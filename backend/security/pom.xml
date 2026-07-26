@@ -27,7 +27,8 @@
     <name>SIXPAY CONNECT - Security</name>
 
     <description>
-        Security domain module for SIXPAY CONNECT.
+        Authentication, authorization and security infrastructure
+        for SIXPAY CONNECT.
     </description>
 
     <!-- ========================================================= -->
@@ -36,10 +37,44 @@
 
     <dependencies>
 
+        <!-- SIXPAY technical components -->
+
         <dependency>
             <groupId>com.sixpay</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Security -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- OAuth2 Resource Server and JWT -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>
+                spring-boot-starter-oauth2-resource-server
+            </artifactId>
+        </dependency>
+
+        <!-- Unit tests -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Security test utilities -->
+
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
