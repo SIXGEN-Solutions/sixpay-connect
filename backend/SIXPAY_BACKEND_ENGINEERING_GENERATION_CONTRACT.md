@@ -658,5 +658,3 @@ Le Master Engineering Prompt **NE DEVRA PAS** dupliquer ou affaiblir les règles
 ## 24. Décision
 
 Le présent **Backend Engineering Generation Contract v1.0** est la règle officielle de génération du code backend SIXPAY CONNECT.
-
-La prochaine étape est la génération et la validation du golden module `partner`.
