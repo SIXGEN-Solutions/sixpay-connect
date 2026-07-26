@@ -27,7 +27,8 @@
     <name>SIXPAY CONNECT - Shared Kernel</name>
 
     <description>
-        Shared Kernel domain module for SIXPAY CONNECT.
+        Shared domain primitives and Domain-Driven Design building
+        blocks for SIXPAY CONNECT.
     </description>
 
     <!-- ========================================================= -->
@@ -36,7 +37,21 @@
 
     <dependencies>
 
-        <!-- Dependencies specific to Shared Kernel will go here. -->
+        <!-- SIXPAY technical common components -->
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Unit testing -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
