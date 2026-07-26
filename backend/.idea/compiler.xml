@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="administration" />
+        <module name="shared-kernel" />
+        <module name="accounting" />
+        <module name="bootstrap" />
+        <module name="subscription" />
+        <module name="notification" />
+        <module name="security" />
+        <module name="common" />
+        <module name="partner" />
+        <module name="integration" />
+        <module name="payment" />
+        <module name="reporting" />
+        <module name="customer" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="tests" target="21" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="accounting" options="-parameters" />
+      <module name="administration" options="-parameters" />
+      <module name="bootstrap" options="-parameters" />
+      <module name="common" options="-parameters" />
+      <module name="customer" options="-parameters" />
+      <module name="integration" options="-parameters" />
+      <module name="notification" options="-parameters" />
+      <module name="partner" options="-parameters" />
+      <module name="payment" options="-parameters" />
+      <module name="reporting" options="-parameters" />
+      <module name="security" options="-parameters" />
+      <module name="shared-kernel" options="-parameters" />
+      <module name="sixpay-parent" options="-parameters" />
+      <module name="subscription" options="-parameters" />
+      <module name="tests" options="-parameters" />
+    </option>
+  </component>
+</project>
