@@ -27,7 +27,8 @@
     <name>SIXPAY CONNECT - Integration</name>
 
     <description>
-        Integration domain module for SIXPAY CONNECT.
+        Shared infrastructure for external system integrations
+        in SIXPAY CONNECT.
     </description>
 
     <!-- ========================================================= -->
@@ -36,10 +37,34 @@
 
     <dependencies>
 
+        <!-- SIXPAY technical components -->
+
         <dependency>
             <groupId>com.sixpay</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Boot auto-configuration support -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Spring synchronous REST client -->
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- Unit testing -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
