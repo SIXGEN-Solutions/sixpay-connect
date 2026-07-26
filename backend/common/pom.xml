@@ -27,7 +27,8 @@
     <name>SIXPAY CONNECT - Common</name>
 
     <description>
-        Common domain module for SIXPAY CONNECT.
+        Framework-independent technical components shared across
+        SIXPAY CONNECT backend modules.
     </description>
 
     <!-- ========================================================= -->
@@ -36,7 +37,13 @@
 
     <dependencies>
 
-        <!-- Dependencies specific to administration will go here. -->
+        <!-- Unit testing -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

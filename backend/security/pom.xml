@@ -36,7 +36,11 @@
 
     <dependencies>
 
-        <!-- Dependencies specific to Security will go here. -->
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
     </dependencies>
 
