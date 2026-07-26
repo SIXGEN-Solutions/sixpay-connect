@@ -45,18 +45,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot auto-configuration support -->
+        <!-- Spring Boot synchronous REST client support -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
-
-        <!-- Spring synchronous REST client -->
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
 
         <!-- Unit testing -->

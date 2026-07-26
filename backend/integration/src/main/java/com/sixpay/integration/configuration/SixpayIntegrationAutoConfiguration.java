@@ -3,14 +3,10 @@ package com.sixpay.integration.configuration;
 import com.sixpay.integration.http.DefaultRestClientFactory;
 import com.sixpay.integration.http.RestClientFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.web.client
-        .RestClientAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestClient;
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -13,98 +13,35 @@
     <groupId>com.sixpay</groupId>
     <artifactId>sixpay-bom</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-
     <packaging>pom</packaging>
 
-    <name>SIXPAY CONNECT - Bill Of Materials</name>
+    <name>SIXPAY CONNECT - Bill of Materials</name>
 
     <description>
-        Centralized dependency versions for SIXPAY CONNECT.
+        Dependency platform for SIXPAY CONNECT.
+        Spring Boot and Spring Cloud remain the primary authorities for
+        framework and third-party dependency versions.
     </description>
 
     <!-- ========================================================= -->
-    <!-- PROPERTIES                                                 -->
+    <!-- VERSION PROPERTIES                                        -->
     <!-- ========================================================= -->
 
     <properties>
 
-        <!-- ===================================================== -->
-        <!-- Java                                                  -->
-        <!-- ===================================================== -->
+        <!-- Framework compatibility baseline -->
 
-        <java.version>21</java.version>
+        <spring.boot.version>4.1.0</spring.boot.version>
+        <spring.cloud.version>2025.1.2</spring.cloud.version>
 
-        <maven.compiler.release>${java.version}</maven.compiler.release>
-
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <!-- ===================================================== -->
-        <!-- Spring                                                -->
-        <!-- ===================================================== -->
-
-        <spring.boot.version>3.5.6</spring.boot.version>
-
-        <spring.cloud.version>2025.0.0</spring.cloud.version>
-
-        <!-- ===================================================== -->
-        <!-- Persistence                                           -->
-        <!-- ===================================================== -->
-
-        <postgresql.version>42.7.7</postgresql.version>
-
-        <flyway.version>11.12.0</flyway.version>
-
-        <!-- ===================================================== -->
-        <!-- Messaging                                             -->
-        <!-- ===================================================== -->
-
-        <kafka.version>3.9.1</kafka.version>
-
-        <!-- ===================================================== -->
-        <!-- Mapping                                               -->
-        <!-- ===================================================== -->
+        <!-- Dependencies not governed by the imported platforms -->
 
         <mapstruct.version>1.6.3</mapstruct.version>
+        <springdoc.version>3.0.3</springdoc.version>
 
-        <lombok.version>1.18.40</lombok.version>
+        <!-- Internal artifacts follow the SIXPAY release version -->
 
-        <!-- ===================================================== -->
-        <!-- JSON                                                  -->
-        <!-- ===================================================== -->
-
-        <jackson.version>2.19.2</jackson.version>
-
-        <!-- ===================================================== -->
-        <!-- Documentation                                         -->
-        <!-- ===================================================== -->
-
-        <springdoc.version>2.8.10</springdoc.version>
-
-        <!-- ===================================================== -->
-        <!-- Security                                              -->
-        <!-- ===================================================== -->
-
-        <vault.version>4.3.0</vault.version>
-
-        <!-- ===================================================== -->
-        <!-- Observability                                         -->
-        <!-- ===================================================== -->
-
-        <micrometer.version>1.15.4</micrometer.version>
-
-        <opentelemetry.version>1.54.0</opentelemetry.version>
-
-        <!-- ===================================================== -->
-        <!-- Testing                                               -->
-        <!-- ===================================================== -->
-
-        <junit.version>5.13.4</junit.version>
-
-        <mockito.version>5.20.0</mockito.version>
-
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <sixpay.modules.version>${project.version}</sixpay.modules.version>
 
     </properties>
 
@@ -113,12 +50,17 @@
     <!-- ========================================================= -->
 
     <dependencyManagement>
-
         <dependencies>
 
-            <!-- ================================================ -->
-            <!-- Spring Boot BOM                                  -->
-            <!-- ================================================ -->
+            <!-- ================================================= -->
+            <!-- EXTERNAL PLATFORMS                                -->
+            <!-- ================================================= -->
+
+            <!--
+                Primary authority for Spring Framework, Spring Security,
+                Jackson, Kafka, PostgreSQL, Flyway, Micrometer,
+                OpenTelemetry, Lombok, JUnit, Mockito and Testcontainers.
+            -->
 
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -128,9 +70,10 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- ================================================ -->
-            <!-- Spring Cloud BOM                                 -->
-            <!-- ================================================ -->
+            <!--
+                Authority for Spring Cloud components, including
+                Spring Cloud Vault.
+            -->
 
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -140,57 +83,11 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- ================================================ -->
-            <!-- PostgreSQL                                       -->
-            <!-- ================================================ -->
+            <!-- ================================================= -->
+            <!-- ADDITIONAL LIBRARIES                              -->
+            <!-- ================================================= -->
 
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${postgresql.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- Flyway                                           -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-core</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-database-postgresql</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- Apache Kafka                                     -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-clients</artifactId>
-                <version>${kafka.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- Jackson                                          -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- MapStruct                                        -->
-            <!-- ================================================ -->
+            <!-- MapStruct -->
 
             <dependency>
                 <groupId>org.mapstruct</groupId>
@@ -204,19 +101,13 @@
                 <version>${mapstruct.version}</version>
             </dependency>
 
-            <!-- ================================================ -->
-            <!-- Lombok                                           -->
-            <!-- ================================================ -->
+            <!-- OpenAPI for Spring Boot 4 -->
 
             <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
-
-            <!-- ================================================ -->
-            <!-- OpenAPI                                          -->
-            <!-- ================================================ -->
 
             <dependency>
                 <groupId>org.springdoc</groupId>
@@ -224,88 +115,93 @@
                 <version>${springdoc.version}</version>
             </dependency>
 
-            <!-- ================================================ -->
-            <!-- HashiCorp Vault                                  -->
-            <!-- ================================================ -->
+            <!-- ================================================= -->
+            <!-- SIXPAY PLATFORM MODULES                           -->
+            <!-- ================================================= -->
 
             <dependency>
-                <groupId>org.springframework.vault</groupId>
-                <artifactId>spring-vault-core</artifactId>
-                <version>${vault.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- Micrometer                                       -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-core</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- OpenTelemetry                                    -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-api</artifactId>
-                <version>${opentelemetry.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>common</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk</artifactId>
-                <version>${opentelemetry.version}</version>
-            </dependency>
-
-            <!-- ================================================ -->
-            <!-- Unit Testing                                     -->
-            <!-- ================================================ -->
-
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${junit.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>shared-kernel</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>security</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-junit-jupiter</artifactId>
-                <version>${mockito.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>integration</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
-            <!-- ================================================ -->
-            <!-- Testcontainers                                   -->
-            <!-- ================================================ -->
+            <!-- ================================================= -->
+            <!-- SIXPAY BUSINESS MODULES                           -->
+            <!-- ================================================= -->
+
+            <!--
+                Version management does not authorize direct coupling
+                between business domains. Domain-to-domain communication
+                must follow the architecture rules defined by SIXPAY.
+            -->
 
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers</artifactId>
-                <version>${testcontainers.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>customer</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${testcontainers.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>partner</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${testcontainers.version}</version>
+                <groupId>com.sixpay</groupId>
+                <artifactId>subscription</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>payment</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>accounting</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>reporting</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>notification</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>administration</artifactId>
+                <version>${sixpay.modules.version}</version>
             </dependency>
 
         </dependencies>
-
     </dependencyManagement>
 
 </project>
