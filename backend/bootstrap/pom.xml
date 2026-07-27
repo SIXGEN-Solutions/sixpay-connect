@@ -21,7 +21,7 @@
     <artifactId>bootstrap</artifactId>
     <packaging>jar</packaging>
 
-    <name>IXPAY CONNECT - bootstrap-services</name>
+    <name>SIXPAY CONNECT - bootstrap-services</name>
     <description>Bootstrap services</description>
 
     <!-- ========================================================= -->
@@ -30,9 +30,59 @@
 
     <dependencies>
 
+        <!-- ===================================================== -->
+        <!-- INTERNAL BUSINESS MODULES                             -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>partner</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>customer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>accounting</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>payment</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Add the other deployable business modules here -->
+
+        <!-- ===================================================== -->
+        <!-- CROSS-CUTTING MODULES                                 -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>integration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- SPRING BOOT RUNTIME                                   -->
+        <!-- ===================================================== -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
         <dependency>
@@ -42,7 +92,50 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Swagger UI belongs to the executable application -->
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- TESTS                                                 -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- Exécution centralisée des migrations                  -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
     </dependencies>

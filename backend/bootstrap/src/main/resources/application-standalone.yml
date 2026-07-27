@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb}
+    username: ${SIXPAY_DB_USERNAME:sixpay_user}
+    password: ${SIXPAY_DB_PASSWORD:sixpay_password}
+
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: sixpay
+        jdbc:
+          lob:
+            non_contextual_creation: true
+          time_zone: UTC
+
+springdoc:
+  api-docs:
+    enabled: true
+
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,flyway
+
+sixpay:
+  security:
+    mode: standalone

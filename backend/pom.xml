@@ -128,6 +128,7 @@
         <module>security</module>
         <module>integration</module>
 
+
         <!-- Business domains -->
 
         <module>customer</module>

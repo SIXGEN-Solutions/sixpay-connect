@@ -1,9 +1,38 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SIXPAY_IDP_ISSUER_URI}
+  application:
+    name: sixpay-connect
+
+  jpa:
+    open-in-view: false
+
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    schemas: sixpay
+    default-schema: sixpay
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

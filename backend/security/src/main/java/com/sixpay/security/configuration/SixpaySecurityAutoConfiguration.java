@@ -24,6 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource
         .authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Default Spring Security configuration for SIXPAY CONNECT.
@@ -69,6 +70,12 @@ public class SixpaySecurityAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security",
+            name = "mode",
+            havingValue = "oauth2",
+            matchIfMissing = true
+    )
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter
