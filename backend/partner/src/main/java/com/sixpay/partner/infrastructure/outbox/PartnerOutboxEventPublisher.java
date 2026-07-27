@@ -31,6 +31,8 @@ public class PartnerOutboxEventPublisher implements PartnerEventPublisher {
                     event.eventId(),
                     event.partnerId(),
                     event.getClass().getSimpleName(),
+                    event.schemaVersion(),
+                    event.correlationId(),
                     objectMapper.writeValueAsString(event),
                     event.occurredAt(),
                     timeProvider.now()

@@ -9,3 +9,8 @@ spring:
 sixpay:
   security:
     mode: oauth2
+
+  messaging:
+    transport: internal
+    outbox:
+      enabled: true

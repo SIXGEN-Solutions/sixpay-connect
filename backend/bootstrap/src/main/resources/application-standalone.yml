@@ -42,3 +42,8 @@ management:
 sixpay:
   security:
     mode: standalone
+
+  messaging:
+    transport: internal
+    outbox:
+      enabled: true

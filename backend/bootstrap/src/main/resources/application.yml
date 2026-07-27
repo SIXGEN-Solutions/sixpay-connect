@@ -36,3 +36,9 @@ management:
     web:
       exposure:
         include: health,info
+
+sixpay:
+  messaging:
+    transport: internal
+    outbox:
+      enabled: true

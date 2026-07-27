@@ -1,1 +1,4 @@
 com.sixpay.integration.configuration.SixpayIntegrationAutoConfiguration
+com.sixpay.integration.configuration.InternalMessagingAutoConfiguration
+com.sixpay.integration.configuration.KafkaMessagingAutoConfiguration
+com.sixpay.integration.configuration.OutboxRelayAutoConfiguration
