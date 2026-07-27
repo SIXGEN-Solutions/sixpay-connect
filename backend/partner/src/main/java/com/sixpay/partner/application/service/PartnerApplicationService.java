@@ -117,8 +117,15 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
         } else {
             partner.reject(command.reason(), now);
         }
+
         persistAndPublish(partner, command.actorId(), correlation(command.correlationId()));
-        appendAudit(partner.id(), "PARTNER_" + decision.name() + "D",
+
+        String auditAction = switch (decision) {
+            case APPROVE -> "PARTNER_APPROVED";
+            case REJECT -> "PARTNER_REJECTED";
+        };
+
+        appendAudit(partner.id(), auditAction,
                 command.actorId(), correlation(command.correlationId()),
                 "Decision applied; status=" + partner.status(), now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
