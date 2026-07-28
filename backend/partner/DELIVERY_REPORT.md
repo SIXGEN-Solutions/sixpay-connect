@@ -61,7 +61,7 @@
 ### Événements
 
 - `PartnerCreatedIntegrationEvent` v1 ;
-- `PartnerStatusChangedIntegrationEvent` v1 ;
+- `PartnerStatusChangedIntegrationEvent` v2, enrichi de `recipientEmail` ;
 - `PartnerThresholdConfiguredIntegrationEvent` v1.
 
 ## Migration
@@ -104,10 +104,10 @@ pourront utiliser `./mvnw` dès que le wrapper sera ajouté au repository.
 
 1. la migration et le mapping Hibernate doivent être validés par `PartnerPersistenceIT` sur PostgreSQL 15 ;
 2. le mapping mTLS/API key doit alimenter `AuthenticatedUser.subject` avec l'UUID partenaire ;
-3. un contrat transverse de publication d'outbox reste à concevoir avant toute dépendance vers `integration` ;
-4. le module `notification` doit consommer les changements de statut pour l'email US-02 ;
-5. le module `payment` doit consommer la projection de statut et de seuil afin de refuser explicitement les nouvelles transactions d'un partenaire non actif ;
-6. chaque critère d'acceptation de l'epic Partenaire doit être relié à un test automatisé ou à une preuve de validation explicite.
+3. un adaptateur concret doit implémenter `PartnerNotificationSender` dans l’infrastructure de `notification` ;
+4. le module `payment` doit consommer la projection de statut et de seuil afin de refuser explicitement les nouvelles transactions d'un partenaire non actif ;
+5. le SLO de consultation inférieur à deux secondes doit être validé dans l’environnement déployé ;
+6. le package `application/port/out` doit être ajouté au commit après correction de la règle `.gitignore`.
 
 ## Prochaine étape recommandée
 

@@ -13,19 +13,24 @@ public record PartnerStatusChangedIntegrationEvent(
         PartnerStatus previousStatus,
         PartnerStatus currentStatus,
         String reason,
+        String recipientEmail,
         String actorId,
         String correlationId,
         Instant occurredAt
 ) implements PartnerIntegrationEvent {
 
     public PartnerStatusChangedIntegrationEvent {
-        if (schemaVersion != 1) {
+        if (schemaVersion != 2) {
             throw new IllegalArgumentException("unsupported schema version");
         }
         Objects.requireNonNull(eventId, "eventId is required");
         Objects.requireNonNull(partnerId, "partnerId is required");
         Objects.requireNonNull(previousStatus, "previousStatus is required");
         Objects.requireNonNull(currentStatus, "currentStatus is required");
+        if (recipientEmail == null || recipientEmail.isBlank()) {
+            throw new IllegalArgumentException("recipientEmail is required");
+        }
+        recipientEmail = recipientEmail.strip();
         Objects.requireNonNull(actorId, "actorId is required");
         Objects.requireNonNull(correlationId, "correlationId is required");
         Objects.requireNonNull(occurredAt, "occurredAt is required");

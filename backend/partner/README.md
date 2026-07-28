@@ -23,11 +23,12 @@ Toutes les versions restent gouvernées par `sixpay-bom`. Le POM du module ne fi
 | `common` | `CorrelationId`, `IdentifierGenerator`, `UuidIdentifierGenerator`, `TimeProvider`, `SystemTimeProvider` | directe |
 | `shared-kernel` | `AggregateRoot`, `DomainEvent`, `DomainException`, `Money` | directe |
 | `security` | `CurrentUserProvider`, `AuthenticatedUser`, `SixpayRole` et auto-configuration JWT | directe |
-| `integration` | Aucun contrat applicable au flux d'outbox actuel ; le module expose aujourd'hui des clients REST externes | absente |
+| `integration` | Relais générique de l’Outbox vers le transport actif | indirecte, via les contrats de `common` |
 
 Une dépendance n'est déclarée que lorsque son API publique est consommée. En particulier,
-`partner` ne dépend pas artificiellement de `integration` : son outbox est un stockage local
-au domaine et aucun appel HTTP externe n'est effectué par le module.
+`partner` ne dépend pas de `integration` : son adaptateur implémente
+`OutboxMessageSource`, contrat framework-independent de `common`. Le relais transverse
+découvre cette source et la publie via l’Internal Bus ou Kafka.
 
 ## Périmètre fonctionnel
 
@@ -106,27 +107,27 @@ La correspondance avec les personas fonctionnels de l'epic est :
 
 ## Contrats d'intégration
 
-Les événements suivants sont versionnés avec `schemaVersion = 1` :
+Les événements suivants sont versionnés :
 
-- `PartnerCreatedIntegrationEvent` ;
-- `PartnerStatusChangedIntegrationEvent` ;
-- `PartnerThresholdConfiguredIntegrationEvent`.
+- `PartnerCreatedIntegrationEvent` v1 ;
+- `PartnerStatusChangedIntegrationEvent` v2 ;
+- `PartnerThresholdConfiguredIntegrationEvent` v1.
 
-Ils sont écrits dans `partner_outbox_events` au sein de la transaction métier. Le module
-`integration` présent dans la baseline expose actuellement des briques de clients REST
-(`RestClientFactory`, `IntegrationContext`, erreurs et en-têtes techniques), mais aucun
-contrat de publication d'outbox. Il n'est donc pas importé par `partner`. Un worker
-transverse devra être ajouté explicitement avant la publication Kafka des lignes `PENDING`.
-Le module `notification` pourra ensuite consommer les changements vers `ACTIVE` ou
-`REJECTED` pour envoyer l'email prévu par US-02. Le module `payment` pourra maintenir une
-projection du statut courant et refuser toute nouvelle transaction lorsque le partenaire
-n'est pas `ACTIVE`.
+Ils sont écrits dans `partner_outbox_events` au sein de la transaction métier. Le relais
+générique de `integration` revendique les lignes via `FOR UPDATE SKIP LOCKED`, construit
+l’enveloppe transverse et utilise le transport configuré.
+
+La version 2 de `PartnerStatusChangedIntegrationEvent` ajoute `recipientEmail`. Ce choix
+rend l’événement de décision autonome : `notification` n’a pas à appeler `partner` ni à
+maintenir une projection préalable du contact. Le champ est limité à la donnée strictement
+nécessaire à l’envoi ; aucun secret ni détail de connexion n’est publié.
+
+`notification` traite uniquement les changements vers `ACTIVE` et `REJECTED` derrière
+`HandleIntegrationEventUseCase`, puis délègue l’envoi à `PartnerNotificationSender`.
+Le module `payment` peut maintenir une projection du statut courant et refuser toute
+nouvelle transaction lorsque le partenaire n'est pas `ACTIVE`.
 
 Ce flux évite toute dépendance directe de `partner` vers `notification` ou `payment`.
-
-Lorsqu'un contrat transverse d'outbox sera officiellement exposé par `integration`, une
-évolution d'architecture décidera si l'adapter local doit l'implémenter. Aucune dépendance
-future n'est anticipée dans le POM.
 
 ## Persistance
 
@@ -180,7 +181,22 @@ d'acceptation de l'epic Partenaire doivent être reliés à des tests automatis�
 
 La revue fonctionnelle doit vérifier chaque critère d'acceptation, y compris les scénarios
 négatifs, de doublon, de replay et de concurrence. La matrice ci-dessus indique les points
-d'ancrage ; elle ne remplace pas la traçabilité détaillée de l'epic.
+d'ancrage. La traçabilité détaillée et les frontières inter-domaines sont consignées dans
+`ACCEPTANCE-TRACEABILITY.md`.
+
+## Observabilité
+
+Le compteur `sixpay.partner.operations` utilise uniquement les tags bornés `operation` et
+`outcome`. Les logs métier contiennent l’opération, l’identifiant du partenaire, le statut
+et le `correlationId`. L’adresse du contact, les clés API et les informations
+d’authentification ne sont jamais journalisées.
+
+## Attention Git
+
+La règle historique `out/` du `.gitignore` excluait par erreur tous les packages Java
+`application/port/out`. Elle doit être remplacée par `/out/`, qui ne cible que le dossier
+de compilation IDE à la racine. Vérifier avant le commit que les ports de `partner` et
+`notification` apparaissent bien dans `git status`.
 
 ## Règles de duplication
 

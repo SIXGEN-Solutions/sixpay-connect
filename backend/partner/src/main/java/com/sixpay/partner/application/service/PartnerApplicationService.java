@@ -39,6 +39,8 @@ import com.sixpay.partner.events.PartnerStatusChangedIntegrationEvent;
 import com.sixpay.partner.events.PartnerThresholdConfiguredIntegrationEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -47,6 +49,9 @@ import java.util.UUID;
 @Service
 @Transactional
 public class PartnerApplicationService implements PartnerManagementUseCase, PartnerQueryUseCase {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(PartnerApplicationService.class);
 
     private final PartnerRepository partnerRepository;
     private final IdentifierGenerator<UUID> identifierGenerator;
@@ -98,6 +103,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 "Partner created in PENDING_VALIDATION status", now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.CREATE);
+        logOutcome("create", partner, correlation(command.correlationId()));
         return PartnerView.from(partner);
     }
 
@@ -130,6 +136,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 "Decision applied; status=" + partner.status(), now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.DECIDE);
+        logOutcome("decide", partner, correlation(command.correlationId()));
         return PartnerView.from(partner);
     }
 
@@ -149,6 +156,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 "Partner suspended; reason=" + partner.statusReason().orElseThrow(), now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.SUSPEND);
+        logOutcome("suspend", partner, correlation(command.correlationId()));
         return PartnerView.from(partner);
     }
 
@@ -168,6 +176,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 "Partner reactivated", now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.REACTIVATE);
+        logOutcome("reactivate", partner, correlation(command.correlationId()));
         return PartnerView.from(partner);
     }
 
@@ -211,6 +220,11 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                         + ", currency=" + current.currency(), now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.CONFIGURE_THRESHOLD);
+        logOutcome(
+                "configure_threshold",
+                partner,
+                correlation(command.correlationId())
+        );
         return PartnerView.from(partner);
     }
 
@@ -314,12 +328,13 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
         }
         if (event instanceof PartnerStatusChanged changed) {
             return new PartnerStatusChangedIntegrationEvent(
-                    1,
+                    2,
                     changed.eventId(),
                     changed.partnerId().value(),
                     changed.previousStatus(),
                     changed.currentStatus(),
                     changed.reason(),
+                    partner.technicalContact().email(),
                     requireText(actorId, "actorId"),
                     requireText(correlationId, "correlationId"),
                     changed.occurredAt()
@@ -359,6 +374,20 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 details,
                 occurredAt
         ));
+    }
+
+    private static void logOutcome(
+            String operation,
+            Partner partner,
+            String correlationId
+    ) {
+        LOGGER.info(
+                "partner_operation={} partner_id={} status={} correlation_id={}",
+                operation,
+                partner.id().value(),
+                partner.status(),
+                correlationId
+        );
     }
 
     private static String requireText(String value, String field) {

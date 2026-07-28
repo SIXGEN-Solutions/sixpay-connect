@@ -8,6 +8,7 @@ import com.sixpay.partner.domain.exception.PartnerDomainException;
 import com.sixpay.sharedkernel.domain.model.AggregateRoot;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -136,6 +137,31 @@ public final class Partner extends AggregateRoot<PartnerId> {
     public Optional<ValidationThreshold> thresholdFor(String transactionType, String currency) {
         return Optional.ofNullable(validationThresholds.get(
                 AuthorizedPerimeter.normalize(transactionType) + ":" + normalizeCurrency(currency)));
+    }
+
+    public int requiredValidationLevels(
+            String transactionType,
+            String currency,
+            BigDecimal transactionAmount
+    ) {
+        Objects.requireNonNull(
+                transactionAmount,
+                "transactionAmount is required"
+        );
+        if (transactionAmount.signum() <= 0) {
+            throw new IllegalArgumentException(
+                    "transactionAmount must be positive"
+            );
+        }
+        return thresholdFor(transactionType, currency)
+                .filter(threshold ->
+                        transactionAmount.compareTo(threshold.amount()) > 0)
+                .map(ValidationThreshold::validationLevels)
+                .orElse(1);
+    }
+
+    public boolean acceptsNewTransactions() {
+        return status == PartnerStatus.ACTIVE;
     }
 
     public List<PartnerDomainEvent> pullDomainEvents() {

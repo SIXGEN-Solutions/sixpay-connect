@@ -1,1 +1,2 @@
+com.sixpay.notification.configuration.NotificationApplicationAutoConfiguration
 com.sixpay.notification.configuration.NotificationMessagingAutoConfiguration
