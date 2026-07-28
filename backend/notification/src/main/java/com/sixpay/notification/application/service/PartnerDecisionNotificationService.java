@@ -54,6 +54,7 @@ public final class PartnerDecisionNotificationService
         var decision = switch (event.currentStatus()) {
             case "ACTIVE" -> Decision.APPROVED;
             case "REJECTED" -> Decision.REJECTED;
+            case "SUSPENDED" -> Decision.SUSPENDED;
             default -> null;
         };
         if (decision == null) {

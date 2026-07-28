@@ -34,6 +34,7 @@ public record PartnerDecisionNotification(
 
     public enum Decision {
         APPROVED,
-        REJECTED
+        REJECTED,
+        SUSPENDED
     }
 }
