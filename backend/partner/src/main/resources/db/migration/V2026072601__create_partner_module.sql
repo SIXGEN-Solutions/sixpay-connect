@@ -34,7 +34,7 @@ CREATE TABLE partner_authorized_perimeters (
 CREATE TABLE partner_validation_thresholds (
     partner_id UUID NOT NULL,
     transaction_type VARCHAR(64) NOT NULL,
-    currency CHAR(3) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     threshold_amount NUMERIC(19, 4) NOT NULL,
     validation_levels INTEGER NOT NULL,
     PRIMARY KEY (partner_id, transaction_type, currency),
@@ -58,7 +58,7 @@ CREATE TABLE partner_validation_threshold_history (
     id UUID PRIMARY KEY,
     partner_id UUID NOT NULL,
     transaction_type VARCHAR(64) NOT NULL,
-    currency CHAR(3) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     previous_amount NUMERIC(19, 4),
     previous_validation_levels INTEGER,
     current_amount NUMERIC(19, 4) NOT NULL,

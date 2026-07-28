@@ -17,6 +17,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -31,12 +32,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
         classes = PartnerPersistenceIT.TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
+        /*
         properties = {
                 "spring.jpa.hibernate.ddl-auto=validate",
-                "spring.jpa.open-in-view=false"
+                "spring.jpa.open-in-view=false",
+
+                "spring.jpa.properties.hibernate.default_schema=sixpay",
+
+                "spring.flyway.enabled=true",
+                "spring.flyway.schemas=sixpay",
+                "spring.flyway.default-schema=sixpay",
+                "spring.flyway.locations=classpath:db/migration",
+                "spring.flyway.validate-on-migrate=true",
+                "spring.flyway.clean-disabled=true"
         }
+        */
 )
+@ActiveProfiles("test")
 @Testcontainers
 class PartnerPersistenceIT {
 

@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -36,12 +37,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
         classes = PartnerOutboxConcurrencyIT.TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = {
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
+     /*   properties = {
+                "spring.datasource.hikari.schema=sixpay",
+                "spring.jpa.properties.hibernate.default_schema=sixpay",
                 "spring.jpa.hibernate.ddl-auto=validate",
                 "spring.jpa.open-in-view=false"
-        }
+        }*/
 )
+@ActiveProfiles("test")
 @Testcontainers
 class PartnerOutboxConcurrencyIT {
 
