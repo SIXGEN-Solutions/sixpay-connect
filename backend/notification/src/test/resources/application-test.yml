@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: sixpay
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    schemas: sixpay
+    default-schema: sixpay
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true

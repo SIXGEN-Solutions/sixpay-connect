@@ -1,3 +1,4 @@
+com.sixpay.notification.configuration.NotificationPersistenceAutoConfiguration
 com.sixpay.notification.configuration.NotificationEmailAutoConfiguration
 com.sixpay.notification.configuration.NotificationApplicationAutoConfiguration
 com.sixpay.notification.configuration.NotificationMessagingAutoConfiguration

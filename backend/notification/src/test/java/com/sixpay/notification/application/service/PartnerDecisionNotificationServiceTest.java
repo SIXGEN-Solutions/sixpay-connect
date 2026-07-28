@@ -1,8 +1,10 @@
 package com.sixpay.notification.application.service;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
+import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
 import com.sixpay.notification.application.model.PartnerStatusChangedEvent;
+import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -20,11 +22,15 @@ class PartnerDecisionNotificationServiceTest {
     private static final UUID PARTNER_ID =
             UUID.fromString("8ec6a427-406f-4f93-b271-cbc819a4c1dd");
     private static final String CORRELATION_ID = "corr-decision";
+    private static final Instant NOW =
+            Instant.parse("2026-07-27T12:00:00Z");
 
     private final List<PartnerDecisionNotification> sent = new ArrayList<>();
+    private final InMemoryDeliveryStore deliveryStore =
+            new InMemoryDeliveryStore();
 
     @Test
-    void sendsApprovalToTechnicalContact() {
+    void sendsApprovalAndMarksTheDeliveryAsSent() {
         var service = service("ACTIVE", null);
 
         service.handle(envelope(2));
@@ -35,37 +41,66 @@ class PartnerDecisionNotificationServiceTest {
             assertThat(notification.recipientEmail())
                     .isEqualTo("alice.ops@example.com");
         });
+        assertThat(deliveryStore.registration.template())
+                .isEqualTo("partner-activated");
+        assertThat(deliveryStore.sentEventId).isEqualTo(EVENT_ID);
     }
 
     @Test
-    void sendsRejectionWithReasonToTechnicalContact() {
-        var service = service("REJECTED", "Dossier incomplet");
+    void sendsRejectionAndSuspensionWithTheirTemplates() {
+        service("REJECTED", "Dossier incomplet").handle(envelope(2));
 
-        service.handle(envelope(2));
+        assertThat(deliveryStore.registration.template())
+                .isEqualTo("partner-rejected");
+        assertThat(sent).singleElement().satisfies(notification ->
+                assertThat(notification.reason())
+                        .isEqualTo("Dossier incomplet")
+        );
 
-        assertThat(sent).singleElement().satisfies(notification -> {
-            assertThat(notification.decision())
-                    .isEqualTo(PartnerDecisionNotification.Decision.REJECTED);
-            assertThat(notification.reason()).isEqualTo("Dossier incomplet");
-        });
+        sent.clear();
+        deliveryStore.reset();
+        service("SUSPENDED", "Risque détecté").handle(envelope(2));
+
+        assertThat(deliveryStore.registration.template())
+                .isEqualTo("partner-suspended");
+        assertThat(sent).singleElement().satisfies(notification ->
+                assertThat(notification.decision())
+                        .isEqualTo(
+                                PartnerDecisionNotification.Decision.SUSPENDED
+                        )
+        );
     }
 
     @Test
-    void sendsSuspensionWithReasonToTechnicalContact() {
-        var service = service("SUSPENDED", "Risque détecté");
+    void ignoresAnAlreadyRegisteredEventWithoutSendingAgain() {
+        var service = service("ACTIVE", null);
 
         service.handle(envelope(2));
+        service.handle(envelope(2));
 
-        assertThat(sent).singleElement().satisfies(notification -> {
-            assertThat(notification.decision())
-                    .isEqualTo(
-                            PartnerDecisionNotification.Decision.SUSPENDED
-                    );
-            assertThat(notification.reason())
-                    .isEqualTo("Risque détecté");
-            assertThat(notification.recipientEmail())
-                    .isEqualTo("alice.ops@example.com");
-        });
+        assertThat(sent).hasSize(1);
+        assertThat(deliveryStore.startCalls).isEqualTo(2);
+        assertThat(deliveryStore.sentCalls).isEqualTo(1);
+    }
+
+    @Test
+    void recordsTheFailureAndRethrowsTheSendingError() {
+        var service = new PartnerDecisionNotificationService(
+                ignored -> partnerEvent("ACTIVE", null),
+                ignored -> {
+                    throw new IllegalStateException("SMTP unavailable");
+                },
+                deliveryStore,
+                () -> NOW
+        );
+
+        assertThatThrownBy(() -> service.handle(envelope(2)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("SMTP unavailable");
+
+        assertThat(deliveryStore.failedEventId).isEqualTo(EVENT_ID);
+        assertThat(deliveryStore.lastError).isEqualTo("SMTP unavailable");
+        assertThat(deliveryStore.nextAttemptAt).isEqualTo(NOW);
     }
 
     @Test
@@ -79,11 +114,12 @@ class PartnerDecisionNotificationServiceTest {
                 "PAYMENT",
                 PARTNER_ID,
                 CORRELATION_ID,
-                Instant.parse("2026-07-27T12:00:00Z"),
+                NOW,
                 "{}"
         ));
 
         assertThat(sent).isEmpty();
+        assertThat(deliveryStore.registration).isNull();
     }
 
     @Test
@@ -103,9 +139,11 @@ class PartnerDecisionNotificationServiceTest {
                         "alice.ops@example.com",
                         "manager@sixpay",
                         CORRELATION_ID,
-                        Instant.parse("2026-07-27T12:00:00Z")
+                        NOW
                 ),
-                sent::add
+                sent::add,
+                deliveryStore,
+                () -> NOW
         );
         assertThatThrownBy(() -> mismatched.handle(envelope(2)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -117,19 +155,28 @@ class PartnerDecisionNotificationServiceTest {
             String reason
     ) {
         return new PartnerDecisionNotificationService(
-                ignored -> new PartnerStatusChangedEvent(
-                        2,
-                        EVENT_ID,
-                        PARTNER_ID,
-                        "PENDING_VALIDATION",
-                        currentStatus,
-                        reason,
-                        "alice.ops@example.com",
-                        "manager@sixpay",
-                        CORRELATION_ID,
-                        Instant.parse("2026-07-27T12:00:00Z")
-                ),
-                sent::add
+                ignored -> partnerEvent(currentStatus, reason),
+                sent::add,
+                deliveryStore,
+                () -> NOW
+        );
+    }
+
+    private static PartnerStatusChangedEvent partnerEvent(
+            String currentStatus,
+            String reason
+    ) {
+        return new PartnerStatusChangedEvent(
+                2,
+                EVENT_ID,
+                PARTNER_ID,
+                "PENDING_VALIDATION",
+                currentStatus,
+                reason,
+                "alice.ops@example.com",
+                "manager@sixpay",
+                CORRELATION_ID,
+                NOW
         );
     }
 
@@ -141,8 +188,61 @@ class PartnerDecisionNotificationServiceTest {
                 "PARTNER",
                 PARTNER_ID,
                 CORRELATION_ID,
-                Instant.parse("2026-07-27T12:00:00Z"),
+                NOW,
                 "{\"eventId\":\"" + EVENT_ID + "\"}"
         );
+    }
+
+    private static final class InMemoryDeliveryStore
+            implements NotificationDeliveryStore {
+
+        private NotificationDeliveryRegistration registration;
+        private UUID sentEventId;
+        private UUID failedEventId;
+        private String lastError;
+        private Instant nextAttemptAt;
+        private int startCalls;
+        private int sentCalls;
+
+        @Override
+        public boolean tryStart(
+                NotificationDeliveryRegistration candidate
+        ) {
+            startCalls++;
+            if (registration != null
+                    && registration.eventId().equals(candidate.eventId())) {
+                return false;
+            }
+            registration = candidate;
+            return true;
+        }
+
+        @Override
+        public void markSent(UUID eventId, Instant sentAt) {
+            sentCalls++;
+            sentEventId = eventId;
+        }
+
+        @Override
+        public void markFailed(
+                UUID eventId,
+                String error,
+                Instant failedAt,
+                Instant retryAt
+        ) {
+            failedEventId = eventId;
+            lastError = error;
+            nextAttemptAt = retryAt;
+        }
+
+        private void reset() {
+            registration = null;
+            sentEventId = null;
+            failedEventId = null;
+            lastError = null;
+            nextAttemptAt = null;
+            startCalls = 0;
+            sentCalls = 0;
+        }
     }
 }

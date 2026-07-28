@@ -1,12 +1,16 @@
 package com.sixpay.notification.application.service;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
+import com.sixpay.common.time.TimeProvider;
+import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
 import com.sixpay.notification.application.model.PartnerDecisionNotification.Decision;
 import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
 import com.sixpay.notification.application.port.out.PartnerNotificationSender;
 import com.sixpay.notification.application.port.out.PartnerStatusChangedEventDecoder;
 
+import java.time.Instant;
 import java.util.Objects;
 
 public final class PartnerDecisionNotificationService
@@ -19,13 +23,19 @@ public final class PartnerDecisionNotificationService
 
     private final PartnerStatusChangedEventDecoder decoder;
     private final PartnerNotificationSender sender;
+    private final NotificationDeliveryStore deliveryStore;
+    private final TimeProvider timeProvider;
 
     public PartnerDecisionNotificationService(
             PartnerStatusChangedEventDecoder decoder,
-            PartnerNotificationSender sender
+            PartnerNotificationSender sender,
+            NotificationDeliveryStore deliveryStore,
+            TimeProvider timeProvider
     ) {
         this.decoder = Objects.requireNonNull(decoder);
         this.sender = Objects.requireNonNull(sender);
+        this.deliveryStore = Objects.requireNonNull(deliveryStore);
+        this.timeProvider = Objects.requireNonNull(timeProvider);
     }
 
     @Override
@@ -61,13 +71,60 @@ public final class PartnerDecisionNotificationService
             return;
         }
 
-        sender.send(new PartnerDecisionNotification(
+        var notification = new PartnerDecisionNotification(
                 event.eventId(),
                 event.partnerId(),
                 event.recipientEmail(),
                 decision,
                 event.reason(),
                 event.correlationId()
-        ));
+        );
+        Instant startedAt = timeProvider.now();
+        boolean firstDelivery = deliveryStore.tryStart(
+                new NotificationDeliveryRegistration(
+                        event.eventId(),
+                        event.partnerId(),
+                        STATUS_CHANGED_EVENT,
+                        event.recipientEmail(),
+                        template(decision),
+                        event.correlationId(),
+                        startedAt
+                )
+        );
+        if (!firstDelivery) {
+            return;
+        }
+
+        try {
+            sender.send(notification);
+            deliveryStore.markSent(event.eventId(), timeProvider.now());
+        } catch (RuntimeException exception) {
+            Instant failedAt = timeProvider.now();
+            deliveryStore.markFailed(
+                    event.eventId(),
+                    errorMessage(exception),
+                    failedAt,
+                    failedAt
+            );
+            throw exception;
+        }
+    }
+
+    private static String template(Decision decision) {
+        return switch (decision) {
+            case APPROVED -> "partner-activated";
+            case REJECTED -> "partner-rejected";
+            case SUSPENDED -> "partner-suspended";
+        };
+    }
+
+    private static String errorMessage(RuntimeException exception) {
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getName();
+        }
+        return message.length() <= 2000
+                ? message
+                : message.substring(0, 2000);
     }
 }
