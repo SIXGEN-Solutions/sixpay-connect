@@ -1,0 +1,23 @@
+<mat-form-field appearance="outline">
+  <mat-label>{{ label() }}</mat-label>
+  <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+  <input
+    #searchInput
+    matInput
+    type="search"
+    [placeholder]="placeholder()"
+    [value]="value()"
+    (input)="update(searchInput.value)"
+  />
+  @if (value()) {
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      aria-label="Effacer la recherche"
+      (click)="clear(searchInput)"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  }
+</mat-form-field>

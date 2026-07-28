@@ -70,3 +70,37 @@ npm run build
 ```
 
 Ces quatre commandes constituent le Gate 1.
+
+## Design System minimal viable
+
+La Phase 2 complète les emplacements existants sans modifier l’architecture :
+
+```text
+src/app/shared/components/
+├── button/          SpButtonComponent
+├── card/            SpCardComponent
+├── data-table/      SpDataTableComponent
+├── dialog/          SpDialogComponent
+├── loading/         SpLoadingComponent
+├── notification/    SpNotificationComponent
+├── search-field/    SpSearchFieldComponent
+└── toolbar/         SpToolbarComponent
+```
+
+`SpFormErrorComponent` fournit l’affichage accessible des erreurs de formulaire.
+Tous ces composants restent indépendants des domaines métier. Le catalogue
+minimal est chargé à la demande sur `/design-system`, dans le domaine
+`dashboard` déjà présent.
+
+Les styles globaux conservent `src/styles/styles.scss` comme point d’entrée :
+
+- `tokens` définit les couleurs, états, espacements, bordures, ombres et la
+  typographie ;
+- `themes` configure Angular Material ;
+- `typography`, `spacing` et `utilities` appliquent les règles communes ;
+- chaque composant conserve ses styles locaux et consomme uniquement les
+  tokens partagés.
+
+Le Gate 2 comprend le Gate technique (`npm ci`, lint, tests et build), puis une
+validation visuelle du catalogue en desktop et mobile, du focus clavier, des
+labels et des retours accessibles.

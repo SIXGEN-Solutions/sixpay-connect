@@ -1,0 +1,28 @@
+.sp-data-table {
+  max-width: 100%;
+  overflow-x: auto;
+  border: var(--sp-border-width) solid var(--sp-color-border);
+  border-radius: var(--sp-radius-md);
+}
+
+table {
+  width: 100%;
+  min-width: 40rem;
+}
+
+th {
+  color: var(--sp-color-text);
+  background: var(--sp-color-surface-variant);
+  font-weight: var(--sp-font-weight-semibold);
+}
+
+td,
+th {
+  border-bottom-color: var(--sp-color-border);
+}
+
+.sp-data-table__empty {
+  padding: var(--sp-space-6);
+  color: var(--sp-color-text-muted);
+  text-align: center;
+}

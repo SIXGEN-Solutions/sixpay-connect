@@ -30,3 +30,13 @@
 .sp-shell__error p {
   margin: var(--sp-space-1) 0 0;
 }
+
+@media (max-width: 48rem) {
+  mat-sidenav {
+    width: 4.5rem;
+  }
+
+  .sp-shell__content {
+    padding: var(--sp-space-4);
+  }
+}

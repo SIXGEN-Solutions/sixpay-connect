@@ -18,3 +18,14 @@ body {
 html {
   min-height: 100%;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

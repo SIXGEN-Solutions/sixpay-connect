@@ -1,0 +1,42 @@
+.sp-notification {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--sp-space-3);
+  padding: var(--sp-space-4);
+  border-inline-start: 4px solid var(--sp-color-info);
+  border-radius: var(--sp-radius-md);
+  color: var(--sp-color-info-text);
+  background: var(--sp-color-info-container);
+}
+
+.sp-notification--success {
+  border-color: var(--sp-color-success);
+  color: var(--sp-color-success-text);
+  background: var(--sp-color-success-container);
+}
+
+.sp-notification--warning {
+  border-color: var(--sp-color-warning);
+  color: var(--sp-color-warning-text);
+  background: var(--sp-color-warning-container);
+}
+
+.sp-notification--error {
+  border-color: var(--sp-color-error);
+  color: var(--sp-color-error-text);
+  background: var(--sp-color-error-container);
+}
+
+p {
+  margin: var(--sp-space-1) 0 0;
+}
+
+button {
+  display: inline-grid;
+  padding: var(--sp-space-1);
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}

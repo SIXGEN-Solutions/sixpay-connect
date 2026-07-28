@@ -14,6 +14,13 @@ export const routes: Routes = [
             (component) => component.DashboardPageComponent,
           ),
       },
+      {
+        path: 'design-system',
+        loadComponent: () =>
+          import('./features/dashboard/components/design-system-catalog.component').then(
+            (component) => component.DesignSystemCatalogComponent,
+          ),
+      },
     ],
   },
   {

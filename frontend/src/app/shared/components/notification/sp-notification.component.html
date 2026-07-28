@@ -1,0 +1,17 @@
+<section
+  class="sp-notification"
+  [class]="'sp-notification sp-notification--' + status()"
+  [attr.role]="status() === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="status() === 'error' ? 'assertive' : 'polite'"
+>
+  <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
+  <div>
+    <strong>{{ title() }}</strong>
+    <p>{{ message() }}</p>
+  </div>
+  @if (dismissible()) {
+    <button type="button" aria-label="Fermer la notification" (click)="dismissed.emit()">
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  }
+</section>

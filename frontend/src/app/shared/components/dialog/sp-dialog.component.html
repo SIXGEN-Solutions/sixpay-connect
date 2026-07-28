@@ -1,0 +1,12 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <sp-button variant="secondary" (buttonClick)="close(false)">
+    {{ data.cancelLabel ?? 'Annuler' }}
+  </sp-button>
+  <sp-button [variant]="data.destructive ? 'danger' : 'primary'" (buttonClick)="close(true)">
+    {{ data.confirmLabel ?? 'Confirmer' }}
+  </sp-button>
+</mat-dialog-actions>

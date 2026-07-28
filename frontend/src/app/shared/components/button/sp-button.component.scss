@@ -1,0 +1,15 @@
+.sp-button {
+  --mdc-filled-button-container-color: var(--sp-color-primary);
+  --mdc-filled-button-label-text-color: var(--sp-color-primary-contrast);
+  border-radius: var(--sp-radius-md);
+}
+
+.sp-button--secondary {
+  --mdc-filled-button-container-color: var(--sp-color-primary-container);
+  --mdc-filled-button-label-text-color: var(--sp-color-info-text);
+}
+
+.sp-button--danger {
+  --mdc-filled-button-container-color: var(--sp-color-error);
+  --mdc-filled-button-label-text-color: var(--sp-color-primary-contrast);
+}

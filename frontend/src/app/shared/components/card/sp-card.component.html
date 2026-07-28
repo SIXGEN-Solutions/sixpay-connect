@@ -1,0 +1,14 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>{{ title() }}</mat-card-title>
+    @if (subtitle(); as cardSubtitle) {
+      <mat-card-subtitle>{{ cardSubtitle }}</mat-card-subtitle>
+    }
+  </mat-card-header>
+  <mat-card-content>
+    <ng-content />
+  </mat-card-content>
+  <mat-card-actions align="end">
+    <ng-content select="[spCardActions]" />
+  </mat-card-actions>
+</mat-card>
