@@ -1,7 +1,6 @@
 package com.sixpay.partner.api.response;
 
 import com.sixpay.partner.application.view.PartnerView;
-import com.sixpay.partner.application.view.ValidationThresholdView;
 import com.sixpay.partner.domain.model.PartnerStatus;
 
 import java.time.Instant;
@@ -17,7 +16,7 @@ public record PartnerResponse(
         Set<String> authorizedTransactionTypes,
         PartnerStatus status,
         String statusReason,
-        List<ValidationThresholdView> validationThresholds,
+        List<ValidationThresholdResponse> validationThresholds,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -31,7 +30,9 @@ public record PartnerResponse(
                 view.authorizedTransactionTypes(),
                 view.status(),
                 view.statusReason(),
-                view.validationThresholds(),
+                view.validationThresholds().stream()
+                        .map(ValidationThresholdResponse::from)
+                        .toList(),
                 view.createdAt(),
                 view.updatedAt()
         );

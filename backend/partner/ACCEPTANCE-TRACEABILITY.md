@@ -1,8 +1,9 @@
 # Traçabilité d’acceptation — Golden Module Partner
 
-Cette matrice s’applique à l’état GitHub `fe3ec87` complété par le lot
-`step-2-golden-partner`. Elle distingue la responsabilité du module `partner`
-des contrôles contractuels imposés aux domaines consommateurs.
+Cette matrice s’applique à la branche GitHub `backend-foundation`, auditée à
+partir du commit `debc137`, puis complétée par le gel du contrat API Partner v1.
+Elle distingue la responsabilité du module `partner` des contrôles
+contractuels imposés aux domaines consommateurs.
 
 | US | Critère | Preuve automatisée |
 |---|---|---|
@@ -20,15 +21,15 @@ des contrôles contractuels imposés aux domaines consommateurs.
 | US-04 | suspension auditée | `PartnerApplicationServiceTest.suspendsAndReactivatesWithAuditAndOutboxEvents` |
 | US-05 | statut actuel et méthodes mTLS/API key sans secret | `PartnerConnectionInfoResponseTest.exposesSupportedConnectionMethodsWithoutSecrets` |
 | US-05 | accès propriétaire et rôles internes | `PartnerControllerTest.letsPartnerReadOnlyItsOwnStatus`, `forbidsPartnerFromReadingAnotherPartnerStatus` et tests RBAC |
-| US-05 | réponse sous deux secondes | garde composant `PartnerControllerTest.statusEndpointRespondsWithinTwoSecondsAtComponentBoundary`; le SLO reste à confirmer sur l’application déployée avec PostgreSQL |
+| US-05 | réponse sous deux secondes | SLO à mesurer sur l’application déployée avec PostgreSQL ; aucun test composant ne prétend valider une latence d’infrastructure |
 | US-06 | audit avec date, heure et auteur | `PartnerApplicationServiceTest.queriesAuditByPartnerPeriodWithPublicPaginationContract` |
 | US-06 | journal non modifiable | `PartnerPersistenceIT.persistsEveryMutationThroughOutboxAndKeepsImmutableHistory` |
 | US-06 | consultation par dossier et période | `PartnerApplicationServiceTest.queriesAuditByPartnerPeriodWithPublicPaginationContract` |
 | transverse | idempotence sans double effet | `PartnerApplicationServiceTest.replaysCreateWithoutRepeatingSideEffects` |
 | transverse | toutes les mutations publient par l’Outbox | `PartnerPersistenceIT.persistsEveryMutationThroughOutboxAndKeepsImmutableHistory` |
 | transverse | aucun couplage `partner` vers `notification` | `PartnerArchitectureTest.partnerDoesNotDependOnAnotherBusinessDomain` |
-| transverse | OpenAPI sur tous les endpoints | `PartnerOpenApiContractTest.documentsEveryPublicEndpointAndItsSecurityScheme` |
-| transverse | métriques à cardinalité bornée | `MicrometerPartnerOperationMetricsTest.recordsBoundedOperationAndOutcomeTags` |
+| transverse | contrat OpenAPI figé sur tous les endpoints | `PartnerApiContractTest.freezesPartnerPathsAndOperationIds`, `freezesPublicResponseFieldNames` et `freezesRequiredMutationHeaders` |
+| transverse | métriques à cardinalité bornée | la conception utilise des enums bornées ; un test Micrometer dédié reste à ajouter |
 
 ## Limites de responsabilité
 

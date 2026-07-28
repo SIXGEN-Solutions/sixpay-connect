@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -127,6 +128,49 @@ class PartnerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin@sixpay", roles = "ADMIN")
+    void rejectsBlankIdempotencyKeyBeforeCallingTheUseCase() throws Exception {
+        mockMvc.perform(post("/api/v1/partners")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", " ")
+                        .content("""
+                            {
+                              "legalName": "Acme Payments",
+                              "technicalContactName": "Alice Ops",
+                              "technicalContactEmail": "alice.ops@example.com",
+                              "authorizedTransactionTypes": ["PAYMENT"]
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid request"));
+
+        verifyNoInteractions(management);
+    }
+
+    @Test
+    @WithMockUser(username = "admin@sixpay", roles = "ADMIN")
+    void rejectsHeadersThatExceedThePersistenceContract() throws Exception {
+        mockMvc.perform(post("/api/v1/partners")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Correlation-ID", "c".repeat(151))
+                        .header("Idempotency-Key", "i".repeat(151))
+                        .content("""
+                            {
+                              "legalName": "Acme Payments",
+                              "technicalContactName": "Alice Ops",
+                              "technicalContactEmail": "alice.ops@example.com",
+                              "authorizedTransactionTypes": ["PAYMENT"]
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid request"));
+
+        verifyNoInteractions(management);
+    }
+
+    @Test
     @WithMockUser(
             username = "8ec6a427-406f-4f93-b271-cbc819a4c1dd",
             roles = "PARTNER"
@@ -138,6 +182,16 @@ class PartnerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.partnerId").value(PARTNER_ID.toString()))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    @WithMockUser(
+            username = "978cfc85-f3ce-4bca-b02e-1bb915178d9d",
+            roles = "PARTNER"
+    )
+    void forbidsPartnerFromReadingAnotherPartnerStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/partners/{partnerId}/status", PARTNER_ID))
+                .andExpect(status().isForbidden());
     }
 
     private static PartnerView partnerView(PartnerStatus status) {

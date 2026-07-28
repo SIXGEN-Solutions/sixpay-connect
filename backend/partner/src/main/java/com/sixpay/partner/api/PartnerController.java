@@ -6,6 +6,7 @@ import com.sixpay.partner.api.request.CreatePartnerRequest;
 import com.sixpay.partner.api.request.PartnerDecisionRequest;
 import com.sixpay.partner.api.request.SuspendPartnerRequest;
 import com.sixpay.partner.api.response.PartnerResponse;
+import com.sixpay.partner.api.response.PartnerAuditPageResponse;
 import com.sixpay.partner.api.response.PartnerStatusResponse;
 import com.sixpay.partner.application.command.ConfigureValidationThresholdCommand;
 import com.sixpay.partner.application.command.CreatePartnerCommand;
@@ -14,7 +15,6 @@ import com.sixpay.partner.application.command.ReactivatePartnerCommand;
 import com.sixpay.partner.application.command.SuspendPartnerCommand;
 import com.sixpay.partner.application.port.in.PartnerManagementUseCase;
 import com.sixpay.partner.application.port.in.PartnerQueryUseCase;
-import com.sixpay.partner.application.view.PartnerAuditPage;
 import com.sixpay.partner.domain.model.PartnerId;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,11 +47,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1/partners")
 @Tag(name = "Partners", description = "Partner lifecycle and validation policy")
 @SecurityRequirement(name = "bearerAuth")
-@Validated
 public class PartnerController {
 
     private static final String CORRELATION_HEADER = "X-Correlation-ID";
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+    private static final int HEADER_MAX_LENGTH = 150;
 
     private final PartnerManagementUseCase management;
     private final PartnerQueryUseCase query;
@@ -70,8 +72,10 @@ public class PartnerController {
     @Operation(summary = "Create a partner in pending validation status")
     public ResponseEntity<PartnerResponse> create(
             @Valid @RequestBody CreatePartnerRequest request,
-            @RequestHeader(name = CORRELATION_HEADER, required = false) String correlationId,
-            @RequestHeader(name = IDEMPOTENCY_HEADER) String idempotencyKey
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId,
+            @RequestHeader(name = IDEMPOTENCY_HEADER)
+            @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         var partner = PartnerResponse.from(management.create(new CreatePartnerCommand(
                 request.legalName(),
@@ -95,8 +99,10 @@ public class PartnerController {
     public PartnerResponse decide(
             @PathVariable UUID partnerId,
             @Valid @RequestBody PartnerDecisionRequest request,
-            @RequestHeader(name = CORRELATION_HEADER, required = false) String correlationId,
-            @RequestHeader(name = IDEMPOTENCY_HEADER) String idempotencyKey
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId,
+            @RequestHeader(name = IDEMPOTENCY_HEADER)
+            @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         return PartnerResponse.from(management.decide(new DecidePartnerCommand(
                 new PartnerId(partnerId),
@@ -114,8 +120,10 @@ public class PartnerController {
     public PartnerResponse suspend(
             @PathVariable UUID partnerId,
             @Valid @RequestBody SuspendPartnerRequest request,
-            @RequestHeader(name = CORRELATION_HEADER, required = false) String correlationId,
-            @RequestHeader(name = IDEMPOTENCY_HEADER) String idempotencyKey
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId,
+            @RequestHeader(name = IDEMPOTENCY_HEADER)
+            @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         return PartnerResponse.from(management.suspend(new SuspendPartnerCommand(
                 new PartnerId(partnerId),
@@ -131,8 +139,10 @@ public class PartnerController {
     @Operation(summary = "Reactivate a suspended partner")
     public PartnerResponse reactivate(
             @PathVariable UUID partnerId,
-            @RequestHeader(name = CORRELATION_HEADER, required = false) String correlationId,
-            @RequestHeader(name = IDEMPOTENCY_HEADER) String idempotencyKey
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId,
+            @RequestHeader(name = IDEMPOTENCY_HEADER)
+            @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         return PartnerResponse.from(management.reactivate(new ReactivatePartnerCommand(
                 new PartnerId(partnerId),
@@ -149,8 +159,10 @@ public class PartnerController {
             @PathVariable UUID partnerId,
             @PathVariable String transactionType,
             @Valid @RequestBody ConfigureValidationThresholdRequest request,
-            @RequestHeader(name = CORRELATION_HEADER, required = false) String correlationId,
-            @RequestHeader(name = IDEMPOTENCY_HEADER) String idempotencyKey
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId,
+            @RequestHeader(name = IDEMPOTENCY_HEADER)
+            @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         return PartnerResponse.from(management.configureValidationThreshold(
                 new ConfigureValidationThresholdCommand(
@@ -183,14 +195,16 @@ public class PartnerController {
     @GetMapping("/{partnerId}/audit")
     @PreAuthorize("hasRole('AUDITOR')")
     @Operation(summary = "Query the immutable audit trail over a period")
-    public PartnerAuditPage audit(
+    public PartnerAuditPageResponse audit(
             @PathVariable UUID partnerId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) int size
     ) {
-        return query.findAuditTrail(new PartnerId(partnerId), from, to, page, size);
+        return PartnerAuditPageResponse.from(
+                query.findAuditTrail(new PartnerId(partnerId), from, to, page, size)
+        );
     }
 
     private String actor() {

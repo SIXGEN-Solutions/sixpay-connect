@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -56,8 +57,8 @@ public class PartnerApiExceptionHandler {
 
     @ExceptionHandler({
             MissingRequestHeaderException.class,
-            HttpMessageNotReadableException.class,
-            HandlerMethodValidationException.class
+            HttpMessageNotReadableException.class
+            //HandlerMethodValidationException.class
     })
     ResponseEntity<ProblemDetail> malformedRequest(Exception exception, HttpServletRequest request) {
         metrics.rejected(PartnerOperationMetrics.Rejection.INVALID_REQUEST);
@@ -94,5 +95,39 @@ public class PartnerApiExceptionHandler {
         problem.setType(URI.create("urn:sixpay:problem:" + status.value()));
         problem.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(status).body(problem);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    ResponseEntity<ProblemDetail> methodValidation(
+            HandlerMethodValidationException exception,
+            HttpServletRequest request
+    ) {
+        metrics.rejected(PartnerOperationMetrics.Rejection.INVALID_REQUEST);
+
+        var detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Request validation failed"
+        );
+
+        detail.setTitle("Invalid request");
+        detail.setType(URI.create("urn:sixpay:problem:invalid-request"));
+        detail.setInstance(URI.create(request.getRequestURI()));
+
+        var errors = new LinkedHashMap<String, String>();
+
+        exception.getParameterValidationResults()
+                .forEach(result -> {
+                    if (result instanceof ParameterErrors parameterErrors) {
+                        parameterErrors.getFieldErrors()
+                                .forEach(error -> errors.putIfAbsent(
+                                        error.getField(),
+                                        error.getDefaultMessage()
+                                ));
+                    }
+                });
+
+        detail.setProperty("errors", errors);
+
+        return ResponseEntity.badRequest().body(detail);
     }
 }
