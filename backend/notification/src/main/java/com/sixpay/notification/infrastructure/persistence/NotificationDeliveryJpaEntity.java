@@ -32,6 +32,9 @@ public class NotificationDeliveryJpaEntity {
     @Column(nullable = false, length = 100)
     private String template;
 
+    @Column(length = 1000)
+    private String reason;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private NotificationDeliveryStatus status;
@@ -65,6 +68,26 @@ public class NotificationDeliveryJpaEntity {
         return eventId;
     }
 
+    public UUID aggregateId() {
+        return aggregateId;
+    }
+
+    public String recipient() {
+        return recipient;
+    }
+
+    public String template() {
+        return template;
+    }
+
+    public String reason() {
+        return reason;
+    }
+
+    public String correlationId() {
+        return correlationId;
+    }
+
     public NotificationDeliveryStatus status() {
         return status;
     }
@@ -83,5 +106,17 @@ public class NotificationDeliveryJpaEntity {
 
     public Instant sentAt() {
         return sentAt;
+    }
+
+    void claimForRetry() {
+        if (status != NotificationDeliveryStatus.FAILED
+                && status != NotificationDeliveryStatus.PENDING) {
+            throw new IllegalStateException(
+                    "Only FAILED or PENDING delivery can be claimed"
+            );
+        }
+        status = NotificationDeliveryStatus.PROCESSING;
+        attemptCount++;
+        nextAttemptAt = null;
     }
 }

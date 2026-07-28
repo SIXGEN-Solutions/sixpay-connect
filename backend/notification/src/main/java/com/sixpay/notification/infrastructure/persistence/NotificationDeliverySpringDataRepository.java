@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface NotificationDeliverySpringDataRepository
@@ -23,6 +24,7 @@ public interface NotificationDeliverySpringDataRepository
                 event_type,
                 recipient,
                 template,
+                reason,
                 status,
                 attempt_count,
                 next_attempt_at,
@@ -38,6 +40,7 @@ public interface NotificationDeliverySpringDataRepository
                 :eventType,
                 :recipient,
                 :template,
+                :reason,
                 'PROCESSING',
                 1,
                 NULL,
@@ -55,6 +58,7 @@ public interface NotificationDeliverySpringDataRepository
             @Param("eventType") String eventType,
             @Param("recipient") String recipient,
             @Param("template") String template,
+            @Param("reason") String reason,
             @Param("createdAt") Instant createdAt,
             @Param("correlationId") String correlationId
     );
@@ -87,5 +91,33 @@ public interface NotificationDeliverySpringDataRepository
             @Param("eventId") UUID eventId,
             @Param("error") String error,
             @Param("nextAttemptAt") Instant nextAttemptAt
+    );
+
+    @Query(value = """
+            SELECT *
+              FROM sixpay.notification_deliveries
+             WHERE status IN ('PENDING', 'FAILED')
+               AND next_attempt_at <= :now
+             ORDER BY next_attempt_at, created_at
+             LIMIT :batchSize
+             FOR UPDATE SKIP LOCKED
+            """, nativeQuery = true)
+    List<NotificationDeliveryJpaEntity> lockDue(
+            @Param("now") Instant now,
+            @Param("batchSize") int batchSize
+    );
+
+    @Modifying
+    @Query(value = """
+            UPDATE sixpay.notification_deliveries
+               SET status = 'DEAD',
+                   last_error = :error,
+                   next_attempt_at = NULL
+             WHERE event_id = :eventId
+               AND status = 'PROCESSING'
+            """, nativeQuery = true)
+    int markDead(
+            @Param("eventId") UUID eventId,
+            @Param("error") String error
     );
 }

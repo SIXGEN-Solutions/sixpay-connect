@@ -1,11 +1,13 @@
 package com.sixpay.notification.infrastructure.persistence;
 
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
+import com.sixpay.notification.application.model.NotificationDeliveryAttempt;
 import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.List;
 import java.util.UUID;
 
 public class JpaNotificationDeliveryStore
@@ -30,9 +32,39 @@ public class JpaNotificationDeliveryStore
                 registration.eventType(),
                 registration.recipient(),
                 registration.template(),
+                registration.reason(),
                 registration.createdAt(),
                 registration.correlationId()
         ) == 1;
+    }
+
+    @Override
+    @Transactional
+    public List<NotificationDeliveryAttempt> claimDue(
+            Instant now,
+            int batchSize
+    ) {
+        Objects.requireNonNull(now, "now is required");
+        if (batchSize < 1) {
+            throw new IllegalArgumentException(
+                    "batchSize must be greater than zero"
+            );
+        }
+        var entities = repository.lockDue(now, batchSize);
+        return entities.stream()
+                .map(entity -> {
+                    entity.claimForRetry();
+                    return new NotificationDeliveryAttempt(
+                            entity.eventId(),
+                            entity.aggregateId(),
+                            entity.recipient(),
+                            entity.template(),
+                            entity.reason(),
+                            entity.correlationId(),
+                            entity.attemptCount()
+                    );
+                })
+                .toList();
     }
 
     @Override
@@ -65,6 +97,24 @@ public class JpaNotificationDeliveryStore
                 ),
                 eventId,
                 "FAILED"
+        );
+    }
+
+    @Override
+    @Transactional
+    public void markDead(
+            UUID eventId,
+            String error,
+            Instant failedAt
+    ) {
+        Objects.requireNonNull(failedAt, "failedAt is required");
+        requireUpdated(
+                repository.markDead(
+                        Objects.requireNonNull(eventId),
+                        requireText(error, "error")
+                ),
+                eventId,
+                "DEAD"
         );
     }
 

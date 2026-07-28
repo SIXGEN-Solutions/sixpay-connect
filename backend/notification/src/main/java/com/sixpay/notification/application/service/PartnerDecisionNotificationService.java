@@ -25,17 +25,20 @@ public final class PartnerDecisionNotificationService
     private final PartnerNotificationSender sender;
     private final NotificationDeliveryStore deliveryStore;
     private final TimeProvider timeProvider;
+    private final NotificationRetryPolicy retryPolicy;
 
     public PartnerDecisionNotificationService(
             PartnerStatusChangedEventDecoder decoder,
             PartnerNotificationSender sender,
             NotificationDeliveryStore deliveryStore,
-            TimeProvider timeProvider
+            TimeProvider timeProvider,
+            NotificationRetryPolicy retryPolicy
     ) {
         this.decoder = Objects.requireNonNull(decoder);
         this.sender = Objects.requireNonNull(sender);
         this.deliveryStore = Objects.requireNonNull(deliveryStore);
         this.timeProvider = Objects.requireNonNull(timeProvider);
+        this.retryPolicy = Objects.requireNonNull(retryPolicy);
     }
 
     @Override
@@ -87,6 +90,7 @@ public final class PartnerDecisionNotificationService
                         STATUS_CHANGED_EVENT,
                         event.recipientEmail(),
                         template(decision),
+                        event.reason(),
                         event.correlationId(),
                         startedAt
                 )
@@ -100,12 +104,23 @@ public final class PartnerDecisionNotificationService
             deliveryStore.markSent(event.eventId(), timeProvider.now());
         } catch (RuntimeException exception) {
             Instant failedAt = timeProvider.now();
-            deliveryStore.markFailed(
-                    event.eventId(),
-                    errorMessage(exception),
-                    failedAt,
-                    failedAt
+            String error = RetryNotificationDeliveriesService.errorMessage(
+                    exception
             );
+            if (retryPolicy.exhausted(1)) {
+                deliveryStore.markDead(
+                        event.eventId(),
+                        error,
+                        failedAt
+                );
+            } else {
+                deliveryStore.markFailed(
+                        event.eventId(),
+                        error,
+                        failedAt,
+                        retryPolicy.nextAttemptAt(failedAt, 1)
+                );
+            }
             throw exception;
         }
     }
@@ -118,13 +133,4 @@ public final class PartnerDecisionNotificationService
         };
     }
 
-    private static String errorMessage(RuntimeException exception) {
-        String message = exception.getMessage();
-        if (message == null || message.isBlank()) {
-            return exception.getClass().getName();
-        }
-        return message.length() <= 2000
-                ? message
-                : message.substring(0, 2000);
-    }
 }

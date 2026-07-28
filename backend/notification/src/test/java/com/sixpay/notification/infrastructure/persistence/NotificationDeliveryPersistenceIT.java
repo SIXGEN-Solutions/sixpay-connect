@@ -2,10 +2,12 @@ package com.sixpay.notification.infrastructure.persistence;
 
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.configuration.NotificationPersistenceAutoConfiguration;
 import com.sixpay.notification.configuration.NotificationApplicationAutoConfiguration;
 import com.sixpay.notification.configuration.NotificationEmailAutoConfiguration;
 import com.sixpay.notification.configuration.NotificationMessagingAutoConfiguration;
-import com.sixpay.notification.configuration.NotificationPersistenceAutoConfiguration;
+import com.sixpay.notification.configuration.NotificationRetryAutoConfiguration;
+import com.sixpay.notification.configuration.NotificationRetryPolicyAutoConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,6 +108,61 @@ class NotificationDeliveryPersistenceIT {
         assertThat(failed.sentAt()).isNull();
     }
 
+    @Test
+    void claimsOnlyDueFailedDeliveryAndIncrementsAttemptCount() {
+        UUID eventId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-07-28T13:00:00Z");
+        store.tryStart(registration(eventId, createdAt));
+        Instant retryAt = createdAt.plusSeconds(60);
+        store.markFailed(
+                eventId,
+                "SMTP unavailable",
+                createdAt.plusSeconds(1),
+                retryAt
+        );
+
+        assertThat(store.claimDue(retryAt.minusMillis(1), 10)).isEmpty();
+
+        var claimed = store.claimDue(retryAt, 10);
+        assertThat(claimed).singleElement().satisfies(attempt ->
+                assertThat(attempt.attemptCount()).isEqualTo(2)
+        );
+
+        var processing = repository.findByEventId(eventId).orElseThrow();
+        assertThat(processing.status())
+                .isEqualTo(NotificationDeliveryStatus.PROCESSING);
+        assertThat(processing.attemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    void neverClaimsSentDelivery() {
+        UUID eventId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-07-28T14:00:00Z");
+        store.tryStart(registration(eventId, createdAt));
+        store.markSent(eventId, createdAt.plusSeconds(1));
+
+        assertThat(store.claimDue(createdAt.plusSeconds(60), 10))
+                .isEmpty();
+    }
+
+    @Test
+    void neverClaimsDeadDelivery() {
+        UUID eventId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-07-28T15:00:00Z");
+        store.tryStart(registration(eventId, createdAt));
+        store.markDead(
+                eventId,
+                "Maximum attempts reached",
+                createdAt.plusSeconds(1)
+        );
+
+        var dead = repository.findByEventId(eventId).orElseThrow();
+        assertThat(dead.status()).isEqualTo(NotificationDeliveryStatus.DEAD);
+        assertThat(dead.nextAttemptAt()).isNull();
+        assertThat(store.claimDue(createdAt.plusSeconds(60), 10))
+                .isEmpty();
+    }
+
     private static NotificationDeliveryRegistration registration(
             UUID eventId,
             Instant createdAt
@@ -116,6 +173,7 @@ class NotificationDeliveryPersistenceIT {
                 "PartnerStatusChangedIntegrationEvent",
                 "alice.ops@example.com",
                 "partner-activated",
+                null,
                 "corr-persistence",
                 createdAt
         );
@@ -125,7 +183,9 @@ class NotificationDeliveryPersistenceIT {
     @EnableAutoConfiguration(exclude = {
             NotificationApplicationAutoConfiguration.class,
             NotificationEmailAutoConfiguration.class,
-            NotificationMessagingAutoConfiguration.class
+            NotificationMessagingAutoConfiguration.class,
+            NotificationRetryPolicyAutoConfiguration.class,
+            NotificationRetryAutoConfiguration.class
     })
     @ImportAutoConfiguration(
             NotificationPersistenceAutoConfiguration.class

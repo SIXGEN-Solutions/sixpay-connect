@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -91,7 +92,8 @@ class PartnerDecisionNotificationServiceTest {
                     throw new IllegalStateException("SMTP unavailable");
                 },
                 deliveryStore,
-                () -> NOW
+                () -> NOW,
+                NotificationRetryPolicy.defaults()
         );
 
         assertThatThrownBy(() -> service.handle(envelope(2)))
@@ -100,7 +102,8 @@ class PartnerDecisionNotificationServiceTest {
 
         assertThat(deliveryStore.failedEventId).isEqualTo(EVENT_ID);
         assertThat(deliveryStore.lastError).isEqualTo("SMTP unavailable");
-        assertThat(deliveryStore.nextAttemptAt).isEqualTo(NOW);
+        assertThat(deliveryStore.nextAttemptAt)
+                .isEqualTo(NOW.plusSeconds(60));
     }
 
     @Test
@@ -143,7 +146,8 @@ class PartnerDecisionNotificationServiceTest {
                 ),
                 sent::add,
                 deliveryStore,
-                () -> NOW
+                () -> NOW,
+                NotificationRetryPolicy.defaults()
         );
         assertThatThrownBy(() -> mismatched.handle(envelope(2)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -158,7 +162,8 @@ class PartnerDecisionNotificationServiceTest {
                 ignored -> partnerEvent(currentStatus, reason),
                 sent::add,
                 deliveryStore,
-                () -> NOW
+                () -> NOW,
+                NotificationRetryPolicy.defaults()
         );
     }
 
@@ -218,6 +223,12 @@ class PartnerDecisionNotificationServiceTest {
         }
 
         @Override
+        public List<com.sixpay.notification.application.model.NotificationDeliveryAttempt>
+        claimDue(Instant now, int batchSize) {
+            return Collections.emptyList();
+        }
+
+        @Override
         public void markSent(UUID eventId, Instant sentAt) {
             sentCalls++;
             sentEventId = eventId;
@@ -233,6 +244,16 @@ class PartnerDecisionNotificationServiceTest {
             failedEventId = eventId;
             lastError = error;
             nextAttemptAt = retryAt;
+        }
+
+        @Override
+        public void markDead(
+                UUID eventId,
+                String error,
+                Instant failedAt
+        ) {
+            failedEventId = eventId;
+            lastError = error;
         }
 
         private void reset() {

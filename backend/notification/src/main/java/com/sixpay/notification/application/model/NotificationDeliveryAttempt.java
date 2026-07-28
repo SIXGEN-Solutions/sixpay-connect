@@ -1,31 +1,32 @@
 package com.sixpay.notification.application.model;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Transport-neutral data required to register the first delivery attempt.
+ * A persisted delivery that has been atomically claimed for an attempt.
  */
-public record NotificationDeliveryRegistration(
+public record NotificationDeliveryAttempt(
         UUID eventId,
         UUID aggregateId,
-        String eventType,
         String recipient,
         String template,
         String reason,
         String correlationId,
-        Instant createdAt
+        int attemptCount
 ) {
 
-    public NotificationDeliveryRegistration {
+    public NotificationDeliveryAttempt {
         Objects.requireNonNull(eventId, "eventId is required");
         Objects.requireNonNull(aggregateId, "aggregateId is required");
-        eventType = requireText(eventType, "eventType");
         recipient = requireText(recipient, "recipient");
         template = requireText(template, "template");
         correlationId = requireText(correlationId, "correlationId");
-        Objects.requireNonNull(createdAt, "createdAt is required");
+        if (attemptCount < 1) {
+            throw new IllegalArgumentException(
+                    "attemptCount must be greater than zero"
+            );
+        }
     }
 
     private static String requireText(String value, String name) {

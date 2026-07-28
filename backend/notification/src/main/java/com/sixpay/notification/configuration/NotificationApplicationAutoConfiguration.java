@@ -7,6 +7,7 @@ import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
 import com.sixpay.notification.application.port.out.PartnerNotificationSender;
 import com.sixpay.notification.application.port.out.PartnerStatusChangedEventDecoder;
 import com.sixpay.notification.application.service.PartnerDecisionNotificationService;
+import com.sixpay.notification.application.service.NotificationRetryPolicy;
 import com.sixpay.notification.infrastructure.messaging.JacksonPartnerStatusChangedEventDecoder;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -41,13 +42,15 @@ public class NotificationApplicationAutoConfiguration {
             PartnerStatusChangedEventDecoder decoder,
             PartnerNotificationSender sender,
             NotificationDeliveryStore deliveryStore,
-            TimeProvider timeProvider
+            TimeProvider timeProvider,
+            NotificationRetryPolicy retryPolicy
     ) {
         return new PartnerDecisionNotificationService(
                 decoder,
                 sender,
                 deliveryStore,
-                timeProvider
+                timeProvider,
+                retryPolicy
         );
     }
 }
