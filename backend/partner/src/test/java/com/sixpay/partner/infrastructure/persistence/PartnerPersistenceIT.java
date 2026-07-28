@@ -33,21 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         classes = PartnerPersistenceIT.TestApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE
-        /*
-        properties = {
-                "spring.jpa.hibernate.ddl-auto=validate",
-                "spring.jpa.open-in-view=false",
-
-                "spring.jpa.properties.hibernate.default_schema=sixpay",
-
-                "spring.flyway.enabled=true",
-                "spring.flyway.schemas=sixpay",
-                "spring.flyway.default-schema=sixpay",
-                "spring.flyway.locations=classpath:db/migration",
-                "spring.flyway.validate-on-migrate=true",
-                "spring.flyway.clean-disabled=true"
-        }
-        */
 )
 @ActiveProfiles("test")
 @Testcontainers

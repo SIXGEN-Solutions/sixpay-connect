@@ -144,6 +144,10 @@
 
         <module>bootstrap</module>
 
+        <!-- E2E tests -->
+
+        <module>tests</module>
+
     </modules>
 
     <!-- ========================================================= -->
