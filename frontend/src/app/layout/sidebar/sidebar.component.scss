@@ -1,0 +1,8 @@
+:host {
+  display: block;
+  min-width: 15rem;
+}
+
+.sp-sidebar__link--active {
+  background: var(--sp-color-primary-container);
+}

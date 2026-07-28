@@ -1,0 +1,8 @@
+<mat-toolbar class="sp-header">
+  <mat-icon aria-hidden="true">account_balance</mat-icon>
+  <span class="sp-header__title">SIXPAY CONNECT</span>
+  <span class="sp-header__spacer"></span>
+  @if (authentication.subject(); as subject) {
+    <span class="sp-header__subject">{{ subject }}</span>
+  }
+</mat-toolbar>
