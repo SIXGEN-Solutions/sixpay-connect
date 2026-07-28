@@ -51,8 +51,27 @@ class PartnerDecisionNotificationServiceTest {
     }
 
     @Test
-    void ignoresNonDecisionStatusChangesAndUnrelatedEvents() {
-        service("SUSPENDED", "Risque détecté").handle(envelope(2));
+    void sendsSuspensionWithReasonToTechnicalContact() {
+        var service = service("SUSPENDED", "Risque détecté");
+
+        service.handle(envelope(2));
+
+        assertThat(sent).singleElement().satisfies(notification -> {
+            assertThat(notification.decision())
+                    .isEqualTo(
+                            PartnerDecisionNotification.Decision.SUSPENDED
+                    );
+            assertThat(notification.reason())
+                    .isEqualTo("Risque détecté");
+            assertThat(notification.recipientEmail())
+                    .isEqualTo("alice.ops@example.com");
+        });
+    }
+
+    @Test
+    void ignoresNonNotifiableStatusChangesAndUnrelatedEvents() {
+        service("PENDING_VALIDATION", null).handle(envelope(2));
+
         service("ACTIVE", null).handle(new IntegrationEventEnvelope(
                 EVENT_ID,
                 "PaymentCapturedIntegrationEvent",

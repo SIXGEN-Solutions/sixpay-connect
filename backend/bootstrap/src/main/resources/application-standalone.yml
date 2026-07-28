@@ -49,3 +49,9 @@ sixpay:
     transport: internal
     outbox:
       enabled: true
+
+  notification:
+    email:
+      mode: logging
+      from: no-reply@sixpay.local
+      subject-prefix: "[SIXPAY]"

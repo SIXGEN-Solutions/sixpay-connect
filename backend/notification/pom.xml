@@ -63,6 +63,13 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- Email outgoing adapter -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Tests -->
 
         <dependency>
