@@ -2,22 +2,28 @@ package com.sixpay.notification.infrastructure.email;
 
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
 import com.sixpay.notification.infrastructure.email.smtp.SmtpEmailGateway;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import java.util.Properties;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EmailPartnerNotificationSenderTest {
 
     @Test
-    void sendsTheRenderedNotificationThroughSmtp() {
+    void sendsTheRenderedHtmlNotificationThroughSmtp() throws Exception {
         JavaMailSender mailSender = mock(JavaMailSender.class);
+        MimeMessage mimeMessage = new MimeMessage(
+                Session.getInstance(new Properties())
+        );
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         NotificationEmailProperties properties =
                 new NotificationEmailProperties();
@@ -39,16 +45,19 @@ class EmailPartnerNotificationSenderTest {
                 "corr-email"
         ));
 
-        ArgumentCaptor<SimpleMailMessage> messageCaptor =
-                ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(messageCaptor.capture());
-        SimpleMailMessage sent = messageCaptor.getValue();
+        verify(mailSender).send(mimeMessage);
+        mimeMessage.saveChanges();
 
-        assertThat(sent.getFrom())
+        assertThat(mimeMessage.getFrom()[0].toString())
                 .isEqualTo("no-reply@sixpay.example");
-        assertThat(sent.getTo())
-                .containsExactly("alice.ops@example.com");
-        assertThat(sent.getSubject())
+        assertThat(mimeMessage.getAllRecipients()[0].toString())
+                .isEqualTo("alice.ops@example.com");
+        assertThat(mimeMessage.getSubject())
                 .startsWith("[SIXPAY TEST]");
+        assertThat(mimeMessage.getContentType())
+                .containsIgnoringCase("text/html");
+        assertThat(mimeMessage.getContent().toString())
+                .contains("<!doctype html>")
+                .contains("Votre accès est actif");
     }
 }

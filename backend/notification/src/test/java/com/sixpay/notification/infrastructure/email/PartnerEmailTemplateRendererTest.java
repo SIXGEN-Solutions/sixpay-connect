@@ -13,21 +13,46 @@ class PartnerEmailTemplateRendererTest {
             new PartnerEmailTemplateRenderer();
 
     @Test
-    void rendersApprovalRejectionAndSuspension() {
-        assertThat(renderer.render(notification(
+    void rendersTheActivationTemplate() {
+        var rendered = renderer.render(notification(
                 PartnerDecisionNotification.Decision.APPROVED,
                 null
-        )).subject()).contains("Activation");
+        ));
 
-        assertThat(renderer.render(notification(
+        assertThat(rendered.subject()).contains("Activation");
+        assertThat(rendered.body())
+                .contains("<!doctype html>")
+                .contains("Votre accès est actif")
+                .doesNotContain("{{partnerId}}")
+                .doesNotContain("{{correlationId}}");
+    }
+
+    @Test
+    void rendersTheRejectionTemplateAndEscapesItsReason() {
+        var rendered = renderer.render(notification(
                 PartnerDecisionNotification.Decision.REJECTED,
-                "Dossier incomplet"
-        )).body()).contains("Dossier incomplet");
+                "<script>alert('x')</script>"
+        ));
 
-        assertThat(renderer.render(notification(
+        assertThat(rendered.subject()).contains("Décision");
+        assertThat(rendered.body())
+                .contains("&lt;script&gt;")
+                .contains("&#39;x&#39;")
+                .doesNotContain("<script>");
+    }
+
+    @Test
+    void rendersTheSuspensionTemplate() {
+        var rendered = renderer.render(notification(
                 PartnerDecisionNotification.Decision.SUSPENDED,
                 "Risque détecté"
-        )).subject()).contains("Suspension");
+        ));
+
+        assertThat(rendered.subject()).contains("Suspension");
+        assertThat(rendered.body())
+                .contains("Votre accès a été suspendu")
+                .contains("Risque détecté")
+                .doesNotContain("{{reason}}");
     }
 
     private static PartnerDecisionNotification notification(

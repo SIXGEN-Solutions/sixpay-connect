@@ -1,8 +1,12 @@
 package com.sixpay.notification.infrastructure.email.smtp;
 
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -23,13 +27,24 @@ public final class SmtpEmailGateway {
             String from,
             String recipient,
             String subject,
-            String body
+            String htmlBody
     ) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(requireText(from, "from"));
-        message.setTo(requireText(recipient, "recipient"));
-        message.setSubject(requireText(subject, "subject"));
-        message.setText(requireText(body, "body"));
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(
+                    message,
+                    StandardCharsets.UTF_8.name()
+            );
+            helper.setFrom(requireText(from, "from"));
+            helper.setTo(requireText(recipient, "recipient"));
+            helper.setSubject(requireText(subject, "subject"));
+            helper.setText(requireText(htmlBody, "htmlBody"), true);
+        } catch (MessagingException exception) {
+            throw new MailPreparationException(
+                    "Unable to prepare notification email",
+                    exception
+            );
+        }
         mailSender.send(message);
     }
 
