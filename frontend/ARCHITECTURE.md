@@ -104,3 +104,47 @@ Les styles globaux conservent `src/styles/styles.scss` comme point d’entrée :
 Le Gate 2 comprend le Gate technique (`npm ci`, lint, tests et build), puis une
 validation visuelle du catalogue en desktop et mobile, du focus clavier, des
 labels et des retours accessibles.
+
+## Modèle frontend Partner et client API
+
+La Phase 3 complète exclusivement les emplacements Partner existants :
+
+```text
+src/app/features/partners/
+├── api/
+│   ├── partners-api.client.ts
+│   └── partners-api.mapper.ts
+├── models/
+│   ├── create-partners.request.ts
+│   ├── partners.response.ts
+│   └── partners.ts
+└── services/
+    └── partners.service.ts
+```
+
+- `partners.response.ts` et `create-partners.request.ts` représentent le contrat
+  HTTP figé par `partner-api-v1.yaml`.
+- `PartnerApiClient` est le seul composant qui appelle directement les huit
+  endpoints Partner.
+- Les interceptors du socle continuent de gérer JWT, `X-Correlation-ID` et
+  `Idempotency-Key`.
+- `partners-api.mapper.ts` transforme les réponses HTTP en modèles
+  applicatifs, notamment les chaînes `date-time` en `Date`.
+- `PartnersService` expose ces modèles applicatifs afin que les composants ne
+  dépendent pas directement des DTO HTTP.
+- Le mapping RFC 7807 produit des `ApplicationError.fieldErrors` directement
+  exploitables par les formulaires.
+
+Le Gate 3 est exécutable avec :
+
+```bash
+npm run gate:3
+```
+
+Il vérifie automatiquement les propriétés, types, champs obligatoires, enums
+et opérations TypeScript par rapport au contrat OpenAPI backend, puis exécute
+lint, tests, build et contrôle du formatage.
+
+La configuration `vitest-base.config.mts` utilise un worker `threads` unique.
+Elle garantit un comportement stable et déterministe sur les postes Windows et
+en CI, sans modifier l’isolation logique entre les fichiers de tests.
