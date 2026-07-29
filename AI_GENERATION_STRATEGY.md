@@ -297,6 +297,11 @@ Le Master Engineering Prompt :
 - ne contient pas de logique métier propre à un domaine ;
 - possède une version et un historique de changements.
 
+Les références officielles sont :
+
+- `MASTER_ENGINEERING_PROMPT_V0.md` pour l’orchestration backend ;
+- `MASTER_ENGINEERING_PROMPT_V1.md` pour l’orchestration full-stack.
+
 Versions recommandées :
 
 | Version | Objet |
@@ -307,6 +312,8 @@ Versions recommandées :
 | `V2` | industrialisation multi-domaines après retour d’expérience mesuré |
 
 ### 7.3 Niveau 3 — Domain Generation Brief
+
+Le modèle officiel est `DOMAIN_GENERATION_BRIEF_TEMPLATE.md`.
 
 Chaque domaine reçoit un brief spécifique contenant :
 
@@ -341,7 +348,8 @@ Un Task Prompt n’est pas réutilisé sur un autre domaine sans adaptation et r
 
 ## 8. Manifeste de contexte
 
-Chaque campagne de génération doit produire un manifeste de contexte. Exemple :
+Chaque campagne de génération doit produire un manifeste de contexte dérivé de
+`AI_CONTEXT_MANIFEST_TEMPLATE.yaml`. Exemple simplifié :
 
 ```yaml
 generation:
@@ -377,6 +385,9 @@ generation:
 
 Le manifeste doit être relu lorsqu’un contrat, une source d’autorité ou le commit de base
 change.
+
+Le rapport de livraison obligatoire est dérivé de
+`AI_GENERATION_REPORT_TEMPLATE.md`.
 
 ---
 
@@ -929,9 +940,13 @@ reproductibilité le sont.
 
 ### Étape 2 — Master Engineering Prompt
 
-- produire `V0` backend ;
-- produire `V1` full-stack ;
-- créer les templates de brief, manifeste et rapport.
+**État : terminée par le versionnement des artefacts de référence.**
+
+- `MASTER_ENGINEERING_PROMPT_V0.md` : orchestration backend ;
+- `MASTER_ENGINEERING_PROMPT_V1.md` : orchestration full-stack ;
+- `DOMAIN_GENERATION_BRIEF_TEMPLATE.md` : préparation métier et technique ;
+- `AI_CONTEXT_MANIFEST_TEMPLATE.yaml` : contexte immuable d’une campagne ;
+- `AI_GENERATION_REPORT_TEMPLATE.md` : preuves et rapport de livraison.
 
 ### Étape 3 — Pilote Customer
 
