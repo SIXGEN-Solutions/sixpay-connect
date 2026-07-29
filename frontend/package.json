@@ -14,10 +14,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "ng test --watch=false",
+    "test:coverage": "ng test --watch=false --coverage",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e": "playwright test",
+    "test:e2e:a11y": "playwright test --grep @a11y",
     "contract:partner": "node verify-partner-openapi.mjs",
     "gate:3": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
     "gate:4": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
-    "gate:5": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check"
+    "gate:5": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
+    "gate:6": "npm run contract:partner && npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run format:check"
   },
   "private": true,
   "dependencies": {
@@ -40,6 +45,9 @@
     "@angular/build": "^21.2.19",
     "@angular/cli": "^21.2.19",
     "@angular/compiler-cli": "^21.2.18",
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "angular-eslint": "^21.4.0",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
