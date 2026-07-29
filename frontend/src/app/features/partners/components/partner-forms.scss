@@ -1,0 +1,27 @@
+.sp-partner-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-space-4);
+}
+
+.sp-partner-form__wide,
+.sp-partner-form__actions {
+  grid-column: 1 / -1;
+}
+
+.sp-partner-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-space-3);
+}
+
+@media (max-width: 768px) {
+  .sp-partner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-partner-form__wide,
+  .sp-partner-form__actions {
+    grid-column: auto;
+  }
+}

@@ -21,6 +21,11 @@ export const routes: Routes = [
             (component) => component.DesignSystemCatalogComponent,
           ),
       },
+      {
+        path: 'partners',
+        loadChildren: () =>
+          import('./features/partners/partners.routes').then((routes) => routes.PARTNER_ROUTES),
+      },
     ],
   },
   {

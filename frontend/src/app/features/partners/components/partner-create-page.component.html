@@ -1,0 +1,76 @@
+<sp-toolbar
+  title="Créer un partenaire"
+  description="Enregistrez les informations légales et techniques du partenaire."
+/>
+
+<sp-card title="Informations du partenaire">
+  <form class="sp-partner-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>Raison sociale</mat-label>
+      <input
+        matInput
+        formControlName="legalName"
+        maxlength="200"
+        autocomplete="organization"
+        [attr.aria-describedby]="fieldError('legalName') ? 'legalName-error' : null"
+      />
+      <sp-form-error errorId="legalName-error" [message]="fieldError('legalName')" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nom du contact technique</mat-label>
+      <input
+        matInput
+        formControlName="technicalContactName"
+        maxlength="150"
+        autocomplete="name"
+        [attr.aria-describedby]="
+          fieldError('technicalContactName') ? 'technicalContactName-error' : null
+        "
+      />
+      <sp-form-error
+        errorId="technicalContactName-error"
+        [message]="fieldError('technicalContactName')"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Courriel du contact</mat-label>
+      <input
+        matInput
+        type="email"
+        formControlName="technicalContactEmail"
+        maxlength="254"
+        autocomplete="email"
+        [attr.aria-describedby]="
+          fieldError('technicalContactEmail') ? 'technicalContactEmail-error' : null
+        "
+      />
+      <sp-form-error
+        errorId="technicalContactEmail-error"
+        [message]="fieldError('technicalContactEmail')"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sp-partner-form__wide">
+      <mat-label>Types de transactions autorisés</mat-label>
+      <input
+        matInput
+        formControlName="authorizedTransactionTypes"
+        placeholder="Ex. PAYMENT, REFUND"
+        aria-describedby="transaction-types-help"
+      />
+      <mat-hint id="transaction-types-help">Séparez les valeurs par une virgule.</mat-hint>
+      <sp-form-error
+        errorId="authorizedTransactionTypes-error"
+        [message]="fieldError('authorizedTransactionTypes')"
+      />
+    </mat-form-field>
+
+    <div class="sp-partner-form__actions">
+      <sp-button type="submit" icon="add" [disabled]="submitting()">
+        {{ submitting() ? 'Création…' : 'Créer le partenaire' }}
+      </sp-button>
+    </div>
+  </form>
+</sp-card>

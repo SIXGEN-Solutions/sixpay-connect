@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "test": "ng test --watch=false",
     "contract:partner": "node verify-partner-openapi.mjs",
-    "gate:3": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check"
+    "gate:3": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
+    "gate:4": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check"
   },
   "private": true,
   "dependencies": {

@@ -6,6 +6,11 @@ const ACCESS_TOKEN_STORAGE_KEY = 'sixpay.access-token';
 interface JwtPayload {
   readonly exp?: number;
   readonly sub?: string;
+  readonly roles?: readonly string[];
+  readonly authorities?: readonly string[];
+  readonly realm_access?: {
+    readonly roles?: readonly string[];
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +32,16 @@ export class AuthenticationService {
   });
 
   readonly subject = computed(() => this.decodePayload(this.accessTokenState())?.sub ?? null);
+  readonly roles = computed(() => {
+    const payload = this.decodePayload(this.accessTokenState());
+    const roles = [
+      ...(payload?.roles ?? []),
+      ...(payload?.authorities ?? []),
+      ...(payload?.realm_access?.roles ?? []),
+    ];
+
+    return new Set(roles.map((role) => role.replace(/^ROLE_/, '').toUpperCase()));
+  });
 
   setAccessToken(accessToken: string): void {
     this.storage?.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
@@ -36,6 +51,10 @@ export class AuthenticationService {
   clearSession(): void {
     this.storage?.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     this.accessTokenState.set(null);
+  }
+
+  hasRole(role: string): boolean {
+    return this.roles().has(role.replace(/^ROLE_/, '').toUpperCase());
   }
 
   private get storage(): Storage | undefined {

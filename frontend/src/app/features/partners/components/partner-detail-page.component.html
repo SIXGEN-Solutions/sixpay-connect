@@ -1,0 +1,161 @@
+<sp-toolbar
+  title="Fiche Partner"
+  description="Informations, statut, connexion et administration du partenaire."
+>
+  @if (state() === 'success' && partner() && authentication.hasRole('ADMIN')) {
+    <sp-partner-lifecycle-actions [partner]="partner()!" (changed)="refresh($event)" />
+  }
+</sp-toolbar>
+
+@if (created()) {
+  <sp-notification
+    title="Partenaire créé"
+    message="Le partenaire a été créé et se trouve en attente de validation."
+    status="success"
+    [dismissible]="true"
+    (dismissed)="created.set(false)"
+  />
+}
+
+@if (actionSucceeded()) {
+  <sp-notification
+    title="Opération réussie"
+    message="La fiche Partner a été actualisée."
+    status="success"
+    [dismissible]="true"
+    (dismissed)="actionSucceeded.set(false)"
+  />
+}
+
+@switch (state()) {
+  @case ('loading') {
+    <sp-loading label="Chargement de la fiche Partner" />
+  }
+  @case ('not-found') {
+    <sp-notification
+      title="Partenaire introuvable"
+      message="Aucun partenaire ne correspond à cet identifiant."
+      status="warning"
+    />
+  }
+  @case ('forbidden') {
+    <sp-notification
+      title="Accès interdit"
+      message="Votre rôle ne permet pas de consulter ce partenaire."
+      status="error"
+    />
+  }
+  @case ('error') {
+    <sp-notification
+      title="Erreur technique"
+      message="La fiche ne peut pas être chargée pour le moment."
+      status="error"
+    />
+  }
+  @case ('success') {
+    @if (partner(); as currentPartner) {
+      <div class="sp-partner-grid">
+        <sp-card title="Informations générales">
+          <dl class="sp-partner-details">
+            <div>
+              <dt>Identifiant</dt>
+              <dd>{{ currentPartner.id }}</dd>
+            </div>
+            <div>
+              <dt>Raison sociale</dt>
+              <dd>{{ currentPartner.legalName }}</dd>
+            </div>
+            <div>
+              <dt>Contact technique</dt>
+              <dd>{{ currentPartner.technicalContactName }}</dd>
+            </div>
+            <div>
+              <dt>Courriel</dt>
+              <dd>
+                <a [href]="'mailto:' + currentPartner.technicalContactEmail">
+                  {{ currentPartner.technicalContactEmail }}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt>Transactions autorisées</dt>
+              <dd>{{ currentPartner.authorizedTransactionTypes.join(', ') }}</dd>
+            </div>
+            <div>
+              <dt>Créé le</dt>
+              <dd>{{ currentPartner.createdAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt>Mis à jour le</dt>
+              <dd>{{ currentPartner.updatedAt | date: 'medium' }}</dd>
+            </div>
+          </dl>
+        </sp-card>
+
+        <sp-card title="Statut et connexion">
+          <dl class="sp-partner-details">
+            <div>
+              <dt>Statut courant</dt>
+              <dd>
+                <span class="sp-status">{{ currentPartner.status }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Motif</dt>
+              <dd>{{ currentPartner.statusReason || '—' }}</dd>
+            </div>
+            @if (status(); as currentStatus) {
+              <div>
+                <dt>Chemin API</dt>
+                <dd>{{ currentStatus.connection.apiBasePath }}</dd>
+              </div>
+              <div>
+                <dt>Authentification</dt>
+                <dd>{{ currentStatus.connection.supportedAuthenticationMethods.join(', ') }}</dd>
+              </div>
+              <div>
+                <dt>Nouvelles transactions</dt>
+                <dd>
+                  {{ currentStatus.connection.newTransactionsAllowed ? 'Autorisées' : 'Bloquées' }}
+                </dd>
+              </div>
+            }
+          </dl>
+        </sp-card>
+      </div>
+
+      <sp-card title="Seuils de validation">
+        @if (currentPartner.validationThresholds.length) {
+          <div class="sp-threshold-list">
+            @for (
+              threshold of currentPartner.validationThresholds;
+              track threshold.transactionType
+            ) {
+              <article>
+                <strong>{{ threshold.transactionType }}</strong>
+                <span>{{ threshold.amount }} {{ threshold.currency }}</span>
+                <span>{{ threshold.validationLevels }} niveau(x)</span>
+              </article>
+            }
+          </div>
+        } @else {
+          <p>Aucun seuil configuré.</p>
+        }
+
+        @if (authentication.hasRole('ADMIN')) {
+          <sp-partner-threshold-form
+            [partnerId]="currentPartner.id"
+            [transactionTypes]="currentPartner.authorizedTransactionTypes"
+            (changed)="refresh($event)"
+          />
+        }
+      </sp-card>
+
+      @if (authentication.hasRole('AUDITOR')) {
+        <sp-card title="Historique d’audit">
+          <sp-partner-audit [partnerId]="currentPartner.id" />
+        </sp-card>
+      }
+    }
+  }
+}

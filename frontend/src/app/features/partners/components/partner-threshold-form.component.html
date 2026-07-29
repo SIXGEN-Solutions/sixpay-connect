@@ -1,0 +1,35 @@
+<form class="sp-partner-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Type de transaction</mat-label>
+    <mat-select formControlName="transactionType">
+      @for (type of transactionTypes(); track type) {
+        <mat-option [value]="type">{{ type }}</mat-option>
+      }
+    </mat-select>
+    <sp-form-error errorId="threshold-type-error" [message]="error('transactionType')" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Devise</mat-label>
+    <input matInput formControlName="currency" maxlength="3" placeholder="CAD" />
+    <sp-form-error errorId="threshold-currency-error" [message]="error('currency')" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Montant</mat-label>
+    <input matInput type="number" min="0.0001" step="0.0001" formControlName="amount" />
+    <sp-form-error errorId="threshold-amount-error" [message]="error('amount')" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Niveaux de validation</mat-label>
+    <input matInput type="number" min="1" max="10" formControlName="validationLevels" />
+    <sp-form-error errorId="threshold-levels-error" [message]="error('validationLevels')" />
+  </mat-form-field>
+
+  <div class="sp-partner-form__actions">
+    <sp-button type="submit" icon="tune" [disabled]="submitting()">
+      {{ submitting() ? 'Mise à jour…' : 'Configurer le seuil' }}
+    </sp-button>
+  </div>
+</form>

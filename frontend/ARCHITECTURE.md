@@ -148,3 +148,19 @@ lint, tests, build et contrôle du formatage.
 La configuration `vitest-base.config.mts` utilise un worker `threads` unique.
 Elle garantit un comportement stable et déterministe sur les postes Windows et
 en CI, sans modifier l’isolation logique entre les fichiers de tests.
+
+# Phase 4 — Écran Golden Partner
+
+Le module `features/partners` conserve la structure de référence existante. Les écrans sont chargés
+à la demande sous `/partners` :
+
+- `/partners` : accès à une fiche à partir de son identifiant ;
+- `/partners/create` : création réservée au rôle `ADMIN` ;
+- `/partners/:partnerId` : fiche complète, cycle de vie, seuils et audit.
+
+Les composants métier délèguent tous les échanges à `PartnersService` et au client HTTP validé par
+la Gate 3. Les rôles sont lus dans les claims JWT `roles`, `authorities` et
+`realm_access.roles`. Les actions de cycle de vie sont réservées à `ADMIN` et l’historique est
+réservé à `AUDITOR`.
+
+La Gate 4 s’exécute avec `npm run gate:4`.
