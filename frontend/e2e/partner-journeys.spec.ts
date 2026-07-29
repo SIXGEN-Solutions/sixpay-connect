@@ -83,8 +83,7 @@ test('configuration d’un seuil, suspension, réactivation et audit', async ({ 
 
     return (
       response.request().method() === 'PUT' &&
-      url.pathname ===
-        `/api/v1/partners/${PARTNER_ID}/validation-thresholds/PAYMENT`
+      url.pathname === `/api/v1/partners/${PARTNER_ID}/validation-thresholds/PAYMENT`
     );
   });
 
@@ -154,16 +153,26 @@ test('refuse une route non autorisée', async ({ page }) => {
   await expect(page.getByText('Accès non autorisé')).toBeVisible();
 });
 
-test('@a11y navigation clavier, labels, focus, formulaires et contraste', async ({
-  page,
-}) => {
+test('@a11y navigation clavier, labels, focus, formulaires et contraste', async ({ page }) => {
   await page.goto('/partners/create');
+
+  const legalNameField = page.getByLabel('Raison sociale');
+  const technicalContactField = page.getByLabel('Nom du contact technique');
+
+  await expect(legalNameField).toBeVisible();
+  await expect(technicalContactField).toBeVisible();
 
   /*
    * Navigation clavier et ordre du focus
    */
+  await legalNameField.focus();
+  await expect(legalNameField).toBeFocused();
+
   await page.keyboard.press('Tab');
-  await expect(page.locator(':focus')).toBeVisible();
+  await expect(technicalContactField).toBeFocused();
+
+  await page.keyboard.press('Shift+Tab');
+  await expect(legalNameField).toBeFocused();
 
   /*
    * Erreurs accessibles du formulaire
@@ -172,7 +181,7 @@ test('@a11y navigation clavier, labels, focus, formulaires et contraste', async 
 
   await expect(page.getByText('Ce champ est obligatoire.').first()).toBeVisible();
 
-  await expect(page.getByLabel('Raison sociale')).toHaveAttribute(
+  await expect(legalNameField).toHaveAttribute(
     'aria-describedby',
     'legalName-error',
   );
@@ -186,7 +195,6 @@ test('@a11y navigation clavier, labels, focus, formulaires et contraste', async 
 
   expect(results.violations).toEqual([]);
 });
-
 /*
 function waitForPartnerRefresh(
   page: Parameters<typeof test>[0] extends never ? never : import('@playwright/test').Page,
@@ -220,8 +228,7 @@ function waitForPartnerRefresh(page: Page): Promise<Response> {
     const url = new URL(response.url());
 
     return (
-      response.request().method() === 'GET' &&
-      url.pathname === `/api/v1/partners/${PARTNER_ID}`
+      response.request().method() === 'GET' && url.pathname === `/api/v1/partners/${PARTNER_ID}`
     );
   });
 }

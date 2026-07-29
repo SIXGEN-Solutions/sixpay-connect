@@ -18,11 +18,13 @@
     "test:e2e:install": "playwright install chromium",
     "test:e2e": "playwright test",
     "test:e2e:a11y": "playwright test --grep @a11y",
+    "dependencies:audit": "npm audit --omit=dev --audit-level=high",
     "contract:partner": "node verify-partner-openapi.mjs",
     "gate:3": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
     "gate:4": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
     "gate:5": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
-    "gate:6": "npm run contract:partner && npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run format:check"
+    "gate:6": "npm run contract:partner && npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run format:check",
+    "gate:7": "npm run contract:partner && npm run lint && npm run test:coverage && npm run dependencies:audit && npm run build && npm run format:check"
   },
   "private": true,
   "dependencies": {
