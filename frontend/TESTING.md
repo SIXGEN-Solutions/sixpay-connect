@@ -1,8 +1,8 @@
-# Tests de référence — Gate 6
+# Tests de référence
 
 ## Périmètre
 
-La Gate 6 couvre les composants et parcours Partner sans modifier le comportement métier
+Il couvre les composants et parcours Partner sans modifier le comportement métier
 validé par les Gates précédentes :
 
 - tests unitaires et de composants Angular avec Vitest ;
