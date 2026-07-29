@@ -4,11 +4,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 
-import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpFormErrorComponent } from '../../../shared/components/sp-form-error.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
+import { PartnerAccessPolicy } from '../security/partner-access.policy';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -29,7 +29,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
       title="Partenaires"
       description="Accédez à une fiche Partner à partir de son identifiant."
     >
-      @if (authentication.hasRole('ADMIN')) {
+      @if (partnerAccess.canCreate()) {
         <a routerLink="/partners/create" class="sp-link-action">Créer un partenaire</a>
       }
     </sp-toolbar>
@@ -82,7 +82,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
   `,
 })
 export class PartnerAccessPageComponent {
-  protected readonly authentication = inject(AuthenticationService);
+  protected readonly partnerAccess = inject(PartnerAccessPolicy);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly form = this.formBuilder.nonNullable.group({

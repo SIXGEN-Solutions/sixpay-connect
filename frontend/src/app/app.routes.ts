@@ -1,8 +1,11 @@
 import { Routes } from '@angular/router';
 
+import { authenticationGuard } from './core/auth/authentication.guard';
+
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [authenticationGuard],
     loadComponent: () =>
       import('./layout/shell/shell.component').then((component) => component.ShellComponent),
     children: [
@@ -29,11 +32,20 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'unauthorized',
+    path: 'login',
+    loadComponent: () =>
+      import('./core/auth/login.component').then((component) => component.LoginComponent),
+  },
+  {
+    path: 'forbidden',
     loadComponent: () =>
       import('./core/auth/unauthorized.component').then(
-        (component) => component.UnauthorizedComponent,
+        (component) => component.ForbiddenComponent,
       ),
+  },
+  {
+    path: 'unauthorized',
+    redirectTo: 'forbidden',
   },
   {
     path: '**',

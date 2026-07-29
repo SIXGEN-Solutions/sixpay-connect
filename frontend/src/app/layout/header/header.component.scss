@@ -15,6 +15,16 @@
   flex: 1;
 }
 
+.sp-header__logout {
+  margin-left: var(--sp-space-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
 .sp-header__subject {
   font-size: var(--sp-font-size-sm);
 }

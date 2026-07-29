@@ -1,6 +1,7 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { AuthenticationService } from '../auth/authentication.service';
 import { authenticationInterceptor } from '../auth/authentication.interceptor';
@@ -9,6 +10,9 @@ import { idempotencyKeyInterceptor } from './idempotency-key.interceptor';
 
 describe('HTTP foundation interceptors', () => {
   let httpTesting: HttpTestingController;
+  const authentication = {
+    accessTokenForRequest: () => of('header.payload.signature'),
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -21,6 +25,7 @@ describe('HTTP foundation interceptors', () => {
           ]),
         ),
         provideHttpClientTesting(),
+        { provide: AuthenticationService, useValue: authentication },
       ],
     });
 
@@ -28,12 +33,10 @@ describe('HTTP foundation interceptors', () => {
   });
 
   afterEach(() => {
-    TestBed.inject(AuthenticationService).clearSession();
     httpTesting.verify();
   });
 
   it('propagates a bearer token and a correlation identifier', () => {
-    TestBed.inject(AuthenticationService).setAccessToken('header.payload.signature');
     const http = TestBed.inject(HttpClient);
 
     http.get('/api/v1/partners/partner-id').subscribe();

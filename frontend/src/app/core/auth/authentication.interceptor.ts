@@ -1,20 +1,28 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { switchMap, take } from 'rxjs';
 
 import { AuthenticationService } from './authentication.service';
 
 export const authenticationInterceptor: HttpInterceptorFn = (request, next) => {
-  const accessToken = inject(AuthenticationService).accessToken();
+  const authentication = inject(AuthenticationService);
 
-  if (!accessToken || request.headers.has('Authorization')) {
+  if (request.headers.has('Authorization')) {
     return next(request);
   }
 
-  return next(
-    request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }),
+  return authentication.accessTokenForRequest().pipe(
+    take(1),
+    switchMap((accessToken) =>
+      next(
+        accessToken
+          ? request.clone({
+              setHeaders: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          : request,
+      ),
+    ),
   );
 };

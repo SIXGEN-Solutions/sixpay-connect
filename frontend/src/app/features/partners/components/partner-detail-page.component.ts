@@ -4,13 +4,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, EMPTY, finalize, forkJoin } from 'rxjs';
 
-import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpNotificationComponent } from '../../../shared/components/notification/sp-notification.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { Partner, PartnerStatusView } from '../models/partners';
 import { PartnersService } from '../services/partners.service';
+import { PartnerAccessPolicy } from '../security/partner-access.policy';
 import { PartnerAuditComponent } from './partner-audit.component';
 import { PartnerLifecycleActionsComponent } from './partner-lifecycle-actions.component';
 import { PartnerThresholdFormComponent } from './partner-threshold-form.component';
@@ -33,7 +33,7 @@ type DetailState = 'loading' | 'success' | 'not-found' | 'forbidden' | 'error';
   styleUrl: './partner-detail-page.component.scss',
 })
 export class PartnerDetailPageComponent implements OnInit {
-  protected readonly authentication = inject(AuthenticationService);
+  protected readonly partnerAccess = inject(PartnerAccessPolicy);
   protected readonly state = signal<DetailState>('loading');
   protected readonly partner = signal<Partner | null>(null);
   protected readonly status = signal<PartnerStatusView | null>(null);

@@ -15,6 +15,6 @@ export class GlobalErrorHandler implements ErrorHandler {
       correlationId: null,
     });
 
-    console.error(error);
+    void error;
   }
 }

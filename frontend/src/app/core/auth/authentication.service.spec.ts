@@ -1,38 +1,30 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
+import { extractSixpayRoles } from './authentication.model';
 import { AuthenticationService } from './authentication.service';
 
-describe('AuthenticationService roles', () => {
-  let authentication: AuthenticationService;
-
+describe('AuthenticationService', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    authentication = TestBed.inject(AuthenticationService);
-    authentication.clearSession();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  it('normalizes direct and Spring Security roles', () => {
-    authentication.setAccessToken(
-      token({ sub: 'admin@sixpay', roles: ['ADMIN'], authorities: ['ROLE_AUDITOR'] }),
-    );
+  it('initializes the explicitly configured standalone identity', () => {
+    const authentication = TestBed.inject(AuthenticationService);
 
-    expect(authentication.subject()).toBe('admin@sixpay');
-    expect(authentication.hasRole('ADMIN')).toBe(true);
-    expect(authentication.hasRole('AUDITOR')).toBe(true);
+    expect(authentication.isAuthenticated()).toBe(true);
+    expect(authentication.subject()).toBe('local-security-user');
+    expect(authentication.hasAnyRole(['ADMIN', 'MANAGER', 'AUDITOR'])).toBe(true);
+    expect(authentication.hasRole('PARTNER')).toBe(false);
   });
 
-  it('reads roles from the standard realm access claim', () => {
-    authentication.setAccessToken(token({ realm_access: { roles: ['auditor'] } }));
+  it('normalizes supported roles without retaining unrelated authorities', () => {
+    const roles = extractSixpayRoles({
+      roles: ['admin'],
+      authorities: ['ROLE_AUDITOR', 'SCOPE_partner.read'],
+      realm_access: { roles: ['manager'] },
+    });
 
-    expect(authentication.hasRole('AUDITOR')).toBe(true);
-    expect(authentication.hasRole('ADMIN')).toBe(false);
+    expect([...roles]).toEqual(['ADMIN', 'AUDITOR', 'MANAGER']);
   });
-
-  function token(payload: object): string {
-    const encoded = btoa(JSON.stringify(payload))
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replaceAll('=', '');
-    return `header.${encoded}.signature`;
-  }
 });

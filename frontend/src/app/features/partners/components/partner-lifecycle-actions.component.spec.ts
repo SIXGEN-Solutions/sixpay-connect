@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { Partner } from '../models/partners';
 import { PartnerLifecycleActionsComponent } from './partner-lifecycle-actions.component';
+import { PartnerAccessPolicy } from '../security/partner-access.policy';
 
 describe('PartnerLifecycleActionsComponent', () => {
   it.each([
@@ -13,7 +14,23 @@ describe('PartnerLifecycleActionsComponent', () => {
   ] as const)('shows only allowed actions for %s', (status, labels) => {
     TestBed.configureTestingModule({
       imports: [PartnerLifecycleActionsComponent],
-      providers: [{ provide: MatDialog, useValue: {} }],
+      providers: [
+        { provide: MatDialog, useValue: {} },
+        {
+          provide: PartnerAccessPolicy,
+          useValue: {
+            canPerformLifecycleAction: (action: string, currentStatus: Partner['status']) => {
+              const actions: Record<Partner['status'], readonly string[]> = {
+                PENDING_VALIDATION: ['approve', 'reject'],
+                ACTIVE: ['suspend'],
+                REJECTED: [],
+                SUSPENDED: ['reactivate'],
+              };
+              return actions[currentStatus].includes(action);
+            },
+          },
+        },
+      ],
     });
     const fixture = TestBed.createComponent(PartnerLifecycleActionsComponent);
     fixture.componentRef.setInput('partner', partner(status));

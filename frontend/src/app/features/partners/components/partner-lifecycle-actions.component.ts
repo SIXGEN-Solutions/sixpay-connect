@@ -17,10 +17,10 @@ import {
 } from '../../../shared/components/dialog/sp-dialog.component';
 import { SpFormErrorComponent } from '../../../shared/components/sp-form-error.component';
 import { Partner } from '../models/partners';
-import { PartnerStatus } from '../models/partners.response';
 import { PartnersService } from '../services/partners.service';
+import { PartnerAccessPolicy, PartnerLifecycleAction } from '../security/partner-access.policy';
 
-type PartnerAction = 'approve' | 'reject' | 'suspend' | 'reactivate';
+type PartnerAction = PartnerLifecycleAction;
 
 @Component({
   selector: 'sp-partner-reason-dialog',
@@ -115,15 +115,10 @@ export class PartnerLifecycleActionsComponent {
   protected readonly busy = signal(false);
   private readonly partners = inject(PartnersService);
   private readonly dialog = inject(MatDialog);
+  private readonly accessPolicy = inject(PartnerAccessPolicy);
 
   protected can(action: PartnerAction): boolean {
-    const actions: Record<PartnerStatus, readonly PartnerAction[]> = {
-      PENDING_VALIDATION: ['approve', 'reject'],
-      ACTIVE: ['suspend'],
-      REJECTED: [],
-      SUSPENDED: ['reactivate'],
-    };
-    return actions[this.partner().status]?.includes(action) ?? false;
+    return this.accessPolicy.canPerformLifecycleAction(action, this.partner().status);
   }
 
   protected run(action: PartnerAction): void {

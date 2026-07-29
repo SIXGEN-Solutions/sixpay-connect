@@ -1,83 +1,149 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { Observable, of, ReplaySubject } from 'rxjs';
 
-const ACCESS_TOKEN_STORAGE_KEY = 'sixpay.access-token';
+import { environment } from '../../../environments/environment';
+import { AuthenticationEnvironment } from '../../../environments/environment.model';
+import {
+  AuthenticatedIdentity,
+  extractSixpayRoles,
+  JwtClaims,
+  SixpayRole,
+} from './authentication.model';
 
-interface JwtPayload {
-  readonly exp?: number;
-  readonly sub?: string;
-  readonly roles?: readonly string[];
-  readonly authorities?: readonly string[];
-  readonly realm_access?: {
-    readonly roles?: readonly string[];
-  };
-}
+const RETURN_URL_STORAGE_KEY = 'sixpay.authentication.return-url';
+const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   private readonly document = inject(DOCUMENT);
-  private readonly accessTokenState = signal<string | null>(
-    this.storage?.getItem(ACCESS_TOKEN_STORAGE_KEY) ?? null,
-  );
+  private readonly router = inject(Router);
+  private readonly oidc = inject(OidcSecurityService, { optional: true });
+  private readonly identityState = signal<AuthenticatedIdentity | null>(null);
+  private readonly readyState = new ReplaySubject<boolean>(1);
 
-  readonly accessToken = this.accessTokenState.asReadonly();
-  readonly isAuthenticated = computed(() => {
-    const token = this.accessTokenState();
-    if (!token) {
-      return false;
+  readonly identity = this.identityState.asReadonly();
+  readonly isAuthenticated = computed(() => this.identityState() !== null);
+  readonly subject = computed(() => this.identityState()?.subject ?? null);
+  readonly roles = computed(() => this.identityState()?.roles ?? new Set<SixpayRole>());
+  readonly ready$ = this.readyState.asObservable();
+
+  constructor() {
+    if (authenticationEnvironment.mode === 'standalone') {
+      const localUser = authenticationEnvironment.standaloneUser;
+      this.identityState.set({
+        subject: localUser?.subject ?? 'local-user',
+        roles: extractSixpayRoles({ roles: localUser?.roles ?? [] }),
+      });
+      this.readyState.next(true);
+      return;
     }
 
-    const payload = this.decodePayload(token);
-    return payload?.exp === undefined || payload.exp * 1000 > Date.now();
-  });
+    if (!this.oidc) {
+      this.readyState.next(false);
+      return;
+    }
 
-  readonly subject = computed(() => this.decodePayload(this.accessTokenState())?.sub ?? null);
-  readonly roles = computed(() => {
-    const payload = this.decodePayload(this.accessTokenState());
-    const roles = [
-      ...(payload?.roles ?? []),
-      ...(payload?.authorities ?? []),
-      ...(payload?.realm_access?.roles ?? []),
-    ];
-
-    return new Set(roles.map((role) => role.replace(/^ROLE_/, '').toUpperCase()));
-  });
-
-  setAccessToken(accessToken: string): void {
-    this.storage?.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-    this.accessTokenState.set(accessToken);
+    this.oidc.checkAuth().subscribe({
+      next: (response) => {
+        if (response.isAuthenticated) {
+          this.setAuthenticatedSession(response.accessToken, response.userData as JwtClaims);
+        } else {
+          this.clearLocalSession();
+        }
+        this.readyState.next(response.isAuthenticated);
+      },
+      error: () => {
+        this.clearLocalSession();
+        this.readyState.next(false);
+      },
+    });
   }
 
-  clearSession(): void {
-    this.storage?.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-    this.accessTokenState.set(null);
+  hasRole(role: SixpayRole | string): boolean {
+    return this.roles().has(role.replace(/^ROLE_/, '').toUpperCase() as SixpayRole);
   }
 
-  hasRole(role: string): boolean {
-    return this.roles().has(role.replace(/^ROLE_/, '').toUpperCase());
+  hasAnyRole(roles: readonly SixpayRole[]): boolean {
+    return roles.some((role) => this.hasRole(role));
+  }
+
+  accessTokenForRequest(): Observable<string | null> {
+    if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
+      return this.oidc.getAccessToken();
+    }
+    return of(null);
+  }
+
+  login(returnUrl = '/'): void {
+    const safeReturnUrl = this.safeReturnUrl(returnUrl);
+    this.storage?.setItem(RETURN_URL_STORAGE_KEY, safeReturnUrl);
+    this.oidc?.authorize();
+  }
+
+  completeLoginNavigation(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+    const returnUrl = this.safeReturnUrl(this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/');
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
+    void this.router.navigateByUrl(returnUrl);
+  }
+
+  logout(): void {
+    this.clearLocalSession();
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
+    if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
+      this.oidc.logoffAndRevokeTokens().subscribe({ error: () => this.oidc?.logoffLocal() });
+      return;
+    }
+    void this.router.navigate(['/login']);
+  }
+
+  expireSession(): void {
+    this.clearLocalSession();
+    this.oidc?.logoffLocal();
+  }
+
+  private setAuthenticatedSession(accessToken: string, userData: JwtClaims | null): void {
+    const claims = this.decodePayload(accessToken) ?? userData ?? {};
+    const subject = claims.sub ?? userData?.sub;
+    if (!subject || this.isExpired(claims)) {
+      this.clearLocalSession();
+      return;
+    }
+    this.identityState.set({ subject, roles: extractSixpayRoles(claims) });
+  }
+
+  private clearLocalSession(): void {
+    this.identityState.set(null);
   }
 
   private get storage(): Storage | undefined {
     return this.document.defaultView?.sessionStorage;
   }
 
-  private decodePayload(token: string | null): JwtPayload | null {
-    if (!token) {
-      return null;
-    }
+  private safeReturnUrl(returnUrl: string): string {
+    return returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
+  }
 
+  private isExpired(claims: JwtClaims): boolean {
+    return claims.exp !== undefined && claims.exp * 1000 <= Date.now();
+  }
+
+  private decodePayload(token: string): JwtClaims | null {
     try {
       const encodedPayload = token.split('.')[1];
       if (!encodedPayload) {
         return null;
       }
-
       const normalizedPayload = encodedPayload
         .replace(/-/g, '+')
         .replace(/_/g, '/')
         .padEnd(Math.ceil(encodedPayload.length / 4) * 4, '=');
-
-      return JSON.parse(atob(normalizedPayload)) as JwtPayload;
+      return JSON.parse(atob(normalizedPayload)) as JwtClaims;
     } catch {
       return null;
     }

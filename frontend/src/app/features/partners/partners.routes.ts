@@ -1,16 +1,25 @@
 import { Routes } from '@angular/router';
 
-import { authenticationGuard } from '../../core/auth/authentication.guard';
 import { partnerRoleGuard } from './guards/partners.guard';
 
 export const PARTNER_ROUTES: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    canActivate: [authenticationGuard],
+    canActivate: [partnerRoleGuard],
+    data: { roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
     loadComponent: () =>
       import('./components/partner-access-page.component').then(
         (component) => component.PartnerAccessPageComponent,
+      ),
+  },
+  {
+    path: 'status',
+    canActivate: [partnerRoleGuard],
+    data: { roles: ['PARTNER'] },
+    loadComponent: () =>
+      import('./components/partner-status-page.component').then(
+        (component) => component.PartnerStatusPageComponent,
       ),
   },
   {
@@ -24,7 +33,8 @@ export const PARTNER_ROUTES: Routes = [
   },
   {
     path: ':partnerId',
-    canActivate: [authenticationGuard],
+    canActivate: [partnerRoleGuard],
+    data: { roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
     loadComponent: () =>
       import('./components/partner-detail-page.component').then(
         (component) => component.PartnerDetailPageComponent,

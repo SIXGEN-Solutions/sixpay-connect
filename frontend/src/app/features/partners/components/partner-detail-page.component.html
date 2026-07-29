@@ -2,7 +2,7 @@
   title="Fiche Partner"
   description="Informations, statut, connexion et administration du partenaire."
 >
-  @if (state() === 'success' && partner() && authentication.hasRole('ADMIN')) {
+  @if (state() === 'success' && partner() && partnerAccess.canManageLifecycle(partner()!.status)) {
     <sp-partner-lifecycle-actions [partner]="partner()!" (changed)="refresh($event)" />
   }
 </sp-toolbar>
@@ -142,7 +142,7 @@
           <p>Aucun seuil configuré.</p>
         }
 
-        @if (authentication.hasRole('ADMIN')) {
+        @if (partnerAccess.canConfigureThreshold()) {
           <sp-partner-threshold-form
             [partnerId]="currentPartner.id"
             [transactionTypes]="currentPartner.authorizedTransactionTypes"
@@ -151,7 +151,7 @@
         }
       </sp-card>
 
-      @if (authentication.hasRole('AUDITOR')) {
+      @if (partnerAccess.canReadAudit()) {
         <sp-card title="Historique d’audit">
           <sp-partner-audit [partnerId]="currentPartner.id" />
         </sp-card>

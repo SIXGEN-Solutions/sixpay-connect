@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
-  selector: 'sp-unauthorized',
+  selector: 'sp-forbidden',
   imports: [MatCardModule],
   template: `
     <main class="sp-unauthorized">
@@ -11,7 +11,7 @@ import { MatCardModule } from '@angular/material/card';
           <mat-card-title>Accès non autorisé</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>Une authentification valide est nécessaire pour accéder à cette ressource.</p>
+          <p>Votre compte est authentifié, mais votre rôle ne permet pas cette opération.</p>
         </mat-card-content>
       </mat-card>
     </main>
@@ -24,4 +24,4 @@ import { MatCardModule } from '@angular/material/card';
     }
   `,
 })
-export class UnauthorizedComponent {}
+export class ForbiddenComponent {}
