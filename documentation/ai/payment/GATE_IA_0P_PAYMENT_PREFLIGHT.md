@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `9f5730a214863623e6792a41b3e68712452487c9` |
+| Commit de référence | `e7746b0de32f6a660b2b06250f68f9c1305e14dd` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.3 — Payment Context Map` |
+| Dernière étape terminée | `0P.4 — Payment Business Flows` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -627,4 +627,50 @@ PAYMENT CONTEXT MAP: ESTABLISHED
 RESPONSIBILITY AMBIGUITIES: 0
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.4 — PAYMENT BUSINESS FLOWS
+```
+
+---
+
+# 10. Résultat de l’étape 0P.4 — Payment Business Flows
+
+L’étape 0P.4 formalise dans
+`documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md` :
+
+- le parcours nominal complet, depuis la réception TRESOR PAY jusqu’à la
+  notification définitive après TFJ ;
+- les quinze parcours alternatifs demandés ;
+- la persistance immédiate et l’alimentation d’ObservedCustomer ;
+- la différence entre rejet métier, échec technique, traitement en cours,
+  posting en attente TFJ et finalité Trésor ;
+- le traitement sans rejeu aveugle des outcomes comptables inconnus ;
+- le rapprochement et l’extourne explicite des effets partiels ;
+- l’indépendance entre résultat financier et livraison des notifications ;
+- la quarantaine des confirmations TFJ non rapprochables ;
+- les exigences de reprise, d’idempotence et d’audit.
+
+Les états utilisés dans les parcours restent candidats jusqu’à la fermeture de
+la machine à états à l’étape 0P.6.
+
+## Critères de sortie 0P.4
+
+- [x] Parcours nominal complet.
+- [x] Quinze parcours alternatifs documentés.
+- [x] Responsabilités conformes à `PAYMENT_CONTEXT_MAP.md`.
+- [x] Aucun rejet avant écriture ne produit d’effet bancaire.
+- [x] Aucun doublon ne produit un second posting.
+- [x] Aucun outcome inconnu ne déclenche de rejeu aveugle.
+- [x] Résultat immédiat et finalité TFJ restent distincts.
+- [x] Confirmation non rapprochable mise en quarantaine.
+- [x] Extourne explicite, idempotente et auditée.
+- [x] Audit et reprise définis pour chaque famille de parcours.
+
+## Verdict 0P.4
+
+```text
+PAYMENT BUSINESS FLOWS: ESTABLISHED
+NOMINAL FLOW: COMPLETE
+ALTERNATIVE FLOWS: 15/15
+FLOW AMBIGUITIES: 0
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.5 — PAYMENT BUSINESS MODEL
 ```
