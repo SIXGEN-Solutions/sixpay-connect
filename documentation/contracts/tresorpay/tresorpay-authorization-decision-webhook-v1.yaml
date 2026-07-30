@@ -1,0 +1,371 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Authorization Decision Webhook
+  version: 1.0.0
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  description: |
+    Frozen outbound webhook contract used by SIXPAY to notify TRESOR PAY of a
+    final authorization decision. This contract is separate from the inbound
+    authorization-request API.
+
+    SIXPAY signs every delivery. TRESOR PAY must process deliveries
+    idempotently using `eventId`; delivery attempts reuse the same `eventId`.
+servers:
+  - url: https://webhooks.tresorpay.example
+    description: Endpoint registered by TRESOR PAY
+security:
+  - oauth2ClientCredentials:
+      - authorization.decision.receive
+    mutualTLS: []
+tags:
+  - name: Authorization decisions
+    description: Final authorization decisions delivered by SIXPAY.
+
+paths:
+  /webhooks/v1/sixpay/authorization-decisions:
+    post:
+      tags:
+        - Authorization decisions
+      operationId: receiveAuthorizationDecision
+      summary: Receive a final SIXPAY authorization decision
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/DeliveryId'
+        - $ref: '#/components/parameters/DeliveryAttempt'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationDecisionEvent'
+      responses:
+        '204':
+          description: Event accepted, including an already processed event
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.tresorpay.example/oauth2/token
+          scopes:
+            authorization.decision.receive: Receive SIXPAY authorization decisions
+    mutualTLS:
+      type: mutualTLS
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeliveryId:
+      name: X-Webhook-Delivery-ID
+      in: header
+      required: true
+      description: Unique identifier of this delivery cycle.
+      schema:
+        type: string
+        format: uuid
+    DeliveryAttempt:
+      name: X-Webhook-Delivery-Attempt
+      in: header
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    Signature:
+      name: X-SIXPAY-Signature
+      in: header
+      required: true
+      description: |
+        Detached signature over the signature timestamp, request target and
+        unmodified request body. The algorithm and key identifier are supplied
+        by the webhook security profile.
+      schema:
+        type: string
+        minLength: 16
+    SignatureTimestamp:
+      name: X-SIXPAY-Signature-Timestamp
+      in: header
+      required: true
+      schema:
+        type: string
+        format: date-time
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    AuthorizationDecisionEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - schemaVersion
+        - eventId
+        - eventType
+        - occurredAt
+        - tresorPayRequestId
+        - subscriptionRequestId
+        - financialInstitutionCode
+        - decision
+      properties:
+        schemaVersion:
+          type: string
+          const: '1.0'
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          const: AUTHORIZATION_DECIDED
+        occurredAt:
+          type: string
+          format: date-time
+        tresorPayRequestId:
+          type: string
+          minLength: 1
+          maxLength: 100
+        subscriptionRequestId:
+          type: string
+          format: uuid
+        subscriptionId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        financialInstitutionCode:
+          type: string
+          minLength: 2
+          maxLength: 35
+        decision:
+          type: string
+          enum:
+            - APPROVED
+            - REJECTED
+        decisionReason:
+          $ref: '#/components/schemas/DecisionReason'
+        subscriptionKey:
+          type:
+            - string
+            - 'null'
+          minLength: 16
+          maxLength: 512
+          writeOnly: true
+          description: |
+            Present only for an approved decision. It is a sensitive credential
+            and must never be logged or included in an error response.
+        decidedAt:
+          type: string
+          format: date-time
+        decidedBy:
+          $ref: '#/components/schemas/DecisionActor'
+        correlationMetadata:
+          $ref: '#/components/schemas/CorrelationMetadata'
+      allOf:
+        - if:
+            properties:
+              decision:
+                const: APPROVED
+          then:
+            properties:
+              subscriptionId: {}
+              subscriptionKey: {}
+              decidedAt: {}
+            required:
+              - subscriptionId
+              - subscriptionKey
+              - decidedAt
+          else:
+            properties:
+              decisionReason: {}
+              decidedAt: {}
+            required:
+              - decisionReason
+              - decidedAt
+
+    DecisionReason:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - label
+      properties:
+        code:
+          type: string
+          maxLength: 50
+          description: Stable business reason code without sensitive KYC data.
+        label:
+          type: string
+          maxLength: 200
+
+    DecisionActor:
+      type: object
+      additionalProperties: false
+      required:
+        - actorId
+        - displayName
+      properties:
+        actorId:
+          type: string
+          maxLength: 100
+        displayName:
+          type: string
+          maxLength: 200
+
+    CorrelationMetadata:
+      type: object
+      additionalProperties: false
+      properties:
+        conversationId:
+          type: string
+          maxLength: 100
+        causationId:
+          type: string
+          maxLength: 100
+        sourceEventId:
+          type: string
+          maxLength: 100
+
+    ProblemDetail:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          enum:
+            - WEBHOOK_REQUEST_INVALID
+            - WEBHOOK_AUTHENTICATION_FAILED
+            - WEBHOOK_SIGNATURE_INVALID
+            - EVENT_ID_CONFLICT
+            - RATE_LIMIT_EXCEEDED
+            - INTERNAL_ERROR
+            - SERVICE_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+
+  responses:
+    BadRequest:
+      description: Malformed headers or body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: OAuth 2.0, mTLS or webhook signature validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: The event identifier was previously used with another payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Delivery temporarily rate-limited
+      headers:
+        Retry-After:
+          description: Delay in seconds before retry
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Temporary receiver failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: Receiver unavailable
+      headers:
+        Retry-After:
+          description: Delay in seconds before retry
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+x-sixpay-webhook-delivery-policy:
+  idempotencyKey: eventId
+  successfulStatuses:
+    - 200
+    - 202
+    - 204
+  retryableStatuses:
+    - 408
+    - 425
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+  nonRetryableStatuses:
+    - 400
+    - 401
+    - 403
+    - 404
+    - 409
+    - 410
+    - 422
+  backoff: exponential-with-jitter
+  maximumAttempts: configurable
+  deadLetterAfterExhaustion: true
+  manualReplay: audited
+  preserveEventIdAcrossRetries: true
