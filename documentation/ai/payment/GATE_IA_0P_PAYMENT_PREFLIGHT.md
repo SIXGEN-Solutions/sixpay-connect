@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `c70baa7a3be117679af6b256a3be454a15e976fc` |
+| Commit de référence | `9f5730a214863623e6792a41b3e68712452487c9` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.2 — MVP Payment Scope` |
+| Dernière étape terminée | `0P.3 — Payment Context Map` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -526,6 +526,10 @@ passage de Gate.
 
 # 6. Répartition fonctionnelle du périmètre
 
+La Context Map normative est définie dans :
+
+`documentation/ai/payment/PAYMENT_CONTEXT_MAP.md`
+
 | Domaine ou système | Responsabilité dans le MVP |
 | --- | --- |
 | TRESOR PAY | Initier l’ordre, fournir les références, recevoir les résultats, générer la quittance |
@@ -540,7 +544,8 @@ passage de Gate.
 | Subscription | Aucune responsabilité dans le parcours Payment MVP |
 | Merchant | Aucun domaine ou modèle dans SIXPAY pour le MVP |
 
-Cette répartition sera détaillée et validée à l’étape `0P.3`.
+Cette répartition est détaillée et validée par l’étape `0P.3`. En cas de
+divergence, `PAYMENT_CONTEXT_MAP.md` constitue la référence.
 
 # 7. Impacts sur le Contract Pack
 
@@ -581,4 +586,45 @@ OUT OF SCOPE: EXPLICIT
 SCOPE AMBIGUITIES: 0
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.3 — PAYMENT CONTEXT MAP
+```
+
+---
+
+# 9. Résultat de l’étape 0P.3 — Payment Context Map
+
+L’étape 0P.3 fixe les responsabilités sans transférer les vérités externes :
+
+- TRESOR PAY reste maître de l’abonnement, de l’ordre demandé et de la
+  quittance ;
+- Amplitude reste maître du client bancaire, du compte, du solde, des
+  écritures et du résultat TFJ ;
+- Payment devient l’unique propriétaire du Payment traité et de ses
+  transitions ;
+- Customer porte les vérifications canoniques et ObservedCustomer ;
+- Integration porte les protocoles et l’Anti-Corruption Layer ;
+- Accounting porte les instructions, outcomes et rapprochements comptables ;
+- Notification porte la livraison fiable ;
+- Reporting porte les vues transverses de lecture.
+
+Les dépendances autorisées, ports candidats, interactions interdites et la
+matrice RACI sont définis dans `PAYMENT_CONTEXT_MAP.md`.
+
+## Critères de sortie 0P.3
+
+- [x] Systèmes maîtres attribués.
+- [x] Propriétaires de processus attribués.
+- [x] Six modules internes détaillés.
+- [x] Ports et sens d’échange identifiés.
+- [x] Responsabilités interdites explicites.
+- [x] Subscription et Merchant absents du parcours MVP.
+- [x] Payment reste propriétaire du cycle de vie.
+- [x] Amplitude reste propriétaire de la vérité bancaire.
+
+## Verdict 0P.3
+
+```text
+PAYMENT CONTEXT MAP: ESTABLISHED
+RESPONSIBILITY AMBIGUITIES: 0
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.4 — PAYMENT BUSINESS FLOWS
 ```
