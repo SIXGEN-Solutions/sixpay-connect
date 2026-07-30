@@ -7,13 +7,13 @@ generation:
     version: "V0.0"
     path: "MASTER_ENGINEERING_PROMPT_V0.md"
   autonomyLevel: "A"
-  status: "REBASELINED_PENDING_PAYMENT_PREFLIGHT"
+  status: "BLOCKING_DECISIONS_CLOSED_PENDING_PAYMENT_PREFLIGHT"
   codeGenerationAllowed: false
 
 repository:
   url: "https://github.com/SIXGEN-Solutions/sixpay-connect.git"
   branch: "feat/customer-foundation-contract"
-  baseCommit: "6874df6e2b27122319d4da5143fe46c58604f1a3"
+  baseCommit: "ceb11c732f0c74927238863c37860256c8b200c4"
 
 scope:
   pilotDomain: "payment"
@@ -94,6 +94,8 @@ payment:
     - "REJECTED"
     - "APPROVED"
     - "POSTING"
+    - "ACCOUNTING_OUTCOME_UNKNOWN"
+    - "REVERSAL_REQUIRED"
     - "DEBITED"
     - "CUT_CREDITED"
     - "NOTIFIED"
@@ -183,7 +185,9 @@ integration:
     authentication:
       token: true
       subscriptionKey: true
-      oauth2OrMtls: "PENDING_PAYMENT_CONTRACT_DECISION"
+      mvpPolicy: "TOKEN_PLUS_SUBSCRIPTION_KEY"
+      oauth2: "DEFERRED_NON_BLOCKING"
+      mutualTls: "DEFERRED_NON_BLOCKING"
 
 reliability:
   inbound:
@@ -214,29 +218,38 @@ security:
 
 gates:
   current: "IA-0R"
-  currentResult: "DOCUMENTED"
+  currentResult: "BLOCKING_ARCHITECTURE_DECISIONS_CLOSED"
+  decisionRegister:
+    path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    status: "CLOSED_FOR_PAYMENT_PREFLIGHT"
   next:
     - "IA-0P_PAYMENT_PREFLIGHT"
     - "IA-0.5P_PAYMENT_CONTRACT_PACK"
   blockers:
     - "Payment Contract Pack not approved"
-    - "Partial posting and reversal policy not approved"
-    - "TFJ confirmation protocol not approved"
-    - "ObservedCustomer retention and access matrix not approved"
+    - "Formal gate sign-offs not obtained"
+  closedArchitectureDecisions:
+    - "ObservedCustomer identity and cross-institution reconciliation"
+    - "Access matrix and retention baseline"
+    - "TRESOR PAY MVP authentication"
+    - "Timeout, retry and backoff baseline"
+    - "Partial posting and reversal policy"
+    - "TFJ confirmation and matching protocol"
 
 validation:
   requiredBeforeCodeGeneration:
     - "Approve Payment API and notification contracts"
     - "Approve Payment state machine and invariants"
-    - "Approve accounting partial-failure behavior"
-    - "Approve TFJ matching and replay rules"
-    - "Approve security, retention and audit decisions"
+    - "Confirm contract compliance with IA_0R_BLOCKING_DECISIONS.yaml"
+    - "Obtain formal gate sign-offs"
 
 outputs:
   updatedDocuments:
     - "documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md"
     - "documentation/ai/customer/CUSTOMER_DOMAIN_GENERATION_BRIEF.md"
     - "documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml"
+    - "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    - "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.md"
 
 approvals:
   productOwner: "PENDING"

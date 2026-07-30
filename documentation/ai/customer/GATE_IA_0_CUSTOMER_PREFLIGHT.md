@@ -2,10 +2,10 @@
 
 | Métadonnée | Valeur |
 | --- | --- |
-| Statut | **REALIGNED — PAYMENT PREFLIGHT REQUIRED** |
+| Statut | **IA-0R CLOSED — READY FOR PAYMENT PREFLIGHT** |
 | Type | Réalignement métier et architectural, sans génération de code |
 | Branche | `feat/customer-foundation-contract` |
-| Commit de référence | `6874df6e2b27122319d4da5143fe46c58604f1a3` |
+| Commit de référence | `ceb11c732f0c74927238863c37860256c8b200c4` |
 | Domaine pilote | `payment` |
 | Support | `customer`, `integration`, `notification` |
 | Niveau d’autonomie | **A — Assistance** |
@@ -27,8 +27,10 @@ Payment
   + confirmation après TFJ
 ```
 
-La génération de code reste interdite jusqu’à validation du Contract Pack Payment
-et des décisions encore ouvertes.
+Les décisions d’architecture bloquantes sont fermées dans
+`documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml`. La génération de
+code reste interdite jusqu’à validation du Contract Pack Payment et obtention
+des signatures de Gate.
 
 ## 2. Parcours métier de référence
 
@@ -129,6 +131,8 @@ BANKING_CHECKING
 REJECTED
 APPROVED
 POSTING
+ACCOUNTING_OUTCOME_UNKNOWN
+REVERSAL_REQUIRED
 DEBITED
 CUT_CREDITED
 NOTIFIED
@@ -139,8 +143,8 @@ REVERSAL_PENDING
 REVERSED
 ```
 
-Les transitions exactes et les cas d’écriture partielle doivent être validés
-dans le Contract Pack Payment.
+Le Contract Pack Payment doit traduire ces états et la politique d’écriture
+partielle du registre IA-0R sans les réinterpréter.
 
 ## 7. Invariants minimum
 
@@ -195,7 +199,23 @@ Contract Pack à produire avant implémentation Payment :
 9. **IA-6P** — confirmation TFJ et rapprochement;
 10. **IA-7P** — sécurité, résilience, observabilité et recette.
 
-## 10. Conditions de sortie
+## 10. Décisions bloquantes fermées
+
+Le registre IA-0R formalise :
+
+- l’identité stable d’ObservedCustomer et l’absence de merge interbancaire
+  automatique;
+- la matrice d’accès, le masquage et la rétention;
+- Token + Subscription Key comme authentification du MVP;
+- les defaults configurables de timeout, retry et backoff;
+- le traitement prudent des résultats comptables partiels ou inconnus;
+- le protocole de confirmation TFJ, sa corrélation et sa stratégie de
+  rapprochement.
+
+Les valeurs SLA définitives peuvent être fournies ultérieurement par la banque
+sans modifier ces décisions.
+
+## 11. Conditions de sortie
 
 - [x] TRESOR PAY déclaré maître des abonnements du MVP.
 - [x] Gestion locale de l’abonnement retirée du périmètre immédiat.
@@ -204,9 +224,10 @@ Contract Pack à produire avant implémentation Payment :
 - [x] MVP séparé des évolutions d’abonnement.
 - [x] Parcours de paiement et confirmation TFJ intégrés au cadrage.
 - [x] Contrats existants formellement reclassifiés dans un registre normatif.
+- [x] Décisions d’architecture bloquantes formellement fermées.
 - [ ] Contract Pack Payment validé.
-- [ ] États, erreurs partielles et règles TFJ approuvés.
-- [ ] Matrice d’accès et rétention des données approuvées.
+- [ ] Signatures formelles Product, Architecture, Security, Integration et
+  Operations obtenues.
 
-**Verdict : IA-0R documenté ; passage obligatoire par IA-0P et IA-0.5P avant
-toute génération de code.**
+**Verdict : IA-0R techniquement fermé ; passage autorisé vers IA-0P. La
+génération de code reste interdite avant IA-0.5P et les signatures de Gate.**

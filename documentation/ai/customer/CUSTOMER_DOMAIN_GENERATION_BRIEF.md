@@ -11,7 +11,7 @@
 | Domaine pilote | `payment` |
 | Domaine support | `customer` |
 | Modèle | `ObservedCustomer` — lecture et audit |
-| Statut | `REBASELINED_PENDING_PAYMENT_PREFLIGHT` |
+| Statut | `BLOCKING_DECISIONS_CLOSED_PENDING_PAYMENT_PREFLIGHT` |
 | Code autorisé | Non |
 | Gate | `GATE_IA_0_CUSTOMER_PREFLIGHT.md` |
 
@@ -148,15 +148,24 @@ Les recherches, consultations détaillées et exports sont audités.
 - filtrage et contrôle d’accès;
 - audit des consultations et exports.
 
-## 11. Décisions ouvertes
+## 11. Décisions fermées
 
-- identité stable d’ObservedCustomer lorsqu’un NIU manque ou évolue;
-- critères de rapprochement entre institutions;
-- données visibles selon les rôles;
-- durée de rétention;
-- protocole exact de confirmation TFJ;
-- traitement des écritures partielles et extournes;
-- valeurs définitives de timeout, retry, backoff et SLA.
+Le registre normatif
+`documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml` arrête les décisions
+suivantes :
+
+- `ObservedCustomerId` est un UUID stable; le NIU est un attribut, pas une clé;
+- aucun rapprochement automatique n’est réalisé entre institutions;
+- les comptes sont masqués et les accès suivent une matrice RBAC auditée;
+- paiements et audit métier sont conservés dix ans par défaut;
+- l’authentification MVP utilise Token + Subscription Key;
+- timeout, retry et backoff sont configurables avec des defaults non
+  contractuels;
+- une écriture partielle ou inconnue n’est jamais rejouée aveuglément;
+- la confirmation TFJ est distincte du résultat immédiat et doit être corrélée.
+
+Les valeurs SLA définitives et les signatures de Gate restent des validations
+externes non structurantes.
 
 ## 12. Definition of Ready
 
@@ -167,7 +176,7 @@ Les recherches, consultations détaillées et exports sont audités.
 - [x] Paiement et confirmation TFJ intégrés.
 - [x] Contrats existants reclassifiés et règles de génération explicitées.
 - [ ] Contract Pack Payment approuvé.
-- [ ] Décisions ouvertes arbitrées.
-- [ ] Sécurité, rétention et audit approuvés.
+- [x] Décisions d’architecture bloquantes arbitrées.
+- [x] Baseline sécurité, rétention et audit définie.
 
 **Aucune génération de code Customer n’est autorisée à partir de ce brief seul.**
