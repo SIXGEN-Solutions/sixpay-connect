@@ -1,0 +1,239 @@
+schemaVersion: "1.0.0"
+
+context:
+  id: "sixpay-payment-preflight-v1"
+  domain: "payment"
+  gate: "IA-0P_PAYMENT_PREFLIGHT"
+  branch: "feat/payment-contract-pack"
+  sourceCommit: "7f26a1f2fc8b8d71fdbd9f38a3387f87435b1b35"
+  status: "CONSOLIDATED_FOR_CONTRACT_GATE"
+  normative: true
+
+codeGenerationAllowed: false
+nextGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+
+primaryDocuments:
+  - path: "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
+    role: "Gate verdict, scope and consolidated readiness"
+  - path: "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
+    role: "Human-readable implementation context and constraints"
+  - path: "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
+    role: "Machine-readable context index and generation lock"
+
+intermediateDeliverables:
+  - step: "0P.1"
+    path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+    status: "ESTABLISHED"
+    role: "Authority hierarchy and requirement traceability"
+  - step: "0P.2"
+    path: "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
+    section: "Scope / Out of Scope"
+    status: "ESTABLISHED"
+    role: "MVP boundary"
+  - step: "0P.3"
+    path: "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
+    status: "ESTABLISHED"
+    role: "System and module responsibilities"
+  - step: "0P.4"
+    path: "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
+    status: "ESTABLISHED"
+    role: "Nominal and alternative flows"
+  - step: "0P.5"
+    path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
+    status: "ESTABLISHED"
+    role: "Aggregate and concept boundaries"
+  - step: "0P.6"
+    path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+    status: "CLOSED"
+    role: "Normative lifecycle and transitions"
+  - step: "0P.8"
+    path: "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
+    status: "ESTABLISHED"
+    role: "Normative domain and process events"
+  - step: "0P.9"
+    path: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
+    status: "ESTABLISHED"
+    role: "Contract families and requirements"
+  - step: "0P.10"
+    path: "documentation/ai/payment/PAYMENT_SECURITY_AUDIT_BASELINE.md"
+    status: "ESTABLISHED"
+    role: "Security, audit and observability"
+  - step: "0P.11"
+    path: "documentation/ai/payment/PAYMENT_RESILIENCE_BASELINE.md"
+    status: "ESTABLISHED"
+    role: "Resilience and operational recovery"
+  - step: "0P.12"
+    path: "documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md"
+    status: "ESTABLISHED"
+    role: "Acceptance and test strategy"
+
+invariantBaseline:
+  step: "0P.7"
+  mode: "EMBEDDED"
+  status: "CLOSED"
+  sources:
+    - path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
+      locator: "section 11"
+    - path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+      locator: "globalInvariants"
+  note: "No standalone invariant file is required."
+
+upstreamAuthorities:
+  - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    role: "Closed blocking architecture decisions"
+  - path: "documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml"
+    role: "Payment pilot and ObservedCustomer upstream context"
+  - path: "documentation/ai/customer/CUSTOMER_DOMAIN_GENERATION_BRIEF.md"
+    role: "Customer support-domain constraints"
+  - path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+    role: "Contract lifecycle and classification authority"
+  - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    role: "Reference-only Amplitude verification contract"
+
+scope:
+  inScope:
+    - "Receive and immediately persist a TRESOR PAY payment request"
+    - "Create or update ObservedCustomer"
+    - "Verify bank customer, account, ownership, status, blocks and oppositions"
+    - "Verify available funds"
+    - "Debit customer account and credit CUT"
+    - "Notify immediate result"
+    - "Await, match and apply TFJ confirmation"
+    - "Notify final result"
+    - "Expose SIXPAY consultation and audit"
+  outOfScope:
+    - "Local subscription management"
+    - "Subscription validation from SIXPAY"
+    - "Digital KYC by document and selfie"
+    - "Interbank clearing beyond TFJ confirmation"
+    - "TRESOR PAY merchant management"
+
+systemsOfRecord:
+  subscription: "TRESOR_PAY"
+  paymentOrder: "TRESOR_PAY"
+  bankingCustomerAndAccount: "AMPLITUDE"
+  processedPayment: "SIXPAY"
+  bankingEntries: "AMPLITUDE"
+  observedCustomerProjection: "SIXPAY"
+  tfjConfirmation: "AMPLITUDE"
+  integrationAudit: "SIXPAY"
+
+modules:
+  payment: "Own Payment aggregate, decisions and lifecycle"
+  customer: "Interpret banking verification and maintain ObservedCustomer"
+  integration: "Own external adapters and transport contracts"
+  notification: "Own reliable immediate and final delivery"
+  accounting: "Interpret posting, unknown outcomes, TFJ and reversal"
+  reporting: "Own read-only query, audit projection and authorized export"
+
+domainModel:
+  aggregateRoots:
+    - "Payment"
+  readModels:
+    - "ObservedCustomer"
+  valueObjects:
+    - "PaymentId"
+    - "TresorPayRequestId"
+    - "PaymentReference"
+    - "IdempotencyKey"
+    - "CorrelationId"
+    - "PayerSnapshot"
+    - "BankAccountReference"
+    - "Money"
+    - "FinancialInstitutionCode"
+  aggregateSnapshots:
+    - "BankingVerificationSnapshot"
+    - "PostingOutcomeSnapshot"
+    - "TreasuryAccountReference"
+    - "NotificationIntentReference"
+    - "EndOfDayConfirmationSnapshot"
+    - "ReversalSnapshot"
+  integrationOwnedConcepts:
+    - "BankingVerification"
+    - "PostingResult"
+    - "TreasuryAccount"
+    - "NotificationDelivery"
+    - "EndOfDayConfirmation"
+    - "Reversal"
+  externalFactsRemainInAdapters: true
+
+stateMachine:
+  path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+  stateCount: 16
+  transitionCount: 34
+  initialState: "RECEIVED"
+  terminalStates:
+    - "REJECTED"
+    - "TREASURY_INTEGRATED"
+    - "FAILED"
+    - "REVERSED"
+
+events:
+  path: "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
+  normativeCount: 16
+  publication: "TRANSACTIONAL_OUTBOX_AT_LEAST_ONCE"
+
+contracts:
+  requirements: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
+  familyCount: 7
+  concreteArtifactCount: 9
+  status: "TO_BE_PRODUCED_AND_APPROVED"
+  format: "OPENAPI_3_1"
+
+security:
+  inboundTresorPayAuthentication:
+    - "TOKEN"
+    - "SUBSCRIPTION_KEY"
+  secrets: "EXTERNALIZED_ROTATABLE_REVOCABLE"
+  transportEncryption: "TLS_1_3"
+  atRestEncryption: "AES_256_OR_VALIDATED_EQUIVALENT"
+  accountIdentifiers: "MINIMIZED_AND_MASKED"
+  credentialsInLogsAllowed: false
+  rbacRoles:
+    - "OPS"
+    - "MANAGER"
+    - "AUDITOR"
+    - "ADMIN"
+
+resilience:
+  inboundIdempotency: true
+  transactionalOutbox: true
+  deliveryGuarantee: "AT_LEAST_ONCE"
+  retry: "BOUNDED_EXPONENTIAL_FULL_JITTER"
+  circuitBreaker: true
+  dlq: true
+  bankReconciliation: true
+  unmatchedTfjQuarantine: true
+  blindFinancialReplayAllowed: false
+  controlledOperationalReplay: true
+  reversalRunbookRequired: true
+
+acceptance:
+  path: "documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md"
+  testFamilyCount: 13
+  explicitScenarioCount: 142
+  requiredStateTransitionCoverage: "34/34"
+  forbiddenTransitionCoverage: "EXHAUSTIVE"
+  requiredContractArtifactCoverage: "9/9"
+  fullIntegrationProfile: "full-tests"
+
+generationRules:
+  forbiddenUntilNextGateApproved:
+    - "Application code generation or modification"
+    - "Database schema, migration or persistence mapping generation"
+    - "Target OpenAPI contract generation"
+    - "Client or server stub generation"
+    - "Invention of fields, states, events or business rules"
+    - "Activation of deferred subscription contracts"
+  requiredBeforeGeneration:
+    - "Approve IA-0.5P_PAYMENT_CONTRACT_PACK"
+    - "Approve and register all nine Payment contract artifacts"
+    - "Validate Amplitude capabilities, authentication and SLA"
+    - "Validate TRESOR PAY contracts and callbacks"
+    - "Obtain Architecture, Payment, Integration, Security and Operations sign-offs"
+
+readiness:
+  architectureAmbiguities: "CLOSED"
+  preflightPack: "CONSOLIDATED"
+  contractPack: "PENDING"
+  codeGeneration: "FORBIDDEN"

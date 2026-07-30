@@ -6,12 +6,12 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `741038f67992c9dacaf7c4a7ceb11d865c15cc1f` |
+| Commit de référence | `7f26a1f2fc8b8d71fdbd9f38a3387f87435b1b35` |
 | Domaine pilote | `payment` |
-| Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.12 — Payment Acceptance Scenarios` |
+| Statut du Gate | `PREFLIGHT_CONSOLIDATED` |
+| Dernière étape terminée | `0P.13 — Payment Preflight Pack` |
 | Génération de code | **Interdite** |
-| Gate suivant | `IA-0.5P — Payment Contract Pack` |
+| Gate suivant | `IA-0.5P_PAYMENT_CONTRACT_PACK` |
 
 ## 2. Objectif
 
@@ -1086,4 +1086,45 @@ PARTIAL WRITE AND REVERSAL: COVERED
 FULL INTEGRATION PROFILE: REQUIRED
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.13 — CONSOLIDATE PAYMENT PREFLIGHT PACK
+```
+
+---
+
+# 18. Résultat de l’étape 0P.13 — Payment Preflight Pack
+
+L’étape 0P.13 consolide l’ensemble du Gate dans trois documents principaux :
+
+- `GATE_IA_0P_PAYMENT_PREFLIGHT.md`, qui porte le périmètre, les résultats et
+  le verdict du Gate ;
+- `PAYMENT_DOMAIN_GENERATION_BRIEF.md`, qui fournit le contexte humain
+  consolidé destiné au futur développement ;
+- `AI_CONTEXT_MANIFEST.yaml`, qui indexe les sources et livrables normatifs
+  dans un format machine-readable.
+
+Le manifeste référence les onze livrables intermédiaires physiques. L’étape
+0P.7 ne crée pas de document autonome : ses invariants sont fermés dans
+`PAYMENT_DOMAIN_MODEL.md` et `PAYMENT_STATE_MACHINE.yaml`.
+
+## Critères de sortie 0P.13
+
+- [x] Trois documents principaux produits.
+- [x] Tous les livrables intermédiaires référencés.
+- [x] Baseline d’invariants embarquée explicitement référencée.
+- [x] Périmètre, autorités, modèle, états et événements consolidés.
+- [x] Contrats, sécurité, résilience et tests consolidés.
+- [x] Sources amont et registre des contrats référencés.
+- [x] Génération de code explicitement interdite.
+- [x] Gate suivant fixé sans ambiguïté.
+
+## Verdict IA-0P
+
+```text
+PAYMENT PREFLIGHT PACK: CONSOLIDATED
+PRIMARY DOCUMENTS: 3/3
+INTERMEDIATE DELIVERABLES: 11/11 PRESENT
+INVARIANT BASELINE: EMBEDDED AND CLOSED
+ARCHITECTURE AMBIGUITIES: CLOSED
+PAYMENT CONTRACT PACK: PENDING
+CODE GENERATION: FORBIDDEN
+NEXT GATE: IA-0.5P_PAYMENT_CONTRACT_PACK
 ```
