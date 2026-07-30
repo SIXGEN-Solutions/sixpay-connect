@@ -5,7 +5,7 @@
 | Statut | **REALIGNED — PAYMENT PREFLIGHT REQUIRED** |
 | Type | Réalignement métier et architectural, sans génération de code |
 | Branche | `feat/customer-foundation-contract` |
-| Commit de référence | `254d05099eceb1d345305ba186eb73099fe111f7` |
+| Commit de référence | `6874df6e2b27122319d4da5143fe46c58604f1a3` |
 | Domaine pilote | `payment` |
 | Support | `customer`, `integration`, `notification` |
 | Niveau d’autonomie | **A — Assistance** |
@@ -157,12 +157,22 @@ dans le Contract Pack Payment.
 
 ## 8. Contrats
 
-Contrats disponibles :
+Le registre normatif
+`documentation/contracts/CONTRACT_REGISTRY.yaml` reclassifie les contrats
+existants sans déplacer leurs fichiers :
 
-- `tresorpay-authorization-decision-webhook-v1.yaml` : conservé comme contrat
-  d’évolution de l’abonnement, non déclencheur du MVP;
-- `amplitude-customer-verification-api-v1.yaml` : contrat de vérification,
-  paramètres de timeout/retry/SLA configurables.
+- `amplitude-customer-verification-api-v1.yaml` : `REFERENCE_MVP`,
+  `PENDING_APPROVAL`, `REFERENCE_ONLY`; il supporte les vérifications bancaires,
+  avec timeout/retry/SLA configurables, mais ne couvre pas l’exécution du
+  paiement;
+- `tresorpay-authorization-request-api-v1.yaml` : `DEFERRED_FUTURE`, `DRAFT`,
+  `EXCLUDED`; aucun usage dans le MVP;
+- `tresorpay-authorization-decision-webhook-v1.yaml` : `DEFERRED_FUTURE`,
+  `DRAFT`, `EXCLUDED`; aucun usage dans le MVP.
+
+La présence d’un contrat différé dans le dépôt ne l’autorise ni pour
+l’implémentation, ni pour la génération de code. Sa réactivation exige une
+décision de périmètre et une nouvelle approbation.
 
 Contract Pack à produire avant implémentation Payment :
 
@@ -193,6 +203,7 @@ Contract Pack à produire avant implémentation Payment :
 - [x] Payment positionné comme domaine pilote.
 - [x] MVP séparé des évolutions d’abonnement.
 - [x] Parcours de paiement et confirmation TFJ intégrés au cadrage.
+- [x] Contrats existants formellement reclassifiés dans un registre normatif.
 - [ ] Contract Pack Payment validé.
 - [ ] États, erreurs partielles et règles TFJ approuvés.
 - [ ] Matrice d’accès et rétention des données approuvées.

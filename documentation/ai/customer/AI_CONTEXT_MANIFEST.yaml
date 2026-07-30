@@ -13,7 +13,7 @@ generation:
 repository:
   url: "https://github.com/SIXGEN-Solutions/sixpay-connect.git"
   branch: "feat/customer-foundation-contract"
-  baseCommit: "254d05099eceb1d345305ba186eb73099fe111f7"
+  baseCommit: "6874df6e2b27122319d4da5143fe46c58604f1a3"
 
 scope:
   pilotDomain: "payment"
@@ -126,16 +126,35 @@ observedCustomer:
     - "PaymentReversed"
 
 contracts:
+  registry:
+    path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+    schemaVersion: "1.0"
+    classificationAuthority: true
   existing:
     - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
-      status: "ACTIVE_PENDING_APPROVAL"
+      lifecycleStatus: "REFERENCE_MVP"
+      approvalStatus: "PENDING_APPROVAL"
+      generationPolicy: "REFERENCE_ONLY"
       usage: "BANKING_VERIFICATION"
+      limitations:
+        - "NO_FUNDS_AVAILABILITY_CONTROL"
+        - "NO_PAYMENT_POSTING"
+        - "NO_CUT_CREDIT"
+        - "NO_END_OF_DAY_CONFIRMATION"
       configurable:
         - "timeout"
         - "retry"
         - "sla"
+    - path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+      lifecycleStatus: "DEFERRED_FUTURE"
+      approvalStatus: "DRAFT"
+      generationPolicy: "EXCLUDED"
+      mvpIncluded: false
     - path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
-      status: "DEFERRED_FOR_FUTURE_SUBSCRIPTION_EVOLUTION"
+      lifecycleStatus: "DEFERRED_FUTURE"
+      approvalStatus: "DRAFT"
+      generationPolicy: "EXCLUDED"
+      mvpIncluded: false
   paymentPack:
     status: "TO_BE_PRODUCED"
     required:

@@ -2,6 +2,23 @@ openapi: 3.1.0
 info:
   title: SIXPAY CONNECT - Amplitude Customer Verification API
   version: 1.0.0
+  x-sixpay-contract:
+    registryId: "amplitude-customer-verification-api-v1"
+    gate: "IA-0R"
+    lifecycleStatus: "REFERENCE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    domain: "integration"
+    capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    mvpIncluded: true
+    limitations:
+      - "NO_SUBSCRIPTION_AUTHORIZATION"
+      - "NO_FUNDS_AVAILABILITY_CONTROL"
+      - "NO_PAYMENT_POSTING"
+      - "NO_CUT_CREDIT"
+      - "NO_END_OF_DAY_CONFIRMATION"
   license:
     name: SIXGEN Solutions Proprietary
     url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
@@ -10,9 +27,13 @@ info:
     facts from the Amplitude Core Banking system.
 
     Amplitude remains the system of record. The contract exposes normalized
-    facts and verification evidence; the final decision to accept or reject a
-    SIXPAY subscription remains the responsibility of the Customer and
-    Subscription domains.
+    facts and verification evidence used by the Payment workflow. It does not
+    authorize or manage a TRESOR PAY subscription: TRESOR PAY remains the
+    subscription system of record for the MVP.
+
+    This reference contract does not cover funds-availability controls, debit
+    posting, CUT credit or end-of-day Treasury confirmation. Those capabilities
+    require dedicated contracts in the Payment Contract Pack.
 
     Connection timeout, response timeout, retry limits, circuit-breaker values
     and SLA objectives are intentionally configurable. No definitive numeric

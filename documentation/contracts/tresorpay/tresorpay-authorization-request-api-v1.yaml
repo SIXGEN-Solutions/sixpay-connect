@@ -2,11 +2,32 @@ openapi: 3.1.0
 info:
   title: SIXPAY CONNECT - TRESOR PAY Authorization Request API
   version: 1.0.0
+  x-sixpay-contract:
+    registryId: "tresorpay-authorization-request-api-v1"
+    gate: "IA-0R"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    systemOfRecord: "TRESOR_PAY"
+    mvpIncluded: false
+    activationPrerequisite: "EXPLICIT_FUTURE_SUBSCRIPTION_SCOPE_APPROVAL"
   license:
     name: SIXGEN Solutions Proprietary
     url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
   description: |
-    Frozen contract for authorization requests pushed by TRESOR PAY to SIXPAY.
+    Deferred contract retained for the future SIXPAY-assisted subscription
+    journey. It is excluded from the MVP and must not trigger code generation.
+
+    For the MVP, TRESOR PAY creates, validates and owns subscriptions. SIXPAY
+    neither receives an authorization request nor maintains a local
+    subscription lifecycle.
+
+    When the future scope is explicitly activated, this contract may serve as
+    the basis for authorization requests exchanged between TRESOR PAY and
+    SIXPAY, subject to a new review and approval.
 
     Transport authentication uses OAuth 2.0 client credentials and mutual TLS.
     The `authorizationToken` carried in the payload is a TRESOR PAY business

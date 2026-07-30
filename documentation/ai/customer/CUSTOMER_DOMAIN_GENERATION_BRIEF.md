@@ -125,11 +125,14 @@ Les recherches, consultations détaillées et exports sont audités.
 
 ## 9. Contrats et dépendances
 
+- Registre normatif : `documentation/contracts/CONTRACT_REGISTRY.yaml`.
 - Entrée principale : futur contrat Payment TRESOR PAY → SIXPAY.
-- Vérifications : `amplitude-customer-verification-api-v1.yaml`.
+- Vérifications : `amplitude-customer-verification-api-v1.yaml`, classé
+  `REFERENCE_MVP` et utilisable comme référence uniquement.
 - Notifications : contrats Payment immédiat et confirmation TFJ à produire.
-- Contrats d’abonnement TRESOR PAY existants : conservés pour évolution, hors
-  chemin critique du MVP.
+- Contrats TRESOR PAY de demande d’autorisation et de décision : classés
+  `DEFERRED_FUTURE`, `DRAFT` et `EXCLUDED`; conservés pour traçabilité, hors
+  chemin critique du MVP et interdits à la génération.
 - Timeout, retry et SLA Amplitude restent configurables.
 
 ## 10. Tests attendus
@@ -162,6 +165,7 @@ Les recherches, consultations détaillées et exports sont audités.
 - [x] Payment déclaré pilote.
 - [x] ObservedCustomer limité au modèle de lecture.
 - [x] Paiement et confirmation TFJ intégrés.
+- [x] Contrats existants reclassifiés et règles de génération explicitées.
 - [ ] Contract Pack Payment approuvé.
 - [ ] Décisions ouvertes arbitrées.
 - [ ] Sécurité, rétention et audit approuvés.

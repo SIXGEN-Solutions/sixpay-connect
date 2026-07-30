@@ -1,0 +1,108 @@
+schemaVersion: "1.0"
+registry:
+  id: "sixpay-contract-registry"
+  gate: "IA-0R"
+  step: "0.2"
+  branch: "feat/customer-foundation-contract"
+  classificationDate: "2026-07-30"
+
+classificationModel:
+  lifecycleStatuses:
+    ACTIVE_MVP:
+      description: "Contract applicable to the current MVP delivery."
+    REFERENCE_MVP:
+      description: "Reusable reference contract for the MVP, not sufficient alone to implement the end-to-end flow."
+    DEFERRED_FUTURE:
+      description: "Contract preserved for an explicitly deferred evolution."
+    SUPERSEDED:
+      description: "Contract retained for traceability but replaced by another version."
+  approvalStatuses:
+    DRAFT: "Not approved for implementation."
+    PENDING_APPROVAL: "Technically prepared and awaiting formal approval."
+    APPROVED: "Approved by the required authorities."
+  generationPolicy:
+    ACTIVE: "May be used for generation when approved and when all dependencies are available."
+    REFERENCE_ONLY: "May inform another contract but cannot independently trigger code generation."
+    EXCLUDED: "Must not be used to generate the current MVP."
+
+contracts:
+  - id: "amplitude-customer-verification-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    domain: "integration"
+    capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "REFERENCE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Verify the banking customer and NIU"
+        - "Retrieve banking identity and required KYC facts"
+        - "Find accounts and verify account ownership and status"
+        - "Detect blocks or oppositions"
+      limitations:
+        - "Does not authorize or manage a TRESOR PAY subscription"
+        - "Does not define funds-availability controls"
+        - "Does not define debit or CUT-credit posting"
+        - "Does not define end-of-day Treasury confirmation"
+    configurable:
+      - "timeout"
+      - "retry"
+      - "sla"
+
+  - id: "tresorpay-authorization-request-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    mvpUsage:
+      included: false
+      reason: "For the MVP, subscription initiation and validation remain entirely in TRESOR PAY."
+    futureUsage:
+      purpose: "Allow a SIXPAY bank-agent interface to retrieve and process a pending TRESOR PAY subscription."
+      prerequisite: "A future TRESOR PAY integration contract and explicit architecture approval."
+
+  - id: "tresorpay-authorization-decision-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_LIFECYCLE_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    mvpUsage:
+      included: false
+      reason: "SIXPAY does not own or update the subscription lifecycle in the MVP."
+    futureUsage:
+      purpose: "Return a bank-agent decision to TRESOR PAY when the future SIXPAY-assisted subscription journey is activated."
+      prerequisite: "Activation of the deferred subscription scope and explicit architecture approval."
+
+missingMvpContracts:
+  status: "TO_BE_PRODUCED"
+  contracts:
+    - id: "tresorpay-payment-request-api-v1"
+      capability: "PAYMENT_REQUEST"
+      direction: "TRESOR_PAY_TO_SIXPAY"
+    - id: "amplitude-payment-execution-api-v1"
+      capability: "FUNDS_CONTROL_DEBIT_AND_CUT_CREDIT"
+      direction: "SIXPAY_TO_AMPLITUDE"
+    - id: "tresorpay-payment-status-webhook-v1"
+      capability: "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
+      direction: "SIXPAY_TO_TRESOR_PAY"
+    - id: "tresorpay-tfj-confirmation-webhook-v1"
+      capability: "END_OF_DAY_TREASURY_CONFIRMATION"
+      direction: "SIXPAY_TO_TRESOR_PAY"
+
+rules:
+  - "File location does not determine lifecycle classification; this registry and each OpenAPI x-sixpay-contract block do."
+  - "Deferred contracts remain versioned at their stable paths for traceability."
+  - "A DEFERRED_FUTURE or EXCLUDED contract must not trigger MVP code generation."
+  - "A REFERENCE_MVP contract cannot authorize implementation of capabilities listed in its limitations."
+  - "The registry and embedded OpenAPI classifications must remain consistent."

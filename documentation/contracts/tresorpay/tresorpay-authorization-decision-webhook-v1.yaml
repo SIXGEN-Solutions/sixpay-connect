@@ -2,12 +2,29 @@ openapi: 3.1.0
 info:
   title: SIXPAY CONNECT - TRESOR PAY Authorization Lifecycle Webhook
   version: 1.0.0
+  x-sixpay-contract:
+    registryId: "tresorpay-authorization-decision-webhook-v1"
+    gate: "IA-0R"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_LIFECYCLE_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    systemOfRecord: "TRESOR_PAY"
+    mvpIncluded: false
+    activationPrerequisite: "EXPLICIT_FUTURE_SUBSCRIPTION_SCOPE_APPROVAL"
   license:
     name: SIXGEN Solutions Proprietary
     url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
   description: |
-    Frozen outbound webhook contract used by SIXPAY to notify TRESOR PAY of
-    authorization-request and subscription lifecycle events.
+    Deferred outbound webhook retained for the future SIXPAY-assisted
+    subscription journey. It is excluded from the MVP and must not trigger code
+    generation.
+
+    For the MVP, TRESOR PAY remains the subscription system of record and
+    SIXPAY emits no subscription lifecycle decision. Activation requires an
+    explicit future-scope decision followed by contract review and approval.
 
     Security and replay protection:
       * OAuth 2.0 client credentials and mutual TLS authenticate SIXPAY;
