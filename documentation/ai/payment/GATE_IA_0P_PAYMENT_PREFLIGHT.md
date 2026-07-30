@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `e7746b0de32f6a660b2b06250f68f9c1305e14dd` |
+| Commit de référence | `0faa8437e479a6397d049496edcacf7b1dbfde8b` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.5 — Payment Domain Model` |
+| Dernière étape terminée | `0P.6 — Payment State Machine` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -721,4 +721,65 @@ AGGREGATE BOUNDARY: CLOSED
 CONCEPT OWNERSHIP AMBIGUITIES: 0
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.6 — PAYMENT STATE MACHINE
+```
+
+---
+
+# 12. Résultat de l’étape 0P.6 — Payment State Machine
+
+L’étape 0P.6 ferme la machine à états normative dans :
+
+`documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml`
+
+Elle formalise :
+
+- les 16 états distincts fournis et leur sémantique ;
+- 34 transitions normatives ;
+- les commandes ou événements déclencheurs ;
+- les préconditions, effets métier et événements de chaque transition ;
+- les capacités de rejeu et de déduplication ;
+- les transitions globalement interdites ;
+- la distinction entre rejet métier et échec technique ;
+- la résolution des outcomes comptables inconnus ou partiels ;
+- la finalité TFJ et les extournes ;
+- l’indépendance entre état Payment et livraison Notification.
+
+Le catalogue transmis dans la demande annonçait 17 états, mais contient
+16 valeurs distinctes. Le YAML conserve exactement ces 16 noms sans en
+inventer un dix-septième.
+
+`AUTHORIZATION_CHECKING` désigne l’admissibilité SIXPAY de la demande et ne
+réintroduit aucune gestion locale d’abonnement.
+
+`NOTIFIED` désigne l’intention de notification immédiate durablement inscrite
+dans l’Outbox. Le succès ou l’échec du transport reste dans Notification et ne
+déclenche aucune transition financière.
+
+## Critères de sortie 0P.6
+
+- [x] Tous les états distincts fournis sont définis.
+- [x] L’état initial et les quatre états terminaux sont identifiés.
+- [x] Chaque transition contient source, trigger, préconditions, cible,
+  effets, événements, interdictions et capacité de rejeu.
+- [x] Tous les états sont atteignables depuis `RECEIVED`.
+- [x] Tous les états non terminaux ont au moins une transition sortante.
+- [x] Aucun outcome inconnu ou partiel n’autorise un rejeu financier aveugle.
+- [x] `TREASURY_INTEGRATED` exige une TFJ favorable rapprochée.
+- [x] Une TFJ absente maintient le Payment en attente.
+- [x] Une TFJ non rapprochable ne modifie pas Payment.
+- [x] Toute extourne est autorisée, distinctement idempotente et auditée.
+- [x] Les résultats de livraison Notification restent hors machine financière.
+
+## Verdict 0P.6
+
+```text
+PAYMENT STATE MACHINE: CLOSED
+DISTINCT STATES: 16
+TRANSITIONS: 34
+TERMINAL STATES: 4
+BLIND FINANCIAL REPLAY: FORBIDDEN
+TFJ FINALITY: EXPLICIT
+STATE AMBIGUITIES: 0
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.7 — PAYMENT INVARIANTS
 ```
