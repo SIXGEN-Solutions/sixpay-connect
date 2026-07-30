@@ -1,0 +1,308 @@
+schemaVersion: "1.0"
+
+generation:
+  id: "customer-customer-verification-v1.0.0-rc1"
+  strategyVersion: "1.0.0"
+  masterPrompt:
+    version: "V0.0"
+    path: "MASTER_ENGINEERING_PROMPT_V0.md"
+  autonomyLevel: "A"
+  status: "READY_FOR_CONTRACT_PACK"
+
+repository:
+  url: "https://github.com/SIXGEN-Solutions/sixpay-connect.git"
+  branch: "feat/industrialisation-documentation"
+  baseCommit: "ffd942ade28fed4c938d628d5269ef373e1a0d24"
+  worktreeCleanAtStart: true
+
+brief:
+  path: "documentation/ai/customer/CUSTOMER_DOMAIN_GENERATION_BRIEF.md"
+  version: "1.0.0-rc1"
+  status: "READY_FOR_CONTRACT_PACK"
+  approvalReference: "GATE-IA-0-DECISIONS-2026-07-29"
+
+scope:
+  domain: "customer"
+  capability: "Customer & Account Verification"
+  useCases:
+    - "CUS-UC-001"
+    - "CUS-UC-002"
+    - "CUS-UC-003"
+    - "CUS-UC-004"
+  included:
+    - "Customer lookup through Core Banking"
+    - "KYC and account eligibility verification"
+    - "Minimal auditable verification snapshot"
+    - "Customer API, application, domain, infrastructure, events and tests"
+  excluded:
+    - "Customer master-data creation or update"
+    - "Merchant aggregate, repository or module"
+    - "Subscription lifecycle and approval workflow"
+    - "Subscription-key generation"
+    - "Frontend implementation"
+  allowedPaths:
+    - "backend/customer/**"
+    - "backend/bootstrap/**"
+    - "backend/tests/**"
+    - "documentation/ai/customer/**"
+  forbiddenPaths:
+    - "backend/partner/**"
+    - "backend/subscription/**"
+    - "frontend/**"
+    - ".github/**"
+    - "backend/sixpay-bom/**"
+    - "MASTER_ENGINEERING_PROMPT_V0.md"
+    - "MASTER_ENGINEERING_PROMPT_V1.md"
+    - "AI_GENERATION_STRATEGY.md"
+
+authorities:
+  - priority: 0
+    id: "tresorpay-core-banking-interoperability"
+    path: "documentation/requirements/cdc/Cahier des Charges interopérabilité entre TRESOR PAY et le core banking_final_schema_final.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "III. Prérequis généraux"
+      - "IV. Création d'un compte TRESOR PAY et validation bancaire"
+      - "Scénario 1 API moderne"
+      - "Schémas de création/activation et de paiement"
+  - priority: 0
+    id: "functional-specifications"
+    path: "documentation/requirements/cdc/SIXPAY_CONNECT_Specifications_Fonctionnelles.pdf"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "BP-02 Customer Subscription"
+      - "CBF-02 Customer Subscription"
+      - "BR-CUS"
+      - "BR-SUB"
+      - "15.1 Points ouverts"
+  - priority: 1
+    id: "product-blueprint"
+    path: "documentation/architecture/SIXPAY_CONNECT_Product_Blueprint.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "Customer Domain"
+      - "Business Information Model"
+      - "Customer Domain Rules"
+      - "Customer Domain Events"
+  - priority: 1
+    id: "application-architecture-blueprint"
+    path: "documentation/architecture/SIXPAY_CONNECT_Application_Architecture_Blueprint.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "Customer Domain"
+      - "Services du Customer Domain"
+      - "Customer Banking APIs"
+      - "Canonical Application Information Model"
+  - priority: 1
+    id: "software-design"
+    path: "documentation/architecture/SIXPAY_CONNECT-SDS.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "Customer commands and queries"
+      - "DTO Design"
+      - "Domain Events"
+      - "Specifications and Error Model"
+  - priority: 1
+    id: "technical-architecture"
+    path: "documentation/architecture/SIXPAY_CONNECT_Technical_Architecture.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "Module Boundaries"
+      - "Domain-Driven Design"
+      - "API Architecture"
+      - "IAM"
+      - "Non-Functional Requirements"
+  - priority: 1
+    id: "reference-implementation"
+    path: "documentation/architecture/SIXPAY_CONNECT_SDS.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "Module Structure"
+      - "Domain Layer"
+      - "Application Layer"
+      - "Infrastructure Layer"
+      - "REST API Architecture"
+  - priority: 2
+    id: "customer-requirements"
+    path: "documentation/requirements/cdc/SIXPAY_CONNECT_CDC.pdf"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "3. Périmètre fonctionnel, fonction 2"
+      - "10.1 Processus d'abonnement"
+  - priority: 2
+    id: "user-stories"
+    path: "documentation/requirements/user-stories/SIXPAY_CONNECT_USER_STORIES.docx"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "EPIC 6 Security"
+      - "EPIC 7 Audit"
+      - "Customer stories missing: blocking decision DEC-REQ-001"
+  - priority: 4
+    id: "backend-technology-matrix"
+    path: "backend/SIXPAY_BACKEND_TECHNOLOGY_MATRIX.md"
+    version: "1.0"
+    required: true
+    applicableSections:
+      - "all"
+  - priority: 4
+    id: "backend-generation-contract"
+    path: "backend/SIXPAY_BACKEND_ENGINEERING_GENERATION_CONTRACT.md"
+    version: "1.0"
+    required: true
+    applicableSections:
+      - "all"
+  - priority: 6
+    id: "golden-partner"
+    path: "backend/partner"
+    version: "git:ffd942ade28fed4c938d628d5269ef373e1a0d24"
+    required: true
+    applicableSections:
+      - "structure, security, audit, outbox, tests and OpenAPI conventions only"
+
+contracts:
+  interoperability:
+    - name: "TRESOR PAY Authorization Request"
+      direction: "inbound"
+      path: "planned:documentation/contracts/tresorpay/subscription-request-v1"
+      approved: false
+    - name: "TRESOR PAY Authorization Decision"
+      direction: "outbound"
+      path: "planned:documentation/contracts/tresorpay/subscription-decision-v1"
+      approved: false
+    - name: "Amplitude Customer and Account Verification"
+      direction: "outbound"
+      path: "planned:documentation/contracts/amplitude/customer-verification-v1"
+      approved: false
+  openapi:
+    - path: "backend/customer/src/main/resources/openapi/customer-api-v1.yaml"
+      version: "v1-planned"
+      operations:
+        - "searchCustomers"
+        - "getCustomer"
+        - "getCustomerAccounts"
+        - "verifyCustomer"
+      approved: false
+  events:
+    - path: "backend/customer/src/main/java/com/sixpay/customer/events"
+      name: "CustomerEligibilityVerifiedIntegrationEvent"
+      version: "v1-planned"
+      approved: false
+  migrations:
+    - path: "backend/customer/src/main/resources/db/migration"
+      destructive: false
+      approved: false
+
+dependencies:
+  allowedModules:
+    - "common"
+    - "shared-kernel"
+    - "security"
+    - "integration"
+  forbiddenModules:
+    - "partner"
+    - "subscription"
+    - "payment"
+    - "accounting"
+    - "notification"
+  newLibraries: []
+
+security:
+  roleMatrixPath: "documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md#10-matrice-rôlesactions-provisoire"
+  dataClassification: "RESTRICTED"
+  productionDataAllowed: false
+  secretsAllowed: false
+  objectAuthorizationRequired: true
+  securityApprovalReference: "PENDING-DEC-SEC-001"
+
+decisions:
+  resolved:
+    - "DEC-CUS-001"
+    - "DEC-CUS-002"
+    - "DEC-CUS-003"
+    - "DEC-CUS-004"
+    - "DEC-CUS-005"
+    - "DEC-SUB-001"
+    - "DEC-SUB-002"
+    - "DEC-SUB-003"
+    - "DEC-SUB-004"
+    - "DEC-SUB-005"
+    - "DEC-INT-001"
+    - "DEC-FUN-002"
+    - "DEC-FUN-003"
+    - "DEC-INT-002"
+    - "DEC-INT-003"
+    - "DEC-INT-004"
+    - "DEC-INT-005"
+    - "DEC-MAP-001"
+    - "DEC-SEC-002"
+    - "DEC-PAY-001"
+  pending:
+    - "DEC-SEC-001"
+    - "DEC-API-001"
+    - "DEC-REQ-001"
+    - "DEC-NFR-001"
+    - "DEC-FUN-001"
+
+validation:
+  backend:
+    targeted:
+      - "mvn --batch-mode --no-transfer-progress verify -pl customer -am"
+    global:
+      - "mvn --batch-mode --no-transfer-progress verify"
+  frontend:
+    targeted: []
+    global: []
+  contracts:
+    - "OpenAPI validation command to be approved"
+    - "Customer event schema validation command to be approved"
+  security:
+    - "Backend dependency and security analysis from backend-ci.yml"
+  requiredCiChecks:
+    - "Backend CI"
+
+outputs:
+  generationReport: "documentation/ai/customer/reports/customer-customer-verification-v1.0.0-rc1-report.md"
+  evidenceDirectory: "documentation/ai/customer/reports/customer-customer-verification-v1.0.0-rc1/"
+  expectedArtifacts:
+    - "Approved TRESOR PAY Authorization Request and Decision contracts"
+    - "Approved Amplitude Customer Verification contract"
+    - "Approved Customer Domain Generation Brief"
+    - "Approved Customer OpenAPI v1"
+    - "Approved Core Banking port contract"
+    - "Customer module implementation and tests"
+    - "AI generation report and evidence"
+
+approvals:
+  product:
+    status: "PENDING"
+    reference: "DEC-REQ-001"
+  architecture:
+    status: "PENDING"
+    reference: "GATE-IA-0"
+  engineering:
+    status: "PENDING"
+    reference: "GATE-IA-0"
+  security:
+    status: "PENDING"
+    reference: "DEC-SEC-001"
+
+risks:
+  destructiveMigration: false
+  publicContractChange: true
+  architectureDeviation: false
+  unresolvedSecurityDecision: true
+  notes:
+    - "The functional specification requires formal bank sign-off."
+    - "Customer User Stories and acceptance criteria are missing."
+    - "TRESOR PAY, Subscription and Amplitude REST contracts must be produced."
+    - "Token and Subscription Key cryptographic formats and lifecycle must be approved."
+    - "Amplitude timeout and SLA values remain configurable placeholders."
