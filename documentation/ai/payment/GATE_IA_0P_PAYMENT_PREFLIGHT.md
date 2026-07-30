@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `87bb9c79f291a53de8684661f82e19f205b19a43` |
+| Commit de référence | `2836dde669487c4d8427f1805f568d737c206065` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.9 — Payment Contract Requirements` |
+| Dernière étape terminée | `0P.10 — Payment Security, Audit & Observability Baseline` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -906,4 +906,61 @@ TFJ PRIMARY AND FALLBACK: EXPLICIT
 BLIND FINANCIAL REPLAY: FORBIDDEN
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.10 — SECURITY AND AUDIT REQUIREMENTS
+```
+
+---
+
+# 15. Résultat de l’étape 0P.10 — Payment Security, Audit & Observability
+
+L’étape 0P.10 établit la baseline normative dans :
+
+`documentation/ai/payment/PAYMENT_SECURITY_AUDIT_BASELINE.md`
+
+Elle formalise :
+
+- Token + Subscription Key pour l’entrée TRESOR PAY du MVP ;
+- le stockage, la rotation et la révocation des secrets ;
+- TLS 1.3 et le chiffrement AES-256 ou équivalent validé ;
+- le masquage systématique des RIB/IBAN ;
+- l’interdiction des credentials et données sensibles dans les logs ;
+- la matrice RBAC `OPS`, `MANAGER`, `AUDITOR` et `ADMIN` ;
+- l’absence de permission Payment implicite pour `SUPPORT`, `READ_ONLY` et
+  `PARTNER` ;
+- l’audit immuable des traitements, consultations, exports et rejeux ;
+- les journaux de corrélation et traces distribuées ;
+- les métriques métier et techniques à cardinalité bornée ;
+- les alertes Payment bloqué, outcome inconnu, extourne, TFJ, Outbox, DLQ et
+  notifications ;
+- les tests de sécurité, audit et observabilité.
+
+Les seuils d’alerte restent configurables et non contractuels jusqu’à
+validation par Operations.
+
+## Critères de sortie 0P.10
+
+- [x] Authentification TRESOR PAY MVP fermée.
+- [x] Gestion des secrets et chiffrement définis.
+- [x] Règles de masquage et de logs sécurisés définies.
+- [x] Matrice RBAC Payment fermée.
+- [x] Consultations, exports et rejeux audités.
+- [x] Audit immuable distinct des logs.
+- [x] Corrélation logs, traces, événements et appels définie.
+- [x] Métriques métier et techniques cataloguées.
+- [x] Labels non bornés interdits.
+- [x] Alertes Payment bloqué, TFJ, DLQ et notifications définies.
+- [x] Tests de sécurité et observabilité définis.
+- [x] Génération de code toujours interdite.
+
+## Verdict 0P.10
+
+```text
+PAYMENT SECURITY BASELINE: ESTABLISHED
+TRESOR PAY MVP AUTHENTICATION: TOKEN + SUBSCRIPTION KEY
+SECRETS: EXTERNALIZED AND ROTATABLE
+SENSITIVE DATA: ENCRYPTED AND MASKED
+PAYMENT RBAC: CLOSED
+BUSINESS AUDIT: IMMUTABLE AND CORRELATED
+OBSERVABILITY AND ALERTS: DEFINED
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.11 — RESILIENCE AND OPERATIONAL RECOVERY
 ```
