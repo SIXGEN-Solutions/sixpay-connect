@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `2836dde669487c4d8427f1805f568d737c206065` |
+| Commit de référence | `1e5f45f4f9adb18a7085291e39112140d6ec0a5a` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.10 — Payment Security, Audit & Observability Baseline` |
+| Dernière étape terminée | `0P.11 — Payment Resilience & Operational Recovery Baseline` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -963,4 +963,66 @@ BUSINESS AUDIT: IMMUTABLE AND CORRELATED
 OBSERVABILITY AND ALERTS: DEFINED
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.11 — RESILIENCE AND OPERATIONAL RECOVERY
+```
+
+---
+
+# 16. Résultat de l’étape 0P.11 — Payment Resilience
+
+L’étape 0P.11 établit la baseline normative dans :
+
+`documentation/ai/payment/PAYMENT_RESILIENCE_BASELINE.md`
+
+Elle formalise :
+
+- l’idempotence entrante, l’empreinte canonique et les conflits ;
+- l’Outbox transactionnelle et la livraison au moins une fois ;
+- les retries bornés avec backoff exponentiel et full jitter ;
+- la séparation entre retry technique, republication et reprise financière ;
+- les circuit breakers et modes dégradés ;
+- la DLQ, son triage et le replay contrôlé ;
+- le rapprochement bancaire et son dossier opérationnel ;
+- la quarantaine des confirmations TFJ non reconnues ;
+- le traitement des résultats comptables inconnus ou partiels ;
+- la reprise ordonnée après incident ;
+- le replay unitaire ou batch, autorisé et audité ;
+- le runbook d’extourne avec clé distincte, double contrôle et recherche
+  d’outcome.
+
+Le retry linéaire de l’Outbox actuellement documenté dans le module
+Integration est une implémentation historique. Le flux Payment exige un
+backoff exponentiel avec jitter configurable ou une politique équivalente
+formellement approuvée.
+
+## Critères de sortie 0P.11
+
+- [x] Idempotence entrante et concurrence fermées.
+- [x] Outbox transactionnelle définie.
+- [x] Retry, backoff, jitter et circuit breaker définis.
+- [x] Rejeu financier aveugle interdit.
+- [x] DLQ et replay contrôlé définis.
+- [x] Rapprochement bancaire défini.
+- [x] Quarantaine TFJ définie.
+- [x] Outcomes inconnus et partiels fermés.
+- [x] Reprise après incident définie.
+- [x] Runbook d’extourne défini.
+- [x] Tests et observabilité de résilience définis.
+- [x] Génération de code toujours interdite.
+
+## Verdict 0P.11
+
+```text
+PAYMENT RESILIENCE BASELINE: ESTABLISHED
+INBOUND IDEMPOTENCY: CLOSED
+TRANSACTIONAL OUTBOX: REQUIRED
+DELIVERY GUARANTEE: AT_LEAST_ONCE
+RETRY: BOUNDED WITH EXPONENTIAL FULL JITTER
+CIRCUIT BREAKERS: DEFINED
+DLQ AND CONTROLLED REPLAY: DEFINED
+BANK RECONCILIATION: DEFINED
+UNMATCHED TFJ: QUARANTINED
+UNKNOWN FINANCIAL OUTCOME: RECONCILE, NEVER BLINDLY REPLAY
+REVERSAL RUNBOOK: DEFINED
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.12 — ACCEPTANCE AND VERIFICATION BASELINE
 ```
