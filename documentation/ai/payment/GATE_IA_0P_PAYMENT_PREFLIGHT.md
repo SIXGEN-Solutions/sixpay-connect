@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `f3c3e23976beee0346415e94446a5d8ec6b0dd26` |
+| Commit de référence | `87bb9c79f291a53de8684661f82e19f205b19a43` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.8 — Payment Event Catalog` |
+| Dernière étape terminée | `0P.9 — Payment Contract Requirements` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -845,4 +845,65 @@ CONSUMER IDEMPOTENCY: EVENT_ID
 BLIND FINANCIAL REPLAY: FORBIDDEN
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.9 — PAYMENT CONTRACT REQUIREMENTS
+```
+
+---
+
+# 14. Résultat de l’étape 0P.9 — Payment Contract Requirements
+
+L’étape 0P.9 établit la cartographie normative dans :
+
+`documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml`
+
+La cartographie distingue :
+
+- sept familles correspondant aux échanges métier demandés ;
+- neuf artefacts OpenAPI concrets à produire au Gate IA-0.5P ;
+- les directions, propriétaires et responsabilités métier ;
+- les protocoles et mécanismes d’authentification ;
+- l’idempotence et la corrélation ;
+- les erreurs, retries et timeouts ;
+- les dépendances d’approbation propres à Amplitude et TRESOR PAY.
+
+Deux décompositions sont obligatoires :
+
+1. la confirmation TFJ comprend le webhook asynchrone Amplitude → SIXPAY et
+   l’API de rapprochement SIXPAY → Amplitude prévue par `IA0R-D08` ;
+2. les consultations SIXPAY séparent l’API Payment de l’API
+   ObservedCustomer afin de préserver la propriété des modules.
+
+Le contrat de posting Amplitude regroupe l’exécution atomique, la recherche
+d’un résultat inconnu et l’extourne explicite. Cette composition empêche qu’un
+timeout financier soit traité par un rejeu aveugle.
+
+Les valeurs techniques de timeout et retry restent configurables et non
+contractuelles jusqu’à approbation bancaire, conformément à `IA0R-D06`.
+
+## Critères de sortie 0P.9
+
+- [x] Sept familles contractuelles cartographiées.
+- [x] Neuf artefacts OpenAPI identifiés et nommés.
+- [x] Direction et propriétaire définis pour chaque contrat.
+- [x] Protocole et authentification définis pour chaque contrat.
+- [x] Idempotence et corrélation définies pour chaque contrat.
+- [x] Erreurs, retry et timeout définis pour chaque contrat.
+- [x] Responsabilité métier définie pour chaque contrat.
+- [x] Recherche d’outcome et extourne intégrées au contrat de posting.
+- [x] Confirmation TFJ primaire et fallback toutes deux couvertes.
+- [x] Notifications immédiate et définitive séparées.
+- [x] APIs de consultation et d’audit strictement en lecture seule.
+- [x] Abonnement local et gestion des marchands toujours exclus.
+- [x] Génération de code toujours interdite avant approbation IA-0.5P.
+
+## Verdict 0P.9
+
+```text
+PAYMENT CONTRACT FAMILIES: 7/7 MAPPED
+CONCRETE OPENAPI ARTIFACTS: 9
+DIRECTIONS AND OWNERSHIP: CLOSED
+CONTRACT REQUIREMENT DIMENSIONS: COMPLETE
+TFJ PRIMARY AND FALLBACK: EXPLICIT
+BLIND FINANCIAL REPLAY: FORBIDDEN
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.10 — SECURITY AND AUDIT REQUIREMENTS
 ```
