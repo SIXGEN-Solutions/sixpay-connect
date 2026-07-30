@@ -9,7 +9,7 @@
 | Commit de référence | `e7746b0de32f6a660b2b06250f68f9c1305e14dd` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.4 — Payment Business Flows` |
+| Dernière étape terminée | `0P.5 — Payment Domain Model` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -673,4 +673,52 @@ ALTERNATIVE FLOWS: 15/15
 FLOW AMBIGUITIES: 0
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.5 — PAYMENT BUSINESS MODEL
+```
+
+---
+
+# 11. Résultat de l’étape 0P.5 — Payment Domain Model
+
+L’étape 0P.5 formalise dans
+`documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md` :
+
+- `Payment` comme Aggregate Root unique du modèle d’écriture Payment ;
+- les identifiants, références et montants comme Value Objects ;
+- un état d’agrégat compact, protégé par des opérations métier nommées ;
+- les snapshots minimaux nécessaires aux décisions Payment ;
+- les frontières avec Customer, Accounting, Notification et Integration ;
+- les projections et journaux d’audit hors agrégat ;
+- les contraintes d’unicité, de concurrence et d’Outbox ;
+- les concepts explicitement interdits dans le modèle Payment.
+
+Le modèle conserve la décision SIXPAY sans transférer l’autorité externe :
+
+- Customer possède `BankingVerification` et `ObservedCustomer` ;
+- Accounting possède le posting, les confirmations TFJ, les rapprochements et
+  les extournes ;
+- Notification possède `NotificationDelivery` et ses tentatives ;
+- Integration possède les DTO, protocoles, credentials et politiques de
+  transport ;
+- Payment conserve seulement les snapshots immuables et références nécessaires
+  à ses invariants.
+
+## Critères de sortie 0P.5
+
+- [x] Aggregate Root et frontière transactionnelle définis.
+- [x] Quinze concepts candidats classifiés.
+- [x] Value Objects et snapshots Payment identifiés.
+- [x] Autorités Customer, Accounting, Notification et Integration préservées.
+- [x] Projections de lecture et audit séparés du modèle d’écriture.
+- [x] Repository et contraintes d’unicité définis.
+- [x] Agrégat géant explicitement interdit.
+- [x] Impacts sur machine à états, invariants, événements et contrats tracés.
+
+## Verdict 0P.5
+
+```text
+PAYMENT DOMAIN MODEL: ESTABLISHED
+AGGREGATE BOUNDARY: CLOSED
+CONCEPT OWNERSHIP AMBIGUITIES: 0
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.6 — PAYMENT STATE MACHINE
 ```
