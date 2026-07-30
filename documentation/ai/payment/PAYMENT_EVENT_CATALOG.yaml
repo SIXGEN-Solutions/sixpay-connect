@@ -1,0 +1,1248 @@
+schemaVersion: "1.0.0"
+
+document:
+  id: "SIXPAY-PAYMENT-EVENT-CATALOG"
+  title: "SIXPAY CONNECT — Payment Event Catalog"
+  gate: "IA-0P — Payment Preflight"
+  step: "0P.8 — Définir les événements métier"
+  branch: "feat/payment-contract-pack"
+  sourceCommit: "f3c3e23976beee0346415e94446a5d8ec6b0dd26"
+  status: "EVENT_CATALOG_ESTABLISHED"
+  normative: true
+  codeGenerationAllowed: false
+  nextStep: "0P.9 — Définir les exigences des contrats Payment"
+
+baseline:
+  references:
+    - path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+      role: "Source hierarchy and normalized Payment requirements"
+    - path: "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
+      role: "Producer and consumer ownership"
+    - path: "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
+      role: "Nominal and alternative business facts"
+    - path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
+      role: "Aggregate boundary, snapshots and sensitive-data rules"
+    - path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+      role: "Normative transitions and produced facts"
+    - path: "documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml"
+      role: "ObservedCustomer source events"
+    - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+      role: "Unknown outcome, reversal, TFJ, security and retention decisions"
+  invariantSource:
+    mode: "EMBEDDED_BASELINE"
+    sources:
+      - "PAYMENT_DOMAIN_MODEL.md section 11"
+      - "PAYMENT_STATE_MACHINE.yaml globalInvariants"
+    note: "The analyzed commit does not contain a standalone PAYMENT_INVARIANTS file."
+
+scope:
+  requestedCandidateEventCount: 15
+  additionalRequiredEventCount: 1
+  normativeEventCount: 16
+  additionalRequiredEvents:
+    - name: "PaymentFailed"
+      rationale:
+        - "FAILED is a terminal state in PAYMENT_STATE_MACHINE.yaml."
+        - "PaymentFailed is already a source event of ObservedCustomer in AI_CONTEXT_MANIFEST.yaml."
+  externalExposure:
+    rule: "Internal events are never exposed directly as TRESOR PAY or Amplitude API payloads."
+    adapters:
+      - "Notification translates eligible result events into versioned TRESOR PAY messages."
+      - "Integration translates commands and canonical outcomes at external boundaries."
+
+eventClassification:
+  DOMAIN_EVENT:
+    description: "Immutable past-tense fact accepted by the Payment aggregate."
+    transactionalPublication: "PAYMENT_WRITE_PLUS_OUTBOX"
+  PROCESS_EVENT:
+    description: "Immutable past-tense fact produced by a supporting process and keyed to Payment."
+    transactionalPublication: "PROCESS_WRITE_PLUS_OUTBOX"
+
+commonEnvelope:
+  implementationReference: "com.sixpay.common.messaging.model.IntegrationEventEnvelope"
+  requiredFields:
+    eventId:
+      type: "UUID"
+      description: "Unique identifier of this immutable event occurrence."
+    eventType:
+      type: "string"
+      description: "Exact stable event name from this catalog."
+    schemaVersion:
+      type: "positive integer"
+      description: "Payload contract version; initial value is 1."
+    aggregateType:
+      type: "string"
+      const: "PAYMENT"
+    aggregateId:
+      type: "UUID"
+      semanticType: "PaymentId"
+    correlationId:
+      type: "string"
+      description: "Non-empty end-to-end correlation identifier."
+    occurredAt:
+      type: "Instant"
+      format: "UTC RFC 3339"
+    payload:
+      type: "object"
+      description: "Event-specific minimal data only."
+  paymentDomainPayloadFields:
+    paymentReference:
+      type: "string"
+      required: true
+    aggregateVersion:
+      type: "positive integer"
+      required: true
+      description: "Version of Payment after the transition that produced the event."
+  processEventPayloadFields:
+    subjectPaymentReference:
+      type: "string"
+      required: true
+    sourceEventId:
+      type: "UUID"
+      required: true
+
+eventIdPolicy:
+  id: "EVT-ID-001"
+  generation:
+    format: "UUID"
+    moment: "Generated once when the business fact is created."
+  immutability:
+    rule: "eventId never changes after creation."
+  delivery:
+    rule: "Every Outbox publication attempt and broker redelivery reuses the original eventId and payload."
+  conflict:
+    sameIdSamePayload: "ACKNOWLEDGE_AS_DUPLICATE"
+    sameIdDifferentPayload: "REJECT_QUARANTINE_AND_ALERT"
+
+correlationPolicy:
+  id: "EVT-CORR-001"
+  source:
+    primary: "CorrelationId stored on Payment from the inbound request."
+    fallback: "SIXPAY generates a CorrelationId before Payment creation when the inbound value is absent and the contract allows it."
+  propagation:
+    rule: "All events in one Payment lifecycle retain the same correlationId."
+  distinction:
+    - "correlationId is not PaymentId."
+    - "correlationId is not IdempotencyKey."
+    - "correlationId is not a bank posting reference."
+
+versionPolicy:
+  id: "EVT-VER-001"
+  initialSchemaVersion: 1
+  compatibility:
+    additiveOptionalField: "SAME_SCHEMA_VERSION_ALLOWED_AFTER_CONSUMER_REVIEW"
+    additiveRequiredField: "NEW_SCHEMA_VERSION"
+    renameRemovalOrSemanticChange: "NEW_SCHEMA_VERSION_AND_MIGRATION_PLAN"
+  consumerBehavior:
+    unsupportedVersion: "REJECT_TO_VERSION_QUARANTINE_AND_ALERT"
+  eventName:
+    rule: "The version is carried in schemaVersion, not appended to eventType."
+
+publicationPolicy:
+  mechanism: "TRANSACTIONAL_OUTBOX"
+  guarantee: "AT_LEAST_ONCE"
+  atomicity:
+    paymentEvents: "Payment mutation and Outbox record commit atomically."
+    processEvents: "Producer process mutation and Outbox record commit atomically."
+  ordering:
+    partitionKey: "aggregateId"
+    paymentEventOrder: "aggregateVersion"
+    crossModuleOrder: "Consumers must use eventId, occurredAt and sourceEventId; no global ordering is assumed."
+  retry:
+    allowed: true
+    rule: "Republish the same immutable event; never recreate the business fact."
+  deadLetter:
+    enabled: true
+    replayRequires:
+      - "Authorized operator or approved runbook"
+      - "Preserved eventId"
+      - "Preserved payload and schemaVersion"
+      - "Audit record"
+
+sensitiveDataDenylist:
+  id: "EVT-SENSITIVE-001"
+  forbiddenInEveryEnvelopeAndPayload:
+    - "Authorization token"
+    - "Subscription Key"
+    - "API key, password, secret or private signing material"
+    - "Complete bank account number"
+    - "Complete RIB or IBAN"
+    - "Raw Amplitude customer number when a protected reference is sufficient"
+    - "Complete NIU; use an approved pseudonymous observation key when required"
+    - "Complete customer name, postal address, email address or telephone number"
+    - "Identity document image or number"
+    - "Selfie, biometric template or liveness data"
+    - "Raw KYC payload"
+    - "Raw TRESOR PAY or Amplitude request/response payload"
+    - "Available or ledger account balance"
+    - "Unmasked Treasury account number"
+    - "Stack trace, SQL, infrastructure credential or internal endpoint"
+  permittedRepresentations:
+    - "PaymentId and non-sensitive PaymentReference"
+    - "FinancialInstitutionCode"
+    - "Protected or masked account reference only when strictly required"
+    - "Stable normalized reason codes"
+    - "Money only for consumers explicitly authorized by event purpose"
+    - "Evidence reference rather than evidence content"
+
+consumerPolicy:
+  idempotency:
+    key: "eventId"
+    persistence: "Every durable consumer stores or otherwise guarantees processed-event deduplication."
+  transaction:
+    rule: "Consumer state change and processed-event marker commit atomically."
+  projectionReplay:
+    rule: "Read projections may be rebuilt from retained events without invoking external financial or notification effects."
+  sideEffects:
+    rule: "A replay that could call Amplitude or TRESOR PAY requires a separate idempotency guard defined by the event."
+  failure:
+    transient: "Retry with configured backoff and jitter."
+    permanent: "DLQ or version quarantine with alert."
+
+events:
+  - name: "PaymentRequestReceived"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "Payment.receive"
+    consumers:
+      - module: "customer"
+        purpose: "Create or update the initial ObservedCustomer projection."
+      - module: "reporting"
+        purpose: "Create Payment search and timeline entries."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "tresorPayRequestId"
+        - "financialInstitutionCode"
+        - "amount"
+        - "currency"
+        - "observedCustomerKey"
+        - "maskedAccountReference"
+        - "receivedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Inbound authentication headers"
+        - "Raw request payload"
+        - "Complete NIU or bank account"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "NOT_APPLICABLE"
+      duplicateOutcome: "No second Payment or ObservedCustomer counter increment."
+
+  - name: "PaymentRequestRejected"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "reject"
+    consumers:
+      - module: "notification"
+        purpose: "Prepare the TRESOR PAY immediate rejection result."
+      - module: "customer"
+        purpose: "Update ObservedCustomer decision and failure counters."
+      - module: "reporting"
+        purpose: "Update Payment search, reason and timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "tresorPayRequestId"
+        - "decision=REJECTED"
+        - "rejectionReasonCode"
+        - "rejectionStage"
+        - "finalizedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Human-readable reason containing PII"
+        - "Raw validation or Amplitude error"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Notification deduplicates on source eventId."
+      duplicateOutcome: "No duplicate rejection notification or counters."
+
+  - name: "BankingVerificationStarted"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "startBankingVerification"
+    consumers:
+      - module: "customer"
+        purpose: "Execute the canonical verification use case."
+      - module: "reporting"
+        purpose: "Expose verification in progress in the timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "verificationId"
+        - "financialInstitutionCode"
+        - "protectedCustomerReference"
+        - "protectedAccountReference"
+        - "requestedChecks"
+        - "startedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete NIU"
+        - "Complete RIB/IBAN"
+        - "Requested balance value"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Customer reuses verificationId; reads may be retried under configured policy."
+      duplicateOutcome: "No duplicate verification workflow for the same verificationId."
+
+  - name: "BankingVerificationCompleted"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordBankingVerification"
+    consumers:
+      - module: "customer"
+        purpose: "Update ObservedCustomer with minimized observed banking facts."
+      - module: "reporting"
+        purpose: "Update verification status, reason codes and timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "verificationId"
+        - "financialInstitutionCode"
+        - "verificationOutcome"
+        - "normalizedReasonCodes"
+        - "accountOperational"
+        - "fundsAvailabilityDecision"
+        - "evidenceReference"
+        - "verifiedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Exact available balance"
+        - "Raw KYC attributes"
+        - "Complete customer or account identity"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "NOT_APPLICABLE"
+      duplicateOutcome: "No duplicate ObservedCustomer update."
+
+  - name: "PaymentApproved"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordBankingVerification"
+    consumers:
+      - module: "accounting"
+        purpose: "Observe eligibility; posting still requires PaymentPostingStarted."
+      - module: "reporting"
+        purpose: "Expose approval decision and timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "verificationId"
+        - "financialInstitutionCode"
+        - "amount"
+        - "currency"
+        - "approvedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Account balance"
+        - "Complete payer or account data"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Forbidden; approval alone must never execute posting."
+      duplicateOutcome: "No state or side-effect duplication."
+
+  - name: "PaymentPostingStarted"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "approveForPosting"
+    consumers:
+      - module: "accounting"
+        purpose: "Create or reuse the unique PaymentPostingInstruction."
+      - module: "reporting"
+        purpose: "Expose posting in progress."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "postingInstructionId"
+        - "bankPostingIdempotencyReference"
+        - "financialInstitutionCode"
+        - "protectedDebtorAccountReference"
+        - "treasuryAccountConfigurationReference"
+        - "amount"
+        - "currency"
+        - "startedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Raw bank idempotency secret"
+        - "Complete debtor or CUT account number"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Accounting must reuse postingInstructionId and bank idempotency reference, then query outcome when unknown."
+      duplicateOutcome: "Never create a second logical posting or blind bank write."
+
+  - name: "PaymentDebited"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordPostingOutcome"
+    consumers:
+      - module: "accounting"
+        purpose: "Correlate posting and reconciliation views."
+      - module: "reporting"
+        purpose: "Expose the confirmed debit without declaring complete success."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "postingInstructionId"
+        - "bankPostingReference"
+        - "debitStatus=CONFIRMED"
+        - "businessDate"
+        - "debitedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete debited account"
+        - "Post-debit balance"
+        - "Raw core-banking entry"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Forbidden; this fact never commands a second debit."
+      duplicateOutcome: "No duplicate accounting or reporting entry."
+
+  - name: "TreasuryAccountCredited"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordPostingOutcome"
+    consumers:
+      - module: "notification"
+        purpose: "Wait for PaymentImmediateResultAvailable; do not infer a message independently."
+      - module: "accounting"
+        purpose: "Update posting and TFJ matching views."
+      - module: "reporting"
+        purpose: "Expose immediate debit/CUT-credit completion."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "postingInstructionId"
+        - "bankPostingReference"
+        - "treasuryAccountConfigurationReference"
+        - "creditStatus=CONFIRMED"
+        - "businessDate"
+        - "creditedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete CUT account number"
+        - "CUT balance"
+        - "Raw accounting entry"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Forbidden; the event is evidence, not a credit command."
+      duplicateOutcome: "No duplicate notification inference or accounting effect."
+
+  - name: "PaymentPostingOutcomeUnknown"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "markAccountingOutcomeUnknown"
+    consumers:
+      - module: "accounting"
+        purpose: "Open reconciliation and query by idempotency key or posting reference."
+      - module: "notification"
+        purpose: "Prepare a PROCESSING immediate result."
+      - module: "reporting"
+        purpose: "Expose unknown outcome, alert and reconciliation status."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "operationContext"
+        - "postingInstructionId"
+        - "bankPostingIdempotencyReference"
+        - "bankPostingReferenceIfKnown"
+        - "knownDebitStatus"
+        - "knownCutCreditStatus"
+        - "normalizedReasonCode"
+        - "unknownSince"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Raw timeout or stack trace"
+        - "Complete account data"
+        - "Bank idempotency secret"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Only read-only outcome lookup is allowed; financial replay is forbidden."
+      duplicateOutcome: "One reconciliation case and one PROCESSING logical notification per result version."
+
+  - name: "PaymentImmediateResultAvailable"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "requestImmediateNotification"
+    consumers:
+      - module: "notification"
+        purpose: "Create a reliable TRESOR PAY NotificationDelivery."
+      - module: "reporting"
+        purpose: "Expose the immediate result and delivery correlation."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "tresorPayRequestId"
+        - "resultType"
+        - "paymentStatus"
+        - "normalizedReasonCodeIfAny"
+        - "bankPostingReferenceIfKnown"
+        - "businessDateIfKnown"
+        - "availableAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Customer identity"
+        - "Complete bank account"
+        - "Internal diagnostic details"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Notification reuses source eventId as delivery idempotency source; no duplicate TRESOR PAY logical message."
+      duplicateOutcome: "Existing NotificationDelivery is reused."
+
+  - name: "PaymentNotificationDelivered"
+    classification: "PROCESS_EVENT"
+    producer:
+      module: "notification"
+      component: "NotificationDelivery process"
+      operation: "markDelivered"
+    consumers:
+      - module: "reporting"
+        purpose: "Update delivery status and Payment timeline."
+      - module: "payment"
+        purpose: "Audit/operational observation only; no Payment state transition."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "subjectPaymentReference"
+        - "sourceEventId"
+        - "deliveryId"
+        - "notificationPhase"
+        - "targetSystem=TRESOR_PAY"
+        - "deliveryStatus=DELIVERED"
+        - "deliveredAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Destination URL credentials"
+        - "Response body"
+        - "Signature secret"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+      note: "Process event is partitioned by subject Payment although produced by Notification."
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "CorrelationId copied from the source result event."
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "NOT_APPLICABLE; replay must not resend the notification."
+      duplicateOutcome: "No Payment transition and no duplicate delivery record."
+
+  - name: "PaymentPendingEndOfDayConfirmation"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "beginEndOfDayConfirmationWait"
+    consumers:
+      - module: "accounting"
+        purpose: "Register TFJ matching and scheduled fallback reconciliation."
+      - module: "reporting"
+        purpose: "Expose pending TFJ status, age and cutoff."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "financialInstitutionCode"
+        - "bankPostingReference"
+        - "businessDate"
+        - "pendingSince"
+        - "cutoffPolicyReference"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete account identities"
+        - "Internal scheduler credentials"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Accounting reuses the same TFJ tracking registration; only read reconciliation may be scheduled."
+      duplicateOutcome: "No duplicate tracker or alert."
+
+  - name: "TreasuryIntegrationConfirmed"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordMatchedEndOfDayConfirmation"
+    consumers:
+      - module: "notification"
+        purpose: "Create the final TRESOR PAY NotificationDelivery."
+      - module: "customer"
+        purpose: "Update ObservedCustomer success and finality counters."
+      - module: "reporting"
+        purpose: "Expose final Treasury integration and timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "confirmationId"
+        - "financialInstitutionCode"
+        - "bankPostingReference"
+        - "businessDate"
+        - "tfjStatus=CONFIRMED"
+        - "evidenceReference"
+        - "confirmedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Raw TFJ file or payload"
+        - "Complete CUT or customer account"
+        - "Unmatched confirmation data"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Notification deduplicates final delivery on source eventId and notification phase."
+      duplicateOutcome: "No duplicate final notification or finality counters."
+
+  - name: "PaymentReversalRequired"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "requireReversal"
+    consumers:
+      - module: "accounting"
+        purpose: "Open or link the reversal case; never reverse automatically."
+      - module: "notification"
+        purpose: "Prepare PROCESSING or REVERSAL_REQUIRED result according to the contract."
+      - module: "reporting"
+        purpose: "Expose anomaly, authorization status and operational alert."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "postingInstructionId"
+        - "bankPostingReference"
+        - "reversalReasonCode"
+        - "knownDebitStatus"
+        - "knownCutCreditStatus"
+        - "reconciliationCaseReference"
+        - "requiredAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete source or destination account"
+        - "Operator comments containing PII"
+        - "Bank instruction document"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Forbidden; a separate audited command and reversal idempotency key are mandatory."
+      duplicateOutcome: "One reversal case and no automatic bank write."
+
+  - name: "PaymentReversed"
+    classification: "DOMAIN_EVENT"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "recordReversalOutcome"
+    consumers:
+      - module: "notification"
+        purpose: "Create the reversal-result TRESOR PAY NotificationDelivery."
+      - module: "customer"
+        purpose: "Update ObservedCustomer final outcome."
+      - module: "reporting"
+        purpose: "Expose confirmed reversal and complete timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "reversalReference"
+        - "bankReversalReference"
+        - "originalBankPostingReference"
+        - "businessDate"
+        - "reversalStatus=CONFIRMED"
+        - "reversedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Complete account data"
+        - "Raw reversal instruction or bank payload"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Notification deduplicates on source eventId and REVERSAL phase."
+      duplicateOutcome: "No duplicate reversal notification or counters."
+
+  - name: "PaymentFailed"
+    classification: "DOMAIN_EVENT"
+    catalogStatus: "ADDITIONAL_REQUIRED"
+    producer:
+      module: "payment"
+      component: "Payment aggregate"
+      operation: "failWithoutFinancialEffect"
+    consumers:
+      - module: "notification"
+        purpose: "Prepare the FAILED immediate TRESOR PAY result."
+      - module: "customer"
+        purpose: "Update ObservedCustomer failure counters and last outcome."
+      - module: "reporting"
+        purpose: "Expose technical failure, stage and timeline."
+    minimalData:
+      envelopeFields:
+        - "eventId"
+        - "eventType"
+        - "schemaVersion"
+        - "aggregateType"
+        - "aggregateId"
+        - "correlationId"
+        - "occurredAt"
+      payloadFields:
+        - "paymentReference"
+        - "aggregateVersion"
+        - "tresorPayRequestId"
+        - "failureReasonCode"
+        - "failureStage"
+        - "financialEffect=NONE_CONFIRMED"
+        - "finalizedAt"
+    sensitiveDataForbidden:
+      policyRef: "EVT-SENSITIVE-001"
+      eventSpecific:
+        - "Stack trace or raw technical error"
+        - "Endpoint or infrastructure topology"
+        - "Customer or account data"
+    aggregateKey:
+      aggregateType: "PAYMENT"
+      field: "aggregateId"
+      semanticType: "PaymentId"
+    eventId:
+      policyRef: "EVT-ID-001"
+    correlation:
+      policyRef: "EVT-CORR-001"
+      source: "Payment.correlationId"
+    version:
+      policyRef: "EVT-VER-001"
+      schemaVersion: 1
+    replayPolicy:
+      publication: "SAME_EVENT_ID_AND_PAYLOAD"
+      consumerDeduplication: "eventId"
+      projectionReplay: true
+      externalSideEffectReplay: "Notification deduplicates on source eventId."
+      duplicateOutcome: "No duplicate FAILED message or counters."
+
+stateMachineAliases:
+  PaymentRequestRejected:
+    replaces:
+      - "PaymentRejected"
+  BankingVerificationStarted:
+    replaces:
+      - "PaymentBankingCheckingStarted"
+      - "BankingVerificationRequested"
+  BankingVerificationCompleted:
+    consolidates:
+      - "BankingVerificationSucceeded"
+      - "BankingVerificationRejected"
+  PaymentPostingStarted:
+    replaces:
+      - "PaymentPostingRequested"
+  PaymentDebited:
+    replaces:
+      - "PaymentCustomerDebited"
+  TreasuryAccountCredited:
+    replaces:
+      - "PaymentCutCredited"
+  PaymentPostingOutcomeUnknown:
+    replaces:
+      - "PaymentAccountingOutcomeUnknown"
+  PaymentImmediateResultAvailable:
+    consolidates:
+      - "PaymentImmediateNotificationRequested"
+      - "PaymentImmediateNotificationIntentRegistered"
+  PaymentPendingEndOfDayConfirmation:
+    replaces:
+      - "PaymentEndOfDayConfirmationPending"
+  TreasuryIntegrationConfirmed:
+    preserves:
+      - "TreasuryIntegrationConfirmed"
+  PaymentReversalRequired:
+    preserves:
+      - "PaymentReversalRequired"
+  PaymentReversed:
+    preserves:
+      - "PaymentReversed"
+  PaymentFailed:
+    preserves:
+      - "PaymentFailed"
+
+projectionSourceMapping:
+  ObservedCustomer:
+    consumer: "customer"
+    events:
+      - "PaymentRequestReceived"
+      - "BankingVerificationCompleted"
+      - "PaymentRequestRejected"
+      - "PaymentApproved"
+      - "TreasuryAccountCredited"
+      - "TreasuryIntegrationConfirmed"
+      - "PaymentFailed"
+      - "PaymentReversed"
+  PaymentTimeline:
+    consumer: "reporting"
+    events:
+      - "*"
+  NotificationDelivery:
+    consumer: "notification"
+    events:
+      - "PaymentRequestRejected"
+      - "PaymentPostingOutcomeUnknown"
+      - "PaymentImmediateResultAvailable"
+      - "TreasuryIntegrationConfirmed"
+      - "PaymentReversalRequired"
+      - "PaymentReversed"
+      - "PaymentFailed"
+
+catalogRules:
+  - id: "PAY-EVT-RULE-001"
+    rule: "Every event is immutable and past tense."
+  - id: "PAY-EVT-RULE-002"
+    rule: "Every event has one producer, explicit consumers and PaymentId as aggregate key."
+  - id: "PAY-EVT-RULE-003"
+    rule: "Every event uses eventId deduplication and preserves eventId across delivery attempts."
+  - id: "PAY-EVT-RULE-004"
+    rule: "Every lifecycle event propagates Payment.correlationId."
+  - id: "PAY-EVT-RULE-005"
+    rule: "Every payload is minimized and inherits EVT-SENSITIVE-001."
+  - id: "PAY-EVT-RULE-006"
+    rule: "Payment state and events commit atomically through Transactional Outbox."
+  - id: "PAY-EVT-RULE-007"
+    rule: "Projection replay never invokes an external financial or notification side effect."
+  - id: "PAY-EVT-RULE-008"
+    rule: "A replay of PaymentPostingStarted never creates a second logical posting."
+  - id: "PAY-EVT-RULE-009"
+    rule: "A replay of PaymentPostingOutcomeUnknown permits lookup only, never blind financial replay."
+  - id: "PAY-EVT-RULE-010"
+    rule: "PaymentNotificationDelivered is informational and cannot transition Payment."
+  - id: "PAY-EVT-RULE-011"
+    rule: "TreasuryIntegrationConfirmed requires a matched successful TFJ result already persisted."
+  - id: "PAY-EVT-RULE-012"
+    rule: "PaymentReversalRequired never commands an automatic reversal."
+
+coverage:
+  requestedEvents:
+    - "PaymentRequestReceived"
+    - "PaymentRequestRejected"
+    - "BankingVerificationStarted"
+    - "BankingVerificationCompleted"
+    - "PaymentApproved"
+    - "PaymentPostingStarted"
+    - "PaymentDebited"
+    - "TreasuryAccountCredited"
+    - "PaymentPostingOutcomeUnknown"
+    - "PaymentImmediateResultAvailable"
+    - "PaymentNotificationDelivered"
+    - "PaymentPendingEndOfDayConfirmation"
+    - "TreasuryIntegrationConfirmed"
+    - "PaymentReversalRequired"
+    - "PaymentReversed"
+  additionalEvents:
+    - "PaymentFailed"
+  requiredPropertiesPerEvent:
+    - "producer"
+    - "consumers"
+    - "minimalData"
+    - "sensitiveDataForbidden"
+    - "aggregateKey"
+    - "eventId"
+    - "correlation"
+    - "version"
+    - "replayPolicy"
+  requestedEventsCovered: "15/15"
+  normativeEventsDefined: 16
+  schemaVersions:
+    "1": 16
+  producerCounts:
+    payment: 15
+    notification: 1
+
+exitCriteria:
+  - criterion: "All 15 requested candidate events are defined."
+    satisfied: true
+  - criterion: "PaymentFailed closes the FAILED-state and ObservedCustomer gap."
+    satisfied: true
+  - criterion: "Every event declares all nine required property groups."
+    satisfied: true
+  - criterion: "Envelope is compatible with IntegrationEventEnvelope."
+    satisfied: true
+  - criterion: "Every event inherits the sensitive-data denylist."
+    satisfied: true
+  - criterion: "Every event has an immutable eventId and schemaVersion 1."
+    satisfied: true
+  - criterion: "Every event defines safe replay and consumer deduplication."
+    satisfied: true
+  - criterion: "Financial and notification side effects are protected from replay."
+    satisfied: true
+  - criterion: "State-machine naming differences are mapped."
+    satisfied: true
+
+verdict:
+  paymentEventCatalog: "ESTABLISHED"
+  requestedEventsCovered: 15
+  additionalRequiredEvents: 1
+  normativeEvents: 16
+  eventEnvelope: "DEFINED"
+  sensitiveDataPolicy: "DENY_BY_DEFAULT"
+  publication: "TRANSACTIONAL_OUTBOX_AT_LEAST_ONCE"
+  consumerIdempotency: "EVENT_ID"
+  blindFinancialReplay: "FORBIDDEN"
+  ambiguityCount: 0
+  codeGenerationAllowed: false
+  nextStep: "0P.9 — PAYMENT CONTRACT REQUIREMENTS"

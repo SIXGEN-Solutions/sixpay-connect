@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `0faa8437e479a6397d049496edcacf7b1dbfde8b` |
+| Commit de référence | `f3c3e23976beee0346415e94446a5d8ec6b0dd26` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.6 — Payment State Machine` |
+| Dernière étape terminée | `0P.8 — Payment Event Catalog` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -782,4 +782,67 @@ TFJ FINALITY: EXPLICIT
 STATE AMBIGUITIES: 0
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.7 — PAYMENT INVARIANTS
+```
+
+---
+
+# 13. Résultat de l’étape 0P.8 — Payment Event Catalog
+
+L’étape 0P.8 établit le catalogue normatif dans :
+
+`documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml`
+
+Le catalogue définit :
+
+- les quinze événements candidats demandés ;
+- `PaymentFailed` comme événement complémentaire obligatoire pour couvrir
+  l’état terminal `FAILED` et la projection `ObservedCustomer` ;
+- l’enveloppe compatible avec `IntegrationEventEnvelope` ;
+- un `eventId` UUID immuable et conservé lors des republishes ;
+- `PaymentId` comme clé d’agrégat et de partition ;
+- la corrélation de bout en bout ;
+- la version initiale et les règles de compatibilité ;
+- les producteurs et consommateurs ;
+- les payloads minimaux ;
+- la politique globale et les interdictions sensibles propres à chaque
+  événement ;
+- la publication Transactional Outbox, la déduplication et les politiques de
+  rejeu ;
+- les alias entre la terminologie de la machine à états et les noms normatifs
+  du catalogue.
+
+`PaymentNotificationDelivered` est un événement de processus produit par
+Notification et corrélé au Payment. Il ne provoque aucune transition
+financière.
+
+Le commit analysé ne contient pas de livrable autonome
+`PAYMENT_INVARIANTS.*`. Le catalogue s’appuie donc sur les invariants déjà
+présents dans `PAYMENT_DOMAIN_MODEL.md` et `PAYMENT_STATE_MACHINE.yaml`.
+
+## Critères de sortie 0P.8
+
+- [x] Quinze événements demandés couverts.
+- [x] Événement `PaymentFailed` ajouté sur justification normative.
+- [x] Producteur et consommateurs définis pour chaque événement.
+- [x] Données minimales et données sensibles interdites définies.
+- [x] Clé d’agrégat et `eventId` définis.
+- [x] Corrélation et version définies.
+- [x] Politique de rejeu définie pour chaque événement.
+- [x] Publication Outbox et consommation idempotente imposées.
+- [x] Rejeux financiers et notifications dupliquées empêchés.
+- [x] Aliases de la machine à états tracés.
+
+## Verdict 0P.8
+
+```text
+PAYMENT EVENT CATALOG: ESTABLISHED
+REQUESTED EVENTS: 15/15
+ADDITIONAL REQUIRED EVENTS: 1
+NORMATIVE EVENTS: 16
+EVENT ENVELOPE: DEFINED
+SENSITIVE DATA: DENY BY DEFAULT
+CONSUMER IDEMPOTENCY: EVENT_ID
+BLIND FINANCIAL REPLAY: FORBIDDEN
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.9 — PAYMENT CONTRACT REQUIREMENTS
 ```
