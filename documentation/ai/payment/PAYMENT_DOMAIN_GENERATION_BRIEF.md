@@ -10,8 +10,8 @@
 | Domaine pilote | `payment` |
 | Gate courant | `IA-0P_PAYMENT_PREFLIGHT` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `7f26a1f2fc8b8d71fdbd9f38a3387f87435b1b35` |
-| Statut | `PREFLIGHT_CONSOLIDATED` |
+| Commit de référence | `00469905c048200277b4012238486e28f62a50b8` |
+| Statut | `IA-0P_PASSED` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P_PAYMENT_CONTRACT_PACK` |
 
@@ -182,13 +182,17 @@ signatures Architecture, Payment, Integration, Security et Operations.
 
 ## 13. Verdict
 
-Le contexte Payment est consolidé et prêt à être soumis au Gate de contrats.
-Il n’est pas prêt pour la génération de code.
+Le contrôle final 0P.14 confirme la cohérence du Gate, de ce brief et du
+manifeste. Les 55 exigences sont tracées, les 15 parcours alternatifs sont
+couverts, la machine à 16 états et 34 transitions est cohérente, les neuf
+contrats cibles sont recensés et aucune ambiguïté structurante ne reste
+ouverte.
+
+Le contexte Payment est prêt pour la production et l’approbation du Contract
+Pack. Il n’est pas prêt pour la génération de code.
 
 ```text
-PAYMENT PREFLIGHT: CONSOLIDATED
-ARCHITECTURE AMBIGUITIES: CLOSED
-CONTRACT PACK: TO BE PRODUCED AND APPROVED
-CODE GENERATION: FORBIDDEN
-NEXT GATE: IA-0.5P_PAYMENT_CONTRACT_PACK
+IA-0P PASSED
+READY FOR IA-0.5P — PAYMENT CONTRACT PACK
+CODE GENERATION FORBIDDEN
 ```

@@ -5,8 +5,8 @@ context:
   domain: "payment"
   gate: "IA-0P_PAYMENT_PREFLIGHT"
   branch: "feat/payment-contract-pack"
-  sourceCommit: "7f26a1f2fc8b8d71fdbd9f38a3387f87435b1b35"
-  status: "CONSOLIDATED_FOR_CONTRACT_GATE"
+  sourceCommit: "00469905c048200277b4012238486e28f62a50b8"
+  status: "PASSED"
   normative: true
 
 codeGenerationAllowed: false
@@ -234,6 +234,38 @@ generationRules:
 
 readiness:
   architectureAmbiguities: "CLOSED"
-  preflightPack: "CONSOLIDATED"
+  preflightPack: "PASSED"
   contractPack: "PENDING"
   codeGeneration: "FORBIDDEN"
+
+finalValidation:
+  step: "0P.14"
+  status: "PASSED"
+  checks:
+    gateBriefManifestConsistency: true
+    stateMachineConsistency: true
+    allBusinessScenariosCovered: true
+    localSubscriptionManagementAbsent: true
+    ia0rDecisionConsistency: true
+    requirementTraceabilityComplete: true
+    paymentObservedCustomerConsistency: true
+    yamlSyntaxValid: true
+    sensitiveExampleDataAbsent: true
+    contractInventoryComplete: true
+  evidence:
+    normalizedRequirementCount: 55
+    requirementsWithoutSourceOrSixpayDecision: 0
+    mvpCapabilityCount: 12
+    businessAlternativeFlowCount: 15
+    stateCount: 16
+    transitionCount: 34
+    terminalStateCount: 4
+    normativeEventCount: 16
+    acceptanceTestFamilyCount: 13
+    explicitAcceptanceScenarioCount: 142
+    contractFamilyCount: 7
+    concreteContractArtifactCount: 9
+  verdict:
+    gate: "IA-0P PASSED"
+    readiness: "READY FOR IA-0.5P — PAYMENT CONTRACT PACK"
+    codeGeneration: "CODE GENERATION FORBIDDEN"

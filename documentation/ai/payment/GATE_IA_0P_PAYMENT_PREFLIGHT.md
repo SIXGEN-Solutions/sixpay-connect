@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `7f26a1f2fc8b8d71fdbd9f38a3387f87435b1b35` |
+| Commit de référence | `00469905c048200277b4012238486e28f62a50b8` |
 | Domaine pilote | `payment` |
-| Statut du Gate | `PREFLIGHT_CONSOLIDATED` |
-| Dernière étape terminée | `0P.13 — Payment Preflight Pack` |
+| Statut du Gate | `PASSED` |
+| Dernière étape terminée | `0P.14 — Contrôle final et verdict` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P_PAYMENT_CONTRACT_PACK` |
 
@@ -1127,4 +1127,136 @@ ARCHITECTURE AMBIGUITIES: CLOSED
 PAYMENT CONTRACT PACK: PENDING
 CODE GENERATION: FORBIDDEN
 NEXT GATE: IA-0.5P_PAYMENT_CONTRACT_PACK
+```
+
+---
+
+# 19. Résultat de l’étape 0P.14 — Contrôle final et verdict
+
+## 19.1 Référence et méthode
+
+Le contrôle final a été exécuté sur le commit
+`00469905c048200277b4012238486e28f62a50b8`, qui intègre le pack 0P.13.
+
+La revue combine :
+
+- comparaison du Gate, du brief et du manifeste ;
+- validation structurelle des YAML ;
+- contrôle de graphe de la machine à états ;
+- revue de couverture des parcours et scénarios d’acceptation ;
+- comparaison avec les décisions IA-0R ;
+- contrôle de traçabilité des exigences ;
+- recherche de données sensibles réalistes dans les exemples ;
+- inventaire des contrats attendus au Gate suivant.
+
+## 19.2 Matrice de contrôle
+
+| Contrôle | Preuve | Résultat |
+| --- | --- | --- |
+| Gate, brief et manifeste | Périmètre, autorités, modèle, compteurs, verrou de génération et Gate suivant concordants | `PASSED` |
+| Machine à états | 16 états, 34 transitions, identifiants uniques, extrémités valides, `allowedNextStates` cohérents, quatre états terminaux sans transition sortante | `PASSED` |
+| Scénarios métier | Parcours nominal et 15 parcours alternatifs couverts ; 13 familles et 142 scénarios d’acceptation | `PASSED` |
+| Absence de gestion locale d’abonnement | TRESOR PAY maître ; aucune dépendance Subscription dans le flux Payment ; contrats Subscription différés et exclus | `PASSED` |
+| Décisions IA-0R | Identité ObservedCustomer, RBAC, authentification, retry, outcome partiel, extourne et TFJ conformes à `IA0R-D01` à `IA0R-D08` | `PASSED` |
+| Traçabilité | 55 exigences `PAY-SRC-*`, zéro exigence sans source, 24 décisions SIXPAY explicites ; 12 capacités MVP reliées aux sources | `PASSED` |
+| Payment / ObservedCustomer | `Payment` seul Aggregate Root d’écriture ; `ObservedCustomer` projection CQRS reconstruisible, non autoritative | `PASSED` |
+| Syntaxe YAML | Manifeste, machine, catalogue d’événements, exigences contractuelles, décisions IA-0R et registre chargés sans erreur | `PASSED` |
+| Données sensibles | Aucun IBAN/RIB complet, Bearer Token ou Subscription Key réaliste détecté ; exemples masqués ou synthétiques | `PASSED` |
+| Contrats à produire | Sept familles et neuf artefacts concrets recensés | `PASSED` |
+
+## 19.3 Contrôle détaillé de la machine à états
+
+La machine normative satisfait les propriétés suivantes :
+
+- état initial unique : `RECEIVED` ;
+- états terminaux : `REJECTED`, `TREASURY_INTEGRATED`, `FAILED`, `REVERSED` ;
+- aucune transition sortante depuis un état terminal ;
+- chaque transition possède source, déclencheur, préconditions, cible, effets,
+  événements, interdictions et politique de rejeu ;
+- chaque source et cible appartient au catalogue des 16 états ;
+- les 34 identifiants de transition sont uniques ;
+- les transitions déclarées concordent avec les `allowedNextStates` ;
+- aucune transition directe ne permet de contourner les contrôles bancaires ;
+- les outcomes inconnus et partiels convergent vers rapprochement ou extourne,
+  jamais vers un rejeu financier aveugle ;
+- la livraison d’une notification ne modifie pas la vérité financière.
+
+## 19.4 Couverture des scénarios métier
+
+Le parcours nominal couvre réception, persistance, contrôles Amplitude, débit,
+crédit CUT, notification immédiate, attente TFJ, confirmation et notification
+définitive.
+
+Les parcours alternatifs couvrent :
+
+1. demande invalide ;
+2. demande dupliquée ;
+3. client bancaire introuvable ;
+4. NIU non concordant ;
+5. compte inexistant ;
+6. RIB/IBAN n’appartenant pas au client ;
+7. compte bloqué ou en opposition ;
+8. solde insuffisant ;
+9. indisponibilité d’Amplitude ;
+10. résultat comptable inconnu ;
+11. débit réussi mais crédit CUT non confirmé ;
+12. notification TRESOR PAY en échec ;
+13. confirmation TFJ absente ;
+14. confirmation TFJ non rapprochable ;
+15. extourne bancaire.
+
+Chaque famille possède une issue métier, une politique de reprise et une
+attente de test dans `PAYMENT_ACCEPTANCE_SCENARIOS.md`.
+
+## 19.5 Cohérence Payment / ObservedCustomer
+
+La frontière est fermée :
+
+- `Payment` possède l’intention, les décisions, snapshots et transitions ;
+- Amplitude reste maître du client, du compte, des écritures et de la TFJ ;
+- Customer traduit les faits bancaires et maintient `ObservedCustomer` ;
+- `ObservedCustomer` inclut succès et échecs, reste idempotent et
+  reconstruisible ;
+- aucun état `Payment` n’est dérivé d’une modification de projection ;
+- aucune donnée de projection ne devient une preuve bancaire autoritative ;
+- les comptes restent référencés sous forme protégée et masquée.
+
+## 19.6 Contrats complets à produire en IA-0.5P
+
+| Famille | Artefact cible |
+| --- | --- |
+| `PAY-CONTRACT-01` | `tresorpay-payment-request-api-v1.yaml` |
+| `PAY-CONTRACT-02` | `amplitude-payment-verification-api-v1.yaml` |
+| `PAY-CONTRACT-03` | `amplitude-payment-posting-api-v1.yaml` |
+| `PAY-CONTRACT-04` | `tresorpay-payment-immediate-result-webhook-v1.yaml` |
+| `PAY-CONTRACT-05` | `amplitude-tfj-confirmation-webhook-v1.yaml` |
+| `PAY-CONTRACT-05` | `amplitude-tfj-reconciliation-api-v1.yaml` |
+| `PAY-CONTRACT-06` | `tresorpay-payment-tfj-result-webhook-v1.yaml` |
+| `PAY-CONTRACT-07` | `sixpay-payment-query-api-v1.yaml` |
+| `PAY-CONTRACT-07` | `sixpay-observed-customer-query-api-v1.yaml` |
+
+Les formats exacts, codes d’erreur, capacités Amplitude, valeurs SLA et
+signatures d’approbation sont des sorties attendues de IA-0.5P. Ils ne
+constituent pas une ambiguïté structurante résiduelle du Preflight.
+
+## 19.7 Critères de sortie du Payment Preflight
+
+- [x] Le périmètre Payment est fermé.
+- [x] L’Aggregate Root `Payment` est défini.
+- [x] La machine à états est complète.
+- [x] Les invariants sont formalisés.
+- [x] Les événements sont catalogués.
+- [x] Les responsabilités des systèmes sont explicites.
+- [x] Les exigences des contrats sont recensées.
+- [x] La sécurité, l’audit et la résilience sont cadrés.
+- [x] Les scénarios d’acceptation sont définis.
+- [x] Aucune ambiguïté structurante ne reste ouverte.
+- [x] La génération de code demeure interdite.
+
+## 19.8 Verdict final
+
+```text
+IA-0P PASSED
+READY FOR IA-0.5P — PAYMENT CONTRACT PACK
+CODE GENERATION FORBIDDEN
 ```
