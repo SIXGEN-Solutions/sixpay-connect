@@ -6,10 +6,10 @@
 | --- | --- |
 | Gate | `IA-0P — Payment Preflight` |
 | Branche | `feat/payment-contract-pack` |
-| Commit de référence | `1e5f45f4f9adb18a7085291e39112140d6ec0a5a` |
+| Commit de référence | `741038f67992c9dacaf7c4a7ceb11d865c15cc1f` |
 | Domaine pilote | `payment` |
 | Statut du Gate | `IN_PROGRESS` |
-| Dernière étape terminée | `0P.11 — Payment Resilience & Operational Recovery Baseline` |
+| Dernière étape terminée | `0P.12 — Payment Acceptance Scenarios` |
 | Génération de code | **Interdite** |
 | Gate suivant | `IA-0.5P — Payment Contract Pack` |
 
@@ -1025,4 +1025,65 @@ UNKNOWN FINANCIAL OUTCOME: RECONCILE, NEVER BLINDLY REPLAY
 REVERSAL RUNBOOK: DEFINED
 CODE GENERATION: FORBIDDEN
 NEXT STEP: 0P.12 — ACCEPTANCE AND VERIFICATION BASELINE
+```
+
+---
+
+# 17. Résultat de l’étape 0P.12 — Payment Acceptance Scenarios
+
+L’étape 0P.12 établit la stratégie de test normative dans :
+
+`documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md`
+
+Elle formalise :
+
+- la pyramide de tests et les conventions Maven ;
+- les étapes de pipeline et les données synthétiques ;
+- treize familles de scénarios ;
+- les tests de domaine et d’application ;
+- la couverture paramétrée des 34 transitions normatives et de toutes les
+  transitions interdites ;
+- l’idempotence, la concurrence et les rejeux ;
+- les neuf artefacts contractuels ;
+- les intégrations Amplitude ;
+- les notifications immédiates et définitives ;
+- la TFJ, son fallback et sa quarantaine ;
+- la sécurité, le RBAC, le masquage et l’audit ;
+- la reconstruction d’ObservedCustomer ;
+- les écritures partielles et résultats inconnus ;
+- les extournes et leur runbook ;
+- les preuves attendues et critères de passage.
+
+Les tests d’intégration ne doivent pas être omis par le comportement Maven par
+défaut : le profil `full-tests` est obligatoire dans la validation complète
+Payment.
+
+## Critères de sortie 0P.12
+
+- [x] Treize familles de tests couvertes.
+- [x] Machine à états couverte exhaustivement.
+- [x] Idempotence, concurrence et replay couverts.
+- [x] Neuf contrats futurs couverts.
+- [x] Amplitude, Notification et TFJ couverts.
+- [x] Sécurité et absence de fuite couvertes.
+- [x] Reconstruction ObservedCustomer couverte.
+- [x] Écritures partielles et extournes couvertes.
+- [x] Matrice parcours/familles établie.
+- [x] Preuves et critères de pipeline définis.
+- [x] Génération de code toujours interdite.
+
+## Verdict 0P.12
+
+```text
+PAYMENT ACCEPTANCE SCENARIOS: ESTABLISHED
+TEST FAMILIES: 13/13
+STATE MACHINE TRANSITIONS: 34/34 REQUIRED
+FORBIDDEN TRANSITIONS: EXHAUSTIVE COVERAGE REQUIRED
+FINANCIAL DOUBLE-EFFECT NEGATIVE TESTS: REQUIRED
+CONTRACT ARTIFACTS: 9/9 COVERED
+OBSERVED CUSTOMER REBUILD: REQUIRED
+PARTIAL WRITE AND REVERSAL: COVERED
+FULL INTEGRATION PROFILE: REQUIRED
+CODE GENERATION: FORBIDDEN
+NEXT STEP: 0P.13 — CONSOLIDATE PAYMENT PREFLIGHT PACK
 ```
