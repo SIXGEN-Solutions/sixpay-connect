@@ -1,50 +1,62 @@
 openapi: 3.1.0
 info:
-  title: SIXPAY CONNECT - TRESOR PAY Authorization Decision Webhook
+  title: SIXPAY CONNECT - TRESOR PAY Authorization Lifecycle Webhook
   version: 1.0.0
   license:
     name: SIXGEN Solutions Proprietary
     url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
   description: |
-    Frozen outbound webhook contract used by SIXPAY to notify TRESOR PAY of a
-    final authorization decision. This contract is separate from the inbound
-    authorization-request API.
+    Frozen outbound webhook contract used by SIXPAY to notify TRESOR PAY of
+    authorization-request and subscription lifecycle events.
 
-    SIXPAY signs every delivery. TRESOR PAY must process deliveries
-    idempotently using `eventId`; delivery attempts reuse the same `eventId`.
+    Security and replay protection:
+      * OAuth 2.0 client credentials and mutual TLS authenticate SIXPAY;
+      * every request is signed with HMAC-SHA256 using the active webhook
+        secret identified by `X-SIXPAY-Signature-Key-ID`;
+      * the receiver verifies the signature over the unmodified request body
+        before parsing it;
+      * the signature timestamp must be inside the accepted five-minute window;
+      * an `eventId` is immutable and is reused across all delivery attempts;
+      * a previously accepted `eventId` with the same payload is acknowledged
+        without repeating the business effect;
+      * a previously accepted `eventId` with a different payload is rejected.
 servers:
   - url: https://webhooks.tresorpay.example
-    description: Endpoint registered by TRESOR PAY
+    description: Environment-specific endpoint registered by TRESOR PAY
 security:
   - oauth2ClientCredentials:
-      - authorization.decision.receive
+      - authorization.lifecycle.receive
     mutualTLS: []
 tags:
-  - name: Authorization decisions
-    description: Final authorization decisions delivered by SIXPAY.
+  - name: Authorization lifecycle
+    description: Authorization-request and subscription lifecycle notifications.
 
 paths:
-  /webhooks/v1/sixpay/authorization-decisions:
+  /webhooks/v1/sixpay/authorization-events:
     post:
       tags:
-        - Authorization decisions
-      operationId: receiveAuthorizationDecision
-      summary: Receive a final SIXPAY authorization decision
+        - Authorization lifecycle
+      operationId: receiveAuthorizationLifecycleEvent
+      summary: Receive an authorization lifecycle event from SIXPAY
+      description: |
+        TRESOR PAY must durably persist the event before returning a success
+        response. Returning `204` for an already processed event is required.
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/DeliveryId'
         - $ref: '#/components/parameters/DeliveryAttempt'
         - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureKeyId'
         - $ref: '#/components/parameters/SignatureTimestamp'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthorizationDecisionEvent'
+              $ref: '#/components/schemas/AuthorizationLifecycleEvent'
       responses:
         '204':
-          description: Event accepted, including an already processed event
+          description: Event durably accepted or previously processed
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
@@ -54,6 +66,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -65,19 +79,22 @@ components:
   securitySchemes:
     oauth2ClientCredentials:
       type: oauth2
+      description: OAuth 2.0 client credentials access token issued to SIXPAY.
       flows:
         clientCredentials:
           tokenUrl: https://identity.tresorpay.example/oauth2/token
           scopes:
-            authorization.decision.receive: Receive SIXPAY authorization decisions
+            authorization.lifecycle.receive: Receive SIXPAY authorization events
     mutualTLS:
       type: mutualTLS
+      description: SIXPAY client certificate trusted by TRESOR PAY.
 
   parameters:
     CorrelationId:
       name: X-Correlation-ID
       in: header
       required: true
+      description: End-to-end identifier, identical to `correlationId` in the body.
       schema:
         type: string
         format: uuid
@@ -85,7 +102,9 @@ components:
       name: X-Webhook-Delivery-ID
       in: header
       required: true
-      description: Unique identifier of this delivery cycle.
+      description: |
+        Identifier of one delivery attempt. A new value is generated for every
+        retry while `eventId` remains unchanged.
       schema:
         type: string
         format: uuid
@@ -93,27 +112,43 @@ components:
       name: X-Webhook-Delivery-Attempt
       in: header
       required: true
+      description: Attempt number, starting at one.
       schema:
         type: integer
         minimum: 1
+        maximum: 8
     Signature:
       name: X-SIXPAY-Signature
       in: header
       required: true
       description: |
-        Detached signature over the signature timestamp, request target and
-        unmodified request body. The algorithm and key identifier are supplied
-        by the webhook security profile.
+        `v1=<base64url-signature>` where the signature is
+        `HMAC-SHA256(secret, signingInput)`.
+
+        `signingInput` is the UTF-8 concatenation of:
+        `timestamp + "." + HTTP_METHOD + "." + request_target + "." +
+        base64url(SHA-256(raw_request_body))`.
       schema:
         type: string
-        minLength: 16
+        pattern: '^v1=[A-Za-z0-9_-]{43}$'
+    SignatureKeyId:
+      name: X-SIXPAY-Signature-Key-ID
+      in: header
+      required: true
+      description: Identifier of the shared secret used for key rotation.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        pattern: '^[A-Za-z0-9._-]+$'
     SignatureTimestamp:
       name: X-SIXPAY-Signature-Timestamp
       in: header
       required: true
+      description: Unix epoch time in seconds used in the signing input.
       schema:
         type: string
-        format: date-time
+        pattern: '^[0-9]{10}$'
 
   headers:
     CorrelationId:
@@ -124,18 +159,32 @@ components:
         format: uuid
 
   schemas:
-    AuthorizationDecisionEvent:
+    AuthorizationLifecycleEvent:
+      oneOf:
+        - $ref: '#/components/schemas/AuthorizationRequestReceivedEvent'
+        - $ref: '#/components/schemas/AuthorizationRequestRejectedEvent'
+        - $ref: '#/components/schemas/SubscriptionActivatedEvent'
+        - $ref: '#/components/schemas/SubscriptionSuspendedEvent'
+        - $ref: '#/components/schemas/SubscriptionReactivatedEvent'
+      discriminator:
+        propertyName: eventType
+        mapping:
+          AUTHORIZATION_REQUEST_RECEIVED: '#/components/schemas/AuthorizationRequestReceivedEvent'
+          AUTHORIZATION_REQUEST_REJECTED: '#/components/schemas/AuthorizationRequestRejectedEvent'
+          SUBSCRIPTION_ACTIVATED: '#/components/schemas/SubscriptionActivatedEvent'
+          SUBSCRIPTION_SUSPENDED: '#/components/schemas/SubscriptionSuspendedEvent'
+          SUBSCRIPTION_REACTIVATED: '#/components/schemas/SubscriptionReactivatedEvent'
+
+    BaseEvent:
       type: object
-      additionalProperties: false
       required:
         - schemaVersion
         - eventId
-        - eventType
         - occurredAt
+        - correlationId
         - tresorPayRequestId
         - subscriptionRequestId
         - financialInstitutionCode
-        - decision
       properties:
         schemaVersion:
           type: string
@@ -143,12 +192,13 @@ components:
         eventId:
           type: string
           format: uuid
-        eventType:
-          type: string
-          const: AUTHORIZATION_DECIDED
+          description: Immutable event identifier and receiver idempotency key.
         occurredAt:
           type: string
           format: date-time
+        correlationId:
+          type: string
+          format: uuid
         tresorPayRequestId:
           type: string
           minLength: 1
@@ -156,60 +206,193 @@ components:
         subscriptionRequestId:
           type: string
           format: uuid
-        subscriptionId:
-          type:
-            - string
-            - 'null'
-          format: uuid
         financialInstitutionCode:
           type: string
           minLength: 2
           maxLength: 35
-        decision:
+          pattern: '^[A-Z0-9][A-Z0-9._-]+$'
+        correlationMetadata:
+          $ref: '#/components/schemas/CorrelationMetadata'
+
+    AuthorizationRequestReceivedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: AUTHORIZATION_REQUEST_RECEIVED
+            data:
+              $ref: '#/components/schemas/RequestReceivedData'
+      unevaluatedProperties: false
+
+    AuthorizationRequestRejectedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: AUTHORIZATION_REQUEST_REJECTED
+            data:
+              $ref: '#/components/schemas/RequestRejectedData'
+      unevaluatedProperties: false
+
+    SubscriptionActivatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - subscriptionId
+            - data
+          properties:
+            eventType:
+              type: string
+              const: SUBSCRIPTION_ACTIVATED
+            subscriptionId:
+              type: string
+              format: uuid
+            data:
+              $ref: '#/components/schemas/SubscriptionActivatedData'
+      unevaluatedProperties: false
+
+    SubscriptionSuspendedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - subscriptionId
+            - data
+          properties:
+            eventType:
+              type: string
+              const: SUBSCRIPTION_SUSPENDED
+            subscriptionId:
+              type: string
+              format: uuid
+            data:
+              $ref: '#/components/schemas/SubscriptionSuspendedData'
+      unevaluatedProperties: false
+
+    SubscriptionReactivatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - subscriptionId
+            - data
+          properties:
+            eventType:
+              type: string
+              const: SUBSCRIPTION_REACTIVATED
+            subscriptionId:
+              type: string
+              format: uuid
+            data:
+              $ref: '#/components/schemas/SubscriptionReactivatedData'
+      unevaluatedProperties: false
+
+    RequestReceivedData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - receivedAt
+      properties:
+        status:
           type: string
-          enum:
-            - APPROVED
-            - REJECTED
-        decisionReason:
+          const: RECEIVED
+        receivedAt:
+          type: string
+          format: date-time
+
+    RequestRejectedData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - rejectedAt
+        - reason
+      properties:
+        status:
+          type: string
+          const: REJECTED
+        rejectedAt:
+          type: string
+          format: date-time
+        reason:
           $ref: '#/components/schemas/DecisionReason'
+        decidedBy:
+          $ref: '#/components/schemas/DecisionActor'
+
+    SubscriptionActivatedData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - activatedAt
+        - subscriptionKey
+      properties:
+        status:
+          type: string
+          const: ACTIVE
+        activatedAt:
+          type: string
+          format: date-time
         subscriptionKey:
-          type:
-            - string
-            - 'null'
+          type: string
           minLength: 16
           maxLength: 512
           writeOnly: true
           description: |
-            Present only for an approved decision. It is a sensitive credential
-            and must never be logged or included in an error response.
-        decidedAt:
+            Sensitive SIXPAY credential. It must never appear in logs, traces,
+            metrics, error responses or subsequent lifecycle events.
+        decidedBy:
+          $ref: '#/components/schemas/DecisionActor'
+
+    SubscriptionSuspendedData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - suspendedAt
+        - reason
+      properties:
+        status:
+          type: string
+          const: SUSPENDED
+        suspendedAt:
+          type: string
+          format: date-time
+        reason:
+          $ref: '#/components/schemas/DecisionReason'
+        decidedBy:
+          $ref: '#/components/schemas/DecisionActor'
+
+    SubscriptionReactivatedData:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - reactivatedAt
+      properties:
+        status:
+          type: string
+          const: ACTIVE
+        reactivatedAt:
           type: string
           format: date-time
         decidedBy:
           $ref: '#/components/schemas/DecisionActor'
-        correlationMetadata:
-          $ref: '#/components/schemas/CorrelationMetadata'
-      allOf:
-        - if:
-            properties:
-              decision:
-                const: APPROVED
-          then:
-            properties:
-              subscriptionId: {}
-              subscriptionKey: {}
-              decidedAt: {}
-            required:
-              - subscriptionId
-              - subscriptionKey
-              - decidedAt
-          else:
-            properties:
-              decisionReason: {}
-              decidedAt: {}
-            required:
-              - decisionReason
-              - decidedAt
 
     DecisionReason:
       type: object
@@ -220,10 +403,13 @@ components:
       properties:
         code:
           type: string
+          minLength: 1
           maxLength: 50
-          description: Stable business reason code without sensitive KYC data.
+          pattern: '^[A-Z][A-Z0-9._-]+$'
+          description: Stable business code without sensitive KYC information.
         label:
           type: string
+          minLength: 1
           maxLength: 200
 
     DecisionActor:
@@ -235,9 +421,11 @@ components:
       properties:
         actorId:
           type: string
+          minLength: 1
           maxLength: 100
         displayName:
           type: string
+          minLength: 1
           maxLength: 200
 
     CorrelationMetadata:
@@ -284,7 +472,9 @@ components:
             - WEBHOOK_REQUEST_INVALID
             - WEBHOOK_AUTHENTICATION_FAILED
             - WEBHOOK_SIGNATURE_INVALID
+            - WEBHOOK_SIGNATURE_EXPIRED
             - EVENT_ID_CONFLICT
+            - EVENT_TYPE_UNSUPPORTED
             - RATE_LIMIT_EXCEEDED
             - INTERNAL_ERROR
             - SERVICE_UNAVAILABLE
@@ -294,7 +484,7 @@ components:
 
   responses:
     BadRequest:
-      description: Malformed headers or body
+      description: Malformed headers or payload
       content:
         application/problem+json:
           schema:
@@ -307,6 +497,12 @@ components:
             $ref: '#/components/schemas/ProblemDetail'
     Conflict:
       description: The event identifier was previously used with another payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Event type or business payload is not supported
       content:
         application/problem+json:
           schema:
@@ -342,8 +538,46 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
 
+x-sixpay-signature-profile:
+  version: v1
+  algorithm: HMAC-SHA256
+  bodyDigest: SHA-256
+  bodyEncoding: raw-unmodified-bytes
+  digestEncoding: base64url-without-padding
+  signatureEncoding: base64url-without-padding
+  timestampUnit: unix-seconds
+  acceptedClockSkewSeconds: 300
+  comparison: constant-time
+  secretRotation:
+    keyIdentifierHeader: X-SIXPAY-Signature-Key-ID
+    overlappingValidityRequired: true
+
+x-sixpay-replay-protection:
+  eventIdRetentionDays: 30
+  deduplicationScope: webhook-endpoint-and-event-id
+  duplicateSamePayload:
+    status: 204
+    repeatBusinessEffect: false
+  duplicateDifferentPayload:
+    status: 409
+    code: EVENT_ID_CONFLICT
+  rejectExpiredSignature:
+    status: 401
+    code: WEBHOOK_SIGNATURE_EXPIRED
+
 x-sixpay-webhook-delivery-policy:
-  idempotencyKey: eventId
+  totalDeliveryAttempts: 8
+  schedule:
+    - PT0S
+    - PT5S
+    - PT30S
+    - PT2M
+    - PT10M
+    - PT30M
+    - PT2H
+    - PT6H
+  backoff: exponential-with-full-jitter
+  honorRetryAfter: true
   successfulStatuses:
     - 200
     - 202
@@ -364,8 +598,12 @@ x-sixpay-webhook-delivery-policy:
     - 409
     - 410
     - 422
-  backoff: exponential-with-jitter
-  maximumAttempts: configurable
-  deadLetterAfterExhaustion: true
-  manualReplay: audited
-  preserveEventIdAcrossRetries: true
+  deadLetterQueue:
+    afterExhaustion: true
+    retentionDays: 90
+    preserveEventAndDeliveryHistory: true
+  manualReplay:
+    allowedFromDlq: true
+    audited: true
+    preserveEventId: true
+    generateNewDeliveryId: true
