@@ -26,6 +26,44 @@ classificationModel:
     EXCLUDED: "Must not be used to generate the current MVP."
 
 contracts:
+  - id: "tresorpay-payment-request-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    domain: "payment"
+    capability: "PAYMENT_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.1"
+    security:
+      active:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+      deferred:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Receive a TRESOR PAY payment order"
+        - "Enforce idempotency and correlation"
+        - "Durably persist Payment before any Amplitude call"
+        - "Acknowledge intake without claiming banking success"
+      constraints:
+        - "TRESOR PAY remains the subscription system of record"
+        - "No local subscription validation"
+        - "Treasury beneficiaries must resolve to bank-controlled configuration"
+        - "Credentials are forbidden in the JSON payload"
+    approvalPrerequisite:
+      - "TRESOR PAY contract owner approval"
+      - "SIXPAY Payment and Integration approval"
+      - "Security approval"
+      - "Completion and approval of the full IA-0.5P Payment Contract Pack"
+
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     domain: "integration"
@@ -87,9 +125,6 @@ contracts:
 missingMvpContracts:
   status: "TO_BE_PRODUCED"
   contracts:
-    - id: "tresorpay-payment-request-api-v1"
-      capability: "PAYMENT_REQUEST"
-      direction: "TRESOR_PAY_TO_SIXPAY"
     - id: "amplitude-payment-execution-api-v1"
       capability: "FUNDS_CONTROL_DEBIT_AND_CUT_CREDIT"
       direction: "SIXPAY_TO_AMPLITUDE"
