@@ -1,17 +1,17 @@
-schemaVersion: 2.1.0
+schemaVersion: 2.2.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 3_1_PAYMENT_MODULE_FOUNDATION
+  lot: 3_2_IDENTIFIERS_VALUE_OBJECTS
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: DOMAIN_ONLY_IMPLEMENTATION_AUTHORIZED
+  status: LOT_3_2_IMPLEMENTED
   normative: true
   implementationDate: '2026-07-31'
 codeGenerationAllowed: false
 generationReadiness: DOMAIN_ONLY_INCREMENT_AUTHORIZED
-nextStep: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
+nextStep: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Final IA-1 brief
@@ -212,11 +212,13 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: LOT_3_1_DOMAIN_ONLY_INCREMENT_AUTHORIZED
+  codeGeneration: LOT_3_2_DOMAIN_ONLY_INCREMENT_AUTHORIZED
   lot3_1FoundationImplemented: true
   lot3DomainOnlyProgramAuthorized: true
   lot3_2ReadyForExplicitActivation: true
   globalCodeGeneration: FORBIDDEN_PENDING_EXTERNAL_APPROVALS
+  lot3_2IdentifiersValueObjectsImplemented: true
+  lot3_3ReadyForExplicitActivation: true
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -224,7 +226,7 @@ implementationAuthorization:
   authorizedAt: '2026-07-31'
   scope: PAYMENT_DOMAIN_ONLY
   globalCodeGenerationAllowed: false
-  currentIncrement: LOT_3_1_PAYMENT_MODULE_FOUNDATION
+  currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
   currentIncrementCodeGenerationAllowed: true
   futureIncrementActivationRequired: true
   programAllowedPaths:
@@ -237,23 +239,30 @@ implementationAuthorization:
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   currentIncrementAllowedPaths:
-  - backend/payment/pom.xml
   - backend/payment/README.md
   - backend/payment/ARCHITECTURE.md
   - backend/payment/ACCEPTANCE-TRACEABILITY.md
-  - backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
   - backend/payment/src/main/java/com/sixpay/payment/domain/package-info.java
+  - backend/payment/src/main/java/com/sixpay/payment/domain/model/**
+  - backend/payment/src/test/java/com/sixpay/payment/domain/model/**
   - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  - documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   allowedChangeKinds:
-  - MODULE_DEPENDENCY_ALIGNMENT
-  - MODULE_MARKER
-  - DOMAIN_PACKAGE_FOUNDATION
-  - ARCHITECTURE_TESTS
+  - IDENTIFIER_IMPLEMENTATION
+  - VALUE_OBJECT_IMPLEMENTATION
+  - CLOSED_CLASSIFICATION_IMPLEMENTATION
+  - VALUE_OBJECT_UNIT_TESTS
+  - ARCHITECTURE_TEST_UPDATE
   - MODULE_DOCUMENTATION
   - AUTHORIZATION_METADATA
   forbiddenChangeKinds:
+  - SNAPSHOT_OR_EVIDENCE_GENERATION
+  - COMMAND_OR_INSTRUCTION_METADATA_GENERATION
+  - AGGREGATE_ROOT_GENERATION
+  - DOMAIN_EVENT_GENERATION
+  - POLICY_OR_DOMAIN_SERVICE_GENERATION
   - APPLICATION_LAYER_GENERATION
   - API_OR_CONTRACT_GENERATION
   - PERSISTENCE_OR_MIGRATION_GENERATION
@@ -278,6 +287,13 @@ implementationAuthorization:
     databaseOrNetworkAccessAllowed: false
     globalGenerationBlockersRemainApplicable: true
     modelFreezeRemainsApplicable: true
+    implementedLocalTypeCount: 22
+    reusedPlatformTypes:
+    - com.sixpay.common.context.CorrelationId
+    - com.sixpay.sharedkernel.domain.valueobject.Money
+    - com.sixpay.sharedkernel.domain.valueobject.ValueObject
+    snapshotsDeferred: true
+    aggregateRootDeferred: true
 implementationDecisions:
 - id: PAY-DEC-IA1-071
   decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED
@@ -289,3 +305,13 @@ implementationDecisions:
   decision: LOT_3_1_CREATES_NO_APPLICATION_API_PERSISTENCE_MESSAGING_OR_EXTERNAL_ADAPTER_CODE
 - id: PAY-DEC-IA1-075
   decision: ARCHITECTURE_TESTS_ENFORCE_THE_ACTIVE_DOMAIN_ONLY_AUTHORIZATION
+- id: PAY-DEC-IA1-076
+  decision: LOT_3_2_ACTIVATES_ONLY_BASE_IDENTIFIERS_VALUE_OBJECTS_AND_CLOSED_CLASSIFICATIONS
+- id: PAY-DEC-IA1-077
+  decision: PAYMENT_REUSES_COMMON_CORRELATION_ID_WITH_CANONICAL_UUID_VALIDATION_IN_PAYMENT_REQUEST_IDENTITY
+- id: PAY-DEC-IA1-078
+  decision: PROTECTED_ACCOUNT_REFERENCES_USE_EXPLICIT_CLASSES_AND_MASKED_STRING_REPRESENTATION
+- id: PAY-DEC-IA1-079
+  decision: TREASURY_ALLOCATION_INTENT_CANONICALIZES_ORDER_AND_ENFORCES_EXACT_TOTAL
+- id: PAY-DEC-IA1-080
+  decision: SNAPSHOT_COMMAND_INSTRUCTION_EVENT_AND_AGGREGATE_TYPES_REMAIN_DEFERRED

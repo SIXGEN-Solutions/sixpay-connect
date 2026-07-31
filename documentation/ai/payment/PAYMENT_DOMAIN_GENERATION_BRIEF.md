@@ -1,147 +1,109 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `3.1 — Payment Module Foundation`  
+> **Current lot:** `3.2 — Identifiers, Value Objects and classifications`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DOMAIN_ONLY_IMPLEMENTATION_AUTHORIZED`  
+> **Status:** `LOT_3_2_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED**
 
-## 1. Governing model
+## Governing model
 
-The IA-1 Payment model validated in Lot 2.8 remains frozen:
+The Lot 2.8 IA-1 model remains frozen. Lot 3.2 translates only its base
+identifier, Value Object and classification catalogue into Java 21.
 
-```text
-17 states
-38 legal transitions
-76 invariants
-16 commands
-17 aggregate operations
-33 domain events
-14 policies
-4 pure Domain Services
-174 named acceptance scenarios
-```
-
-Lot 3 translates that model into Java 21 without changing its semantics.
-
-## 2. Authorization
-
-The user explicitly authorizes implementation of the pure Payment domain.
-
-The authorization is recorded as:
+## Authorization
 
 ```text
 PAY-AUTH-IA1-001
 scope: PAYMENT_DOMAIN_ONLY
-currentIncrement: LOT_3_1_PAYMENT_MODULE_FOUNDATION
+currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
 currentIncrementCodeGenerationAllowed: true
 futureIncrementActivationRequired: true
+globalCodeGenerationAllowed: false
 ```
 
-This is not a global generation approval.
-
-The existing contract, security, operations and integration blockers remain
-applicable outside the pure domain.
-
-## 3. Lot 3.1 allowed changes
+## Implemented types
 
 ```text
-backend/payment/pom.xml
-backend/payment/README.md
-backend/payment/ARCHITECTURE.md
-backend/payment/ACCEPTANCE-TRACEABILITY.md
-backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
-backend/payment/src/main/java/com/sixpay/payment/domain/package-info.java
-backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
-documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+22 Payment-local production types
++ package-private structural validation utility
++ reused Money, CorrelationId and ValueObject
 ```
 
-## 4. Lot 3.1 implementation
-
-The Payment module now:
-
-- remains a non-executable JAR;
-- depends directly on `common` and `shared-kernel`;
-- uses BOM-managed versions;
-- introduces JUnit only for tests;
-- exposes a framework-free module marker;
-- establishes the pure `domain` package;
-- enforces the active authorization with architecture tests.
-
-## 5. Reused platform contracts
-
-Payment must reuse:
+Implemented:
 
 ```text
-common
-└── CorrelationId and approved cross-cutting contracts
-
-shared-kernel
-├── AggregateRoot
-├── DomainEvent
-├── DomainException
-├── Money
-└── ValueObject
+PaymentId
+PaymentSource
+ExternalPaymentReference
+ExternalSubscriptionReference
+PublicPaymentReference
+IdempotencyKey
+RequestFingerprint
+PaymentRequestIdentity
+FinancialInstitutionCode
+DebtorAccountReference
+TreasuryAccountReference
+TreasuryBeneficiaryReference
+TreasuryAllocation
+TreasuryAllocationIntent
+BankPostingReference
+FailureCode
+FailureCategory
+FailureStage
+RetryDisposition
+ExternalSystem
+PaymentFailure
+PaymentStatus
 ```
 
-Lot 3 must not create local replacements for these types.
+## Deferred types
 
-## 6. Explicitly forbidden in Lot 3.1
+The following are not authorized by Lot 3.2:
 
 ```text
-application services
-commands and handlers
-REST API
-OpenAPI changes
-Spring configuration
-JPA entities and repositories
-database migrations
-Outbox implementation
-Kafka integration
-Amplitude adapters
-Notification delivery
-bank-specific configuration
-semantic changes to the IA-1 model
+snapshot-support identifiers and EvidenceMetadata
+PostingInstructionIdentity and ReversalInstructionIdentity
+PaymentCommandId and ExpectedBusinessVersion
+event metadata Value Objects
+PaymentState and Payment Aggregate Root
+policies and Domain Services
+domain events
 ```
 
-## 7. Activation rule for the next increments
+## Structural rules implemented
 
-The overall program path is limited to:
+- canonical non-nil Payment UUID;
+- exact case-sensitive external references;
+- `PAY-` Crockford ULID public reference;
+- strict idempotency key and SHA-256 fingerprint;
+- Payment-specific UUID validation around reused `CorrelationId`;
+- normalized financial institution code;
+- protected account token/mask/fingerprint separation;
+- canonical immutable Treasury allocations;
+- exact allocation total and currency;
+- opaque bank posting references;
+- stable failure code and category/disposition matrix;
+- 17 final IA-1 statuses with four terminal values.
 
-```text
-backend/payment/src/main/java/com/sixpay/payment/domain/**
-backend/payment/src/test/java/com/sixpay/payment/domain/**
-backend/payment/src/test/java/com/sixpay/payment/architecture/**
-```
+## Scope protections
 
-However, each next increment requires explicit activation before code is
-generated.
+Global generation blockers remain active.
 
-The next candidate is:
+No application layer, API, database, Outbox, external adapter, Spring
+configuration, snapshot, Aggregate Root, policy or event is generated.
 
-```text
-Lot 3.2 — Identifiers, Value Objects and classifications
-```
+## Tests
 
-## 8. Exit criteria
+Five unit-test classes and the architecture test provide the Lot 3.2 evidence.
 
-- Payment POM aligns with the Golden Module conventions.
-- `PaymentModule` is framework-free and non-executable.
-- The pure domain package exists.
-- No other production layer is generated.
-- Architecture tests enforce dependencies and boundaries.
-- The global generation flag remains false.
-- Lot 3.1 is the only active implementation increment.
-
-## 9. Verdict
+## Verdict
 
 ```text
-LOT 3.1 PAYMENT MODULE FOUNDATION: IMPLEMENTED
-DOMAIN-ONLY PROGRAM AUTHORIZATION: ACTIVE
-CURRENT INCREMENT GENERATION: AUTHORIZED
-GLOBAL CODE GENERATION: FORBIDDEN
+LOT 3.2: IMPLEMENTED
+LOCAL TYPES: 22
 MODEL SEMANTICS: UNCHANGED
-NEXT: LOT 3.2 EXPLICIT ACTIVATION
+GLOBAL GENERATION: FORBIDDEN
+NEXT: LOT 3.3 EXPLICIT ACTIVATION
 ```

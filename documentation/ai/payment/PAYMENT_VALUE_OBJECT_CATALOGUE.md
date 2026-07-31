@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.2 — Identifiers, Value Objects and classifications`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `BASE_VALUE_OBJECTS_IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current increment implementation:** **AUTHORIZED_AND_COMPLETED**
 
 ## 1. Purpose
 
@@ -1211,21 +1212,64 @@ key.
 
 **Decisions:** `PAY-DEC-IA1-042`, `PAY-DEC-IA1-044`, `PAY-DEC-IA1-048`.
 
+
+## Lot 3.2 implementation mapping
+
+The following base catalogue types are now implemented under:
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/model/
+```
+
+| Catalogue concept | Java implementation |
+| --- | --- |
+| Payment identity and source | `PaymentId`, `PaymentSource` |
+| External and public references | `ExternalPaymentReference`, `ExternalSubscriptionReference`, `PublicPaymentReference` |
+| Request identity | `IdempotencyKey`, `RequestFingerprint`, `PaymentRequestIdentity` |
+| Bank context | `FinancialInstitutionCode` |
+| Protected accounts | `DebtorAccountReference`, `TreasuryAccountReference` |
+| Allocation intent | `TreasuryBeneficiaryReference`, `TreasuryAllocation`, `TreasuryAllocationIntent` |
+| Posting reference | `BankPostingReference` |
+| Failure model | `FailureCode`, `FailureCategory`, `FailureStage`, `RetryDisposition`, `ExternalSystem`, `PaymentFailure` |
+| Lifecycle classification | `PaymentStatus` |
+| Reused platform types | `CorrelationId`, `Money`, `ValueObject` |
+
+Implementation decisions:
+
+- protected account references are explicit final classes and override
+  `toString()` to return only the masked display;
+- `PaymentRequestIdentity` validates that the reused `CorrelationId` contains a
+  canonical non-nil UUID;
+- Treasury allocations are stored in canonical beneficiary order and their
+  exact total is verified;
+- command/instruction, snapshot-support and event-support Value Objects remain
+  deferred to their corresponding increments.
+
+Automated evidence is documented in:
+
+```text
+backend/payment/ACCEPTANCE-TRACEABILITY.md
+```
+
+**Implementation decisions:** `PAY-DEC-IA1-076` through
+`PAY-DEC-IA1-080`.
+
 ## 15. Exit checklist
 
-- [ ] Every Aggregate Root type has semantics and ownership.
-- [ ] Every string type has explicit format and normalization.
-- [ ] Every protected value has confidentiality and logging rules.
-- [ ] Every identifier has generation and equality rules.
-- [ ] `Money` reuse is explicit and requires no source modification.
-- [ ] External reference uniqueness scope is explicit.
-- [ ] Treasury allocation sum/currency rules are explicit.
-- [ ] Account execution token, masked display and binding fingerprint are
+- [x] Every base Aggregate Root Value Object has semantics and ownership.
+- [x] Every implemented string type has explicit format and normalization.
+- [x] Every implemented protected value has confidentiality and logging rules.
+- [x] Every implemented identifier has generation and equality rules.
+- [x] `Money` is reused without source modification.
+- [x] External reference uniqueness scope remains explicit.
+- [x] Treasury allocation sum/currency rules are implemented.
+- [x] Account execution token, masked display and binding fingerprint are
       distinct.
-- [ ] Bank command identity and posting identity are distinct.
-- [ ] `PaymentFailure` is structured and bounded.
-- [ ] No snapshot type is prematurely finalized.
-- [ ] Code generation remains forbidden.
+- [x] Bank command identity and posting reference remain distinct; command
+      identity implementation is deferred.
+- [x] `PaymentFailure` is structured and bounded.
+- [x] No snapshot type is implemented by Lot 3.2.
+- [x] Global generation remains forbidden; Lot 3.2 was explicitly authorized.
 
 ## 16. Verdict
 

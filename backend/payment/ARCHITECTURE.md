@@ -1,116 +1,94 @@
-# Architecture Decision Record — Payment Domain Foundation
+# Architecture Decision Record — Payment Value Objects
 
 ## Decision
 
-The `payment` module is initialized as a non-executable Maven JAR whose current
-authorized implementation scope is limited to the pure Payment domain.
+Lot 3.2 implements the immutable identity and base Value Object layer of the
+validated IA-1 Payment domain.
 
-## Authority
+The Aggregate Root, snapshots, instruction identities, policies and events
+remain outside this increment.
 
-This decision implements the validated IA-1 Payment model without changing its
-semantics.
+## Package decision
 
-The model remains frozen at:
-
-```text
-17 states
-38 transitions
-76 invariants
-16 commands
-17 aggregate operations
-33 domain events
-14 policies
-4 pure Domain Services
-```
-
-## Dependency direction
+All base types reside under:
 
 ```text
-payment
-├── common
-└── shared-kernel
+com.sixpay.payment.domain.model
 ```
 
-`payment` does not depend on another business module.
+This keeps the domain API cohesive while avoiding premature technical
+subpackage boundaries.
 
-The dependency on `common` is direct because the final model uses approved
-cross-cutting contracts such as `CorrelationId`.
+## Structural versus contextual validation
 
-The dependency on `shared-kernel` is direct because Payment must reuse:
+Value Objects enforce:
 
-- `AggregateRoot`;
-- `DomainEvent`;
-- `DomainException`;
-- `Money`;
-- `ValueObject`.
+- non-nullity;
+- lexical format;
+- normalization;
+- bounded collection size;
+- positive allocation amounts;
+- same-currency allocation composition;
+- exact allocation total;
+- failure category/disposition compatibility;
+- protected-reference representation.
 
-## Domain-only boundary
+They do not validate:
 
-Authorized production path for the Lot 3 program:
+- registry existence;
+- bank activation;
+- external uniqueness;
+- authoritative evidence freshness;
+- lifecycle transition eligibility;
+- external-system outcomes.
 
-```text
-backend/payment/src/main/java/com/sixpay/payment/domain/**
-```
+Those remain aggregate invariants or policies.
 
-The module marker is the only production type allowed outside `domain` during
-Lot 3.
+## Platform reuse
 
-The following layers remain outside the active authorization:
+Payment reuses:
 
-```text
-api
-application
-configuration
-events
-infrastructure
-```
+- `CorrelationId` from `common`;
+- `Money` and `ValueObject` from `shared-kernel`.
 
-The top-level `events` package is reserved for integration-event contracts.
-Payment domain events will live under `domain/event`.
+`PaymentRequestIdentity` adds the Payment-specific requirement that the reused
+CorrelationId contain a canonical non-nil UUID.
 
-## Framework independence
+No platform type is modified.
 
-The Payment domain must not import:
+## Protected references
 
-- Spring;
-- Jakarta Persistence or Servlet APIs;
-- Hibernate;
-- Jackson;
-- Payment API, application, configuration, infrastructure or integration-event
-  packages;
-- another SIXPAY business domain.
+`DebtorAccountReference` and `TreasuryAccountReference` are final classes with
+explicit equality and `toString()`.
 
-## Module assembly
+- protected tokens never appear in `toString()`;
+- masked display is excluded from identity equality;
+- Treasury identity is bank + configuration ID + version;
+- clear account values are never represented.
 
-`PaymentModule` is a marker class only.
+## Treasury allocation
 
-It is not annotated and does not expose a `main` method. `bootstrap` remains the
-only executable Spring Boot application.
+`TreasuryAllocationIntent`:
 
-## Controlled implementation authorization
+- accepts 1 to 20 allocations;
+- rejects duplicate beneficiaries;
+- enforces positive same-currency amounts;
+- verifies the exact total;
+- stores a defensive immutable copy;
+- stores allocations in canonical beneficiary-reference order.
 
-The repository retains:
+## Failure classification
 
-```text
-globalCodeGenerationAllowed: false
-```
+`PaymentFailure` enforces the validated category/disposition matrix and keeps
+one bounded safe message.
 
-A narrower authorization is active:
+## Controlled authorization
 
 ```text
 scope: PAYMENT_DOMAIN_ONLY
-currentIncrement: LOT_3_1_PAYMENT_MODULE_FOUNDATION
+currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
 currentIncrementCodeGenerationAllowed: true
-futureIncrementActivationRequired: true
+globalCodeGenerationAllowed: false
 ```
 
-This authorization does not override contract, security, integration or
-operations blockers outside the pure domain.
-
-## Consequences
-
-- Lot 3 can implement and test the domain incrementally.
-- No API, database schema, adapter or external call is inferred from the domain
-  model.
-- Each subsequent Lot 3 increment requires explicit activation.
-- Architecture tests fail if the active boundary is broadened silently.
+Every later increment still requires explicit activation.
