@@ -91,6 +91,8 @@ upstreamAuthorities:
     role: "Payment-confirmed reference contract for customer and account verification only"
   - path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
     role: "Core Banking funds control, posting, outcome recovery and reversal contract"
+  - path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    role: "TRESOR PAY Payment lifecycle status webhook"
 
 scope:
   inScope:
@@ -264,6 +266,17 @@ contractPackDecisions:
     preferredPostingMode: "ATOMIC_DEBIT_AND_CUT_CREDIT"
     unknownOutcomePolicy: "LOOKUP_ONLY_NO_BLIND_RESUBMISSION"
     reversalPolicy: "EXPLICIT_BANK_INSTRUCTION_OR_APPROVED_RUNBOOK"
+    generationPolicy: "REFERENCE_ONLY"
+  - step: "1.5"
+    id: "TRESOR_PAY_PAYMENT_STATUS_WEBHOOK"
+    contractPath: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    status: "PRODUCED_PENDING_EXTERNAL_APPROVAL"
+    decision: "AT_LEAST_ONCE_SIGNED_IDEMPOTENT_DELIVERY"
+    eventCount: 7
+    idempotencyKey: "eventId"
+    deliveryAttemptKey: "deliveryId"
+    orderingKey: "paymentVersion"
+    tfjFinalityCovered: false
     generationPolicy: "REFERENCE_ONLY"
 
 finalValidation:

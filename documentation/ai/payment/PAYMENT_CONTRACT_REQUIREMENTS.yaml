@@ -387,11 +387,17 @@ contractFamilies:
       business: "payment"
       delivery: "notification"
     artifacts:
-      - id: "tresorpay-payment-immediate-result-webhook-v1"
-        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-immediate-result-webhook-v1.yaml"
+      - id: "tresorpay-payment-status-webhook-v1"
+        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
         type: "OPENAPI_WEBHOOK"
         operations:
-          - "Deliver REJECTED, POSTED_PENDING_TFJ, PROCESSING, FAILED or REVERSAL status"
+          - "Deliver PAYMENT_RECEIVED"
+          - "Deliver PAYMENT_REJECTED"
+          - "Deliver PAYMENT_PROCESSING"
+          - "Deliver PAYMENT_DEBITED"
+          - "Deliver CUT_CREDITED"
+          - "Deliver PAYMENT_FAILED"
+          - "Deliver PAYMENT_REVERSED"
     protocol:
       style: "ASYNCHRONOUS_WEBHOOK"
       transport: "HTTPS REST JSON"
@@ -704,7 +710,7 @@ artifactInventory:
     family: "PAY-CONTRACT-03"
     direction: "SIXPAY_TO_AMPLITUDE"
     owner: "integration"
-  - id: "tresorpay-payment-immediate-result-webhook-v1"
+  - id: "tresorpay-payment-status-webhook-v1"
     family: "PAY-CONTRACT-04"
     direction: "SIXPAY_TO_TRESOR_PAY"
     owner: "integration"
@@ -759,7 +765,7 @@ gateIA05PProductionOrder:
     reason: "Closes the bank read, financial write and recovery boundaries."
   - order: 3
     artifacts:
-      - "tresorpay-payment-immediate-result-webhook-v1"
+      - "tresorpay-payment-status-webhook-v1"
     reason: "Closes immediate external outcomes after the state and posting contracts."
   - order: 4
     artifacts:

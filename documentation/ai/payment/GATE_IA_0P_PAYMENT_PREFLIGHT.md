@@ -1228,7 +1228,7 @@ La frontière est fermée :
 | `PAY-CONTRACT-01` | `tresorpay-payment-request-api-v1.yaml` |
 | `PAY-CONTRACT-02` | `amplitude-payment-verification-api-v1.yaml` |
 | `PAY-CONTRACT-03` | `amplitude-payment-posting-api-v1.yaml` |
-| `PAY-CONTRACT-04` | `tresorpay-payment-immediate-result-webhook-v1.yaml` |
+| `PAY-CONTRACT-04` | `tresorpay-payment-status-webhook-v1.yaml` |
 | `PAY-CONTRACT-05` | `amplitude-tfj-confirmation-webhook-v1.yaml` |
 | `PAY-CONTRACT-05` | `amplitude-tfj-reconciliation-api-v1.yaml` |
 | `PAY-CONTRACT-06` | `tresorpay-payment-tfj-result-webhook-v1.yaml` |

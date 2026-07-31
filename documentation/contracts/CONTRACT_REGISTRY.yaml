@@ -138,6 +138,47 @@ contracts:
       - "Amplitude confirms reservation and reversal capabilities"
       - "SIXPAY Accounting, Payment, Integration, Security and Operations approve the contract"
 
+  - id: "tresorpay-payment-status-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "PAYMENT_STATUS_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.5"
+    mvpUsage:
+      included: true
+      eventTypes:
+        - "PAYMENT_RECEIVED"
+        - "PAYMENT_REJECTED"
+        - "PAYMENT_PROCESSING"
+        - "PAYMENT_DEBITED"
+        - "CUT_CREDITED"
+        - "PAYMENT_FAILED"
+        - "PAYMENT_REVERSED"
+      semantics:
+        delivery: "AT_LEAST_ONCE"
+        idempotencyKey: "eventId"
+        attemptIdentifier: "deliveryId"
+        ordering: "paymentVersion"
+        durableAcceptance: "HTTP_204"
+      constraints:
+        - "PAYMENT_DEBITED is an intermediate fact"
+        - "CUT_CREDITED does not establish TFJ finality"
+        - "Delivery failure never changes Payment financial state"
+        - "Operational replay preserves eventId and payload"
+        - "Notification replay never triggers a financial replay"
+    approvalPrerequisite:
+      - "TRESOR PAY approves endpoint registration and event semantics"
+      - "Security approves Bearer, Subscription Key and HMAC profile"
+      - "Operations approves retry, DLQ, alert and replay procedures"
+
   - id: "tresorpay-authorization-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
     domain: "subscription"
@@ -173,9 +214,6 @@ contracts:
 missingMvpContracts:
   status: "TO_BE_PRODUCED"
   contracts:
-    - id: "tresorpay-payment-status-webhook-v1"
-      capability: "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
-      direction: "SIXPAY_TO_TRESOR_PAY"
     - id: "tresorpay-tfj-confirmation-webhook-v1"
       capability: "END_OF_DAY_TREASURY_CONFIRMATION"
       direction: "SIXPAY_TO_TRESOR_PAY"
@@ -219,3 +257,5 @@ rules:
   - "amplitude-customer-verification-api-v1 is confirmed for Payment customer/account checks only; it does not replace amplitude-payment-verification-api-v1 for funds control."
   - "amplitude-payment-posting-api-v1 performs final execution-time checks but does not replace the dedicated pre-posting verification contract."
   - "Financial-command uncertainty is resolved by authoritative lookup; blind resubmission is forbidden."
+  - "Payment status webhook delivery is idempotent on eventId; deliveryId identifies attempts only."
+  - "CUT_CREDITED is an immediate posting result and must never be interpreted as TFJ finality."
