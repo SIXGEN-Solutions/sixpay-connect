@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.3 — Snapshots and Business Evidence`  
+> **Current sub-lot:** `2.4 — Invariants`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `SNAPSHOT_MODEL_PREPARED`  
+> **Status:** `INVARIANT_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Normative model hierarchy
@@ -17,60 +17,53 @@
 | Aggregate Root | `PAYMENT_AGGREGATE_ROOT.md` |
 | Identifiers and Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
 | Snapshots and evidence | `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md` |
+| Invariants — human | `PAYMENT_INVARIANT_CATALOGUE.md` |
+| Invariants — machine | `PAYMENT_INVARIANT_CATALOGUE.yaml` |
 | Posting reference | `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
-| Invariants | Lot 2.4 pending |
 | Commands/operations | Lot 2.5 pending |
 | Domain Events | Lot 2.6 pending |
 | Policies/Domain Services | Lot 2.7 pending |
 | Final validation | Lot 2.8 pending |
 
-## 2. Current aggregate composition
+## 2. Aggregate model
 
 ```text
 Payment
-├── immutable identity and request Value Objects
-├── PaymentStatus
-├── current decision evidence
-│   ├── AuthorizationEvidenceSnapshot?
-│   ├── BankingVerificationSnapshot?
-│   ├── FundsControlSnapshot?
-│   ├── TreasuryAccountResolutionSnapshot?
-│   ├── PostingOutcomeSnapshot?
-│   ├── EndOfDayConfirmationSnapshot?
-│   └── ReversalSnapshot?
-├── TreasuryAccountReference?
-├── BankPostingReference?
-├── current PaymentFailure?
-├── timestamps
+├── immutable identity and original intent
+├── current lifecycle state
+├── current accepted evidence snapshots
+├── current protected bank references
+├── current relevant PaymentFailure?
+├── temporal metadata
 └── businessVersion
 ```
 
-## 3. Evidence boundary
+## 3. Invariant model
 
-Snapshots are canonical minimized evidence, not provider payloads.
+The model now contains 76 complete cross-object and lifecycle invariants in
+eight families:
 
-They include common metadata:
+1. identity and immutable intent;
+2. boundary and confidentiality;
+3. admission and authorization;
+4. banking, funds and Treasury resolution;
+5. posting and financial safety;
+6. notification and TFJ;
+7. reversal and terminal failures;
+8. replay, concurrency and transaction atomicity.
 
-```text
-source
-correlation
-observation channel
-evidence fingerprint
-observedAt
-acceptedAt
-```
+## 4. State-machine relationship
 
-Full historical versions belong to append-only audit/reporting.
+`PAYMENT_STATE_MACHINE.yaml` remains an IA-0P input pending Lot 2.5
+reconciliation.
 
-## 4. Key snapshot semantics
+The invariant catalogue already fixes these target semantics:
 
-- authorization stores safe binding results, not JWT/claims;
-- banking verification stores canonical checks, not KYC/customer payload;
-- funds control binds exact amount/account and excludes available balance;
-- Treasury resolution proves protected bank configuration;
-- posting stores command identity, financial outcome and both leg results;
-- TFJ stores only uniquely matched final results;
-- reversal combines immutable authorization proof and optional outcome.
+- banking verification and funds control are distinct;
+- notification intent is orthogonal;
+- one logical posting exists per Payment;
+- `FAILED` requires proven absence of financial effect;
+- finality requires uniquely matched TFJ `INTEGRATED`.
 
 ## 5. Generation status
 
@@ -78,6 +71,7 @@ Full historical versions belong to append-only audit/reporting.
 AGGREGATE ROOT: PREPARED
 VALUE OBJECTS: PREPARED
 SNAPSHOTS: PREPARED
-INVARIANTS: PENDING LOT 2.4
+INVARIANTS: PREPARED
+COMMANDS AND OPERATIONS: PENDING LOT 2.5
 CODE GENERATION: FORBIDDEN
 ```

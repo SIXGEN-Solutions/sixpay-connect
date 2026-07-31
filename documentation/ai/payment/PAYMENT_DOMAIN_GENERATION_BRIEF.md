@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.3 — Snapshots and Business Evidence`  
+> **Current lot:** `2.4 — Invariants`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_2_3_DRAFT_PENDING_VALIDATION`  
+> **Status:** `LOT_2_4_DRAFT_PENDING_VALIDATION`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Governing documents
@@ -16,107 +16,122 @@
 - `PAYMENT_AGGREGATE_ROOT.md`
 - `PAYMENT_VALUE_OBJECT_CATALOGUE.md`
 - `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`
+- `PAYMENT_INVARIANT_CATALOGUE.md`
+- `PAYMENT_INVARIANT_CATALOGUE.yaml`
 - `PAYMENT_DOMAIN_MODEL.md`
 - `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md`
 - `AI_CONTEXT_MANIFEST.yaml`
 - `documentation/contracts/CONTRACT_REGISTRY.yaml`
 
-## 2. Aggregate and Value Object baseline
+## 2. Model readiness
 
-`Payment` is the sole write Aggregate Root for one logical TRESOR PAY payment
-intention.
+Prepared:
 
-Lot 2.2 identifiers and Value Objects remain normative. Shared-kernel `Money`
-is reused unchanged.
+- Aggregate Root;
+- identifiers and Value Objects;
+- snapshots and minimized business evidence;
+- complete cross-object and lifecycle invariants.
 
-## 3. Snapshot rule
+Still pending:
 
-Payment stores only the current immutable, minimized evidence that directly
-supports its current decisions.
+- command and operation signatures;
+- domain-event schemas;
+- policies and Domain Services;
+- final cross-document validation.
 
-The complete evidence history belongs to append-only audit/reporting.
+## 3. Invariant catalogue
 
-Every snapshot contains common metadata:
+The normative catalogue contains 76 invariants in eight families:
 
 ```text
-sourceSystem
-correlationId
-observationChannel
-evidenceFingerprint
-observedAt
-acceptedAt
+IDENTITY_AND_IMMUTABILITY
+BOUNDARY_AND_CONFIDENTIALITY
+AUTHORIZATION_AND_ADMISSION
+BANKING_AND_FUNDS
+POSTING_AND_FINANCIAL_SAFETY
+NOTIFICATION_AND_TFJ
+REVERSAL_AND_FAILURE
+REPLAY_CONCURRENCY_AND_ATOMICITY
 ```
 
-Raw external payloads never enter Payment.
+Each invariant declares:
 
-## 4. Snapshot catalogue
+- statement;
+- enforcement layer;
+- violation result;
+- source traceability;
+- required verification level.
 
-| Snapshot | Purpose |
-| --- | --- |
-| `AuthorizationEvidenceSnapshot` | Prove signed TRESOR PAY authorization bindings |
-| `BankingVerificationSnapshot` | Prove customer/account/KYC checks used by Payment |
-| `FundsControlSnapshot` | Prove exact amount/account execution checks |
-| `TreasuryAccountResolutionSnapshot` | Prove protected CUT configuration resolution |
-| `PostingOutcomeSnapshot` | Prove known, partial, rejected or unknown posting outcome |
-| `EndOfDayConfirmationSnapshot` | Prove uniquely matched final TFJ result |
-| `ReversalSnapshot` | Prove reversal authorization and current outcome |
+## 4. Default violation behavior
 
-## 5. Minimization rules
+```text
+reject operation
+leave Payment unchanged
+do not increment businessVersion
+do not register a domain event
+do not append a state-transition audit
+do not create an Outbox intent
+```
 
-- no JWT, signature, raw claim or Subscription Key;
-- no customer identity/KYC value;
-- no full bank account;
-- no available balance;
-- no raw provider payload;
-- no retry-attempt history;
-- no unmatched TFJ result;
-- no notification delivery state;
-- no provider free-form technical error.
+Conflicting financial or TFJ evidence is quarantined by its owning module and
+does not mutate Payment.
 
-## 6. Posting and TFJ decisions
+## 5. Financial safety invariants
 
-Posting evidence preserves:
+- only one logical posting instruction per Payment;
+- exact retries reuse the same posting identity;
+- unknown posting/reversal outcomes require authoritative lookup;
+- no blind financial replay;
+- `FAILED` requires proven absence of financial effect;
+- partial debit/CUT outcomes are never success;
+- posting success is distinct from TFJ finality;
+- original posting identity survives reversal.
 
-- financial-command idempotency identity;
-- outcome;
-- principal/leg references;
-- debit and CUT-credit leg statuses;
-- exact amount;
-- business date;
-- next action;
-- observation source/channel.
+## 6. Notification and TFJ invariants
 
-`UNKNOWN` never means failure and requires authoritative resolution.
+- notification is an intent/event, not delivery state;
+- delivery never changes financial state;
+- TFJ tracking does not wait for notification delivery;
+- only authenticated, durable, uniquely matched `INTEGRATED` TFJ evidence
+  establishes Treasury finality;
+- pending/unmatched/conflicting TFJ evidence remains in Accounting;
+- TFJ delay alone cannot trigger reversal or failure.
 
-Only an authenticated, durably persisted and uniquely matched final TFJ result
-enters Payment. TFJ `PENDING`, unmatched, ambiguous or conflicting evidence
-remains in Accounting/quarantine.
+## 7. IA-0P machine reconciliation
 
-## 7. Replay and replacement
+Lot 2.4 does not rewrite `PAYMENT_STATE_MACHINE.yaml`.
 
-- same evidence identity + same fingerprint: no-op;
-- same identity + different fingerprint: conflict, audit and quarantine when
-  financial/TFJ;
-- replacement requires a permitted lifecycle, equal immutable bindings and a
-  more authoritative or conclusive result;
-- terminal evidence is not silently replaced.
+The IA-1 invariant catalogue supersedes conflicting IA-0P semantics regarding:
 
-## 8. Closed Lot 2.3 decisions
+- distinct banking and funds gates;
+- notification orthogonality;
+- `FAILED` classification;
+- TFJ failure mapping;
+- one-posting rule.
 
-`PAY-DEC-IA1-017` through `PAY-DEC-IA1-026` are defined in
-`PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
+Lot 2.5 will reconcile final commands, states and transitions.
 
-Structural snapshot invariants are `PAY-SNAP-001` through `PAY-SNAP-018`.
+## 8. Closed decisions
+
+`PAY-DEC-IA1-027` through `PAY-DEC-IA1-032` are defined in
+`PAYMENT_INVARIANT_CATALOGUE.md`.
+
+The complete invariant range is:
+
+```text
+PAY-INV-001
+...
+PAY-INV-076
+```
 
 ## 9. Deferred scope
 
 | Lot | Deferred subject |
 | --- | --- |
-| 2.4 | Complete cross-object and lifecycle invariants |
-| 2.5 | Commands and aggregate operations |
+| 2.5 | Commands, aggregate operations and state-machine reconciliation |
 | 2.6 | Domain Events and safe payloads |
-| 2.7 | Freshness, matching, resolver policies and Domain Services |
-| 2.8 | Final model validation |
+| 2.7 | Policies and Domain Services |
+| 2.8 | Final model and acceptance validation |
 
 ## 10. Traceability prefixes
 
@@ -127,6 +142,7 @@ PAY-POSTREF-*
 PAY-AGG-*
 PAY-VO-*
 PAY-SNAP-*
+PAY-INV-*
 PAY-DEC-*
 PAY-CONTRACT-*
 PAY-AI-*
@@ -135,25 +151,26 @@ SRC-*
 OPEN-*
 ```
 
-## 11. Authorized Lot 2.3 modifications
+## 11. Authorized Lot 2.4 modifications
 
 ```text
-documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
-documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
 documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
 documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
 documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
 ```
 
-Implementation, contracts, architecture, requirements, state machine and event
-catalogue are not modified in this lot.
+No implementation, contract, requirement, architecture, state-machine or event
+catalogue file is modified.
 
 ## 12. Verdict
 
 ```text
-IA-1 LOT 2.3 SNAPSHOTS AND BUSINESS EVIDENCE PREPARED
+IA-1 LOT 2.4 PAYMENT INVARIANTS PREPARED
+INVARIANT COUNT: 76
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.4 — INVARIANTS
+NEXT: LOT 2.5 — COMMANDS AND AGGREGATE OPERATIONS
 CODE GENERATION: FORBIDDEN
 ```

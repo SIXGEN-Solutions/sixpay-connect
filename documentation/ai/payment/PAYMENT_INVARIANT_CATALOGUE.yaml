@@ -1,0 +1,1069 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-INVARIANT-CATALOGUE
+  title: SIXPAY CONNECT — Payment Invariant Catalogue
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 2_4_INVARIANTS
+  branch: feat/payment-domain-generation-brief
+  status: DRAFT_PENDING_VALIDATION
+  normative: true
+  codeGenerationAllowed: false
+  nextLot: 2_5_COMMANDS_AND_AGGREGATE_OPERATIONS
+authority:
+  markdownCompanion: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+  stateMachineCompatibility: IA1_INVARIANTS_OVERRIDE_CONFLICTING_IA0P_SEMANTICS
+  stateMachineUpdateDeferredTo: LOT_2_5
+violationDefault:
+  paymentMutation: false
+  businessVersionIncrement: false
+  domainEventRegistration: false
+  stateTransitionAudit: false
+  outboxIntentCreation: false
+categories:
+- id: IDENTITY_AND_IMMUTABILITY
+  title: Identity, creation and immutable intent
+- id: BOUNDARY_AND_CONFIDENTIALITY
+  title: Domain boundary and confidentiality
+- id: AUTHORIZATION_AND_ADMISSION
+  title: Admission and TRESOR PAY authorization
+- id: BANKING_AND_FUNDS
+  title: Banking verification, funds and Treasury resolution
+- id: POSTING_AND_FINANCIAL_SAFETY
+  title: Posting and financial safety
+- id: NOTIFICATION_AND_TFJ
+  title: Notification and TFJ finality
+- id: REVERSAL_AND_FAILURE
+  title: Reversal, failures and terminal states
+- id: REPLAY_CONCURRENCY_AND_ATOMICITY
+  title: Replay, concurrency, audit and atomicity
+invariants:
+- id: PAY-INV-001
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: A Payment has exactly one non-null, non-nil and immutable PaymentId for its entire lifecycle.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-AGG-001
+  - PAY-DEC-IA1-007
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-002
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: PaymentSource and ExternalPaymentReference are required at creation, immutable and never recycled.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-AGG-002
+  - PAY-DEC-IA1-002
+  - PAY-DEC-IA1-008
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-003
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: The business uniqueness key is PaymentSource plus ExternalPaymentReference; repository-wide uniqueness is enforced atomically outside
+    the aggregate.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: RETURN_EXISTING_OR_CONFLICT
+  sourceRefs:
+  - PAY-DEC-IA1-002
+  verification:
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+- id: PAY-INV-004
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: PublicPaymentReference is required, globally unique in SIXPAY, immutable and distinct from every internal, external, idempotency,
+    correlation and bank reference.
+  enforcement:
+  - DOMAIN
+  - PERSISTENCE
+  violationResult: REJECT_OR_UNIQUE_CONSTRAINT
+  sourceRefs:
+  - PAY-DEC-IA1-010
+  verification:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+- id: PAY-INV-005
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: ExternalSubscriptionReference is required for the MVP, immutable and never resolved or mutated as a local Subscription aggregate.
+  enforcement:
+  - DOMAIN
+  - ARCHITECTURE
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-BOUND-001
+  - PAY-DEC-IA1-009
+  verification:
+  - DOMAIN_UNIT
+  - ARCHITECTURE_TEST
+- id: PAY-INV-006
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: The original PaymentRequestIdentity is required at creation and its idempotency key, request fingerprint and correlation identifier
+    never change.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-DEC-IA1-011
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-007
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: FinancialInstitutionCode, DebtorAccountReference, requested Money and TreasuryAllocationIntent are immutable original-intent facts.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-AGG-004
+  - PAY-DEC-IA1-012
+  - PAY-DEC-IA1-014
+  - PAY-DEC-IA1-015
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-008
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: Requested Money and every Treasury allocation are strictly positive, use one currency and allocations sum exactly to the requested
+    amount.
+  enforcement:
+  - VALUE_OBJECT
+  - DOMAIN
+  violationResult: REJECT_CREATION
+  sourceRefs:
+  - PAY-DEC-IA1-014
+  - PAY-DEC-IA1-015
+  verification:
+  - VALUE_OBJECT_UNIT
+  - PROPERTY_BASED
+- id: PAY-INV-009
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: createdAt is immutable; updatedAt never precedes createdAt and changes only on a successful aggregate mutation.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-AGG-004
+  - PAY-SNAP-003
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-010
+  category: IDENTITY_AND_IMMUTABILITY
+  statement: businessVersion is non-negative and increases exactly once for each successful state-changing mutation; no-op replay and rejected
+    operations do not increase it.
+  enforcement:
+  - DOMAIN
+  - PERSISTENCE
+  violationResult: STALE_OR_NO_MUTATION
+  sourceRefs:
+  - PAY-AGG-011
+  - PAY-AGG-012
+  verification:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+- id: PAY-INV-011
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Payment domain state never contains a raw JWT, Subscription Key, credential, signature, JWKS body or secret.
+  enforcement:
+  - DOMAIN
+  - INTEGRATION
+  - PERSISTENCE
+  violationResult: SECURITY_REJECTION
+  sourceRefs:
+  - PAY-BOUND-002
+  - PAY-SNAP-004
+  - PAY-DEC-IA1-019
+  verification:
+  - DOMAIN_UNIT
+  - SERIALIZATION_TEST
+  - SECURITY_TEST
+- id: PAY-INV-012
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Payment never stores a clear debtor or Treasury account number; protected token, mask and keyed fingerprint remain distinct representations.
+  enforcement:
+  - DOMAIN
+  - INTEGRATION
+  - PERSISTENCE
+  violationResult: SECURITY_REJECTION
+  sourceRefs:
+  - PAY-DEC-IA1-012
+  - PAY-DEC-IA1-013
+  verification:
+  - DOMAIN_UNIT
+  - PERSISTENCE_ENCRYPTION
+  - SECURITY_TEST
+- id: PAY-INV-013
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Raw TRESOR PAY, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
+  enforcement:
+  - DOMAIN
+  - INTEGRATION
+  violationResult: REJECT_MAPPING
+  sourceRefs:
+  - PAY-BOUND-003
+  - PAY-SNAP-004
+  verification:
+  - ARCHITECTURE_TEST
+  - MAPPING_TEST
+  - EVENT_SCHEMA_TEST
+- id: PAY-INV-014
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Payment domain types have no dependency on Spring, Jakarta Persistence, Hibernate, Jackson, HTTP, Kafka, database entities or another
+    business-domain implementation.
+  enforcement:
+  - ARCHITECTURE
+  violationResult: BUILD_OR_ARCHITECTURE_FAILURE
+  sourceRefs:
+  - PAY-BOUND-004
+  - PAY-BOUND-010
+  verification:
+  - ARCHITECTURE_TEST
+- id: PAY-INV-015
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Payment retains at most one current accepted snapshot per evidence category and one current relevant PaymentFailure; full histories
+    remain in audit/reporting.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_RECONSTITUTION_OR_MUTATION
+  sourceRefs:
+  - PAY-DEC-IA1-003
+  - PAY-DEC-IA1-017
+  - PAY-SNAP-016
+  verification:
+  - DOMAIN_UNIT
+  - RECONSTITUTION_TEST
+- id: PAY-INV-016
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Domain events and external errors expose only explicitly approved safe projections and never serialize complete protected Value Objects
+    or snapshots by default.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - CONTRACT
+  violationResult: SCHEMA_OR_SECURITY_FAILURE
+  sourceRefs:
+  - PAY-SNAP-018
+  - PAY-DEC-IA1-012
+  verification:
+  - EVENT_SCHEMA_TEST
+  - API_CONTRACT_TEST
+  - SECURITY_TEST
+- id: PAY-INV-017
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Payment does not own transport retry, circuit-breaker state, notification delivery attempts, unmatched TFJ records or generic Outbox
+    mechanics.
+  enforcement:
+  - ARCHITECTURE
+  violationResult: ARCHITECTURE_FAILURE
+  sourceRefs:
+  - PAY-BOUND-005
+  - PAY-BOUND-007
+  - PAY-BOUND-008
+  verification:
+  - ARCHITECTURE_TEST
+- id: PAY-INV-018
+  category: BOUNDARY_AND_CONFIDENTIALITY
+  statement: Every safe message, reason code and audit projection is free of credentials, clear account data, raw KYC values, stack traces and
+    raw provider errors.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - INTEGRATION
+  violationResult: SECURITY_REJECTION
+  sourceRefs:
+  - PAYMENT_SECURITY_AUDIT_BASELINE
+  - PAY-DEC-IA1-016
+  verification:
+  - DOMAIN_UNIT
+  - SECURITY_TEST
+  - API_CONTRACT_TEST
+- id: PAY-INV-019
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: An unauthenticated transport request creates no Payment; a Payment is durably created before any Amplitude business call.
+  enforcement:
+  - INTEGRATION
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: REJECT_BEFORE_CREATION
+  sourceRefs:
+  - PAY-BASE-005
+  - PAYMENT_AUTHORIZATION_VERIFICATION_DECISION
+  verification:
+  - API_SECURITY_TEST
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+- id: PAY-INV-020
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: Payment creation requires all mandatory canonical identifiers, positive Money, protected debtor account and balanced Treasury allocation
+    intent.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_CREATION_NO_EVENT
+  sourceRefs:
+  - PAY-AGG-003
+  - PAY-DEC-IA1-014
+  verification:
+  - DOMAIN_UNIT
+  - PROPERTY_BASED
+- id: PAY-INV-021
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: Banking verification cannot begin before Payment has accepted an AuthorizationEvidenceSnapshot with outcome APPROVED.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-DEC-IA1-019
+  - PAY-TR-002
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-022
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: An approved authorization snapshot requires every mandatory request binding to MATCH, a valid payment scope and acceptance inside
+    the approved validity interval.
+  enforcement:
+  - DOMAIN
+  - POLICY
+  violationResult: SECURITY_REJECTION
+  sourceRefs:
+  - PAY-DEC-IA1-019
+  verification:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  - SECURITY_TEST
+- id: PAY-INV-023
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: A rejected authorization snapshot forbids all Amplitude customer, funds and posting operations for that Payment.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: TERMINAL_REJECTION
+  sourceRefs:
+  - PAY-DEC-IA1-019
+  verification:
+  - DOMAIN_UNIT
+  - APPLICATION
+- id: PAY-INV-024
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: Authorization infrastructure failure without a canonical decision is represented as a technical PaymentFailure and never fabricated
+    as APPROVED or REJECTED evidence.
+  enforcement:
+  - APPLICATION
+  - DOMAIN
+  violationResult: SAFE_FAILURE_OR_RECOVERY
+  sourceRefs:
+  - PAY-DEC-IA1-019
+  - PAY-DEC-IA1-016
+  verification:
+  - APPLICATION
+  - DOMAIN_UNIT
+- id: PAY-INV-025
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: An identical authorization evidence replay is a no-op; the same authorization evidence identity with another fingerprint is a security
+    conflict.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: NO_OP_OR_SECURITY_CONFLICT
+  sourceRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-006
+  - PAY-DEC-IA1-019
+  verification:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+- id: PAY-INV-026
+  category: AUTHORIZATION_AND_ADMISSION
+  statement: Payment never infers, manages or changes a TRESOR PAY Subscription status from ExternalSubscriptionReference.
+  enforcement:
+  - DOMAIN
+  - ARCHITECTURE
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-BASE-006
+  - PAY-BOUND-001
+  verification:
+  - DOMAIN_UNIT
+  - ARCHITECTURE_TEST
+- id: PAY-INV-027
+  category: BANKING_AND_FUNDS
+  statement: BankingVerificationSnapshot and FundsControlSnapshot are distinct evidence categories and neither substitutes for the other.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-BASE-011
+  - PAY-BASE-012
+  - PAY-DEC-IA1-020
+  - PAY-DEC-IA1-021
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-028
+  category: BANKING_AND_FUNDS
+  statement: Only a BankingVerificationSnapshot with outcome VERIFIED may permit progression to funds control.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_OR_REMAIN_CHECKING
+  sourceRefs:
+  - PAY-BASE-010
+  - PAY-DEC-IA1-020
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-029
+  category: BANKING_AND_FUNDS
+  statement: A banking verification outcome REJECTED produces a definitive business rejection before financial submission; INDETERMINATE never
+    permits approval.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_OR_RECOVERY
+  sourceRefs:
+  - PAY-DEC-IA1-020
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-030
+  category: BANKING_AND_FUNDS
+  statement: Every accepted banking verification must match the aggregate institution and debtor-account binding fingerprint.
+  enforcement:
+  - DOMAIN
+  violationResult: INTEGRATION_CONFLICT
+  sourceRefs:
+  - PAY-SNAP-007
+  - PAY-DEC-IA1-020
+  verification:
+  - DOMAIN_UNIT
+  - MAPPING_TEST
+- id: PAY-INV-031
+  category: BANKING_AND_FUNDS
+  statement: ObservedCustomer or any read projection can inform operations but can never authorize Payment progression or replace a fresh Amplitude
+    verification.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAYMENT_DOMAIN_BOUNDARIES
+  - AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW
+  verification:
+  - APPLICATION
+  - ARCHITECTURE_TEST
+- id: PAY-INV-032
+  category: BANKING_AND_FUNDS
+  statement: Only a FundsControlSnapshot with outcome VERIFIED, exact Payment amount/account binding and unexpired validity may authorize posting.
+  enforcement:
+  - DOMAIN
+  - POLICY
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-SNAP-008
+  - PAY-DEC-IA1-021
+  verification:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+- id: PAY-INV-033
+  category: BANKING_AND_FUNDS
+  statement: Funds outcome REJECTED forbids posting and supports business rejection; INDETERMINATE supports only controlled recovery or technical
+    failure.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_OR_RECOVERY
+  sourceRefs:
+  - PAY-DEC-IA1-021
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-034
+  category: BANKING_AND_FUNDS
+  statement: Available balance and provider-disclosed available amount are never retained in Payment.
+  enforcement:
+  - DOMAIN
+  - INTEGRATION
+  violationResult: REJECT_MAPPING
+  sourceRefs:
+  - PAY-SNAP-009
+  - PAY-DEC-IA1-021
+  verification:
+  - MAPPING_TEST
+  - SECURITY_TEST
+- id: PAY-INV-035
+  category: BANKING_AND_FUNDS
+  statement: Posting authorization requires a TreasuryAccountResolutionSnapshot with outcome RESOLVED and a TreasuryAccountReference produced
+    from protected bank configuration.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-BASE-014
+  - PAY-DEC-IA1-022
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-036
+  category: BANKING_AND_FUNDS
+  statement: Resolved Treasury institution and allocation-intent fingerprint must match the Payment; inbound beneficiary/account data cannot create
+    or override the CUT reference.
+  enforcement:
+  - DOMAIN
+  - POLICY
+  violationResult: INTEGRATION_CONFLICT
+  sourceRefs:
+  - PAY-DEC-IA1-013
+  - PAY-DEC-IA1-022
+  verification:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+- id: PAY-INV-037
+  category: BANKING_AND_FUNDS
+  statement: Once posting is authorized, the accepted favorable authorization, banking, funds and Treasury-resolution evidence cannot be replaced
+    by a less authoritative, stale or differently bound result.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_CONFLICT
+  sourceRefs:
+  - PAY-DEC-IA1-026
+  verification:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+- id: PAY-INV-038
+  category: BANKING_AND_FUNDS
+  statement: A Payment is approved for financial submission only when authorization, banking verification, funds control and Treasury resolution
+    are all favorable and mutually coherent.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-BASE-010
+  - PAY-BASE-012
+  - PAY-BASE-013
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-039
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: One Payment authorizes at most one logical posting instruction for its original payment intention.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: REJECT_SECOND_LOGICAL_POSTING
+  sourceRefs:
+  - PAY-AGG-014
+  - PAY-TR-009
+  verification:
+  - DOMAIN_UNIT
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+- id: PAY-INV-040
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: Every retry of the same posting instruction reuses the exact posting idempotency key and immutable instruction fingerprint; a new
+    key is not a retry.
+  enforcement:
+  - APPLICATION
+  - INTEGRATION
+  - PERSISTENCE
+  violationResult: IDEMPOTENCY_CONFLICT
+  sourceRefs:
+  - PAYMENT_RESILIENCE_BASELINE
+  - PAY-CONTRACT-002
+  verification:
+  - APPLICATION
+  - CONTRACT_TEST
+  - CONCURRENCY
+- id: PAY-INV-041
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: A posting outcome must match the original Payment reference, amount, institution, debtor account, Treasury reference and posting
+    command identity.
+  enforcement:
+  - DOMAIN
+  violationResult: INTEGRATION_CONFLICT
+  sourceRefs:
+  - PAY-SNAP-007
+  - PAY-DEC-IA1-023
+  verification:
+  - DOMAIN_UNIT
+  - MAPPING_TEST
+- id: PAY-INV-042
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: Posting outcome UNKNOWN means neither success nor failure, forbids blind financial resubmission and requires authoritative lookup
+    or reconciliation.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: ACCOUNTING_OUTCOME_UNKNOWN
+  sourceRefs:
+  - PAY-BASE-015
+  - PAY-BASE-016
+  - PAY-SNAP-010
+  verification:
+  - DOMAIN_UNIT
+  - RESILIENCE_TEST
+- id: PAY-INV-043
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: A posting may be classified REJECTED_NO_FINANCIAL_EFFECT or Payment FAILED only when authoritative evidence proves that neither debit
+    nor CUT credit occurred.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_FAILURE_CLASSIFICATION
+  sourceRefs:
+  - PAY-SNAP-010
+  - PAYMENT_STATE_MACHINE
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-044
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: Posting outcome COMPLETED requires debit SUCCEEDED, CUT credit SUCCEEDED, exact Money and a principal BankPostingReference.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_SNAPSHOT
+  sourceRefs:
+  - PAY-SNAP-011
+  - PAY-DEC-IA1-023
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-045
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: DEBIT_CONFIRMED_CUT_CREDIT_PENDING requires debit SUCCEEDED, CUT credit PENDING or UNKNOWN, a principal posting reference and no
+    success finalization.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_SNAPSHOT
+  sourceRefs:
+  - PAY-DEC-IA1-023
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-046
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: A confirmed debit with explicit CUT-credit failure requires reversal review/authorization and can never be represented as successful
+    or failed-without-effect.
+  enforcement:
+  - DOMAIN
+  violationResult: REVERSAL_REQUIRED
+  sourceRefs:
+  - PAY-BASE-021
+  - PAY-DEC-IA1-023
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-047
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: When principal or leg references are present in multiple domain objects, they must be equal and immutable.
+  enforcement:
+  - DOMAIN
+  violationResult: INTEGRATION_CONFLICT
+  sourceRefs:
+  - PAY-POSTREF-001
+  - PAY-POSTREF-003
+  - PAY-DEC-IA1-023
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-048
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: The original BankPostingReference is retained for the lifetime of Payment, including after TFJ processing or reversal.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-POSTREF-002
+  - PAY-POSTREF-007
+  - PAY-DEC-IA1-006
+  verification:
+  - DOMAIN_UNIT
+  - RECONSTITUTION_TEST
+- id: PAY-INV-049
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: Confirmed debit and CUT credit establish immediate posting facts only; they never establish TFJ finality.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_TRANSITION
+  sourceRefs:
+  - PAY-BASE-018
+  - PAY-SNAP-012
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-050
+  category: POSTING_AND_FINANCIAL_SAFETY
+  statement: A posting or posting-resolution mutation is committed atomically with aggregate state, immutable audit and Outbox intent, or none
+    of them is committed.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: ROLLBACK_ALL
+  sourceRefs:
+  - PAY-BASE-024
+  - PAYMENT_RESILIENCE_BASELINE
+  verification:
+  - POSTGRES_INTEGRATION
+  - CRASH_RECOVERY_TEST
+- id: PAY-INV-051
+  category: NOTIFICATION_AND_TFJ
+  statement: Notification is a domain intent/event orthogonal to financial state; delivery success or failure never changes Payment financial
+    status.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: IGNORE_DELIVERY_FOR_FINANCIAL_STATE
+  sourceRefs:
+  - PAY-DEC-IA1-004
+  - PAY-BASE-022
+  verification:
+  - DOMAIN_UNIT
+  - INTERMODULE_TEST
+- id: PAY-INV-052
+  category: NOTIFICATION_AND_TFJ
+  statement: At most one logical notification intent exists per Payment, notification purpose and business result version; replay reuses the original
+    event identity.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: RETURN_EXISTING_INTENT
+  sourceRefs:
+  - PAY-BASE-023
+  - PAYMENT_RESILIENCE_BASELINE
+  verification:
+  - POSTGRES_INTEGRATION
+  - REPLAY_TEST
+- id: PAY-INV-053
+  category: NOTIFICATION_AND_TFJ
+  statement: TFJ tracking begins from a confirmed completed posting and does not wait for notification delivery acknowledgement.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: REJECT_INVALID_DEPENDENCY
+  sourceRefs:
+  - PAY-BASE-018
+  - PAY-DEC-IA1-004
+  verification:
+  - DOMAIN_UNIT
+  - INTERMODULE_TEST
+- id: PAY-INV-054
+  category: NOTIFICATION_AND_TFJ
+  statement: An EndOfDayConfirmationSnapshot enters Payment only after authentication, durable persistence and unique matching on institution,
+    business date, public Payment reference and principal posting reference.
+  enforcement:
+  - ACCOUNTING
+  - APPLICATION
+  - DOMAIN
+  violationResult: QUARANTINE_NO_PAYMENT_MUTATION
+  sourceRefs:
+  - PAY-BASE-019
+  - PAY-DEC-IA1-024
+  verification:
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  - CONTRACT_TEST
+- id: PAY-INV-055
+  category: NOTIFICATION_AND_TFJ
+  statement: TFJ PENDING, unmatched, ambiguous or conflicting evidence remains outside Payment and cannot change its state.
+  enforcement:
+  - ACCOUNTING
+  - DOMAIN
+  violationResult: QUARANTINE_NO_PAYMENT_MUTATION
+  sourceRefs:
+  - PAY-BASE-020
+  - PAY-SNAP-014
+  verification:
+  - APPLICATION
+  - RECONCILIATION_TEST
+- id: PAY-INV-056
+  category: NOTIFICATION_AND_TFJ
+  statement: Only a uniquely matched TFJ status INTEGRATED establishes TREASURY_INTEGRATED and finalization.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_TRANSITION
+  sourceRefs:
+  - PAY-BASE-019
+  - PAY-SNAP-013
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-057
+  category: NOTIFICATION_AND_TFJ
+  statement: TFJ delay or cutoff expiry keeps Payment pending and cannot alone authorize reversal, failure or another posting.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: REMAIN_PENDING_REQUEST_LOOKUP
+  sourceRefs:
+  - PAY-BASE-021
+  verification:
+  - DOMAIN_UNIT
+  - SCHEDULER_TEST
+- id: PAY-INV-058
+  category: NOTIFICATION_AND_TFJ
+  statement: An identical terminal TFJ replay is a no-op; conflicting final TFJ evidence is quarantined and never silently replaces terminal evidence.
+  enforcement:
+  - DOMAIN
+  - ACCOUNTING
+  violationResult: NO_OP_OR_QUARANTINE
+  sourceRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-017
+  - PAY-DEC-IA1-024
+  verification:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  - RECONCILIATION_TEST
+- id: PAY-INV-059
+  category: REVERSAL_AND_FAILURE
+  statement: A reversal can be requested only for a confirmed or authoritatively reconciled financial effect and requires BANK_INSTRUCTION or
+    APPROVED_RUNBOOK authorization.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - POLICY
+  violationResult: REJECT_REVERSAL
+  sourceRefs:
+  - PAY-DEC-IA1-025
+  - PAY-CONTRACT-002
+  verification:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  - AUTHORIZATION_TEST
+- id: PAY-INV-060
+  category: REVERSAL_AND_FAILURE
+  statement: Reversal uses a distinct immutable idempotency key and reversal reference and never overwrites the original posting identity.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: IDEMPOTENCY_OR_REFERENCE_CONFLICT
+  sourceRefs:
+  - PAY-POSTREF-007
+  - PAY-DEC-IA1-025
+  verification:
+  - DOMAIN_UNIT
+  - APPLICATION
+- id: PAY-INV-061
+  category: REVERSAL_AND_FAILURE
+  statement: Reversal outcome UNKNOWN requires authoritative lookup and forbids blind reversal resubmission.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  violationResult: ACCOUNTING_OUTCOME_UNKNOWN
+  sourceRefs:
+  - PAY-DEC-IA1-025
+  - PAYMENT_RESILIENCE_BASELINE
+  verification:
+  - DOMAIN_UNIT
+  - RESILIENCE_TEST
+- id: PAY-INV-062
+  category: REVERSAL_AND_FAILURE
+  statement: REVERSED requires an authoritative outcome REVERSED with a stable reversal reference linked to the same Payment and original posting.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_TRANSITION
+  sourceRefs:
+  - PAY-DEC-IA1-006
+  - PAY-DEC-IA1-025
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-063
+  category: REVERSAL_AND_FAILURE
+  statement: A rejected or not-allowed reversal does not make the original financial effect disappear and cannot transition Payment to FAILED-without-effect.
+  enforcement:
+  - DOMAIN
+  violationResult: REMAIN_REVERSAL_REQUIRED_OR_OPERATIONAL
+  sourceRefs:
+  - PAY-DEC-IA1-025
+  verification:
+  - DOMAIN_UNIT
+- id: PAY-INV-064
+  category: REVERSAL_AND_FAILURE
+  statement: REJECTED is terminal only for a conclusive business/security rejection before any financial instruction can have produced an effect.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_TERMINAL_STATE
+  sourceRefs:
+  - PAYMENT_UBIQUITOUS_LANGUAGE
+  - PAYMENT_STATE_MACHINE
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-065
+  category: REVERSAL_AND_FAILURE
+  statement: FAILED is terminal only when absence of financial effect is proven; an uncertain, partial or reversal-required Payment cannot become
+    FAILED.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_INVALID_TERMINAL_STATE
+  sourceRefs:
+  - PAY-BASE-015
+  - PAYMENT_STATE_MACHINE
+  verification:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+- id: PAY-INV-066
+  category: REVERSAL_AND_FAILURE
+  statement: Every terminal state has finalizedAt, immutable terminal evidence and no later state-changing command; an identical fact replay remains
+    a no-op.
+  enforcement:
+  - DOMAIN
+  violationResult: REJECT_NO_MUTATION
+  sourceRefs:
+  - PAY-SNAP-017
+  - PAYMENT_STATE_MACHINE
+  verification:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+- id: PAY-INV-067
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Same PaymentSource and ExternalPaymentReference with the same canonical request fingerprint resolves to the original Payment and
+    creates no new business effect.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: RETURN_EXISTING_PAYMENT
+  sourceRefs:
+  - PAY-DEC-IA1-002
+  - PAYMENT_RESILIENCE_BASELINE
+  verification:
+  - APPLICATION
+  - CONCURRENCY
+- id: PAY-INV-068
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Same source/reference or idempotency scope with a different canonical request fingerprint is a conflict and leaves the original Payment
+    unchanged.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: IDEMPOTENCY_CONFLICT
+  sourceRefs:
+  - PAY-DEC-IA1-008
+  - PAY-DEC-IA1-011
+  verification:
+  - APPLICATION
+  - CONCURRENCY
+- id: PAY-INV-069
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Same evidence identity and fingerprint is a no-op without version increment or new domain event; same identity with another fingerprint
+    is a conflict.
+  enforcement:
+  - DOMAIN
+  violationResult: NO_OP_OR_CONFLICT
+  sourceRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-006
+  - PAY-DEC-IA1-026
+  verification:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+- id: PAY-INV-070
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: A command with an expected business version different from the current version is rejected before mutation.
+  enforcement:
+  - DOMAIN
+  - PERSISTENCE
+  violationResult: STALE_COMMAND
+  sourceRefs:
+  - PAYMENT_STATE_MACHINE
+  - PAY-AGG-011
+  verification:
+  - DOMAIN_UNIT
+  - CONCURRENCY
+- id: PAY-INV-071
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Concurrent creation for the same business uniqueness key results in one Payment; losing transactions reload the winner or return
+    a conflict.
+  enforcement:
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: ONE_WINNER
+  sourceRefs:
+  - PAY-DEC-IA1-002
+  verification:
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+- id: PAY-INV-072
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Aggregate reconstitution restores structurally valid persisted state, performs no business transition, changes no timestamp/version
+    and raises no event.
+  enforcement:
+  - DOMAIN
+  - PERSISTENCE
+  violationResult: REJECT_CORRUPT_STATE
+  sourceRefs:
+  - PAY-DEC-IA1-005
+  - PAY-AGG-010
+  verification:
+  - RECONSTITUTION_TEST
+  - PERSISTENCE_TEST
+- id: PAY-INV-073
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: An invariant violation causes no partial state mutation, no event registration, no audit transition, no Outbox intent and no version
+    change.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: ATOMIC_NO_OP
+  sourceRefs:
+  - PAY-AGG-012
+  - PAY-BASE-024
+  verification:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+- id: PAY-INV-074
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Every successful aggregate mutation registers the exact corresponding domain fact once and commits state, audit and Outbox intent
+    atomically.
+  enforcement:
+  - DOMAIN
+  - APPLICATION
+  - PERSISTENCE
+  violationResult: ROLLBACK_ALL
+  sourceRefs:
+  - PAY-AGG-011
+  - PAY-BASE-024
+  verification:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+- id: PAY-INV-075
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: Outbox republication and consumer redelivery preserve eventId and payload identity and never repeat the aggregate transition or financial
+    effect.
+  enforcement:
+  - APPLICATION
+  - INTEGRATION
+  violationResult: IDEMPOTENT_REDELIVERY
+  sourceRefs:
+  - PAY-BASE-023
+  - PAYMENT_RESILIENCE_BASELINE
+  verification:
+  - MESSAGING_INTEGRATION
+  - REPLAY_TEST
+- id: PAY-INV-076
+  category: REPLAY_CONCURRENCY_AND_ATOMICITY
+  statement: The aggregate never performs a network call; external results are accepted only after application orchestration returns a canonical
+    result.
+  enforcement:
+  - DOMAIN
+  - ARCHITECTURE
+  violationResult: ARCHITECTURE_FAILURE
+  sourceRefs:
+  - PAY-BOUND-004
+  - PAYMENT_AGGREGATE_ROOT
+  verification:
+  - ARCHITECTURE_TEST
+  - APPLICATION
+decisions:
+- id: PAY-DEC-IA1-027
+  decision: IA1_INVARIANTS_OVERRIDE_CONFLICTING_IA0P_STATE_SEMANTICS
+- id: PAY-DEC-IA1-028
+  decision: UTC_INSTANTS_BANK_LOCAL_BUSINESS_DATES_POLICY_DRIVEN_FRESHNESS
+- id: PAY-DEC-IA1-029
+  decision: NOTIFICATION_INTENT_ORTHOGONAL_NOT_TARGET_FINANCIAL_STATE
+- id: PAY-DEC-IA1-030
+  decision: TFJ_FAILED_DOES_NOT_AUTOMATICALLY_MAP_TO_PAYMENT_FAILED
+- id: PAY-DEC-IA1-031
+  decision: ONE_LOGICAL_POSTING_PER_PAYMENT_RECOVERY_REUSES_IDENTITY
+- id: PAY-DEC-IA1-032
+  decision: INVARIANT_VIOLATION_ATOMIC_NO_MUTATION
+readiness:
+  invariantCount: 76
+  humanValidationRequired: true
+  machineReadableValidationRequired: true
+  commandsLotReadyAfterValidation: true
+  codeGeneration: FORBIDDEN

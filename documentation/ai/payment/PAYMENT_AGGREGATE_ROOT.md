@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Aggregate Root
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.3 — Snapshots and Business Evidence`  
+> **Current lot:** `2.4 — Invariants`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `SNAPSHOT_MODEL_PREPARED`  
+> **Status:** `INVARIANT_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Aggregate decision
@@ -11,108 +11,117 @@
 `Payment` remains the sole write Aggregate Root for one logical TRESOR PAY
 payment intention.
 
-Normative supporting documents:
+Normative model documents:
 
 - `PAYMENT_VALUE_OBJECT_CATALOGUE.md`;
-- `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
+- `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`;
+- `PAYMENT_INVARIANT_CATALOGUE.md`;
+- `PAYMENT_INVARIANT_CATALOGUE.yaml`.
 
-## 2. Required state at creation
+## 2. State composition
 
-| Attribute | Type |
+Payment contains:
+
+- immutable identity and original-intent Value Objects;
+- current `PaymentStatus`;
+- at most one current accepted snapshot per evidence category;
+- protected Treasury and posting references when known;
+- at most one current relevant `PaymentFailure`;
+- temporal fields and `businessVersion`.
+
+Full histories, notification delivery, unmatched TFJ evidence and technical
+attempts remain outside the aggregate.
+
+## 3. Invariant enforcement
+
+Every named aggregate operation follows this order:
+
+```text
+validate command identity/version
+validate source state
+validate required evidence and bindings
+validate transition-specific invariants
+compute next immutable state
+register the domain fact
+return the complete mutation
+```
+
+An invariant violation leaves the aggregate exactly unchanged.
+
+There is no public generic status setter and no partially applied mutation.
+
+## 4. Core aggregate invariants
+
+- immutable Payment identity and original financial intent;
+- source-scoped external-reference uniqueness;
+- positive balanced Money and allocations;
+- authorization before banking verification;
+- banking verification before funds control;
+- favorable fresh funds and protected CUT resolution before posting;
+- one logical posting per Payment;
+- unknown outcome resolved by lookup, never blind replay;
+- completed posting distinct from TFJ finality;
+- notification delivery independent from financial state;
+- uniquely matched TFJ required for Treasury finality;
+- reversal authorized separately on the original Payment;
+- terminal states immutable;
+- state, audit and Outbox intent atomic.
+
+The complete 76-invariant catalogue is normative.
+
+## 5. State/evidence coherence
+
+| Condition | Required aggregate evidence |
 | --- | --- |
-| `id` | `PaymentId` |
-| `source` | `PaymentSource` |
-| `externalPaymentReference` | `ExternalPaymentReference` |
-| `externalSubscriptionReference` | `ExternalSubscriptionReference` |
-| `publicPaymentReference` | `PublicPaymentReference` |
-| `requestIdentity` | `PaymentRequestIdentity` |
-| `financialInstitution` | `FinancialInstitutionCode` |
-| `debtorAccount` | `DebtorAccountReference` |
-| `requestedAmount` | shared-kernel `Money` |
-| `treasuryAllocationIntent` | `TreasuryAllocationIntent` |
-| `status` | `PaymentStatus` |
-| `createdAt` | `Instant` |
-| `updatedAt` | `Instant` |
-| `businessVersion` | non-negative monotonic version |
+| Received | Complete immutable request intent |
+| Authorization approved | Approved authorization snapshot |
+| Banking verified | Approved authorization + banking `VERIFIED` |
+| Approved for posting | Banking `VERIFIED` + funds `VERIFIED` + Treasury `RESOLVED` |
+| Posting submitted | One durable posting instruction identity |
+| Debit-only | Debit succeeded, CUT not succeeded, principal posting reference |
+| CUT credited | Both legs succeeded, principal posting reference |
+| Outcome unknown | Canonical unknown/incomplete posting or reversal evidence |
+| Pending TFJ | Completed posting, no final matched TFJ |
+| Treasury integrated | Uniquely matched TFJ `INTEGRATED` |
+| Reversal required/pending | Confirmed effect + explicit authorization as applicable |
+| Reversed | Authoritative reversal success |
+| Rejected | Conclusive pre-financial rejection |
+| Failed | Proven absence of financial effect |
 
-## 3. Current optional decision evidence
+## 6. IA-0P state-machine compatibility
 
-| Attribute | Type |
-| --- | --- |
-| `authorizationEvidence` | `AuthorizationEvidenceSnapshot` |
-| `bankingVerificationEvidence` | `BankingVerificationSnapshot` |
-| `fundsControlEvidence` | `FundsControlSnapshot` |
-| `treasuryResolutionEvidence` | `TreasuryAccountResolutionSnapshot` |
-| `resolvedTreasuryAccount` | `TreasuryAccountReference` |
-| `postingOutcome` | `PostingOutcomeSnapshot` |
-| `bankPostingReference` | `BankPostingReference` |
-| `tfjConfirmation` | `EndOfDayConfirmationSnapshot` |
-| `reversal` | `ReversalSnapshot` |
-| `failure` | current relevant `PaymentFailure` |
-| `finalizedAt` | `Instant` |
+The IA-0P machine remains an input until Lot 2.5.
 
-Payment stores at most one current accepted snapshot per category. All previous
-versions are persisted in append-only audit/reporting, not in the aggregate.
+For IA-1:
 
-## 4. Snapshot acceptance
+- funds control is separate from banking verification;
+- notification intent is orthogonal and not a target financial status;
+- TFJ provider failure does not automatically imply Payment `FAILED`;
+- `FAILED` requires proven absence of financial effect.
 
-A snapshot enters Payment only through a named aggregate operation after:
+Lot 2.5 will reconcile states, operations and transitions without weakening
+these invariants.
 
-- source authentication/validation outside the aggregate;
-- canonical mapping;
-- identity, bank, amount and account-binding verification;
-- freshness validation when applicable;
-- structural consistency validation;
-- evidence replay/conflict detection.
+## 7. Applicable invariant identifiers
 
-The aggregate never receives an external DTO or raw provider payload.
+- aggregate structure: `PAY-AGG-001` to `PAY-AGG-014`;
+- snapshots: `PAY-SNAP-001` to `PAY-SNAP-018`;
+- complete cross-object/lifecycle catalogue: `PAY-INV-001` to `PAY-INV-076`;
+- Lot 2.4 decisions: `PAY-DEC-IA1-027` to `PAY-DEC-IA1-032`.
 
-## 5. Snapshot replacement
+## 8. Deferred scope
 
-An identical replay is a no-op.
+- exact aggregate operations and command signatures: Lot 2.5;
+- domain-event names and safe payloads: Lot 2.6;
+- policies and Domain Services: Lot 2.7;
+- final cross-document validation: Lot 2.8.
 
-A different fingerprint under the same evidence identity is a conflict and
-causes no Payment mutation.
-
-A newer snapshot can replace the current one only when the lifecycle permits a
-new observation and the new evidence is more authoritative or conclusive.
-Terminal-state evidence is never silently replaced.
-
-## 6. Financial evidence rules
-
-- available balance is not stored;
-- `UNKNOWN` posting outcome is not failure;
-- confirmed financial effect requires principal posting reference;
-- completed debit + CUT credit is not TFJ finality;
-- only uniquely matched final TFJ evidence enters Payment;
-- TFJ `PENDING`, unmatched or quarantined evidence remains in Accounting;
-- reversal retains original Payment and posting identity.
-
-## 7. Confidentiality
-
-Full snapshots are never serialized automatically into domain events.
-
-Events and query projections use explicit safe views defined by their own
-contracts. Credentials, raw token/claims, KYC values, clear account data and
-provider payloads remain forbidden.
-
-## 8. Applicable decisions
-
-- Aggregate decisions: `PAY-DEC-IA1-002` to `PAY-DEC-IA1-006`;
-- Value Object decisions: `PAY-DEC-IA1-007` to `PAY-DEC-IA1-016`;
-- Snapshot decisions: `PAY-DEC-IA1-017` to `PAY-DEC-IA1-026`;
-- structural snapshot invariants: `PAY-SNAP-001` to `PAY-SNAP-018`.
-
-## 9. Deferred scope
-
-Complete cross-state invariants, commands, events, policies and final model
-validation remain assigned to Lots 2.4–2.8.
-
-## 10. Verdict
+## 9. Verdict
 
 ```text
 AGGREGATE ROOT: PREPARED
-IDENTIFIERS AND VALUE OBJECTS: PREPARED
-SNAPSHOTS AND BUSINESS EVIDENCE: PREPARED
+VALUE OBJECTS: PREPARED
+SNAPSHOTS: PREPARED
+INVARIANTS: PREPARED
 CODE GENERATION: FORBIDDEN
 ```
