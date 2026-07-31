@@ -1,18 +1,17 @@
-schemaVersion: "1.1.0"
+schemaVersion: "1.2.0"
 
 context:
   id: "sixpay-payment-domain-brief-v1"
   domain: "payment"
   gate: "IA-1_PAYMENT_DOMAIN_BRIEF"
-  lot: "0_BASELINE_AND_GATE_SCOPE"
-  branch: "feat/payment-contract-pack"
-  sourceCommit: "__PAYMENT_CONTRACT_PACK_HEAD_SHA__"
+  lot: "1_UBIQUITOUS_LANGUAGE_AND_DOMAIN_BOUNDARIES"
+  branch: "feat/payment-domain-generation-brief"
   baselineDate: "2026-07-31"
-  status: "BASELINE_PENDING_VALIDATION"
+  status: "LOT_1_DRAFT_PENDING_VALIDATION"
   normative: true
 
 codeGenerationAllowed: false
-nextLot: "LOT_1_UBIQUITOUS_LANGUAGE_AND_PAYMENT_MODEL_BOUNDARIES"
+nextLot: "LOT_2_VALUE_OBJECTS_AND_IDENTIFIERS"
 
 primaryDocuments:
   - path: "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
@@ -21,6 +20,12 @@ primaryDocuments:
     role: "Lot 0 authority, scope, classifications and open decisions"
   - path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
     role: "Detailed source catalogue and stable source identifiers"
+  - path: "documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md"
+    role: "Normative Payment glossary"
+  - path: "documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md"
+    role: "Normative domain ownership boundaries"
+  - path: "documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md"
+    role: "BankPostingReference structural decision"
   - path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
     role: "Contract lifecycle, approval and generation authority"
 
@@ -29,6 +34,8 @@ upstreamDocuments:
     role: "Repository entry point and source-of-truth precedence"
   - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
     role: "Approved scope and system-of-record decisions"
+  - path: "documentation/architecture/tresorpay/API_ESSENTIEL_TRESORPAY.pdf"
+    role: "TRESOR PAY source API documentation including InitiateDebit"
   - path: "backend/partner/ARCHITECTURE.md"
     role: "Golden module structural conventions only"
   - path: "backend/partner/ACCEPTANCE-TRACEABILITY.md"
@@ -53,6 +60,9 @@ paymentAiCorpus:
   - "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
   - "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
   - "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
+  - "documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md"
+  - "documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md"
+  - "documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md"
   - "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
 
 contractClassification:
@@ -114,6 +124,8 @@ scope:
     - "MINIMIZED_DECISION_SNAPSHOTS"
     - "DOMAIN_EVENTS"
     - "SOURCE_TO_TEST_TRACEABILITY"
+    - "UBIQUITOUS_LANGUAGE"
+    - "DOMAIN_OWNERSHIP_BOUNDARIES"
 
   excluded:
     - "JAVA_IMPLEMENTATION"
@@ -134,14 +146,88 @@ approvedDecisionIds:
   through: "PAY-BASE-030"
   source: "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
 
+lot1Decisions:
+  - id: "PAY-DEC-IA1-001"
+    subject: "BANK_POSTING_REFERENCE_STRUCTURE"
+    status: "DECIDED_PENDING_EXTERNAL_CONTRACT_APPROVAL"
+    decision: "PRINCIPAL_REFERENCE_WITH_OPTIONAL_LEG_REFERENCES"
+    source: "documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md"
+
 openDecisionIds:
   from: "OPEN-BASE-001"
   through: "OPEN-BASE-013"
   source: "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
 
+ubiquitousLanguage:
+  path: "documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md"
+  canonicalTerms:
+    - "PAYMENT"
+    - "PAYMENT_RECEIVED"
+    - "TRESOR_PAY_AUTHORIZATION"
+    - "BANKING_VERIFICATION"
+    - "FUNDS_CONTROL"
+    - "BANK_POSTING"
+    - "DEBIT"
+    - "CUT_CREDIT"
+    - "TFJ_FINALITY"
+    - "NOTIFICATION"
+    - "REPLAY"
+    - "RECOVERY"
+    - "UNCERTAIN_BANKING_OUTCOME"
+    - "REVERSAL"
+    - "BUSINESS_FAILURE"
+    - "TECHNICAL_FAILURE"
+    - "DEFINITIVE_REJECTION"
+  ambiguousMajorTermsAllowed: false
+  initiateDebitMeaning: "PAYMENT_ORDER_SUBMISSION"
+  initiateDebitProvesBankDebit: false
+  endToEndIdMeaning: "EXTERNAL_PAYMENT_REFERENCE"
+
+domainBoundaries:
+  path: "documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md"
+  paymentOwns:
+    - "PAYMENT_LIFECYCLE"
+    - "PAYMENT_IDENTITIES_AND_REFERENCES"
+    - "PAYMENT_AMOUNT"
+    - "BUSINESS_DECISIONS_AND_NORMALIZED_RESULTS"
+    - "LEGAL_TRANSITIONS"
+    - "MINIMIZED_DECISION_EVIDENCE"
+    - "PAYMENT_FAILURES"
+    - "BUSINESS_VERSION"
+    - "DOMAIN_EVENTS"
+    - "NOTIFICATION_INTENTS"
+  paymentDoesNotOwn:
+    - "TRESOR_PAY_SUBSCRIPTION_LIFECYCLE"
+    - "CREDENTIALS_OR_JWT"
+    - "BANK_CUSTOMER_OR_ACCOUNT_MASTER"
+    - "AVAILABLE_BALANCE"
+    - "CUT_CONFIGURATION"
+    - "HTTP_REST_KAFKA_TRANSPORT"
+    - "AMPLITUDE_TECHNICAL_EXECUTION"
+    - "NOTIFICATION_DELIVERY"
+    - "GENERIC_OUTBOX_IMPLEMENTATION"
+    - "UNMATCHED_TFJ_WORKFLOW"
+    - "QUERY_PROJECTIONS"
+    - "UNBOUNDED_HISTORY"
+    - "REVERSAL_TECHNICAL_EXECUTION"
+
+bankPostingReference:
+  decisionId: "PAY-DEC-IA1-001"
+  principalReference:
+    requiredWhenPostingConfirmed: true
+  debitLegReference:
+    required: false
+  cutCreditLegReference:
+    required: false
+  legReferencesRepresentIndependentPayments: false
+  externalContractApprovalRequired: true
+
 traceability:
   requiredPrefixes:
     - "PAY-BASE-"
+    - "PAY-BOUND-"
+    - "PAY-POSTREF-"
+    - "PAY-DEC-"
     - "PAY-CONTRACT-"
     - "PAY-AI-"
     - "PAY-SRC-"
@@ -176,12 +262,13 @@ goldenPartner:
     - "ACCEPTANCE_TRACEABILITY"
   businessSemanticsReusable: false
 
-authorizedLot0Modifications:
+authorizedLot1Modifications:
   - "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
-  - "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
   - "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
   - "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
-  - "documentation/contracts/CONTRACT_REGISTRY.yaml"
+  - "documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md"
+  - "documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md"
+  - "documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md"
 
 generationRules:
   forbidden:
@@ -195,6 +282,9 @@ generationRules:
 
 readiness:
   lot0BaselinePrepared: true
-  documentaryValidationRequired: true
+  lot1LanguagePrepared: true
+  lot1BoundaryPrepared: true
+  lot1PostingReferenceDecisionPrepared: true
+  lot1HumanValidationRequired: true
   contractPackApproved: false
   codeGeneration: "FORBIDDEN"
