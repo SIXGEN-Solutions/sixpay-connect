@@ -1,0 +1,1360 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Amplitude Payment Posting API
+  version: 1.0.0
+  description: |
+    Contract used by SIXPAY Accounting through the Integration anti-corruption
+    layer to check payment execution conditions, optionally reserve funds,
+    atomically debit the customer account and credit the configured CUT account,
+    recover an uncertain outcome and request an explicit reversal.
+
+    Amplitude remains authoritative for accounts, available funds, restrictions,
+    limits, reservations and financial entries. The preferred operation is an
+    atomic debit and CUT credit. A reservation flow is usable only when the bank
+    declares and approves that capability.
+
+    A timeout or connection loss after a financial command is an UNKNOWN
+    outcome. SIXPAY must query the operation with the original idempotency key
+    or bank reference and must never blindly submit another financial command.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryId: "amplitude-payment-posting-api-v1"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.4"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_BANK_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "integration"
+    businessOwner: "accounting"
+    capability: "FUNDS_CONTROL_PAYMENT_POSTING_AND_REVERSAL"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    preferredPostingMode: "ATOMIC_DEBIT_AND_CUT_CREDIT"
+    optionalCapabilities:
+      fundReservation: "PENDING_BANK_CONFIRMATION"
+      reversal: "PENDING_BANK_CONFIRMATION"
+    decisions:
+      - "IA0R-D06"
+      - "IA0R-D07"
+    limitations:
+      - "NO_CUSTOMER_IDENTITY_OR_KYC_VERIFICATION"
+      - "NO_TRESOR_PAY_SUBSCRIPTION_AUTHORIZATION"
+      - "NO_TFJ_FINALITY"
+      - "NO_BLIND_FINANCIAL_REPLAY"
+
+servers:
+  - url: https://amplitude-api.example
+    description: Environment-specific Amplitude integration endpoint
+
+security:
+  - oauth2ClientCredentials:
+      - amplitude.payment.read
+    mutualTLS: []
+
+tags:
+  - name: Payment checks
+    description: Fresh account, available-funds, restriction and limit checks.
+  - name: Fund reservations
+    description: Optional bank-approved reservation lifecycle.
+  - name: Payment postings
+    description: Financial posting and outcome recovery.
+  - name: Reversals
+    description: Explicit, authorized and audited bank reversal.
+
+paths:
+  /api/v1/payment-checks:
+    post:
+      tags: [Payment checks]
+      operationId: checkAmplitudePaymentExecution
+      summary: Check whether the account can execute the payment
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.account.read
+            - amplitude.funds.read
+          mutualTLS: []
+      description: |
+        Performs a fresh read-only decision for the supplied amount and
+        currency. It checks account existence and status, debit restrictions,
+        available funds and applicable transaction limits. It performs no
+        reservation and no financial entry.
+      x-idempotent: true
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCheckRequest'
+      responses:
+        '200':
+          description: Completed positive, negative or indeterminate check
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentCheckResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/fund-reservations:
+    post:
+      tags: [Fund reservations]
+      operationId: reserveAmplitudePaymentFunds
+      summary: Reserve funds for a Payment
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.funds.read
+            - amplitude.payment.post
+          mutualTLS: []
+      description: |
+        Optional capability. The operation may be used only after Amplitude
+        confirms reservation semantics, expiry, capture and release. A timeout
+        is an UNKNOWN reservation outcome and must be resolved by lookup.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundReservationRequest'
+      responses:
+        '200':
+          description: Reservation outcome is known
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundReservationResult'
+        '202':
+          description: Reservation accepted but its financial outcome is not yet conclusive
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundReservationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/FinancialCommandFailure'
+        '503':
+          $ref: '#/components/responses/FinancialCommandUnavailable'
+
+  /api/v1/fund-reservation-lookups/{idempotencyKey}:
+    get:
+      tags: [Fund reservations]
+      operationId: getAmplitudeFundReservationByIdempotencyKey
+      summary: Recover a reservation outcome by its original idempotency key
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Current authoritative reservation outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundReservationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/fund-reservations/{reservationReference}/releases:
+    post:
+      tags: [Fund reservations]
+      operationId: releaseAmplitudeFundReservation
+      summary: Release a reservation without posting
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.post
+          mutualTLS: []
+      description: |
+        Releases an unconsumed reservation. The release uses its own
+        idempotency key. An uncertain release is recovered through reservation
+        lookup and is never retried with a new key.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ReservationReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationReleaseRequest'
+      responses:
+        '200':
+          description: Reservation release outcome is known
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundReservationResult'
+        '202':
+          description: Release outcome is not yet conclusive
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundReservationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/FinancialCommandFailure'
+        '503':
+          $ref: '#/components/responses/FinancialCommandUnavailable'
+
+  /api/v1/payment-postings:
+    post:
+      tags: [Payment postings]
+      operationId: postAmplitudePayment
+      summary: Debit the customer and credit the configured CUT
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.post
+          mutualTLS: []
+      description: |
+        Preferred mode: one atomic Amplitude operation debits the customer and
+        credits the configured CUT. When an approved reservation is supplied,
+        Amplitude captures that reservation and credits the CUT under the same
+        posting identity.
+
+        The CUT reference is an opaque reference resolved from protected bank
+        configuration; it must never be accepted from the TRESOR PAY payload.
+        The same idempotency key and same instruction return the same posting
+        identity and outcome. The same key with a different instruction is a
+        conflict.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentPostingRequest'
+      responses:
+        '200':
+          description: Posting reached a conclusive outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPostingResult'
+        '202':
+          description: Posting was accepted but its financial outcome is unknown or incomplete
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPostingResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/FinancialCommandFailure'
+        '503':
+          $ref: '#/components/responses/FinancialCommandUnavailable'
+
+  /api/v1/payment-posting-lookups/{idempotencyKey}:
+    get:
+      tags: [Payment postings]
+      operationId: getAmplitudePostingByIdempotencyKey
+      summary: Recover posting status by the original idempotency key
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Current authoritative posting outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPostingResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/payment-postings/{bankPostingReference}:
+    get:
+      tags: [Payment postings]
+      operationId: getAmplitudePostingByReference
+      summary: Get the current posting status by bank reference
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/BankPostingReference'
+      responses:
+        '200':
+          description: Current authoritative posting outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPostingResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/payment-postings/{bankPostingReference}/reversals:
+    post:
+      tags: [Reversals]
+      operationId: reverseAmplitudePosting
+      summary: Request an explicit bank-authorized reversal
+      description: |
+        Reversal is not an automatic Payment decision. SIXPAY may call this
+        operation only with a bank instruction or an approved runbook,
+        appropriate RBAC authorization and a durable audit record. The reversal
+        key must be distinct from the original posting key.
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.reverse
+            - amplitude.payment.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/BankPostingReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentReversalRequest'
+      responses:
+        '200':
+          description: Reversal reached a conclusive outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReversalResult'
+        '202':
+          description: Reversal accepted but its financial outcome is unknown
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              $ref: '#/components/headers/OperationLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReversalResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/FinancialCommandFailure'
+        '503':
+          $ref: '#/components/responses/FinancialCommandUnavailable'
+
+  /api/v1/payment-postings/{bankPostingReference}/reversals/{reversalReference}:
+    get:
+      tags: [Reversals]
+      operationId: getAmplitudeReversal
+      summary: Get the current reversal status
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/BankPostingReference'
+        - $ref: '#/components/parameters/ReversalReference'
+      responses:
+        '200':
+          description: Current authoritative reversal outcome
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReversalResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OperationNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      description: OAuth 2.0 client credentials token issued to SIXPAY.
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.amplitude.example/oauth2/token
+          scopes:
+            amplitude.account.read: Read account status and restrictions
+            amplitude.funds.read: Read available funds and applicable limits
+            amplitude.payment.post: Reserve funds and execute posting
+            amplitude.payment.read: Query reservation, posting and reversal outcomes
+            amplitude.payment.reverse: Request an explicitly authorized reversal
+    mutualTLS:
+      type: mutualTLS
+      description: SIXPAY client certificate trusted by the bank.
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: End-to-end correlation identifier propagated unchanged.
+      schema:
+        type: string
+        format: uuid
+    FinancialInstitutionCode:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      description: Institution owning the debtor account and bank operation.
+      schema:
+        $ref: '#/components/schemas/FinancialInstitutionCode'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Stable operation key generated by SIXPAY Accounting. Every retry of the
+        same command reuses this exact key. It must contain no sensitive data.
+      schema:
+        $ref: '#/components/schemas/IdempotencyKey'
+    IdempotencyKeyPath:
+      name: idempotencyKey
+      in: path
+      required: true
+      description: Original financial-command idempotency key.
+      schema:
+        $ref: '#/components/schemas/IdempotencyKey'
+    ReservationReference:
+      name: reservationReference
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BankReference'
+    BankPostingReference:
+      name: bankPostingReference
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BankReference'
+    ReversalReference:
+      name: reversalReference
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BankReference'
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OperationLocation:
+      description: Relative URI for authoritative operation-status lookup.
+      required: true
+      schema:
+        type: string
+        format: uri-reference
+
+  schemas:
+    FinancialInstitutionCode:
+      type: string
+      minLength: 2
+      maxLength: 35
+      pattern: '^[A-Z0-9][A-Z0-9._-]{1,34}$'
+
+    IdempotencyKey:
+      type: string
+      minLength: 16
+      maxLength: 128
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$'
+
+    BankReference:
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{7,127}$'
+
+    PaymentReference:
+      type: string
+      minLength: 8
+      maxLength: 100
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$'
+
+    AccountReference:
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+      description: |
+        Opaque Amplitude account reference. Full RIB and IBAN values are
+        forbidden from responses, errors, logs, traces and business events.
+
+    Money:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    PaymentCheckRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - debtorAccountReference
+        - amount
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        debtorAccountReference:
+          $ref: '#/components/schemas/AccountReference'
+        amount:
+          $ref: '#/components/schemas/Money'
+        requestedAt:
+          type: string
+          format: date-time
+
+    PaymentCheckResult:
+      type: object
+      additionalProperties: false
+      required:
+        - verificationReference
+        - paymentReference
+        - outcome
+        - checks
+        - checkedAt
+        - validUntil
+        - source
+      properties:
+        verificationReference:
+          $ref: '#/components/schemas/BankReference'
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        outcome:
+          type: string
+          enum:
+            - VERIFIED
+            - REJECTED
+            - INDETERMINATE
+        checks:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/PaymentExecutionCheck'
+        availableAmount:
+          description: Returned only when disclosure is approved by the bank.
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        checkedAt:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+          description: After this instant the result must not authorize posting.
+        source:
+          type: string
+          const: AMPLITUDE
+
+    PaymentExecutionCheck:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - result
+        - checkedAt
+      properties:
+        type:
+          type: string
+          enum:
+            - ACCOUNT_EXISTS
+            - ACCOUNT_ACTIVE
+            - DEBIT_ALLOWED
+            - CURRENCY_SUPPORTED
+            - AVAILABLE_FUNDS_SUFFICIENT
+            - PER_TRANSACTION_LIMIT_NOT_EXCEEDED
+            - DAILY_LIMIT_NOT_EXCEEDED
+            - OTHER_APPLICABLE_LIMITS_NOT_EXCEEDED
+        result:
+          type: string
+          enum:
+            - PASS
+            - FAIL
+            - UNKNOWN
+        reasonCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+        checkedAt:
+          type: string
+          format: date-time
+
+    FundReservationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - verificationReference
+        - debtorAccountReference
+        - amount
+        - expiresAt
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        verificationReference:
+          $ref: '#/components/schemas/BankReference'
+        debtorAccountReference:
+          $ref: '#/components/schemas/AccountReference'
+        amount:
+          $ref: '#/components/schemas/Money'
+        expiresAt:
+          type: string
+          format: date-time
+        requestedAt:
+          type: string
+          format: date-time
+
+    FundReservationResult:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - idempotencyKey
+        - status
+        - amount
+        - observedAt
+        - source
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        idempotencyKey:
+          $ref: '#/components/schemas/IdempotencyKey'
+        reservationReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+          description: Required when postingMode is CAPTURE_RESERVATION_AND_CREDIT_CUT.
+        status:
+          type: string
+          enum:
+            - RESERVED
+            - DECLINED
+            - RELEASED
+            - CAPTURED
+            - EXPIRED
+            - UNKNOWN
+        amount:
+          $ref: '#/components/schemas/Money'
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        reasonCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+        observedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+
+    ReservationReleaseRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - reasonCode
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        reasonCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+        requestedAt:
+          type: string
+          format: date-time
+
+    PaymentPostingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - verificationReference
+        - debtorAccountReference
+        - treasuryAccountReference
+        - amount
+        - postingMode
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        verificationReference:
+          $ref: '#/components/schemas/BankReference'
+        debtorAccountReference:
+          $ref: '#/components/schemas/AccountReference'
+        treasuryAccountReference:
+          allOf:
+            - $ref: '#/components/schemas/AccountReference'
+          description: |
+            Opaque CUT account reference resolved from approved bank
+            configuration. It must not originate from TRESOR PAY.
+        amount:
+          $ref: '#/components/schemas/Money'
+        postingMode:
+          type: string
+          enum:
+            - ATOMIC_DEBIT_AND_CUT_CREDIT
+            - CAPTURE_RESERVATION_AND_CREDIT_CUT
+        reservationReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        requestedBusinessDate:
+          type: string
+          format: date
+        requestedAt:
+          type: string
+          format: date-time
+
+    PaymentPostingResult:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - idempotencyKey
+        - outcome
+        - debit
+        - cutCredit
+        - amount
+        - nextAction
+        - observedAt
+        - source
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        idempotencyKey:
+          $ref: '#/components/schemas/IdempotencyKey'
+        bankPostingReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        outcome:
+          type: string
+          description: |
+            COMPLETED confirms both debit and accounting CUT credit but does
+            not establish TFJ finality. UNKNOWN never means failure.
+          enum:
+            - COMPLETED
+            - REJECTED_NO_FINANCIAL_EFFECT
+            - DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+            - REVERSAL_REQUIRED
+            - UNKNOWN
+        debit:
+          $ref: '#/components/schemas/PostingLegResult'
+        cutCredit:
+          $ref: '#/components/schemas/PostingLegResult'
+        amount:
+          $ref: '#/components/schemas/Money'
+        businessDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        rejectionCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+        nextAction:
+          type: string
+          enum:
+            - NONE
+            - QUERY_OUTCOME
+            - WAIT_FOR_CUT_CREDIT
+            - OPEN_RECONCILIATION
+            - REQUEST_EXPLICIT_REVERSAL
+        observedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+
+    PostingLegResult:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - NOT_STARTED
+            - PENDING
+            - SUCCEEDED
+            - FAILED
+            - UNKNOWN
+        bankEntryReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        effectiveAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        failureCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+
+    PaymentReversalRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - reasonCode
+        - authorization
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        reasonCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+        authorization:
+          $ref: '#/components/schemas/ReversalAuthorization'
+        requestedAt:
+          type: string
+          format: date-time
+
+    ReversalAuthorization:
+      type: object
+      additionalProperties: false
+      required:
+        - authorizationType
+        - authorizationReference
+        - requestedBy
+      properties:
+        authorizationType:
+          type: string
+          enum:
+            - BANK_INSTRUCTION
+            - APPROVED_RUNBOOK
+        authorizationReference:
+          type: string
+          minLength: 8
+          maxLength: 128
+        requestedBy:
+          type: string
+          minLength: 3
+          maxLength: 128
+          description: Auditable service or operator subject, never a credential.
+
+    PaymentReversalResult:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - bankPostingReference
+        - reversalIdempotencyKey
+        - outcome
+        - observedAt
+        - source
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        bankPostingReference:
+          $ref: '#/components/schemas/BankReference'
+        reversalIdempotencyKey:
+          $ref: '#/components/schemas/IdempotencyKey'
+        reversalReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        outcome:
+          type: string
+          enum:
+            - REVERSED
+            - REJECTED
+            - NOT_ALLOWED
+            - UNKNOWN
+        reversalEntryReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        reasonCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+        observedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+
+    ProblemDetail:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe detail without account, credential or raw provider data.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          enum:
+            - REQUEST_INVALID
+            - AUTHENTICATION_REQUIRED
+            - ACCESS_DENIED
+            - IDEMPOTENCY_CONFLICT
+            - VERIFICATION_EXPIRED
+            - ACCOUNT_NOT_FOUND
+            - ACCOUNT_RESTRICTED
+            - INSUFFICIENT_FUNDS
+            - LIMIT_EXCEEDED
+            - RESERVATION_NOT_FOUND
+            - RESERVATION_NOT_USABLE
+            - POSTING_NOT_FOUND
+            - POSTING_REJECTED
+            - POSTING_OUTCOME_UNKNOWN
+            - REVERSAL_NOT_ALLOWED
+            - REVERSAL_OUTCOME_UNKNOWN
+            - RATE_LIMIT_EXCEEDED
+            - AMPLITUDE_INTERNAL_ERROR
+            - AMPLITUDE_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+        retryable:
+          type: boolean
+        retryAfter:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+        invalidParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvalidParameter'
+
+    InvalidParameter:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+        reason:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: OAuth token or mTLS identity is invalid
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Authenticated SIXPAY client is not authorized
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    IdempotencyConflict:
+      description: Same idempotency key used for a different canonical instruction
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Syntactically valid request rejected by a stable business rule
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    OperationNotFound:
+      description: No operation exists for the supplied reference
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Amplitude request rate exceeded
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before another lookup or safe request
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected failure while processing a read-only operation
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: Amplitude is temporarily unavailable for a read-only operation
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before retry
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    FinancialCommandFailure:
+      description: |
+        Technical error returned only when Amplitude can prove that no
+        financial effect occurred. Otherwise the operation must return or be
+        treated by SIXPAY as an UNKNOWN outcome.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    FinancialCommandUnavailable:
+      description: |
+        Service unavailable response is proof of failure only when Amplitude
+        can prove that the command was not accepted. If acceptance is uncertain,
+        SIXPAY enters outcome recovery and performs status lookup.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before outcome lookup
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+x-sixpay-idempotency-policy:
+  financialCommands:
+    required: true
+    scope: "FINANCIAL_INSTITUTION_PLUS_OPERATION_TYPE"
+    fingerprint: "Canonical command payload"
+    sameKeySameFingerprint: "RETURN_SAME_OPERATION_IDENTITY_AND_CURRENT_OUTCOME"
+    sameKeyDifferentFingerprint: "HTTP_409_IDEMPOTENCY_CONFLICT"
+    keyRetention: "13_MONTHS_MINIMUM"
+  posting:
+    keyGeneratedBy: "SIXPAY_ACCOUNTING"
+    blindRetry: false
+    recovery:
+      - "QUERY_BY_ORIGINAL_IDEMPOTENCY_KEY"
+      - "QUERY_BY_BANK_POSTING_REFERENCE"
+  reversal:
+    distinctKeyFromPosting: true
+    retryOnlyWithOriginalReversalKey: true
+  reservation:
+    createAndReleaseUseDistinctStableKeys: true
+    lookupAfterUnknownOutcome: true
+
+x-sixpay-outcome-consistency:
+  completed:
+    required:
+      debitStatus: "SUCCEEDED"
+      cutCreditStatus: "SUCCEEDED"
+      bankPostingReference: "PRESENT"
+  rejectedNoFinancialEffect:
+    required:
+      debitStatus:
+        - "NOT_STARTED"
+        - "FAILED"
+      cutCreditStatus: "NOT_STARTED"
+  debitConfirmedCutCreditPending:
+    required:
+      debitStatus: "SUCCEEDED"
+      cutCreditStatus:
+        - "PENDING"
+        - "UNKNOWN"
+    paymentState: "ACCOUNTING_OUTCOME_UNKNOWN_OR_DEBITED_AFTER_RECONCILIATION"
+  reversalRequired:
+    required:
+      debitStatus: "SUCCEEDED"
+      cutCreditStatus: "FAILED"
+    paymentState: "REVERSAL_REQUIRED"
+  unknown:
+    rule: "Never infer success or no effect; perform lookup and reconciliation."
+    paymentState: "ACCOUNTING_OUTCOME_UNKNOWN"
+
+x-sixpay-resilience-policy:
+  values:
+    normative: false
+    finalSource: "BANK_APPROVED_ENVIRONMENT_CONFIGURATION"
+  timeoutDefaults:
+    connection: "2_SECONDS"
+    response: "10_SECONDS"
+    overallOperation: "15_SECONDS"
+  retry:
+    maximumAttempts: 3
+    backoff: "EXPONENTIAL_WITH_FULL_JITTER"
+    initialBackoff: "500_MILLISECONDS"
+    maximumBackoff: "2_SECONDS"
+    reads: "RETRY_TRANSIENT_FAILURES"
+    writes: "ONLY_WITH_CONFIRMED_BANK_IDEMPOTENCY"
+    afterUnknownWriteOutcome: "LOOKUP_ONLY_NO_BLIND_RESUBMISSION"
+    honorRetryAfter: true
+  circuitBreaker:
+    required: true
+    thresholds: "BANK_APPROVED_ENVIRONMENT_CONFIGURATION"
+  alerting:
+    - "POSTING_OUTCOME_UNKNOWN"
+    - "DEBIT_CONFIRMED_CUT_CREDIT_UNKNOWN"
+    - "DEBIT_CONFIRMED_CUT_CREDIT_FAILED"
+    - "REVERSAL_OUTCOME_UNKNOWN"
+
+x-sixpay-sensitive-data-policy:
+  request:
+    accountIdentifiers: "OPAQUE_REFERENCES_ONLY"
+    credentials: "FORBIDDEN_IN_PAYLOAD"
+  response:
+    fullRibOrIban: "FORBIDDEN"
+  observability:
+    accountIdentifiers: "MASK_OR_HASH"
+    idempotencyKey: "HASH_WHEN_EXPOSED_IN_METRICS"
+    credentials: "NEVER_LOG"
+
+x-sixpay-approval-prerequisites:
+  - "Amplitude confirms atomic debit and CUT credit semantics."
+  - "Amplitude confirms idempotency scope, retention and duplicate behavior."
+  - "Amplitude confirms authoritative lookup by idempotency key and bank reference."
+  - "Amplitude confirms account, available-funds, restriction and limit checks."
+  - "Amplitude confirms whether reservation, expiry, capture and release are supported."
+  - "Amplitude confirms partial-outcome representation."
+  - "Amplitude confirms reversal eligibility and processing."
+  - "Security approves OAuth2 scopes, mTLS and secret rotation."
+  - "Operations approves unknown-outcome reconciliation and reversal runbooks."

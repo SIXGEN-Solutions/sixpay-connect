@@ -99,6 +99,45 @@ contracts:
       - "retry"
       - "sla"
 
+  - id: "amplitude-payment-posting-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "accounting"
+    capability: "FUNDS_CONTROL_PAYMENT_POSTING_AND_REVERSAL"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.4"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Perform a fresh execution-time account, funds, restriction and limit check"
+        - "Optionally reserve and release funds when the bank approves the capability"
+        - "Atomically debit the customer and credit the configured CUT"
+        - "Return stable bank references and leg-level outcomes"
+        - "Recover uncertain posting outcomes by idempotency key or bank reference"
+        - "Request and track an explicit authorized reversal"
+      constraints:
+        - "Atomic debit and CUT credit is the preferred posting mode"
+        - "CUT reference comes from protected bank configuration"
+        - "A write timeout never proves failure"
+        - "Unknown outcomes permit lookup only, never blind resubmission"
+        - "Reversal requires a bank instruction or approved runbook"
+        - "Posting success does not establish TFJ finality"
+      relationshipToVerificationContract: >
+        Execution-time checks are defense in depth and do not replace the
+        dedicated pre-posting amplitude-payment-verification-api-v1 contract
+        identified by PAY-CONTRACT-02.
+    approvalPrerequisite:
+      - "Amplitude approves atomic posting and partial-outcome semantics"
+      - "Amplitude approves bank idempotency and authoritative lookup"
+      - "Amplitude confirms reservation and reversal capabilities"
+      - "SIXPAY Accounting, Payment, Integration, Security and Operations approve the contract"
+
   - id: "tresorpay-authorization-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
     domain: "subscription"
@@ -134,9 +173,6 @@ contracts:
 missingMvpContracts:
   status: "TO_BE_PRODUCED"
   contracts:
-    - id: "amplitude-payment-execution-api-v1"
-      capability: "FUNDS_CONTROL_DEBIT_AND_CUT_CREDIT"
-      direction: "SIXPAY_TO_AMPLITUDE"
     - id: "tresorpay-payment-status-webhook-v1"
       capability: "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
       direction: "SIXPAY_TO_TRESOR_PAY"
@@ -181,3 +217,5 @@ rules:
   - "The registry and embedded OpenAPI classifications must remain consistent."
   - "The absent tresorpay-subscription-verification-api-v1 contract is intentional while LOCAL_SIGNED_TOKEN_VALIDATION remains approved for the MVP."
   - "amplitude-customer-verification-api-v1 is confirmed for Payment customer/account checks only; it does not replace amplitude-payment-verification-api-v1 for funds control."
+  - "amplitude-payment-posting-api-v1 performs final execution-time checks but does not replace the dedicated pre-posting verification contract."
+  - "Financial-command uncertainty is resolved by authoritative lookup; blind resubmission is forbidden."

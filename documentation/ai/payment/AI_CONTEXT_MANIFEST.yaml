@@ -89,6 +89,8 @@ upstreamAuthorities:
     role: "Contract lifecycle and classification authority"
   - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     role: "Payment-confirmed reference contract for customer and account verification only"
+  - path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    role: "Core Banking funds control, posting, outcome recovery and reversal contract"
 
 scope:
   inScope:
@@ -253,6 +255,15 @@ contractPackDecisions:
     decision: "REUSE_FOR_CUSTOMER_AND_ACCOUNT_VERIFICATION_ONLY"
     confirmedForPayment: true
     fundsControlCovered: false
+    generationPolicy: "REFERENCE_ONLY"
+  - step: "1.4"
+    id: "AMPLITUDE_CORE_BANKING_PAYMENT"
+    contractPath: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    status: "PRODUCED_PENDING_BANK_APPROVAL"
+    decision: "ATOMIC_POSTING_WITH_OPTIONAL_RESERVATION_AND_QUERY_RECOVERY"
+    preferredPostingMode: "ATOMIC_DEBIT_AND_CUT_CREDIT"
+    unknownOutcomePolicy: "LOOKUP_ONLY_NO_BLIND_RESUBMISSION"
+    reversalPolicy: "EXPLICIT_BANK_INSTRUCTION_OR_APPROVED_RUNBOOK"
     generationPolicy: "REFERENCE_ONLY"
 
 finalValidation:
