@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.5 — Commands and Business Operations`  
+> **Current lot:** `2.6 — Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `COMMAND_SUPPORT_TYPES_ADDED`  
+> **Status:** `EVENT_SUPPORT_TYPES_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1181,6 +1181,36 @@ REVERSED
 
 **Decisions:** `PAY-DEC-IA1-034`, `PAY-DEC-IA1-035`, `PAY-DEC-IA1-036`.
 
+
+## Domain-event support types added by Lot 2.6
+
+### `PaymentEventSequence`
+
+Positive integer identifying the deterministic registration order of events
+within one aggregate mutation.
+
+- starts at `1` for each resulting aggregate version;
+- increments by one for every event from that mutation;
+- is not a global sequence;
+- is not persisted as Payment business state after event construction.
+
+### `PaymentEventSchemaVersion`
+
+Positive integer event-payload contract version.
+
+Initial value is `1`. It changes only under the compatibility rules in
+`PAYMENT_EVENT_CATALOG.yaml`.
+
+### `PaymentEventCausationId`
+
+Optional non-nil UUID identifying the command or source event that caused the
+Payment mutation.
+
+It is operational traceability, not a Payment identity and not an idempotency
+key.
+
+**Decisions:** `PAY-DEC-IA1-042`, `PAY-DEC-IA1-044`, `PAY-DEC-IA1-048`.
+
 ## 15. Exit checklist
 
 - [ ] Every Aggregate Root type has semantics and ownership.
@@ -1202,6 +1232,6 @@ REVERSED
 ```text
 IA-1 LOT 2.2 IDENTIFIERS AND VALUE OBJECTS PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.6 — DOMAIN EVENTS
+NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
 CODE GENERATION: FORBIDDEN
 ```

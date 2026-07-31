@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Snapshots and Business Evidence Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.5 — Commands and Business Operations`  
+> **Current lot:** `2.6 — Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `COMMAND_BINDINGS_ADDED`  
+> **Status:** `EVENT_SAFE_PROJECTIONS_BOUND`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1009,6 +1009,6 @@ Detailed cross-state invariants are finalized in Lot 2.4.
 ```text
 IA-1 LOT 2.3 SNAPSHOTS AND BUSINESS EVIDENCE PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.6 — DOMAIN EVENTS
+NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
 CODE GENERATION: FORBIDDEN
 ```

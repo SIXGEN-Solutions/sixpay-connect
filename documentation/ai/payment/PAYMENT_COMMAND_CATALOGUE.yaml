@@ -1,14 +1,14 @@
-schemaVersion: 1.0.0
+schemaVersion: 1.1.0
 document:
   id: SIXPAY-PAYMENT-COMMAND-CATALOGUE
   title: SIXPAY CONNECT — Payment Commands and Aggregate Operations
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_5_COMMANDS_AND_BUSINESS_OPERATIONS
+  lot: 2_6_DOMAIN_EVENTS
   branch: feat/payment-domain-generation-brief
-  status: DRAFT_PENDING_VALIDATION
+  status: DOMAIN_EVENTS_BOUND
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_6_DOMAIN_EVENTS
+  nextLot: 2_7_POLICIES_AND_DOMAIN_SERVICES
 commandMetadata:
   requiredFields:
   - commandId
@@ -28,8 +28,8 @@ commandMetadata:
   versionModes:
     NONE: Creation command; no existing aggregate version exists.
     REQUIRED: Expected version must equal the loaded Payment businessVersion.
-    STATE_AND_EVIDENCE_GUARDED: Expected version may be omitted for asynchronous canonical results; the current aggregate state, evidence identity
-      and persistence optimistic lock remain mandatory.
+    STATE_AND_EVIDENCE_GUARDED: Expected version may be omitted for asynchronous canonical results; the current aggregate state, evidence identity and persistence
+      optimistic lock remain mandatory.
 aggregateOperationModel:
   commandObjectsEnterAggregate: false
   genericStatusSetterAllowed: false
@@ -74,12 +74,14 @@ commands:
   - APPLIED_RECEIVED
   - EXISTING_PAYMENT_IDENTICAL_REPLAY
   - EXTERNAL_REFERENCE_OR_IDEMPOTENCY_CONFLICT
-  facts:
-  - PAYMENT_RECEIVED
   forbidden:
   - Authenticate credentials inside Payment.
   - Call Amplitude before Payment is committed.
   - Create another Payment for an identical replay.
+  possibleFactKinds:
+  - PAYMENT_RECEIVED
+  eventRefs:
+  - PAY-EVT-001
 - id: PAY-CMD-002
   name: StartAuthorizationCheckingCommand
   operationId: PAY-OP-002
@@ -98,11 +100,13 @@ commands:
   outcomes:
   - APPLIED_AUTHORIZATION_CHECKING
   - NO_OP_IDENTICAL_REPLAY
-  facts:
-  - AUTHORIZATION_CHECKING_STARTED
   forbidden:
   - Perform JWT verification inside Payment.
   - Start a banking call directly.
+  possibleFactKinds:
+  - AUTHORIZATION_CHECKING_STARTED
+  eventRefs:
+  - PAY-EVT-002
 - id: PAY-CMD-003
   name: ApplyAuthorizationDecisionCommand
   operationId: PAY-OP-003
@@ -125,14 +129,19 @@ commands:
   - REJECTED_TERMINAL
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - SECURITY_EVIDENCE_CONFLICT
-  facts:
-  - AUTHORIZATION_DECISION_RECORDED
-  - BANKING_VERIFICATION_REQUESTED_IF_APPROVED
-  - PAYMENT_REJECTED_IF_REJECTED
-  - IMMEDIATE_RESULT_AVAILABLE_IF_REJECTED
   forbidden:
   - Accept a raw JWT or claims.
   - Treat infrastructure failure as an authorization decision.
+  possibleFactKinds:
+  - AUTHORIZATION_DECISION_RECORDED
+  - BANKING_VERIFICATION_REQUESTED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-004
+  - PAY-EVT-005
+  - PAY-EVT-006
 - id: PAY-CMD-004
   name: ApplyBankingVerificationCommand
   operationId: PAY-OP-004
@@ -156,15 +165,22 @@ commands:
   - INDETERMINATE_REMAINS_PENDING
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - EVIDENCE_CONFLICT
-  facts:
-  - BANKING_VERIFICATION_RECORDED
-  - FUNDS_CONTROL_REQUESTED_IF_VERIFIED
-  - PAYMENT_REJECTED_IF_REJECTED
-  - PROCESSING_DEFERRED_IF_INDETERMINATE
   forbidden:
   - Store KYC payloads.
   - Use ObservedCustomer as approval evidence.
   - Combine funds approval with this result.
+  possibleFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - FUNDS_CONTROL_REQUESTED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - PAYMENT_PROCESSING_DEFERRED
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-009
 - id: PAY-CMD-005
   name: ApplyFundsControlCommand
   operationId: PAY-OP-005
@@ -187,14 +203,21 @@ commands:
   - INDETERMINATE_REMAINS_PENDING
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - EVIDENCE_CONFLICT
-  facts:
-  - FUNDS_CONTROL_RECORDED
-  - TREASURY_ACCOUNT_RESOLUTION_REQUESTED_IF_VERIFIED
-  - PAYMENT_REJECTED_IF_REJECTED
-  - PROCESSING_DEFERRED_IF_INDETERMINATE
   forbidden:
   - Store available balance.
   - Authorize posting from stale or mismatched funds evidence.
+  possibleFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - TREASURY_ACCOUNT_RESOLUTION_REQUESTED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - PAYMENT_PROCESSING_DEFERRED
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-011
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-009
 - id: PAY-CMD-006
   name: ApplyTreasuryAccountResolutionCommand
   operationId: PAY-OP-006
@@ -217,13 +240,19 @@ commands:
   - REJECTED_TERMINAL
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - CONFIGURATION_CONFLICT
-  facts:
-  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
-  - PAYMENT_APPROVED_FOR_POSTING_IF_RESOLVED
-  - PAYMENT_REJECTED_IF_REJECTED
   forbidden:
   - Construct a CUT account from inbound TRESOR PAY data.
   - Expose a Treasury account token in an event.
+  possibleFactKinds:
+  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  - PAYMENT_APPROVED_FOR_POSTING
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  eventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-013
+  - PAY-EVT-005
+  - PAY-EVT-006
 - id: PAY-CMD-007
   name: AuthorizePostingCommand
   operationId: PAY-OP-007
@@ -246,12 +275,15 @@ commands:
   - APPLIED_POSTING_PENDING
   - NO_OP_SAME_INSTRUCTION_REPLAY
   - SECOND_OR_CONFLICTING_POSTING_REJECTED
-  facts:
-  - POSTING_AUTHORIZED
-  - POSTING_REQUESTED
   forbidden:
   - Call Amplitude inside the aggregate transaction.
   - Generate another posting identity for the same Payment.
+  possibleFactKinds:
+  - POSTING_AUTHORIZED
+  - POSTING_REQUESTED
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
 - id: PAY-CMD-008
   name: ApplyPostingOutcomeCommand
   operationId: PAY-OP-008
@@ -284,16 +316,28 @@ commands:
   - PARTIAL_EFFECT_TO_REVERSAL_REQUIRED
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - FINANCIAL_EVIDENCE_CONFLICT
-  facts:
-  - POSTING_OUTCOME_RECORDED
-  - IMMEDIATE_RESULT_AVAILABLE
-  - TFJ_TRACKING_REQUESTED_IF_COMPLETED
-  - POSTING_OUTCOME_LOOKUP_REQUESTED_IF_UNKNOWN
-  - REVERSAL_REVIEW_REQUESTED_IF_REQUIRED
   forbidden:
   - Infer TFJ finality.
   - Blindly resubmit the posting.
   - Classify an uncertain result as failure.
+  possibleFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  - DEBIT_CONFIRMED
+  - POSTING_OUTCOME_LOOKUP_REQUESTED
+  - PAYMENT_REJECTED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - REVERSAL_REVIEW_REQUESTED
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  - PAY-EVT-018
+  - PAY-EVT-019
+  - PAY-EVT-005
+  - PAY-EVT-032
+  - PAY-EVT-020
 - id: PAY-CMD-009
   name: ResolvePostingOutcomeCommand
   operationId: PAY-OP-009
@@ -321,14 +365,25 @@ commands:
   - RESOLVED_REVERSAL_REQUIRED
   - NO_OP_STILL_UNKNOWN_OR_IDENTICAL_REPLAY
   - FINANCIAL_EVIDENCE_CONFLICT
-  facts:
-  - POSTING_OUTCOME_RESOLVED
-  - IMMEDIATE_RESULT_AVAILABLE_IF_CONCLUSIVE
-  - TFJ_TRACKING_REQUESTED_IF_COMPLETED
-  - REVERSAL_REVIEW_REQUESTED_IF_REQUIRED
   forbidden:
   - Create a replacement instruction.
   - Resolve from non-authoritative operational assumptions.
+  possibleFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  - DEBIT_CONFIRMED
+  - PAYMENT_REJECTED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - REVERSAL_REVIEW_REQUESTED
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-006
+  - PAY-EVT-017
+  - PAY-EVT-018
+  - PAY-EVT-005
+  - PAY-EVT-032
+  - PAY-EVT-020
 - id: PAY-CMD-010
   name: ApplyEndOfDayConfirmationCommand
   operationId: PAY-OP-010
@@ -353,15 +408,23 @@ commands:
   - FAILED_REQUIRES_MANUAL_RECONCILIATION_REMAINS_PENDING
   - NO_OP_IDENTICAL_REPLAY
   - TFJ_CONFLICT_QUARANTINED
-  facts:
-  - TFJ_CONFIRMATION_RECORDED
-  - TREASURY_INTEGRATION_CONFIRMED_IF_INTEGRATED
-  - FINAL_RESULT_AVAILABLE_IF_INTEGRATED
-  - REVERSAL_REVIEW_REQUESTED_IF_REQUIRED
-  - TREASURY_RECONCILIATION_REQUIRED_IF_MANUAL
   forbidden:
   - Accept PENDING or unmatched TFJ data.
   - Map TFJ FAILED automatically to Payment FAILED.
+  possibleFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - TREASURY_INTEGRATION_CONFIRMED
+  - FINAL_RESULT_AVAILABLE
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TREASURY_RECONCILIATION_REQUIRED
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  - PAY-EVT-020
+  - PAY-EVT-006
+  - PAY-EVT-025
 - id: PAY-CMD-011
   name: AuthorizeReversalCommand
   operationId: PAY-OP-011
@@ -382,13 +445,16 @@ commands:
   - APPLIED_REVERSAL_PENDING
   - NO_OP_SAME_ACTIVE_INSTRUCTION_REPLAY
   - UNAUTHORIZED_OR_CONFLICTING_REVERSAL_REJECTED
-  facts:
-  - REVERSAL_AUTHORIZED
-  - REVERSAL_REQUESTED
   forbidden:
   - Reverse automatically.
   - Reuse the original posting idempotency key.
   - Delete original posting evidence.
+  possibleFactKinds:
+  - REVERSAL_AUTHORIZED
+  - REVERSAL_REQUESTED
+  eventRefs:
+  - PAY-EVT-026
+  - PAY-EVT-027
 - id: PAY-CMD-012
   name: ApplyReversalOutcomeCommand
   operationId: PAY-OP-012
@@ -411,13 +477,21 @@ commands:
   - REJECTED_OR_NOT_ALLOWED_TO_REVERSAL_REQUIRED
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - REVERSAL_EVIDENCE_CONFLICT
-  facts:
-  - REVERSAL_OUTCOME_RECORDED
-  - REVERSAL_RESULT_AVAILABLE_IF_CONCLUSIVE
-  - REVERSAL_OUTCOME_LOOKUP_REQUESTED_IF_UNKNOWN
   forbidden:
   - Treat rejection as absence of the original effect.
   - Blindly resubmit an unknown reversal.
+  possibleFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - PAYMENT_REVERSED
+  - REVERSAL_RESULT_AVAILABLE
+  - REVERSAL_OUTCOME_LOOKUP_REQUESTED
+  - REVERSAL_REVIEW_REQUESTED
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-033
+  - PAY-EVT-029
+  - PAY-EVT-030
+  - PAY-EVT-020
 - id: PAY-CMD-013
   name: ResolveReversalOutcomeCommand
   operationId: PAY-OP-013
@@ -439,12 +513,19 @@ commands:
   - RESOLVED_REJECTED_OR_NOT_ALLOWED
   - NO_OP_STILL_UNKNOWN_OR_IDENTICAL_REPLAY
   - REVERSAL_EVIDENCE_CONFLICT
-  facts:
-  - REVERSAL_OUTCOME_RESOLVED
-  - REVERSAL_RESULT_AVAILABLE_IF_CONCLUSIVE
   forbidden:
   - Create a new reversal instruction during lookup.
   - Overwrite the original posting reference.
+  possibleFactKinds:
+  - REVERSAL_OUTCOME_RESOLVED
+  - PAYMENT_REVERSED
+  - REVERSAL_RESULT_AVAILABLE
+  - REVERSAL_REVIEW_REQUESTED
+  eventRefs:
+  - PAY-EVT-031
+  - PAY-EVT-033
+  - PAY-EVT-029
+  - PAY-EVT-020
 - id: PAY-CMD-014
   name: RejectPaymentCommand
   operationId: PAY-OP-014
@@ -463,13 +544,16 @@ commands:
   outcomes:
   - REJECTED_TERMINAL
   - NO_OP_IDENTICAL_TERMINAL_REPLAY
-  facts:
-  - PAYMENT_REJECTED
-  - IMMEDIATE_RESULT_AVAILABLE
   forbidden:
   - Use after financial submission.
   - Use a technical failure category.
   - Reopen the Payment later.
+  possibleFactKinds:
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  eventRefs:
+  - PAY-EVT-005
+  - PAY-EVT-006
 - id: PAY-CMD-015
   name: RecordRecoverableFailureCommand
   operationId: PAY-OP-015
@@ -491,11 +575,15 @@ commands:
   outcomes:
   - FAILURE_RECORDED_STATUS_UNCHANGED
   - NO_OP_IDENTICAL_FAILURE_REPLAY
-  facts:
-  - PAYMENT_PROCESSING_DEFERRED
   forbidden:
   - Use for an uncertain financial write.
   - Use NOT_RETRYABLE without terminal resolution.
+  possibleFactKinds:
+  - PAYMENT_PROCESSING_DEFERRED
+  - IMMEDIATE_RESULT_AVAILABLE
+  eventRefs:
+  - PAY-EVT-009
+  - PAY-EVT-006
 - id: PAY-CMD-016
   name: FailWithoutFinancialEffectCommand
   operationId: PAY-OP-016
@@ -519,13 +607,16 @@ commands:
   outcomes:
   - FAILED_TERMINAL
   - NO_OP_IDENTICAL_TERMINAL_REPLAY
-  facts:
-  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
-  - IMMEDIATE_RESULT_AVAILABLE
   forbidden:
   - Use when posting may have been submitted.
   - Use for a business rejection.
   - Use for partial or uncertain effect.
+  possibleFactKinds:
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  eventRefs:
+  - PAY-EVT-032
+  - PAY-EVT-006
 operations:
 - id: PAY-OP-001
   name: receive
@@ -554,8 +645,8 @@ operations:
   returnSemantics: Selects verified/rejected/indeterminate branch.
 - id: PAY-OP-006
   name: recordTreasuryAccountResolution
-  conceptualSignature: void recordTreasuryAccountResolution(TreasuryAccountResolutionSnapshot evidence, TreasuryAccountReference resolvedAccount,
-    PaymentFailure failure, Instant now)
+  conceptualSignature: void recordTreasuryAccountResolution(TreasuryAccountResolutionSnapshot evidence, TreasuryAccountReference resolvedAccount, PaymentFailure
+    failure, Instant now)
   commandId: PAY-CMD-006
   returnSemantics: Stores the protected account only for RESOLVED.
 - id: PAY-OP-007
@@ -735,5 +826,15 @@ readiness:
   aggregateOperationCount: 17
   statusCount: 17
   humanValidationRequired: true
-  domainEventsLotReadyAfterValidation: true
   codeGeneration: FORBIDDEN
+  domainEventsBound: true
+  domainEventsLot: 2_6_DOMAIN_EVENTS
+  policiesLotReadyAfterValidation: true
+eventCatalogue:
+  path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+  humanPath: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+  eventCount: 33
+  eventIdRange:
+    from: PAY-EVT-001
+    through: PAY-EVT-033
+  commandFactsMappedToEvents: true

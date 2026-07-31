@@ -1,98 +1,110 @@
-schemaVersion: 1.7.0
+schemaVersion: 1.8.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_5_COMMANDS_AND_BUSINESS_OPERATIONS
+  lot: 2_6_DOMAIN_EVENTS
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_5_DRAFT_PENDING_VALIDATION
+  status: LOT_2_6_DRAFT_PENDING_VALIDATION
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_6_DOMAIN_EVENTS
+nextLot: LOT_2_7_POLICIES_AND_DOMAIN_SERVICES
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Primary IA-1 brief
 - path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
-  role: Aggregate Root specification
+  role: Aggregate Root
 - path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-  role: Identifiers and Value Objects
+  role: Value Objects
 - path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
-  role: Snapshots and business evidence
+  role: Snapshots
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-  role: Human invariant catalogue
+  role: Human invariants
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  role: Machine invariant catalogue
+  role: Machine invariants
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
-  role: Human command and operation catalogue
+  role: Human commands and operations
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
-  role: Machine command and operation catalogue
+  role: Machine commands and operations
 - path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  role: Reconciled IA-1 state machine
+  role: IA-1 state machine with event bindings
+- path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+  role: Human Payment domain events
+- path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+  role: Machine Payment domain events
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
   role: Consolidated model index
-commandModel:
-  commandCount: 16
-  operationCount: 17
-  commandIdRange:
-    from: PAY-CMD-001
-    through: PAY-CMD-016
-  operationIdRange:
-    from: PAY-OP-001
-    through: PAY-OP-017
-  commandObjectsEnterAggregate: false
-  genericStatusSetterAllowed: false
-  commandRegistryOwner: APPLICATION_AND_PERSISTENCE
-  invalidOperationAtomicNoMutation: true
+modelCounts:
+  aggregateRoots: 1
+  paymentStatuses: 17
+  terminalStatuses: 4
+  commands: 16
+  aggregateOperations: 17
+  stateTransitions: 38
+  invariants: 76
+  paymentDomainEvents: 33
+domainEventModel:
+  humanPath: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+  machinePath: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+  eventIdRange:
+    from: PAY-EVT-001
+    through: PAY-EVT-033
+  onlyPaymentAggregateEvents: true
+  commonFields:
+  - eventId
+  - paymentId
+  - paymentReference
+  - correlationId
+  - aggregateVersion
+  - eventSequence
+  - causationId
+  - occurredAt
+  sharedDomainEventReference: com.sixpay.sharedkernel.domain.event.DomainEvent
+  integrationEnvelopeReference: com.sixpay.common.messaging.model.IntegrationEventEnvelope
+  explicitPayloadMappingRequired: true
+  automaticDomainSerializationAllowed: false
+  publication: TRANSACTIONAL_OUTBOX_AT_LEAST_ONCE
+  consumerDeduplication: eventId
+  notificationTriggerEvents:
+  - PaymentImmediateResultAvailable
+  - PaymentFinalResultAvailable
+  - PaymentReversalResultAvailable
 stateMachine:
   path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  schemaVersion: 2.0.0
+  schemaVersion: 2.1.0
   stateCount: 17
-  terminalStateCount: 4
   transitionCount: 38
-  transitionIdRange:
-    from: PAY-TR-001
-    through: PAY-TR-038
-  notificationStatePresent: false
-  unknownStates:
-  - POSTING_OUTCOME_UNKNOWN
-  - REVERSAL_OUTCOME_UNKNOWN
-  replacesIa0pSemantics: true
-paymentStatuses:
-- RECEIVED
-- AUTHORIZATION_CHECKING
-- BANKING_VERIFICATION_PENDING
-- FUNDS_CONTROL_PENDING
-- TREASURY_ACCOUNT_RESOLUTION_PENDING
-- APPROVED_FOR_POSTING
-- POSTING_PENDING
-- POSTING_OUTCOME_UNKNOWN
-- DEBIT_CONFIRMED
-- POSTED_PENDING_TFJ
-- REVERSAL_REQUIRED
-- REVERSAL_PENDING
-- REVERSAL_OUTCOME_UNKNOWN
-- REJECTED
-- FAILED
-- TREASURY_INTEGRATED
-- REVERSED
-lot2_5Decisions:
-- id: PAY-DEC-IA1-033
-  decision: APPLICATION_COMMANDS_OUTSIDE_AGGREGATE_NAMED_TYPED_METHODS
-- id: PAY-DEC-IA1-034
-  decision: COMMON_COMMAND_METADATA_DEDUP_AND_VERSION_MODES
-- id: PAY-DEC-IA1-035
-  decision: FINAL_17_STATUS_MODEL
-- id: PAY-DEC-IA1-036
-  decision: COMPLETED_POSTING_DIRECT_TO_POSTED_PENDING_TFJ_NOTIFICATION_ORTHOGONAL
-- id: PAY-DEC-IA1-037
-  decision: EXTERNAL_PROCESSES_REQUESTED_BY_FACTS_NO_NETWORK_IN_AGGREGATE
-- id: PAY-DEC-IA1-038
-  decision: NEGATIVE_OUTCOME_MAPPING_BY_EVIDENCE_AND_FAILURE_CATEGORY
-- id: PAY-DEC-IA1-039
-  decision: IA1_STATE_MACHINE_17_STATES_38_TRANSITIONS
-- id: PAY-DEC-IA1-040
-  decision: GENERIC_STATUS_MUTATION_AND_GENERIC_COMMAND_DISPATCH_FORBIDDEN
+  eventBindingsComplete: true
+  eventTypeCount: 33
+  lot2_6ConsistencyCorrections:
+  - PROCESSING_RESULT_FOR_INDETERMINATE_BANKING
+  - PROCESSING_RESULT_FOR_INDETERMINATE_FUNDS
+  - PROCESSING_RESULT_FOR_RECOVERABLE_FAILURE
+  - PROCESSING_RESULT_FOR_DEBIT_ONLY
+  - REVERSAL_RESULT_FOR_REJECTED_OR_NOT_ALLOWED
+  - EXPLICIT_PAYMENT_REVERSED_TERMINAL_EVENT
+lot2_6Decisions:
+- id: PAY-DEC-IA1-041
+  decision: PAYMENT_EVENT_CATALOGUE_CONTAINS_ONLY_PAYMENT_AGGREGATE_EVENTS
+- id: PAY-DEC-IA1-042
+  decision: PAYMENT_DOMAIN_EVENT_CONTRACT_EXTENDS_SHARED_DOMAIN_EVENT_AND_MAPS_EXPLICITLY_TO_INTEGRATION_ENVELOPE
+- id: PAY-DEC-IA1-043
+  decision: THIRTY_THREE_STABLE_EVENT_TYPES_MAP_ONE_TO_ONE_TO_CANONICAL_FACT_KINDS
+- id: PAY-DEC-IA1-044
+  decision: MULTIPLE_EVENTS_SHARE_AGGREGATE_VERSION_AND_USE_EVENT_SEQUENCE
+- id: PAY-DEC-IA1-045
+  decision: EXPLICIT_MINIMIZED_SAFE_PAYLOADS_NO_AUTOMATIC_DOMAIN_SERIALIZATION
+- id: PAY-DEC-IA1-046
+  decision: PROCESS_REQUEST_EVENTS_REQUIRE_EVENT_SPECIFIC_BUSINESS_IDEMPOTENCY
+- id: PAY-DEC-IA1-047
+  decision: RESULT_INTENT_EVENTS_ARE_THE_ONLY_NOTIFICATION_TRIGGERS_DELIVERY_REMAINS_OUTSIDE_PAYMENT
+- id: PAY-DEC-IA1-048
+  decision: EVENT_TYPE_STABLE_SCHEMA_VERSIONED_RETIRED_NAMES_NEVER_REUSED
+- id: PAY-DEC-IA1-049
+  decision: PAYMENT_REVERSED_IS_AN_EXPLICIT_TERMINAL_FACT_DISTINCT_FROM_REVERSAL_RESULT_DELIVERY
+- id: PAY-DEC-IA1-050
+  decision: PROCESSING_AND_CONCLUSIVE_REVERSAL_RESULTS_MUST_REGISTER_THEIR_RESULT_INTENT_EVENTS
 traceability:
   requiredPrefixes:
   - PAY-BASE-
@@ -105,6 +117,7 @@ traceability:
   - PAY-CMD-
   - PAY-OP-
   - PAY-TR-
+  - PAY-EVT-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -112,7 +125,9 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_5Modifications:
+authorizedLot2_6Modifications:
+- documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
 - documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
 - documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
@@ -127,12 +142,12 @@ generationRules:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OPENAPI_MODIFICATION
-  - PAYMENT_EVENT_CATALOGUE_MODIFICATION_IN_LOT_2_5
-  - FINAL_EVENT_PAYLOAD_GENERATION
+  - AUTOMATIC_DOMAIN_OBJECT_SERIALIZATION
+  - RAW_EXTERNAL_PAYLOAD_IN_EVENT
+  - PROTECTED_ACCOUNT_TOKEN_IN_GENERAL_EVENT
+  - NOTIFICATION_DELIVERY_EVENT_OWNED_BY_PAYMENT
+  - BROKER_REDELIVERY_AS_FINANCIAL_RETRY_IDENTITY
   - POLICY_CONSTANT_INVENTION
-  - NETWORK_CALL_INSIDE_AGGREGATE_OR_TRANSACTION
-  - GENERIC_STATUS_SETTER
-  - GENERIC_COMMAND_DISPATCH_INSIDE_AGGREGATE
 readiness:
   lot2_1AggregateRootPrepared: true
   lot2_2ValueObjectsPrepared: true
@@ -140,6 +155,7 @@ readiness:
   lot2_4InvariantsPrepared: true
   lot2_5CommandsAndOperationsPrepared: true
   lot2_5StateMachineReconciled: true
-  lot2_5HumanValidationRequired: true
-  lot2_6ReadyAfterValidation: true
+  lot2_6DomainEventsPrepared: true
+  lot2_6HumanValidationRequired: true
+  lot2_7ReadyAfterValidation: true
   codeGeneration: FORBIDDEN

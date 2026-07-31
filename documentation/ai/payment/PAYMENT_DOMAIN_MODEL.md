@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.5 — Commands and Business Operations`  
+> **Current sub-lot:** `2.6 — Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `COMMAND_AND_OPERATION_MODEL_PREPARED`  
+> **Status:** `DOMAIN_EVENT_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Normative hierarchy
@@ -20,57 +20,61 @@
 | Invariants | `PAYMENT_INVARIANT_CATALOGUE.md` and `.yaml` |
 | Commands/operations | `PAYMENT_COMMAND_CATALOGUE.md` and `.yaml` |
 | State machine | `PAYMENT_STATE_MACHINE.yaml` |
-| Domain Events | Lot 2.6 pending |
+| Domain Events — human | `PAYMENT_DOMAIN_EVENT_CATALOGUE.md` |
+| Domain Events — machine | `PAYMENT_EVENT_CATALOG.yaml` |
 | Policies/Domain Services | Lot 2.7 pending |
 | Final validation | Lot 2.8 pending |
 
-## 2. Write-model composition
+## 2. Current model counts
 
 ```text
-Payment
-├── immutable original intent
-├── current PaymentStatus
-├── current accepted evidence
-├── PostingInstructionIdentity?
-├── BankPostingReference?
-├── ReversalSnapshot?
-├── current PaymentFailure?
-├── timestamps
-└── businessVersion
+1 Payment Aggregate Root
+17 Payment statuses
+4 terminal statuses
+16 application commands
+17 aggregate operations
+38 legal transitions
+76 complete invariants
+33 Payment domain events
 ```
 
-## 3. Command model
-
-The write model accepts 16 application commands mapped to 16 public mutation
-operations plus the `reconstitute` factory.
-
-Commands remain outside the aggregate. Handlers perform deduplication,
-authorization, version control and transaction management.
-
-## 4. State model
-
-The IA-1 state machine contains:
+## 3. Event architecture
 
 ```text
-17 states
-4 terminal states
-38 transitions
+Payment operation
+    ↓
+PaymentDomainEvent record(s)
+    ↓ releaseDomainEvents()
+explicit safe Outbox mapping
+    ↓
+IntegrationEventEnvelope
+    ↓
+durable consumer deduplication by eventId
 ```
 
-Important corrections from IA-0P:
+All events from one mutation share `aggregateVersion` and are ordered by
+`eventSequence`.
 
-- banking verification and funds control are separate;
-- `NOTIFIED` is removed;
-- posting and reversal unknown outcomes are separate;
-- completed posting goes directly to `POSTED_PENDING_TFJ`;
-- TFJ failure does not automatically map to Payment `FAILED`.
+## 4. Event roles
 
-## 5. External process boundary
+The catalogue distinguishes:
 
-Payment operations register facts that request Customer, Accounting,
-Integration and Notification work.
+- lifecycle and terminal facts;
+- accepted evidence facts;
+- financial facts;
+- external process requests;
+- notification result intents.
 
-They never call external systems directly.
+Only result-intent events trigger Notification.
+
+## 5. State-machine corrections bound in Lot 2.6
+
+Without adding states or transitions, the final machine now guarantees:
+
+- indeterminate/recoverable and debit-only paths publish `PROCESSING` result
+  intent;
+- reversal rejected/not allowed publishes a conclusive reversal result;
+- successful reversal publishes explicit `PaymentReversed`.
 
 ## 6. Generation status
 
@@ -82,6 +86,7 @@ INVARIANTS: PREPARED
 COMMANDS: PREPARED
 OPERATIONS: PREPARED
 STATE MACHINE: PREPARED
-DOMAIN EVENTS: PENDING LOT 2.6
+DOMAIN EVENTS: PREPARED
+POLICIES AND DOMAIN SERVICES: PENDING LOT 2.7
 CODE GENERATION: FORBIDDEN
 ```
