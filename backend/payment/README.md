@@ -1,79 +1,66 @@
 # SIXPAY CONNECT — Payment Module
 
-## Status
+## Current increment
 
 ```text
-Current increment: Lot 3.3 — Snapshots and financial evidence
-Implementation scope: PAYMENT_DOMAIN_ONLY
+Lot 3.4 — Policies and Domain Services
+Scope: PAYMENT_DOMAIN_ONLY
 Global generation: FORBIDDEN
-Current increment generation: AUTHORIZED
 ```
 
-## Implemented evidence
+## Implemented decision model
 
 ```text
-AuthorizationEvidenceSnapshot
-BankingVerificationSnapshot
-FundsControlSnapshot
-TreasuryAccountResolutionSnapshot
-PostingOutcomeSnapshot
-EndOfDayConfirmationSnapshot
-ReversalSnapshot
+14 pure policies
+12 immutable injected profiles
+4 pure Domain Services
+typed decision enums and records
 ```
 
-The module now contains immutable support types for:
-
-- common source/correlation/channel/fingerprint metadata;
-- authorization bindings;
-- banking and funds check evidence;
-- protected Treasury resolution;
-- posting instruction identity, leg outcomes and next actions;
-- uniquely matched TFJ finality evidence;
-- reversal authorization and canonical outcome evidence.
-
-## Structural boundary
-
-Constructors enforce only the structure defined by the frozen IA-1 model:
-
-- chronology;
-- source and channel compatibility;
-- bounded unique check collections;
-- outcome/field consistency;
-- positive amounts;
-- principal and leg reference consistency;
-- immutable preservation of original reversal identities.
-
-Freshness thresholds, mandatory-check profiles, binding against a particular
-Payment, evidence replacement authority and lifecycle eligibility remain
-Policies or Aggregate Root concerns.
-
-## Prohibited behavior
-
-Evidence types do not:
-
-- call Security, Amplitude or Accounting;
-- verify cryptographic signatures;
-- load configuration;
-- read the system clock;
-- perform persistence;
-- mutate Payment;
-- publish events.
-
-## Tests
+### Policies
 
 ```text
-EvidenceMetadataTest
-AuthorizationEvidenceSnapshotTest
-BankingAndFundsSnapshotsTest
-TreasuryAndPostingSnapshotsTest
-EndOfDayAndReversalSnapshotsTest
-PaymentArchitectureTest
+EvidenceTemporalValidityPolicy
+AuthorizationEvidenceAcceptancePolicy
+BankingVerificationAcceptancePolicy
+FundsControlAcceptancePolicy
+TreasuryResolutionAcceptancePolicy
+EvidenceReplayReplacementPolicy
+PostingInstructionAuthorizationPolicy
+PostingOutcomeInterpretationPolicy
+EndOfDayConfirmationAcceptancePolicy
+ReversalAuthorizationPolicy
+ReversalOutcomeInterpretationPolicy
+FailureClassificationPolicy
+PaymentResultIntentPolicy
+PaymentEventDisclosurePolicy
 ```
 
-## Next increment
+### Domain Services
 
 ```text
-Lot 3.4 — Policies and pure Domain Services
+PostingOutcomeDecisionService
+EndOfDayDecisionService
+ReversalDecisionService
+PaymentResultIntentService
 ```
 
-The Aggregate Root and `PaymentState` remain deferred.
+## Purity
+
+No component performs I/O, repository access, external calls, persistence,
+clock reads, aggregate mutation or event registration.
+
+`decisionAt` and immutable approved profiles are explicit method inputs.
+
+## Deferred
+
+`Payment`, `PaymentState`, domain events, handlers, repositories, Outbox and
+adapters remain absent.
+
+## Build
+
+From `backend/`:
+
+```bash
+mvn --batch-mode --no-transfer-progress -pl payment -am test
+```

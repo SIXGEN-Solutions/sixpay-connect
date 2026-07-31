@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Policies and Domain Services
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.4 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current increment implementation:** **AUTHORIZED_AND_COMPLETED**
 
 ## 1. Purpose
 
@@ -634,19 +635,48 @@ Secrets are never policy configuration.
 - `PAY-DEC-IA1-058` — `POSTING_TFJ_AND_REVERSAL_SERVICES_RETURN_IMMUTABLE_DECISIONS_WITHOUT_MUTATION_EVENT_OR_IO`
 - `PAY-DEC-IA1-059` — `RESULT_INTENT_DECISION_AND_EVENT_PAYLOAD_DISCLOSURE_ARE_SEPARATE_POLICIES`
 - `PAY-DEC-IA1-060` — `POLICY_AND_SERVICE_DEFINITIONS_DO_NOT_AUTHORIZE_JAVA_GENERATION_BEFORE_FINAL_MODEL_VALIDATION`
+
+## Lot 3.4 implementation
+
+Implemented packages:
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/policy/
+backend/payment/src/main/java/com/sixpay/payment/domain/service/
+```
+
+Implemented counts:
+
+```text
+Policies: 14
+Policy profiles: 12
+Domain Services: 4
+```
+
+All components are immutable/stateless and return typed decisions. Architecture
+tests reject I/O, repositories, external clients, system-clock access,
+aggregate mutation and event registration.
+
+`PaymentEventDisclosurePolicy` is implemented as a pure domain-only boundary
+policy over `ExplicitEventPayload`; no application mapper or Outbox code is
+introduced.
+
+**Implementation decisions:** `PAY-DEC-IA1-086` through
+`PAY-DEC-IA1-090`.
+
 ## 15. Exit checklist
 
-- [ ] Every configurable decision has a named profile.
-- [ ] No profile contains a secret or protected account.
-- [ ] Every policy is pure and deterministic.
-- [ ] Every Domain Service returns a typed immutable decision.
-- [ ] Payment remains the only state/event owner.
+- [x] Every configurable decision has a named profile.
+- [x] No profile contains a secret or protected account.
+- [x] Every policy is pure and deterministic.
+- [x] Every Domain Service returns a typed immutable decision.
+- [x] Payment remains the only state/event owner.
 - [ ] Every command and invariant references its required policies/services.
 - [ ] State-machine policy/service references are consistent.
-- [ ] Event disclosure is separated from result-intent selection.
-- [ ] Persistent matching and external calls remain ports/processes.
-- [ ] No bank-specific constant has been invented.
-- [ ] Code generation remains forbidden.
+- [x] Event disclosure is separated from result-intent selection.
+- [x] Persistent matching and external calls remain ports/processes.
+- [x] No bank-specific constant has been invented.
+- [x] Global generation remains forbidden; Lot 3.4 was explicitly authorized.
 
 ## 16. Verdict
 

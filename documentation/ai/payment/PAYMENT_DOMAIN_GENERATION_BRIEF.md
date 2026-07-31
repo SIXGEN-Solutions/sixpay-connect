@@ -1,71 +1,62 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `3.3 — Snapshots and financial evidence`  
+> **Current lot:** `3.4 — Policies and Domain Services`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_3_3_IMPLEMENTED`  
+> **Status:** `LOT_3_4_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED**
 
-## Authorization
+## Implemented
 
 ```text
-PAY-AUTH-IA1-001
-scope: PAYMENT_DOMAIN_ONLY
-currentIncrement: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
-currentIncrementCodeGenerationAllowed: true
-futureIncrementActivationRequired: true
-globalCodeGenerationAllowed: false
+14 Payment Policies
+12 immutable policy profiles
+4 pure Domain Services
+typed decision enums and immutable decision records
+explicit decision contexts and service inputs
 ```
 
-## Implemented snapshots
+## Purity guarantees
+
+Every policy and service:
+
+- receives time and profiles explicitly;
+- performs no I/O;
+- accesses no repository;
+- calls no external client;
+- reads no system clock;
+- mutates no Payment;
+- registers no event;
+- returns a typed immutable decision.
+
+## Packages
 
 ```text
-AuthorizationEvidenceSnapshot
-BankingVerificationSnapshot
-FundsControlSnapshot
-TreasuryAccountResolutionSnapshot
-PostingOutcomeSnapshot
-EndOfDayConfirmationSnapshot
-ReversalSnapshot
+com.sixpay.payment.domain.policy
+com.sixpay.payment.domain.service
 ```
 
-## Implemented support
+`PaymentEventDisclosurePolicy` is kept as a pure domain-only boundary policy
+until application/Outbox mapping is separately authorized.
 
-The package includes metadata, identifiers, observation channels,
-authorization bindings, banking/funds checks, posting legs, TFJ failure
-evidence and reversal authorization/outcome evidence.
-
-Primitive posting/reversal instruction IDs and idempotency keys are included
-because the snapshots require stable financial-command identity. Full
-instruction composites remain deferred.
-
-## Structural validation
-
-Constructors enforce bounded immutable collections, source/channel
-compatibility, chronology, outcome matrices, positive amounts, posting
-leg/reference consistency, TFJ final-status structure and reversal identity
-preservation.
-
-## Deferred behavior
+## Deferred
 
 ```text
-freshness profiles
-mandatory check profiles
-aggregate bank/account/amount bindings
-replay and replacement authority
-TFJ unique match proof
-state transition eligibility
-Payment mutation
-domain event registration
+Payment
+PaymentState
+Domain Events
+event registration
+application handlers
+repositories and adapters
 ```
 
 ## Verdict
 
 ```text
-LOT 3.3: IMPLEMENTED
-SNAPSHOTS: 7
-MODEL SEMANTICS: UNCHANGED
+LOT 3.4: IMPLEMENTED
+POLICIES: 14
+PROFILES: 12
+DOMAIN SERVICES: 4
 GLOBAL GENERATION: FORBIDDEN
-NEXT: LOT 3.4 EXPLICIT ACTIVATION
+NEXT: LOT 3.5 EXPLICIT ACTIVATION
 ```

@@ -1,11 +1,11 @@
-schemaVersion: 1.1.0
+schemaVersion: 1.2.0
 document:
   id: SIXPAY-PAYMENT-POLICY-DOMAIN-SERVICE-CATALOGUE
   title: SIXPAY CONNECT — Payment Policies and Domain Services
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 3_4_POLICIES_DOMAIN_SERVICES
   branch: feat/payment-domain-generation-brief
-  status: FINAL_VALIDATED
+  status: IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
   nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
@@ -987,3 +987,18 @@ finalValidation:
   humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
   machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
   status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+implementation:
+  status: IMPLEMENTED
+  policyCount: 14
+  profileCount: 12
+  domainServiceCount: 4
+  packages:
+  - com.sixpay.payment.domain.policy
+  - com.sixpay.payment.domain.service
+  pure: true
+  ioAllowed: false
+  repositoryAccessAllowed: false
+  externalClientAccessAllowed: false
+  systemClockAccessAllowed: false
+  aggregateMutationAllowed: false
+  eventRegistrationAllowed: false

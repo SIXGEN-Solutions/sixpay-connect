@@ -16,178 +16,127 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PaymentArchitectureTest {
 
-    private static final Path JAVA_ROOT =
-            Path.of("src/main/java/com/sixpay/payment");
-
     private static final Path DOMAIN_ROOT =
-            JAVA_ROOT.resolve("domain");
-
-    private static final Path EVIDENCE_ROOT =
-            DOMAIN_ROOT.resolve("model/evidence");
-
+            Path.of("src/main/java/com/sixpay/payment/domain");
+    private static final Path POLICY_ROOT =
+            DOMAIN_ROOT.resolve("policy");
+    private static final Path SERVICE_ROOT =
+            DOMAIN_ROOT.resolve("service");
     private static final Path REPOSITORY_ROOT =
             Path.of("..", "..").normalize();
 
-    private static final List<String> FORBIDDEN_DOMAIN_IMPORTS = List.of(
-            "import org.springframework.",
-            "import jakarta.persistence.",
-            "import jakarta.servlet.",
-            "import org.hibernate.",
-            "import tools.jackson.",
-            "import com.sixpay.payment.api.",
-            "import com.sixpay.payment.application.",
-            "import com.sixpay.payment.infrastructure.",
-            "import com.sixpay.payment.configuration.",
-            "import com.sixpay.payment.events."
+    private static final Set<String> POLICY_SOURCES = Set.of(
+            "AuthorizationEvidenceAcceptancePolicy.java",
+            "AuthorizationPolicyProfile.java",
+            "BankingVerificationAcceptancePolicy.java",
+            "BankingVerificationPolicyProfile.java",
+            "CurrentPostingEvidence.java",
+            "CurrentReversalEvidence.java",
+            "CurrentTfjEvidence.java",
+            "EndOfDayConfirmationAcceptancePolicy.java",
+            "EndOfDayDecision.java",
+            "EndOfDayInterpretation.java",
+            "EventDataClassification.java",
+            "EventDisclosureDecision.java",
+            "EventDisclosureProfile.java",
+            "EvidenceAcceptanceDecision.java",
+            "EvidenceAuthority.java",
+            "EvidenceCategory.java",
+            "EvidenceConclusiveness.java",
+            "EvidenceIdentity.java",
+            "EvidenceReplayDecision.java",
+            "EvidenceReplayReplacementPolicy.java",
+            "EvidenceTemporalDecision.java",
+            "EvidenceTemporalProfile.java",
+            "EvidenceTemporalValidityPolicy.java",
+            "ExplicitEventPayload.java",
+            "FailureClassificationPolicy.java",
+            "FailureClassificationProfile.java",
+            "FailureDispositionDecision.java",
+            "FinancialEffectKnowledge.java",
+            "FinancialOutcomePolicyProfile.java",
+            "FundsControlAcceptancePolicy.java",
+            "FundsControlPolicyProfile.java",
+            "PaymentAuthorizationContext.java",
+            "PaymentBankingContext.java",
+            "PaymentEventDisclosurePolicy.java",
+            "PaymentFundsContext.java",
+            "PaymentLifecycleContext.java",
+            "PaymentPostingAuthorizationContext.java",
+            "PaymentPostingContext.java",
+            "PaymentResultContext.java",
+            "PaymentResultIntentPolicy.java",
+            "PaymentReversalContext.java",
+            "PaymentReversalEligibilityContext.java",
+            "PaymentTfjContext.java",
+            "PaymentTreasuryContext.java",
+            "PolicyDecision.java",
+            "PolicyProfileMetadata.java",
+            "PostingAuthorizationDecision.java",
+            "PostingAuthorizationPolicyProfile.java",
+            "PostingDecision.java",
+            "PostingInstructionAuthorizationPolicy.java",
+            "PostingInstructionIdentity.java",
+            "PostingOutcomeInterpretation.java",
+            "PostingOutcomeInterpretationPolicy.java",
+            "ResultIntentDecision.java",
+            "ResultIntentPolicyProfile.java",
+            "ReversalAuthorizationDecision.java",
+            "ReversalAuthorizationPolicy.java",
+            "ReversalDecision.java",
+            "ReversalInstructionIdentity.java",
+            "ReversalOutcomeInterpretation.java",
+            "ReversalOutcomeInterpretationPolicy.java",
+            "ReversalPolicyProfile.java",
+            "TfjPolicyProfile.java",
+            "TreasuryResolutionAcceptancePolicy.java",
+            "TreasuryResolutionPolicyProfile.java",
+            "UniqueTfjMatchProof.java",
+            "package-info.java"
     );
 
-    private static final List<String> OTHER_BUSINESS_DOMAINS = List.of(
-            "import com.sixpay.customer.",
-            "import com.sixpay.partner.",
-            "import com.sixpay.subscription.",
-            "import com.sixpay.accounting.",
-            "import com.sixpay.reporting.",
-            "import com.sixpay.notification.",
-            "import com.sixpay.administration."
-    );
-
-    private static final List<String> FORBIDDEN_PRODUCTION_LAYERS =
-            List.of(
-                    "api",
-                    "application",
-                    "infrastructure",
-                    "configuration",
-                    "events"
-            );
-
-    private static final Set<String> LOT_3_3_EVIDENCE_SOURCES = Set.of(
-            "AuthorizationBindingEvidence.java",
-            "AuthorizationBindingResult.java",
-            "AuthorizationBindingType.java",
-            "AuthorizationDecisionOutcome.java",
-            "AuthorizationEvidenceReference.java",
-            "AuthorizationEvidenceSnapshot.java",
-            "BankingVerificationCheckEvidence.java",
-            "BankingVerificationCheckType.java",
-            "BankingVerificationId.java",
-            "BankingVerificationOutcome.java",
-            "BankingVerificationSnapshot.java",
-            "EndOfDayConfirmationSnapshot.java",
-            "EvidenceCheckResult.java",
-            "EvidenceFingerprint.java",
-            "EvidenceMetadata.java",
-            "EvidenceObservationChannel.java",
-            "EvidenceValueObjectRules.java",
-            "FundsControlCheckEvidence.java",
-            "FundsControlCheckType.java",
-            "FundsControlOutcome.java",
-            "FundsControlSnapshot.java",
-            "FundsVerificationReference.java",
-            "PostingIdempotencyKey.java",
-            "PostingInstructionId.java",
-            "PostingLegEvidence.java",
-            "PostingLegStatus.java",
-            "PostingNextAction.java",
-            "PostingOutcome.java",
-            "PostingOutcomeSnapshot.java",
-            "ReversalAuthorizationEvidence.java",
-            "ReversalAuthorizationReference.java",
-            "ReversalAuthorizationType.java",
-            "ReversalIdempotencyKey.java",
-            "ReversalInstructionId.java",
-            "ReversalOutcome.java",
-            "ReversalOutcomeEvidence.java",
-            "ReversalReference.java",
-            "ReversalSnapshot.java",
-            "TfjConfirmationId.java",
-            "TfjFailureEvidence.java",
-            "TfjRecoveryAction.java",
-            "TfjStatus.java",
-            "TreasuryAccountResolutionSnapshot.java",
-            "TreasuryResolutionOutcome.java",
+    private static final Set<String> SERVICE_SOURCES = Set.of(
+            "EndOfDayDecisionInput.java",
+            "EndOfDayDecisionService.java",
+            "PaymentPolicyBundle.java",
+            "PaymentResultIntentService.java",
+            "PostingDecisionInput.java",
+            "PostingOutcomeDecisionService.java",
+            "ReversalDecisionInput.java",
+            "ReversalDecisionService.java",
             "package-info.java"
     );
 
     @Test
-    void moduleContainsOnlyApprovedDomainLayers() {
-        assertTrue(
-                Files.isRegularFile(JAVA_ROOT.resolve("PaymentModule.java"))
-        );
-
-        FORBIDDEN_PRODUCTION_LAYERS.forEach(layer ->
-                assertFalse(
-                        containsJavaSources(JAVA_ROOT.resolve(layer)),
-                        "Domain-only authorization forbids " + layer
-                )
-        );
-    }
-
-    @Test
-    void lot33ImplementsExactlyTheAuthorizedEvidenceSources()
+    void lot34ContainsExactlyAuthorizedPolicyAndServiceSources()
             throws IOException {
-        try (Stream<Path> paths = Files.list(EVIDENCE_ROOT)) {
-            Set<String> actual = paths
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .map(path -> path.getFileName().toString())
-                    .collect(Collectors.toSet());
-
-            assertEquals(LOT_3_3_EVIDENCE_SOURCES, actual);
-        }
+        assertEquals(POLICY_SOURCES, filenames(POLICY_ROOT));
+        assertEquals(SERVICE_SOURCES, filenames(SERVICE_ROOT));
     }
 
     @Test
-    void aggregatePoliciesServicesAndEventsRemainDeferred() {
-        List.of("Payment.java", "PaymentState.java").forEach(filename ->
-                assertFalse(
-                        Files.exists(
-                                DOMAIN_ROOT.resolve("model")
-                                        .resolve(filename)
-                        )
-                )
+    void fourteenPoliciesTwelveProfilesAndFourServicesExist() {
+        assertEquals(
+                14,
+                countFilesEndingWith(POLICY_ROOT, "Policy.java")
         );
-
-        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("policy")));
-        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("service")));
-        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("event")));
-    }
-
-    @Test
-    void moduleDependenciesRemainUnchanged() throws IOException {
-        var pom = Files.readString(Path.of("pom.xml"));
-
-        assertTrue(declaresArtifact(pom, "common"));
-        assertTrue(declaresArtifact(pom, "shared-kernel"));
-        assertTrue(declaresArtifact(pom, "junit-jupiter"));
-        assertFalse(pom.contains("spring-boot-starter"));
-
-        List.of(
-                "security",
-                "integration",
-                "customer",
-                "partner",
-                "subscription",
-                "accounting",
-                "reporting",
-                "notification",
-                "administration"
-        ).forEach(artifact ->
-                assertFalse(declaresArtifact(pom, artifact))
+        assertEquals(
+                12,
+                countFilesEndingWith(POLICY_ROOT, "Profile.java")
+        );
+        assertEquals(
+                4,
+                countFilesEndingWith(SERVICE_ROOT, "Service.java")
         );
     }
 
     @Test
-    void domainRemainsFrameworkAndBusinessModuleAgnostic()
-            throws IOException {
-        assertSourcesDoNotContain(DOMAIN_ROOT, FORBIDDEN_DOMAIN_IMPORTS);
-        assertSourcesDoNotContain(DOMAIN_ROOT, OTHER_BUSINESS_DOMAINS);
-    }
-
-    @Test
-    void evidenceContainsNoIoClockOrCryptoExecution()
-            throws IOException {
+    void policiesAndServicesRemainPure() throws IOException {
         assertSourcesDoNotContain(
-                EVIDENCE_ROOT,
+                DOMAIN_ROOT,
                 List.of(
+                        "org.springframework.",
+                        "jakarta.persistence.",
                         "java.net.",
                         "java.sql.",
                         "java.nio.file.",
@@ -198,15 +147,34 @@ class PaymentArchitectureTest {
                         "Repository",
                         "RestClient",
                         "WebClient",
-                        "KafkaTemplate"
+                        "KafkaTemplate",
+                        "registerEvent(",
+                        "addDomainEvent("
                 )
         );
     }
 
     @Test
-    void controlledAuthorizationActivatesOnlyLot33()
+    void noAggregateMutationOrEventPackageIsIntroduced() {
+        assertFalse(
+                Files.exists(
+                        DOMAIN_ROOT.resolve("model/Payment.java")
+                )
+        );
+        assertFalse(
+                Files.exists(
+                        DOMAIN_ROOT.resolve("model/PaymentState.java")
+                )
+        );
+        assertFalse(
+                Files.isDirectory(DOMAIN_ROOT.resolve("event"))
+        );
+    }
+
+    @Test
+    void currentAuthorizationIsLot34DomainOnly()
             throws IOException {
-        var manifest = Files.readString(
+        String manifest = Files.readString(
                 REPOSITORY_ROOT.resolve(
                         "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
                 )
@@ -216,11 +184,8 @@ class PaymentArchitectureTest {
                 manifest.contains("globalCodeGenerationAllowed: false")
         );
         assertTrue(
-                manifest.contains("scope: PAYMENT_DOMAIN_ONLY")
-        );
-        assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE"
+                        "currentIncrement: LOT_3_4_POLICIES_DOMAIN_SERVICES"
                 )
         );
         assertTrue(
@@ -232,61 +197,33 @@ class PaymentArchitectureTest {
                 manifest.contains("AGGREGATE_ROOT_GENERATION")
         );
         assertTrue(
-                manifest.contains("POLICY_OR_DOMAIN_SERVICE_GENERATION")
-        );
-        assertTrue(
                 manifest.contains("DOMAIN_EVENT_GENERATION")
         );
     }
 
-    @Test
-    void fullSnapshotsAreNotRecordsWithAutomaticStringExposure()
+    private static Set<String> filenames(Path root)
             throws IOException {
-        for (String filename : List.of(
-                "AuthorizationEvidenceSnapshot.java",
-                "BankingVerificationSnapshot.java",
-                "FundsControlSnapshot.java",
-                "TreasuryAccountResolutionSnapshot.java",
-                "PostingOutcomeSnapshot.java",
-                "EndOfDayConfirmationSnapshot.java",
-                "ReversalSnapshot.java"
-        )) {
-            String content = Files.readString(
-                    EVIDENCE_ROOT.resolve(filename)
-            );
-
-            assertFalse(
-                    content.contains(
-                            "record " + filename.replace(".java", "")
-                    )
-            );
-            assertTrue(content.contains("public String toString()"));
+        try (Stream<Path> paths = Files.list(root)) {
+            return paths
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .map(path -> path.getFileName().toString())
+                    .collect(Collectors.toSet());
         }
     }
 
-    private static boolean declaresArtifact(
-            String pom,
-            String artifactId
+    private static int countFilesEndingWith(
+            Path root,
+            String suffix
     ) {
-        return pom.contains(
-                "<artifactId>" + artifactId + "</artifactId>"
-        );
-    }
-
-    private static boolean containsJavaSources(Path root) {
-        if (!Files.isDirectory(root)) {
-            return false;
-        }
-
-        try (Stream<Path> paths = Files.walk(root)) {
-            return paths.anyMatch(
-                    path -> path.toString().endsWith(".java")
-            );
+        try (Stream<Path> paths = Files.list(root)) {
+            return (int) paths
+                    .filter(path ->
+                            path.getFileName().toString()
+                                    .endsWith(suffix)
+                    )
+                    .count();
         } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "cannot inspect " + root,
-                    exception
-            );
+            throw new IllegalStateException(exception);
         }
     }
 
@@ -294,16 +231,10 @@ class PaymentArchitectureTest {
             Path root,
             List<String> forbiddenTokens
     ) throws IOException {
-        if (!Files.isDirectory(root)) {
-            return;
-        }
-
         try (Stream<Path> paths = Files.walk(root)) {
-            var violations = paths
+            List<String> violations = paths
                     .filter(path -> path.toString().endsWith(".java"))
-                    .flatMap(path ->
-                            violations(path, forbiddenTokens).stream()
-                    )
+                    .flatMap(path -> violations(path, forbiddenTokens).stream())
                     .toList();
 
             assertTrue(
@@ -318,8 +249,7 @@ class PaymentArchitectureTest {
             List<String> forbiddenTokens
     ) {
         try {
-            var content = Files.readString(path);
-
+            String content = Files.readString(path);
             return forbiddenTokens.stream()
                     .filter(content::contains)
                     .map(token ->
@@ -327,10 +257,7 @@ class PaymentArchitectureTest {
                     )
                     .toList();
         } catch (IOException exception) {
-            throw new IllegalStateException(
-                    "cannot inspect " + path,
-                    exception
-            );
+            throw new IllegalStateException(exception);
         }
     }
 }

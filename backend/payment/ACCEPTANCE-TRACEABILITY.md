@@ -1,31 +1,16 @@
-# Traçabilité d’acceptation — Payment Lot 3.3
+# Traçabilité d’acceptation — Payment Lot 3.4
 
-| ID | Critère | Preuve automatisée |
+| ID | Critère | Preuve |
 | --- | --- | --- |
-| `PAY-L3.3-ACC-001` | métadonnées complètes et chronologie valide | `EvidenceMetadataTest` |
-| `PAY-L3.3-ACC-002` | autorisation minimisée et matrice cohérente | `AuthorizationEvidenceSnapshotTest` |
-| `PAY-L3.3-ACC-003` | checks bancaires uniques, canoniques et cohérents | `BankingAndFundsSnapshotsTest` |
-| `PAY-L3.3-ACC-004` | fonds positifs, valides et sans solde disponible | `BankingAndFundsSnapshotsTest` |
-| `PAY-L3.3-ACC-005` | résolution Treasury issue de configuration protégée | `TreasuryAndPostingSnapshotsTest` |
-| `PAY-L3.3-ACC-006` | cinq outcomes de posting cohérents | `TreasuryAndPostingSnapshotsTest` |
-| `PAY-L3.3-ACC-007` | références de jambes cohérentes | `bankAndLegReferencesMustBeConsistent` |
-| `PAY-L3.3-ACC-008` | TFJ n’accepte que `INTEGRATED` ou `FAILED` | `EndOfDayAndReversalSnapshotsTest` |
-| `PAY-L3.3-ACC-009` | reversal conserve les identités originales | `reversalSnapshotPreservesOriginalInstructionAndAuthorization` |
-| `PAY-L3.3-ACC-010` | matrice des outcomes de reversal | `reversalOutcomeMatrixIsStrict` |
-| `PAY-L3.3-ACC-011` | snapshots sans I/O, horloge ou crypto | `PaymentArchitectureTest` |
-| `PAY-L3.3-ACC-012` | Aggregate, Policies, Services et Events différés | `aggregatePoliciesServicesAndEventsRemainDeferred` |
-| `PAY-L3.3-ACC-013` | seule l’autorisation Lot 3.3 est active | `controlledAuthorizationActivatesOnlyLot33` |
-
-## Limites
-
-Les contrôles suivants seront exercés après implémentation des Policies et de
-l’Aggregate Root :
-
-```text
-freshness profiles
-Payment binding
-replay / conflict / replacement
-state eligibility
-atomic mutation
-event registration
-```
+| `PAY-L3.4-ACC-001` | 14 Policies présentes | `PaymentArchitectureTest.fourteenPoliciesTwelveProfilesAndFourServicesExist` |
+| `PAY-L3.4-ACC-002` | 12 profils immuables présents | même test d’architecture |
+| `PAY-L3.4-ACC-003` | 4 Domain Services présents | même test d’architecture |
+| `PAY-L3.4-ACC-004` | aucun I/O, repository, client externe ou horloge | `policiesAndServicesRemainPure` |
+| `PAY-L3.4-ACC-005` | aucune mutation Payment ni event registration | `noAggregateMutationOrEventPackageIsIntroduced` et scan des tokens |
+| `PAY-L3.4-ACC-006` | décisions temporelles typées | `CoreAcceptancePoliciesTest` |
+| `PAY-L3.4-ACC-007` | acceptation authorization/banking/funds typée | `CoreAcceptancePoliciesTest` |
+| `PAY-L3.4-ACC-008` | replay, instruction unique et failure classification | `ReplayAuthorizationAndFailurePoliciesTest` |
+| `PAY-L3.4-ACC-009` | result intent indépendant de Notification | `ResultAndDisclosurePoliciesTest` |
+| `PAY-L3.4-ACC-010` | divulgation explicite allowlist/denylist | `ResultAndDisclosurePoliciesTest` |
+| `PAY-L3.4-ACC-011` | services posting/TFJ/result retournent des décisions | `DomainServicesTest` |
+| `PAY-L3.4-ACC-012` | seule l’autorisation Lot 3.4 est active | `currentAuthorizationIsLot34DomainOnly` |
