@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.3 — Snapshots and Business Evidence`  
+> **Current lot:** `2.5 — Commands and Business Operations`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `SNAPSHOT_SUPPORT_TYPES_ADDED`  
+> **Status:** `COMMAND_SUPPORT_TYPES_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1053,6 +1053,134 @@ These types:
 Snapshot shapes and lifecycle rules remain in
 `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
 
+
+## Command and instruction support types added by Lot 2.5
+
+### `PaymentCommandId`
+
+Application-command identity.
+
+- non-nil UUID;
+- generated once at command creation;
+- same ID and fingerprint means command replay;
+- same ID and different fingerprint means conflict;
+- not stored as unbounded history inside Payment.
+
+### `ExpectedBusinessVersion`
+
+Non-negative integer representing the aggregate version expected by a
+version-guarded command.
+
+It is application/concurrency metadata and not Payment business state.
+
+### `CommandCausationReference`
+
+Optional safe opaque reference identifying the event, request or operation that
+caused a command.
+
+- 1–128 safe ASCII characters;
+- no credential, account or payload data;
+- case preserved;
+- operational correlation only.
+
+### `PostingInstructionId`
+
+Non-nil UUID identifying the sole logical posting instruction of one Payment.
+
+It is distinct from:
+
+- `PaymentId`;
+- inbound `IdempotencyKey`;
+- Amplitude `BankPostingReference`.
+
+### `PostingIdempotencyKey`
+
+Opaque bank-command idempotency identity:
+
+- 16–128 ASCII characters;
+- pattern `^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$`;
+- immutable;
+- reused unchanged for every authorized retry of the same instruction;
+- never regenerated after an uncertain outcome.
+
+### `PostingInstructionFingerprint`
+
+Canonical instruction digest:
+
+```text
+v1:sha256:<64 lowercase hexadecimal characters>
+```
+
+It binds Payment, amount, debtor account fingerprint, resolved Treasury
+configuration, allocations and institution.
+
+### `PostingInstructionIdentity`
+
+Immutable composite:
+
+```text
+PostingInstructionId
+PostingIdempotencyKey
+PostingInstructionFingerprint
+authorizedAt
+```
+
+Payment stores it before any posting network call.
+
+### `ReversalInstructionId`
+
+Non-nil UUID identifying one explicitly authorized reversal instruction.
+
+A later reauthorization after a conclusive rejected/not-allowed reversal may
+create a new instruction ID; only one instruction is active at a time.
+
+### `ReversalIdempotencyKey`
+
+Opaque reversal-command key with the same lexical format as
+`PostingIdempotencyKey`.
+
+It is distinct from the original posting key and is reused unchanged while the
+same reversal outcome is unresolved.
+
+### `ReversalInstructionIdentity`
+
+Immutable composite:
+
+```text
+ReversalInstructionId
+ReversalIdempotencyKey
+instructionFingerprint
+authorizedAt
+```
+
+### `PaymentStatus`
+
+Closed IA-1 target values:
+
+```text
+RECEIVED
+AUTHORIZATION_CHECKING
+BANKING_VERIFICATION_PENDING
+FUNDS_CONTROL_PENDING
+TREASURY_ACCOUNT_RESOLUTION_PENDING
+APPROVED_FOR_POSTING
+POSTING_PENDING
+POSTING_OUTCOME_UNKNOWN
+DEBIT_CONFIRMED
+POSTED_PENDING_TFJ
+REVERSAL_REQUIRED
+REVERSAL_PENDING
+REVERSAL_OUTCOME_UNKNOWN
+REJECTED
+FAILED
+TREASURY_INTEGRATED
+REVERSED
+```
+
+`NOTIFIED` is not a Payment financial status.
+
+**Decisions:** `PAY-DEC-IA1-034`, `PAY-DEC-IA1-035`, `PAY-DEC-IA1-036`.
+
 ## 15. Exit checklist
 
 - [ ] Every Aggregate Root type has semantics and ownership.
@@ -1074,6 +1202,6 @@ Snapshot shapes and lifecycle rules remain in
 ```text
 IA-1 LOT 2.2 IDENTIFIERS AND VALUE OBJECTS PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.4 — INVARIANTS
+NEXT: LOT 2.6 — DOMAIN EVENTS
 CODE GENERATION: FORBIDDEN
 ```

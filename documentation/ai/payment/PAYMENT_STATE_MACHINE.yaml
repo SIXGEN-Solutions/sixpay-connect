@@ -1,1351 +1,759 @@
-schemaVersion: "1.0.0"
+schemaVersion: 2.0.0
 document:
-  id: "SIXPAY-PAYMENT-STATE-MACHINE"
-  title: "SIXPAY CONNECT — Normative Payment State Machine"
-  gate: "IA-0P — Payment Preflight"
-  step: "0P.6 — Fermer la machine à états Payment"
-  branch: "feat/payment-contract-pack"
-  sourceCommit: "0faa8437e479a6397d049496edcacf7b1dbfde8b"
-  status: "STATE_MACHINE_CLOSED"
+  id: SIXPAY-PAYMENT-STATE-MACHINE
+  title: SIXPAY CONNECT — IA-1 Payment State Machine
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 2_5_COMMANDS_AND_BUSINESS_OPERATIONS
+  branch: feat/payment-domain-generation-brief
+  status: DRAFT_PENDING_VALIDATION
   normative: true
   codeGenerationAllowed: false
-  nextStep: "0P.7 — Formaliser les invariants Payment"
-
+  nextLot: 2_6_DOMAIN_EVENTS
+  replacesSemanticsOf: IA-0P_PAYMENT_STATE_MACHINE_V1
 references:
-  - path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
-    role: "Normalized requirements and source hierarchy"
-  - path: "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
-    role: "System and module ownership"
-  - path: "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
-    role: "Nominal and alternative flows"
-  - path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
-    role: "Aggregate boundary and canonical snapshots"
-  - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
-    role: "Unknown accounting outcome, reversal and TFJ decisions"
-
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
+  role: Commands and named operations
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
+  role: Machine-readable commands and operations
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+  role: Cross-object and lifecycle guards
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
+  role: Machine-readable invariant guards
+- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+  role: Aggregate ownership
+- path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+  role: Canonical result semantics
 semantics:
-  aggregate: "Payment"
-  stateOwner: "SIXPAY_PAYMENT"
-  initialState: "RECEIVED"
+  aggregate: Payment
+  initialState: RECEIVED
   terminalStates:
-    - "REJECTED"
-    - "TREASURY_INTEGRATED"
-    - "FAILED"
-    - "REVERSED"
-  authorizationChecking:
-    meaning: "SIXPAY request admissibility and processing authorization"
-    includes:
-      - "Canonical request semantic validation"
-      - "Partner and channel authorization already translated by Integration"
-      - "Institution and controlled configuration eligibility"
-      - "Business idempotency conflict detection"
-    excludes:
-      - "Local subscription lookup"
-      - "TRESOR PAY subscription validation"
-      - "Customer KYC decision"
-  notified:
-    meaning: "The immediate-result notification intent is durably registered in the Transactional Outbox"
-    doesNotMean:
-      - "TRESOR PAY has acknowledged HTTP delivery"
-      - "The payment is financially final"
-      - "The TFJ result is confirmed"
-  financialFinality:
-    immediatePostingState: "CUT_CREDITED"
-    treasuryFinalityState: "TREASURY_INTEGRATED"
-    rule: "Only a matched successful Amplitude TFJ result can establish Treasury finality"
-  deliveryIndependence:
-    rule: "Notification delivery status never changes the financial state of Payment"
-    owner: "SIXPAY_NOTIFICATION"
-
-stateCategories:
-  intake:
-    - "RECEIVED"
-    - "AUTHORIZATION_CHECKING"
-  bankingDecision:
-    - "BANKING_CHECKING"
-    - "REJECTED"
-    - "APPROVED"
-  financialExecution:
-    - "POSTING"
-    - "ACCOUNTING_OUTCOME_UNKNOWN"
-    - "DEBITED"
-    - "CUT_CREDITED"
-    - "REVERSAL_REQUIRED"
-    - "REVERSAL_PENDING"
-    - "REVERSED"
-    - "FAILED"
-  notificationAndFinality:
-    - "NOTIFIED"
-    - "PENDING_END_OF_DAY_CONFIRMATION"
-    - "TREASURY_INTEGRATED"
-
+  - REJECTED
+  - FAILED
+  - TREASURY_INTEGRATED
+  - REVERSED
+  notificationState: null
+  notificationRule: NOTIFICATION_INTENT_IS_ORTHOGONAL_AND_DELIVERY_NEVER_CHANGES_FINANCIAL_STATE
+  oneLogicalPostingPerPayment: true
+  financialReplayAfterUnknownAllowed: false
+  tfjFinalityRule: ONLY_UNIQUELY_MATCHED_INTEGRATED_EVIDENCE_ESTABLISHES_FINALITY
+  invalidTransitionBehavior: PAYMENT_DOMAIN_EXCEPTION_NO_MUTATION_NO_EVENT_NO_VERSION_INCREMENT
+creation:
+  commandId: PAY-CMD-001
+  operationId: PAY-OP-001
+  operation: Payment.receive
+  createdState: RECEIVED
+  requiredInvariantRefs:
+  - PAY-INV-001
+  - PAY-INV-002
+  - PAY-INV-003
+  - PAY-INV-004
+  - PAY-INV-005
+  - PAY-INV-006
+  - PAY-INV-007
+  - PAY-INV-008
+  - PAY-INV-019
+  - PAY-INV-020
+  domainFactKinds:
+  - PAYMENT_RECEIVED
 states:
   RECEIVED:
-    description: "The authenticated request is durably recorded before any Amplitude call."
+    description: Authenticated canonical Payment intention is durably persisted.
     terminal: false
     financialEffectPossible: false
-    requiredFacts:
-      - "PaymentId"
-      - "TresorPayRequestId"
-      - "PaymentReference"
-      - "IdempotencyKey"
-      - "RequestFingerprint"
-      - "CorrelationId"
-      - "Money"
-      - "FinancialInstitutionCode"
-      - "BankAccountReference"
-      - "PayerSnapshot"
-    allowedNextStates:
-      - "AUTHORIZATION_CHECKING"
-
   AUTHORIZATION_CHECKING:
-    description: "SIXPAY checks request admissibility; no local subscription is consulted."
+    description: SIXPAY is awaiting or applying the canonical TRESOR PAY authorization decision.
     terminal: false
     financialEffectPossible: false
-    allowedNextStates:
-      - "BANKING_CHECKING"
-      - "REJECTED"
-      - "FAILED"
-
-  BANKING_CHECKING:
-    description: "Fresh Amplitude-backed customer, account, status, restriction and funds checks are in progress."
+  BANKING_VERIFICATION_PENDING:
+    description: Authorization is approved and fresh customer/account verification is pending.
     terminal: false
     financialEffectPossible: false
-    allowedNextStates:
-      - "BANKING_CHECKING"
-      - "REJECTED"
-      - "APPROVED"
-      - "FAILED"
-
-  REJECTED:
-    description: "A stable business reason rejects the payment before any financial write."
-    terminal: true
-    financialEffectPossible: false
-    allowedNextStates: []
-
-  APPROVED:
-    description: "All required banking checks are favorable and fresh; posting may be requested once."
+  FUNDS_CONTROL_PENDING:
+    description: Banking identity/account verification is approved and exact funds control is pending.
     terminal: false
     financialEffectPossible: false
-    allowedNextStates:
-      - "POSTING"
-      - "FAILED"
-
-  POSTING:
-    description: "A unique idempotent debit-and-CUT-credit instruction has been durably authorized and submitted."
+  TREASURY_ACCOUNT_RESOLUTION_PENDING:
+    description: Funds are approved and protected CUT/Treasury configuration resolution is pending.
+    terminal: false
+    financialEffectPossible: false
+  APPROVED_FOR_POSTING:
+    description: All required favorable evidence exists and one posting may be authorized.
+    terminal: false
+    financialEffectPossible: false
+  POSTING_PENDING:
+    description: The sole posting instruction is durable and may have reached Amplitude.
     terminal: false
     financialEffectPossible: true
-    allowedNextStates:
-      - "DEBITED"
-      - "CUT_CREDITED"
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "REVERSAL_REQUIRED"
-      - "FAILED"
-
-  ACCOUNTING_OUTCOME_UNKNOWN:
-    description: "SIXPAY cannot prove the complete result of a posting or reversal and must reconcile without blind replay."
+  POSTING_OUTCOME_UNKNOWN:
+    description: Posting result is uncertain and only authoritative lookup/reconciliation is allowed.
     terminal: false
     financialEffectPossible: true
-    allowedNextStates:
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "DEBITED"
-      - "CUT_CREDITED"
-      - "REVERSAL_REQUIRED"
-      - "FAILED"
-      - "REVERSED"
-
+  DEBIT_CONFIRMED:
+    description: Debtor debit is confirmed while CUT credit is not confirmed complete.
+    terminal: false
+    financialEffectPossible: true
+  POSTED_PENDING_TFJ:
+    description: Debit and CUT credit are confirmed; immediate result and TFJ tracking intents exist.
+    terminal: false
+    financialEffectPossible: true
   REVERSAL_REQUIRED:
-    description: "A confirmed or reconciled financial anomaly requires an explicit bank reversal."
+    description: A confirmed/reconciled effect requires explicit authorized reversal handling.
     terminal: false
     financialEffectPossible: true
-    allowedNextStates:
-      - "REVERSAL_PENDING"
-
-  DEBITED:
-    description: "The customer debit is confirmed while the CUT credit is not yet confirmed."
+  REVERSAL_PENDING:
+    description: An authorized reversal instruction is durable and awaiting a known result.
     terminal: false
     financialEffectPossible: true
-    allowedNextStates:
-      - "CUT_CREDITED"
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "REVERSAL_REQUIRED"
-
-  CUT_CREDITED:
-    description: "Customer debit and accounting credit of the configured CUT are confirmed; TFJ finality is not."
+  REVERSAL_OUTCOME_UNKNOWN:
+    description: Reversal result is uncertain and only authoritative lookup is allowed.
     terminal: false
     financialEffectPossible: true
-    allowedNextStates:
-      - "NOTIFIED"
-
-  NOTIFIED:
-    description: "The immediate-result notification intent is committed to Outbox; delivery remains owned by Notification."
-    terminal: false
-    financialEffectPossible: true
-    allowedNextStates:
-      - "PENDING_END_OF_DAY_CONFIRMATION"
-
-  PENDING_END_OF_DAY_CONFIRMATION:
-    description: "Immediate posting is known and Payment awaits a matched Amplitude TFJ result."
-    terminal: false
-    financialEffectPossible: true
-    allowedNextStates:
-      - "PENDING_END_OF_DAY_CONFIRMATION"
-      - "TREASURY_INTEGRATED"
-      - "REVERSAL_REQUIRED"
-
-  TREASURY_INTEGRATED:
-    description: "A matched successful TFJ result is durably persisted and Treasury finality is established."
-    terminal: true
-    financialEffectPossible: true
-    allowedNextStates: []
-
-  FAILED:
-    description: "Processing ended with proven absence of financial effect."
+  REJECTED:
+    description: Conclusive business/security rejection with no financial effect.
     terminal: true
     financialEffectPossible: false
-    allowedNextStates: []
-
-  REVERSAL_PENDING:
-    description: "An explicitly authorized, separately idempotent bank reversal is awaiting a known outcome."
-    terminal: false
-    financialEffectPossible: true
-    allowedNextStates:
-      - "REVERSAL_REQUIRED"
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "REVERSED"
-
-  REVERSED:
-    description: "The bank reversal is confirmed and linked to the original posting."
+  FAILED:
+    description: Technical processing ended with proven absence of financial effect.
+    terminal: true
+    financialEffectPossible: false
+  TREASURY_INTEGRATED:
+    description: Uniquely matched Amplitude TFJ INTEGRATED evidence establishes finality.
     terminal: true
     financialEffectPossible: true
-    allowedNextStates: []
-
-replayDefaults:
-  duplicateEvent:
-    sameEventIdAndPayload: "NO_OP_RETURN_CURRENT_STATE"
-    sameEventIdDifferentPayload: "REJECT_CONFLICT_AND_AUDIT"
-  staleCommand:
-    rule: "REJECT_IF_EXPECTED_AGGREGATE_VERSION_DOES_NOT_MATCH"
-  terminalState:
-    sameFactReplay: "NO_OP"
-    newStateChangingCommand: "REJECT"
-  outbox:
-    rule: "A replay may republish an existing event identifier but must not repeat the domain transition."
-  financialWrite:
-    rule: "NEVER_BLINDLY_REPLAY_AFTER_UNKNOWN_OUTCOME"
-
+  REVERSED:
+    description: Authorized bank reversal is confirmed; original posting evidence remains.
+    terminal: true
+    financialEffectPossible: true
 transitions:
-  - id: "PAY-TR-001"
-    from: "RECEIVED"
-    trigger:
-      kind: "COMMAND"
-      name: "StartAuthorizationChecks"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "The request is durably persisted."
-      - "All mandatory canonical identifiers and immutable request facts exist."
-      - "No idempotency conflict is recorded."
-    to: "AUTHORIZATION_CHECKING"
-    businessEffects:
-      - "Marks the beginning of SIXPAY admissibility checks."
-      - "Does not query or validate a local subscription."
-    eventsProduced:
-      - "PaymentAuthorizationCheckingStarted"
-    forbiddenTransitions:
-      - "Direct RECEIVED to BANKING_CHECKING without admissibility checks."
-      - "Direct RECEIVED to POSTING."
-      - "Any financial effect."
-    replayCapability:
-      allowed: true
-      mode: "IDEMPOTENT_STATE_CONFIRMATION"
-      key: "PaymentId + commandId"
-      duplicateResult: "Return AUTHORIZATION_CHECKING without a second event."
-
-  - id: "PAY-TR-002"
-    from: "AUTHORIZATION_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "PaymentAuthorizationApproved"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "Canonical request semantics are valid."
-      - "Partner, channel, institution and configuration are admissible."
-      - "The idempotency key and fingerprint do not conflict."
-    to: "BANKING_CHECKING"
-    businessEffects:
-      - "Authorizes fresh customer, account, restriction and funds checks."
-      - "Requests BankingVerification through the Customer port."
-    eventsProduced:
-      - "PaymentBankingCheckingStarted"
-      - "BankingVerificationRequested"
-    forbiddenTransitions:
-      - "Direct AUTHORIZATION_CHECKING to APPROVED."
-      - "Posting before fresh banking verification."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "authorizationDecisionEventId"
-      duplicateResult: "No-op if the same favorable decision was already applied."
-
-  - id: "PAY-TR-003"
-    from: "AUTHORIZATION_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "PaymentAuthorizationRejected"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "A stable admissibility or semantic rejection reason exists."
-      - "No financial instruction has been created."
-    to: "REJECTED"
-    businessEffects:
-      - "Persists the rejection reason and finalization instant."
-      - "Creates an immediate rejection notification intent in Outbox."
-    eventsProduced:
-      - "PaymentRejected"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "REJECTED to any non-terminal state."
-      - "Any Amplitude posting."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "authorizationDecisionEventId"
-      duplicateResult: "Return the existing rejection and notification intent."
-
-  - id: "PAY-TR-004"
-    from: "AUTHORIZATION_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "AuthorizationCheckFailedWithoutFinancialEffect"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "The failure is technical rather than a business rejection."
-      - "Absence of any financial effect is proven."
-      - "Configured safe retries are exhausted or the error is permanent."
-    to: "FAILED"
-    businessEffects:
-      - "Persists a technical failure without banking effect."
-      - "Creates a FAILED immediate notification intent."
-    eventsProduced:
-      - "PaymentFailed"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Classifying a business rejection as FAILED."
-      - "Transitioning to FAILED when a financial effect is possible."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "failureEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-005"
-    from: "BANKING_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "BankingVerificationSucceeded"
-      owner: "SIXPAY_CUSTOMER"
-    preconditions:
-      - "The verification snapshot is authenticated, normalized and fresh."
-      - "Customer and account exist."
-      - "NIU and account ownership match."
-      - "Account is operational and has no blocking restriction."
-      - "Available funds are sufficient for the requested Money."
-    to: "APPROVED"
-    businessEffects:
-      - "Stores the immutable BankingVerificationSnapshot."
-      - "Records the Payment decision as approved for posting."
-    eventsProduced:
-      - "PaymentApproved"
-    forbiddenTransitions:
-      - "Approval from a stale or incomplete verification."
-      - "Approval based on ObservedCustomer read data."
-      - "Approval when funds availability is unknown."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "verificationId"
-      duplicateResult: "No-op if snapshot and decision are identical."
-
-  - id: "PAY-TR-006"
-    from: "BANKING_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "BankingVerificationRejected"
-      owner: "SIXPAY_CUSTOMER"
-    preconditions:
-      - "A fresh canonical verification contains at least one stable business rejection reason."
-      - "No posting instruction exists."
-    to: "REJECTED"
-    businessEffects:
-      - "Stores the verification evidence and normalized rejection reasons."
-      - "Creates a REJECTED immediate notification intent."
-    eventsProduced:
-      - "PaymentRejected"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Any financial write."
-      - "Reopening the rejected Payment after source-data correction."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "verificationId"
-      duplicateResult: "Return existing rejection."
-
-  - id: "PAY-TR-007"
-    from: "BANKING_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "BankingVerificationDeferred"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "Amplitude is temporarily unavailable or the read outcome is inconclusive."
-      - "No financial instruction has been submitted."
-      - "The retry/recovery policy allows continued checking."
-    to: "BANKING_CHECKING"
-    businessEffects:
-      - "Keeps the Payment recoverable without creating a false rejection."
-      - "Records the deferred reason and schedules a controlled read retry."
-      - "May create one PROCESSING notification intent according to contract policy."
-    eventsProduced:
-      - "PaymentBankingVerificationDeferred"
-    forbiddenTransitions:
-      - "Treating unavailability as a business rejection."
-      - "Posting with an unknown banking verification."
-    replayCapability:
-      allowed: true
-      mode: "SCHEDULED_READ_RETRY"
-      key: "PaymentId + verificationCycleId + attemptNumber"
-      duplicateResult: "Duplicate attempt result is ignored."
-
-  - id: "PAY-TR-008"
-    from: "BANKING_CHECKING"
-    trigger:
-      kind: "EVENT"
-      name: "BankingVerificationFailedWithoutFinancialEffect"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "No financial instruction exists."
-      - "Configured read retries are exhausted or the failure is permanent."
-      - "The failure is not a stable banking rejection."
-    to: "FAILED"
-    businessEffects:
-      - "Finalizes the Payment as a technical failure without financial effect."
-      - "Creates a FAILED immediate notification intent."
-    eventsProduced:
-      - "PaymentFailed"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Transitioning to FAILED if posting may have reached Amplitude."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "failureEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-009"
-    from: "APPROVED"
-    trigger:
-      kind: "COMMAND"
-      name: "SubmitPaymentPosting"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "The BankingVerificationSnapshot remains fresh."
-      - "No posting instruction or outcome exists."
-      - "The TreasuryAccountReference comes from approved configuration."
-      - "The bank idempotency key is stable and unique for this Payment."
-    to: "POSTING"
-    businessEffects:
-      - "Creates one logical PaymentPostingInstruction."
-      - "Durably records posting authorization before the network call."
-    eventsProduced:
-      - "PaymentPostingRequested"
-    forbiddenTransitions:
-      - "A second logical posting instruction."
-      - "Posting with a caller-supplied TreasuryAccount."
-      - "Direct APPROVED to DEBITED or CUT_CREDITED."
-    replayCapability:
-      allowed: true
-      mode: "IDEMPOTENT_WRITE_SUBMISSION"
-      key: "bankPostingIdempotencyKey"
-      duplicateResult: "Reuse the existing instruction; never create another."
-
-  - id: "PAY-TR-010"
-    from: "APPROVED"
-    trigger:
-      kind: "EVENT"
-      name: "PostingAbortedWithoutSubmission"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "Accounting proves the posting was never submitted to Amplitude."
-      - "No financial effect is possible."
-      - "Recovery is exhausted or a permanent internal failure exists."
-    to: "FAILED"
-    businessEffects:
-      - "Finalizes the Payment without financial effect."
-      - "Creates a FAILED immediate notification intent."
-    eventsProduced:
-      - "PaymentFailed"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Using this transition after a network submission may have occurred."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "abortEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-011"
-    from: "POSTING"
-    trigger:
-      kind: "EVENT"
-      name: "CustomerDebitConfirmed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The outcome matches the unique posting instruction."
-      - "The customer debit has a stable bank reference."
-      - "CUT credit is not yet confirmed."
-    to: "DEBITED"
-    businessEffects:
-      - "Stores the confirmed debit fact."
-      - "Prevents any new debit instruction."
-    eventsProduced:
-      - "PaymentCustomerDebited"
-    forbiddenTransitions:
-      - "Declaring immediate success before CUT credit."
-      - "Submitting another debit."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "bankPostingReference + debitStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-012"
-    from: "POSTING"
-    trigger:
-      kind: "EVENT"
-      name: "AtomicPostingConfirmed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Amplitude confirms both customer debit and accounting CUT credit."
-      - "The result matches the unique instruction and Money."
-      - "Stable correlated bank reference or references are present."
-    to: "CUT_CREDITED"
-    businessEffects:
-      - "Stores the complete PostingOutcomeSnapshot."
-      - "Recognizes immediate posting success without establishing TFJ finality."
-    eventsProduced:
-      - "PaymentCustomerDebited"
-      - "PaymentCutCredited"
-    forbiddenTransitions:
-      - "Direct POSTING to TREASURY_INTEGRATED."
-      - "Treating the outcome as a TFJ confirmation."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "bankPostingReference + postingStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-013"
-    from: "POSTING"
-    trigger:
-      kind: "EVENT"
-      name: "PostingOutcomeUnknown"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The instruction may have reached Amplitude."
-      - "SIXPAY cannot prove complete success or absence of effect."
-    to: "ACCOUNTING_OUTCOME_UNKNOWN"
-    businessEffects:
-      - "Stores UNKNOWN outcome and operation context POSTING."
-      - "Opens reconciliation and operational alert."
-      - "Creates one PROCESSING immediate notification intent."
-    eventsProduced:
-      - "PaymentAccountingOutcomeUnknown"
-      - "PaymentReconciliationRequested"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Blind retry of debit or CUT credit."
-      - "Transition to FAILED without proof of no effect."
-      - "Success notification."
-    replayCapability:
-      allowed: false
-      mode: "RECONCILIATION_ONLY"
-      key: "bankPostingIdempotencyKey or bankPostingReference"
-      duplicateResult: "Repeated UNKNOWN observations are deduplicated; only lookup is allowed."
-
-  - id: "PAY-TR-014"
-    from: "POSTING"
-    trigger:
-      kind: "EVENT"
-      name: "PostingFailedWithoutFinancialEffect"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Amplitude or reconciliation proves no debit and no CUT credit."
-      - "The failure result matches the unique instruction."
-    to: "FAILED"
-    businessEffects:
-      - "Stores the failed PostingOutcomeSnapshot."
-      - "Creates a FAILED immediate notification intent."
-    eventsProduced:
-      - "PaymentFailed"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Using FAILED when any financial effect is possible."
-      - "Retrying with a new posting identity."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "bankPostingReference or postingFailureEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-015"
-    from: "POSTING"
-    trigger:
-      kind: "EVENT"
-      name: "PartialPostingRequiresReversal"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Customer debit is confirmed."
-      - "CUT credit is explicitly failed."
-      - "The partial outcome matches the unique instruction."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Stores the partial PostingOutcomeSnapshot."
-      - "Opens a reconciliation and reversal case."
-      - "Creates a REVERSAL_REQUIRED or PROCESSING notification intent."
-    eventsProduced:
-      - "PaymentReversalRequired"
-      - "PaymentReconciliationRequested"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Success notification."
-      - "Automatic reversal without bank instruction or approved runbook."
-      - "Blind credit retry."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "bankPostingReference + partialOutcomeStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-016"
-    from: "DEBITED"
-    trigger:
-      kind: "EVENT"
-      name: "CutCreditConfirmed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The CUT credit belongs to the same posting instruction and Money."
-      - "The target is the configured TreasuryAccountReference."
-      - "A stable bank reference is present."
-    to: "CUT_CREDITED"
-    businessEffects:
-      - "Completes the PostingOutcomeSnapshot."
-      - "Recognizes immediate posting success without TFJ finality."
-    eventsProduced:
-      - "PaymentCutCredited"
-    forbiddenTransitions:
-      - "Crediting a caller-supplied CUT."
-      - "Direct DEBITED to TREASURY_INTEGRATED."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "bankPostingReference + cutCreditStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-017"
-    from: "DEBITED"
-    trigger:
-      kind: "EVENT"
-      name: "CutCreditOutcomeUnknown"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Customer debit is confirmed."
-      - "CUT credit success or failure cannot be proven."
-    to: "ACCOUNTING_OUTCOME_UNKNOWN"
-    businessEffects:
-      - "Stores UNKNOWN CUT outcome and operation context POSTING."
-      - "Opens reconciliation and alert."
-      - "Creates one PROCESSING immediate notification intent."
-    eventsProduced:
-      - "PaymentAccountingOutcomeUnknown"
-      - "PaymentReconciliationRequested"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Blind retry of CUT credit."
-      - "Success or final notification."
-    replayCapability:
-      allowed: false
-      mode: "RECONCILIATION_ONLY"
-      key: "bankPostingIdempotencyKey or bankPostingReference"
-      duplicateResult: "Only status lookup may be repeated."
-
-  - id: "PAY-TR-018"
-    from: "DEBITED"
-    trigger:
-      kind: "EVENT"
-      name: "CutCreditFailed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Customer debit is confirmed."
-      - "CUT credit failure is explicit and stable."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Stores the partial outcome and reversal reason."
-      - "Creates a REVERSAL_REQUIRED or PROCESSING notification intent."
-    eventsProduced:
-      - "PaymentReversalRequired"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Success notification."
-      - "Automatic or unaudited reversal."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "bankPostingReference + cutCreditFailureCode"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-019"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "PostingReconciledAsFullySucceeded"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is POSTING."
-      - "Lookup confirms both customer debit and CUT credit."
-      - "The result matches the original idempotency key or posting reference."
-    to: "CUT_CREDITED"
-    businessEffects:
-      - "Replaces UNKNOWN evidence with the reconciled complete outcome."
-      - "Closes the accounting-unknown reconciliation case."
-    eventsProduced:
-      - "PaymentAccountingOutcomeResolved"
-      - "PaymentCutCredited"
-    forbiddenTransitions:
-      - "Creating a second financial instruction."
-      - "Direct transition to TREASURY_INTEGRATED."
-    replayCapability:
-      allowed: true
-      mode: "RECONCILIATION_EVENT_DEDUPLICATION"
-      key: "reconciliationResultEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-020"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "PostingReconciledAsDebitOnly"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is POSTING."
-      - "Customer debit is confirmed."
-      - "CUT credit remains pending or requires a distinct known resolution."
-    to: "DEBITED"
-    businessEffects:
-      - "Stores the confirmed debit fact."
-      - "Keeps the original posting identity and forbids another debit."
-    eventsProduced:
-      - "PaymentAccountingOutcomePartiallyResolved"
-      - "PaymentCustomerDebited"
-    forbiddenTransitions:
-      - "New debit submission."
-      - "Immediate success notification."
-    replayCapability:
-      allowed: true
-      mode: "RECONCILIATION_EVENT_DEDUPLICATION"
-      key: "reconciliationResultEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-021"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "PostingReconciledAsNoFinancialEffect"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is POSTING."
-      - "Reconciliation proves neither debit nor CUT credit occurred."
-    to: "FAILED"
-    businessEffects:
-      - "Closes the reconciliation case as no financial effect."
-      - "Creates a FAILED immediate notification intent if not already created."
-    eventsProduced:
-      - "PaymentAccountingOutcomeResolved"
-      - "PaymentFailed"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Using this transition on incomplete evidence."
-      - "Submitting a replacement posting for the same Payment."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_RECONCILIATION_REPLAY"
-      key: "reconciliationResultEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-022"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "PostingReconciledAsReversalRequired"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is POSTING."
-      - "Reconciliation confirms debit and explicit CUT credit failure."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Closes the posting-unknown case with a partial outcome."
-      - "Opens or links an explicit reversal case."
-      - "Creates a REVERSAL_REQUIRED notification intent if absent."
-    eventsProduced:
-      - "PaymentAccountingOutcomeResolved"
-      - "PaymentReversalRequired"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Blind retry."
-      - "Automatic reversal."
-      - "Success notification."
-    replayCapability:
-      allowed: true
-      mode: "RECONCILIATION_EVENT_DEDUPLICATION"
-      key: "reconciliationResultEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-023"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "AccountingReconciliationStillUnknown"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Lookup has completed without a conclusive financial result."
-      - "The reconciliation policy permits another scheduled lookup."
-    to: "ACCOUNTING_OUTCOME_UNKNOWN"
-    businessEffects:
-      - "Keeps the Payment unresolved."
-      - "Records the lookup outcome and next controlled reconciliation action."
-      - "Maintains the operational alert."
-    eventsProduced:
-      - "PaymentAccountingReconciliationDeferred"
-    forbiddenTransitions:
-      - "Financial write replay."
-      - "Final success, rejection or failure without proof."
-    replayCapability:
-      allowed: true
-      mode: "SCHEDULED_STATUS_LOOKUP"
-      key: "reconciliationCycleId + attemptNumber"
-      duplicateResult: "Duplicate lookup result is ignored."
-
-  - id: "PAY-TR-024"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "ReversalReconciledAsConfirmed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is REVERSAL."
-      - "Amplitude confirms the reversal with its distinct reference."
-      - "The result matches the reversal idempotency key."
-    to: "REVERSED"
-    businessEffects:
-      - "Stores the confirmed ReversalSnapshot."
-      - "Finalizes the Payment as reversed."
-      - "Creates a reversal-result notification intent."
-    eventsProduced:
-      - "PaymentAccountingOutcomeResolved"
-      - "PaymentReversed"
-      - "PaymentReversalNotificationRequested"
-    forbiddenTransitions:
-      - "Applying a reversal result to a posting-unknown context."
-      - "Deleting or rewriting original posting history."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_RECONCILIATION_REPLAY"
-      key: "reversalReconciliationEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-025"
-    from: "ACCOUNTING_OUTCOME_UNKNOWN"
-    trigger:
-      kind: "EVENT"
-      name: "ReversalReconciledAsFailed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The unknown operation context is REVERSAL."
-      - "Amplitude explicitly confirms no successful reversal."
-      - "The original partial financial effect still requires reversal."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Stores the failed reversal outcome."
-      - "Returns the Payment to explicit operational authorization."
-    eventsProduced:
-      - "PaymentAccountingOutcomeResolved"
-      - "PaymentReversalRequired"
-    forbiddenTransitions:
-      - "Treating reversal failure as FAILED without financial effect."
-      - "Automatic resubmission without authorization."
-    replayCapability:
-      allowed: true
-      mode: "RECONCILIATION_EVENT_DEDUPLICATION"
-      key: "reversalReconciliationEventId"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-026"
-    from: "CUT_CREDITED"
-    trigger:
-      kind: "COMMAND"
-      name: "RegisterImmediateNotificationIntent"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "The complete successful PostingOutcomeSnapshot is persisted."
-      - "No immediate-success notification intent exists for this result version."
-    to: "NOTIFIED"
-    businessEffects:
-      - "Atomically records the POSTED_PENDING_TFJ notification intent in Outbox."
-      - "Does not wait for external delivery."
-    eventsProduced:
-      - "PaymentImmediateNotificationRequested"
-      - "PaymentImmediateNotificationIntentRegistered"
-    forbiddenTransitions:
-      - "Direct CUT_CREDITED to TREASURY_INTEGRATED."
-      - "Treating delivery acknowledgement as a financial transition."
-    replayCapability:
-      allowed: true
-      mode: "OUTBOX_INTENT_DEDUPLICATION"
-      key: "PaymentId + IMMEDIATE_RESULT + resultVersion"
-      duplicateResult: "Return the existing intent without creating another."
-
-  - id: "PAY-TR-027"
-    from: "NOTIFIED"
-    trigger:
-      kind: "COMMAND"
-      name: "BeginEndOfDayConfirmationWait"
-      owner: "SIXPAY_PAYMENT"
-    preconditions:
-      - "The immediate notification intent is durably registered."
-      - "The complete posting result and bank reference are persisted."
-    to: "PENDING_END_OF_DAY_CONFIRMATION"
-    businessEffects:
-      - "Starts TFJ matching and cutoff tracking."
-      - "Keeps notification delivery independent."
-    eventsProduced:
-      - "PaymentEndOfDayConfirmationPending"
-    forbiddenTransitions:
-      - "Waiting for HTTP delivery before entering TFJ tracking."
-      - "Declaring Treasury finality."
-    replayCapability:
-      allowed: true
-      mode: "IDEMPOTENT_STATE_CONFIRMATION"
-      key: "PaymentId + postingResultVersion"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-028"
-    from: "PENDING_END_OF_DAY_CONFIRMATION"
-    trigger:
-      kind: "EVENT"
-      name: "EndOfDayConfirmationCutoffReached"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "No matched successful TFJ result is persisted."
-      - "The configured cutoff for the business date is reached."
-    to: "PENDING_END_OF_DAY_CONFIRMATION"
-    businessEffects:
-      - "Keeps Payment pending."
-      - "Requests scheduled Amplitude reconciliation."
-      - "Raises or maintains an operational alert."
-    eventsProduced:
-      - "PaymentEndOfDayConfirmationOverdue"
-      - "EndOfDayReconciliationRequested"
-    forbiddenTransitions:
-      - "Success final notification."
-      - "Automatic reversal solely because TFJ is late."
-      - "A second posting."
-    replayCapability:
-      allowed: true
-      mode: "SCHEDULED_READ_RETRY"
-      key: "PaymentId + businessDate + cutoffCycle"
-      duplicateResult: "One alert/reconciliation request per cycle."
-
-  - id: "PAY-TR-029"
-    from: "PENDING_END_OF_DAY_CONFIRMATION"
-    trigger:
-      kind: "EVENT"
-      name: "MatchedSuccessfulEndOfDayConfirmation"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The confirmation is authenticated and normalized."
-      - "It is uniquely matched by institution, business date, PaymentReference and bank posting reference."
-      - "The TFJ idempotency key is new or an identical replay."
-      - "The successful confirmation is durably persisted."
-    to: "TREASURY_INTEGRATED"
-    businessEffects:
-      - "Stores the EndOfDayConfirmationSnapshot."
-      - "Establishes Treasury finality and finalization instant."
-      - "Atomically creates the final notification intent."
-    eventsProduced:
-      - "TreasuryIntegrationConfirmed"
-      - "PaymentFinalNotificationRequested"
-    forbiddenTransitions:
-      - "Using an unmatched or ambiguous confirmation."
-      - "Final notification before durable TFJ persistence."
-      - "Any later financial state transition."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_TFJ_REPLAY"
-      key: "institution + businessDate + bankPostingReference + tfjStatus"
-      duplicateResult: "Return TREASURY_INTEGRATED without a second logical notification."
-
-  - id: "PAY-TR-030"
-    from: "PENDING_END_OF_DAY_CONFIRMATION"
-    trigger:
-      kind: "EVENT"
-      name: "MatchedEndOfDayFailureRequiresReversal"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The TFJ result is uniquely matched to the Payment."
-      - "The normalized bank outcome explicitly requires reversal under an approved rule or instruction."
-      - "Treasury finality has not been established."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Stores the matched adverse TFJ evidence."
-      - "Opens or links the reversal case."
-      - "Creates a non-success result notification intent if required."
-    eventsProduced:
-      - "PaymentReversalRequired"
-      - "PaymentImmediateNotificationRequested"
-    forbiddenTransitions:
-      - "Automatic reversal without authorization."
-      - "Transition to FAILED while financial effects remain."
-      - "Success final notification."
-    replayCapability:
-      allowed: true
-      mode: "TFJ_EVENT_DEDUPLICATION"
-      key: "institution + businessDate + bankPostingReference + tfjStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-031"
-    from: "REVERSAL_REQUIRED"
-    trigger:
-      kind: "COMMAND"
-      name: "SubmitAuthorizedReversal"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "A bank instruction or approved runbook authorizes reversal."
-      - "The authorization and actor are auditable."
-      - "A distinct reversal idempotency key exists."
-      - "No reversal is already pending or confirmed."
-    to: "REVERSAL_PENDING"
-    businessEffects:
-      - "Stores ReversalReference and authorization evidence."
-      - "Durably records one reversal instruction before submission."
-    eventsProduced:
-      - "PaymentReversalRequested"
-    forbiddenTransitions:
-      - "Automatic reversal decision."
-      - "Reuse of the original posting idempotency key."
-      - "More than one logical reversal instruction."
-    replayCapability:
-      allowed: true
-      mode: "IDEMPOTENT_WRITE_SUBMISSION"
-      key: "reversalIdempotencyKey"
-      duplicateResult: "Reuse the existing reversal instruction."
-
-  - id: "PAY-TR-032"
-    from: "REVERSAL_PENDING"
-    trigger:
-      kind: "EVENT"
-      name: "ReversalConfirmed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Amplitude confirms the authorized reversal."
-      - "The result matches ReversalReference and reversal idempotency key."
-      - "A stable bank reversal reference exists."
-    to: "REVERSED"
-    businessEffects:
-      - "Stores the confirmed ReversalSnapshot."
-      - "Finalizes the Payment as reversed."
-      - "Creates a reversal-result notification intent."
-    eventsProduced:
-      - "PaymentReversed"
-      - "PaymentReversalNotificationRequested"
-    forbiddenTransitions:
-      - "Deleting original posting and TFJ evidence."
-      - "Any later transition to success."
-    replayCapability:
-      allowed: true
-      mode: "TERMINAL_FACT_REPLAY"
-      key: "bankReversalReference + reversalStatus"
-      duplicateResult: "No-op."
-
-  - id: "PAY-TR-033"
-    from: "REVERSAL_PENDING"
-    trigger:
-      kind: "EVENT"
-      name: "ReversalOutcomeUnknown"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "The reversal may have reached Amplitude."
-      - "Success or failure cannot be proven."
-    to: "ACCOUNTING_OUTCOME_UNKNOWN"
-    businessEffects:
-      - "Stores UNKNOWN outcome and operation context REVERSAL."
-      - "Opens or continues reconciliation and alert."
-    eventsProduced:
-      - "PaymentAccountingOutcomeUnknown"
-      - "PaymentReconciliationRequested"
-    forbiddenTransitions:
-      - "Blind reversal replay."
-      - "Treating the Payment as REVERSED or FAILED without proof."
-    replayCapability:
-      allowed: false
-      mode: "RECONCILIATION_ONLY"
-      key: "reversalIdempotencyKey or ReversalReference"
-      duplicateResult: "Only reversal status lookup may be repeated."
-
-  - id: "PAY-TR-034"
-    from: "REVERSAL_PENDING"
-    trigger:
-      kind: "EVENT"
-      name: "ReversalExplicitlyFailed"
-      owner: "SIXPAY_ACCOUNTING"
-    preconditions:
-      - "Amplitude explicitly confirms the reversal did not succeed."
-      - "The original financial anomaly still requires reversal."
-    to: "REVERSAL_REQUIRED"
-    businessEffects:
-      - "Stores the failed reversal outcome."
-      - "Returns control to an audited authorization/runbook decision."
-      - "Raises an operational alert."
-    eventsProduced:
-      - "PaymentReversalFailed"
-      - "PaymentReversalRequired"
-    forbiddenTransitions:
-      - "Automatic resubmission."
-      - "Transition to FAILED without financial effect."
-    replayCapability:
-      allowed: true
-      mode: "EVENT_DEDUPLICATION"
-      key: "reversalFailureEventId"
-      duplicateResult: "No-op."
-
-ignoredOrExternalInputs:
-  - id: "PAY-IN-IGN-001"
-    input: "DuplicatePaymentRequestWithSameFingerprint"
-    applicableStates:
-      - "*"
-    handling: "Return the existing Payment state and references; do not execute a transition."
-    audit: true
-    replaySafe: true
-
-  - id: "PAY-IN-IGN-002"
-    input: "DuplicatePaymentRequestWithDifferentFingerprint"
-    applicableStates:
-      - "*"
-    handling: "Reject as an idempotency conflict; do not modify the existing Payment."
-    audit: true
-    replaySafe: true
-
-  - id: "PAY-IN-IGN-003"
-    input: "NotificationDeliverySucceeded"
-    applicableStates:
-      - "*"
-    handling: "Update Notification and read models only; never transition Payment."
-    audit: true
-    replaySafe: true
-
-  - id: "PAY-IN-IGN-004"
-    input: "NotificationDeliveryFailedOrDeadLettered"
-    applicableStates:
-      - "*"
-    handling: "Retry, backoff, DLQ and alert in Notification; never roll back Payment."
-    audit: true
-    replaySafe: true
-
-  - id: "PAY-IN-IGN-005"
-    input: "UnmatchedOrAmbiguousEndOfDayConfirmation"
-    applicableStates:
-      - "*"
-    handling: "Quarantine in Accounting, alert and manually reconcile; do not modify Payment."
-    audit: true
-    replaySafe: true
-
-  - id: "PAY-IN-IGN-006"
-    input: "ObservedCustomerProjectionUpdated"
-    applicableStates:
-      - "*"
-    handling: "Update Customer read model only; never authorize or transition Payment."
-    audit: false
-    replaySafe: true
-
-globalForbiddenTransitions:
-  - id: "PAY-FORB-001"
-    from:
-      - "REJECTED"
-      - "FAILED"
-      - "TREASURY_INTEGRATED"
-      - "REVERSED"
-    to: "*"
-    reason: "Terminal states cannot be reopened; identical fact replay is a no-op."
-
-  - id: "PAY-FORB-002"
-    from: "*"
-    to: "TREASURY_INTEGRATED"
-    exceptFrom:
-      - "PENDING_END_OF_DAY_CONFIRMATION"
-    reason: "Treasury finality requires a matched successful TFJ result."
-
-  - id: "PAY-FORB-003"
-    from:
-      - "RECEIVED"
-      - "AUTHORIZATION_CHECKING"
-      - "BANKING_CHECKING"
-      - "REJECTED"
-    to:
-      - "DEBITED"
-      - "CUT_CREDITED"
-      - "NOTIFIED"
-      - "PENDING_END_OF_DAY_CONFIRMATION"
-      - "TREASURY_INTEGRATED"
-    reason: "No financial success is possible before approval and posting."
-
-  - id: "PAY-FORB-004"
-    from:
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "REVERSAL_REQUIRED"
-      - "REVERSAL_PENDING"
-    to:
-      - "APPROVED"
-      - "POSTING"
-    reason: "Unknown or partial financial effects cannot restart the original posting."
-
-  - id: "PAY-FORB-005"
-    from: "*"
-    to: "REJECTED"
-    exceptFrom:
-      - "AUTHORIZATION_CHECKING"
-      - "BANKING_CHECKING"
-    reason: "Business rejection is only valid before any posting."
-
-  - id: "PAY-FORB-006"
-    from: "*"
-    to: "FAILED"
-    rule: "Forbidden whenever a financial effect is possible or not conclusively excluded."
-    reason: "FAILED means proven absence of financial effect."
-
-  - id: "PAY-FORB-007"
-    from: "*"
-    to: "NOTIFIED"
-    exceptFrom:
-      - "CUT_CREDITED"
-    reason: "NOTIFIED represents the successful-posting immediate notification intent."
-
-  - id: "PAY-FORB-008"
-    from: "*"
-    to: "REVERSAL_PENDING"
-    exceptFrom:
-      - "REVERSAL_REQUIRED"
-    reason: "Every reversal requires explicit authorization and a distinct idempotency key."
-
-  - id: "PAY-FORB-009"
-    from: "*"
-    to: "REVERSED"
-    exceptFrom:
-      - "REVERSAL_PENDING"
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-    reason: "REVERSED requires a confirmed authorized reversal."
-
-  - id: "PAY-FORB-010"
-    from: "*"
-    to: "*"
-    rule: "A notification delivery outcome alone cannot trigger a Payment transition."
-    reason: "Financial truth and delivery truth are separate."
-
-globalInvariants:
-  - id: "PAY-SM-INV-001"
-    rule: "A Payment has exactly one current state from the declared state catalog."
-  - id: "PAY-SM-INV-002"
-    rule: "Every accepted transition is atomic with its domain events and Outbox intents."
-  - id: "PAY-SM-INV-003"
-    rule: "Every transition checks the expected aggregate version."
-  - id: "PAY-SM-INV-004"
-    rule: "No transition mutates immutable request identity, Money, institution or debtor account."
-  - id: "PAY-SM-INV-005"
-    rule: "A business rejection never coexists with a financial outcome."
-  - id: "PAY-SM-INV-006"
-    rule: "Only one logical posting instruction exists per Payment."
-  - id: "PAY-SM-INV-007"
-    rule: "UNKNOWN and PARTIAL outcomes forbid blind financial replay."
-  - id: "PAY-SM-INV-008"
-    rule: "Only a matched successful TFJ result establishes TREASURY_INTEGRATED."
-  - id: "PAY-SM-INV-009"
-    rule: "A notification delivery failure never rolls back a financial transition."
-  - id: "PAY-SM-INV-010"
-    rule: "A reversal has an identity and idempotency key distinct from the original posting."
-
-coverage:
-  requestedStateCount: 17
-  suppliedDistinctStateCount: 16
-  requiredStates:
-    count: 16
-    values:
-      - "RECEIVED"
-      - "AUTHORIZATION_CHECKING"
-      - "BANKING_CHECKING"
-      - "REJECTED"
-      - "APPROVED"
-      - "POSTING"
-      - "ACCOUNTING_OUTCOME_UNKNOWN"
-      - "REVERSAL_REQUIRED"
-      - "DEBITED"
-      - "CUT_CREDITED"
-      - "NOTIFIED"
-      - "PENDING_END_OF_DAY_CONFIRMATION"
-      - "TREASURY_INTEGRATED"
-      - "FAILED"
-      - "REVERSAL_PENDING"
-      - "REVERSED"
-    note: "All names supplied by the user are preserved; no seventeenth state is invented."
-  transitionCount: 34
+- id: PAY-TR-001
+  commandId: PAY-CMD-002
+  operationId: PAY-OP-002
+  from:
+  - RECEIVED
+  condition: COMMAND_ACCEPTED
+  to: AUTHORIZATION_CHECKING
+  guardRefs:
+  - PAY-INV-010
+  - PAY-INV-021
+  domainFactKinds:
+  - AUTHORIZATION_CHECKING_STARTED
+  replay: IDENTICAL_COMMAND_NO_OP
+- id: PAY-TR-002
+  commandId: PAY-CMD-003
+  operationId: PAY-OP-003
+  from:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == APPROVED
+  to: BANKING_VERIFICATION_PENDING
+  guardRefs:
+  - PAY-INV-021
+  - PAY-INV-022
+  domainFactKinds:
+  - AUTHORIZATION_DECISION_RECORDED
+  - BANKING_VERIFICATION_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-003
+  commandId: PAY-CMD-003
+  operationId: PAY-OP-003
+  from:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-023
+  - PAY-INV-065
+  domainFactKinds:
+  - AUTHORIZATION_DECISION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-004
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == VERIFIED
+  to: FUNDS_CONTROL_PENDING
+  guardRefs:
+  - PAY-INV-027
+  - PAY-INV-028
+  - PAY-INV-030
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - FUNDS_CONTROL_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-005
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-029
+  - PAY-INV-065
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-006
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  to: BANKING_VERIFICATION_PENDING
+  guardRefs:
+  - PAY-INV-029
+  - PAY-INV-068
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - PAYMENT_PROCESSING_DEFERRED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-007
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == VERIFIED
+  to: TREASURY_ACCOUNT_RESOLUTION_PENDING
+  guardRefs:
+  - PAY-INV-032
+  - PAY-INV-034
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - TREASURY_ACCOUNT_RESOLUTION_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-008
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-033
+  - PAY-INV-065
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-009
+  commandId: PAY-CMD-007
+  operationId: PAY-OP-007
+  from:
+  - APPROVED_FOR_POSTING
+  condition: SOLE_INSTRUCTION_AUTHORIZED
+  to: POSTING_PENDING
+  guardRefs:
+  - PAY-INV-038
+  - PAY-INV-039
+  - PAY-INV-040
+  - PAY-INV-041
+  domainFactKinds:
+  - POSTING_AUTHORIZED
+  - POSTING_REQUESTED
+  replay: SAME_INSTRUCTION_NO_OP_DIFFERENT_INSTRUCTION_CONFLICT
+- id: PAY-TR-010
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  to: FUNDS_CONTROL_PENDING
+  guardRefs:
+  - PAY-INV-033
+  - PAY-INV-068
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - PAYMENT_PROCESSING_DEFERRED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-011
+  commandId: PAY-CMD-006
+  operationId: PAY-OP-006
+  from:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == RESOLVED
+  to: APPROVED_FOR_POSTING
+  guardRefs:
+  - PAY-INV-035
+  - PAY-INV-036
+  - PAY-INV-038
+  domainFactKinds:
+  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  - PAYMENT_APPROVED_FOR_POSTING
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-012
+  commandId: PAY-CMD-006
+  operationId: PAY-OP-006
+  from:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-035
+  - PAY-INV-065
+  domainFactKinds:
+  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-013
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-041
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-014
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  to: DEBIT_CONFIRMED
+  guardRefs:
+  - PAY-INV-045
+  - PAY-INV-048
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - DEBIT_CONFIRMED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-015
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == UNKNOWN
+  to: POSTING_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-069
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - POSTING_OUTCOME_LOOKUP_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-016
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-017
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-018
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-019
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-020
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == UNKNOWN
+  to: POSTING_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - POSTING_OUTCOME_LOOKUP_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-021
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-022
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-044
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-023
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  to: DEBIT_CONFIRMED
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - DEBIT_CONFIRMED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-024
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-025
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-026
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-046
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-027
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == INTEGRATED
+  to: TREASURY_INTEGRATED
+  guardRefs:
+  - PAY-INV-054
+  - PAY-INV-056
+  - PAY-INV-058
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - TREASURY_INTEGRATION_CONFIRMED
+  - FINAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-028
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && evidence.failureEvidence.recoveryAction == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-054
+  - PAY-INV-057
+  - PAY-INV-059
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-029
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && recoveryAction in [MANUAL_RECONCILIATION, REVERSAL_REVIEW]
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-055
+  - PAY-INV-057
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - TREASURY_RECONCILIATION_REQUIRED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-030
+  commandId: PAY-CMD-011
+  operationId: PAY-OP-011
+  from:
+  - REVERSAL_REQUIRED
+  condition: AUTHORIZATION_ACCEPTED
+  to: REVERSAL_PENDING
+  guardRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  domainFactKinds:
+  - REVERSAL_AUTHORIZED
+  - REVERSAL_REQUESTED
+  replay: SAME_ACTIVE_INSTRUCTION_NO_OP_DIFFERENT_CONFLICT
+- id: PAY-TR-031
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == REVERSED
+  to: REVERSED
+  guardRefs:
+  - PAY-INV-060
+  - PAY-INV-063
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-032
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == UNKNOWN
+  to: REVERSAL_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-069
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - REVERSAL_OUTCOME_LOOKUP_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-033
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome in [REJECTED, NOT_ALLOWED]
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-062
+  - PAY-INV-064
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-034
+  commandId: PAY-CMD-013
+  operationId: PAY-OP-013
+  from:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSED
+  to: REVERSED
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-063
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RESOLVED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-035
+  commandId: PAY-CMD-013
+  operationId: PAY-OP-013
+  from:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome in [REJECTED, NOT_ALLOWED]
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-062
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RESOLVED
+  - REVERSAL_REVIEW_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+- id: PAY-TR-036
+  commandId: PAY-CMD-014
+  operationId: PAY-OP-014
+  from:
+  - RECEIVED
+  condition: businessOrSecurityRejection is conclusive
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-020
+  - PAY-INV-065
+  domainFactKinds:
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+- id: PAY-TR-037
+  commandId: PAY-CMD-015
+  operationId: PAY-OP-015
+  from:
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: failure.retryDisposition in [SAFE_RETRY, RECOVERY_EVENT_REQUIRED, OPERATOR_ACTION_REQUIRED]
+  to: SAME_AS_SOURCE
+  guardRefs:
+  - PAY-INV-024
+  - PAY-INV-033
+  - PAY-INV-068
+  domainFactKinds:
+  - PAYMENT_PROCESSING_DEFERRED
+  replay: IDENTICAL_FAILURE_NO_OP
+- id: PAY-TR-038
+  commandId: PAY-CMD-016
+  operationId: PAY-OP-016
+  from:
+  - RECEIVED
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  - APPROVED_FOR_POSTING
+  condition: technical failure and absence of financial effect are proven
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+replayDefaults:
+  sameCommandIdSameFingerprint: RETURN_RECORDED_COMMAND_RESULT
+  sameCommandIdDifferentFingerprint: COMMAND_CONFLICT_NO_PAYMENT_MUTATION
+  sameEvidenceIdentitySameFingerprint: NO_OP
+  sameEvidenceIdentityDifferentFingerprint: EVIDENCE_CONFLICT_NO_PAYMENT_MUTATION
+  terminalSameFactReplay: NO_OP
+  terminalNewStateChangingCommand: REJECT
+  staleExpectedVersion: REJECT_BEFORE_MUTATION
+  outboxRepublication: PRESERVE_EVENT_ID_AND_PAYLOAD_NO_DOMAIN_TRANSITION
+  unknownFinancialOutcome: LOOKUP_OR_RECONCILIATION_ONLY
+stateCoherence:
+  RECEIVED:
+  - COMPLETE_IMMUTABLE_REQUEST_INTENT
+  AUTHORIZATION_CHECKING:
+  - NO_BANKING_OR_FINANCIAL_EVIDENCE_ASSUMED
+  BANKING_VERIFICATION_PENDING:
+  - AUTHORIZATION_APPROVED
+  FUNDS_CONTROL_PENDING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  TREASURY_ACCOUNT_RESOLUTION_PENDING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  - FUNDS_CONTROL_VERIFIED
+  APPROVED_FOR_POSTING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  - FUNDS_CONTROL_VERIFIED_AND_FRESH
+  - TREASURY_ACCOUNT_RESOLVED
+  POSTING_PENDING:
+  - SOLE_POSTING_INSTRUCTION_DURABLE
+  POSTING_OUTCOME_UNKNOWN:
+  - POSTING_OUTCOME_UNKNOWN
+  - LOOKUP_REQUIRED
+  DEBIT_CONFIRMED:
+  - DEBIT_SUCCEEDED
+  - CUT_CREDIT_NOT_SUCCEEDED
+  - PRINCIPAL_POSTING_REFERENCE
+  POSTED_PENDING_TFJ:
+  - DEBIT_SUCCEEDED
+  - CUT_CREDIT_SUCCEEDED
+  - PRINCIPAL_POSTING_REFERENCE
+  REVERSAL_REQUIRED:
+  - CONFIRMED_OR_RECONCILED_FINANCIAL_EFFECT
+  - REVERSAL_REASON
+  REVERSAL_PENDING:
+  - AUTHORIZED_REVERSAL_INSTRUCTION_DURABLE
+  REVERSAL_OUTCOME_UNKNOWN:
+  - REVERSAL_OUTCOME_UNKNOWN
+  - LOOKUP_REQUIRED
+  REJECTED:
+  - CONCLUSIVE_PRE_FINALITY_REJECTION
+  - NO_FINANCIAL_EFFECT
+  FAILED:
+  - TECHNICAL_FAILURE
+  - NO_FINANCIAL_EFFECT_PROVEN
+  TREASURY_INTEGRATED:
+  - UNIQUELY_MATCHED_TFJ_INTEGRATED
+  REVERSED:
+  - AUTHORITATIVE_REVERSAL_CONFIRMED
+  - ORIGINAL_POSTING_PRESERVED
+counts:
+  stateCount: 17
   terminalStateCount: 4
-  allStatesReachableFromInitial: true
-  allNonTerminalStatesHaveOutgoingTransition: true
-  everyTransitionDefines:
-    - "source state"
-    - "trigger command or event"
-    - "preconditions"
-    - "target state"
-    - "business effects"
-    - "events produced"
-    - "forbidden transitions"
-    - "replay capability"
-
-exitCriteria:
-  - criterion: "All distinct supplied states are defined."
-    satisfied: true
-  - criterion: "Every state has normative semantics and allowed targets."
-    satisfied: true
-  - criterion: "Nominal debit, CUT credit, immediate notification and TFJ path is complete."
-    satisfied: true
-  - criterion: "Business rejection and technical failure are distinct."
-    satisfied: true
-  - criterion: "Unknown and partial accounting outcomes are recoverable without blind replay."
-    satisfied: true
-  - criterion: "Notification delivery is outside the Payment financial state machine."
-    satisfied: true
-  - criterion: "TFJ absence and unmatched confirmation cannot create false finality."
-    satisfied: true
-  - criterion: "Reversal requires explicit authorization and distinct idempotency."
-    satisfied: true
-  - criterion: "Terminal states and globally forbidden transitions are explicit."
-    satisfied: true
-
-verdict:
-  paymentStateMachine: "CLOSED"
-  distinctStates: 16
-  transitions: 34
-  terminalStates: 4
-  blindFinancialReplay: "FORBIDDEN"
-  tfjFinality: "EXPLICIT"
-  notificationDeliveryCoupling: "FORBIDDEN"
-  ambiguityCount: 0
-  codeGenerationAllowed: false
-  nextStep: "0P.7 — PAYMENT INVARIANTS"
+  transitionCount: 38

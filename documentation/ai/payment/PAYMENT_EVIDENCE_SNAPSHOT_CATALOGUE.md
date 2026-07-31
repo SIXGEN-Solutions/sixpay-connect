@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Snapshots and Business Evidence Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Lot:** `2.3 — Snapshots and Business Evidence`  
+> **Current lot:** `2.5 — Commands and Business Operations`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DRAFT_PENDING_VALIDATION`  
+> **Status:** `COMMAND_BINDINGS_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -539,6 +539,7 @@ Amplitude posting instruction.
 
 ```text
 PostingOutcomeSnapshot
+├── postingInstructionId
 ├── postingCommandIdempotencyKey
 ├── outcome
 ├── bankPostingReference?
@@ -648,7 +649,7 @@ Leg references in `BankPostingReference` must match the corresponding
 An authoritative lookup may replace an `UNKNOWN` or incomplete snapshot only
 when:
 
-- posting command idempotency key is unchanged;
+- posting instruction ID and command idempotency key are unchanged;
 - Payment, amount and account bindings are unchanged;
 - new evidence identity/fingerprint passes conflict checks;
 - the new result is more conclusive or explicitly corrects the current
@@ -777,6 +778,7 @@ the original Payment and original posting.
 ```text
 ReversalSnapshot
 ├── originalBankPostingReference
+├── reversalInstructionId
 ├── reversalCommandIdempotencyKey
 ├── authorization
 └── outcome?
@@ -842,7 +844,7 @@ At reversal submission, `outcome` may be absent.
 A later result creates a new immutable `ReversalSnapshot` with the same:
 
 - original posting reference;
-- reversal command idempotency key;
+- reversal instruction ID and command idempotency key;
 - authorization evidence.
 
 The aggregate replaces its current snapshot atomically. Audit retains every
@@ -1007,6 +1009,6 @@ Detailed cross-state invariants are finalized in Lot 2.4.
 ```text
 IA-1 LOT 2.3 SNAPSHOTS AND BUSINESS EVIDENCE PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.4 — INVARIANTS
+NEXT: LOT 2.6 — DOMAIN EVENTS
 CODE GENERATION: FORBIDDEN
 ```

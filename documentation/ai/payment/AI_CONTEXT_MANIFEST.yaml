@@ -1,15 +1,15 @@
-schemaVersion: 1.6.0
+schemaVersion: 1.7.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_4_INVARIANTS
+  lot: 2_5_COMMANDS_AND_BUSINESS_OPERATIONS
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_4_DRAFT_PENDING_VALIDATION
+  status: LOT_2_5_DRAFT_PENDING_VALIDATION
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_5_COMMANDS_AND_AGGREGATE_OPERATIONS
+nextLot: LOT_2_6_DOMAIN_EVENTS
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Primary IA-1 brief
@@ -20,65 +20,79 @@ primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
   role: Snapshots and business evidence
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-  role: Human-readable normative invariant catalogue
+  role: Human invariant catalogue
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  role: Machine-readable normative invariant catalogue
+  role: Machine invariant catalogue
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
+  role: Human command and operation catalogue
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
+  role: Machine command and operation catalogue
+- path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
+  role: Reconciled IA-1 state machine
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
   role: Consolidated model index
-- path: documentation/ai/payment/PAYMENT_IA1_BASELINE.md
-  role: Gate baseline
-- path: documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md
-  role: Source catalogue
-- path: documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md
-  role: Glossary
-- path: documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md
-  role: Ownership boundaries
-invariantCatalogue:
-  humanPath: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-  machinePath: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  count: 76
-  idRange:
-    from: PAY-INV-001
-    through: PAY-INV-076
-  categories:
-  - IDENTITY_AND_IMMUTABILITY
-  - BOUNDARY_AND_CONFIDENTIALITY
-  - AUTHORIZATION_AND_ADMISSION
-  - BANKING_AND_FUNDS
-  - POSTING_AND_FINANCIAL_SAFETY
-  - NOTIFICATION_AND_TFJ
-  - REVERSAL_AND_FAILURE
-  - REPLAY_CONCURRENCY_AND_ATOMICITY
-  defaultViolation:
-    paymentMutation: false
-    businessVersionIncrement: false
-    domainEventRegistration: false
-    stateTransitionAudit: false
-    outboxIntentCreation: false
-stateMachineCompatibility:
-  currentFile: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  currentRole: IA0P_INPUT_PENDING_IA1_RECONCILIATION
-  updateDeferredTo: LOT_2_5
-  invariantSemanticsOverrideConflicts: true
-  targetCorrections:
-  - BANKING_VERIFICATION_AND_FUNDS_CONTROL_DISTINCT
-  - NOTIFICATION_INTENT_ORTHOGONAL
-  - FAILED_REQUIRES_PROVEN_NO_FINANCIAL_EFFECT
-  - TFJ_FAILED_NOT_AUTOMATIC_PAYMENT_FAILED
-  - ONE_LOGICAL_POSTING_PER_PAYMENT
-lot2_4Decisions:
-- id: PAY-DEC-IA1-027
-  decision: IA1_INVARIANTS_OVERRIDE_CONFLICTING_IA0P_STATE_SEMANTICS
-- id: PAY-DEC-IA1-028
-  decision: UTC_INSTANTS_BANK_LOCAL_BUSINESS_DATES_POLICY_DRIVEN_FRESHNESS
-- id: PAY-DEC-IA1-029
-  decision: NOTIFICATION_INTENT_ORTHOGONAL_NOT_TARGET_FINANCIAL_STATE
-- id: PAY-DEC-IA1-030
-  decision: TFJ_FAILED_DOES_NOT_AUTOMATICALLY_MAP_TO_PAYMENT_FAILED
-- id: PAY-DEC-IA1-031
-  decision: ONE_LOGICAL_POSTING_PER_PAYMENT_RECOVERY_REUSES_IDENTITY
-- id: PAY-DEC-IA1-032
-  decision: INVARIANT_VIOLATION_ATOMIC_NO_MUTATION
+commandModel:
+  commandCount: 16
+  operationCount: 17
+  commandIdRange:
+    from: PAY-CMD-001
+    through: PAY-CMD-016
+  operationIdRange:
+    from: PAY-OP-001
+    through: PAY-OP-017
+  commandObjectsEnterAggregate: false
+  genericStatusSetterAllowed: false
+  commandRegistryOwner: APPLICATION_AND_PERSISTENCE
+  invalidOperationAtomicNoMutation: true
+stateMachine:
+  path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
+  schemaVersion: 2.0.0
+  stateCount: 17
+  terminalStateCount: 4
+  transitionCount: 38
+  transitionIdRange:
+    from: PAY-TR-001
+    through: PAY-TR-038
+  notificationStatePresent: false
+  unknownStates:
+  - POSTING_OUTCOME_UNKNOWN
+  - REVERSAL_OUTCOME_UNKNOWN
+  replacesIa0pSemantics: true
+paymentStatuses:
+- RECEIVED
+- AUTHORIZATION_CHECKING
+- BANKING_VERIFICATION_PENDING
+- FUNDS_CONTROL_PENDING
+- TREASURY_ACCOUNT_RESOLUTION_PENDING
+- APPROVED_FOR_POSTING
+- POSTING_PENDING
+- POSTING_OUTCOME_UNKNOWN
+- DEBIT_CONFIRMED
+- POSTED_PENDING_TFJ
+- REVERSAL_REQUIRED
+- REVERSAL_PENDING
+- REVERSAL_OUTCOME_UNKNOWN
+- REJECTED
+- FAILED
+- TREASURY_INTEGRATED
+- REVERSED
+lot2_5Decisions:
+- id: PAY-DEC-IA1-033
+  decision: APPLICATION_COMMANDS_OUTSIDE_AGGREGATE_NAMED_TYPED_METHODS
+- id: PAY-DEC-IA1-034
+  decision: COMMON_COMMAND_METADATA_DEDUP_AND_VERSION_MODES
+- id: PAY-DEC-IA1-035
+  decision: FINAL_17_STATUS_MODEL
+- id: PAY-DEC-IA1-036
+  decision: COMPLETED_POSTING_DIRECT_TO_POSTED_PENDING_TFJ_NOTIFICATION_ORTHOGONAL
+- id: PAY-DEC-IA1-037
+  decision: EXTERNAL_PROCESSES_REQUESTED_BY_FACTS_NO_NETWORK_IN_AGGREGATE
+- id: PAY-DEC-IA1-038
+  decision: NEGATIVE_OUTCOME_MAPPING_BY_EVIDENCE_AND_FAILURE_CATEGORY
+- id: PAY-DEC-IA1-039
+  decision: IA1_STATE_MACHINE_17_STATES_38_TRANSITIONS
+- id: PAY-DEC-IA1-040
+  decision: GENERIC_STATUS_MUTATION_AND_GENERIC_COMMAND_DISPATCH_FORBIDDEN
 traceability:
   requiredPrefixes:
   - PAY-BASE-
@@ -88,6 +102,9 @@ traceability:
   - PAY-VO-
   - PAY-SNAP-
   - PAY-INV-
+  - PAY-CMD-
+  - PAY-OP-
+  - PAY-TR-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -95,9 +112,12 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_4Modifications:
-- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
+authorizedLot2_5Modifications:
+- documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
+- documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
+- documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 - documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
 - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
@@ -107,16 +127,19 @@ generationRules:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OPENAPI_MODIFICATION
-  - PAYMENT_STATE_MACHINE_MODIFICATION_IN_LOT_2_4
-  - FINAL_COMMAND_SIGNATURES
-  - FINAL_DOMAIN_EVENT_PAYLOADS
+  - PAYMENT_EVENT_CATALOGUE_MODIFICATION_IN_LOT_2_5
+  - FINAL_EVENT_PAYLOAD_GENERATION
   - POLICY_CONSTANT_INVENTION
-  - SILENT_INVARIANT_RELAXATION
+  - NETWORK_CALL_INSIDE_AGGREGATE_OR_TRANSACTION
+  - GENERIC_STATUS_SETTER
+  - GENERIC_COMMAND_DISPATCH_INSIDE_AGGREGATE
 readiness:
   lot2_1AggregateRootPrepared: true
   lot2_2ValueObjectsPrepared: true
   lot2_3SnapshotsPrepared: true
   lot2_4InvariantsPrepared: true
-  lot2_4HumanValidationRequired: true
-  lot2_5ReadyAfterValidation: true
+  lot2_5CommandsAndOperationsPrepared: true
+  lot2_5StateMachineReconciled: true
+  lot2_5HumanValidationRequired: true
+  lot2_6ReadyAfterValidation: true
   codeGeneration: FORBIDDEN

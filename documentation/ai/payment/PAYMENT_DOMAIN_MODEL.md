@@ -1,12 +1,12 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.4 — Invariants`  
+> **Current sub-lot:** `2.5 — Commands and Business Operations`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `INVARIANT_MODEL_PREPARED`  
+> **Status:** `COMMAND_AND_OPERATION_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
-## 1. Normative model hierarchy
+## 1. Normative hierarchy
 
 | Topic | Normative document |
 | --- | --- |
@@ -15,63 +15,73 @@
 | Language | `PAYMENT_UBIQUITOUS_LANGUAGE.md` |
 | Boundaries | `PAYMENT_DOMAIN_BOUNDARIES.md` |
 | Aggregate Root | `PAYMENT_AGGREGATE_ROOT.md` |
-| Identifiers and Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
-| Snapshots and evidence | `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md` |
-| Invariants — human | `PAYMENT_INVARIANT_CATALOGUE.md` |
-| Invariants — machine | `PAYMENT_INVARIANT_CATALOGUE.yaml` |
-| Posting reference | `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
-| Commands/operations | Lot 2.5 pending |
+| Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
+| Snapshots | `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md` |
+| Invariants | `PAYMENT_INVARIANT_CATALOGUE.md` and `.yaml` |
+| Commands/operations | `PAYMENT_COMMAND_CATALOGUE.md` and `.yaml` |
+| State machine | `PAYMENT_STATE_MACHINE.yaml` |
 | Domain Events | Lot 2.6 pending |
 | Policies/Domain Services | Lot 2.7 pending |
 | Final validation | Lot 2.8 pending |
 
-## 2. Aggregate model
+## 2. Write-model composition
 
 ```text
 Payment
-├── immutable identity and original intent
-├── current lifecycle state
-├── current accepted evidence snapshots
-├── current protected bank references
-├── current relevant PaymentFailure?
-├── temporal metadata
+├── immutable original intent
+├── current PaymentStatus
+├── current accepted evidence
+├── PostingInstructionIdentity?
+├── BankPostingReference?
+├── ReversalSnapshot?
+├── current PaymentFailure?
+├── timestamps
 └── businessVersion
 ```
 
-## 3. Invariant model
+## 3. Command model
 
-The model now contains 76 complete cross-object and lifecycle invariants in
-eight families:
+The write model accepts 16 application commands mapped to 16 public mutation
+operations plus the `reconstitute` factory.
 
-1. identity and immutable intent;
-2. boundary and confidentiality;
-3. admission and authorization;
-4. banking, funds and Treasury resolution;
-5. posting and financial safety;
-6. notification and TFJ;
-7. reversal and terminal failures;
-8. replay, concurrency and transaction atomicity.
+Commands remain outside the aggregate. Handlers perform deduplication,
+authorization, version control and transaction management.
 
-## 4. State-machine relationship
+## 4. State model
 
-`PAYMENT_STATE_MACHINE.yaml` remains an IA-0P input pending Lot 2.5
-reconciliation.
+The IA-1 state machine contains:
 
-The invariant catalogue already fixes these target semantics:
+```text
+17 states
+4 terminal states
+38 transitions
+```
 
-- banking verification and funds control are distinct;
-- notification intent is orthogonal;
-- one logical posting exists per Payment;
-- `FAILED` requires proven absence of financial effect;
-- finality requires uniquely matched TFJ `INTEGRATED`.
+Important corrections from IA-0P:
 
-## 5. Generation status
+- banking verification and funds control are separate;
+- `NOTIFIED` is removed;
+- posting and reversal unknown outcomes are separate;
+- completed posting goes directly to `POSTED_PENDING_TFJ`;
+- TFJ failure does not automatically map to Payment `FAILED`.
+
+## 5. External process boundary
+
+Payment operations register facts that request Customer, Accounting,
+Integration and Notification work.
+
+They never call external systems directly.
+
+## 6. Generation status
 
 ```text
 AGGREGATE ROOT: PREPARED
 VALUE OBJECTS: PREPARED
 SNAPSHOTS: PREPARED
 INVARIANTS: PREPARED
-COMMANDS AND OPERATIONS: PENDING LOT 2.5
+COMMANDS: PREPARED
+OPERATIONS: PREPARED
+STATE MACHINE: PREPARED
+DOMAIN EVENTS: PENDING LOT 2.6
 CODE GENERATION: FORBIDDEN
 ```
