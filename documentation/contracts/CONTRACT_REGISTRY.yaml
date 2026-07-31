@@ -43,6 +43,7 @@ contracts:
       active:
         - "BEARER_AUTHORIZATION_TOKEN"
         - "SUBSCRIPTION_KEY"
+        - "LOCAL_SIGNED_TOKEN_VALIDATION"
       deferred:
         - "OAUTH2_CLIENT_CREDENTIALS"
         - "MUTUAL_TLS"
@@ -56,6 +57,8 @@ contracts:
       constraints:
         - "TRESOR PAY remains the subscription system of record"
         - "No local subscription validation"
+        - "Subscription authorization is attested by a short-lived signed JWT"
+        - "No synchronous TRESOR PAY subscription-verification call in the MVP"
         - "Treasury beneficiaries must resolve to bank-controlled configuration"
         - "Credentials are forbidden in the JSON payload"
     approvalPrerequisite:
@@ -135,9 +138,39 @@ missingMvpContracts:
       capability: "END_OF_DAY_TREASURY_CONFIRMATION"
       direction: "SIXPAY_TO_TRESOR_PAY"
 
+mvpAuthorizationVerification:
+  gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+  phaseStep: "1.2"
+  decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
+  decisionPath: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+  sourceSystem: "TRESOR_PAY"
+  subscriptionSystemOfRecord: "TRESOR_PAY"
+  localSubscriptionManagement: false
+  remoteApiContract:
+    id: "tresorpay-subscription-verification-api-v1"
+    requiredForMvp: false
+    produced: false
+    status: "NOT_REQUIRED_BY_DECISION"
+  signedToken:
+    profile: "JWT_COMPACT_JWS"
+    asymmetricSignatureRequired: true
+    jwksRequired: true
+    shortLived: true
+    requestBindingRequired: true
+    replayProtectionRequired: true
+  approvalStatus: "PENDING_EXTERNAL_APPROVAL"
+  approvalPrerequisite:
+    - "TRESOR PAY confirms signed-token issuance and claims"
+    - "TRESOR PAY confirms approved JWKS publication and rotation"
+    - "Security approves algorithms, maximum TTL and clock skew"
+    - "Payment and Integration approve request-claim binding"
+  generationPolicy: "REFERENCE_ONLY"
+  codeGenerationAllowed: false
+
 rules:
   - "File location does not determine lifecycle classification; this registry and each OpenAPI x-sixpay-contract block do."
   - "Deferred contracts remain versioned at their stable paths for traceability."
   - "A DEFERRED_FUTURE or EXCLUDED contract must not trigger MVP code generation."
   - "A REFERENCE_MVP contract cannot authorize implementation of capabilities listed in its limitations."
   - "The registry and embedded OpenAPI classifications must remain consistent."
+  - "The absent tresorpay-subscription-verification-api-v1 contract is intentional while LOCAL_SIGNED_TOKEN_VALIDATION remains approved for the MVP."

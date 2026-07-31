@@ -22,6 +22,10 @@ info:
 
     * `Authorization: Bearer ...` and `X-Subscription-Key` are mandatory for
       the MVP;
+    * the Bearer Token is a short-lived asymmetric JWT signed by TRESOR PAY
+      and bound to the subscription, client, bank, account and payment;
+    * SIXPAY validates that authorization token locally; no synchronous
+      subscription-verification call is made for the MVP;
     * `LoginName`, `APIKey` and `PIN` are forbidden in the JSON body;
     * credentials must never be persisted in Payment, events, audit payloads
       or logs;
@@ -221,9 +225,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        MVP authorization token issued to the registered TRESOR PAY
-        integration. The token subject must be bound to the Subscription Key
-        owner and permitted financial institutions.
+        Short-lived asymmetric JWT signed by TRESOR PAY. It attests that the
+        subscription is ACTIVE and binds the subscription, client NIU,
+        financial institution, debtor-account hash and payment reference.
+        SIXPAY validates it locally and binds its `client_id` claim to the
+        Subscription Key owner and `X-TresorPay-App-Id`.
     subscriptionKey:
       type: apiKey
       in: header
@@ -597,6 +603,11 @@ components:
             - PAYMENT_REQUEST_INVALID
             - AUTHENTICATION_FAILED
             - AUTHORIZATION_DENIED
+            - AUTHORIZATION_TOKEN_INVALID
+            - AUTHORIZATION_TOKEN_EXPIRED
+            - AUTHORIZATION_CLAIMS_MISMATCH
+            - AUTHORIZATION_REPLAY_DETECTED
+            - AUTHORIZATION_KEY_UNAVAILABLE
             - IDEMPOTENCY_CONFLICT
             - PAYMENT_REFERENCE_CONFLICT
             - FINANCIAL_INSTITUTION_UNSUPPORTED
@@ -904,6 +915,61 @@ x-sixpay-sensitive-data:
     - "Full beneficiary account identifier"
     - "Raw request payload"
     - "Unverified KYC data beyond the approved minimal audit projection"
+
+x-sixpay-local-authorization-validation:
+  decisionReference: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+  mode: "LOCAL_SIGNED_TOKEN_VALIDATION"
+  remoteSubscriptionVerificationApiRequired: false
+  token:
+    format: "JWT_COMPACT_JWS"
+    allowedAlgorithms:
+      - "RS256"
+      - "PS256"
+      - "ES256"
+    forbiddenAlgorithms:
+      - "none"
+    headerRequirements:
+      typ: "JWT"
+      kidRequired: true
+    requiredClaims:
+      - "iss"
+      - "aud"
+      - "sub"
+      - "jti"
+      - "iat"
+      - "nbf"
+      - "exp"
+      - "client_id"
+      - "subscription_status"
+      - "customer_niu"
+      - "financial_institution_code"
+      - "debtor_account_hash"
+      - "payment_reference"
+      - "scope"
+    requiredValues:
+      subscription_status: "ACTIVE"
+      scopeContains: "payment:initiate"
+    maximumTtl: "5_MINUTES_RECOMMENDED_PENDING_SECURITY_APPROVAL"
+  requestBinding:
+    sub: "subscriptionReference"
+    client_id:
+      - "X-TresorPay-App-Id"
+      - "Subscription Key owner"
+    customer_niu: "customer.niu"
+    financial_institution_code: "financialInstitutionCode"
+    debtor_account_hash: "Canonical debtorAccount digest"
+    payment_reference: "tresorPayPaymentReference"
+  jwks:
+    transport: "HTTPS"
+    endpointSource: "SIXPAY_CONTROLLED_CONFIGURATION"
+    cacheRequired: true
+    controlledRefreshOnUnknownKid: true
+    tokenProvidedKeyUrlAllowed: false
+  replay:
+    jtiRequired: true
+    bindJtiToCanonicalRequest: true
+    rawTokenStorageAllowed: false
+    tokenDigestStorageAllowed: true
 
 x-sixpay-deferred-security:
   activation: "DEFERRED_NON_BLOCKING"

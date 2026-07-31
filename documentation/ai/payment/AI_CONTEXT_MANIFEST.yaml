@@ -238,6 +238,14 @@ readiness:
   contractPack: "PENDING"
   codeGeneration: "FORBIDDEN"
 
+contractPackDecisions:
+  - step: "1.2"
+    id: "PAYMENT_AUTHORIZATION_VERIFICATION"
+    path: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+    status: "DECIDED_PENDING_EXTERNAL_APPROVAL"
+    decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
+    remoteContractRequired: false
+
 finalValidation:
   step: "0P.14"
   status: "PASSED"
