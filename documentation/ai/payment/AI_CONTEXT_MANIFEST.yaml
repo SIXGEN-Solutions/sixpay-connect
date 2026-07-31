@@ -1,18 +1,25 @@
-schemaVersion: 1.9.0
+schemaVersion: 2.0.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  lot: 2_8_FINAL_MODEL_VALIDATION
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_7_DRAFT_PENDING_VALIDATION
+  status: MODEL_VALIDATED_GENERATION_PENDING_APPROVAL
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_8_FINAL_MODEL_VALIDATION
+generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+nextStep: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-  role: Primary IA-1 brief
+  role: Final IA-1 brief
+- path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  role: Human final validation
+- path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  role: Machine final validation
+- path: documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md
+  role: Final IA-1 acceptance baseline
 - path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
   role: Aggregate Root
 - path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
@@ -22,74 +29,43 @@ primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
   role: Human invariants
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  role: Machine invariants with policy/service refs
+  role: Machine invariants
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
-  role: Human commands
+  role: Human commands and operations
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
-  role: Machine commands with policy/service refs
+  role: Machine commands and operations
 - path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  role: State machine with policy/service refs
+  role: Final state machine
 - path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
   role: Human events
 - path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
-  role: Machine events with policy/service refs
+  role: Machine events
 - path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
-  role: Human policies and Domain Services
+  role: Human policies/services
 - path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
-  role: Machine policies and Domain Services
+  role: Machine policies/services
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
-  role: Consolidated model
+  role: Consolidated final model
 modelCounts:
   aggregateRoots: 1
-  paymentStatuses: 17
-  terminalStatuses: 4
+  states: 17
+  terminalStates: 4
   commands: 16
   aggregateOperations: 17
-  stateTransitions: 38
+  transitions: 38
   invariants: 76
-  paymentDomainEvents: 33
+  events: 33
   policies: 14
-  pureDomainPolicies: 13
-  boundaryPolicies: 1
-  pureDomainServices: 4
+  domainServices: 4
   policyProfiles: 12
-  externalComponentsExplicitlyExcluded: 16
-policyDomainServiceModel:
-  humanPath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
-  machinePath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
-  policyIdRange:
-    from: PAY-POL-001
-    through: PAY-POL-014
-  domainServiceIdRange:
-    from: PAY-DS-001
-    through: PAY-DS-004
-  aggregateOwnsStateAndEvents: true
-  domainServicesReturnDecisionsOnly: true
-  ioAllowed: false
-  explicitTimeRequired: true
-  effectiveProfilesLoadedByApplication: true
-  hardCodedBankSpecificValuesAllowed: false
-lot2_7Decisions:
-- id: PAY-DEC-IA1-051
-  decision: POLICY_DOMAIN_SERVICE_PORT_AND_INFRASTRUCTURE_RESPONSIBILITIES_ARE_EXPLICITLY_SEPARATED
-- id: PAY-DEC-IA1-052
-  decision: ALL_DOMAIN_POLICIES_AND_SERVICES_ARE_PURE_DETERMINISTIC_AND_RECEIVE_TIME_CONFIGURATION_EXPLICITLY
-- id: PAY-DEC-IA1-053
-  decision: FOURTEEN_POLICIES_AND_FOUR_PURE_DOMAIN_SERVICES_FORM_THE_PAYMENT_DECISION_MODEL
-- id: PAY-DEC-IA1-054
-  decision: PAYMENT_AGGREGATE_REMAINS_SOLE_STATE_AND_EVENT_OWNER_DOMAIN_SERVICES_RETURN_DECISIONS_ONLY
-- id: PAY-DEC-IA1-055
-  decision: POLICY_PROFILES_ARE_VERSIONED_APPROVED_AND_INJECTED_NO_BANK_CONSTANT_IS_INVENTED_OR_HARD_CODED
-- id: PAY-DEC-IA1-056
-  decision: PERSISTENT_MATCHING_LOOKUP_RETRY_CIRCUIT_BREAKER_DLQ_AND_SECRET_ACCESS_REMAIN_OUTSIDE_DOMAIN
-- id: PAY-DEC-IA1-057
-  decision: EVIDENCE_REPLAY_REPLACEMENT_AND_CONFLICT_CLASSIFICATION_USE_ONE_SHARED_DOMAIN_POLICY
-- id: PAY-DEC-IA1-058
-  decision: POSTING_TFJ_AND_REVERSAL_SERVICES_RETURN_IMMUTABLE_DECISIONS_WITHOUT_MUTATION_EVENT_OR_IO
-- id: PAY-DEC-IA1-059
-  decision: RESULT_INTENT_DECISION_AND_EVENT_PAYLOAD_DISCLOSURE_ARE_SEPARATE_POLICIES
-- id: PAY-DEC-IA1-060
-  decision: POLICY_AND_SERVICE_DEFINITIONS_DO_NOT_AUTHORIZE_JAVA_GENERATION_BEFORE_FINAL_MODEL_VALIDATION
+  namedAcceptanceScenarios: 174
+validation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+  modelBlockerCount: 0
+  generationBlockerCount: 5
+  correctionCount: 3
 traceability:
   requiredPrefixes:
   - PAY-BASE-
@@ -105,6 +81,9 @@ traceability:
   - PAY-EVT-
   - PAY-POL-
   - PAY-DS-
+  - PAY-VAL-
+  - PAY-FIX-
+  - PAY-ACC-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -112,34 +91,111 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_7Modifications:
-- documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
-- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-- documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
-- documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-- documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
-- documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
-- documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
-- documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-- documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+finalDecisions:
+- id: PAY-DEC-IA1-061
+  decision: LOT_2_FINAL_MODEL_VALIDATION_PASSES_AFTER_TWO_UNKNOWN_OUTCOME_CORRECTIONS
+- id: PAY-DEC-IA1-062
+  decision: SEVENTEEN_STATES_AND_THIRTY_EIGHT_TRANSITIONS_ARE_FINAL_FOR_IA1
+- id: PAY-DEC-IA1-063
+  decision: THIRTY_THREE_EVENTS_FULLY_COVER_CANONICAL_DOMAIN_FACTS
+- id: PAY-DEC-IA1-064
+  decision: FOURTEEN_POLICIES_AND_FOUR_DOMAIN_SERVICES_PASS_PURITY_AND_OWNERSHIP_VALIDATION
+- id: PAY-DEC-IA1-065
+  decision: PAYMENT_ACCEPTANCE_SCENARIOS_ARE_REBASELINED_TO_IA1
+- id: PAY-DEC-IA1-066
+  decision: SAME_AS_SOURCE_AND_COMMANDLESS_RECONSTITUTION_ARE_EXPLICIT_VALIDATION_EXCEPTIONS
+- id: PAY-DEC-IA1-067
+  decision: NO_OPEN_DECISION_BLOCKS_THE_DOMAIN_MODEL_SHAPE
+- id: PAY-DEC-IA1-068
+  decision: GLOBAL_CODE_GENERATION_REMAINS_FORBIDDEN_UNTIL_CONTRACT_AND_OWNER_APPROVAL
+- id: PAY-DEC-IA1-069
+  decision: DOMAIN_ONLY_IMPLEMENTATION_PLANNING_IS_READY_BUT_NOT_AUTOMATICALLY_AUTHORIZED
+- id: PAY-DEC-IA1-070
+  decision: LOT_2_IS_COMPLETE_AND_THE_IA1_PAYMENT_MODEL_IS_FROZEN_PENDING_APPROVED_CHANGE_CONTROL
+openDecisionReview:
+- id: OPEN-BASE-001
+  disposition: SUPERSEDED
+  modelImpact: NONE
+  reason: The authoritative branch is now feat/payment-domain-generation-brief.
+- id: OPEN-BASE-002
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_GLOBAL_CODE_GENERATION
+  reason: Complete Payment Contract Pack approval is still required.
+- id: OPEN-BASE-003
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_VERIFICATION_ADAPTER_GENERATION
+  reason: documentation/contracts/amplitude/amplitude-payment-verification-api-v1.yaml was not present at validation.
+- id: OPEN-BASE-004
+  disposition: CLOSED
+  modelImpact: NONE
+  reason: Final internal query paths exist for Payment, ObservedCustomer and Payment Audit.
+- id: OPEN-BASE-005
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: CONTRACT_MANIFEST_RECONCILIATION_REQUIRED
+  reason: Historical contract artifact count must be confirmed by the contract manifest owners.
+- id: OPEN-BASE-006
+  disposition: DEFERRED_NOT_MVP_MODEL
+  modelImpact: NONE
+  reason: Reservation is absent from the IA-1 Payment aggregate; future support requires a new approved change.
+- id: OPEN-BASE-007
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: BANK_CONTRACT_APPROVAL_REQUIRED
+  reason: Principal posting reference with optional leg references is modeled.
+- id: OPEN-BASE-008
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: OPERATIONS_AND_BANK_APPROVAL_REQUIRED
+  reason: Reversal source states and explicit authorization evidence are modeled.
+- id: OPEN-BASE-009
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: NOTIFIED is not a financial state; delivery belongs to Notification.
+- id: OPEN-BASE-010
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: DEBIT_CONFIRMED explicitly represents debit-only evidence.
+- id: OPEN-BASE-011
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: FAILED is terminal only with proven absence of financial effect.
+- id: OPEN-BASE-012
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SECURITY_ADAPTER_ACTIVATION
+  reason: JWT TTL, clock skew and algorithms remain approved profile/adapter configuration.
+- id: OPEN-BASE-013
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SCHEDULER_AND_ALERT_ACTIVATION
+  reason: Cutoff, reconciliation windows and SLA remain Operations/Accounting configuration.
+generationBlockers:
+- id: GEN-BLOCK-001
+  source: OPEN-BASE-002
+  reason: Complete Payment Contract Pack approval.
+- id: GEN-BLOCK-002
+  source: OPEN-BASE-003
+  reason: Missing approved amplitude-payment-verification-api-v1.yaml.
+- id: GEN-BLOCK-003
+  source: CURRENT_INTERNAL_QUERY_CONTRACTS
+  reason: Current internal query contracts declare approvalStatus=PENDING_APPROVAL and codeGenerationAllowed=false.
+- id: GEN-BLOCK-004
+  source: OPEN-BASE-012
+  reason: Security adapter parameters require approval.
+- id: GEN-BLOCK-005
+  source: OPEN-BASE-013
+  reason: Operational cutoff/reconciliation/SLA parameters require approval.
 generationRules:
-  forbidden:
+  forbiddenUntilExplicitApproval:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OPENAPI_MODIFICATION
-  - POLICY_OR_SERVICE_IO
-  - DOMAIN_SERVICE_AGGREGATE_MUTATION
-  - DOMAIN_SERVICE_EVENT_REGISTRATION
-  - DOMAIN_CLOCK_ACCESS
-  - POLICY_CONFIGURATION_LOADING_INSIDE_DOMAIN
-  - HARDCODED_OR_INVENTED_BANK_SPECIFIC_VALUES
-  - SECRET_OR_PROTECTED_ACCOUNT_IN_POLICY_PROFILE
-  - RETRY_CIRCUIT_BREAKER_OR_DLQ_AS_DOMAIN_SERVICE
+  - ADAPTER_OR_CONTROLLER_GENERATION
+  - ACTIVATION_OF_BANK_SPECIFIC_CONFIGURATION
+  modelFreeze: IA1_MODEL_FROZEN
 readiness:
   lot2_1AggregateRootPrepared: true
   lot2_2ValueObjectsPrepared: true
@@ -148,8 +204,11 @@ readiness:
   lot2_5CommandsAndOperationsPrepared: true
   lot2_5StateMachineReconciled: true
   lot2_6DomainEventsPrepared: true
-  lot2_7PoliciesPrepared: true
-  lot2_7DomainServicesPrepared: true
-  lot2_7HumanValidationRequired: true
-  lot2_8ReadyAfterValidation: true
-  codeGeneration: FORBIDDEN
+  lot2_7PoliciesAndDomainServicesPrepared: true
+  lot2_8FinalValidationPassed: true
+  lot2Complete: true
+  domainModelComplete: true
+  domainModelFrozen: true
+  modelBlockers: 0
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL

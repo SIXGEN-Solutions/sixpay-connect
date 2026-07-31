@@ -1,14 +1,14 @@
-schemaVersion: 2.2.0
+schemaVersion: 2.3.0
 document:
   id: SIXPAY-PAYMENT-STATE-MACHINE
   title: SIXPAY CONNECT — IA-1 Payment State Machine
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  lot: 2_8_FINAL_MODEL_VALIDATION
   branch: feat/payment-domain-generation-brief
-  status: POLICY_AND_SERVICE_BINDINGS_ADDED
+  status: FINAL_VALIDATED
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_8_FINAL_MODEL_VALIDATION
+  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
   replacesSemanticsOf: IA-0P_PAYMENT_STATE_MACHINE_V1
 references:
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
@@ -45,6 +45,16 @@ semantics:
   financialReplayAfterUnknownAllowed: false
   tfjFinalityRule: ONLY_UNIQUELY_MATCHED_INTEGRATED_EVIDENCE_ESTABLISHES_FINALITY
   invalidTransitionBehavior: PAYMENT_DOMAIN_EXCEPTION_NO_MUTATION_NO_EVENT_NO_VERSION_INCREMENT
+  sameAsSourcePseudoTarget:
+    value: SAME_AS_SOURCE
+    allowedTransitionIds:
+    - PAY-TR-037
+    meaning: The aggregate retains the concrete source state after a recoverable pre-financial failure.
+  reconstitution:
+    operationId: PAY-OP-017
+    commandId: null
+    createsTransition: false
+    createsEvent: false
 creation:
   commandId: PAY-CMD-001
   operationId: PAY-OP-001
@@ -1206,3 +1216,12 @@ policyServiceBinding:
   servicesReturnDecisionsOnly: true
   profileLoadingOwner: APPLICATION
   decisionAtSource: APPLICATION_CLOCK
+finalValidation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+readiness:
+  lot2_8FinalValidationPassed: true
+  domainModelComplete: true
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL

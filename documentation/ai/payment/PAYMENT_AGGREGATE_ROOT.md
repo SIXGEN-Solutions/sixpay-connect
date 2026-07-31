@@ -1,124 +1,68 @@
 # SIXPAY CONNECT — Payment Aggregate Root
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.7 — Policies and Domain Services`  
+> **Current lot:** `2.8 — Final Model Validation`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `POLICY_AND_DOMAIN_SERVICE_MODEL_PREPARED`  
-> **Code generation:** **FORBIDDEN**
+> **Status:** `FINAL_VALIDATED_AND_FROZEN`  
+> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
 
-## 1. Aggregate ownership
+## Final aggregate decision
 
-`Payment` remains the sole owner of:
+`Payment` is the sole write Aggregate Root for one logical TRESOR PAY payment
+intention.
 
-- current Payment state;
+It is the sole owner of:
+
+- its 17-state lifecycle;
 - legal transitions;
-- bounded evidence;
-- business version;
+- bounded current evidence;
+- business version and timestamps;
 - failure state;
-- timestamps;
 - Payment domain-event registration.
 
-No policy or Domain Service can mutate or publish on behalf of Payment.
+Policies and Domain Services return immutable decisions and never mutate the
+aggregate.
 
-## 2. Decision dependencies
-
-Payment operations receive an explicit `PaymentPolicyBundle` or the narrowly
-required policies/services.
-
-The bundle contains immutable policy implementations and approved effective
-profiles. It contains no repository, adapter, credential, network client or
-framework object.
-
-## 3. Direct policy use
-
-The aggregate directly uses pure policies for:
+## Final behavioural inventory
 
 ```text
-authorization evidence acceptance
-banking verification acceptance
-funds control acceptance
-Treasury resolution acceptance
-evidence replay/replacement
-posting instruction authorization
-failure classification
+16 application commands
+17 aggregate operations
+38 legal transitions
+76 invariants
+33 Payment domain events
+14 policies
+4 pure Domain Services
 ```
 
-These decisions remain close to one operation and one evidence category.
+`PAY-OP-017 reconstitute` is intentionally commandless, transitionless and
+eventless.
 
-## 4. Domain Service use
+`SAME_AS_SOURCE` is a valid pseudo-target only for `PAY-TR-037`, where a
+recoverable pre-financial failure retains the concrete source state.
 
-Cross-object financial interpretations use:
+## Final financial semantics
 
-```text
-PostingOutcomeDecisionService
-EndOfDayDecisionService
-ReversalDecisionService
-PaymentResultIntentService
-```
+- `POSTING_OUTCOME_UNKNOWN` and `REVERSAL_OUTCOME_UNKNOWN` are distinct.
+- `DEBIT_CONFIRMED` represents a known debit without complete CUT credit.
+- `FAILED` requires proven absence of financial effect.
+- `TREASURY_INTEGRATED` requires uniquely matched TFJ `INTEGRATED` evidence.
+- `REVERSED` preserves the original posting evidence.
+- Notification delivery is never a Payment state.
 
-Each service returns one immutable decision. The aggregate then:
+## Freeze and generation gate
 
-1. verifies that the decision is compatible with its current state;
-2. applies the complete mutation;
-3. increments businessVersion once;
-4. registers ordered domain events.
+The IA-1 aggregate model is frozen. A semantic change requires traceable change
+control and re-execution of Lot 2.8 validation.
 
-## 5. Explicit time
+The model is ready for implementation planning, but code generation remains
+disabled until explicit owner and contract-gate approval.
 
-Payment and all policies use the same `decisionAt` supplied by the handler.
-
-The domain never calls the system clock.
-
-## 6. Configuration
-
-Policy profiles are:
-
-- approved;
-- versioned;
-- effective-dated;
-- immutable for one decision;
-- free of secrets and protected accounts.
-
-The aggregate does not load profiles. Their identity/version is auditable when
-it materially affects a decision.
-
-## 7. External components
-
-Repository, JWT verification, Amplitude calls, Treasury configuration access,
-TFJ matching, Notification, Outbox, retries and DLQ remain outside Payment.
-
-They provide canonical inputs or consume events.
-
-## 8. Applicable ranges
+## Verdict
 
 ```text
-PAY-INV-001 ... PAY-INV-076
-PAY-CMD-001 ... PAY-CMD-016
-PAY-OP-001  ... PAY-OP-017
-PAY-TR-001  ... PAY-TR-038
-PAY-EVT-001 ... PAY-EVT-033
-PAY-POL-001 ... PAY-POL-014
-PAY-DS-001  ... PAY-DS-004
-```
-
-Lot 2.7 decisions are `PAY-DEC-IA1-051` through `PAY-DEC-IA1-060`.
-
-## 9. Deferred scope
-
-Only final cross-document, acceptance and generation-readiness validation
-remains in Lot 2.8.
-
-## 10. Verdict
-
-```text
-AGGREGATE ROOT: PREPARED
-VALUE OBJECTS: PREPARED
-SNAPSHOTS: PREPARED
-INVARIANTS: PREPARED
-COMMANDS AND OPERATIONS: PREPARED
-STATE MACHINE: PREPARED
-DOMAIN EVENTS: PREPARED
-POLICIES: PREPARED
-DOMAIN SERVICES: PREPARED
-CODE GENERATION: FORBIDDEN
+PAYMENT AGGREGATE ROOT: FINAL_VALIDATED
+LOT 2: COMPLETE
+MODEL BLOCKERS: NONE
+CODE GENERATION: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
 ```

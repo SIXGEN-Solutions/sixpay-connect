@@ -1,14 +1,14 @@
-schemaVersion: 2.1.0
+schemaVersion: 2.2.0
 document:
   id: SIXPAY-PAYMENT-DOMAIN-EVENT-CATALOGUE
   title: SIXPAY CONNECT — IA-1 Payment Domain Event Catalogue
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  lot: 2_8_FINAL_MODEL_VALIDATION
   branch: feat/payment-domain-generation-brief
-  status: POLICY_AND_SERVICE_BINDINGS_ADDED
+  status: FINAL_VALIDATED
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_8_FINAL_MODEL_VALIDATION
+  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
   replacesSemanticsOf: IA-0P_PAYMENT_EVENT_CATALOG_V1
 scope:
   paymentAggregateEventCount: 33
@@ -2199,12 +2199,19 @@ readiness:
   eventCount: 33
   humanValidationRequired: true
   machineValidationRequired: true
-  codeGeneration: FORBIDDEN
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
   policiesAndDomainServicesBound: true
   finalValidationLotReadyAfterValidation: true
+  lot2_8FinalValidationPassed: true
+  domainModelComplete: true
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
 policyBindings:
   disclosurePolicy: PAY-POL-014
   resultIntentPolicy: PAY-POL-013
   resultIntentService: PAY-DS-004
   postingInstructionPolicy: PAY-POL-007
   reversalAuthorizationPolicy: PAY-POL-010
+finalValidation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS

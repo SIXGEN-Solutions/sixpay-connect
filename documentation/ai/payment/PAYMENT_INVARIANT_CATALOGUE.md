@@ -1,10 +1,10 @@
 # SIXPAY CONNECT — Payment Invariant Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.7 — Policies and Domain Services`  
+> **Current lot:** `2.8 — Final Model Validation`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `POLICY_AND_SERVICE_BINDINGS_ADDED`  
-> **Code generation:** **FORBIDDEN**
+> **Status:** `FINAL_VALIDATED`  
+> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
 
 ## 1. Purpose
 
@@ -138,7 +138,7 @@ owning module and does not mutate Payment.
 | `PAY-INV-039` | One Payment authorizes at most one logical posting instruction for its original payment intention. | `DOMAIN`, `APPLICATION`, `PERSISTENCE` | `REJECT_SECOND_LOGICAL_POSTING` | `DOMAIN_UNIT`, `APPLICATION`, `POSTGRES_INTEGRATION` |
 | `PAY-INV-040` | Every retry of the same posting instruction reuses the exact posting idempotency key and immutable instruction fingerprint; a new key is not a retry. | `APPLICATION`, `INTEGRATION`, `PERSISTENCE` | `IDEMPOTENCY_CONFLICT` | `APPLICATION`, `CONTRACT_TEST`, `CONCURRENCY` |
 | `PAY-INV-041` | A posting outcome must match the original Payment reference, amount, institution, debtor account, Treasury reference and posting command identity. | `DOMAIN` | `INTEGRATION_CONFLICT` | `DOMAIN_UNIT`, `MAPPING_TEST` |
-| `PAY-INV-042` | Posting outcome UNKNOWN means neither success nor failure, forbids blind financial resubmission and requires authoritative lookup or reconciliation. | `DOMAIN`, `APPLICATION` | `ACCOUNTING_OUTCOME_UNKNOWN` | `DOMAIN_UNIT`, `RESILIENCE_TEST` |
+| `PAY-INV-042` | Posting outcome UNKNOWN means neither success nor failure, forbids blind financial resubmission and requires authoritative lookup or reconciliation. | `DOMAIN`, `APPLICATION` | `POSTING_OUTCOME_UNKNOWN or REVERSAL_OUTCOME_UNKNOWN according to the operation` | `DOMAIN_UNIT`, `RESILIENCE_TEST` |
 | `PAY-INV-043` | A posting may be classified REJECTED_NO_FINANCIAL_EFFECT or Payment FAILED only when authoritative evidence proves that neither debit nor CUT credit occurred. | `DOMAIN` | `REJECT_INVALID_FAILURE_CLASSIFICATION` | `DOMAIN_UNIT`, `STATE_TRANSITION_TEST` |
 | `PAY-INV-044` | Posting outcome COMPLETED requires debit SUCCEEDED, CUT credit SUCCEEDED, exact Money and a principal BankPostingReference. | `DOMAIN` | `REJECT_INVALID_SNAPSHOT` | `DOMAIN_UNIT` |
 | `PAY-INV-045` | DEBIT_CONFIRMED_CUT_CREDIT_PENDING requires debit SUCCEEDED, CUT credit PENDING or UNKNOWN, a principal posting reference and no success finalization. | `DOMAIN` | `REJECT_INVALID_SNAPSHOT` | `DOMAIN_UNIT` |
@@ -165,7 +165,7 @@ owning module and does not mutate Payment.
 | --- | --- | --- | --- | --- |
 | `PAY-INV-059` | A reversal can be requested only for a confirmed or authoritatively reconciled financial effect and requires BANK_INSTRUCTION or APPROVED_RUNBOOK authorization. | `DOMAIN`, `APPLICATION`, `POLICY` | `REJECT_REVERSAL` | `DOMAIN_UNIT`, `POLICY_TEST`, `AUTHORIZATION_TEST` |
 | `PAY-INV-060` | Reversal uses a distinct immutable idempotency key and reversal reference and never overwrites the original posting identity. | `DOMAIN`, `APPLICATION` | `IDEMPOTENCY_OR_REFERENCE_CONFLICT` | `DOMAIN_UNIT`, `APPLICATION` |
-| `PAY-INV-061` | Reversal outcome UNKNOWN requires authoritative lookup and forbids blind reversal resubmission. | `DOMAIN`, `APPLICATION` | `ACCOUNTING_OUTCOME_UNKNOWN` | `DOMAIN_UNIT`, `RESILIENCE_TEST` |
+| `PAY-INV-061` | Reversal outcome UNKNOWN requires authoritative lookup and forbids blind reversal resubmission. | `DOMAIN`, `APPLICATION` | `POSTING_OUTCOME_UNKNOWN or REVERSAL_OUTCOME_UNKNOWN according to the operation` | `DOMAIN_UNIT`, `RESILIENCE_TEST` |
 | `PAY-INV-062` | REVERSED requires an authoritative outcome REVERSED with a stable reversal reference linked to the same Payment and original posting. | `DOMAIN` | `REJECT_INVALID_TRANSITION` | `DOMAIN_UNIT`, `STATE_TRANSITION_TEST` |
 | `PAY-INV-063` | A rejected or not-allowed reversal does not make the original financial effect disappear and cannot transition Payment to FAILED-without-effect. | `DOMAIN` | `REMAIN_REVERSAL_REQUIRED_OR_OPERATIONAL` | `DOMAIN_UNIT` |
 | `PAY-INV-064` | REJECTED is terminal only for a conclusive business/security rejection before any financial instruction can have produced an effect. | `DOMAIN` | `REJECT_INVALID_TERMINAL_STATE` | `DOMAIN_UNIT`, `STATE_TRANSITION_TEST` |
@@ -256,7 +256,7 @@ they provide reusable pure decisions consumed by named operations.
 - Banking verification and funds control remain distinct gates even if an
   interim orchestration uses one broad processing status.
 - `FAILED` means processing terminated with proven absence of financial effect.
-- `ACCOUNTING_OUTCOME_UNKNOWN` is non-terminal.
+- `POSTING_OUTCOME_UNKNOWN or REVERSAL_OUTCOME_UNKNOWN according to the operation` is non-terminal.
 - `TREASURY_INTEGRATED` and `REVERSED` are terminal financial outcomes.
 - A provider TFJ status `FAILED` does not automatically map to Payment
   `FAILED`; it may require reconciliation or reversal.
@@ -345,6 +345,24 @@ names and scenario references will be fully normalized during Lot 2.8.
 IA-1 LOT 2.4 PAYMENT INVARIANTS PREPARED
 INVARIANT COUNT: 76
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.8 — FINAL MODEL VALIDATION
+NEXT: OWNER APPROVAL AND CONTRACT GATE CLOSURE
 CODE GENERATION: FORBIDDEN
 ```
+
+## Final Lot 2.8 validation
+
+The cross-catalogue validation passed.
+
+```text
+MODEL STATUS: FINAL_VALIDATED
+LOT 2 STATUS: COMPLETE
+MODEL BLOCKERS: NONE
+GENERATION READINESS: READY_PENDING_EXTERNAL_APPROVALS
+CODE GENERATION: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+```
+
+Normative validation evidence:
+
+- `PAYMENT_MODEL_VALIDATION_REPORT.md`
+- `PAYMENT_MODEL_VALIDATION.yaml`
+- `PAYMENT_ACCEPTANCE_SCENARIOS.md`

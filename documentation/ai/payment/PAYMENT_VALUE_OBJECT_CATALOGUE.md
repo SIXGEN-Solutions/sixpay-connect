@@ -1,10 +1,10 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.8 — Final Model Validation`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `EVENT_SUPPORT_TYPES_ADDED`  
-> **Code generation:** **FORBIDDEN**
+> **Status:** `FINAL_VALIDATED`  
+> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
 
 ## 1. Purpose
 
@@ -1232,6 +1232,24 @@ key.
 ```text
 IA-1 LOT 2.2 IDENTIFIERS AND VALUE OBJECTS PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
+NEXT: OWNER APPROVAL AND CONTRACT GATE CLOSURE
 CODE GENERATION: FORBIDDEN
 ```
+
+## Final Lot 2.8 validation
+
+The cross-catalogue validation passed.
+
+```text
+MODEL STATUS: FINAL_VALIDATED
+LOT 2 STATUS: COMPLETE
+MODEL BLOCKERS: NONE
+GENERATION READINESS: READY_PENDING_EXTERNAL_APPROVALS
+CODE GENERATION: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+```
+
+Normative validation evidence:
+
+- `PAYMENT_MODEL_VALIDATION_REPORT.md`
+- `PAYMENT_MODEL_VALIDATION.yaml`
+- `PAYMENT_ACCEPTANCE_SCENARIOS.md`
