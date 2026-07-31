@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Lot:** `2.2 — Identifiers and Value Objects`  
+> **Current lot:** `2.3 — Snapshots and Business Evidence`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DRAFT_PENDING_VALIDATION`  
+> **Status:** `SNAPSHOT_SUPPORT_TYPES_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1023,6 +1023,36 @@ may be exposed through approved contracts.
 - generators, resolvers and policy interfaces: Lot 2.7;
 - complete consistency validation: Lot 2.8.
 
+
+## Snapshot-support Value Objects added by Lot 2.3
+
+The following types support the snapshot catalogue and are normative through
+`PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
+
+| Type | Semantics | Format |
+| --- | --- | --- |
+| `EvidenceFingerprint` | Digest of canonical minimized evidence | `v1:sha256:<64 lowercase hex>` |
+| `EvidenceMetadata` | Source, correlation, channel and temporal proof | Immutable composite |
+| `EvidenceObservationChannel` | How canonical evidence was observed | Closed enum |
+| `AuthorizationEvidenceReference` | Keyed non-reversible reference to JWT `jti` | `v1:hmac-sha256:<64 lowercase hex>` |
+| `BankingVerificationId` | Amplitude customer/account verification identity | Non-nil UUID |
+| `FundsVerificationReference` | Amplitude funds-check identity | Opaque bank reference |
+| `TfjConfirmationId` | Amplitude TFJ confirmation identity | Non-nil UUID |
+| `ReversalAuthorizationReference` | Bank/runbook authorization identity | 8–128 safe opaque characters |
+| `ReversalReference` | Amplitude reversal identity | Opaque bank reference |
+
+These types:
+
+- are immutable;
+- preserve case for externally assigned opaque references;
+- have value equality;
+- are never credentials;
+- cannot substitute for `PaymentId`, Payment references, command idempotency
+  keys or posting references.
+
+Snapshot shapes and lifecycle rules remain in
+`PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
+
 ## 15. Exit checklist
 
 - [ ] Every Aggregate Root type has semantics and ownership.
@@ -1044,6 +1074,6 @@ may be exposed through approved contracts.
 ```text
 IA-1 LOT 2.2 IDENTIFIERS AND VALUE OBJECTS PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.3 — SNAPSHOTS AND BUSINESS EVIDENCE
+NEXT: LOT 2.4 — INVARIANTS
 CODE GENERATION: FORBIDDEN
 ```

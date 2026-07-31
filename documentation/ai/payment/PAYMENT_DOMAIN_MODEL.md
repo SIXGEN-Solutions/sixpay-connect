@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.2 — Identifiers and Value Objects`  
+> **Current sub-lot:** `2.3 — Snapshots and Business Evidence`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `VALUE_OBJECT_MODEL_PREPARED`  
+> **Status:** `SNAPSHOT_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Normative model hierarchy
@@ -16,8 +16,8 @@
 | Boundaries | `PAYMENT_DOMAIN_BOUNDARIES.md` |
 | Aggregate Root | `PAYMENT_AGGREGATE_ROOT.md` |
 | Identifiers and Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
+| Snapshots and evidence | `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md` |
 | Posting reference | `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
-| Snapshots/evidence | Lot 2.3 pending |
 | Invariants | Lot 2.4 pending |
 | Commands/operations | Lot 2.5 pending |
 | Domain Events | Lot 2.6 pending |
@@ -28,45 +28,56 @@
 
 ```text
 Payment
-├── PaymentId
-├── PaymentSource
-├── ExternalPaymentReference
-├── ExternalSubscriptionReference
-├── PublicPaymentReference
-├── PaymentRequestIdentity
-│   ├── IdempotencyKey
-│   ├── RequestFingerprint
-│   └── CorrelationId
-├── FinancialInstitutionCode
-├── DebtorAccountReference
-├── Money
-├── TreasuryAllocationIntent
+├── immutable identity and request Value Objects
 ├── PaymentStatus
+├── current decision evidence
+│   ├── AuthorizationEvidenceSnapshot?
+│   ├── BankingVerificationSnapshot?
+│   ├── FundsControlSnapshot?
+│   ├── TreasuryAccountResolutionSnapshot?
+│   ├── PostingOutcomeSnapshot?
+│   ├── EndOfDayConfirmationSnapshot?
+│   └── ReversalSnapshot?
 ├── TreasuryAccountReference?
 ├── BankPostingReference?
-├── PaymentFailure?
-├── lifecycle snapshots?          [Lot 2.3]
+├── current PaymentFailure?
 ├── timestamps
 └── businessVersion
 ```
 
-## 3. Key decisions
+## 3. Evidence boundary
 
-- internal identity uses UUID v4;
-- public reference uses `PAY-` + ULID;
-- external reference is source-scoped and case-sensitive;
-- account clear values never enter Payment;
-- account token, masked display and binding fingerprint are distinct;
-- Treasury account comes only from protected bank configuration;
-- allocation amounts use shared `Money`, same currency and exact total;
-- posting command identity differs from bank posting identity;
-- PaymentFailure is structured and current-only.
+Snapshots are canonical minimized evidence, not provider payloads.
 
-## 4. Code-generation status
-
-The model is still documentary. Snapshot, invariant, command and event details
-must be completed before generation.
+They include common metadata:
 
 ```text
+source
+correlation
+observation channel
+evidence fingerprint
+observedAt
+acceptedAt
+```
+
+Full historical versions belong to append-only audit/reporting.
+
+## 4. Key snapshot semantics
+
+- authorization stores safe binding results, not JWT/claims;
+- banking verification stores canonical checks, not KYC/customer payload;
+- funds control binds exact amount/account and excludes available balance;
+- Treasury resolution proves protected bank configuration;
+- posting stores command identity, financial outcome and both leg results;
+- TFJ stores only uniquely matched final results;
+- reversal combines immutable authorization proof and optional outcome.
+
+## 5. Generation status
+
+```text
+AGGREGATE ROOT: PREPARED
+VALUE OBJECTS: PREPARED
+SNAPSHOTS: PREPARED
+INVARIANTS: PENDING LOT 2.4
 CODE GENERATION: FORBIDDEN
 ```

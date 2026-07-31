@@ -1,22 +1,24 @@
-schemaVersion: 1.4.0
+schemaVersion: 1.5.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_2_IDENTIFIERS_AND_VALUE_OBJECTS
+  lot: 2_3_SNAPSHOTS_AND_BUSINESS_EVIDENCE
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_2_DRAFT_PENDING_VALIDATION
+  status: LOT_2_3_DRAFT_PENDING_VALIDATION
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_3_SNAPSHOTS_AND_BUSINESS_EVIDENCE
+nextLot: LOT_2_4_INVARIANTS
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Primary IA-1 brief
 - path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
   role: Aggregate Root specification
 - path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-  role: Normative identifiers and Value Objects
+  role: Identifiers and Value Objects
+- path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+  role: Normative snapshots and business evidence
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
   role: Consolidated model index
 - path: documentation/ai/payment/PAYMENT_IA1_BASELINE.md
@@ -27,126 +29,119 @@ primaryDocuments:
   role: Glossary
 - path: documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md
   role: Ownership boundaries
-identifierValueObjects:
-  PaymentId:
-    format: UUID_V4_NON_NIL
-    generatedBy: APPLICATION_PORT
-    opaque: true
-  PaymentSource:
-    values:
-    - TRESOR_PAY
-    extensibleOnlyByDecision: true
-  ExternalPaymentReference:
-    sourceField: tresorPayPaymentReference/endToEndId
-    length:
-      min: 1
-      max: 128
-    caseSensitive: true
-    uniquenessScope:
-    - PAYMENT_SOURCE
-    - REFERENCE
-    immutable: true
-    recyclable: false
-  ExternalSubscriptionReference:
-    requiredForMvp: true
-    localAggregateReference: false
-    immutable: true
-  PublicPaymentReference:
-    format: PAY-<ULID_UPPERCASE>
-    generatedBy: APPLICATION_PORT
-  IdempotencyKey:
-    length:
-      min: 8
-      max: 128
-    caseSensitive: true
-  RequestFingerprint:
-    algorithm: SHA-256
-    encoding: LOWERCASE_HEX
-    length: 64
-  CorrelationId:
-    format: UUID_NON_NIL
-  PaymentRequestIdentity:
-    components:
-    - IdempotencyKey
-    - RequestFingerprint
-    - CorrelationId
-  FinancialInstitutionCode:
-    length:
-      min: 2
-      max: 32
-    normalization: UPPERCASE
-accountValueObjects:
-  DebtorAccountReference:
-    components:
-    - FinancialInstitutionCode
-    - IntegrationAccountToken
-    - MaskedDisplay
-    - BindingFingerprint
-    clearAccountStored: false
-    eventExposure: FINGERPRINT_OR_MASKED_ONLY_WHEN_JUSTIFIED
-  TreasuryAccountReference:
-    createdBy: PROTECTED_TREASURY_CONFIGURATION_RESOLVER
-    inboundValueMayOverride: false
-    bankCoherenceRequired: true
-treasuryAllocation:
-  collectionType: TreasuryAllocationIntent
-  minItems: 1
-  maxItems: 20
-  beneficiaryUnique: true
-  allAmountsPositive: true
-  sameCurrencyAsPayment: true
-  sumEqualsPaymentAmount: true
-money:
-  type: com.sixpay.sharedkernel.domain.valueobject.Money
-  duplicateAllowed: false
-  sourceModificationRequired: false
-  paymentRequiresPositive: true
-  bankCurrencyCompatibilityPolicyRequired: true
-bankPostingReference:
-  principalRequiredAfterConfirmedPosting: true
-  debitLegOptional: true
-  cutCreditLegOptional: true
-  preservedAfterReversal: true
-  commandIdentityDistinct: true
-paymentFailure:
-  storage: CURRENT_RELEVANT_ONLY
-  historyOwner: AUDIT_AND_REPORTING
-  fields:
-  - failureCode
-  - failureCategory
-  - failureStage
-  - retryDisposition
-  - safeMessage
-  - occurredAt
-  - externalSystem
-  categories:
-  - BUSINESS_REJECTION
-  - TECHNICAL_FAILURE
-  - UNCERTAIN_EXTERNAL_OUTCOME
-  - SECURITY_REJECTION
-  - INTEGRATION_CONFLICT
-  - TREASURY_RECONCILIATION_FAILURE
-lot2_2Decisions:
-- id: PAY-DEC-IA1-007
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-008
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-009
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-010
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-011
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-012
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-013
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-014
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-015
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-- id: PAY-DEC-IA1-016
-  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+evidenceMetadata:
+  type: EvidenceMetadata
+  requiredFields:
+  - sourceSystem
+  - correlationId
+  - observationChannel
+  - evidenceFingerprint
+  - observedAt
+  - acceptedAt
+  fingerprintFormat: v1:sha256:<64_lowercase_hex>
+  acceptedAtNotBeforeObservedAt: true
+snapshotStorage:
+  currentAcceptedPerCategory: 1
+  fullHistoryOwner: APPEND_ONLY_AUDIT_AND_REPORTING
+  rawExternalPayloadAllowed: false
+  automaticEventSerializationAllowed: false
+snapshots:
+  AuthorizationEvidenceSnapshot:
+    source: TRESOR_PAY
+    outcomes:
+    - APPROVED
+    - REJECTED
+    rawJwtStored: false
+    rawClaimsStored: false
+    bindingEvidenceStored: true
+  BankingVerificationSnapshot:
+    source: AMPLITUDE
+    outcomes:
+    - VERIFIED
+    - REJECTED
+    - INDETERMINATE
+    customerKycValuesStored: false
+    canonicalChecksStored: true
+  FundsControlSnapshot:
+    source: AMPLITUDE
+    outcomes:
+    - VERIFIED
+    - REJECTED
+    - INDETERMINATE
+    bindsExactPaymentAmount: true
+    availableBalanceStored: false
+    validUntilRequired: true
+  TreasuryAccountResolutionSnapshot:
+    source: SIXPAY
+    channels:
+    - PROTECTED_CONFIGURATION_RESOLUTION
+    outcomes:
+    - RESOLVED
+    - REJECTED
+    inboundAccountMayOverride: false
+  PostingOutcomeSnapshot:
+    source: AMPLITUDE
+    outcomes:
+    - COMPLETED
+    - REJECTED_NO_FINANCIAL_EFFECT
+    - DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+    - REVERSAL_REQUIRED
+    - UNKNOWN
+    debitLegRequired: true
+    cutCreditLegRequired: true
+    unknownMeansFailure: false
+    blindReplayAllowed: false
+  EndOfDayConfirmationSnapshot:
+    source: AMPLITUDE
+    acceptedStatuses:
+    - INTEGRATED
+    - FAILED
+    pendingAcceptedIntoAggregate: false
+    uniqueMatchingRequired: true
+    matchingKeys:
+    - financialInstitutionCode
+    - businessDate
+    - publicPaymentReference
+    - principalBankPostingReference
+  ReversalSnapshot:
+    originalPaymentPreserved: true
+    originalPostingReferencePreserved: true
+    authorizationRequiredBeforeSubmission: true
+    outcomes:
+    - REVERSED
+    - REJECTED
+    - NOT_ALLOWED
+    - UNKNOWN
+snapshotReplayPolicy:
+  sameIdentitySameFingerprint: NO_OP
+  sameIdentityDifferentFingerprint: CONFLICT_NO_PAYMENT_MUTATION
+  financialOrTfjConflict: QUARANTINE_AUDIT_ALERT
+  terminalEvidenceReplaceable: false
+lot2_3Decisions:
+- id: PAY-DEC-IA1-017
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-018
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-019
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-020
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-021
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-022
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-023
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-024
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-025
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+- id: PAY-DEC-IA1-026
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+snapshotInvariantIds:
+  from: PAY-SNAP-001
+  through: PAY-SNAP-018
+  source: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
 traceability:
   requiredPrefixes:
   - PAY-BASE-
@@ -154,6 +149,7 @@ traceability:
   - PAY-POSTREF-
   - PAY-AGG-
   - PAY-VO-
+  - PAY-SNAP-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -161,7 +157,8 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_2Modifications:
+authorizedLot2_3Modifications:
+- documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 - documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
@@ -170,15 +167,17 @@ authorizedLot2_2Modifications:
 generationRules:
   forbidden:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
-  - MONEY_JAVA_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OPENAPI_MODIFICATION
-  - SNAPSHOT_FIELD_INVENTION
+  - RAW_EXTERNAL_PAYLOAD_IN_AGGREGATE
+  - CREDENTIAL_OR_TOKEN_PERSISTENCE
   - FINAL_COMMAND_SIGNATURES
   - FINAL_DOMAIN_EVENT_PAYLOADS
+  - SILENT_CLOSURE_OF_INVARIANT_OR_POLICY_DECISIONS
 readiness:
   lot2_1AggregateRootPrepared: true
   lot2_2ValueObjectsPrepared: true
-  lot2_2HumanValidationRequired: true
-  lot2_3ReadyAfterValidation: true
+  lot2_3SnapshotsPrepared: true
+  lot2_3HumanValidationRequired: true
+  lot2_4ReadyAfterValidation: true
   codeGeneration: FORBIDDEN
