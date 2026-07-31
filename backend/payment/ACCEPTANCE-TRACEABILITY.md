@@ -1,32 +1,31 @@
-# Traçabilité d’acceptation — Payment Lot 3.2
+# Traçabilité d’acceptation — Payment Lot 3.3
 
 | ID | Critère | Preuve automatisée |
 | --- | --- | --- |
-| `PAY-L3.2-ACC-001` | `PaymentId` est un UUID canonique non nul | `PaymentIdentityValueObjectsTest.paymentIdAcceptsOnlyCanonicalNonNilUuid` |
-| `PAY-L3.2-ACC-002` | les références externes conservent la casse et leur format | `externalReferencesStripOnlyOuterAsciiWhitespaceAndPreserveCase` |
-| `PAY-L3.2-ACC-003` | la référence publique respecte `PAY-` + ULID Crockford | `publicReferenceRequiresPayPrefixedCrockfordUlid` |
-| `PAY-L3.2-ACC-004` | identité de requête, fingerprint et corrélation restent distincts | `requestIdentityKeepsThreeDistinctIdentities` |
-| `PAY-L3.2-ACC-005` | le code banque est normalisé de manière indépendante de la locale | `financialInstitutionCodeUsesLocaleIndependentUppercase` |
-| `PAY-L3.2-ACC-006` | les tokens de comptes protégés ne sont jamais imprimés | `ProtectedAccountValueObjectsTest.debtorReferenceNeverPrintsTheProtectedToken` et `treasuryReferenceEqualityUsesConfigurationIdentity` |
-| `PAY-L3.2-ACC-007` | les allocations sont bornées, positives, uniques et équilibrées | `TreasuryAllocationIntentTest` |
-| `PAY-L3.2-ACC-008` | `PaymentFailure` applique la matrice category/disposition | `PaymentFailureTest` |
-| `PAY-L3.2-ACC-009` | les 17 statuts IA-1 et quatre terminaux sont exacts | `PaymentClassificationTest` |
-| `PAY-L3.2-ACC-010` | `NOTIFIED` n’est pas un statut Payment | `PaymentClassificationTest.notifiedIsNotAPaymentStatus` |
-| `PAY-L3.2-ACC-011` | `Money`, `CorrelationId` et primitives DDD ne sont pas dupliqués | `PaymentArchitectureTest.moduleReusesSharedPlatformPrimitives` |
-| `PAY-L3.2-ACC-012` | aucun type du Lot 3.3 ou Aggregate Root n’est généré | `PaymentArchitectureTest.lot32ImplementsExactlyTheAuthorizedModelSources` |
-| `PAY-L3.2-ACC-013` | le domaine reste sans framework ni dépendance inter-domaine | `PaymentArchitectureTest.domainRemainsFrameworkAgnostic` et `paymentDoesNotDependOnAnotherBusinessDomain` |
-| `PAY-L3.2-ACC-014` | seule l’autorisation Lot 3.2 est active | `PaymentArchitectureTest.controlledAuthorizationActivatesOnlyLot32` |
+| `PAY-L3.3-ACC-001` | métadonnées complètes et chronologie valide | `EvidenceMetadataTest` |
+| `PAY-L3.3-ACC-002` | autorisation minimisée et matrice cohérente | `AuthorizationEvidenceSnapshotTest` |
+| `PAY-L3.3-ACC-003` | checks bancaires uniques, canoniques et cohérents | `BankingAndFundsSnapshotsTest` |
+| `PAY-L3.3-ACC-004` | fonds positifs, valides et sans solde disponible | `BankingAndFundsSnapshotsTest` |
+| `PAY-L3.3-ACC-005` | résolution Treasury issue de configuration protégée | `TreasuryAndPostingSnapshotsTest` |
+| `PAY-L3.3-ACC-006` | cinq outcomes de posting cohérents | `TreasuryAndPostingSnapshotsTest` |
+| `PAY-L3.3-ACC-007` | références de jambes cohérentes | `bankAndLegReferencesMustBeConsistent` |
+| `PAY-L3.3-ACC-008` | TFJ n’accepte que `INTEGRATED` ou `FAILED` | `EndOfDayAndReversalSnapshotsTest` |
+| `PAY-L3.3-ACC-009` | reversal conserve les identités originales | `reversalSnapshotPreservesOriginalInstructionAndAuthorization` |
+| `PAY-L3.3-ACC-010` | matrice des outcomes de reversal | `reversalOutcomeMatrixIsStrict` |
+| `PAY-L3.3-ACC-011` | snapshots sans I/O, horloge ou crypto | `PaymentArchitectureTest` |
+| `PAY-L3.3-ACC-012` | Aggregate, Policies, Services et Events différés | `aggregatePoliciesServicesAndEventsRemainDeferred` |
+| `PAY-L3.3-ACC-013` | seule l’autorisation Lot 3.3 est active | `controlledAuthorizationActivatesOnlyLot33` |
 
 ## Limites
 
-Les types suivants restent explicitement différés :
+Les contrôles suivants seront exercés après implémentation des Policies et de
+l’Aggregate Root :
 
 ```text
-EvidenceMetadata and snapshot-support identifiers
-PostingInstructionIdentity
-ReversalInstructionIdentity
-PaymentCommandId
-ExpectedBusinessVersion
-PaymentEventSequence and event metadata
-Payment and PaymentState
+freshness profiles
+Payment binding
+replay / conflict / replacement
+state eligibility
+atomic mutation
+event registration
 ```

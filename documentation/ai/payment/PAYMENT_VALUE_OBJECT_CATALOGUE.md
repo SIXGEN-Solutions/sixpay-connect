@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Identifiers and Value Objects Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `3.2 — Identifiers, Value Objects and classifications`  
+> **Current lot:** `3.3 — Snapshots and financial evidence`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `BASE_VALUE_OBJECTS_IMPLEMENTED`  
+> **Status:** `BASE_AND_SNAPSHOT_SUPPORT_VALUE_OBJECTS_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment implementation:** **AUTHORIZED_AND_COMPLETED**
 
@@ -1054,6 +1054,31 @@ These types:
 Snapshot shapes and lifecycle rules remain in
 `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`.
 
+
+
+## Lot 3.3 snapshot-support implementation
+
+The following previously specified support concepts are now implemented in the
+evidence package:
+
+```text
+EvidenceFingerprint
+EvidenceMetadata
+EvidenceObservationChannel
+AuthorizationEvidenceReference
+BankingVerificationId
+FundsVerificationReference
+TfjConfirmationId
+ReversalAuthorizationReference
+ReversalReference
+PostingInstructionId
+PostingIdempotencyKey
+ReversalInstructionId
+ReversalIdempotencyKey
+```
+
+Full posting/reversal instruction identity composites, command metadata and
+event metadata remain deferred.
 
 ## Command and instruction support types added by Lot 2.5
 

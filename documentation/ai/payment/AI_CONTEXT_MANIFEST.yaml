@@ -1,17 +1,17 @@
-schemaVersion: 2.2.0
+schemaVersion: 2.3.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 3_2_IDENTIFIERS_VALUE_OBJECTS
+  lot: 3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_3_2_IMPLEMENTED
+  status: LOT_3_3_IMPLEMENTED
   normative: true
   implementationDate: '2026-07-31'
 codeGenerationAllowed: false
 generationReadiness: DOMAIN_ONLY_INCREMENT_AUTHORIZED
-nextStep: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
+nextStep: LOT_3_4_POLICIES_PURE_DOMAIN_SERVICES
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Final IA-1 brief
@@ -212,13 +212,15 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: LOT_3_2_DOMAIN_ONLY_INCREMENT_AUTHORIZED
+  codeGeneration: LOT_3_3_DOMAIN_ONLY_INCREMENT_AUTHORIZED
   lot3_1FoundationImplemented: true
   lot3DomainOnlyProgramAuthorized: true
   lot3_2ReadyForExplicitActivation: true
   globalCodeGeneration: FORBIDDEN_PENDING_EXTERNAL_APPROVALS
   lot3_2IdentifiersValueObjectsImplemented: true
   lot3_3ReadyForExplicitActivation: true
+  lot3_3SnapshotsFinancialEvidenceImplemented: true
+  lot3_4ReadyForExplicitActivation: true
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -226,7 +228,7 @@ implementationAuthorization:
   authorizedAt: '2026-07-31'
   scope: PAYMENT_DOMAIN_ONLY
   globalCodeGenerationAllowed: false
-  currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
+  currentIncrement: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
   currentIncrementCodeGenerationAllowed: true
   futureIncrementActivationRequired: true
   programAllowedPaths:
@@ -243,26 +245,27 @@ implementationAuthorization:
   - backend/payment/ARCHITECTURE.md
   - backend/payment/ACCEPTANCE-TRACEABILITY.md
   - backend/payment/src/main/java/com/sixpay/payment/domain/package-info.java
-  - backend/payment/src/main/java/com/sixpay/payment/domain/model/**
-  - backend/payment/src/test/java/com/sixpay/payment/domain/model/**
+  - backend/payment/src/main/java/com/sixpay/payment/domain/model/evidence/**
+  - backend/payment/src/test/java/com/sixpay/payment/domain/model/evidence/**
   - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  - documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
   - documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   allowedChangeKinds:
-  - IDENTIFIER_IMPLEMENTATION
-  - VALUE_OBJECT_IMPLEMENTATION
-  - CLOSED_CLASSIFICATION_IMPLEMENTATION
-  - VALUE_OBJECT_UNIT_TESTS
+  - SNAPSHOT_SUPPORT_VALUE_OBJECT_IMPLEMENTATION
+  - EVIDENCE_SNAPSHOT_IMPLEMENTATION
+  - FINANCIAL_OUTCOME_STRUCTURE_IMPLEMENTATION
+  - EVIDENCE_UNIT_TESTS
   - ARCHITECTURE_TEST_UPDATE
   - MODULE_DOCUMENTATION
   - AUTHORIZATION_METADATA
   forbiddenChangeKinds:
-  - SNAPSHOT_OR_EVIDENCE_GENERATION
-  - COMMAND_OR_INSTRUCTION_METADATA_GENERATION
+  - FULL_POSTING_OR_REVERSAL_INSTRUCTION_IDENTITY_GENERATION
+  - PAYMENT_STATE_GENERATION
   - AGGREGATE_ROOT_GENERATION
-  - DOMAIN_EVENT_GENERATION
   - POLICY_OR_DOMAIN_SERVICE_GENERATION
+  - DOMAIN_EVENT_GENERATION
   - APPLICATION_LAYER_GENERATION
   - API_OR_CONTRACT_GENERATION
   - PERSISTENCE_OR_MIGRATION_GENERATION
@@ -294,6 +297,12 @@ implementationAuthorization:
     - com.sixpay.sharedkernel.domain.valueobject.ValueObject
     snapshotsDeferred: true
     aggregateRootDeferred: true
+    implementedSnapshotCount: 7
+    snapshotSupportPackage: com.sixpay.payment.domain.model.evidence
+    policiesDeferred: true
+    domainEventsDeferred: true
+    systemClockAccessAllowed: false
+    ioAllowed: false
 implementationDecisions:
 - id: PAY-DEC-IA1-071
   decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED
@@ -315,3 +324,13 @@ implementationDecisions:
   decision: TREASURY_ALLOCATION_INTENT_CANONICALIZES_ORDER_AND_ENFORCES_EXACT_TOTAL
 - id: PAY-DEC-IA1-080
   decision: SNAPSHOT_COMMAND_INSTRUCTION_EVENT_AND_AGGREGATE_TYPES_REMAIN_DEFERRED
+- id: PAY-DEC-IA1-081
+  decision: LOT_3_3_IMPLEMENT_SEVEN_IMMUTABLE_MINIMIZED_EVIDENCE_SNAPSHOTS
+- id: PAY-DEC-IA1-082
+  decision: SNAPSHOT_CONSTRUCTORS_ENFORCE_STRUCTURE_WHILE_CONTEXTUAL_ACCEPTANCE_REMAINS_POLICY_OWNED
+- id: PAY-DEC-IA1-083
+  decision: POSTING_AND_REVERSAL_SUPPORT_IDENTITIES_ARE_IMPLEMENTED_WITHOUT_FULL_AUTHORIZATION_COMPOSITES
+- id: PAY-DEC-IA1-084
+  decision: FULL_SNAPSHOT_STRING_REPRESENTATIONS_EXCLUDE_PROTECTED_TOKENS_AND_BINDING_FINGERPRINTS
+- id: PAY-DEC-IA1-085
+  decision: PAYMENT_STATE_AGGREGATE_POLICIES_SERVICES_AND_EVENTS_REMAIN_DEFERRED

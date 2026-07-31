@@ -3,101 +3,77 @@
 ## Status
 
 ```text
-Current increment: Lot 3.2 — Identifiers, Value Objects and classifications
+Current increment: Lot 3.3 — Snapshots and financial evidence
 Implementation scope: PAYMENT_DOMAIN_ONLY
 Global generation: FORBIDDEN
 Current increment generation: AUTHORIZED
 ```
 
-## Implemented domain concepts
-
-Lot 3.2 implements 22 local types:
+## Implemented evidence
 
 ```text
-PaymentId
-PaymentSource
-ExternalPaymentReference
-ExternalSubscriptionReference
-PublicPaymentReference
-IdempotencyKey
-RequestFingerprint
-PaymentRequestIdentity
-FinancialInstitutionCode
-DebtorAccountReference
-TreasuryAccountReference
-TreasuryBeneficiaryReference
-TreasuryAllocation
-TreasuryAllocationIntent
-BankPostingReference
-FailureCode
-FailureCategory
-FailureStage
-RetryDisposition
-ExternalSystem
-PaymentFailure
-PaymentStatus
+AuthorizationEvidenceSnapshot
+BankingVerificationSnapshot
+FundsControlSnapshot
+TreasuryAccountResolutionSnapshot
+PostingOutcomeSnapshot
+EndOfDayConfirmationSnapshot
+ReversalSnapshot
 ```
 
-The module reuses, rather than duplicates:
+The module now contains immutable support types for:
 
-```text
-com.sixpay.common.context.CorrelationId
-com.sixpay.sharedkernel.domain.valueobject.Money
-com.sixpay.sharedkernel.domain.valueobject.ValueObject
-```
+- common source/correlation/channel/fingerprint metadata;
+- authorization bindings;
+- banking and funds check evidence;
+- protected Treasury resolution;
+- posting instruction identity, leg outcomes and next actions;
+- uniquely matched TFJ finality evidence;
+- reversal authorization and canonical outcome evidence.
 
-## Package
+## Structural boundary
 
-```text
-src/main/java/com/sixpay/payment/domain/model/
-```
+Constructors enforce only the structure defined by the frozen IA-1 model:
 
-All types are immutable. String-based types normalize only according to their
-validated IA-1 catalogue rules.
+- chronology;
+- source and channel compatibility;
+- bounded unique check collections;
+- outcome/field consistency;
+- positive amounts;
+- principal and leg reference consistency;
+- immutable preservation of original reversal identities.
 
-Protected account references are ordinary final classes, not records, so their
-default representation cannot expose protected tokens.
+Freshness thresholds, mandatory-check profiles, binding against a particular
+Payment, evidence replacement authority and lifecycle eligibility remain
+Policies or Aggregate Root concerns.
 
-## Deliberately deferred
+## Prohibited behavior
 
-Lot 3.2 does not implement:
+Evidence types do not:
 
-- `Payment` or `PaymentState`;
-- snapshot/evidence-support Value Objects;
-- posting/reversal instruction identities;
-- command and event metadata;
-- policies or Domain Services;
-- domain events;
-- application, API, persistence or adapters.
-
-These belong to subsequent explicitly activated increments.
+- call Security, Amplitude or Accounting;
+- verify cryptographic signatures;
+- load configuration;
+- read the system clock;
+- perform persistence;
+- mutate Payment;
+- publish events.
 
 ## Tests
 
 ```text
-PaymentIdentityValueObjectsTest
-ProtectedAccountValueObjectsTest
-TreasuryAllocationIntentTest
-PaymentFailureTest
-PaymentClassificationTest
+EvidenceMetadataTest
+AuthorizationEvidenceSnapshotTest
+BankingAndFundsSnapshotsTest
+TreasuryAndPostingSnapshotsTest
+EndOfDayAndReversalSnapshotsTest
 PaymentArchitectureTest
-```
-
-The tests cover formats, normalization, equality, defensive copying,
-confidentiality, failure matrices, the 17 statuses and architecture boundaries.
-
-## Build
-
-From `backend/`:
-
-```bash
-mvn --batch-mode --no-transfer-progress -pl payment -am test
 ```
 
 ## Next increment
 
 ```text
-Lot 3.3 — Snapshots and financial evidence support
+Lot 3.4 — Policies and pure Domain Services
 ```
 
-It requires explicit activation before implementation.
+The Aggregate Root and `PaymentState` remain deferred.

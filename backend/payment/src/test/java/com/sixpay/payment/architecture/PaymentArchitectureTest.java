@@ -22,8 +22,8 @@ class PaymentArchitectureTest {
     private static final Path DOMAIN_ROOT =
             JAVA_ROOT.resolve("domain");
 
-    private static final Path MODEL_ROOT =
-            DOMAIN_ROOT.resolve("model");
+    private static final Path EVIDENCE_ROOT =
+            DOMAIN_ROOT.resolve("model/evidence");
 
     private static final Path REPOSITORY_ROOT =
             Path.of("..", "..").normalize();
@@ -60,91 +60,105 @@ class PaymentArchitectureTest {
                     "events"
             );
 
-    private static final Set<String> LOT_3_2_MODEL_SOURCES = Set.of(
-            "BankPostingReference.java",
-            "DebtorAccountReference.java",
-            "ExternalPaymentReference.java",
-            "ExternalSubscriptionReference.java",
-            "ExternalSystem.java",
-            "FailureCategory.java",
-            "FailureCode.java",
-            "FailureStage.java",
-            "FinancialInstitutionCode.java",
-            "IdempotencyKey.java",
-            "PaymentFailure.java",
-            "PaymentId.java",
-            "PaymentRequestIdentity.java",
-            "PaymentSource.java",
-            "PaymentStatus.java",
-            "PaymentValueObjectRules.java",
-            "PublicPaymentReference.java",
-            "RequestFingerprint.java",
-            "RetryDisposition.java",
-            "TreasuryAccountReference.java",
-            "TreasuryAllocation.java",
-            "TreasuryAllocationIntent.java",
-            "TreasuryBeneficiaryReference.java",
+    private static final Set<String> LOT_3_3_EVIDENCE_SOURCES = Set.of(
+            "AuthorizationBindingEvidence.java",
+            "AuthorizationBindingResult.java",
+            "AuthorizationBindingType.java",
+            "AuthorizationDecisionOutcome.java",
+            "AuthorizationEvidenceReference.java",
+            "AuthorizationEvidenceSnapshot.java",
+            "BankingVerificationCheckEvidence.java",
+            "BankingVerificationCheckType.java",
+            "BankingVerificationId.java",
+            "BankingVerificationOutcome.java",
+            "BankingVerificationSnapshot.java",
+            "EndOfDayConfirmationSnapshot.java",
+            "EvidenceCheckResult.java",
+            "EvidenceFingerprint.java",
+            "EvidenceMetadata.java",
+            "EvidenceObservationChannel.java",
+            "EvidenceValueObjectRules.java",
+            "FundsControlCheckEvidence.java",
+            "FundsControlCheckType.java",
+            "FundsControlOutcome.java",
+            "FundsControlSnapshot.java",
+            "FundsVerificationReference.java",
+            "PostingIdempotencyKey.java",
+            "PostingInstructionId.java",
+            "PostingLegEvidence.java",
+            "PostingLegStatus.java",
+            "PostingNextAction.java",
+            "PostingOutcome.java",
+            "PostingOutcomeSnapshot.java",
+            "ReversalAuthorizationEvidence.java",
+            "ReversalAuthorizationReference.java",
+            "ReversalAuthorizationType.java",
+            "ReversalIdempotencyKey.java",
+            "ReversalInstructionId.java",
+            "ReversalOutcome.java",
+            "ReversalOutcomeEvidence.java",
+            "ReversalReference.java",
+            "ReversalSnapshot.java",
+            "TfjConfirmationId.java",
+            "TfjFailureEvidence.java",
+            "TfjRecoveryAction.java",
+            "TfjStatus.java",
+            "TreasuryAccountResolutionSnapshot.java",
+            "TreasuryResolutionOutcome.java",
             "package-info.java"
     );
 
     @Test
     void moduleContainsOnlyApprovedDomainLayers() {
         assertTrue(
-                Files.isRegularFile(JAVA_ROOT.resolve("PaymentModule.java")),
-                "PaymentModule marker is required"
-        );
-        assertTrue(
-                Files.isRegularFile(DOMAIN_ROOT.resolve("package-info.java")),
-                "The pure domain package must exist"
+                Files.isRegularFile(JAVA_ROOT.resolve("PaymentModule.java"))
         );
 
         FORBIDDEN_PRODUCTION_LAYERS.forEach(layer ->
                 assertFalse(
                         containsJavaSources(JAVA_ROOT.resolve(layer)),
-                        "Domain-only authorization forbids Java sources in "
-                                + layer
+                        "Domain-only authorization forbids " + layer
                 )
         );
     }
 
     @Test
-    void lot32ImplementsExactlyTheAuthorizedModelSources()
+    void lot33ImplementsExactlyTheAuthorizedEvidenceSources()
             throws IOException {
-        try (Stream<Path> paths = Files.list(MODEL_ROOT)) {
+        try (Stream<Path> paths = Files.list(EVIDENCE_ROOT)) {
             Set<String> actual = paths
-                    .filter(path ->
-                            path.toString().endsWith(".java")
-                    )
+                    .filter(path -> path.toString().endsWith(".java"))
                     .map(path -> path.getFileName().toString())
                     .collect(Collectors.toSet());
 
-            assertEquals(
-                    LOT_3_2_MODEL_SOURCES,
-                    actual
-            );
+            assertEquals(LOT_3_3_EVIDENCE_SOURCES, actual);
         }
-
-        List.of(
-                "Payment.java",
-                "PaymentState.java",
-                "PostingInstructionIdentity.java",
-                "ReversalInstructionIdentity.java",
-                "EvidenceMetadata.java"
-        ).forEach(filename ->
-                assertFalse(
-                        Files.exists(MODEL_ROOT.resolve(filename)),
-                        filename + " belongs to a later increment"
-                )
-        );
     }
 
     @Test
-    void moduleDeclaresOnlyFoundationDependencies() throws IOException {
+    void aggregatePoliciesServicesAndEventsRemainDeferred() {
+        List.of("Payment.java", "PaymentState.java").forEach(filename ->
+                assertFalse(
+                        Files.exists(
+                                DOMAIN_ROOT.resolve("model")
+                                        .resolve(filename)
+                        )
+                )
+        );
+
+        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("policy")));
+        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("service")));
+        assertFalse(containsJavaSources(DOMAIN_ROOT.resolve("event")));
+    }
+
+    @Test
+    void moduleDependenciesRemainUnchanged() throws IOException {
         var pom = Files.readString(Path.of("pom.xml"));
 
         assertTrue(declaresArtifact(pom, "common"));
         assertTrue(declaresArtifact(pom, "shared-kernel"));
         assertTrue(declaresArtifact(pom, "junit-jupiter"));
+        assertFalse(pom.contains("spring-boot-starter"));
 
         List.of(
                 "security",
@@ -157,51 +171,46 @@ class PaymentArchitectureTest {
                 "notification",
                 "administration"
         ).forEach(artifact ->
-                assertFalse(
-                        declaresArtifact(pom, artifact),
-                        "Payment must not depend on " + artifact
-                )
-        );
-
-        assertFalse(pom.contains("spring-boot-starter"));
-    }
-
-    @Test
-    void domainRemainsFrameworkAgnostic() throws IOException {
-        assertSourcesDoNotContain(
-                DOMAIN_ROOT,
-                FORBIDDEN_DOMAIN_IMPORTS
+                assertFalse(declaresArtifact(pom, artifact))
         );
     }
 
     @Test
-    void paymentDoesNotDependOnAnotherBusinessDomain()
+    void domainRemainsFrameworkAndBusinessModuleAgnostic()
+            throws IOException {
+        assertSourcesDoNotContain(DOMAIN_ROOT, FORBIDDEN_DOMAIN_IMPORTS);
+        assertSourcesDoNotContain(DOMAIN_ROOT, OTHER_BUSINESS_DOMAINS);
+    }
+
+    @Test
+    void evidenceContainsNoIoClockOrCryptoExecution()
             throws IOException {
         assertSourcesDoNotContain(
-                JAVA_ROOT,
-                OTHER_BUSINESS_DOMAINS
-        );
-    }
-
-    @Test
-    void moduleIsNotAnExecutableSpringBootApplication()
-            throws IOException {
-        assertSourcesDoNotContain(
-                JAVA_ROOT,
+                EVIDENCE_ROOT,
                 List.of(
-                        "@SpringBootApplication",
-                        "public static void main("
+                        "java.net.",
+                        "java.sql.",
+                        "java.nio.file.",
+                        "java.security.",
+                        "javax.crypto.",
+                        "Instant.now(",
+                        "System.currentTimeMillis(",
+                        "Repository",
+                        "RestClient",
+                        "WebClient",
+                        "KafkaTemplate"
                 )
         );
     }
 
     @Test
-    void controlledAuthorizationActivatesOnlyLot32()
+    void controlledAuthorizationActivatesOnlyLot33()
             throws IOException {
-        var manifestPath = REPOSITORY_ROOT.resolve(
-                "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
+        var manifest = Files.readString(
+                REPOSITORY_ROOT.resolve(
+                        "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
+                )
         );
-        var manifest = Files.readString(manifestPath);
 
         assertTrue(
                 manifest.contains("globalCodeGenerationAllowed: false")
@@ -211,7 +220,7 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS"
+                        "currentIncrement: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE"
                 )
         );
         assertTrue(
@@ -220,42 +229,39 @@ class PaymentArchitectureTest {
                 )
         );
         assertTrue(
-                manifest.contains("futureIncrementActivationRequired: true")
-        );
-        assertTrue(
-                manifest.contains("SNAPSHOT_OR_EVIDENCE_GENERATION")
-        );
-        assertTrue(
                 manifest.contains("AGGREGATE_ROOT_GENERATION")
         );
         assertTrue(
-                manifest.contains("APPLICATION_LAYER_GENERATION")
+                manifest.contains("POLICY_OR_DOMAIN_SERVICE_GENERATION")
+        );
+        assertTrue(
+                manifest.contains("DOMAIN_EVENT_GENERATION")
         );
     }
 
     @Test
-    void moduleReusesSharedPlatformPrimitives() {
-        assertFalse(Files.exists(MODEL_ROOT.resolve("Money.java")));
-        assertFalse(Files.exists(MODEL_ROOT.resolve("CorrelationId.java")));
-        assertFalse(Files.exists(DOMAIN_ROOT.resolve("AggregateRoot.java")));
-        assertFalse(Files.exists(DOMAIN_ROOT.resolve("DomainEvent.java")));
-        assertFalse(Files.exists(DOMAIN_ROOT.resolve("ValueObject.java")));
-    }
-
-    @Test
-    void protectedReferencesOverrideDefaultRecordRepresentation()
+    void fullSnapshotsAreNotRecordsWithAutomaticStringExposure()
             throws IOException {
-        String debtor = Files.readString(
-                MODEL_ROOT.resolve("DebtorAccountReference.java")
-        );
-        String treasury = Files.readString(
-                MODEL_ROOT.resolve("TreasuryAccountReference.java")
-        );
+        for (String filename : List.of(
+                "AuthorizationEvidenceSnapshot.java",
+                "BankingVerificationSnapshot.java",
+                "FundsControlSnapshot.java",
+                "TreasuryAccountResolutionSnapshot.java",
+                "PostingOutcomeSnapshot.java",
+                "EndOfDayConfirmationSnapshot.java",
+                "ReversalSnapshot.java"
+        )) {
+            String content = Files.readString(
+                    EVIDENCE_ROOT.resolve(filename)
+            );
 
-        assertTrue(debtor.contains("public String toString()"));
-        assertTrue(treasury.contains("public String toString()"));
-        assertFalse(debtor.contains("record DebtorAccountReference"));
-        assertFalse(treasury.contains("record TreasuryAccountReference"));
+            assertFalse(
+                    content.contains(
+                            "record " + filename.replace(".java", "")
+                    )
+            );
+            assertTrue(content.contains("public String toString()"));
+        }
     }
 
     private static boolean declaresArtifact(

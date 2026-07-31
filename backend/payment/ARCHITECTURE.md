@@ -1,94 +1,64 @@
-# Architecture Decision Record — Payment Value Objects
+# Architecture Decision Record — Payment Evidence Snapshots
 
 ## Decision
 
-Lot 3.2 implements the immutable identity and base Value Object layer of the
-validated IA-1 Payment domain.
+Lot 3.3 implements the seven immutable, minimized evidence categories accepted
+by the future Payment Aggregate Root.
 
-The Aggregate Root, snapshots, instruction identities, policies and events
-remain outside this increment.
-
-## Package decision
-
-All base types reside under:
+## Package
 
 ```text
-com.sixpay.payment.domain.model
+com.sixpay.payment.domain.model.evidence
 ```
 
-This keeps the domain API cohesive while avoiding premature technical
-subpackage boundaries.
+All support identifiers, classifications and evidence structures needed by
+these snapshots are colocated in this package.
 
 ## Structural versus contextual validation
 
-Value Objects enforce:
+Implemented in constructors:
 
-- non-nullity;
-- lexical format;
-- normalization;
-- bounded collection size;
-- positive allocation amounts;
-- same-currency allocation composition;
-- exact allocation total;
-- failure category/disposition compatibility;
-- protected-reference representation.
+- valid IDs and fingerprints;
+- source/channel compatibility;
+- time chronology;
+- immutable bounded collections;
+- outcome consistency;
+- posting leg/reference consistency;
+- TFJ final-status shape;
+- reversal authorization before submission;
+- immutable reversal identity preservation.
 
-They do not validate:
+Deferred to Policies/Aggregate Root:
 
-- registry existence;
-- bank activation;
-- external uniqueness;
-- authoritative evidence freshness;
-- lifecycle transition eligibility;
-- external-system outcomes.
+- approved issuer/algorithm/scope profiles;
+- mandatory banking/funds check sets;
+- exact Payment amount/account/bank binding;
+- freshness windows;
+- same-evidence replay and replacement ranking;
+- unique TFJ match proof;
+- lifecycle eligibility and state transition;
+- event generation.
 
-Those remain aggregate invariants or policies.
+## Confidentiality
 
-## Platform reuse
+Full snapshots are explicit final classes with safe `toString()` methods.
+Protected tokens, account fingerprints and full check details are not emitted
+by default string representations.
 
-Payment reuses:
+## Instruction identities
 
-- `CorrelationId` from `common`;
-- `Money` and `ValueObject` from `shared-kernel`.
+`PostingInstructionId`, `PostingIdempotencyKey`,
+`ReversalInstructionId` and `ReversalIdempotencyKey` are implemented because
+posting and reversal evidence cannot be structurally identified without them.
 
-`PaymentRequestIdentity` adds the Payment-specific requirement that the reused
-CorrelationId contain a canonical non-nil UUID.
-
-No platform type is modified.
-
-## Protected references
-
-`DebtorAccountReference` and `TreasuryAccountReference` are final classes with
-explicit equality and `toString()`.
-
-- protected tokens never appear in `toString()`;
-- masked display is excluded from identity equality;
-- Treasury identity is bank + configuration ID + version;
-- clear account values are never represented.
-
-## Treasury allocation
-
-`TreasuryAllocationIntent`:
-
-- accepts 1 to 20 allocations;
-- rejects duplicate beneficiaries;
-- enforces positive same-currency amounts;
-- verifies the exact total;
-- stores a defensive immutable copy;
-- stores allocations in canonical beneficiary-reference order.
-
-## Failure classification
-
-`PaymentFailure` enforces the validated category/disposition matrix and keeps
-one bounded safe message.
+Full `PostingInstructionIdentity` and `ReversalInstructionIdentity` composites
+remain deferred.
 
 ## Controlled authorization
 
 ```text
 scope: PAYMENT_DOMAIN_ONLY
-currentIncrement: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
+currentIncrement: LOT_3_3_SNAPSHOTS_FINANCIAL_EVIDENCE
 currentIncrementCodeGenerationAllowed: true
 globalCodeGenerationAllowed: false
 ```
-
-Every later increment still requires explicit activation.

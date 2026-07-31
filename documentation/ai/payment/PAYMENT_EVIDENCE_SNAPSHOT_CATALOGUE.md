@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Snapshots and Business Evidence Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.3 — Snapshots and financial evidence`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `SNAPSHOTS_IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current increment implementation:** **AUTHORIZED_AND_COMPLETED**
 
 ## 1. Purpose
 
@@ -991,18 +992,60 @@ Detailed cross-state invariants are finalized in Lot 2.4.
 - freshness, resolver and matching policies: Lot 2.7;
 - final consistency validation: Lot 2.8.
 
+
+## Lot 3.3 implementation mapping
+
+The seven snapshots are implemented under:
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/model/evidence/
+```
+
+```text
+AuthorizationEvidenceSnapshot
+BankingVerificationSnapshot
+FundsControlSnapshot
+TreasuryAccountResolutionSnapshot
+PostingOutcomeSnapshot
+EndOfDayConfirmationSnapshot
+ReversalSnapshot
+```
+
+Implementation boundary:
+
+- constructors enforce structural validity;
+- Policies retain ownership of freshness, mandatory checks and contextual
+  binding;
+- Domain Services retain ownership of posting, TFJ and reversal
+  interpretation;
+- the Aggregate Root will retain ownership of acceptance, replacement, state
+  mutation and event registration.
+
+Full snapshots are explicit final classes with safe summary representations.
+They do not expose protected account tokens, account-binding fingerprints or
+raw external values through their default `toString()`.
+
+Automated evidence is listed in:
+
+```text
+backend/payment/ACCEPTANCE-TRACEABILITY.md
+```
+
+**Implementation decisions:** `PAY-DEC-IA1-081` through
+`PAY-DEC-IA1-085`.
+
 ## 18. Exit checklist
 
-- [ ] Every decision-relevant external stage has a defined snapshot.
-- [ ] Every snapshot has exact fields, source and timing rules.
-- [ ] Raw credentials, KYC values and account data are excluded.
-- [ ] Favorable, negative and indeterminate outcomes are distinguishable.
-- [ ] Posting partial and unknown outcomes are representable.
-- [ ] TFJ unique matching and finality rules are explicit.
-- [ ] Reversal authorization and outcome are distinct but linked.
-- [ ] Replay, conflict and replacement behavior is explicit.
-- [ ] Aggregate history remains bounded.
-- [ ] Code generation remains forbidden.
+- [x] Every decision-relevant external stage has an implemented snapshot.
+- [x] Every snapshot implements exact fields, source and structural timing rules.
+- [x] Raw credentials, KYC values and clear account data are excluded.
+- [x] Favorable, negative and indeterminate outcomes are distinguishable.
+- [x] Posting partial and unknown outcomes are representable.
+- [x] TFJ final evidence structure is implemented; unique matching remains service-owned.
+- [x] Reversal authorization and outcome are distinct but linked.
+- [x] Replay, conflict and replacement rules remain explicit and policy-owned.
+- [x] Snapshot types are bounded; aggregate storage is deferred.
+- [x] Global generation remains forbidden; Lot 3.3 was explicitly authorized.
 
 ## 19. Verdict
 
