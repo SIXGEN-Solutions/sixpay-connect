@@ -1,144 +1,159 @@
-schemaVersion: 1.3.0
+schemaVersion: 1.4.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_1_PAYMENT_AGGREGATE_ROOT
+  lot: 2_2_IDENTIFIERS_AND_VALUE_OBJECTS
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_1_DRAFT_PENDING_VALIDATION
+  status: LOT_2_2_DRAFT_PENDING_VALIDATION
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_2_IDENTIFIERS_AND_VALUE_OBJECTS
+nextLot: LOT_2_3_SNAPSHOTS_AND_BUSINESS_EVIDENCE
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Primary IA-1 brief
+- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+  role: Aggregate Root specification
+- path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+  role: Normative identifiers and Value Objects
+- path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
+  role: Consolidated model index
 - path: documentation/ai/payment/PAYMENT_IA1_BASELINE.md
-  role: Lot 0 authority
+  role: Gate baseline
 - path: documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md
   role: Source catalogue
 - path: documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md
-  role: Normative glossary
+  role: Glossary
 - path: documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md
   role: Ownership boundaries
-- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
-  role: Normative Lot 2.1 Aggregate Root specification
-- path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
-  role: Consolidated IA-1 model index
-- path: documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md
-  role: Posting reference decision
-aggregateRoot:
-  name: Payment
-  soleWriteAggregateRoot: true
-  identityType: PaymentId
-  baseType: AggregateRoot<PaymentId>
-  represents: ONE_LOGICAL_TRESOR_PAY_PAYMENT_INTENTION
-  creationOperation: receive
-  reconstitutionOperation: reconstitute
-  reconstitutionRaisesEvents: false
-  genericStatusSetterAllowed: false
-  networkCallsAllowed: false
-  rawExternalPayloadsAllowed: false
-  unboundedHistoryAllowed: false
-  currentRelevantFailureStored: true
-  failureHistoryOwner: AUDIT_AND_REPORTING
-  notificationDeliveryOwned: false
-  notificationIntentRaisedAsDomainFact: true
-  reversalCreatesNewPayment: false
-  originalPostingReferencePreservedAfterReversal: true
-aggregateConceptualState:
-  requiredAtCreation:
-  - PAYMENT_ID
-  - PAYMENT_SOURCE
-  - EXTERNAL_PAYMENT_REFERENCE
-  - EXTERNAL_SUBSCRIPTION_REFERENCE
-  - PUBLIC_PAYMENT_REFERENCE
-  - PAYMENT_REQUEST_IDENTITY
-  - FINANCIAL_INSTITUTION_CODE
-  - DEBTOR_ACCOUNT_REFERENCE
-  - MONEY
-  - TREASURY_ALLOCATION_INTENT
-  - PAYMENT_STATUS
-  - CREATED_AT
-  - UPDATED_AT
-  - BUSINESS_VERSION
-  optionalLifecycleEvidence:
-  - AUTHORIZATION_EVIDENCE_SNAPSHOT
-  - BANKING_VERIFICATION_SNAPSHOT
-  - FUNDS_CONTROL_SNAPSHOT
-  - TREASURY_ACCOUNT_REFERENCE
-  - POSTING_OUTCOME_SNAPSHOT
-  - BANK_POSTING_REFERENCE
-  - END_OF_DAY_CONFIRMATION_SNAPSHOT
-  - REVERSAL_SNAPSHOT
-  - PAYMENT_FAILURE
-  - FINALIZED_AT
-  forbidden:
-  - RAW_TRESOR_PAY_PAYLOAD
-  - RAW_AMPLITUDE_PAYLOAD
-  - CREDENTIALS_OR_TOKENS
-  - UNBOUNDED_INTEGRATION_ATTEMPTS
-  - UNBOUNDED_NOTIFICATION_ATTEMPTS
-  - UNMATCHED_TFJ_RESULTS
-  - FULL_AUDIT_HISTORY
-  - READ_MODEL_FORMATTING_FIELDS
-businessUniqueness:
-  decisionId: PAY-DEC-IA1-002
-  scope:
-  - PAYMENT_SOURCE
-  - EXTERNAL_PAYMENT_REFERENCE
-  mvpSource: TRESOR_PAY
-  aggregateAloneGuaranteesGlobalUniqueness: false
-  requiresApplicationAndPersistenceEnforcement: true
-lot2_1Decisions:
-- id: PAY-DEC-IA1-002
-  subject: EXTERNAL_PAYMENT_UNIQUENESS
-  decision: SOURCE_SCOPED
-- id: PAY-DEC-IA1-003
-  subject: PAYMENT_FAILURE_OWNERSHIP
-  decision: CURRENT_FAILURE_IN_AGGREGATE_HISTORY_IN_AUDIT
-- id: PAY-DEC-IA1-004
-  subject: NOTIFICATION_OWNERSHIP
-  decision: DOMAIN_INTENT_NOT_FINANCIAL_STATE
-- id: PAY-DEC-IA1-005
-  subject: RECONSTITUTION
-  decision: DISTINCT_EVENT_FREE_RECONSTITUTION
-- id: PAY-DEC-IA1-006
-  subject: REVERSAL_AGGREGATE_IDENTITY
-  decision: SAME_PAYMENT_PRESERVE_POSTING_IDENTITY
-structuralInvariantIds:
-  from: PAY-AGG-001
-  through: PAY-AGG-014
-  source: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
-transactionBoundary:
-  aggregateCountPerUseCaseTransaction: 1
-  atomicWrites:
-  - PAYMENT_STATE
-  - IMMUTABLE_AUDIT
-  - OUTBOX_INTENT
-  networkCallsInsideTransaction: false
-domainDependencyRules:
-  allowed:
-  - JAVA_STANDARD_LIBRARY
-  - SHARED_KERNEL_AGGREGATE_ROOT
-  - APPROVED_SHARED_KERNEL_DOMAIN_CONCEPTS
-  - PAYMENT_LOCAL_DOMAIN_TYPES
-  forbidden:
-  - SPRING
-  - JAKARTA_PERSISTENCE
-  - HIBERNATE
-  - JACKSON
-  - KAFKA
-  - HTTP_CLIENTS
-  - OTHER_BUSINESS_DOMAIN_IMPLEMENTATIONS
-  - EXTERNAL_DTOS
-  - DATABASE_ENTITIES
+identifierValueObjects:
+  PaymentId:
+    format: UUID_V4_NON_NIL
+    generatedBy: APPLICATION_PORT
+    opaque: true
+  PaymentSource:
+    values:
+    - TRESOR_PAY
+    extensibleOnlyByDecision: true
+  ExternalPaymentReference:
+    sourceField: tresorPayPaymentReference/endToEndId
+    length:
+      min: 1
+      max: 128
+    caseSensitive: true
+    uniquenessScope:
+    - PAYMENT_SOURCE
+    - REFERENCE
+    immutable: true
+    recyclable: false
+  ExternalSubscriptionReference:
+    requiredForMvp: true
+    localAggregateReference: false
+    immutable: true
+  PublicPaymentReference:
+    format: PAY-<ULID_UPPERCASE>
+    generatedBy: APPLICATION_PORT
+  IdempotencyKey:
+    length:
+      min: 8
+      max: 128
+    caseSensitive: true
+  RequestFingerprint:
+    algorithm: SHA-256
+    encoding: LOWERCASE_HEX
+    length: 64
+  CorrelationId:
+    format: UUID_NON_NIL
+  PaymentRequestIdentity:
+    components:
+    - IdempotencyKey
+    - RequestFingerprint
+    - CorrelationId
+  FinancialInstitutionCode:
+    length:
+      min: 2
+      max: 32
+    normalization: UPPERCASE
+accountValueObjects:
+  DebtorAccountReference:
+    components:
+    - FinancialInstitutionCode
+    - IntegrationAccountToken
+    - MaskedDisplay
+    - BindingFingerprint
+    clearAccountStored: false
+    eventExposure: FINGERPRINT_OR_MASKED_ONLY_WHEN_JUSTIFIED
+  TreasuryAccountReference:
+    createdBy: PROTECTED_TREASURY_CONFIGURATION_RESOLVER
+    inboundValueMayOverride: false
+    bankCoherenceRequired: true
+treasuryAllocation:
+  collectionType: TreasuryAllocationIntent
+  minItems: 1
+  maxItems: 20
+  beneficiaryUnique: true
+  allAmountsPositive: true
+  sameCurrencyAsPayment: true
+  sumEqualsPaymentAmount: true
+money:
+  type: com.sixpay.sharedkernel.domain.valueobject.Money
+  duplicateAllowed: false
+  sourceModificationRequired: false
+  paymentRequiresPositive: true
+  bankCurrencyCompatibilityPolicyRequired: true
+bankPostingReference:
+  principalRequiredAfterConfirmedPosting: true
+  debitLegOptional: true
+  cutCreditLegOptional: true
+  preservedAfterReversal: true
+  commandIdentityDistinct: true
+paymentFailure:
+  storage: CURRENT_RELEVANT_ONLY
+  historyOwner: AUDIT_AND_REPORTING
+  fields:
+  - failureCode
+  - failureCategory
+  - failureStage
+  - retryDisposition
+  - safeMessage
+  - occurredAt
+  - externalSystem
+  categories:
+  - BUSINESS_REJECTION
+  - TECHNICAL_FAILURE
+  - UNCERTAIN_EXTERNAL_OUTCOME
+  - SECURITY_REJECTION
+  - INTEGRATION_CONFLICT
+  - TREASURY_RECONCILIATION_FAILURE
+lot2_2Decisions:
+- id: PAY-DEC-IA1-007
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-008
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-009
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-010
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-011
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-012
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-013
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-014
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-015
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- id: PAY-DEC-IA1-016
+  source: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
 traceability:
   requiredPrefixes:
   - PAY-BASE-
   - PAY-BOUND-
   - PAY-POSTREF-
   - PAY-AGG-
+  - PAY-VO-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -146,7 +161,8 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_1Modifications:
+authorizedLot2_2Modifications:
+- documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 - documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
 - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
@@ -154,16 +170,15 @@ authorizedLot2_1Modifications:
 generationRules:
   forbidden:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
+  - MONEY_JAVA_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
-  - OPENAPI_CONTRACT_GENERATION_OR_MODIFICATION
-  - INVENTION_OF_VALUE_OBJECT_FORMATS
-  - FINALIZATION_OF_COMMAND_SIGNATURES
-  - FINALIZATION_OF_DOMAIN_EVENT_PAYLOADS
-  - SILENT_CLOSURE_OF_OPEN_DECISIONS
+  - OPENAPI_MODIFICATION
+  - SNAPSHOT_FIELD_INVENTION
+  - FINAL_COMMAND_SIGNATURES
+  - FINAL_DOMAIN_EVENT_PAYLOADS
 readiness:
-  lot0BaselinePrepared: true
-  lot1LanguageAndBoundariesPrepared: true
   lot2_1AggregateRootPrepared: true
-  lot2_1HumanValidationRequired: true
-  lot2_2ReadyToStartAfterValidation: true
+  lot2_2ValueObjectsPrepared: true
+  lot2_2HumanValidationRequired: true
+  lot2_3ReadyAfterValidation: true
   codeGeneration: FORBIDDEN

@@ -1,123 +1,72 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.1 — Aggregate Root Payment`  
+> **Current sub-lot:** `2.2 — Identifiers and Value Objects`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `AGGREGATE_ROOT_MODEL_PREPARED`  
+> **Status:** `VALUE_OBJECT_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
-## 1. Purpose
-
-This document is the consolidated IA-1 domain-model index.
-
-The former IA-0P model was a candidate model. IA-1 now progressively replaces
-it through validated sub-lots.
-
-For Lot 2.1, the normative Aggregate Root specification is:
-
-`documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md`
-
-## 2. Normative model hierarchy
+## 1. Normative model hierarchy
 
 | Topic | Normative document |
 | --- | --- |
-| Sources and authority | `PAYMENT_SOURCE_BASELINE.md` |
-| Gate scope and decisions | `PAYMENT_IA1_BASELINE.md` |
-| Ubiquitous language | `PAYMENT_UBIQUITOUS_LANGUAGE.md` |
-| Domain ownership | `PAYMENT_DOMAIN_BOUNDARIES.md` |
+| Sources | `PAYMENT_SOURCE_BASELINE.md` |
+| Gate baseline | `PAYMENT_IA1_BASELINE.md` |
+| Language | `PAYMENT_UBIQUITOUS_LANGUAGE.md` |
+| Boundaries | `PAYMENT_DOMAIN_BOUNDARIES.md` |
 | Aggregate Root | `PAYMENT_AGGREGATE_ROOT.md` |
-| Bank posting reference | `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
-| Identifiers and Value Objects | Lot 2.2 — pending |
-| Snapshots and evidence | Lot 2.3 — pending |
-| Invariants | Lot 2.4 — pending |
-| Commands and operations | Lot 2.5 — pending |
-| Domain Events | Lot 2.6 — pending |
-| Policies and Domain Services | Lot 2.7 — pending |
-| Final model validation | Lot 2.8 — pending |
+| Identifiers and Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
+| Posting reference | `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
+| Snapshots/evidence | Lot 2.3 pending |
+| Invariants | Lot 2.4 pending |
+| Commands/operations | Lot 2.5 pending |
+| Domain Events | Lot 2.6 pending |
+| Policies/Domain Services | Lot 2.7 pending |
+| Final validation | Lot 2.8 pending |
 
-## 3. Aggregate model
-
-`Payment` is the sole write Aggregate Root.
+## 2. Current aggregate composition
 
 ```text
 Payment
-├── immutable identity and original intent
-│   ├── PaymentId
-│   ├── PaymentSource
-│   ├── ExternalPaymentReference
-│   ├── ExternalSubscriptionReference
-│   ├── PublicPaymentReference
-│   ├── PaymentRequestIdentity
-│   ├── FinancialInstitutionCode
-│   ├── DebtorAccountReference
-│   ├── Money
-│   └── Treasury allocation intent
-│
-├── current decision state
-│   ├── PaymentStatus
-│   ├── current relevant PaymentFailure?
-│   ├── AuthorizationEvidenceSnapshot?
-│   ├── BankingVerificationSnapshot?
-│   ├── FundsControlSnapshot?
-│   ├── TreasuryAccountReference?
-│   ├── PostingOutcomeSnapshot?
-│   ├── BankPostingReference?
-│   ├── EndOfDayConfirmationSnapshot?
-│   └── ReversalSnapshot?
-│
-└── consistency metadata
-    ├── createdAt
-    ├── updatedAt
-    ├── finalizedAt?
-    └── businessVersion
+├── PaymentId
+├── PaymentSource
+├── ExternalPaymentReference
+├── ExternalSubscriptionReference
+├── PublicPaymentReference
+├── PaymentRequestIdentity
+│   ├── IdempotencyKey
+│   ├── RequestFingerprint
+│   └── CorrelationId
+├── FinancialInstitutionCode
+├── DebtorAccountReference
+├── Money
+├── TreasuryAllocationIntent
+├── PaymentStatus
+├── TreasuryAccountReference?
+├── BankPostingReference?
+├── PaymentFailure?
+├── lifecycle snapshots?          [Lot 2.3]
+├── timestamps
+└── businessVersion
 ```
 
-The exact type details remain deferred to Lots 2.2 and 2.3.
+## 3. Key decisions
 
-## 4. Aggregate boundary
+- internal identity uses UUID v4;
+- public reference uses `PAY-` + ULID;
+- external reference is source-scoped and case-sensitive;
+- account clear values never enter Payment;
+- account token, masked display and binding fingerprint are distinct;
+- Treasury account comes only from protected bank configuration;
+- allocation amounts use shared `Money`, same currency and exact total;
+- posting command identity differs from bank posting identity;
+- PaymentFailure is structured and current-only.
 
-Payment owns lifecycle decisions and minimized evidence.
+## 4. Code-generation status
 
-It does not own Subscription, customer/account master data, bank configuration,
-external transports, notification delivery, generic Outbox infrastructure,
-unmatched TFJ workflow, reversal execution or read projections.
-
-## 5. Creation and reconstitution
-
-Creation is a named business operation and raises a Payment-received fact.
-
-Reconstitution restores persisted state and raises no event.
-
-No persistence adapter may rebuild the aggregate by replaying public transition
-methods.
-
-## 6. Current decisions
-
-- uniqueness is scoped by `PaymentSource + ExternalPaymentReference`;
-- MVP source is `TRESOR_PAY`;
-- aggregate retains only current relevant `PaymentFailure`;
-- complete failure history belongs to audit/reporting;
-- notification is a domain intent, not financial status;
-- reversal stays on the original Payment;
-- original posting identity remains after reversal;
-- aggregate methods are named and no generic status setter is allowed.
-
-## 7. State-machine relationship
-
-The existing `PAYMENT_STATE_MACHINE.yaml` remains an IA-1 input, not yet a
-final implementation contract.
-
-Lot 2.1 confirms responsibility for the state machine but does not close every
-state or transition. In particular, later work must reconcile:
-
-- `NOTIFIED` with notification-as-intent;
-- `DEBITED` with atomic debit + CUT credit;
-- `FAILED` with business, technical and uncertain outcomes.
-
-## 8. Generation status
+The model is still documentary. Snapshot, invariant, command and event details
+must be completed before generation.
 
 ```text
-AGGREGATE ROOT MODEL: PREPARED
-VALUE OBJECT CATALOGUE: PENDING LOT 2.2
 CODE GENERATION: FORBIDDEN
 ```
