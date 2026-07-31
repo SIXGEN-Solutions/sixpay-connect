@@ -1,14 +1,14 @@
-schemaVersion: 2.1.0
+schemaVersion: 2.2.0
 document:
   id: SIXPAY-PAYMENT-STATE-MACHINE
   title: SIXPAY CONNECT — IA-1 Payment State Machine
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_6_DOMAIN_EVENTS
+  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
   branch: feat/payment-domain-generation-brief
-  status: DOMAIN_EVENTS_BOUND
+  status: POLICY_AND_SERVICE_BINDINGS_ADDED
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  nextLot: 2_8_FINAL_MODEL_VALIDATION
   replacesSemanticsOf: IA-0P_PAYMENT_STATE_MACHINE_V1
 references:
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
@@ -27,6 +27,10 @@ references:
   role: Machine-readable IA-1 Payment domain events
 - path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
   role: Human-readable IA-1 Payment domain events
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+  role: Machine-readable policies and Domain Services
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  role: Human-readable policies and Domain Services
 semantics:
   aggregate: Payment
   initialState: RECEIVED
@@ -61,6 +65,8 @@ creation:
   - PAYMENT_RECEIVED
   domainEventRefs:
   - PAY-EVT-001
+  policyRefs: []
+  domainServiceRefs: []
 states:
   RECEIVED:
     description: Authenticated canonical Payment intention is durably persisted.
@@ -146,6 +152,8 @@ transitions:
   replay: IDENTICAL_COMMAND_NO_OP
   domainEventRefs:
   - PAY-EVT-002
+  policyRefs: []
+  domainServiceRefs: []
 - id: PAY-TR-002
   commandId: PAY-CMD-003
   operationId: PAY-OP-003
@@ -163,6 +171,12 @@ transitions:
   domainEventRefs:
   - PAY-EVT-003
   - PAY-EVT-004
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
 - id: PAY-TR-003
   commandId: PAY-CMD-003
   operationId: PAY-OP-003
@@ -182,6 +196,14 @@ transitions:
   - PAY-EVT-003
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-004
   commandId: PAY-CMD-004
   operationId: PAY-OP-004
@@ -200,6 +222,12 @@ transitions:
   domainEventRefs:
   - PAY-EVT-007
   - PAY-EVT-008
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
 - id: PAY-TR-005
   commandId: PAY-CMD-004
   operationId: PAY-OP-004
@@ -219,6 +247,14 @@ transitions:
   - PAY-EVT-007
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-006
   commandId: PAY-CMD-004
   operationId: PAY-OP-004
@@ -238,6 +274,14 @@ transitions:
   - PAY-EVT-007
   - PAY-EVT-009
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-007
   commandId: PAY-CMD-005
   operationId: PAY-OP-005
@@ -255,6 +299,12 @@ transitions:
   domainEventRefs:
   - PAY-EVT-010
   - PAY-EVT-011
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
 - id: PAY-TR-008
   commandId: PAY-CMD-005
   operationId: PAY-OP-005
@@ -274,6 +324,14 @@ transitions:
   - PAY-EVT-010
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-009
   commandId: PAY-CMD-007
   operationId: PAY-OP-007
@@ -293,6 +351,11 @@ transitions:
   domainEventRefs:
   - PAY-EVT-014
   - PAY-EVT-015
+  policyRefs:
+  - PAY-POL-004
+  - PAY-POL-005
+  - PAY-POL-007
+  domainServiceRefs: []
 - id: PAY-TR-010
   commandId: PAY-CMD-005
   operationId: PAY-OP-005
@@ -312,6 +375,14 @@ transitions:
   - PAY-EVT-010
   - PAY-EVT-009
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-011
   commandId: PAY-CMD-006
   operationId: PAY-OP-006
@@ -330,6 +401,12 @@ transitions:
   domainEventRefs:
   - PAY-EVT-012
   - PAY-EVT-013
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
 - id: PAY-TR-012
   commandId: PAY-CMD-006
   operationId: PAY-OP-006
@@ -349,6 +426,14 @@ transitions:
   - PAY-EVT-012
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-013
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -370,6 +455,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-006
   - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-014
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -389,6 +482,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-018
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-015
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -408,6 +509,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-019
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-016
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -427,6 +536,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-017
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -446,6 +563,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-032
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-018
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -465,6 +590,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-020
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-019
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -485,6 +618,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-006
   - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-020
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -504,6 +645,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-019
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-021
   commandId: PAY-CMD-008
   operationId: PAY-OP-008
@@ -523,6 +672,14 @@ transitions:
   - PAY-EVT-016
   - PAY-EVT-020
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-022
   commandId: PAY-CMD-009
   operationId: PAY-OP-009
@@ -543,6 +700,14 @@ transitions:
   - PAY-EVT-021
   - PAY-EVT-006
   - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-023
   commandId: PAY-CMD-009
   operationId: PAY-OP-009
@@ -562,6 +727,14 @@ transitions:
   - PAY-EVT-021
   - PAY-EVT-018
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-024
   commandId: PAY-CMD-009
   operationId: PAY-OP-009
@@ -581,6 +754,14 @@ transitions:
   - PAY-EVT-021
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-025
   commandId: PAY-CMD-009
   operationId: PAY-OP-009
@@ -600,6 +781,14 @@ transitions:
   - PAY-EVT-021
   - PAY-EVT-032
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-026
   commandId: PAY-CMD-009
   operationId: PAY-OP-009
@@ -619,6 +808,14 @@ transitions:
   - PAY-EVT-021
   - PAY-EVT-020
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-TR-027
   commandId: PAY-CMD-010
   operationId: PAY-OP-010
@@ -639,6 +836,15 @@ transitions:
   - PAY-EVT-022
   - PAY-EVT-023
   - PAY-EVT-024
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-002
+  - PAY-DS-004
 - id: PAY-TR-028
   commandId: PAY-CMD-010
   operationId: PAY-OP-010
@@ -659,6 +865,15 @@ transitions:
   - PAY-EVT-022
   - PAY-EVT-020
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-002
+  - PAY-DS-004
 - id: PAY-TR-029
   commandId: PAY-CMD-010
   operationId: PAY-OP-010
@@ -676,6 +891,13 @@ transitions:
   domainEventRefs:
   - PAY-EVT-022
   - PAY-EVT-025
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  domainServiceRefs:
+  - PAY-DS-002
 - id: PAY-TR-030
   commandId: PAY-CMD-011
   operationId: PAY-OP-011
@@ -693,6 +915,10 @@ transitions:
   domainEventRefs:
   - PAY-EVT-026
   - PAY-EVT-027
+  policyRefs:
+  - PAY-POL-010
+  domainServiceRefs:
+  - PAY-DS-003
 - id: PAY-TR-031
   commandId: PAY-CMD-012
   operationId: PAY-OP-012
@@ -712,6 +938,14 @@ transitions:
   - PAY-EVT-028
   - PAY-EVT-033
   - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-TR-032
   commandId: PAY-CMD-012
   operationId: PAY-OP-012
@@ -729,6 +963,12 @@ transitions:
   domainEventRefs:
   - PAY-EVT-028
   - PAY-EVT-030
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  domainServiceRefs:
+  - PAY-DS-003
 - id: PAY-TR-033
   commandId: PAY-CMD-012
   operationId: PAY-OP-012
@@ -748,6 +988,14 @@ transitions:
   - PAY-EVT-028
   - PAY-EVT-020
   - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-TR-034
   commandId: PAY-CMD-013
   operationId: PAY-OP-013
@@ -767,6 +1015,14 @@ transitions:
   - PAY-EVT-031
   - PAY-EVT-033
   - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-TR-035
   commandId: PAY-CMD-013
   operationId: PAY-OP-013
@@ -786,6 +1042,14 @@ transitions:
   - PAY-EVT-031
   - PAY-EVT-020
   - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-TR-036
   commandId: PAY-CMD-014
   operationId: PAY-OP-014
@@ -803,6 +1067,11 @@ transitions:
   domainEventRefs:
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-037
   commandId: PAY-CMD-015
   operationId: PAY-OP-015
@@ -824,6 +1093,11 @@ transitions:
   domainEventRefs:
   - PAY-EVT-009
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-TR-038
   commandId: PAY-CMD-016
   operationId: PAY-OP-016
@@ -846,6 +1120,11 @@ transitions:
   domainEventRefs:
   - PAY-EVT-032
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 replayDefaults:
   sameCommandIdSameFingerprint: RETURN_RECORDED_COMMAND_RESULT
   sameCommandIdDifferentFingerprint: COMMAND_CONFLICT_NO_PAYMENT_MUTATION
@@ -912,6 +1191,8 @@ counts:
   terminalStateCount: 4
   transitionCount: 38
   eventTypeCount: 33
+  policyCount: 14
+  domainServiceCount: 4
 eventBinding:
   factKindToEventType: ONE_TO_ONE
   eventIdRange:
@@ -920,3 +1201,8 @@ eventBinding:
   multipleEventsPerTransition:
     aggregateVersion: SAME_RESULTING_VERSION
     eventSequence: DOMAIN_FACT_ORDER_ONE_BASED
+policyServiceBinding:
+  aggregateOwnsTransition: true
+  servicesReturnDecisionsOnly: true
+  profileLoadingOwner: APPLICATION
+  decisionAtSource: APPLICATION_CLOCK

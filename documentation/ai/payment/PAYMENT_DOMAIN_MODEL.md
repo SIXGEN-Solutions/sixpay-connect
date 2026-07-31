@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.6 — Domain Events`  
+> **Current sub-lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DOMAIN_EVENT_MODEL_PREPARED`  
+> **Status:** `POLICY_AND_DOMAIN_SERVICE_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Normative hierarchy
@@ -11,8 +11,7 @@
 | Topic | Normative document |
 | --- | --- |
 | Sources | `PAYMENT_SOURCE_BASELINE.md` |
-| Gate baseline | `PAYMENT_IA1_BASELINE.md` |
-| Language | `PAYMENT_UBIQUITOUS_LANGUAGE.md` |
+| Baseline and language | Existing IA-1 baseline/language documents |
 | Boundaries | `PAYMENT_DOMAIN_BOUNDARIES.md` |
 | Aggregate Root | `PAYMENT_AGGREGATE_ROOT.md` |
 | Value Objects | `PAYMENT_VALUE_OBJECT_CATALOGUE.md` |
@@ -20,73 +19,57 @@
 | Invariants | `PAYMENT_INVARIANT_CATALOGUE.md` and `.yaml` |
 | Commands/operations | `PAYMENT_COMMAND_CATALOGUE.md` and `.yaml` |
 | State machine | `PAYMENT_STATE_MACHINE.yaml` |
-| Domain Events — human | `PAYMENT_DOMAIN_EVENT_CATALOGUE.md` |
-| Domain Events — machine | `PAYMENT_EVENT_CATALOG.yaml` |
-| Policies/Domain Services | Lot 2.7 pending |
+| Events | `PAYMENT_DOMAIN_EVENT_CATALOGUE.md` and `PAYMENT_EVENT_CATALOG.yaml` |
+| Policies/services | `PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md` and `.yaml` |
 | Final validation | Lot 2.8 pending |
 
 ## 2. Current model counts
 
 ```text
-1 Payment Aggregate Root
-17 Payment statuses
+1 Aggregate Root
+17 statuses
 4 terminal statuses
-16 application commands
+16 commands
 17 aggregate operations
-38 legal transitions
-76 complete invariants
-33 Payment domain events
+38 transitions
+76 invariants
+33 domain events
+14 policies
+4 pure Domain Services
+12 versioned policy profiles
 ```
 
-## 3. Event architecture
+## 3. Decision architecture
 
 ```text
-Payment operation
-    ↓
-PaymentDomainEvent record(s)
-    ↓ releaseDomainEvents()
-explicit safe Outbox mapping
-    ↓
-IntegrationEventEnvelope
-    ↓
-durable consumer deduplication by eventId
+Canonical input + Payment state + explicit time + approved profile
+        ↓
+pure policy / pure Domain Service
+        ↓ immutable typed decision
+Payment Aggregate Root
+        ↓
+state mutation + ordered events
 ```
 
-All events from one mutation share `aggregateVersion` and are ordered by
-`eventSequence`.
+## 4. Domain Service boundary
 
-## 4. Event roles
+A Domain Service:
 
-The catalogue distinguishes:
+- has no state;
+- performs no I/O;
+- has no framework dependency;
+- returns a decision;
+- never owns a transaction;
+- never mutates Payment;
+- never publishes an event.
 
-- lifecycle and terminal facts;
-- accepted evidence facts;
-- financial facts;
-- external process requests;
-- notification result intents.
+Persistent matching, configuration loading and external execution are ports or
+processes, not Domain Services.
 
-Only result-intent events trigger Notification.
-
-## 5. State-machine corrections bound in Lot 2.6
-
-Without adding states or transitions, the final machine now guarantees:
-
-- indeterminate/recoverable and debit-only paths publish `PROCESSING` result
-  intent;
-- reversal rejected/not allowed publishes a conclusive reversal result;
-- successful reversal publishes explicit `PaymentReversed`.
-
-## 6. Generation status
+## 5. Generation status
 
 ```text
-AGGREGATE ROOT: PREPARED
-VALUE OBJECTS: PREPARED
-SNAPSHOTS: PREPARED
-INVARIANTS: PREPARED
-COMMANDS: PREPARED
-OPERATIONS: PREPARED
-STATE MACHINE: PREPARED
-DOMAIN EVENTS: PREPARED
-POLICIES AND DOMAIN SERVICES: PENDING LOT 2.7
+MODEL DEFINITION: COMPLETE THROUGH LOT 2.7
+FINAL VALIDATION: PENDING LOT 2.8
 CODE GENERATION: FORBIDDEN
 ```

@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Snapshots and Business Evidence Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `EVENT_SAFE_PROJECTIONS_BOUND`  
+> **Status:** `POLICY_BINDINGS_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1009,6 +1009,23 @@ Detailed cross-state invariants are finalized in Lot 2.4.
 ```text
 IA-1 LOT 2.3 SNAPSHOTS AND BUSINESS EVIDENCE PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
+NEXT: LOT 2.8 — FINAL MODEL VALIDATION
 CODE GENERATION: FORBIDDEN
 ```
+
+
+## Policy ownership added by Lot 2.7
+
+| Snapshot | Acceptance / interpretation |
+| --- | --- |
+| `AuthorizationEvidenceSnapshot` | `PAY-POL-001`, `PAY-POL-002`, `PAY-POL-006` |
+| `BankingVerificationSnapshot` | `PAY-POL-001`, `PAY-POL-003`, `PAY-POL-006` |
+| `FundsControlSnapshot` | `PAY-POL-001`, `PAY-POL-004`, `PAY-POL-006` |
+| `TreasuryAccountResolutionSnapshot` | `PAY-POL-001`, `PAY-POL-005`, `PAY-POL-006` |
+| `PostingOutcomeSnapshot` | `PAY-DS-001` |
+| `EndOfDayConfirmationSnapshot` | `PAY-DS-002` |
+| `ReversalSnapshot` | `PAY-DS-003` |
+
+Snapshot constructors enforce structural validity. Policies/services decide
+whether a structurally valid snapshot is acceptable for one specific Payment
+and lifecycle state.

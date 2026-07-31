@@ -1,148 +1,114 @@
 # SIXPAY CONNECT — Payment Aggregate Root
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DOMAIN_EVENT_MODEL_PREPARED`  
+> **Status:** `POLICY_AND_DOMAIN_SERVICE_MODEL_PREPARED`  
 > **Code generation:** **FORBIDDEN**
 
-## 1. Aggregate decision
+## 1. Aggregate ownership
 
-`Payment` is the sole write Aggregate Root for one logical TRESOR PAY payment
-intention.
+`Payment` remains the sole owner of:
 
-Its normative behavioural documents now include:
+- current Payment state;
+- legal transitions;
+- bounded evidence;
+- business version;
+- failure state;
+- timestamps;
+- Payment domain-event registration.
 
-- Value Objects;
-- snapshots and minimized evidence;
-- 76 invariants;
-- 16 commands and 17 operations;
-- 17 statuses and 38 transitions;
-- 33 Payment domain events.
+No policy or Domain Service can mutate or publish on behalf of Payment.
 
-## 2. Domain event contract
+## 2. Decision dependencies
 
-The future Payment domain defines a sealed conceptual family:
+Payment operations receive an explicit `PaymentPolicyBundle` or the narrowly
+required policies/services.
+
+The bundle contains immutable policy implementations and approved effective
+profiles. It contains no repository, adapter, credential, network client or
+framework object.
+
+## 3. Direct policy use
+
+The aggregate directly uses pure policies for:
 
 ```text
-PaymentDomainEvent extends DomainEvent
+authorization evidence acceptance
+banking verification acceptance
+funds control acceptance
+Treasury resolution acceptance
+evidence replay/replacement
+posting instruction authorization
+failure classification
 ```
 
-Every event carries:
+These decisions remain close to one operation and one evidence category.
+
+## 4. Domain Service use
+
+Cross-object financial interpretations use:
 
 ```text
-eventId
-paymentId
-paymentReference
-correlationId
-aggregateVersion
-eventSequence
-causationId?
-occurredAt
+PostingOutcomeDecisionService
+EndOfDayDecisionService
+ReversalDecisionService
+PaymentResultIntentService
 ```
 
-`DomainEvent.eventType()` remains the event record's simple class name.
+Each service returns one immutable decision. The aggregate then:
 
-## 3. Event registration
+1. verifies that the decision is compatible with its current state;
+2. applies the complete mutation;
+3. increments businessVersion once;
+4. registers ordered domain events.
 
-Each successful real mutation:
+## 5. Explicit time
 
-1. validates all invariants;
-2. computes and applies one complete next aggregate state;
-3. increments `businessVersion` once;
-4. registers one or more immutable Payment events;
-5. assigns one-based `eventSequence` in registration order.
+Payment and all policies use the same `decisionAt` supplied by the handler.
 
-All events from the mutation carry the same resulting aggregate version.
+The domain never calls the system clock.
 
-Invalid operations, no-op replay, evidence replay, conflicts, stale commands
-and reconstitution register no event.
+## 6. Configuration
 
-## 4. Event publication
+Policy profiles are:
 
-Payment only registers domain events in memory through the shared AggregateRoot
-mechanism.
+- approved;
+- versioned;
+- effective-dated;
+- immutable for one decision;
+- free of secrets and protected accounts.
 
-The application/infrastructure layer:
+The aggregate does not load profiles. Their identity/version is auditable when
+it materially affects a decision.
 
-- releases pending events;
-- maps each event to the existing `IntegrationEventEnvelope`;
-- serializes an explicit safe payload;
-- persists audit and Outbox atomically with Payment state;
-- publishes at least once.
+## 7. External components
 
-Payment never publishes directly to Kafka or HTTP.
+Repository, JWT verification, Amplitude calls, Treasury configuration access,
+TFJ matching, Notification, Outbox, retries and DLQ remain outside Payment.
 
-## 5. Event ownership
+They provide canonical inputs or consume events.
 
-The Payment catalogue contains only events registered by Payment.
-
-It excludes:
-
-- Notification delivery events;
-- Customer verification-process events;
-- Accounting posting/reconciliation process events;
-- raw external callbacks.
-
-Supporting modules consume Payment process-request events and return canonical
-results through Lot 2.5 commands.
-
-## 6. Notification rule
-
-Only these events trigger Notification:
+## 8. Applicable ranges
 
 ```text
-PaymentImmediateResultAvailable
-PaymentFinalResultAvailable
-PaymentReversalResultAvailable
-```
-
-Delivery success/failure does not return to Payment and does not affect its
-financial status.
-
-## 7. Financial replay rule
-
-`PaymentPostingRequested` and `PaymentReversalRequested` carry stable
-instruction identities.
-
-Their consumers must use those business identities for idempotency.
-
-Broker redelivery or Outbox replay never creates a new financial instruction.
-
-Lookup request events are read-only.
-
-## 8. Safe payload rule
-
-Domain events never serialize the aggregate, snapshots or protected account
-Value Objects automatically.
-
-Event-specific payloads may include only the fields approved in
-`PAYMENT_EVENT_CATALOG.yaml`.
-
-Clear accounts, tokens, credentials, raw JWT/KYC/provider payloads, balances
-and diagnostics remain forbidden.
-
-## 9. Applicable ranges
-
-```text
-PAY-AGG-001 ... PAY-AGG-014
-PAY-SNAP-001 ... PAY-SNAP-018
 PAY-INV-001 ... PAY-INV-076
 PAY-CMD-001 ... PAY-CMD-016
 PAY-OP-001  ... PAY-OP-017
 PAY-TR-001  ... PAY-TR-038
 PAY-EVT-001 ... PAY-EVT-033
+PAY-POL-001 ... PAY-POL-014
+PAY-DS-001  ... PAY-DS-004
 ```
 
-Lot 2.6 decisions are `PAY-DEC-IA1-041` through `PAY-DEC-IA1-050`.
+Lot 2.7 decisions are `PAY-DEC-IA1-051` through `PAY-DEC-IA1-060`.
 
-## 10. Deferred scope
+## 9. Deferred scope
 
-- freshness, authorization, matching and secure-instruction policies;
-- Domain Services and policy interfaces;
-- final acceptance/model validation.
+Only final cross-document, acceptance and generation-readiness validation
+remains in Lot 2.8.
 
-## 11. Verdict
+## 10. Verdict
 
 ```text
 AGGREGATE ROOT: PREPARED
@@ -152,5 +118,7 @@ INVARIANTS: PREPARED
 COMMANDS AND OPERATIONS: PREPARED
 STATE MACHINE: PREPARED
 DOMAIN EVENTS: PREPARED
+POLICIES: PREPARED
+DOMAIN SERVICES: PREPARED
 CODE GENERATION: FORBIDDEN
 ```

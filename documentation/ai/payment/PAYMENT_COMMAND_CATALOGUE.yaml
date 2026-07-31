@@ -1,14 +1,14 @@
-schemaVersion: 1.1.0
+schemaVersion: 1.2.0
 document:
   id: SIXPAY-PAYMENT-COMMAND-CATALOGUE
   title: SIXPAY CONNECT — Payment Commands and Aggregate Operations
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_6_DOMAIN_EVENTS
+  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
   branch: feat/payment-domain-generation-brief
-  status: DOMAIN_EVENTS_BOUND
+  status: POLICY_AND_SERVICE_BINDINGS_ADDED
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  nextLot: 2_8_FINAL_MODEL_VALIDATION
 commandMetadata:
   requiredFields:
   - commandId
@@ -82,6 +82,8 @@ commands:
   - PAYMENT_RECEIVED
   eventRefs:
   - PAY-EVT-001
+  policyRefs: []
+  domainServiceRefs: []
 - id: PAY-CMD-002
   name: StartAuthorizationCheckingCommand
   operationId: PAY-OP-002
@@ -107,6 +109,8 @@ commands:
   - AUTHORIZATION_CHECKING_STARTED
   eventRefs:
   - PAY-EVT-002
+  policyRefs: []
+  domainServiceRefs: []
 - id: PAY-CMD-003
   name: ApplyAuthorizationDecisionCommand
   operationId: PAY-OP-003
@@ -142,6 +146,14 @@ commands:
   - PAY-EVT-004
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-004
   name: ApplyBankingVerificationCommand
   operationId: PAY-OP-004
@@ -181,6 +193,14 @@ commands:
   - PAY-EVT-005
   - PAY-EVT-006
   - PAY-EVT-009
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-005
   name: ApplyFundsControlCommand
   operationId: PAY-OP-005
@@ -218,6 +238,14 @@ commands:
   - PAY-EVT-005
   - PAY-EVT-006
   - PAY-EVT-009
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-006
   name: ApplyTreasuryAccountResolutionCommand
   operationId: PAY-OP-006
@@ -253,6 +281,14 @@ commands:
   - PAY-EVT-013
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-007
   name: AuthorizePostingCommand
   operationId: PAY-OP-007
@@ -284,6 +320,11 @@ commands:
   eventRefs:
   - PAY-EVT-014
   - PAY-EVT-015
+  policyRefs:
+  - PAY-POL-004
+  - PAY-POL-005
+  - PAY-POL-007
+  domainServiceRefs: []
 - id: PAY-CMD-008
   name: ApplyPostingOutcomeCommand
   operationId: PAY-OP-008
@@ -338,6 +379,14 @@ commands:
   - PAY-EVT-005
   - PAY-EVT-032
   - PAY-EVT-020
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-CMD-009
   name: ResolvePostingOutcomeCommand
   operationId: PAY-OP-009
@@ -384,6 +433,14 @@ commands:
   - PAY-EVT-005
   - PAY-EVT-032
   - PAY-EVT-020
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
 - id: PAY-CMD-010
   name: ApplyEndOfDayConfirmationCommand
   operationId: PAY-OP-010
@@ -425,6 +482,15 @@ commands:
   - PAY-EVT-020
   - PAY-EVT-006
   - PAY-EVT-025
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-002
+  - PAY-DS-004
 - id: PAY-CMD-011
   name: AuthorizeReversalCommand
   operationId: PAY-OP-011
@@ -455,6 +521,10 @@ commands:
   eventRefs:
   - PAY-EVT-026
   - PAY-EVT-027
+  policyRefs:
+  - PAY-POL-010
+  domainServiceRefs:
+  - PAY-DS-003
 - id: PAY-CMD-012
   name: ApplyReversalOutcomeCommand
   operationId: PAY-OP-012
@@ -492,6 +562,14 @@ commands:
   - PAY-EVT-029
   - PAY-EVT-030
   - PAY-EVT-020
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-CMD-013
   name: ResolveReversalOutcomeCommand
   operationId: PAY-OP-013
@@ -526,6 +604,14 @@ commands:
   - PAY-EVT-033
   - PAY-EVT-029
   - PAY-EVT-020
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
 - id: PAY-CMD-014
   name: RejectPaymentCommand
   operationId: PAY-OP-014
@@ -554,6 +640,11 @@ commands:
   eventRefs:
   - PAY-EVT-005
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-015
   name: RecordRecoverableFailureCommand
   operationId: PAY-OP-015
@@ -584,6 +675,11 @@ commands:
   eventRefs:
   - PAY-EVT-009
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-CMD-016
   name: FailWithoutFinancialEffectCommand
   operationId: PAY-OP-016
@@ -617,6 +713,11 @@ commands:
   eventRefs:
   - PAY-EVT-032
   - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
 operations:
 - id: PAY-OP-001
   name: receive
@@ -829,7 +930,8 @@ readiness:
   codeGeneration: FORBIDDEN
   domainEventsBound: true
   domainEventsLot: 2_6_DOMAIN_EVENTS
-  policiesLotReadyAfterValidation: true
+  policiesAndDomainServicesBound: true
+  finalValidationLotReadyAfterValidation: true
 eventCatalogue:
   path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
   humanPath: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
@@ -838,3 +940,6 @@ eventCatalogue:
     from: PAY-EVT-001
     through: PAY-EVT-033
   commandFactsMappedToEvents: true
+policyServiceCatalogue:
+  humanPath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  machinePath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml

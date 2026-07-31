@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Event Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DRAFT_PENDING_VALIDATION`  
+> **Status:** `POLICY_AND_SERVICE_BINDINGS_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -1181,6 +1181,27 @@ The explicitly authorized reversal is confirmed while original posting evidence 
 
 **Replay:** `FINANCIAL_REPLAY_FORBIDDEN_FACT_ONLY`.
 
+
+## Policy and service bindings added by Lot 2.7
+
+Every event payload passes `PAY-POL-014 PaymentEventDisclosurePolicy` before
+Outbox persistence.
+
+Additional bindings include:
+
+| Event family | Decision components |
+| --- | --- |
+| Authorization/banking/funds/Treasury evidence | Corresponding acceptance policy + replay policy |
+| Posting authorization/request | `PAY-POL-007` |
+| Posting outcome facts | `PAY-DS-001` |
+| TFJ facts | `PAY-DS-002` |
+| Reversal facts | `PAY-DS-003` |
+| Result-intent events | `PAY-POL-013`, `PAY-DS-004` |
+
+Disclosure validation does not decrypt, retrieve or infer protected material.
+It validates only the explicit payload already constructed from approved
+fields.
+
 ## 7. Notification ownership
 
 Only these Payment events trigger Notification:
@@ -1280,6 +1301,6 @@ Important replacements:
 IA-1 LOT 2.6 PAYMENT DOMAIN EVENTS PREPARED
 EVENT COUNT: 33
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
+NEXT: LOT 2.8 — FINAL MODEL VALIDATION
 CODE GENERATION: FORBIDDEN
 ```

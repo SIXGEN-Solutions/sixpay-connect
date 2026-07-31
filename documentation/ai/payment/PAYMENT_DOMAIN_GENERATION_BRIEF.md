@@ -1,161 +1,105 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_2_6_DRAFT_PENDING_VALIDATION`  
+> **Status:** `LOT_2_7_DRAFT_PENDING_VALIDATION`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Governing documents
 
 - `ENGINEERING_CONTEXT.md`
-- `PAYMENT_IA1_BASELINE.md`
-- `PAYMENT_SOURCE_BASELINE.md`
-- `PAYMENT_UBIQUITOUS_LANGUAGE.md`
-- `PAYMENT_DOMAIN_BOUNDARIES.md`
-- `PAYMENT_AGGREGATE_ROOT.md`
-- `PAYMENT_VALUE_OBJECT_CATALOGUE.md`
-- `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`
-- `PAYMENT_INVARIANT_CATALOGUE.md`
-- `PAYMENT_INVARIANT_CATALOGUE.yaml`
-- `PAYMENT_COMMAND_CATALOGUE.md`
-- `PAYMENT_COMMAND_CATALOGUE.yaml`
-- `PAYMENT_STATE_MACHINE.yaml`
-- `PAYMENT_DOMAIN_EVENT_CATALOGUE.md`
-- `PAYMENT_EVENT_CATALOG.yaml`
-- `PAYMENT_DOMAIN_MODEL.md`
-- `AI_CONTEXT_MANIFEST.yaml`
+- all prior Payment IA-1 baseline, language and boundary documents;
+- `PAYMENT_AGGREGATE_ROOT.md`;
+- `PAYMENT_VALUE_OBJECT_CATALOGUE.md`;
+- `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`;
+- `PAYMENT_INVARIANT_CATALOGUE.md` and `.yaml`;
+- `PAYMENT_COMMAND_CATALOGUE.md` and `.yaml`;
+- `PAYMENT_STATE_MACHINE.yaml`;
+- `PAYMENT_DOMAIN_EVENT_CATALOGUE.md`;
+- `PAYMENT_EVENT_CATALOG.yaml`;
+- `PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md`;
+- `PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml`;
+- `PAYMENT_DOMAIN_MODEL.md`;
+- `AI_CONTEXT_MANIFEST.yaml`.
 
-## 2. Prepared model
+## 2. Lot 2.7 result
 
-Completed:
-
-- Aggregate Root;
-- identifiers and Value Objects;
-- snapshots and minimized evidence;
-- invariants;
-- commands and aggregate operations;
-- IA-1 state machine;
-- Payment domain event catalogue.
-
-Pending:
-
-- policies and Domain Services;
-- final acceptance/model validation.
-
-## 3. Event model
-
-The Payment Aggregate Root registers 33 stable event types.
-
-Every event has:
+The Payment model now defines:
 
 ```text
-eventId
-paymentId
-paymentReference
-correlationId
-aggregateVersion
-eventSequence
-causationId?
-occurredAt
+14 policies
+4 pure Domain Services
+12 versioned policy-profile types
+16 external components explicitly excluded from Domain Service status
 ```
 
-The integration layer maps it explicitly to
-`IntegrationEventEnvelope`.
+## 3. Pure decision rule
 
-No automatic aggregate/snapshot serialization is permitted.
+Policies and Domain Services:
 
-## 4. Publication
+- are deterministic for the same inputs;
+- receive `decisionAt` explicitly;
+- receive effective profiles explicitly;
+- perform no repository, network, clock, secret or configuration I/O;
+- depend on no Spring/JPA/Jackson/integration DTO;
+- return immutable typed decisions.
+
+## 4. Aggregate rule
+
+Payment remains the only component allowed to:
+
+- change Payment state;
+- increment businessVersion;
+- update timestamps;
+- register Payment domain events.
+
+A service decision does not itself constitute a transition.
+
+## 5. Profile rule
+
+The application loads approved versioned profiles through
+`PaymentPolicyConfigurationPort`.
+
+No bank-specific rule is hard-coded or invented in the domain.
+
+Secrets and protected account values are forbidden in policy profiles.
+
+## 6. Financial decision services
 
 ```text
-Payment mutation
-+ immutable audit
-+ Outbox event records
-= one database transaction
+PostingOutcomeDecisionService
+EndOfDayDecisionService
+ReversalDecisionService
+PaymentResultIntentService
 ```
 
-Publication is at least once. Consumers deduplicate with `eventId`.
+Posting/TFJ/reversal execution, lookup, matching and persistence remain outside
+the domain.
 
-All events from one aggregate mutation share the resulting aggregate version
-and use `eventSequence` for deterministic local order.
-
-## 5. Event ownership
-
-The catalogue contains only Payment aggregate events.
-
-Notification, Customer and Accounting own their process events.
-
-Raw external callbacks are mapped to canonical commands and snapshots before
-Payment sees them.
-
-## 6. Notification triggers
-
-Only:
+## 7. Traceability ranges
 
 ```text
-PaymentImmediateResultAvailable
-PaymentFinalResultAvailable
-PaymentReversalResultAvailable
+PAY-POL-001 ... PAY-POL-014
+PAY-DS-001  ... PAY-DS-004
+PAY-DEC-IA1-051 ... PAY-DEC-IA1-060
 ```
 
-can create a `NotificationDelivery`.
+The command, invariant, transition and event catalogues contain direct policy
+and service references.
 
-Notification delivery never mutates Payment.
-
-## 7. Financial process requests
-
-Posting and reversal request events carry stable instruction identities.
-
-Consumers reuse:
+## 8. Authorized Lot 2.7 modifications
 
 ```text
-instructionId
-idempotencyKey
-instructionFingerprint
-```
-
-They never derive a replacement financial instruction from broker redelivery.
-
-Outcome-lookup events permit read-only lookup only.
-
-## 8. Event catalogue ranges
-
-```text
-PAY-EVT-001 ... PAY-EVT-033
-PAY-EVT-RULE-001 ... PAY-EVT-RULE-012
-PAY-DEC-IA1-041 ... PAY-DEC-IA1-050
-```
-
-## 9. Lot 2.6 consistency corrections
-
-No state or transition was added.
-
-Existing transitions now register missing result intents for:
-
-- indeterminate banking verification;
-- indeterminate funds control;
-- recoverable pre-financial failures;
-- debit-only posting outcomes;
-- conclusive rejected/not-allowed reversal outcomes.
-
-Successful reversal also registers explicit terminal `PaymentReversed`.
-
-## 10. Deferred scope
-
-| Lot | Subject |
-| --- | --- |
-| 2.7 | Policies and Domain Services |
-| 2.8 | Final model, event, acceptance and traceability validation |
-
-## 11. Authorized Lot 2.6 modifications
-
-```text
-documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
 documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
 documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
 documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
 documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
 documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
@@ -163,15 +107,20 @@ documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
 documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
 ```
 
-No Java implementation, contract, architecture or requirement file is
-modified.
+No Java, database, API contract, architecture or requirement file is modified.
 
-## 12. Verdict
+## 9. Deferred scope
+
+Lot 2.8 performs final cross-catalogue validation, acceptance coverage,
+open-decision review and generation-readiness verdict.
+
+## 10. Verdict
 
 ```text
-IA-1 LOT 2.6 PAYMENT DOMAIN EVENTS PREPARED
-EVENT COUNT: 33
+IA-1 LOT 2.7 POLICIES AND DOMAIN SERVICES PREPARED
+POLICY COUNT: 14
+DOMAIN SERVICE COUNT: 4
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
+NEXT: LOT 2.8 — FINAL MODEL VALIDATION
 CODE GENERATION: FORBIDDEN
 ```

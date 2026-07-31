@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Invariant Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Lot:** `2.4 — Invariants`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DRAFT_PENDING_VALIDATION`  
+> **Status:** `POLICY_AND_SERVICE_BINDINGS_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -186,6 +186,34 @@ owning module and does not mutate Payment.
 | `PAY-INV-075` | Outbox republication and consumer redelivery preserve eventId and payload identity and never repeat the aggregate transition or financial effect. | `APPLICATION`, `INTEGRATION` | `IDEMPOTENT_REDELIVERY` | `MESSAGING_INTEGRATION`, `REPLAY_TEST` |
 | `PAY-INV-076` | The aggregate never performs a network call; external results are accepted only after application orchestration returns a canonical result. | `DOMAIN`, `ARCHITECTURE` | `ARCHITECTURE_FAILURE` | `ARCHITECTURE_TEST`, `APPLICATION` |
 
+
+## Policy and Domain Service bindings added by Lot 2.7
+
+The machine-readable invariant catalogue now associates every applicable
+`PAY-INV-*` rule with:
+
+```text
+policyRefs
+domainServiceRefs
+```
+
+Examples:
+
+| Invariant family | Decision components |
+| --- | --- |
+| Authorization and freshness | `PAY-POL-001`, `PAY-POL-002`, `PAY-POL-006` |
+| Banking and funds | `PAY-POL-003`, `PAY-POL-004` |
+| Treasury resolution | `PAY-POL-005` |
+| Posting authorization | `PAY-POL-007` |
+| Posting outcomes | `PAY-POL-006`, `PAY-POL-008`, `PAY-POL-012`, `PAY-DS-001` |
+| TFJ finality | `PAY-POL-006`, `PAY-POL-009`, `PAY-POL-012`, `PAY-DS-002` |
+| Reversal | `PAY-POL-006`, `PAY-POL-010`, `PAY-POL-011`, `PAY-POL-012`, `PAY-DS-003` |
+| Result intent | `PAY-POL-013`, `PAY-DS-004` |
+| Event confidentiality | `PAY-POL-014` |
+
+Policies and services do not replace invariant enforcement by the aggregate;
+they provide reusable pure decisions consumed by named operations.
+
 ## 13. State and evidence coherence
 
 | Payment condition | Required evidence | Forbidden evidence or effect |
@@ -317,6 +345,6 @@ names and scenario references will be fully normalized during Lot 2.8.
 IA-1 LOT 2.4 PAYMENT INVARIANTS PREPARED
 INVARIANT COUNT: 76
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2.5 — COMMANDS AND AGGREGATE OPERATIONS
+NEXT: LOT 2.8 — FINAL MODEL VALIDATION
 CODE GENERATION: FORBIDDEN
 ```

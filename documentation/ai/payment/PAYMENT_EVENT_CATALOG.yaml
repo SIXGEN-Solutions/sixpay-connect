@@ -1,14 +1,14 @@
-schemaVersion: 2.0.0
+schemaVersion: 2.1.0
 document:
   id: SIXPAY-PAYMENT-DOMAIN-EVENT-CATALOGUE
   title: SIXPAY CONNECT — IA-1 Payment Domain Event Catalogue
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_6_DOMAIN_EVENTS
+  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
   branch: feat/payment-domain-generation-brief
-  status: DRAFT_PENDING_VALIDATION
+  status: POLICY_AND_SERVICE_BINDINGS_ADDED
   normative: true
   codeGenerationAllowed: false
-  nextLot: 2_7_POLICIES_AND_DOMAIN_SERVICES
+  nextLot: 2_8_FINAL_MODEL_VALIDATION
   replacesSemanticsOf: IA-0P_PAYMENT_EVENT_CATALOG_V1
 scope:
   paymentAggregateEventCount: 33
@@ -206,6 +206,9 @@ events:
     operationRefs:
     - PAY-OP-001
     transitionRefs: []
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-002
   name: PaymentAuthorizationCheckingStarted
   factKind: AUTHORIZATION_CHECKING_STARTED
@@ -243,6 +246,9 @@ events:
     - PAY-OP-002
     transitionRefs:
     - PAY-TR-001
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-003
   name: PaymentAuthorizationDecisionRecorded
   factKind: AUTHORIZATION_DECISION_RECORDED
@@ -294,6 +300,11 @@ events:
     transitionRefs:
     - PAY-TR-002
     - PAY-TR-003
+  policyRefs:
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-004
   name: PaymentBankingVerificationRequested
   factKind: BANKING_VERIFICATION_REQUESTED
@@ -339,6 +350,9 @@ events:
     - PAY-OP-003
     transitionRefs:
     - PAY-TR-002
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-005
   name: PaymentRejected
   factKind: PAYMENT_REJECTED
@@ -408,6 +422,9 @@ events:
     - PAY-TR-016
     - PAY-TR-024
     - PAY-TR-036
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-006
   name: PaymentImmediateResultAvailable
   factKind: IMMEDIATE_RESULT_AVAILABLE
@@ -506,6 +523,11 @@ events:
     - PAY-TR-036
     - PAY-TR-037
     - PAY-TR-038
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-EVT-007
   name: PaymentBankingVerificationRecorded
   factKind: BANKING_VERIFICATION_RECORDED
@@ -562,6 +584,11 @@ events:
     - PAY-TR-004
     - PAY-TR-005
     - PAY-TR-006
+  policyRefs:
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-008
   name: PaymentFundsControlRequested
   factKind: FUNDS_CONTROL_REQUESTED
@@ -607,6 +634,9 @@ events:
     - PAY-OP-004
     transitionRefs:
     - PAY-TR-004
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-009
   name: PaymentProcessingDeferred
   factKind: PAYMENT_PROCESSING_DEFERRED
@@ -653,6 +683,9 @@ events:
     - PAY-TR-006
     - PAY-TR-010
     - PAY-TR-037
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-010
   name: PaymentFundsControlRecorded
   factKind: FUNDS_CONTROL_RECORDED
@@ -708,6 +741,11 @@ events:
     - PAY-TR-007
     - PAY-TR-008
     - PAY-TR-010
+  policyRefs:
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-011
   name: PaymentTreasuryAccountResolutionRequested
   factKind: TREASURY_ACCOUNT_RESOLUTION_REQUESTED
@@ -752,6 +790,9 @@ events:
     - PAY-OP-005
     transitionRefs:
     - PAY-TR-007
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-012
   name: PaymentTreasuryAccountResolutionRecorded
   factKind: TREASURY_ACCOUNT_RESOLUTION_RECORDED
@@ -809,6 +850,11 @@ events:
     transitionRefs:
     - PAY-TR-011
     - PAY-TR-012
+  policyRefs:
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-013
   name: PaymentApprovedForPosting
   factKind: PAYMENT_APPROVED_FOR_POSTING
@@ -843,6 +889,9 @@ events:
     - PAY-OP-006
     transitionRefs:
     - PAY-TR-011
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-014
   name: PaymentPostingAuthorized
   factKind: POSTING_AUTHORIZED
@@ -887,6 +936,10 @@ events:
     - PAY-OP-007
     transitionRefs:
     - PAY-TR-009
+  policyRefs:
+  - PAY-POL-007
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-015
   name: PaymentPostingRequested
   factKind: POSTING_REQUESTED
@@ -941,6 +994,10 @@ events:
     - PAY-OP-007
     transitionRefs:
     - PAY-TR-009
+  policyRefs:
+  - PAY-POL-007
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-016
   name: PaymentPostingOutcomeRecorded
   factKind: POSTING_OUTCOME_RECORDED
@@ -1022,6 +1079,13 @@ events:
     - PAY-TR-019
     - PAY-TR-020
     - PAY-TR-021
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-001
 - id: PAY-EVT-017
   name: PaymentEndOfDayTrackingRequested
   factKind: TFJ_TRACKING_REQUESTED
@@ -1071,6 +1135,9 @@ events:
     - PAY-TR-013
     - PAY-TR-019
     - PAY-TR-022
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-018
   name: PaymentDebitConfirmed
   factKind: DEBIT_CONFIRMED
@@ -1123,6 +1190,9 @@ events:
     transitionRefs:
     - PAY-TR-014
     - PAY-TR-023
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-019
   name: PaymentPostingOutcomeLookupRequested
   factKind: POSTING_OUTCOME_LOOKUP_REQUESTED
@@ -1177,6 +1247,9 @@ events:
     transitionRefs:
     - PAY-TR-015
     - PAY-TR-020
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-020
   name: PaymentReversalRequired
   factKind: REVERSAL_REVIEW_REQUESTED
@@ -1243,6 +1316,9 @@ events:
     - PAY-TR-028
     - PAY-TR-033
     - PAY-TR-035
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-021
   name: PaymentPostingOutcomeResolved
   factKind: POSTING_OUTCOME_RESOLVED
@@ -1316,6 +1392,13 @@ events:
     - PAY-TR-024
     - PAY-TR-025
     - PAY-TR-026
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-001
 - id: PAY-EVT-022
   name: PaymentEndOfDayConfirmationRecorded
   factKind: TFJ_CONFIRMATION_RECORDED
@@ -1390,6 +1473,13 @@ events:
     - PAY-TR-027
     - PAY-TR-028
     - PAY-TR-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
 - id: PAY-EVT-023
   name: TreasuryIntegrationConfirmed
   factKind: TREASURY_INTEGRATION_CONFIRMED
@@ -1435,6 +1525,10 @@ events:
     - PAY-OP-010
     transitionRefs:
     - PAY-TR-027
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
 - id: PAY-EVT-024
   name: PaymentFinalResultAvailable
   factKind: FINAL_RESULT_AVAILABLE
@@ -1488,6 +1582,11 @@ events:
     - PAY-OP-010
     transitionRefs:
     - PAY-TR-027
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-EVT-025
   name: PaymentTreasuryReconciliationRequired
   factKind: TREASURY_RECONCILIATION_REQUIRED
@@ -1541,6 +1640,10 @@ events:
     - PAY-OP-010
     transitionRefs:
     - PAY-TR-029
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
 - id: PAY-EVT-026
   name: PaymentReversalAuthorized
   factKind: REVERSAL_AUTHORIZED
@@ -1597,6 +1700,10 @@ events:
     - PAY-OP-011
     transitionRefs:
     - PAY-TR-030
+  policyRefs:
+  - PAY-POL-010
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-027
   name: PaymentReversalRequested
   factKind: REVERSAL_REQUESTED
@@ -1649,6 +1756,10 @@ events:
     - PAY-OP-011
     transitionRefs:
     - PAY-TR-030
+  policyRefs:
+  - PAY-POL-010
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-028
   name: PaymentReversalOutcomeRecorded
   factKind: REVERSAL_OUTCOME_RECORDED
@@ -1708,6 +1819,13 @@ events:
     - PAY-TR-031
     - PAY-TR-032
     - PAY-TR-033
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
 - id: PAY-EVT-029
   name: PaymentReversalResultAvailable
   factKind: REVERSAL_RESULT_AVAILABLE
@@ -1766,6 +1884,11 @@ events:
     - PAY-TR-033
     - PAY-TR-034
     - PAY-TR-035
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
 - id: PAY-EVT-030
   name: PaymentReversalOutcomeLookupRequested
   factKind: REVERSAL_OUTCOME_LOOKUP_REQUESTED
@@ -1811,6 +1934,9 @@ events:
     - PAY-OP-012
     transitionRefs:
     - PAY-TR-032
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-031
   name: PaymentReversalOutcomeResolved
   factKind: REVERSAL_OUTCOME_RESOLVED
@@ -1873,6 +1999,13 @@ events:
     transitionRefs:
     - PAY-TR-034
     - PAY-TR-035
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
 - id: PAY-EVT-032
   name: PaymentFailedWithoutFinancialEffect
   factKind: PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
@@ -1919,6 +2052,9 @@ events:
     - PAY-TR-017
     - PAY-TR-025
     - PAY-TR-038
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
 - id: PAY-EVT-033
   name: PaymentReversed
   factKind: PAYMENT_REVERSED
@@ -1967,6 +2103,10 @@ events:
     transitionRefs:
     - PAY-TR-031
     - PAY-TR-034
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
 legacyMigration:
   PaymentRequestReceived:
   - PaymentReceived
@@ -2059,5 +2199,12 @@ readiness:
   eventCount: 33
   humanValidationRequired: true
   machineValidationRequired: true
-  policiesLotReadyAfterValidation: true
   codeGeneration: FORBIDDEN
+  policiesAndDomainServicesBound: true
+  finalValidationLotReadyAfterValidation: true
+policyBindings:
+  disclosurePolicy: PAY-POL-014
+  resultIntentPolicy: PAY-POL-013
+  resultIntentService: PAY-DS-004
+  postingInstructionPolicy: PAY-POL-007
+  reversalAuthorizationPolicy: PAY-POL-010

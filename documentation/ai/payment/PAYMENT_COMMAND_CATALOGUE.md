@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Commands and Aggregate Operations
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.6 — Domain Events`  
+> **Current lot:** `2.7 — Policies and Domain Services`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `DOMAIN_EVENTS_BOUND`  
+> **Status:** `POLICY_AND_SERVICE_BINDINGS_ADDED`  
 > **Code generation:** **FORBIDDEN**
 
 ## 1. Purpose
@@ -53,6 +53,25 @@ The aggregate receives only typed domain arguments.
 | `PAY-CMD-014 RejectPaymentCommand` | `Payment.reject` | `REQUIRED` | `PAY-EVT-005`, `PAY-EVT-006` |
 | `PAY-CMD-015 RecordRecoverableFailureCommand` | `Payment.recordRecoverableFailure` | `STATE_AND_EVIDENCE_GUARDED` | `PAY-EVT-009`, `PAY-EVT-006` |
 | `PAY-CMD-016 FailWithoutFinancialEffectCommand` | `Payment.failWithoutFinancialEffect` | `REQUIRED` | `PAY-EVT-032`, `PAY-EVT-006` |
+
+## Policy and service bindings added by Lot 2.7
+
+| Command group | Policies / Domain Services |
+| --- | --- |
+| Authorization result | `PAY-POL-001`, `PAY-POL-002`, `PAY-POL-006` |
+| Banking verification | `PAY-POL-001`, `PAY-POL-003`, `PAY-POL-006` |
+| Funds control | `PAY-POL-001`, `PAY-POL-004`, `PAY-POL-006` |
+| Treasury resolution | `PAY-POL-001`, `PAY-POL-005`, `PAY-POL-006` |
+| Posting authorization | `PAY-POL-007` |
+| Posting outcome / lookup | `PAY-DS-001` |
+| TFJ result | `PAY-DS-002` |
+| Reversal authorization/outcome | `PAY-DS-003` |
+| Result-intent-producing branches | `PAY-POL-013`, `PAY-DS-004` |
+| Rejection/failure/defer | `PAY-POL-012` |
+
+Handlers load effective profiles and pass `decisionAt`. They never instantiate
+bank-specific defaults inside the domain.
+
 ## 4. Detailed command facts
 
 The `possibleFactKinds` list on each command is the union of all facts from its
@@ -129,6 +148,6 @@ PAY-EVT-001 ... PAY-EVT-033
 COMMANDS: PREPARED
 OPERATIONS: PREPARED
 DOMAIN EVENT BINDINGS: PREPARED
-NEXT: LOT 2.7 — POLICIES AND DOMAIN SERVICES
+NEXT: LOT 2.8 — FINAL MODEL VALIDATION
 CODE GENERATION: FORBIDDEN
 ```

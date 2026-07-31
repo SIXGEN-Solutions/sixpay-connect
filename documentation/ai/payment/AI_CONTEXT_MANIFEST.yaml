@@ -1,15 +1,15 @@
-schemaVersion: 1.8.0
+schemaVersion: 1.9.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_6_DOMAIN_EVENTS
+  lot: 2_7_POLICIES_AND_DOMAIN_SERVICES
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_2_6_DRAFT_PENDING_VALIDATION
+  status: LOT_2_7_DRAFT_PENDING_VALIDATION
   normative: true
 codeGenerationAllowed: false
-nextLot: LOT_2_7_POLICIES_AND_DOMAIN_SERVICES
+nextLot: LOT_2_8_FINAL_MODEL_VALIDATION
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Primary IA-1 brief
@@ -22,19 +22,23 @@ primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
   role: Human invariants
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  role: Machine invariants
+  role: Machine invariants with policy/service refs
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
-  role: Human commands and operations
+  role: Human commands
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
-  role: Machine commands and operations
+  role: Machine commands with policy/service refs
 - path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  role: IA-1 state machine with event bindings
+  role: State machine with policy/service refs
 - path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-  role: Human Payment domain events
+  role: Human events
 - path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
-  role: Machine Payment domain events
+  role: Machine events with policy/service refs
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  role: Human policies and Domain Services
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+  role: Machine policies and Domain Services
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
-  role: Consolidated model index
+  role: Consolidated model
 modelCounts:
   aggregateRoots: 1
   paymentStatuses: 17
@@ -44,67 +48,48 @@ modelCounts:
   stateTransitions: 38
   invariants: 76
   paymentDomainEvents: 33
-domainEventModel:
-  humanPath: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-  machinePath: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
-  eventIdRange:
-    from: PAY-EVT-001
-    through: PAY-EVT-033
-  onlyPaymentAggregateEvents: true
-  commonFields:
-  - eventId
-  - paymentId
-  - paymentReference
-  - correlationId
-  - aggregateVersion
-  - eventSequence
-  - causationId
-  - occurredAt
-  sharedDomainEventReference: com.sixpay.sharedkernel.domain.event.DomainEvent
-  integrationEnvelopeReference: com.sixpay.common.messaging.model.IntegrationEventEnvelope
-  explicitPayloadMappingRequired: true
-  automaticDomainSerializationAllowed: false
-  publication: TRANSACTIONAL_OUTBOX_AT_LEAST_ONCE
-  consumerDeduplication: eventId
-  notificationTriggerEvents:
-  - PaymentImmediateResultAvailable
-  - PaymentFinalResultAvailable
-  - PaymentReversalResultAvailable
-stateMachine:
-  path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-  schemaVersion: 2.1.0
-  stateCount: 17
-  transitionCount: 38
-  eventBindingsComplete: true
-  eventTypeCount: 33
-  lot2_6ConsistencyCorrections:
-  - PROCESSING_RESULT_FOR_INDETERMINATE_BANKING
-  - PROCESSING_RESULT_FOR_INDETERMINATE_FUNDS
-  - PROCESSING_RESULT_FOR_RECOVERABLE_FAILURE
-  - PROCESSING_RESULT_FOR_DEBIT_ONLY
-  - REVERSAL_RESULT_FOR_REJECTED_OR_NOT_ALLOWED
-  - EXPLICIT_PAYMENT_REVERSED_TERMINAL_EVENT
-lot2_6Decisions:
-- id: PAY-DEC-IA1-041
-  decision: PAYMENT_EVENT_CATALOGUE_CONTAINS_ONLY_PAYMENT_AGGREGATE_EVENTS
-- id: PAY-DEC-IA1-042
-  decision: PAYMENT_DOMAIN_EVENT_CONTRACT_EXTENDS_SHARED_DOMAIN_EVENT_AND_MAPS_EXPLICITLY_TO_INTEGRATION_ENVELOPE
-- id: PAY-DEC-IA1-043
-  decision: THIRTY_THREE_STABLE_EVENT_TYPES_MAP_ONE_TO_ONE_TO_CANONICAL_FACT_KINDS
-- id: PAY-DEC-IA1-044
-  decision: MULTIPLE_EVENTS_SHARE_AGGREGATE_VERSION_AND_USE_EVENT_SEQUENCE
-- id: PAY-DEC-IA1-045
-  decision: EXPLICIT_MINIMIZED_SAFE_PAYLOADS_NO_AUTOMATIC_DOMAIN_SERIALIZATION
-- id: PAY-DEC-IA1-046
-  decision: PROCESS_REQUEST_EVENTS_REQUIRE_EVENT_SPECIFIC_BUSINESS_IDEMPOTENCY
-- id: PAY-DEC-IA1-047
-  decision: RESULT_INTENT_EVENTS_ARE_THE_ONLY_NOTIFICATION_TRIGGERS_DELIVERY_REMAINS_OUTSIDE_PAYMENT
-- id: PAY-DEC-IA1-048
-  decision: EVENT_TYPE_STABLE_SCHEMA_VERSIONED_RETIRED_NAMES_NEVER_REUSED
-- id: PAY-DEC-IA1-049
-  decision: PAYMENT_REVERSED_IS_AN_EXPLICIT_TERMINAL_FACT_DISTINCT_FROM_REVERSAL_RESULT_DELIVERY
-- id: PAY-DEC-IA1-050
-  decision: PROCESSING_AND_CONCLUSIVE_REVERSAL_RESULTS_MUST_REGISTER_THEIR_RESULT_INTENT_EVENTS
+  policies: 14
+  pureDomainPolicies: 13
+  boundaryPolicies: 1
+  pureDomainServices: 4
+  policyProfiles: 12
+  externalComponentsExplicitlyExcluded: 16
+policyDomainServiceModel:
+  humanPath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  machinePath: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+  policyIdRange:
+    from: PAY-POL-001
+    through: PAY-POL-014
+  domainServiceIdRange:
+    from: PAY-DS-001
+    through: PAY-DS-004
+  aggregateOwnsStateAndEvents: true
+  domainServicesReturnDecisionsOnly: true
+  ioAllowed: false
+  explicitTimeRequired: true
+  effectiveProfilesLoadedByApplication: true
+  hardCodedBankSpecificValuesAllowed: false
+lot2_7Decisions:
+- id: PAY-DEC-IA1-051
+  decision: POLICY_DOMAIN_SERVICE_PORT_AND_INFRASTRUCTURE_RESPONSIBILITIES_ARE_EXPLICITLY_SEPARATED
+- id: PAY-DEC-IA1-052
+  decision: ALL_DOMAIN_POLICIES_AND_SERVICES_ARE_PURE_DETERMINISTIC_AND_RECEIVE_TIME_CONFIGURATION_EXPLICITLY
+- id: PAY-DEC-IA1-053
+  decision: FOURTEEN_POLICIES_AND_FOUR_PURE_DOMAIN_SERVICES_FORM_THE_PAYMENT_DECISION_MODEL
+- id: PAY-DEC-IA1-054
+  decision: PAYMENT_AGGREGATE_REMAINS_SOLE_STATE_AND_EVENT_OWNER_DOMAIN_SERVICES_RETURN_DECISIONS_ONLY
+- id: PAY-DEC-IA1-055
+  decision: POLICY_PROFILES_ARE_VERSIONED_APPROVED_AND_INJECTED_NO_BANK_CONSTANT_IS_INVENTED_OR_HARD_CODED
+- id: PAY-DEC-IA1-056
+  decision: PERSISTENT_MATCHING_LOOKUP_RETRY_CIRCUIT_BREAKER_DLQ_AND_SECRET_ACCESS_REMAIN_OUTSIDE_DOMAIN
+- id: PAY-DEC-IA1-057
+  decision: EVIDENCE_REPLAY_REPLACEMENT_AND_CONFLICT_CLASSIFICATION_USE_ONE_SHARED_DOMAIN_POLICY
+- id: PAY-DEC-IA1-058
+  decision: POSTING_TFJ_AND_REVERSAL_SERVICES_RETURN_IMMUTABLE_DECISIONS_WITHOUT_MUTATION_EVENT_OR_IO
+- id: PAY-DEC-IA1-059
+  decision: RESULT_INTENT_DECISION_AND_EVENT_PAYLOAD_DISCLOSURE_ARE_SEPARATE_POLICIES
+- id: PAY-DEC-IA1-060
+  decision: POLICY_AND_SERVICE_DEFINITIONS_DO_NOT_AUTHORIZE_JAVA_GENERATION_BEFORE_FINAL_MODEL_VALIDATION
 traceability:
   requiredPrefixes:
   - PAY-BASE-
@@ -118,6 +103,8 @@ traceability:
   - PAY-OP-
   - PAY-TR-
   - PAY-EVT-
+  - PAY-POL-
+  - PAY-DS-
   - PAY-DEC-
   - PAY-CONTRACT-
   - PAY-AI-
@@ -125,13 +112,16 @@ traceability:
   - SRC-
   - OPEN-
   untracedRuleAllowed: false
-authorizedLot2_6Modifications:
-- documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-- documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+authorizedLot2_7Modifications:
+- documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
 - documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
 - documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
-- documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+- documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
 - documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
 - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
 - documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
@@ -142,12 +132,14 @@ generationRules:
   - APPLICATION_CODE_GENERATION_OR_MODIFICATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OPENAPI_MODIFICATION
-  - AUTOMATIC_DOMAIN_OBJECT_SERIALIZATION
-  - RAW_EXTERNAL_PAYLOAD_IN_EVENT
-  - PROTECTED_ACCOUNT_TOKEN_IN_GENERAL_EVENT
-  - NOTIFICATION_DELIVERY_EVENT_OWNED_BY_PAYMENT
-  - BROKER_REDELIVERY_AS_FINANCIAL_RETRY_IDENTITY
-  - POLICY_CONSTANT_INVENTION
+  - POLICY_OR_SERVICE_IO
+  - DOMAIN_SERVICE_AGGREGATE_MUTATION
+  - DOMAIN_SERVICE_EVENT_REGISTRATION
+  - DOMAIN_CLOCK_ACCESS
+  - POLICY_CONFIGURATION_LOADING_INSIDE_DOMAIN
+  - HARDCODED_OR_INVENTED_BANK_SPECIFIC_VALUES
+  - SECRET_OR_PROTECTED_ACCOUNT_IN_POLICY_PROFILE
+  - RETRY_CIRCUIT_BREAKER_OR_DLQ_AS_DOMAIN_SERVICE
 readiness:
   lot2_1AggregateRootPrepared: true
   lot2_2ValueObjectsPrepared: true
@@ -156,6 +148,8 @@ readiness:
   lot2_5CommandsAndOperationsPrepared: true
   lot2_5StateMachineReconciled: true
   lot2_6DomainEventsPrepared: true
-  lot2_6HumanValidationRequired: true
-  lot2_7ReadyAfterValidation: true
+  lot2_7PoliciesPrepared: true
+  lot2_7DomainServicesPrepared: true
+  lot2_7HumanValidationRequired: true
+  lot2_8ReadyAfterValidation: true
   codeGeneration: FORBIDDEN
