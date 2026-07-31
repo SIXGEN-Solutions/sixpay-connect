@@ -1,346 +1,200 @@
-schemaVersion: "1.0.0"
+schemaVersion: "1.1.0"
 
 context:
-  id: "sixpay-payment-preflight-v1"
+  id: "sixpay-payment-domain-brief-v1"
   domain: "payment"
-  gate: "IA-0P_PAYMENT_PREFLIGHT"
+  gate: "IA-1_PAYMENT_DOMAIN_BRIEF"
+  lot: "0_BASELINE_AND_GATE_SCOPE"
   branch: "feat/payment-contract-pack"
-  sourceCommit: "00469905c048200277b4012238486e28f62a50b8"
-  status: "PASSED"
+  sourceCommit: "__PAYMENT_CONTRACT_PACK_HEAD_SHA__"
+  baselineDate: "2026-07-31"
+  status: "BASELINE_PENDING_VALIDATION"
   normative: true
 
 codeGenerationAllowed: false
-nextGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+nextLot: "LOT_1_UBIQUITOUS_LANGUAGE_AND_PAYMENT_MODEL_BOUNDARIES"
 
 primaryDocuments:
-  - path: "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
-    role: "Gate verdict, scope and consolidated readiness"
   - path: "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
-    role: "Human-readable implementation context and constraints"
-  - path: "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
-    role: "Machine-readable context index and generation lock"
-
-intermediateDeliverables:
-  - step: "0P.1"
-    path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
-    status: "ESTABLISHED"
-    role: "Authority hierarchy and requirement traceability"
-  - step: "0P.2"
-    path: "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
-    section: "Scope / Out of Scope"
-    status: "ESTABLISHED"
-    role: "MVP boundary"
-  - step: "0P.3"
-    path: "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
-    status: "ESTABLISHED"
-    role: "System and module responsibilities"
-  - step: "0P.4"
-    path: "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
-    status: "ESTABLISHED"
-    role: "Nominal and alternative flows"
-  - step: "0P.5"
-    path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
-    status: "ESTABLISHED"
-    role: "Aggregate and concept boundaries"
-  - step: "0P.6"
-    path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
-    status: "CLOSED"
-    role: "Normative lifecycle and transitions"
-  - step: "0P.8"
-    path: "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
-    status: "ESTABLISHED"
-    role: "Normative domain and process events"
-  - step: "0P.9"
-    path: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
-    status: "ESTABLISHED"
-    role: "Contract families and requirements"
-  - step: "0P.10"
-    path: "documentation/ai/payment/PAYMENT_SECURITY_AUDIT_BASELINE.md"
-    status: "ESTABLISHED"
-    role: "Security, audit and observability"
-  - step: "0P.11"
-    path: "documentation/ai/payment/PAYMENT_RESILIENCE_BASELINE.md"
-    status: "ESTABLISHED"
-    role: "Resilience and operational recovery"
-  - step: "0P.12"
-    path: "documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md"
-    status: "ESTABLISHED"
-    role: "Acceptance and test strategy"
-
-invariantBaseline:
-  step: "0P.7"
-  mode: "EMBEDDED"
-  status: "CLOSED"
-  sources:
-    - path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
-      locator: "section 11"
-    - path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
-      locator: "globalInvariants"
-  note: "No standalone invariant file is required."
-
-upstreamAuthorities:
-  - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
-    role: "Closed blocking architecture decisions"
-  - path: "documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml"
-    role: "Payment pilot and ObservedCustomer upstream context"
-  - path: "documentation/ai/customer/CUSTOMER_DOMAIN_GENERATION_BRIEF.md"
-    role: "Customer support-domain constraints"
+    role: "Primary human-readable IA-1 brief"
+  - path: "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
+    role: "Lot 0 authority, scope, classifications and open decisions"
+  - path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+    role: "Detailed source catalogue and stable source identifiers"
   - path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
-    role: "Contract lifecycle and classification authority"
-  - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
-    role: "Payment-confirmed reference contract for customer and account verification only"
-  - path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
-    role: "Core Banking funds control, posting, outcome recovery and reversal contract"
-  - path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
-    role: "TRESOR PAY Payment lifecycle status webhook"
+    role: "Contract lifecycle, approval and generation authority"
+
+upstreamDocuments:
+  - path: "ENGINEERING_CONTEXT.md"
+    role: "Repository entry point and source-of-truth precedence"
+  - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    role: "Approved scope and system-of-record decisions"
+  - path: "backend/partner/ARCHITECTURE.md"
+    role: "Golden module structural conventions only"
+  - path: "backend/partner/ACCEPTANCE-TRACEABILITY.md"
+    role: "Golden module verification and traceability conventions"
+  - path: "backend/SIXPAY_BACKEND_ENGINEERING_GENERATION_CONTRACT.md"
+    role: "Backend generation constraints"
+  - path: "DOMAIN_GENERATION_BRIEF_TEMPLATE.md"
+    role: "Brief structure reference"
+
+paymentAiCorpus:
+  - "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+  - "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
+  - "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
+  - "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
+  - "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
+  - "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+  - "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
+  - "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
+  - "documentation/ai/payment/PAYMENT_SECURITY_AUDIT_BASELINE.md"
+  - "documentation/ai/payment/PAYMENT_RESILIENCE_BASELINE.md"
+  - "documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md"
+  - "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+  - "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
+  - "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
+  - "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
+
+contractClassification:
+  activeMvpPendingApproval:
+    - id: "tresorpay-payment-request-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    - id: "amplitude-payment-posting-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    - id: "tresorpay-payment-status-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    - id: "amplitude-end-of-day-confirmation-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+    - id: "tresorpay-treasury-integration-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+
+  referenceMvp:
+    - id: "amplitude-customer-verification-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+      limitations:
+        - "NO_SUBSCRIPTION_VALIDATION"
+        - "NO_FUNDS_CONTROL"
+        - "NO_POSTING"
+        - "NO_REVERSAL"
+        - "NO_TFJ"
+
+  intentionallyAbsent:
+    - id: "tresorpay-subscription-verification-api-v1"
+      decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
+      requiredForMvp: false
+
+  deferredExcluded:
+    - id: "tresorpay-authorization-request-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+    - id: "tresorpay-authorization-decision-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+
+  missingOrUnapproved:
+    - id: "amplitude-payment-verification-api-v1"
+      capability: "PAYMENT_EXECUTION_VERIFICATION"
+    - id: "payment-query-api-v1"
+      capability: "PAYMENT_QUERY"
+    - id: "observed-customer-query-api-v1"
+      capability: "OBSERVED_CUSTOMER_QUERY"
+    - id: "payment-audit-query-api-v1"
+      capability: "PAYMENT_AUDIT_QUERY"
 
 scope:
-  inScope:
-    - "Receive and immediately persist a TRESOR PAY payment request"
-    - "Create or update ObservedCustomer"
-    - "Verify bank customer, account, ownership, status, blocks and oppositions"
-    - "Verify available funds"
-    - "Debit customer account and credit CUT"
-    - "Notify immediate result"
-    - "Await, match and apply TFJ confirmation"
-    - "Notify final result"
-    - "Expose SIXPAY consultation and audit"
-  outOfScope:
-    - "Local subscription management"
-    - "Subscription validation from SIXPAY"
-    - "Digital KYC by document and selfie"
-    - "Interbank clearing beyond TFJ confirmation"
-    - "TRESOR PAY merchant management"
+  included:
+    - "PAYMENT_AGGREGATE_ROOT"
+    - "PAYMENT_TYPED_IDENTIFIERS"
+    - "EXTERNAL_PAYMENT_AND_SUBSCRIPTION_REFERENCES"
+    - "SHARED_KERNEL_MONEY_REUSE"
+    - "DEBTOR_AND_TREASURY_ACCOUNT_REFERENCES"
+    - "BANK_POSTING_REFERENCE"
+    - "PAYMENT_FAILURE"
+    - "PAYMENT_STATUS"
+    - "NAMED_TRANSITIONS"
+    - "INVARIANTS"
+    - "MINIMIZED_DECISION_SNAPSHOTS"
+    - "DOMAIN_EVENTS"
+    - "SOURCE_TO_TEST_TRACEABILITY"
 
-systemsOfRecord:
-  subscription: "TRESOR_PAY"
-  paymentOrder: "TRESOR_PAY"
-  bankingCustomerAndAccount: "AMPLITUDE"
-  processedPayment: "SIXPAY"
-  bankingEntries: "AMPLITUDE"
-  observedCustomerProjection: "SIXPAY"
-  tfjConfirmation: "AMPLITUDE"
-  integrationAudit: "SIXPAY"
+  excluded:
+    - "JAVA_IMPLEMENTATION"
+    - "JPA_MAPPING"
+    - "DATABASE_SCHEMA"
+    - "FLYWAY_MIGRATIONS"
+    - "OPENAPI_CREATION_OR_MODIFICATION"
+    - "ADAPTERS_AND_CONTROLLERS"
+    - "LOCAL_SUBSCRIPTION_MANAGEMENT"
+    - "OBSERVED_CUSTOMER_AS_AGGREGATE_MEMBER"
+    - "RAW_EXTERNAL_PAYLOADS_IN_DOMAIN"
+    - "UNAPPROVED_SLA_OR_TIMEOUTS"
+    - "BLIND_FINANCIAL_REPLAY"
+    - "AUTOMATIC_REVERSAL_FROM_TFJ_DELAY"
 
-modules:
-  payment: "Own Payment aggregate, decisions and lifecycle"
-  customer: "Interpret banking verification and maintain ObservedCustomer"
-  integration: "Own external adapters and transport contracts"
-  notification: "Own reliable immediate and final delivery"
-  accounting: "Interpret posting, unknown outcomes, TFJ and reversal"
-  reporting: "Own read-only query, audit projection and authorized export"
+approvedDecisionIds:
+  from: "PAY-BASE-001"
+  through: "PAY-BASE-030"
+  source: "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
 
-domainModel:
-  aggregateRoots:
-    - "Payment"
-  readModels:
-    - "ObservedCustomer"
-  valueObjects:
-    - "PaymentId"
-    - "TresorPayRequestId"
-    - "PaymentReference"
-    - "IdempotencyKey"
-    - "CorrelationId"
-    - "PayerSnapshot"
-    - "BankAccountReference"
-    - "Money"
-    - "FinancialInstitutionCode"
-  aggregateSnapshots:
-    - "BankingVerificationSnapshot"
-    - "PostingOutcomeSnapshot"
-    - "TreasuryAccountReference"
-    - "NotificationIntentReference"
-    - "EndOfDayConfirmationSnapshot"
-    - "ReversalSnapshot"
-  integrationOwnedConcepts:
-    - "BankingVerification"
-    - "PostingResult"
-    - "TreasuryAccount"
-    - "NotificationDelivery"
-    - "EndOfDayConfirmation"
-    - "Reversal"
-  externalFactsRemainInAdapters: true
+openDecisionIds:
+  from: "OPEN-BASE-001"
+  through: "OPEN-BASE-013"
+  source: "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
 
-stateMachine:
-  path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
-  stateCount: 16
-  transitionCount: 34
-  initialState: "RECEIVED"
-  terminalStates:
-    - "REJECTED"
-    - "TREASURY_INTEGRATED"
-    - "FAILED"
-    - "REVERSED"
+traceability:
+  requiredPrefixes:
+    - "PAY-BASE-"
+    - "PAY-CONTRACT-"
+    - "PAY-AI-"
+    - "PAY-SRC-"
+    - "SRC-"
+    - "OPEN-"
+  appliesTo:
+    - "AGGREGATE_FIELDS"
+    - "VALUE_OBJECTS"
+    - "STATUSES"
+    - "TRANSITIONS"
+    - "GUARDS"
+    - "INVARIANTS"
+    - "FAILURES"
+    - "COMMANDS"
+    - "EVENTS"
+    - "TESTS"
+  untracedRuleAllowed: false
 
-events:
-  path: "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
-  normativeCount: 16
-  publication: "TRANSACTIONAL_OUTBOX_AT_LEAST_ONCE"
+goldenPartner:
+  reusableConventions:
+    - "HEXAGONAL_INTERNAL_ARCHITECTURE"
+    - "RICH_AGGREGATE"
+    - "FRAMEWORK_FREE_DOMAIN"
+    - "APPLICATION_PORTS"
+    - "EXPLICIT_DOMAIN_PERSISTENCE_MAPPING"
+    - "ATOMIC_AGGREGATE_AUDIT_OUTBOX"
+    - "APPEND_ONLY_HISTORY"
+    - "LOCAL_DOMAIN_OUTBOX"
+    - "NO_BUSINESS_DOMAIN_IMPORTS"
+    - "MODULE_AUTO_CONFIGURATION"
+    - "ARCHITECTURE_TESTS"
+    - "ACCEPTANCE_TRACEABILITY"
+  businessSemanticsReusable: false
 
-contracts:
-  requirements: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
-  familyCount: 7
-  concreteArtifactCount: 9
-  status: "TO_BE_PRODUCED_AND_APPROVED"
-  format: "OPENAPI_3_1"
-
-security:
-  inboundTresorPayAuthentication:
-    - "TOKEN"
-    - "SUBSCRIPTION_KEY"
-  secrets: "EXTERNALIZED_ROTATABLE_REVOCABLE"
-  transportEncryption: "TLS_1_3"
-  atRestEncryption: "AES_256_OR_VALIDATED_EQUIVALENT"
-  accountIdentifiers: "MINIMIZED_AND_MASKED"
-  credentialsInLogsAllowed: false
-  rbacRoles:
-    - "OPS"
-    - "MANAGER"
-    - "AUDITOR"
-    - "ADMIN"
-
-resilience:
-  inboundIdempotency: true
-  transactionalOutbox: true
-  deliveryGuarantee: "AT_LEAST_ONCE"
-  retry: "BOUNDED_EXPONENTIAL_FULL_JITTER"
-  circuitBreaker: true
-  dlq: true
-  bankReconciliation: true
-  unmatchedTfjQuarantine: true
-  blindFinancialReplayAllowed: false
-  controlledOperationalReplay: true
-  reversalRunbookRequired: true
-
-acceptance:
-  path: "documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md"
-  testFamilyCount: 13
-  explicitScenarioCount: 142
-  requiredStateTransitionCoverage: "34/34"
-  forbiddenTransitionCoverage: "EXHAUSTIVE"
-  requiredContractArtifactCoverage: "9/9"
-  fullIntegrationProfile: "full-tests"
+authorizedLot0Modifications:
+  - "documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md"
+  - "documentation/ai/payment/PAYMENT_IA1_BASELINE.md"
+  - "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+  - "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
+  - "documentation/contracts/CONTRACT_REGISTRY.yaml"
 
 generationRules:
-  forbiddenUntilNextGateApproved:
-    - "Application code generation or modification"
-    - "Database schema, migration or persistence mapping generation"
-    - "Target OpenAPI contract generation"
-    - "Client or server stub generation"
-    - "Invention of fields, states, events or business rules"
-    - "Activation of deferred subscription contracts"
-  requiredBeforeGeneration:
-    - "Approve IA-0.5P_PAYMENT_CONTRACT_PACK"
-    - "Approve and register all nine Payment contract artifacts"
-    - "Validate Amplitude capabilities, authentication and SLA"
-    - "Validate TRESOR PAY contracts and callbacks"
-    - "Obtain Architecture, Payment, Integration, Security and Operations sign-offs"
+  forbidden:
+    - "APPLICATION_CODE_GENERATION_OR_MODIFICATION"
+    - "DATABASE_SCHEMA_OR_MIGRATION_GENERATION"
+    - "OPENAPI_CONTRACT_GENERATION_OR_MODIFICATION"
+    - "CLIENT_OR_SERVER_STUB_GENERATION"
+    - "INVENTION_OF_FIELDS_STATES_EVENTS_OR_RULES"
+    - "ACTIVATION_OF_DEFERRED_SUBSCRIPTION_CAPABILITIES"
+    - "SILENT_CLOSURE_OF_OPEN_DECISIONS"
 
 readiness:
-  architectureAmbiguities: "CLOSED"
-  preflightPack: "PASSED"
-  contractPack: "PENDING"
+  lot0BaselinePrepared: true
+  documentaryValidationRequired: true
+  contractPackApproved: false
   codeGeneration: "FORBIDDEN"
-
-contractPackDecisions:
-  - step: "1.2"
-    id: "PAYMENT_AUTHORIZATION_VERIFICATION"
-    path: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
-    status: "DECIDED_PENDING_EXTERNAL_APPROVAL"
-    decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
-    remoteContractRequired: false
-  - step: "1.3"
-    id: "AMPLITUDE_CUSTOMER_VERIFICATION_FOR_PAYMENT"
-    path: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
-    contractPath: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
-    status: "CONFIRMED_PENDING_EXTERNAL_APPROVAL"
-    decision: "REUSE_FOR_CUSTOMER_AND_ACCOUNT_VERIFICATION_ONLY"
-    confirmedForPayment: true
-    fundsControlCovered: false
-    generationPolicy: "REFERENCE_ONLY"
-  - step: "1.4"
-    id: "AMPLITUDE_CORE_BANKING_PAYMENT"
-    contractPath: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
-    status: "PRODUCED_PENDING_BANK_APPROVAL"
-    decision: "ATOMIC_POSTING_WITH_OPTIONAL_RESERVATION_AND_QUERY_RECOVERY"
-    preferredPostingMode: "ATOMIC_DEBIT_AND_CUT_CREDIT"
-    unknownOutcomePolicy: "LOOKUP_ONLY_NO_BLIND_RESUBMISSION"
-    reversalPolicy: "EXPLICIT_BANK_INSTRUCTION_OR_APPROVED_RUNBOOK"
-    generationPolicy: "REFERENCE_ONLY"
-  - step: "1.5"
-    id: "TRESOR_PAY_PAYMENT_STATUS_WEBHOOK"
-    contractPath: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
-    status: "PRODUCED_PENDING_EXTERNAL_APPROVAL"
-    decision: "AT_LEAST_ONCE_SIGNED_IDEMPOTENT_DELIVERY"
-    eventCount: 7
-    idempotencyKey: "eventId"
-    deliveryAttemptKey: "deliveryId"
-    orderingKey: "paymentVersion"
-    tfjFinalityCovered: false
-    generationPolicy: "REFERENCE_ONLY"
-  - step: "1.6"
-    id: "TFJ_END_OF_DAY_CONTRACTS"
-    contractPaths:
-      - "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
-      - "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
-    status: "PRODUCED_PENDING_EXTERNAL_APPROVAL"
-    decision: "AMPLITUDE_ASYNC_CONFIRMATION_WITH_SCHEDULED_QUERY_FALLBACK"
-    finalitySource: "AMPLITUDE_TFJ_RESULT"
-    matchingKey:
-      - "financialInstitutionCode"
-      - "businessDate"
-      - "paymentReference"
-      - "bankPostingReference"
-    unmatchedPolicy: "QUARANTINE_ALERT_MANUAL_RECONCILIATION_NO_PAYMENT_UPDATE"
-    tresorPayEventCount: 3
-    generationPolicy: "REFERENCE_ONLY"
-  - step: "1.7"
-    id: "INTERNAL_PAYMENT_CONSULTATION_CONTRACTS"
-    contractPaths:
-      - "documentation/contracts/internal/payment-query-api-v1.yaml"
-      - "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
-      - "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
-    status: "PRODUCED_PENDING_INTERNAL_APPROVAL"
-    decision: "SEPARATE_PAYMENT_OBSERVED_CUSTOMER_AND_PRIVILEGED_AUDIT_READ_APIS"
-    readOnly: true
-    pagination: "STABLE_CURSOR"
-    ordinaryScopes:
-      - "payment.read"
-      - "observed-customer.read"
-    privilegedScopes:
-      - "payment.audit.read"
-      - "payment.audit.export"
-    accessAuditRequired: true
-    generationPolicy: "REFERENCE_ONLY"
-
-finalValidation:
-  step: "0P.14"
-  status: "PASSED"
-  checks:
-    gateBriefManifestConsistency: true
-    stateMachineConsistency: true
-    allBusinessScenariosCovered: true
-    localSubscriptionManagementAbsent: true
-    ia0rDecisionConsistency: true
-    requirementTraceabilityComplete: true
-    paymentObservedCustomerConsistency: true
-    yamlSyntaxValid: true
-    sensitiveExampleDataAbsent: true
-    contractInventoryComplete: true
-  evidence:
-    normalizedRequirementCount: 55
-    requirementsWithoutSourceOrSixpayDecision: 0
-    mvpCapabilityCount: 12
-    businessAlternativeFlowCount: 15
-    stateCount: 16
-    transitionCount: 34
-    terminalStateCount: 4
-    normativeEventCount: 16
-    acceptanceTestFamilyCount: 13
-    explicitAcceptanceScenarioCount: 142
-    contractFamilyCount: 7
-    concreteContractArtifactCount: 9
-  verdict:
-    gate: "IA-0P PASSED"
-    readiness: "READY FOR IA-0.5P — PAYMENT CONTRACT PACK"
-    codeGeneration: "CODE GENERATION FORBIDDEN"

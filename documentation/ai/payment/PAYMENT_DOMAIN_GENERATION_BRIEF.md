@@ -1,198 +1,232 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> Ce brief consolide le Gate IA-0P et prépare le Contract Pack Payment. Il
-> n’autorise aucune génération de code, de schéma, de migration ou de contrat.
+> This brief is the primary human-readable context for Gate
+> `IA-1 — PAYMENT DOMAIN BRIEF`.
+>
+> Lot 0 freezes the governing corpus. It does not authorize code, database,
+> contract, client, server-stub or infrastructure generation.
 
 ## 1. Identification
 
-| Propriété | Valeur |
+| Property | Value |
 | --- | --- |
-| Domaine pilote | `payment` |
-| Gate courant | `IA-0P_PAYMENT_PREFLIGHT` |
-| Branche | `feat/payment-contract-pack` |
-| Commit de référence | `00469905c048200277b4012238486e28f62a50b8` |
-| Statut | `IA-0P_PASSED` |
-| Génération de code | **Interdite** |
-| Gate suivant | `IA-0.5P_PAYMENT_CONTRACT_PACK` |
+| Domain | `payment` |
+| Gate | `IA-1 — PAYMENT DOMAIN BRIEF` |
+| Current lot | `0 — Baseline and Gate Scope` |
+| Branch | `feat/payment-contract-pack` |
+| Frozen source commit | `__PAYMENT_CONTRACT_PACK_HEAD_SHA__` |
+| Baseline date | `2026-07-31` |
+| Status | `BASELINE_PENDING_VALIDATION` |
+| Code generation | **FORBIDDEN** |
+| Lot 0 authority | `documentation/ai/payment/PAYMENT_IA1_BASELINE.md` |
+| Next lot | `Lot 1 — Ubiquitous Language and Payment Model Boundaries` |
 
-## 2. Usage et autorité
+## 2. Usage and authority
 
-Ce document est le brief humain consolidé du domaine Payment. Il doit être lu
-avec `AI_CONTEXT_MANIFEST.yaml`, qui constitue l’index machine-readable, et
-avec les livrables normatifs qu’il référence.
+This document must be read with:
 
-La hiérarchie de `PAYMENT_SOURCE_BASELINE.md` s’applique. Une exigence Payment
-doit citer une source ou être identifiée comme décision SIXPAY. En cas de
-contradiction, les décisions IA-0R priment.
+- `ENGINEERING_CONTEXT.md`;
+- `documentation/ai/payment/PAYMENT_IA1_BASELINE.md`;
+- `documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md`;
+- `documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml`;
+- `documentation/contracts/CONTRACT_REGISTRY.yaml`.
 
-## 3. Périmètre du MVP
+The complete authority hierarchy, contract classification, approved
+assumptions, file boundaries and open decisions are defined in
+`PAYMENT_IA1_BASELINE.md`.
 
-Le MVP couvre :
+Every model rule introduced after Lot 0 must cite an approved source or an
+explicit open decision. Implementation convenience is never a business source.
 
-- la réception et la persistance immédiate d’un ordre TRESOR PAY ;
-- la création ou l’actualisation de la projection `ObservedCustomer` ;
-- la vérification Amplitude du client, du compte, de son appartenance, de son
-  statut, de ses blocages, oppositions et fonds disponibles ;
-- le débit du client et le crédit comptable du CUT ;
-- la notification du résultat immédiat ;
-- l’attente, le rapprochement et la confirmation TFJ ;
-- la notification du résultat définitif ;
-- la consultation et l’audit dans SIXPAY.
+## 3. Lot 0 frozen scope
 
-Sont exclus :
+IA-1 is authorized to define the Payment Aggregate Root, typed identifiers,
+external references, `Money`, debtor and Treasury account references, bank
+posting reference, Payment failures, Payment statuses, named transitions,
+invariants, minimized decision snapshots, domain events and test traceability.
 
-- la gestion locale et la validation SIXPAY des abonnements ;
-- le KYC numérique par document et selfie ;
-- la compensation interbancaire hors confirmation TFJ ;
-- la gestion des marchands TRESOR PAY.
+IA-1 is not authorized to generate implementation, persistence, migrations,
+OpenAPI contracts, adapters, controllers, schedulers or infrastructure.
 
-## 4. Autorité et responsabilités
+## 4. Systems of record
 
-| Fait ou opération | Système maître |
+| Fact or operation | System of record |
 | --- | --- |
-| Abonnement et ordre de paiement | TRESOR PAY |
-| Client, compte et écritures bancaires | Amplitude |
-| Paiement traité et audit d’intégration | SIXPAY |
-| Projection `ObservedCustomer` | SIXPAY |
-| Confirmation TFJ | Amplitude |
+| Subscription | TRESOR PAY |
+| Payment order | TRESOR PAY |
+| Banking customer and debtor account | Amplitude |
+| Banking posting and posting lookup | Amplitude |
+| Processed Payment lifecycle | SIXPAY |
+| ObservedCustomer projection | SIXPAY |
+| TFJ confirmation | Amplitude |
+| Integration audit | SIXPAY |
 
-Les modules SIXPAY se répartissent ainsi :
+## 5. Module responsibilities
 
-- `payment` possède l’agrégat, ses décisions et son cycle de vie ;
-- `customer` interprète les vérifications et maintient `ObservedCustomer` ;
-- `integration` possède les adaptateurs et contrats de transport externes ;
-- `accounting` interprète posting, résultat inconnu, TFJ et extourne ;
-- `notification` garantit la livraison des résultats à TRESOR PAY ;
-- `reporting` expose les projections de consultation et d’export.
+- `payment` owns the aggregate, decisions, lifecycle and domain events.
+- `customer` interprets customer/account verification and maintains
+  `ObservedCustomer`.
+- `integration` owns external transport adapters and payload mapping.
+- `accounting` interprets funds verification, posting, unknown outcomes, TFJ
+  and reversal.
+- `notification` owns reliable immediate and final delivery.
+- `reporting` owns read-only Payment, ObservedCustomer and audit projections.
+- `security` and `integration` validate authorization evidence; Payment
+  consumes only a canonical minimized result.
 
-## 5. Parcours canonique
+No other business module is imported into the Payment domain model.
+
+## 6. Approved baseline decisions
+
+The following constraints are frozen:
+
+- persist Payment before any Amplitude call;
+- no local Subscription aggregate;
+- `ExternalSubscriptionReference` is traceability only;
+- validate a short-lived asymmetric signed authorization token locally;
+- never persist or publish credentials or raw authorization tokens;
+- only a positive canonical banking result permits progression;
+- preserve a dedicated pre-posting verification boundary;
+- target atomic debtor debit and configured CUT credit;
+- resolve unknown write outcomes through authoritative lookup only;
+- never blindly resubmit a financial command;
+- distinguish immediate `CUT_CREDITED` from TFJ finality;
+- only a uniquely matched successful TFJ result establishes
+  `TREASURY_INTEGRATED`;
+- notification delivery failure never changes financial state;
+- Payment transition, immutable audit and Outbox intent are atomic;
+- reuse shared-kernel `Money`;
+- keep the domain framework-free;
+- use named aggregate transitions, never arbitrary status mutation.
+
+The normative identifiers and full wording are in
+`PAYMENT_IA1_BASELINE.md`, section 9.
+
+## 7. Applicable contract classification
+
+### Active MVP, pending approval
+
+- `tresorpay-payment-request-api-v1.yaml`
+- `amplitude-payment-posting-api-v1.yaml`
+- `tresorpay-payment-status-webhook-v1.yaml`
+- `amplitude-end-of-day-confirmation-api-v1.yaml`
+- `tresorpay-treasury-integration-webhook-v1.yaml`
+
+### Reference MVP only
+
+- `amplitude-customer-verification-api-v1.yaml`
+
+### Deferred and excluded
+
+- `tresorpay-authorization-request-api-v1.yaml`
+- `tresorpay-authorization-decision-webhook-v1.yaml`
+
+### Intentionally absent
+
+- `tresorpay-subscription-verification-api-v1.yaml`
+
+### Missing or not approved
+
+- `amplitude-payment-verification-api-v1.yaml`
+- internal Payment query contract;
+- internal ObservedCustomer query contract;
+- internal Payment audit query contract;
+- external approvals listed in the Contract Registry.
+
+No contract listed above authorizes code generation at Lot 0.
+
+## 8. Golden Partner conventions
+
+Payment will reuse these Golden Partner conventions:
+
+- rich aggregate;
+- hexagonal internal architecture;
+- framework-free domain;
+- application ports;
+- explicit persistence mapping;
+- transactional aggregate, audit and Outbox;
+- append-only history;
+- local domain Outbox;
+- no cross-domain business imports;
+- module auto-configuration;
+- architecture, domain, application, persistence, concurrency and acceptance
+  tests.
+
+Partner statuses, events, thresholds, payloads and business rules are not
+Payment sources.
+
+## 9. Authorized files
+
+Lot 0 may update only:
 
 ```text
-TRESOR PAY → réception SIXPAY → persistance → contrôles Amplitude
-           → débit client → crédit CUT → notification immédiate
-           → attente TFJ → confirmation TFJ → notification définitive
+documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+documentation/ai/payment/PAYMENT_IA1_BASELINE.md
+documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md
+documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+documentation/contracts/CONTRACT_REGISTRY.yaml
 ```
 
-Tout résultat financier inconnu ou partiel est rapproché avant décision. Une
-écriture financière ne doit jamais être rejouée aveuglément. Les parcours
-alternatifs et leurs issues normatives sont définis dans
-`PAYMENT_BUSINESS_FLOWS.md`.
+Lot 0 must not modify implementation, OpenAPI artifacts, architecture,
+requirements, user stories or infrastructure.
 
-## 6. Modèle métier
+## 10. Open decisions
 
-`Payment` est l’unique Aggregate Root d’écriture du périmètre. Il contient son
-identité, ses références externes et de corrélation, le montant, les snapshots
-minimaux nécessaires, les décisions bancaires acceptées, les résultats de
-posting, les intentions de notification, la confirmation TFJ et l’extourne.
+The open-decision catalogue is maintained in
+`PAYMENT_IA1_BASELINE.md`, section 12.
 
-Les identifiants typés, `Money`, `PayerSnapshot`, `BankAccountReference`,
-`FinancialInstitutionCode`, `BankingVerification`, `PostingResult`,
-`TreasuryAccount`, `NotificationDelivery`, `EndOfDayConfirmation` et
-`Reversal` suivent les classifications exactes de
-`PAYMENT_DOMAIN_MODEL.md`.
+The principal blockers are:
 
-`ObservedCustomer` reste une projection CQRS reconstruisible. Il ne devient ni
-Aggregate Root Payment, ni référentiel KYC, ni système maître bancaire.
+- exact branch HEAD SHA;
+- Payment Contract Pack approval;
+- missing pre-posting verification contract;
+- final internal query contract names and paths;
+- reservation capability;
+- bank posting reference structure;
+- reversal guards;
+- semantic role of `NOTIFIED`;
+- semantics of `DEBITED` under atomic posting;
+- exact role of terminal `FAILED`;
+- security and operational parameters.
 
-## 7. États, invariants et événements
+No open decision may be silently closed by generation.
 
-La machine normative comporte 16 états et 34 transitions. Ses états terminaux
-sont `REJECTED`, `TREASURY_INTEGRATED`, `FAILED` et `REVERSED`.
+## 11. Traceability rule
 
-Les invariants essentiels sont :
+Every aggregate property, value object, state, transition, guard, invariant,
+failure, command, event and test must cite at least one of:
 
-- persister avant tout appel externe ;
-- garantir l’idempotence métier et technique ;
-- interdire tout posting avant contrôles favorables ;
-- séparer résultat immédiat et finalité TFJ ;
-- ne pas confondre intention Outbox et accusé de livraison ;
-- ne pas modifier un état financier à cause d’un échec de notification ;
-- rapprocher tout outcome inconnu avant reprise ou extourne ;
-- conserver les échecs dans la consultation et l’audit.
+```text
+PAY-BASE-*
+PAY-CONTRACT-*
+PAY-AI-*
+PAY-SRC-*
+SRC-*
+OPEN-*
+```
 
-Les invariants 0P.7 sont intégrés à `PAYMENT_DOMAIN_MODEL.md` et
-`PAYMENT_STATE_MACHINE.yaml`. Le catalogue normatif contient 16 événements :
-les 15 candidats et `PaymentFailed`, requis par l’état terminal `FAILED`.
+An untraced rule is invalid.
 
-## 8. Contrats à produire au Gate suivant
+## 12. Lot 0 exit criterion
 
-Les sept familles correspondent à huit artefacts OpenAPI 3.1 :
+Lot 0 is complete when:
 
-1. demande de paiement TRESOR PAY → SIXPAY ;
-2. vérification et contrôle des fonds SIXPAY → Amplitude ;
-3. débit client et crédit CUT SIXPAY → Amplitude ;
-4. notification immédiate SIXPAY → TRESOR PAY ;
-5. confirmation TFJ Amplitude → SIXPAY, avec fallback de rapprochement ;
-6. notification définitive TFJ SIXPAY → TRESOR PAY ;
-7. APIs SIXPAY de consultation Payment, ObservedCustomer et audit.
-
-Le Gate IA-0.5P devra fixer les payloads, erreurs RFC 7807, authentification,
-idempotence, corrélation, timeouts, retries, compatibilité et responsabilités.
-
-## 9. Sécurité, audit et observabilité
-
-- TRESOR PAY utilise Token + Subscription Key pour le MVP.
-- Les secrets sont externalisés, rotatifs et révocables.
-- TLS 1.3 et AES-256 ou équivalent validé sont requis.
-- RIB/IBAN sont minimisés et masqués hors frontière bancaire autorisée.
-- Aucun credential, secret ou compte en clair ne figure dans les logs.
-- Les droits suivent la matrice `OPS`, `MANAGER`, `AUDITOR`, `ADMIN`.
-- Consultations, exports, rejeux et actions sensibles sont audités.
-- Logs, traces, événements et appels portent la corrélation de bout en bout.
-- Des alertes couvrent les paiements bloqués, TFJ absente, DLQ, notifications,
-  outcomes inconnus et extournes.
-
-## 10. Résilience
-
-Le traitement impose idempotence entrante, Outbox transactionnelle, livraison
-au moins une fois, retry borné avec backoff exponentiel et full jitter, circuit
-breaker, DLQ, rapprochement bancaire, quarantaine TFJ, reprise ordonnée,
-replay contrôlé et runbook d’extourne avec double contrôle.
-
-Un retry technique, une republication et une reprise financière sont trois
-opérations distinctes. Aucun automatisme ne doit transformer une incertitude
-bancaire en double effet financier.
-
-## 11. Vérification attendue
-
-La stratégie comprend 13 familles et 142 scénarios identifiés. Elle exige :
-
-- la couverture des 34 transitions et de toutes les transitions interdites ;
-- des tests d’idempotence, concurrence et rejeu ;
-- la couverture des huit artefacts contractuels ;
-- des tests Amplitude, notifications et TFJ ;
-- des tests RBAC, masquage, audit et absence de fuite ;
-- la reconstruction d’`ObservedCustomer` ;
-- les résultats inconnus, écritures partielles et extournes ;
-- l’exécution du profil Maven `full-tests`.
-
-## 12. Contraintes de génération
-
-Avant approbation du Gate `IA-0.5P_PAYMENT_CONTRACT_PACK`, il est interdit de :
-
-- générer ou modifier du code applicatif ;
-- créer des tables, migrations ou mappings de persistance ;
-- produire les OpenAPI cibles ou des clients/serveurs dérivés ;
-- inventer un champ, état, événement, responsabilité ou règle métier ;
-- activer les contrats TRESOR PAY d’abonnement classés hors MVP.
-
-Les validations externes encore attendues portent notamment sur les contrats,
-capacités, authentification et SLA Amplitude/TRESOR PAY, ainsi que sur les
-signatures Architecture, Payment, Integration, Security et Operations.
+- the authoritative branch HEAD is frozen;
+- the same SHA appears in all Lot 0 documents;
+- the contract inventory is classified;
+- active, reference, deferred, intentionally absent and missing capabilities
+  are distinguished;
+- approved assumptions are identified;
+- unresolved decisions are explicitly catalogued;
+- authorized and forbidden files are explicit;
+- the baseline passes human validation;
+- code generation remains forbidden.
 
 ## 13. Verdict
 
-Le contrôle final 0P.14 confirme la cohérence du Gate, de ce brief et du
-manifeste. Les 55 exigences sont tracées, les 15 parcours alternatifs sont
-couverts, la machine à 16 états et 34 transitions est cohérente, les neuf
-contrats cibles sont recensés et aucune ambiguïté structurante ne reste
-ouverte.
-
-Le contexte Payment est prêt pour la production et l’approbation du Contract
-Pack. Il n’est pas prêt pour la génération de code.
-
 ```text
-IA-0P PASSED
-READY FOR IA-0.5P — PAYMENT CONTRACT PACK
-CODE GENERATION FORBIDDEN
+IA-1 LOT 0 BASELINE PREPARED
+STATUS: BASELINE_PENDING_VALIDATION
+NEXT: DOCUMENTARY BASELINE APPROVAL
+CODE GENERATION: FORBIDDEN
 ```

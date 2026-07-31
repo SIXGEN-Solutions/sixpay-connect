@@ -14,7 +14,7 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `feat/payment-contract-pack`
+**Primary implementation branch:** `feat/payment-domain-generation-brief`
 
 ---
 
@@ -32,7 +32,7 @@ The repository is the single source of engineering knowledge.
 
 Unless explicitly instructed otherwise, information shall be interpreted using the following precedence:
 
-1. **`feat/payment-contract-pack`** (latest implementation)
+1. **`feat/payment-domain-generation-brief`** (latest implementation)
 2. **`documentation/architecture/`**
 3. **`documentation/requirements/`**
 4. **`documentation/contracts/`**
