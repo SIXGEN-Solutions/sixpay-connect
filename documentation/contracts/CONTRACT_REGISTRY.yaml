@@ -179,6 +179,78 @@ contracts:
       - "Security approves Bearer, Subscription Key and HMAC profile"
       - "Operations approves retry, DLQ, alert and replay procedures"
 
+  - id: "amplitude-end-of-day-confirmation-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "accounting"
+    lifecycleConsumer: "payment"
+    capability: "END_OF_DAY_TREASURY_CONFIRMATION"
+    primaryDirection: "AMPLITUDE_TO_SIXPAY"
+    fallbackDirection: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    mvpUsage:
+      included: true
+      primaryMode: "AMPLITUDE_ASYNCHRONOUS_CONFIRMATION"
+      fallbackMode: "SIXPAY_SCHEDULED_RECONCILIATION_QUERY"
+      finalitySource: "AMPLITUDE_TFJ_RESULT"
+      matchingKeys:
+        - "FINANCIAL_INSTITUTION_CODE"
+        - "BUSINESS_DATE"
+        - "PAYMENT_REFERENCE"
+        - "BANK_POSTING_REFERENCE"
+      constraints:
+        - "Only a matched successful result establishes TREASURY_INTEGRATED"
+        - "An unmatched, ambiguous or conflicting result is quarantined"
+        - "A quarantined result never changes Payment"
+        - "A missing result keeps Payment pending and triggers the fallback query"
+        - "TFJ delay alone never authorizes automatic reversal"
+    approvalPrerequisite:
+      - "Amplitude approves callback, lookup and business status semantics"
+      - "Security approves mTLS plus HMAC for callback and OAuth2 plus mTLS for lookup"
+      - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
+
+  - id: "tresorpay-treasury-integration-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "TREASURY_INTEGRATION_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    mvpUsage:
+      included: true
+      eventTypes:
+        - "PENDING_END_OF_DAY_CONFIRMATION"
+        - "TREASURY_INTEGRATED"
+        - "TREASURY_INTEGRATION_FAILED"
+      semantics:
+        delivery: "AT_LEAST_ONCE"
+        idempotencyKey: "eventId"
+        attemptIdentifier: "deliveryId"
+        ordering: "paymentVersion"
+        durableAcceptance: "HTTP_204"
+      constraints:
+        - "TREASURY_INTEGRATED requires a durably persisted and uniquely matched Amplitude result"
+        - "TREASURY_INTEGRATION_FAILED never commands an automatic reversal"
+        - "Delivery failure never changes Payment financial state"
+        - "Operational replay never triggers a financial replay"
+    approvalPrerequisite:
+      - "TRESOR PAY approves endpoint registration and event semantics"
+      - "Security approves Bearer, Subscription Key and HMAC profile"
+      - "Operations approves retry, DLQ, alert and replay procedures"
+
   - id: "tresorpay-authorization-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
     domain: "subscription"
@@ -214,9 +286,15 @@ contracts:
 missingMvpContracts:
   status: "TO_BE_PRODUCED"
   contracts:
-    - id: "tresorpay-tfj-confirmation-webhook-v1"
-      capability: "END_OF_DAY_TREASURY_CONFIRMATION"
-      direction: "SIXPAY_TO_TRESOR_PAY"
+    - id: "amplitude-payment-verification-api-v1"
+      capability: "PAYMENT_EXECUTION_VERIFICATION"
+      direction: "SIXPAY_TO_AMPLITUDE"
+    - id: "sixpay-payment-query-api-v1"
+      capability: "PAYMENT_QUERY_AND_AUDIT"
+      direction: "TRESOR_PAY_TO_SIXPAY"
+    - id: "sixpay-observed-customer-query-api-v1"
+      capability: "OBSERVED_CUSTOMER_QUERY"
+      direction: "AUTHORIZED_SIXPAY_USER_TO_SIXPAY"
 
 mvpAuthorizationVerification:
   gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"

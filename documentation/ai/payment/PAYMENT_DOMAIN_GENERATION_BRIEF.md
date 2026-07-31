@@ -116,7 +116,7 @@ les 15 candidats et `PaymentFailed`, requis par l’état terminal `FAILED`.
 
 ## 8. Contrats à produire au Gate suivant
 
-Les sept familles correspondent à neuf artefacts OpenAPI 3.1 :
+Les sept familles correspondent à huit artefacts OpenAPI 3.1 :
 
 1. demande de paiement TRESOR PAY → SIXPAY ;
 2. vérification et contrôle des fonds SIXPAY → Amplitude ;
@@ -159,7 +159,7 @@ La stratégie comprend 13 familles et 142 scénarios identifiés. Elle exige :
 
 - la couverture des 34 transitions et de toutes les transitions interdites ;
 - des tests d’idempotence, concurrence et rejeu ;
-- la couverture des neuf artefacts contractuels ;
+- la couverture des huit artefacts contractuels ;
 - des tests Amplitude, notifications et TFJ ;
 - des tests RBAC, masquage, audit et absence de fuite ;
 - la reconstruction d’`ObservedCustomer` ;

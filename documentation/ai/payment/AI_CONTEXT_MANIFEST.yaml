@@ -180,7 +180,7 @@ events:
 contracts:
   requirements: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
   familyCount: 7
-  concreteArtifactCount: 9
+  concreteArtifactCount: 8
   status: "TO_BE_PRODUCED_AND_APPROVED"
   format: "OPENAPI_3_1"
 
@@ -218,7 +218,7 @@ acceptance:
   explicitScenarioCount: 142
   requiredStateTransitionCoverage: "34/34"
   forbiddenTransitionCoverage: "EXHAUSTIVE"
-  requiredContractArtifactCoverage: "9/9"
+  requiredContractArtifactCoverage: "8/8"
   fullIntegrationProfile: "full-tests"
 
 generationRules:
@@ -231,7 +231,7 @@ generationRules:
     - "Activation of deferred subscription contracts"
   requiredBeforeGeneration:
     - "Approve IA-0.5P_PAYMENT_CONTRACT_PACK"
-    - "Approve and register all nine Payment contract artifacts"
+    - "Approve and register all eight Payment contract artifacts"
     - "Validate Amplitude capabilities, authentication and SLA"
     - "Validate TRESOR PAY contracts and callbacks"
     - "Obtain Architecture, Payment, Integration, Security and Operations sign-offs"
@@ -277,6 +277,22 @@ contractPackDecisions:
     deliveryAttemptKey: "deliveryId"
     orderingKey: "paymentVersion"
     tfjFinalityCovered: false
+    generationPolicy: "REFERENCE_ONLY"
+  - step: "1.6"
+    id: "TFJ_END_OF_DAY_CONTRACTS"
+    contractPaths:
+      - "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+      - "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+    status: "PRODUCED_PENDING_EXTERNAL_APPROVAL"
+    decision: "AMPLITUDE_ASYNC_CONFIRMATION_WITH_SCHEDULED_QUERY_FALLBACK"
+    finalitySource: "AMPLITUDE_TFJ_RESULT"
+    matchingKey:
+      - "financialInstitutionCode"
+      - "businessDate"
+      - "paymentReference"
+      - "bankPostingReference"
+    unmatchedPolicy: "QUARANTINE_ALERT_MANUAL_RECONCILIATION_NO_PAYMENT_UPDATE"
+    tresorPayEventCount: 3
     generationPolicy: "REFERENCE_ONLY"
 
 finalValidation:

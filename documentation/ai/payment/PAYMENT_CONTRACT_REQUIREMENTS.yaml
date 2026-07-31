@@ -38,11 +38,12 @@ baseline:
 
 scope:
   contractFamilyCount: 7
-  concreteArtifactCount: 9
+  concreteArtifactCount: 8
   rationale: >
     The seven requested business exchanges form seven contract families.
     TFJ requires both the primary asynchronous confirmation and the scheduled
-    reconciliation fallback. Internal query and audit capabilities require
+    reconciliation fallback, consolidated in one bidirectional API artifact.
+    Internal query and audit capabilities require
     separate Payment and ObservedCustomer APIs to preserve module ownership.
   lifecycleStatusAtThisStep: "TO_BE_PRODUCED"
   approvalStatusAtThisStep: "NOT_DRAFTED"
@@ -478,15 +479,11 @@ contractFamilies:
       business: "accounting"
       lifecycleConsumer: "payment"
     artifacts:
-      - id: "amplitude-tfj-confirmation-webhook-v1"
-        targetPath: "documentation/contracts/amplitude/amplitude-tfj-confirmation-webhook-v1.yaml"
-        type: "OPENAPI_WEBHOOK"
+      - id: "amplitude-end-of-day-confirmation-api-v1"
+        targetPath: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+        type: "OPENAPI_BIDIRECTIONAL"
         operations:
           - "Receive an asynchronous TFJ result from Amplitude"
-      - id: "amplitude-tfj-reconciliation-api-v1"
-        targetPath: "documentation/contracts/amplitude/amplitude-tfj-reconciliation-api-v1.yaml"
-        type: "OPENAPI"
-        operations:
           - "Query missing TFJ results by institution, business date and posting reference"
     protocol:
       primary: "ASYNCHRONOUS_HTTPS_WEBHOOK_JSON"
@@ -563,11 +560,13 @@ contractFamilies:
       business: "payment"
       delivery: "notification"
     artifacts:
-      - id: "tresorpay-payment-tfj-result-webhook-v1"
-        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-tfj-result-webhook-v1.yaml"
+      - id: "tresorpay-treasury-integration-webhook-v1"
+        targetPath: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
         type: "OPENAPI_WEBHOOK"
         operations:
-          - "Deliver a definitive matched TFJ result"
+          - "Deliver PENDING_END_OF_DAY_CONFIRMATION"
+          - "Deliver TREASURY_INTEGRATED after a matched successful TFJ result"
+          - "Deliver TREASURY_INTEGRATION_FAILED after a matched adverse TFJ result"
     protocol:
       style: "ASYNCHRONOUS_WEBHOOK"
       transport: "HTTPS REST JSON"
@@ -714,15 +713,11 @@ artifactInventory:
     family: "PAY-CONTRACT-04"
     direction: "SIXPAY_TO_TRESOR_PAY"
     owner: "integration"
-  - id: "amplitude-tfj-confirmation-webhook-v1"
+  - id: "amplitude-end-of-day-confirmation-api-v1"
     family: "PAY-CONTRACT-05"
-    direction: "AMPLITUDE_TO_SIXPAY"
+    direction: "BIDIRECTIONAL_AMPLITUDE_SIXPAY"
     owner: "integration"
-  - id: "amplitude-tfj-reconciliation-api-v1"
-    family: "PAY-CONTRACT-05"
-    direction: "SIXPAY_TO_AMPLITUDE"
-    owner: "integration"
-  - id: "tresorpay-payment-tfj-result-webhook-v1"
+  - id: "tresorpay-treasury-integration-webhook-v1"
     family: "PAY-CONTRACT-06"
     direction: "SIXPAY_TO_TRESOR_PAY"
     owner: "integration"
@@ -769,12 +764,11 @@ gateIA05PProductionOrder:
     reason: "Closes immediate external outcomes after the state and posting contracts."
   - order: 4
     artifacts:
-      - "amplitude-tfj-confirmation-webhook-v1"
-      - "amplitude-tfj-reconciliation-api-v1"
+      - "amplitude-end-of-day-confirmation-api-v1"
     reason: "Closes primary and fallback Treasury finality."
   - order: 5
     artifacts:
-      - "tresorpay-payment-tfj-result-webhook-v1"
+      - "tresorpay-treasury-integration-webhook-v1"
     reason: "Depends on the finality contract."
   - order: 6
     artifacts:

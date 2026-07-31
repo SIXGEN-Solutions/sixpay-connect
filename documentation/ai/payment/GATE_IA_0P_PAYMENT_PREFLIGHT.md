@@ -858,7 +858,7 @@ L’étape 0P.9 établit la cartographie normative dans :
 La cartographie distingue :
 
 - sept familles correspondant aux échanges métier demandés ;
-- neuf artefacts OpenAPI concrets à produire au Gate IA-0.5P ;
+- huit artefacts OpenAPI concrets à produire au Gate IA-0.5P ;
 - les directions, propriétaires et responsabilités métier ;
 - les protocoles et mécanismes d’authentification ;
 - l’idempotence et la corrélation ;
@@ -1044,7 +1044,7 @@ Elle formalise :
 - la couverture paramétrée des 34 transitions normatives et de toutes les
   transitions interdites ;
 - l’idempotence, la concurrence et les rejeux ;
-- les neuf artefacts contractuels ;
+- les huit artefacts contractuels ;
 - les intégrations Amplitude ;
 - les notifications immédiates et définitives ;
 - la TFJ, son fallback et sa quarantaine ;
@@ -1080,7 +1080,7 @@ TEST FAMILIES: 13/13
 STATE MACHINE TRANSITIONS: 34/34 REQUIRED
 FORBIDDEN TRANSITIONS: EXHAUSTIVE COVERAGE REQUIRED
 FINANCIAL DOUBLE-EFFECT NEGATIVE TESTS: REQUIRED
-CONTRACT ARTIFACTS: 9/9 COVERED
+CONTRACT ARTIFACTS: 8/8 COVERED
 OBSERVED CUSTOMER REBUILD: REQUIRED
 PARTIAL WRITE AND REVERSAL: COVERED
 FULL INTEGRATION PROFILE: REQUIRED
@@ -1162,7 +1162,7 @@ La revue combine :
 | Payment / ObservedCustomer | `Payment` seul Aggregate Root d’écriture ; `ObservedCustomer` projection CQRS reconstruisible, non autoritative | `PASSED` |
 | Syntaxe YAML | Manifeste, machine, catalogue d’événements, exigences contractuelles, décisions IA-0R et registre chargés sans erreur | `PASSED` |
 | Données sensibles | Aucun IBAN/RIB complet, Bearer Token ou Subscription Key réaliste détecté ; exemples masqués ou synthétiques | `PASSED` |
-| Contrats à produire | Sept familles et neuf artefacts concrets recensés | `PASSED` |
+| Contrats à produire | Sept familles et huit artefacts concrets recensés | `PASSED` |
 
 ## 19.3 Contrôle détaillé de la machine à états
 
@@ -1229,9 +1229,8 @@ La frontière est fermée :
 | `PAY-CONTRACT-02` | `amplitude-payment-verification-api-v1.yaml` |
 | `PAY-CONTRACT-03` | `amplitude-payment-posting-api-v1.yaml` |
 | `PAY-CONTRACT-04` | `tresorpay-payment-status-webhook-v1.yaml` |
-| `PAY-CONTRACT-05` | `amplitude-tfj-confirmation-webhook-v1.yaml` |
-| `PAY-CONTRACT-05` | `amplitude-tfj-reconciliation-api-v1.yaml` |
-| `PAY-CONTRACT-06` | `tresorpay-payment-tfj-result-webhook-v1.yaml` |
+| `PAY-CONTRACT-05` | `amplitude-end-of-day-confirmation-api-v1.yaml` |
+| `PAY-CONTRACT-06` | `tresorpay-treasury-integration-webhook-v1.yaml` |
 | `PAY-CONTRACT-07` | `sixpay-payment-query-api-v1.yaml` |
 | `PAY-CONTRACT-07` | `sixpay-observed-customer-query-api-v1.yaml` |
 

@@ -48,7 +48,7 @@ code Payment.
 | `PAYMENT_DOMAIN_MODEL.md` | Aggregate Root, Value Objects et invariants |
 | `PAYMENT_STATE_MACHINE.yaml` | 16 états distincts et 34 transitions normatives |
 | `PAYMENT_EVENT_CATALOG.yaml` | Événements, producteurs, consumers et replay |
-| `PAYMENT_CONTRACT_REQUIREMENTS.yaml` | Sept familles et neuf artefacts contractuels |
+| `PAYMENT_CONTRACT_REQUIREMENTS.yaml` | Sept familles et huit artefacts contractuels |
 | `PAYMENT_SECURITY_AUDIT_BASELINE.md` | Authentification, RBAC, audit et observabilité |
 | `PAYMENT_RESILIENCE_BASELINE.md` | Idempotence, Outbox, DLQ, rapprochement et extourne |
 | `IA_0R_BLOCKING_DECISIONS.yaml` | Décisions bloquantes fermées |
@@ -274,7 +274,7 @@ transactionnelles ; une simple simulation séquentielle est insuffisante.
 
 ## 15. Tests de contrats — `PAY-ACC-CTR`
 
-Les neuf artefacts identifiés en 0P.9 doivent passer validation OpenAPI 3.1,
+Les huit artefacts identifiés en 0P.9 doivent passer validation OpenAPI 3.1,
 tests de schéma, exemples et tests consommateur/fournisseur.
 
 | ID | Contrat / règle | Résultat attendu |
@@ -486,7 +486,7 @@ Les rapports ne contiennent jamais de credentials ou comptes complets.
 - [x] Tests d’idempotence définis.
 - [x] Tests de concurrence réelle définis.
 - [x] Tests de rejeu et DLQ définis.
-- [x] Tests des neuf artefacts contractuels définis.
+- [x] Tests des huit artefacts contractuels définis.
 - [x] Tests Amplitude définis.
 - [x] Tests de notification définis.
 - [x] Tests TFJ définis.
@@ -505,7 +505,7 @@ TEST FAMILIES: 13/13
 STATE MACHINE TRANSITIONS: 34/34 REQUIRED
 FORBIDDEN TRANSITIONS: EXHAUSTIVE COVERAGE REQUIRED
 FINANCIAL DOUBLE-EFFECT NEGATIVE TESTS: REQUIRED
-CONTRACT ARTIFACTS: 9/9 COVERED
+CONTRACT ARTIFACTS: 8/8 COVERED
 OBSERVED CUSTOMER REBUILD: REQUIRED
 PARTIAL WRITE AND REVERSAL: COVERED
 FULL INTEGRATION PROFILE: REQUIRED
