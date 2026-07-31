@@ -36,10 +36,24 @@
 
     <dependencies>
 
+        <!-- SIXPAY platform contracts used by the pure Payment domain -->
+
         <dependency>
             <groupId>com.sixpay</groupId>
             <artifactId>common</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>shared-kernel</artifactId>
+        </dependency>
+
+        <!-- Unit and architecture tests -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
