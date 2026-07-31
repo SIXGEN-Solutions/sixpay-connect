@@ -3,9 +3,9 @@
 > This brief is the primary human-readable context for Gate
 > `IA-1 — PAYMENT DOMAIN BRIEF`.
 >
-> Lot 0 freezes the governing corpus. Lot 1 fixes the ubiquitous language and
-> domain boundaries. Neither lot authorizes code, database, contract, client,
-> server-stub or infrastructure generation.
+> Lots 0 and 1 freeze the governing corpus, language and boundaries.
+> Lot 2.1 defines the Payment Aggregate Root. No current lot authorizes code,
+> database, contract, client, server-stub or infrastructure generation.
 
 ## 1. Identification
 
@@ -13,292 +13,168 @@
 | --- | --- |
 | Domain | `payment` |
 | Gate | `IA-1 — PAYMENT DOMAIN BRIEF` |
-| Current lot | `1 — Ubiquitous Language and Domain Boundaries` |
+| Current lot | `2.1 — Aggregate Root Payment` |
 | Branch | `feat/payment-domain-generation-brief` |
 | Baseline date | `2026-07-31` |
-| Status | `LOT_1_DRAFT_PENDING_VALIDATION` |
+| Status | `LOT_2_1_DRAFT_PENDING_VALIDATION` |
 | Code generation | **FORBIDDEN** |
 | Lot 0 authority | `documentation/ai/payment/PAYMENT_IA1_BASELINE.md` |
 | Lot 1 glossary | `documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md` |
 | Lot 1 boundaries | `documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md` |
-| Lot 1 posting-reference decision | `documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md` |
-| Next lot | `Lot 2 — Value Objects and Identifiers` |
+| Lot 2.1 Aggregate Root | `documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md` |
+| Next lot | `Lot 2.2 — Identifiers and Value Objects` |
 
 ## 2. Usage and authority
 
 This document must be read with:
 
 - `ENGINEERING_CONTEXT.md`;
-- `documentation/ai/payment/PAYMENT_IA1_BASELINE.md`;
-- `documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md`;
-- `documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md`;
-- `documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md`;
-- `documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md`;
-- `documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml`;
+- `PAYMENT_IA1_BASELINE.md`;
+- `PAYMENT_SOURCE_BASELINE.md`;
+- `PAYMENT_UBIQUITOUS_LANGUAGE.md`;
+- `PAYMENT_DOMAIN_BOUNDARIES.md`;
+- `PAYMENT_BANK_POSTING_REFERENCE_DECISION.md`;
+- `PAYMENT_AGGREGATE_ROOT.md`;
+- `PAYMENT_DOMAIN_MODEL.md`;
+- `AI_CONTEXT_MANIFEST.yaml`;
 - `documentation/contracts/CONTRACT_REGISTRY.yaml`.
 
-The complete authority hierarchy, contract classification, approved
-assumptions, file boundaries and open decisions are defined in
-`PAYMENT_IA1_BASELINE.md`.
-
-Every model rule introduced after Lot 0 must cite an approved source, a frozen
-baseline decision, a Lot 1 boundary invariant or an explicit open decision.
+Every rule must cite an approved source, decision, invariant or open decision.
 Implementation convenience is never a business source.
 
-## 3. Lot 0 frozen scope
-
-IA-1 is authorized to define the Payment Aggregate Root, typed identifiers,
-external references, `Money`, debtor and Treasury account references, bank
-posting reference, Payment failures, Payment statuses, named transitions,
-invariants, minimized decision snapshots, domain events and test traceability.
-
-IA-1 is not authorized to generate implementation, persistence, migrations,
-OpenAPI contracts, adapters, controllers, schedulers or infrastructure.
-
-## 4. Systems of record
+## 3. Systems of record
 
 | Fact or operation | System of record |
 | --- | --- |
-| Subscription | TRESOR PAY |
-| Payment order | TRESOR PAY |
-| Banking customer and debtor account | Amplitude |
-| Banking posting and posting lookup | Amplitude |
+| Subscription and Payment order | TRESOR PAY |
+| Banking customer/account, posting and TFJ | Amplitude |
 | Processed Payment lifecycle | SIXPAY |
-| ObservedCustomer projection | SIXPAY |
-| TFJ confirmation | Amplitude |
+| ObservedCustomer and query projections | SIXPAY |
 | Integration audit | SIXPAY |
 
-## 5. Module responsibilities
+## 4. Module responsibilities
 
-- `payment` owns the aggregate, decisions, lifecycle and domain events.
-- `customer` interprets customer/account verification and maintains
-  `ObservedCustomer`.
-- `integration` owns external transport adapters and payload mapping.
-- `accounting` interprets funds verification, posting, uncertain outcomes, TFJ
-  and reversal.
-- `notification` owns reliable immediate and final delivery.
-- `reporting` owns read-only Payment, ObservedCustomer and audit projections.
-- `security` and `integration` validate authorization evidence; Payment
-  consumes only a canonical minimized result.
+- `payment` owns aggregate decisions, lifecycle and domain events.
+- `customer` interprets customer/account verification.
+- `accounting` interprets funds, posting, uncertain outcomes, TFJ and reversal.
+- `integration` owns transport adapters and external mapping.
+- `notification` owns delivery.
+- `reporting` owns read projections.
+- `security` and `integration` validate authorization evidence.
 
-No other business module is imported into the Payment domain model.
+## 5. Frozen baseline decisions
 
-## 6. Approved baseline decisions
-
-The following constraints are frozen:
-
-- persist Payment before any Amplitude call;
+- persist Payment before Amplitude calls;
 - no local Subscription aggregate;
-- `ExternalSubscriptionReference` is traceability only;
-- validate a short-lived asymmetric signed authorization token locally;
-- never persist or publish credentials or raw authorization tokens;
-- only a positive canonical banking result permits progression;
-- preserve a dedicated pre-posting verification boundary;
-- target atomic debtor debit and configured CUT credit;
-- resolve unknown write outcomes through authoritative lookup only;
-- never blindly resubmit a financial command;
-- distinguish immediate `CUT_CREDITED` from TFJ finality;
-- only a uniquely matched successful TFJ result establishes
-  `TREASURY_INTEGRATED`;
-- notification delivery failure never changes financial state;
-- Payment transition, immutable audit and Outbox intent are atomic;
-- reuse shared-kernel `Money`;
-- keep the domain framework-free;
-- use named aggregate transitions, never arbitrary status mutation.
+- external subscription reference is traceability only;
+- signed authorization token validated locally;
+- credentials never enter Payment;
+- only positive canonical decisions permit progression;
+- posting targets atomic debit + configured CUT credit;
+- uncertain financial outcomes are looked up, never blindly replayed;
+- CUT credit is distinct from TFJ finality;
+- notification delivery does not change financial state;
+- state, audit and Outbox intent are atomic;
+- shared-kernel `Money` is reused;
+- domain remains framework-free.
 
-The normative identifiers and full wording are in
-`PAYMENT_IA1_BASELINE.md`, section 9.
+## 6. Ubiquitous language and boundaries
 
-## 7. Applicable contract classification
+Normative documents:
 
-### Active MVP, pending approval
+- `PAYMENT_UBIQUITOUS_LANGUAGE.md`;
+- `PAYMENT_DOMAIN_BOUNDARIES.md`.
 
-- `tresorpay-payment-request-api-v1.yaml`
-- `amplitude-payment-posting-api-v1.yaml`
-- `tresorpay-payment-status-webhook-v1.yaml`
-- `amplitude-end-of-day-confirmation-api-v1.yaml`
-- `tresorpay-treasury-integration-webhook-v1.yaml`
+`InitiateDebit` means Payment-order submission, not confirmed debit.
+`endToEndId` means `ExternalPaymentReference`.
 
-### Reference MVP only
+## 7. Bank posting reference
 
-- `amplitude-customer-verification-api-v1.yaml`
-
-### Deferred and excluded
-
-- `tresorpay-authorization-request-api-v1.yaml`
-- `tresorpay-authorization-decision-webhook-v1.yaml`
-
-### Intentionally absent
-
-- `tresorpay-subscription-verification-api-v1.yaml`
-
-### Missing or not approved
-
-- `amplitude-payment-verification-api-v1.yaml`
-- internal Payment query contract;
-- internal ObservedCustomer query contract;
-- internal Payment audit query contract;
-- external approvals listed in the Contract Registry.
-
-No contract listed above authorizes code generation.
-
-## 8. Golden Partner conventions
-
-Payment will reuse these Golden Partner conventions:
-
-- rich aggregate;
-- hexagonal internal architecture;
-- framework-free domain;
-- application ports;
-- explicit persistence mapping;
-- transactional aggregate, audit and Outbox;
-- append-only history;
-- local domain Outbox;
-- no cross-domain business imports;
-- module auto-configuration;
-- architecture, domain, application, persistence, concurrency and acceptance
-  tests.
-
-Partner statuses, events, thresholds, payloads and business rules are not
-Payment sources.
-
-## 9. Lot 1 ubiquitous language
-
-The normative glossary is:
-
-`documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md`
-
-The following terms have one canonical meaning:
-
-- Payment;
-- Payment received;
-- TRESOR PAY authorization;
-- Banking verification;
-- Funds control;
-- Bank posting;
-- Debit;
-- CUT credit;
-- TFJ finality;
-- Notification;
-- Replay;
-- Recovery;
-- Uncertain banking outcome;
-- Reversal;
-- Business failure;
-- Technical failure;
-- Definitive rejection.
-
-The TRESOR PAY operation `InitiateDebit` is normalized as submission of a
-Payment order. Its acceptance proves only durable intake by SIXPAY. It does not
-prove bank verification, debit, CUT credit or TFJ finality.
-
-The source field `endToEndId` is interpreted as the unique
-`ExternalPaymentReference`.
-
-## 10. Lot 1 domain boundary
-
-The normative ownership document is:
-
-`documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md`
-
-Payment owns:
-
-- lifecycle;
-- identities and references;
-- amount and currency;
-- business decisions and normalized results;
-- legal transitions;
-- minimized immutable evidence;
-- failures;
-- business version;
-- domain events;
-- notification intentions.
-
-Payment does not own:
-
-- TRESOR PAY Subscription lifecycle;
-- JWT, Subscription Key, credentials or JWKS;
-- bank customer/account master data;
-- available balance;
-- protected CUT configuration;
-- HTTP, REST, Kafka or transport concerns;
-- Amplitude technical execution;
-- notification delivery attempts;
-- generic Outbox infrastructure;
-- unmatched TFJ inputs or quarantine workflow;
-- query projections or unbounded histories;
-- reversal technical execution.
-
-Payment owns the interpretation of external facts, not the external master fact.
-
-## 11. BankPostingReference decision
-
-Decision:
-
-`PAY-DEC-IA1-001`
-
-Normative document:
-
-`documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md`
-
-`BankPostingReference` is a composite abstraction containing:
+Decision `PAY-DEC-IA1-001` defines:
 
 ```text
-principalPostingReference   mandatory when posting is confirmed
+principalPostingReference   mandatory after confirmed posting
 debitLegReference           optional
 cutCreditLegReference       optional
 ```
 
-The principal reference identifies the atomic posting as a whole. Optional leg
-references are retained only when Amplitude supplies stable identifiers. They
-never represent independent Payment operations.
+## 8. Lot 2.1 Aggregate Root
 
-## 12. Authorized files
+Normative document:
 
-Lot 1 may add or update only:
+`documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md`
 
-```text
-documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md
-documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
-documentation/ai/payment/PAYMENT_UBIQUITOUS_LANGUAGE.md
-documentation/ai/payment/PAYMENT_DOMAIN_BOUNDARIES.md
-documentation/ai/payment/PAYMENT_BANK_POSTING_REFERENCE_DECISION.md
-```
+### Aggregate decision
 
-Lot 1 must not modify implementation, OpenAPI artifacts, architecture,
-requirements, user stories or infrastructure.
+`Payment` is the sole write Aggregate Root and represents one logical TRESOR
+PAY payment intention for its full lifecycle.
 
-## 13. Remaining open decisions
+### Aggregate-owned concepts
 
-The open-decision catalogue remains in
-`PAYMENT_IA1_BASELINE.md`, section 12.
+Payment owns:
 
-Lot 1 closes the structural form of `BankPostingReference`, but external
-approval is still required for:
+- immutable identity and original intent;
+- lifecycle status;
+- amount and currency;
+- current canonical decisions;
+- minimized evidence;
+- current relevant failure;
+- posting and reversal identity;
+- temporal and business version consistency;
+- domain-event registration.
 
-- Amplitude principal posting-reference format and uniqueness scope;
-- optional debit/CUT leg-reference availability;
-- authoritative posting lookup identifier;
-- authoritative TFJ matching identifier;
-- reservation capability;
-- reversal guards;
-- exact role of `NOTIFIED`;
-- exact role of `DEBITED` under atomic posting;
-- terminal `FAILED` semantics;
-- security and operational parameters.
+### Aggregate-excluded concepts
 
-No open decision may be silently closed by generation.
+Payment excludes:
 
-## 14. Traceability rule
+- Subscription lifecycle;
+- credentials and raw payloads;
+- bank master data and configuration;
+- network execution;
+- notification delivery;
+- generic Outbox implementation;
+- unmatched TFJ workflow;
+- unbounded histories and read projections.
 
-Every aggregate property, value object, state, transition, guard, invariant,
-failure, command, event and test must cite at least one of:
+### Creation and reconstitution
+
+`receive` creates a new Payment and raises the received fact.
+
+`reconstitute` restores persisted state, applies no transition and raises no
+event.
+
+### Transaction boundary
+
+One transaction loads or creates one Payment, applies one use-case decision and
+atomically persists aggregate state, immutable audit and Outbox intent.
+
+### Decisions closed
+
+- `PAY-DEC-IA1-002`: source-scoped external-reference uniqueness;
+- `PAY-DEC-IA1-003`: current failure in aggregate, history in audit;
+- `PAY-DEC-IA1-004`: notification is intent, not financial state;
+- `PAY-DEC-IA1-005`: reconstitution is distinct and event-free;
+- `PAY-DEC-IA1-006`: reversal remains on original Payment.
+
+## 9. Deferred to following sub-lots
+
+| Lot | Scope |
+| --- | --- |
+| 2.2 | Identifier and Value Object catalogue |
+| 2.3 | Snapshots and business evidence |
+| 2.4 | Complete invariants |
+| 2.5 | Commands and aggregate operations |
+| 2.6 | Domain Events |
+| 2.7 | Policies and Domain Services |
+| 2.8 | Final model validation |
+
+## 10. Traceability prefixes
 
 ```text
 PAY-BASE-*
 PAY-BOUND-*
 PAY-POSTREF-*
+PAY-AGG-*
 PAY-DEC-*
 PAY-CONTRACT-*
 PAY-AI-*
@@ -309,25 +185,22 @@ OPEN-*
 
 An untraced rule is invalid.
 
-## 15. Lot 1 exit criterion
-
-Lot 1 is complete when:
-
-- every major Payment term has exactly one meaning;
-- request acceptance, bank posting and TFJ finality are distinct;
-- replay, recovery and financial resubmission are distinct;
-- business failure, technical failure and uncertain outcome are distinct;
-- every domain concept has one documented owner;
-- Payment external evidence is minimized and canonical;
-- `BankPostingReference` has one agreed structural model;
-- no unresolved external detail is silently invented;
-- code generation remains forbidden.
-
-## 16. Verdict
+## 11. Authorized Lot 2.1 files
 
 ```text
-IA-1 LOT 1 UBIQUITOUS LANGUAGE AND DOMAIN BOUNDARIES PREPARED
+documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
+documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+```
+
+No implementation, contract, architecture or requirement file is modified.
+
+## 12. Verdict
+
+```text
+IA-1 LOT 2.1 PAYMENT AGGREGATE ROOT PREPARED
 STATUS: DRAFT_PENDING_VALIDATION
-NEXT: LOT 2 — VALUE OBJECTS AND IDENTIFIERS
+NEXT: LOT 2.2 — IDENTIFIERS AND VALUE OBJECTS
 CODE GENERATION: FORBIDDEN
 ```
