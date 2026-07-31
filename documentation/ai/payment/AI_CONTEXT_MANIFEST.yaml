@@ -1,16 +1,17 @@
-schemaVersion: 2.0.0
+schemaVersion: 2.1.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 3_1_PAYMENT_MODULE_FOUNDATION
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: MODEL_VALIDATED_GENERATION_PENDING_APPROVAL
+  status: DOMAIN_ONLY_IMPLEMENTATION_AUTHORIZED
   normative: true
+  implementationDate: '2026-07-31'
 codeGenerationAllowed: false
-generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-nextStep: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+generationReadiness: DOMAIN_ONLY_INCREMENT_AUTHORIZED
+nextStep: LOT_3_2_IDENTIFIERS_VALUE_OBJECTS
 primaryDocuments:
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Final IA-1 brief
@@ -211,4 +212,80 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+  codeGeneration: LOT_3_1_DOMAIN_ONLY_INCREMENT_AUTHORIZED
+  lot3_1FoundationImplemented: true
+  lot3DomainOnlyProgramAuthorized: true
+  lot3_2ReadyForExplicitActivation: true
+  globalCodeGeneration: FORBIDDEN_PENDING_EXTERNAL_APPROVALS
+implementationAuthorization:
+  id: PAY-AUTH-IA1-001
+  status: ACTIVE
+  authorizationBasis: USER_EXPLICIT_INSTRUCTION
+  authorizedAt: '2026-07-31'
+  scope: PAYMENT_DOMAIN_ONLY
+  globalCodeGenerationAllowed: false
+  currentIncrement: LOT_3_1_PAYMENT_MODULE_FOUNDATION
+  currentIncrementCodeGenerationAllowed: true
+  futureIncrementActivationRequired: true
+  programAllowedPaths:
+  - backend/payment/pom.xml
+  - backend/payment/*.md
+  - backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
+  - backend/payment/src/main/java/com/sixpay/payment/domain/**
+  - backend/payment/src/test/java/com/sixpay/payment/domain/**
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/**
+  - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+  currentIncrementAllowedPaths:
+  - backend/payment/pom.xml
+  - backend/payment/README.md
+  - backend/payment/ARCHITECTURE.md
+  - backend/payment/ACCEPTANCE-TRACEABILITY.md
+  - backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
+  - backend/payment/src/main/java/com/sixpay/payment/domain/package-info.java
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+  allowedChangeKinds:
+  - MODULE_DEPENDENCY_ALIGNMENT
+  - MODULE_MARKER
+  - DOMAIN_PACKAGE_FOUNDATION
+  - ARCHITECTURE_TESTS
+  - MODULE_DOCUMENTATION
+  - AUTHORIZATION_METADATA
+  forbiddenChangeKinds:
+  - APPLICATION_LAYER_GENERATION
+  - API_OR_CONTRACT_GENERATION
+  - PERSISTENCE_OR_MIGRATION_GENERATION
+  - OUTBOX_OR_MESSAGING_GENERATION
+  - EXTERNAL_ADAPTER_GENERATION
+  - SPRING_CONFIGURATION_GENERATION
+  - BANK_SPECIFIC_CONFIGURATION_ACTIVATION
+  - DOMAIN_MODEL_SEMANTIC_CHANGE
+  forbiddenProductionPaths:
+  - backend/payment/src/main/java/com/sixpay/payment/api/**
+  - backend/payment/src/main/java/com/sixpay/payment/application/**
+  - backend/payment/src/main/java/com/sixpay/payment/configuration/**
+  - backend/payment/src/main/java/com/sixpay/payment/events/**
+  - backend/payment/src/main/java/com/sixpay/payment/infrastructure/**
+  - backend/payment/src/main/resources/db/**
+  - backend/payment/src/main/resources/openapi/**
+  constraints:
+    javaVersion: 21
+    frameworkFreeDomain: true
+    anotherBusinessDomainDependencyAllowed: false
+    springDependencyAllowedInCurrentIncrement: false
+    databaseOrNetworkAccessAllowed: false
+    globalGenerationBlockersRemainApplicable: true
+    modelFreezeRemainsApplicable: true
+implementationDecisions:
+- id: PAY-DEC-IA1-071
+  decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED
+- id: PAY-DEC-IA1-072
+  decision: LOT_3_1_ADDS_ONLY_COMMON_SHARED_KERNEL_AND_JUNIT_DEPENDENCIES
+- id: PAY-DEC-IA1-073
+  decision: PAYMENT_MODULE_IS_A_NON_EXECUTABLE_FRAMEWORK_FREE_DOMAIN_LIBRARY
+- id: PAY-DEC-IA1-074
+  decision: LOT_3_1_CREATES_NO_APPLICATION_API_PERSISTENCE_MESSAGING_OR_EXTERNAL_ADAPTER_CODE
+- id: PAY-DEC-IA1-075
+  decision: ARCHITECTURE_TESTS_ENFORCE_THE_ACTIVE_DOMAIN_ONLY_AUTHORIZATION

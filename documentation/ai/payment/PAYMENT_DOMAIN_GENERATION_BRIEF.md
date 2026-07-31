@@ -1,29 +1,15 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.1 — Payment Module Foundation`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `MODEL_VALIDATED_GENERATION_PENDING_APPROVAL`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `DOMAIN_ONLY_IMPLEMENTATION_AUTHORIZED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current increment:** **AUTHORIZED**
 
-## Final governing pack
+## 1. Governing model
 
-- `PAYMENT_AGGREGATE_ROOT.md`
-- `PAYMENT_VALUE_OBJECT_CATALOGUE.md`
-- `PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md`
-- `PAYMENT_INVARIANT_CATALOGUE.md` and `.yaml`
-- `PAYMENT_COMMAND_CATALOGUE.md` and `.yaml`
-- `PAYMENT_STATE_MACHINE.yaml`
-- `PAYMENT_DOMAIN_EVENT_CATALOGUE.md`
-- `PAYMENT_EVENT_CATALOG.yaml`
-- `PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md` and `.yaml`
-- `PAYMENT_ACCEPTANCE_SCENARIOS.md`
-- `PAYMENT_MODEL_VALIDATION_REPORT.md`
-- `PAYMENT_MODEL_VALIDATION.yaml`
-- `PAYMENT_DOMAIN_MODEL.md`
-- `AI_CONTEXT_MANIFEST.yaml`
-
-## Final model
+The IA-1 Payment model validated in Lot 2.8 remains frozen:
 
 ```text
 17 states
@@ -37,55 +23,125 @@
 174 named acceptance scenarios
 ```
 
-## Final validation result
+Lot 3 translates that model into Java 21 without changing its semantics.
 
-The IA-1 Payment model is:
+## 2. Authorization
 
-- internally coherent;
-- fully cross-referenced;
-- reachable and terminally safe;
-- explicit about replay and uncertain financial outcomes;
-- deterministic about event ordering;
-- protected against automatic sensitive-data disclosure;
-- backed by an IA-1 acceptance catalogue.
+The user explicitly authorizes implementation of the pure Payment domain.
 
-Two obsolete invariant results were corrected:
+The authorization is recorded as:
 
 ```text
-PAY-INV-042 → POSTING_OUTCOME_UNKNOWN
-PAY-INV-061 → REVERSAL_OUTCOME_UNKNOWN
+PAY-AUTH-IA1-001
+scope: PAYMENT_DOMAIN_ONLY
+currentIncrement: LOT_3_1_PAYMENT_MODULE_FOUNDATION
+currentIncrementCodeGenerationAllowed: true
+futureIncrementActivationRequired: true
 ```
 
-## Model freeze
+This is not a global generation approval.
 
-The model is frozen after Lot 2.8. Any semantic change requires a new decision,
-synchronized catalogue updates, acceptance updates and another final
-validation.
+The existing contract, security, operations and integration blockers remain
+applicable outside the pure domain.
 
-## Generation readiness
+## 3. Lot 3.1 allowed changes
 
 ```text
-DOMAIN MODEL: READY
-DOMAIN IMPLEMENTATION PLANNING: READY
-GLOBAL AUTOMATIC CODE GENERATION: NOT AUTHORIZED
+backend/payment/pom.xml
+backend/payment/README.md
+backend/payment/ARCHITECTURE.md
+backend/payment/ACCEPTANCE-TRACEABILITY.md
+backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
+backend/payment/src/main/java/com/sixpay/payment/domain/package-info.java
+backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
 ```
 
-Generation remains blocked pending:
+## 4. Lot 3.1 implementation
 
-- owner approval;
-- complete Payment Contract Pack approval;
-- approved Amplitude payment-verification contract;
-- approval of current query contracts;
-- security and operational configuration approval.
+The Payment module now:
 
-## Verdict
+- remains a non-executable JAR;
+- depends directly on `common` and `shared-kernel`;
+- uses BOM-managed versions;
+- introduces JUnit only for tests;
+- exposes a framework-free module marker;
+- establishes the pure `domain` package;
+- enforces the active authorization with architecture tests.
+
+## 5. Reused platform contracts
+
+Payment must reuse:
 
 ```text
-IA-1 LOT 2.8 FINAL MODEL VALIDATION: PASS
-LOT 2: COMPLETE
-PAYMENT MODEL: FINAL_VALIDATED_AND_FROZEN
-MODEL BLOCKERS: NONE
-GENERATION BLOCKERS: EXTERNAL_APPROVALS
-NEXT: OWNER APPROVAL AND CONTRACT GATE CLOSURE
-CODE GENERATION: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+common
+└── CorrelationId and approved cross-cutting contracts
+
+shared-kernel
+├── AggregateRoot
+├── DomainEvent
+├── DomainException
+├── Money
+└── ValueObject
+```
+
+Lot 3 must not create local replacements for these types.
+
+## 6. Explicitly forbidden in Lot 3.1
+
+```text
+application services
+commands and handlers
+REST API
+OpenAPI changes
+Spring configuration
+JPA entities and repositories
+database migrations
+Outbox implementation
+Kafka integration
+Amplitude adapters
+Notification delivery
+bank-specific configuration
+semantic changes to the IA-1 model
+```
+
+## 7. Activation rule for the next increments
+
+The overall program path is limited to:
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/**
+backend/payment/src/test/java/com/sixpay/payment/domain/**
+backend/payment/src/test/java/com/sixpay/payment/architecture/**
+```
+
+However, each next increment requires explicit activation before code is
+generated.
+
+The next candidate is:
+
+```text
+Lot 3.2 — Identifiers, Value Objects and classifications
+```
+
+## 8. Exit criteria
+
+- Payment POM aligns with the Golden Module conventions.
+- `PaymentModule` is framework-free and non-executable.
+- The pure domain package exists.
+- No other production layer is generated.
+- Architecture tests enforce dependencies and boundaries.
+- The global generation flag remains false.
+- Lot 3.1 is the only active implementation increment.
+
+## 9. Verdict
+
+```text
+LOT 3.1 PAYMENT MODULE FOUNDATION: IMPLEMENTED
+DOMAIN-ONLY PROGRAM AUTHORIZATION: ACTIVE
+CURRENT INCREMENT GENERATION: AUTHORIZED
+GLOBAL CODE GENERATION: FORBIDDEN
+MODEL SEMANTICS: UNCHANGED
+NEXT: LOT 3.2 EXPLICIT ACTIVATION
 ```
