@@ -1,132 +1,133 @@
 openapi: 3.1.0
 info:
-  title: SIXPAY CONNECT - Internal Payment Query API
+  title: SIXPAY CONNECT - Internal ObservedCustomer Query API
   version: 1.0.0
   description: |
-    Read-only internal API for authorized operational consultation of SIXPAY
-    Payments. It exposes masked read projections and never loads or mutates the
-    Payment aggregate. Timeline and immutable audit evidence are exposed by the
-    dedicated Payment Audit Query API.
+    Read-only internal API for the Customer-owned ObservedCustomer projection.
+    ObservedCustomer is a non-authoritative CQRS projection created from Payment
+    observations. It never manages a subscription, never changes Amplitude data,
+    and never exposes an unmasked account identifier.
   license:
     name: SIXGEN Solutions Proprietary
     url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
   x-sixpay-contract:
-    registryId: payment-query-api-v1
+    registryId: observed-customer-query-api-v1
     gate: IA-0.5P_PAYMENT_CONTRACT_PACK
     phaseStep: "1.7"
     lifecycleStatus: ACTIVE_MVP
-    approvalStatus: PENDING_INTERNAL_APPROVAL
+    approvalStatus: PENDING_APPROVAL
     generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
-    domain: payment
+    domain: customer
     businessOwner: reporting
     securityOwner: security
-    capability: PAYMENT_QUERY
+    capability: OBSERVED_CUSTOMER_QUERY
     direction: INTERNAL_CLIENT_TO_SIXPAY
     dataClassification: CONFIDENTIAL
     readOnly: true
     limitations:
-      - NO_PAYMENT_MUTATION
+      - NON_AUTHORITATIVE_BANKING_PROJECTION
+      - NO_CUSTOMER_MUTATION
+      - NO_SUBSCRIPTION_LIFECYCLE
       - NO_UNMASKED_BANK_ACCOUNT
-      - NO_SUBSCRIPTION_LIFECYCLE_DATA
-      - NO_AUDIT_EVIDENCE_PAYLOAD
 servers:
   - url: https://sixpay-api.example
     description: Environment-specific internal SIXPAY endpoint
 security:
   - oauth2:
-      - payment.read
+      - observed-customer.read
 tags:
-  - name: Payments
-    description: Masked read-only Payment projections.
+  - name: Observed customers
+    description: Masked read-only ObservedCustomer projections.
 paths:
-  /internal/api/v1/payments:
+  /internal/api/v1/observed-customers:
     get:
-      tags: [Payments]
-      operationId: searchPayments
-      summary: Search Payments with stable cursor pagination
+      tags: [Observed customers]
+      operationId: searchObservedCustomers
+      summary: Search ObservedCustomers with stable cursor pagination
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/PageSize'
-        - name: paymentReference
+        - name: niu
           in: query
+          description: Exact normalized NIU; access and display remain purpose-limited.
           schema:
             type: string
             minLength: 1
             maxLength: 64
-        - name: tresorPayRequestId
+        - name: legalName
           in: query
           schema:
             type: string
             minLength: 1
-            maxLength: 100
-        - name: observedCustomerId
-          in: query
-          schema:
-            type: string
-            format: uuid
+            maxLength: 200
         - name: financialInstitutionCode
           in: query
           schema:
             type: string
             minLength: 1
             maxLength: 32
-        - name: status
+        - name: lastPaymentStatus
           in: query
           schema:
             $ref: '#/components/schemas/PaymentStatus'
-        - name: reasonCode
+        - name: lastFailureReasonCode
           in: query
           schema:
             type: string
             minLength: 1
             maxLength: 64
-        - name: createdFrom
+        - name: firstObservedFrom
           in: query
           schema:
             type: string
             format: date-time
-        - name: createdTo
+        - name: firstObservedTo
           in: query
           schema:
             type: string
             format: date-time
-        - name: amountMin
-          in: query
-          schema:
-            type: number
-            minimum: 0
-        - name: amountMax
-          in: query
-          schema:
-            type: number
-            minimum: 0
-        - name: currency
+        - name: lastObservedFrom
           in: query
           schema:
             type: string
-            pattern: '^[A-Z]{3}$'
+            format: date-time
+        - name: lastObservedTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: paymentFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: paymentTo
+          in: query
+          schema:
+            type: string
+            format: date-time
         - name: sort
           in: query
           schema:
             type: string
             enum:
-              - CREATED_AT_ASC
-              - CREATED_AT_DESC
-              - UPDATED_AT_ASC
-              - UPDATED_AT_DESC
-            default: CREATED_AT_DESC
+              - FIRST_OBSERVED_AT_ASC
+              - FIRST_OBSERVED_AT_DESC
+              - LAST_OBSERVED_AT_ASC
+              - LAST_OBSERVED_AT_DESC
+            default: LAST_OBSERVED_AT_DESC
       responses:
         '200':
-          description: Stable page of masked Payment summaries
+          description: Stable page of ObservedCustomer summaries
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaymentSearchPage'
+                $ref: '#/components/schemas/ObservedCustomerSearchPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -140,24 +141,73 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
-  /internal/api/v1/payments/{paymentId}:
+  /internal/api/v1/observed-customers/{observedCustomerId}:
     get:
-      tags: [Payments]
-      operationId: getPayment
-      summary: Read a masked Payment detail projection
+      tags: [Observed customers]
+      operationId: getObservedCustomer
+      summary: Read an ObservedCustomer detail projection
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
-        - $ref: '#/components/parameters/PaymentId'
+        - $ref: '#/components/parameters/ObservedCustomerId'
       responses:
         '200':
-          description: Payment detail
+          description: ObservedCustomer detail
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaymentDetail'
+                $ref: '#/components/schemas/ObservedCustomerDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/observed-customers/{observedCustomerId}/payments:
+    get:
+      tags: [Observed customers]
+      operationId: listObservedCustomerPayments
+      summary: List masked Payment references linked to an ObservedCustomer
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/ObservedCustomerId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - name: createdFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: createdTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Stable page of linked Payment references
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservedCustomerPaymentPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -182,7 +232,7 @@ components:
           authorizationUrl: https://identity.example/oauth2/authorize
           tokenUrl: https://identity.example/oauth2/token
           scopes:
-            payment.read: Read masked Payment projections
+            observed-customer.read: Read masked ObservedCustomer projections
   parameters:
     CorrelationId:
       name: X-Correlation-ID
@@ -191,8 +241,8 @@ components:
       schema:
         type: string
         format: uuid
-    PaymentId:
-      name: paymentId
+    ObservedCustomerId:
+      name: observedCustomerId
       in: path
       required: true
       schema:
@@ -237,7 +287,7 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     NotFound:
-      description: Payment not found or not visible to the caller
+      description: ObservedCustomer not found or not visible to the caller
       content:
         application/problem+json:
           schema:
@@ -290,17 +340,15 @@ components:
         - NOTIFIED
         - PENDING_END_OF_DAY_CONFIRMATION
         - TREASURY_INTEGRATED
-    Money:
+    MaskedIdentifier:
       type: object
       additionalProperties: false
-      required: [amount, currency]
+      required: [maskedValue]
       properties:
-        amount:
-          type: number
-          minimum: 0
-        currency:
+        maskedValue:
           type: string
-          pattern: '^[A-Z]{3}$'
+          minLength: 1
+          maxLength: 64
     MaskedAccountReference:
       type: object
       additionalProperties: false
@@ -316,55 +364,154 @@ components:
           maxLength: 32
           examples:
             - "•••• 1234"
-    PaymentSummary:
+    InstitutionObservation:
+      type: object
+      additionalProperties: false
+      required: [financialInstitutionCode, firstObservedAt, lastObservedAt, accounts]
+      properties:
+        financialInstitutionCode:
+          type: string
+        firstObservedAt:
+          type: string
+          format: date-time
+        lastObservedAt:
+          type: string
+          format: date-time
+        accounts:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/MaskedAccountReference'
+    ObservedCustomerSummary:
       type: object
       additionalProperties: false
       required:
-        - paymentId
-        - paymentReference
-        - tresorPayRequestId
-        - financialInstitutionCode
-        - amount
-        - status
-        - createdAt
-        - updatedAt
+        - observedCustomerId
+        - niu
+        - legalName
+        - firstObservedAt
+        - lastObservedAt
+        - totalPayments
+        - successfulPayments
+        - failedPayments
+        - projectionUpdatedAt
+        - projectionVersion
       properties:
-        paymentId:
-          type: string
-          format: uuid
-        paymentReference:
-          type: string
-        tresorPayRequestId:
-          type: string
         observedCustomerId:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uuid
-        financialInstitutionCode:
+        niu:
+          $ref: '#/components/schemas/MaskedIdentifier'
+        legalName:
           type: string
-        debtorAccount:
-          $ref: '#/components/schemas/MaskedAccountReference'
-        amount:
-          $ref: '#/components/schemas/Money'
-        status:
-          $ref: '#/components/schemas/PaymentStatus'
-        reasonCode:
+        phone:
+          oneOf:
+            - $ref: '#/components/schemas/MaskedIdentifier'
+            - type: 'null'
+        email:
+          oneOf:
+            - $ref: '#/components/schemas/MaskedIdentifier'
+            - type: 'null'
+        firstObservedAt:
+          type: string
+          format: date-time
+        lastObservedAt:
+          type: string
+          format: date-time
+        totalPayments:
+          type: integer
+          minimum: 0
+        successfulPayments:
+          type: integer
+          minimum: 0
+        failedPayments:
+          type: integer
+          minimum: 0
+        lastPaymentStatus:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentStatus'
+            - type: 'null'
+        lastFailureReasonCode:
           type:
             - string
             - 'null'
-        createdAt:
+        projectionUpdatedAt:
           type: string
           format: date-time
-        updatedAt:
+        projectionVersion:
+          type: integer
+          format: int64
+          minimum: 0
+    ObservedCustomerDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - observedCustomerId
+        - niu
+        - legalName
+        - institutions
+        - firstObservedAt
+        - lastObservedAt
+        - totalPayments
+        - successfulPayments
+        - failedPayments
+        - projectionUpdatedAt
+        - projectionVersion
+        - sourceEventWatermark
+      properties:
+        observedCustomerId:
+          type: string
+          format: uuid
+        niu:
+          $ref: '#/components/schemas/MaskedIdentifier'
+        legalName:
+          type: string
+        phone:
+          oneOf:
+            - $ref: '#/components/schemas/MaskedIdentifier'
+            - type: 'null'
+        email:
+          oneOf:
+            - $ref: '#/components/schemas/MaskedIdentifier'
+            - type: 'null'
+        institutions:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstitutionObservation'
+        firstObservedAt:
           type: string
           format: date-time
-        finalizedAt:
+        lastObservedAt:
+          type: string
+          format: date-time
+        totalPayments:
+          type: integer
+          minimum: 0
+        successfulPayments:
+          type: integer
+          minimum: 0
+        failedPayments:
+          type: integer
+          minimum: 0
+        lastPaymentStatus:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentStatus'
+            - type: 'null'
+        lastFailureReasonCode:
           type:
             - string
             - 'null'
+        projectionUpdatedAt:
+          type: string
           format: date-time
-    PaymentSearchPage:
+        projectionVersion:
+          type: integer
+          format: int64
+          minimum: 0
+        sourceEventWatermark:
+          type: string
+          description: Opaque watermark proving projection freshness.
+    ObservedCustomerSearchPage:
       type: object
       additionalProperties: false
       required: [items, size, hasMore, snapshotAt]
@@ -372,7 +519,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/PaymentSummary'
+            $ref: '#/components/schemas/ObservedCustomerSummary'
         size:
           type: integer
           minimum: 0
@@ -385,138 +532,35 @@ components:
         snapshotAt:
           type: string
           format: date-time
-    BankingVerificationSummary:
-      type: object
-      additionalProperties: false
-      required: [verificationId, outcome, observedAt]
-      properties:
-        verificationId:
-          type: string
-        outcome:
-          type: string
-          enum: [VERIFIED, REJECTED, DEFERRED, FAILED]
-        reasonCodes:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-        observedAt:
-          type: string
-          format: date-time
-    PostingSummary:
-      type: object
-      additionalProperties: false
-      required: [outcome]
-      properties:
-        bankPostingReference:
-          type:
-            - string
-            - 'null'
-        outcome:
-          type: string
-          enum:
-            - NOT_REQUESTED
-            - PENDING
-            - UNKNOWN
-            - DEBIT_CONFIRMED
-            - CUT_CREDIT_CONFIRMED
-            - FAILED
-            - PARTIAL
-        observedAt:
-          type:
-            - string
-            - 'null'
-          format: date-time
-    TfjSummary:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [NOT_APPLICABLE, PENDING, INTEGRATED, FAILED, QUARANTINED]
-        businessDate:
-          type:
-            - string
-            - 'null'
-          format: date
-        confirmedAt:
-          type:
-            - string
-            - 'null'
-          format: date-time
-    NotificationSummary:
-      type: object
-      additionalProperties: false
-      required: [type, status]
-      properties:
-        type:
-          type: string
-          enum: [IMMEDIATE, TREASURY_FINAL, REVERSAL]
-        status:
-          type: string
-          enum: [NOT_REQUESTED, PENDING, DELIVERED, FAILED, DLQ]
-        eventId:
-          type:
-            - string
-            - 'null'
-          format: uuid
-        lastAttemptAt:
-          type:
-            - string
-            - 'null'
-          format: date-time
-    ReversalSummary:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [NOT_REQUIRED, REQUIRED, PENDING, UNKNOWN, REVERSED, FAILED]
-        reversalReference:
-          type:
-            - string
-            - 'null'
-        observedAt:
-          type:
-            - string
-            - 'null'
-          format: date-time
-    PaymentDetail:
+    ObservedCustomerPaymentReference:
       type: object
       additionalProperties: false
       required:
         - paymentId
         - paymentReference
-        - tresorPayRequestId
         - financialInstitutionCode
-        - amount
         - status
         - createdAt
         - updatedAt
-        - correlationId
-        - aggregateVersion
-        - notifications
       properties:
         paymentId:
           type: string
           format: uuid
         paymentReference:
           type: string
-        tresorPayRequestId:
-          type: string
-        observedCustomerId:
-          type:
-            - string
-            - 'null'
-          format: uuid
         financialInstitutionCode:
           type: string
-        debtorAccount:
-          $ref: '#/components/schemas/MaskedAccountReference'
         amount:
-          $ref: '#/components/schemas/Money'
+          type: object
+          additionalProperties: false
+          required: [amount, currency]
+          properties:
+            amount:
+              type: number
+              minimum: 0
+            currency:
+              type: string
+              pattern: '^[A-Z]{3}$'
         status:
           $ref: '#/components/schemas/PaymentStatus'
         reasonCode:
@@ -529,38 +573,27 @@ components:
         updatedAt:
           type: string
           format: date-time
-        finalizedAt:
+    ObservedCustomerPaymentPage:
+      type: object
+      additionalProperties: false
+      required: [items, size, hasMore, snapshotAt]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObservedCustomerPaymentReference'
+        size:
+          type: integer
+          minimum: 0
+        hasMore:
+          type: boolean
+        nextCursor:
           type:
             - string
             - 'null'
-          format: date-time
-        correlationId:
+        snapshotAt:
           type: string
-          format: uuid
-        aggregateVersion:
-          type: integer
-          format: int64
-          minimum: 0
-        bankingVerification:
-          oneOf:
-            - $ref: '#/components/schemas/BankingVerificationSummary'
-            - type: 'null'
-        posting:
-          oneOf:
-            - $ref: '#/components/schemas/PostingSummary'
-            - type: 'null'
-        tfj:
-          oneOf:
-            - $ref: '#/components/schemas/TfjSummary'
-            - type: 'null'
-        notifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/NotificationSummary'
-        reversal:
-          oneOf:
-            - $ref: '#/components/schemas/ReversalSummary'
-            - type: 'null'
+          format: date-time
     ProblemDetail:
       type: object
       additionalProperties: false

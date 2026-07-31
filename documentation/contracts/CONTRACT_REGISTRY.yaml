@@ -1,10 +1,10 @@
 schemaVersion: "1.0"
 registry:
   id: "sixpay-contract-registry"
-  gate: "IA-0R"
-  step: "0.2"
-  branch: "feat/customer-foundation-contract"
-  classificationDate: "2026-07-30"
+  gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+  step: "1.7"
+  branch: "feat/payment-contract-pack"
+  classificationDate: "2026-07-31"
 
 classificationModel:
   lifecycleStatuses:
@@ -251,6 +251,118 @@ contracts:
       - "Security approves Bearer, Subscription Key and HMAC profile"
       - "Operations approves retry, DLQ, alert and replay procedures"
 
+  - id: "payment-query-api-v1"
+    path: "documentation/contracts/internal/payment-query-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    capability: "PAYMENT_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "payment.read"
+      authorization: "RBAC_PLUS_SCOPE_PLUS_INSTITUTION_PERIMETER"
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "List and filter masked Payment projections"
+        - "Read Payment detail and current status"
+        - "Read normalized banking, posting, notification, TFJ and reversal summaries"
+      constraints:
+        - "No Payment mutation"
+        - "No unmasked bank account"
+        - "No subscription lifecycle data"
+        - "Timeline and immutable audit evidence remain in payment-audit-query-api-v1"
+
+  - id: "observed-customer-query-api-v1"
+    path: "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    capability: "OBSERVED_CUSTOMER_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "observed-customer.read"
+      authorization: "RBAC_PLUS_SCOPE_PLUS_INSTITUTION_PERIMETER"
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "List and filter ObservedCustomer projections"
+        - "Read projection freshness and observed institutions"
+        - "List linked masked Payment references"
+      constraints:
+        - "ObservedCustomer remains non-authoritative"
+        - "No customer or Amplitude mutation"
+        - "No subscription lifecycle"
+        - "No unmasked bank account"
+
+  - id: "payment-audit-query-api-v1"
+    path: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+    domain: "reporting"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    evidenceOwners:
+      - "payment"
+      - "customer"
+      - "accounting"
+      - "notification"
+      - "integration"
+    capability: "PAYMENT_AUDIT_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "payment.audit.read"
+        - "payment.audit.export"
+      authorization: "AUDITOR_RBAC_PLUS_SCOPE_PLUS_PURPOSE"
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "Read ordered Payment lifecycle timelines"
+        - "Search immutable Payment audit evidence"
+        - "Request and retrieve controlled masked audit exports"
+      constraints:
+        - "Every consultation, denial and export is audited"
+        - "No audit mutation"
+        - "No operational replay or financial command"
+        - "No raw external payload, credential, secret or unmasked account"
+
   - id: "tresorpay-authorization-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
     domain: "subscription"
@@ -284,17 +396,15 @@ contracts:
       prerequisite: "Activation of the deferred subscription scope and explicit architecture approval."
 
 missingMvpContracts:
-  status: "TO_BE_PRODUCED"
+  status: "PARTIALLY_CLOSED"
   contracts:
     - id: "amplitude-payment-verification-api-v1"
       capability: "PAYMENT_EXECUTION_VERIFICATION"
       direction: "SIXPAY_TO_AMPLITUDE"
-    - id: "sixpay-payment-query-api-v1"
-      capability: "PAYMENT_QUERY_AND_AUDIT"
-      direction: "TRESOR_PAY_TO_SIXPAY"
-    - id: "sixpay-observed-customer-query-api-v1"
-      capability: "OBSERVED_CUSTOMER_QUERY"
-      direction: "AUTHORIZED_SIXPAY_USER_TO_SIXPAY"
+  completedAtStep17:
+    - "payment-query-api-v1"
+    - "observed-customer-query-api-v1"
+    - "payment-audit-query-api-v1"
 
 mvpAuthorizationVerification:
   gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
@@ -337,3 +447,6 @@ rules:
   - "Financial-command uncertainty is resolved by authoritative lookup; blind resubmission is forbidden."
   - "Payment status webhook delivery is idempotent on eventId; deliveryId identifies attempts only."
   - "CUT_CREDITED is an immediate posting result and must never be interpreted as TFJ finality."
+  - "Internal Payment, ObservedCustomer and audit APIs are read-only and use stable cursor pagination."
+  - "Payment audit is separated from Payment query and requires dedicated privileged scopes."
+  - "Every privileged audit consultation, denial and export is itself audited."

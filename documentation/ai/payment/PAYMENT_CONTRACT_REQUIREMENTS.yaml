@@ -38,13 +38,14 @@ baseline:
 
 scope:
   contractFamilyCount: 7
-  concreteArtifactCount: 8
+  concreteArtifactCount: 9
   rationale: >
     The seven requested business exchanges form seven contract families.
     TFJ requires both the primary asynchronous confirmation and the scheduled
     reconciliation fallback, consolidated in one bidirectional API artifact.
-    Internal query and audit capabilities require
-    separate Payment and ObservedCustomer APIs to preserve module ownership.
+    Internal query and audit capabilities require separate Payment,
+    ObservedCustomer and privileged Payment Audit APIs to preserve module
+    ownership and isolate restricted audit access.
   lifecycleStatusAtThisStep: "TO_BE_PRODUCED"
   approvalStatusAtThisStep: "NOT_DRAFTED"
   generationPolicyAtThisStep: "FORBIDDEN"
@@ -614,8 +615,8 @@ contractFamilies:
       - "IA0R-D08"
 
   - id: "PAY-CONTRACT-07"
-    name: "SIXPAY Payment consultation and audit APIs"
-    capability: "PAYMENT_QUERY_AND_AUDIT"
+    name: "SIXPAY internal Payment, ObservedCustomer and audit query APIs"
+    capability: "PAYMENT_OBSERVED_CUSTOMER_AND_AUDIT_QUERY"
     direction:
       caller: "SIXPAY_AUTHORIZED_INTERNAL_CLIENT"
       provider: "SIXPAY"
@@ -624,53 +625,63 @@ contractFamilies:
       openApi:
         - "payment"
         - "customer"
+        - "reporting"
       business:
         - "reporting"
         - "payment"
         - "customer"
       security: "security"
     artifacts:
-      - id: "sixpay-payment-query-api-v1"
-        targetPath: "documentation/contracts/internal/sixpay-payment-query-api-v1.yaml"
+      - id: "payment-query-api-v1"
+        targetPath: "documentation/contracts/internal/payment-query-api-v1.yaml"
         type: "OPENAPI"
         operations:
           - "List and filter Payments"
           - "Read Payment detail and status"
-          - "Read state, banking, notification, TFJ and reversal timeline"
-          - "Read immutable audit evidence authorized for the caller"
-      - id: "sixpay-observed-customer-query-api-v1"
-        targetPath: "documentation/contracts/internal/sixpay-observed-customer-query-api-v1.yaml"
+          - "Read normalized banking, posting, notification, TFJ and reversal summaries"
+      - id: "observed-customer-query-api-v1"
+        targetPath: "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
         type: "OPENAPI"
         operations:
           - "List and filter ObservedCustomers"
           - "Read an ObservedCustomer and its Payment references"
           - "Read projection freshness and source institution"
+      - id: "payment-audit-query-api-v1"
+        targetPath: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "Read Payment lifecycle and integration timeline"
+          - "Search immutable audit evidence authorized for the caller"
+          - "Request and retrieve controlled masked audit exports"
     protocol:
       style: "SYNCHRONOUS_READ_ONLY_QUERY"
       transport: "HTTPS REST JSON"
-      pagination: "Cursor or stable page contract required"
+      pagination: "STABLE_CURSOR"
       mutationOperations: "FORBIDDEN"
     authentication:
       tls: "MANDATORY"
       mechanisms:
         - "OIDC_OAUTH2_BEARER_JWT"
-      authorization: "RBAC_PLUS_SCOPES"
-      minimumScopes:
+      authorization: "RBAC_PLUS_SCOPES_PLUS_INSTITUTION_PERIMETER"
+      ordinaryScopes:
         - "payment.read"
-        - "payment.audit.read"
         - "observed-customer.read"
-      privilegedExportScope: "payment.export"
+      privilegedScopes:
+        - "payment.audit.read"
+        - "payment.audit.export"
     idempotency:
       required: false
       rationale: "All operations are read-only and naturally repeatable"
       consistency: "Pagination tokens and sort order must be stable within their documented validity"
     correlation:
       headerRequired: true
-      audit: "Every privileged consultation and export records actor, scope, filters and CorrelationId"
+      audit: "Every privileged consultation, denial and export records actor, scope, purpose, filters and CorrelationId"
     errors:
       businessCodes:
         - "PAYMENT_NOT_FOUND"
         - "OBSERVED_CUSTOMER_NOT_FOUND"
+        - "AUDIT_RECORD_NOT_FOUND"
+        - "AUDIT_EXPORT_NOT_FOUND"
         - "INVALID_FILTER"
         - "PAGE_TOKEN_INVALID"
         - "DATA_ACCESS_FORBIDDEN"
@@ -679,15 +690,16 @@ contractFamilies:
     retry:
       automaticReadRetry: true
       policy: "Retry only transient failures; preserve the same page token and filters"
-      exportRetry: "Requires a stable export request identifier if asynchronous export is introduced"
+      exportRetry: "Reuse the stable audit export identity; never create duplicate exports blindly"
     timeout:
       policy: "Configurable per query class"
-      longRunningQuery: "Must use bounded pagination or an approved asynchronous export"
+      longRunningQuery: "Must use bounded pagination or the controlled asynchronous audit export"
     businessResponsibility:
       - "Expose read projections without loading or mutating the Payment aggregate."
       - "Preserve Customer ownership of ObservedCustomer."
       - "Mask data according to role and purpose."
       - "Keep audit evidence immutable and consultation access itself auditable."
+      - "Keep privileged audit and export operations separate from ordinary Payment consultation."
     sourceRequirements:
       - "PAY-SRC-041"
       - "PAY-SRC-042"
@@ -721,14 +733,18 @@ artifactInventory:
     family: "PAY-CONTRACT-06"
     direction: "SIXPAY_TO_TRESOR_PAY"
     owner: "integration"
-  - id: "sixpay-payment-query-api-v1"
+  - id: "payment-query-api-v1"
     family: "PAY-CONTRACT-07"
     direction: "INTERNAL_CLIENT_TO_SIXPAY"
     owner: "payment"
-  - id: "sixpay-observed-customer-query-api-v1"
+  - id: "observed-customer-query-api-v1"
     family: "PAY-CONTRACT-07"
     direction: "INTERNAL_CLIENT_TO_SIXPAY"
     owner: "customer"
+  - id: "payment-audit-query-api-v1"
+    family: "PAY-CONTRACT-07"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    owner: "reporting"
 
 crossContractRules:
   - id: "PAY-XCON-001"
@@ -747,6 +763,10 @@ crossContractRules:
     rule: "No query or audit API provides a Payment mutation operation."
   - id: "PAY-XCON-008"
     rule: "Contract examples, errors and logs contain masked or synthetic bank data only."
+  - id: "PAY-XCON-009"
+    rule: "Payment timeline, immutable audit evidence and controlled audit exports are exposed only by payment-audit-query-api-v1."
+  - id: "PAY-XCON-010"
+    rule: "Every privileged audit consultation, denial and export is itself audited."
 
 gateIA05PProductionOrder:
   - order: 1
@@ -772,9 +792,10 @@ gateIA05PProductionOrder:
     reason: "Depends on the finality contract."
   - order: 6
     artifacts:
-      - "sixpay-payment-query-api-v1"
-      - "sixpay-observed-customer-query-api-v1"
-    reason: "Projects approved state, notification and TFJ semantics."
+      - "payment-query-api-v1"
+      - "observed-customer-query-api-v1"
+      - "payment-audit-query-api-v1"
+    reason: "Projects approved state, notification and TFJ semantics while isolating privileged audit access."
 
 approvalRequirements:
   everyExternalContract:
@@ -824,7 +845,7 @@ acceptanceCriteria:
   - "The Amplitude posting contract includes safe outcome lookup and explicit reversal operations."
   - "The TFJ family includes asynchronous confirmation and scheduled fallback reconciliation."
   - "Immediate and definitive TRESOR PAY notifications are distinct."
-  - "Payment and ObservedCustomer query APIs preserve module ownership and remain read-only."
+  - "Payment, ObservedCustomer and Payment Audit query APIs preserve module ownership, privilege separation and read-only semantics."
   - "All requirements cite baseline identifiers or an explicit SIXPAY decision."
   - "No contract authorizes local Subscription or TRESOR PAY merchant management."
   - "Code generation remains forbidden until IA-0.5P contracts are approved and registered."

@@ -15,7 +15,7 @@ info:
     gate: IA-0.5P_PAYMENT_CONTRACT_PACK
     phaseStep: "1.7"
     lifecycleStatus: ACTIVE_MVP
-    approvalStatus: PENDING_INTERNAL_APPROVAL
+    approvalStatus: PENDING_APPROVAL
     generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
     domain: reporting

@@ -24,11 +24,25 @@ actuels pour la traçabilité et une évolution future du parcours d’abonnemen
 Pour le MVP, TRESOR PAY reste maître de l’abonnement et SIXPAY ne gère aucun
 cycle de vie local d’abonnement.
 
+## Contrats internes de consultation — étape 1.7
+
+| Contrat | Classement | Usage MVP | Génération |
+| --- | --- | --- | --- |
+| `internal/payment-query-api-v1.yaml` | `ACTIVE_MVP` | Consultation opérationnelle Payment masquée | Référence uniquement jusqu’à approbation |
+| `internal/observed-customer-query-api-v1.yaml` | `ACTIVE_MVP` | Consultation ObservedCustomer masquée | Référence uniquement jusqu’à approbation |
+| `internal/payment-audit-query-api-v1.yaml` | `ACTIVE_MVP` | Timeline, audit immuable et export contrôlé | Référence uniquement jusqu’à approbation |
+
+Ces trois contrats sont strictement en lecture seule. Le contrat d’audit est
+séparé du contrat de consultation Payment afin d’appliquer des scopes, une
+classification et une traçabilité renforcés. Les opérations d’export restent
+contrôlées et ne constituent ni une mutation métier ni une commande de replay.
+
 ## Règle de gouvernance
 
 Toute évolution de classement doit mettre à jour dans le même changement :
 
 1. `CONTRACT_REGISTRY.yaml`;
 2. l’extension `info.x-sixpay-contract` du contrat;
-3. `documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml`;
+3. le manifeste IA du domaine concerné, notamment
+   `documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml` pour le Payment Contract Pack;
 4. le document de Gate concerné.

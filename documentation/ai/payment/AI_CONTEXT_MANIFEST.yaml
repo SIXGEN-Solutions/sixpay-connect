@@ -180,7 +180,7 @@ events:
 contracts:
   requirements: "documentation/ai/payment/PAYMENT_CONTRACT_REQUIREMENTS.yaml"
   familyCount: 7
-  concreteArtifactCount: 8
+  concreteArtifactCount: 9
   status: "TO_BE_PRODUCED_AND_APPROVED"
   format: "OPENAPI_3_1"
 
@@ -218,7 +218,7 @@ acceptance:
   explicitScenarioCount: 142
   requiredStateTransitionCoverage: "34/34"
   forbiddenTransitionCoverage: "EXHAUSTIVE"
-  requiredContractArtifactCoverage: "8/8"
+  requiredContractArtifactCoverage: "9/9"
   fullIntegrationProfile: "full-tests"
 
 generationRules:
@@ -231,7 +231,7 @@ generationRules:
     - "Activation of deferred subscription contracts"
   requiredBeforeGeneration:
     - "Approve IA-0.5P_PAYMENT_CONTRACT_PACK"
-    - "Approve and register all eight Payment contract artifacts"
+    - "Approve and register all nine Payment contract artifacts"
     - "Validate Amplitude capabilities, authentication and SLA"
     - "Validate TRESOR PAY contracts and callbacks"
     - "Obtain Architecture, Payment, Integration, Security and Operations sign-offs"
@@ -293,6 +293,24 @@ contractPackDecisions:
       - "bankPostingReference"
     unmatchedPolicy: "QUARANTINE_ALERT_MANUAL_RECONCILIATION_NO_PAYMENT_UPDATE"
     tresorPayEventCount: 3
+    generationPolicy: "REFERENCE_ONLY"
+  - step: "1.7"
+    id: "INTERNAL_PAYMENT_CONSULTATION_CONTRACTS"
+    contractPaths:
+      - "documentation/contracts/internal/payment-query-api-v1.yaml"
+      - "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
+      - "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+    status: "PRODUCED_PENDING_INTERNAL_APPROVAL"
+    decision: "SEPARATE_PAYMENT_OBSERVED_CUSTOMER_AND_PRIVILEGED_AUDIT_READ_APIS"
+    readOnly: true
+    pagination: "STABLE_CURSOR"
+    ordinaryScopes:
+      - "payment.read"
+      - "observed-customer.read"
+    privilegedScopes:
+      - "payment.audit.read"
+      - "payment.audit.export"
+    accessAuditRequired: true
     generationPolicy: "REFERENCE_ONLY"
 
 finalValidation:
