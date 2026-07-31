@@ -5,6 +5,8 @@ info:
   x-sixpay-contract:
     registryId: "amplitude-customer-verification-api-v1"
     gate: "IA-0R"
+    reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    reviewStep: "1.3"
     lifecycleStatus: "REFERENCE_MVP"
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
@@ -13,6 +15,15 @@ info:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     mvpIncluded: true
+    paymentUsage:
+      confirmed: true
+      role: "CUSTOMER_AND_ACCOUNT_VERIFICATION_ONLY"
+      invokedAfter: "PAYMENT_REQUEST_DURABLY_PERSISTED"
+      consumedBy:
+        - "customer"
+        - "payment"
+      decisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
+      fundsControlContract: "amplitude-payment-verification-api-v1"
     limitations:
       - "NO_SUBSCRIPTION_AUTHORIZATION"
       - "NO_FUNDS_AVAILABILITY_CONTROL"
@@ -34,6 +45,11 @@ info:
     This reference contract does not cover funds-availability controls, debit
     posting, CUT credit or end-of-day Treasury confirmation. Those capabilities
     require dedicated contracts in the Payment Contract Pack.
+
+    Payment usage is confirmed for the read-only verification of the banking
+    customer, NIU, claimed identity, debtor account ownership, account status,
+    blocks, oppositions and required KYC facts. SIXPAY invokes the composite
+    verification only after durable persistence of the Payment request.
 
     Connection timeout, response timeout, retry limits, circuit-breaker values
     and SLA objectives are intentionally configurable. No definitive numeric
@@ -215,7 +231,9 @@ paths:
       description: |
         Executes a fresh, read-only composite verification. The operation is
         semantically idempotent and creates no Amplitude business resource.
-        Retries must reuse `X-Correlation-ID`.
+        Retries must reuse `X-Correlation-ID`. A customer or account not found
+        is a completed negative business verification returned with HTTP 200;
+        HTTP errors represent protocol, authentication or technical failures.
       x-idempotent: true
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
@@ -241,8 +259,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/CustomerNotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
         '429':
@@ -595,8 +611,10 @@ components:
       required:
         - niu
         - legalName
-        - phoneNumber
-        - email
+      description: |
+        Identity attributes claimed in the Payment request. Optional attributes
+        are compared only when supplied; their omission does not prevent
+        Amplitude from returning the corresponding authorized KYC facts.
       properties:
         customerReference:
           type: string
@@ -654,11 +672,8 @@ components:
         - verificationId
         - verifiedAt
         - source
-        - customerReference
-        - accountReference
+        - outcome
         - checks
-        - identity
-        - account
       properties:
         verificationId:
           type: string
@@ -669,24 +684,46 @@ components:
         source:
           type: string
           const: AMPLITUDE
-        customerReference:
+        outcome:
           type: string
+          description: |
+            VERIFIED requires every applicable mandatory check to pass.
+            REJECTED represents a conclusive negative business result.
+            INDETERMINATE never authorizes Payment progression.
+          enum:
+            - VERIFIED
+            - REJECTED
+            - INDETERMINATE
+        customerReference:
+          type:
+            - string
+            - 'null'
           minLength: 1
           maxLength: 100
         accountReference:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 1
           maxLength: 100
         checks:
           type: array
-          minItems: 7
+          minItems: 1
           uniqueItems: true
+          description: |
+            Contains each applicable check at most once. Checks that cannot be
+            evaluated after an earlier negative result may be omitted or marked
+            UNKNOWN. Payment may progress only when the outcome is VERIFIED.
           items:
             $ref: '#/components/schemas/VerificationCheck'
         identity:
-          $ref: '#/components/schemas/CustomerIdentity'
+          oneOf:
+            - $ref: '#/components/schemas/CustomerIdentity'
+            - type: 'null'
         account:
-          $ref: '#/components/schemas/BankAccount'
+          oneOf:
+            - $ref: '#/components/schemas/BankAccount'
+            - type: 'null'
 
     VerificationCheck:
       type: object
@@ -699,8 +736,10 @@ components:
           type: string
           enum:
             - CUSTOMER_EXISTS
+            - FINANCIAL_INSTITUTION_MATCHES
             - NIU_MATCHES
             - IDENTITY_MATCHES
+            - ACCOUNT_EXISTS
             - ACCOUNT_BELONGS_TO_CUSTOMER
             - ACCOUNT_IS_ACTIVE
             - ACCOUNT_NOT_BLOCKED
@@ -897,7 +936,7 @@ x-sixpay-amplitude-resilience-policy:
     halfOpenCalls: configurable
   fallback:
     useStaleKycOrAccountData: false
-    failClosedForSubscriptionActivation: true
+    failClosedForPaymentVerification: true
 
 x-sixpay-amplitude-sla:
   status: pending-bank-approval

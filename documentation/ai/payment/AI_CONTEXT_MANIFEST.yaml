@@ -88,7 +88,7 @@ upstreamAuthorities:
   - path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
     role: "Contract lifecycle and classification authority"
   - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
-    role: "Reference-only Amplitude verification contract"
+    role: "Payment-confirmed reference contract for customer and account verification only"
 
 scope:
   inScope:
@@ -245,6 +245,15 @@ contractPackDecisions:
     status: "DECIDED_PENDING_EXTERNAL_APPROVAL"
     decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
     remoteContractRequired: false
+  - step: "1.3"
+    id: "AMPLITUDE_CUSTOMER_VERIFICATION_FOR_PAYMENT"
+    path: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
+    contractPath: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    status: "CONFIRMED_PENDING_EXTERNAL_APPROVAL"
+    decision: "REUSE_FOR_CUSTOMER_AND_ACCOUNT_VERIFICATION_ONLY"
+    confirmedForPayment: true
+    fundsControlCovered: false
+    generationPolicy: "REFERENCE_ONLY"
 
 finalValidation:
   step: "0P.14"
