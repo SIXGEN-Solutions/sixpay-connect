@@ -1,0 +1,9 @@
+{
+  "PHASE_1_7_INSTALLATION.md": "d60c06e55cc1108a9d66afb082f1b21f459f61784e0cae96ab3cf65bc6073975",
+  "documentation/contracts/internal/observed-customer-query-api-v1.yaml": "439f4487e06a6f77f2620a39c58c58c02a55e85711d5a70f27d929b5281631d2",
+  "documentation/contracts/internal/payment-audit-query-api-v1.yaml": "8fefbb577b2e493ee299546800644a7bbe221d34e665bd41c0535188fab1edb1",
+  "documentation/contracts/internal/payment-query-api-v1.yaml": "8d0bc27fafc800f8e714e215446c647d0cde213c98d6a9e28859ddbcea2506f2",
+  "patches/phase-1.7-internal-contracts.patch": "d700c42cca51a169efde47af58563606bc1e15bdf92d44587580cae91780e317",
+  "scripts/validate-payment-internal-contract-pack.py": "efadf8499bde6c3ac1dfa798b48802f76b3d2f2515eaa93a503bb69487dc9822",
+  "validation/VALIDATION_REPORT.md": "d74b0ae1fd2393f1f8b0d3fa16a27a67a0ddd91c5e6a5772bc0e32bcffa8db86"
+}

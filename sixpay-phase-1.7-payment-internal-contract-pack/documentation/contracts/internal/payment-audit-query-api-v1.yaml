@@ -1,0 +1,844 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Internal Payment Audit Query API
+  version: 1.0.0
+  description: |
+    Privileged read-only API for immutable Payment audit evidence, lifecycle
+    timelines, integration evidence and controlled audit export. Every access,
+    denied access and export is itself audited. Audit data is append-only and
+    this API exposes no mutation or operational replay command.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryId: payment-audit-query-api-v1
+    gate: IA-0.5P_PAYMENT_CONTRACT_PACK
+    phaseStep: "1.7"
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_INTERNAL_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: reporting
+    businessOwner: reporting
+    evidenceOwners:
+      - payment
+      - customer
+      - accounting
+      - notification
+      - integration
+    securityOwner: security
+    capability: PAYMENT_AUDIT_QUERY
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: RESTRICTED
+    readOnly: true
+    retention: PAYMENT_AND_BUSINESS_AUDIT_10_YEARS_AFTER_FINAL_STATE
+    limitations:
+      - NO_AUDIT_MUTATION
+      - NO_OPERATIONAL_REPLAY
+      - NO_FINANCIAL_COMMAND
+      - NO_RAW_EXTERNAL_PAYLOAD
+      - NO_CREDENTIAL_OR_SECRET
+      - NO_UNMASKED_BANK_ACCOUNT
+servers:
+  - url: https://sixpay-api.example
+    description: Environment-specific internal SIXPAY endpoint
+security:
+  - oauth2:
+      - payment.audit.read
+tags:
+  - name: Payment timeline
+    description: Ordered lifecycle, decision and normalized integration evidence.
+  - name: Payment audit
+    description: Immutable audit records and controlled evidence export.
+paths:
+  /internal/api/v1/payments/{paymentId}/timeline:
+    get:
+      tags: [Payment timeline]
+      operationId: getPaymentTimeline
+      summary: Read the ordered Payment lifecycle timeline
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/PaymentId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - DOMAIN
+              - BANKING_VERIFICATION
+              - ACCOUNTING
+              - NOTIFICATION
+              - TFJ
+              - REVERSAL
+        - name: occurredFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: occurredTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Stable page of ordered timeline entries
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentTimelinePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/AuditForbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/payment-audit-records:
+    get:
+      tags: [Payment audit]
+      operationId: searchPaymentAuditRecords
+      summary: Search immutable Payment-related audit evidence
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+        - name: paymentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: paymentReference
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: observedCustomerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: actorId
+          in: query
+          description: Opaque actor identifier.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+        - name: actorType
+          in: query
+          schema:
+            type: string
+            enum: [USER, SERVICE, SYSTEM, EXTERNAL_SYSTEM]
+        - name: action
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - name: result
+          in: query
+          schema:
+            type: string
+            enum: [SUCCESS, FAILURE, DENIED, NO_OP, QUARANTINED]
+        - name: reasonCode
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+        - name: correlationId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sourceSystem
+          in: query
+          schema:
+            type: string
+            enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+        - name: occurredFrom
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: occurredTo
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [OCCURRED_AT_ASC, OCCURRED_AT_DESC]
+            default: OCCURRED_AT_DESC
+      responses:
+        '200':
+          description: Stable page of immutable audit records
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuditPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/AuditForbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/payment-audit-records/{auditId}:
+    get:
+      tags: [Payment audit]
+      operationId: getPaymentAuditRecord
+      summary: Read one immutable audit record
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: auditId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Immutable audit record
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuditRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/AuditForbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/payment-audit-exports:
+    post:
+      tags: [Payment audit]
+      operationId: requestPaymentAuditExport
+      summary: Request a controlled asynchronous export of masked audit evidence
+      description: |
+        This operation creates an export job, not a Payment or audit mutation.
+        It requires the payment.audit.export scope, a business purpose and a
+        bounded period. Production and download of the export are audited.
+      security:
+        - oauth2:
+            - payment.audit.read
+            - payment.audit.export
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 150
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentAuditExportRequest'
+      responses:
+        '202':
+          description: Export request durably accepted
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Location:
+              description: URI of the export job
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuditExportJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/AuditForbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/payment-audit-exports/{exportId}:
+    get:
+      tags: [Payment audit]
+      operationId: getPaymentAuditExport
+      summary: Read a controlled audit export job status
+      security:
+        - oauth2:
+            - payment.audit.read
+            - payment.audit.export
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export job status and time-limited retrieval metadata
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuditExportJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/AuditForbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://identity.example/oauth2/authorize
+          tokenUrl: https://identity.example/oauth2/token
+          scopes:
+            payment.audit.read: Read immutable Payment audit evidence
+            payment.audit.export: Request and retrieve controlled audit exports
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PaymentId:
+      name: paymentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 2048
+    PageSize:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+  headers:
+    CorrelationId:
+      description: Echo of the request correlation identifier
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invalid filter, period or malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication is required
+    AuditForbidden:
+      description: Audit access is denied or intentionally concealed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Evidence or export not found or not visible to the caller
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency key reused with a different export request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Export policy rejected the request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Audit query rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Internal audit query failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: Audit store temporarily unavailable
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+  schemas:
+    PaymentState:
+      type: string
+      enum:
+        - RECEIVED
+        - AUTHORIZATION_CHECKING
+        - BANKING_CHECKING
+        - REJECTED
+        - APPROVED
+        - POSTING
+        - ACCOUNTING_OUTCOME_UNKNOWN
+        - DEBITED
+        - CUT_CREDITED
+        - REVERSAL_REQUIRED
+        - REVERSAL_PENDING
+        - REVERSED
+        - FAILED
+        - NOTIFIED
+        - PENDING_END_OF_DAY_CONFIRMATION
+        - TREASURY_INTEGRATED
+    PaymentTimelineEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - timelineEntryId
+        - paymentId
+        - category
+        - eventType
+        - occurredAt
+        - correlationId
+        - sourceSystem
+        - aggregateVersion
+      properties:
+        timelineEntryId:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        category:
+          type: string
+          enum:
+            - DOMAIN
+            - BANKING_VERIFICATION
+            - ACCOUNTING
+            - NOTIFICATION
+            - TFJ
+            - REVERSAL
+        eventType:
+          type: string
+        fromState:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentState'
+            - type: 'null'
+        toState:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentState'
+            - type: 'null'
+        result:
+          type: string
+          enum: [SUCCESS, FAILURE, DEFERRED, UNKNOWN, PARTIAL, NO_OP, QUARANTINED]
+        reasonCode:
+          type:
+            - string
+            - 'null'
+        occurredAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          format: uuid
+        sourceSystem:
+          type: string
+          enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+        externalReference:
+          type:
+            - string
+            - 'null'
+        aggregateVersion:
+          type: integer
+          format: int64
+          minimum: 0
+        metadata:
+          type: object
+          description: Allow-listed, minimized, masked evidence only.
+          additionalProperties:
+            type:
+              - string
+              - number
+              - integer
+              - boolean
+              - 'null'
+    PaymentTimelinePage:
+      type: object
+      additionalProperties: false
+      required: [items, size, hasMore, snapshotAt]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentTimelineEntry'
+        size:
+          type: integer
+          minimum: 0
+        hasMore:
+          type: boolean
+        nextCursor:
+          type:
+            - string
+            - 'null'
+        snapshotAt:
+          type: string
+          format: date-time
+    AuditActor:
+      type: object
+      additionalProperties: false
+      required: [actorType, actorId]
+      properties:
+        actorType:
+          type: string
+          enum: [USER, SERVICE, SYSTEM, EXTERNAL_SYSTEM]
+        actorId:
+          type: string
+          description: Opaque actor identifier.
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    PaymentAuditRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - auditId
+        - occurredAt
+        - actor
+        - action
+        - targetType
+        - targetId
+        - result
+        - reasonCode
+        - correlationId
+        - sourceSystem
+        - integrityEvidence
+      properties:
+        auditId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        actor:
+          $ref: '#/components/schemas/AuditActor'
+        action:
+          type: string
+        targetType:
+          type: string
+          enum:
+            - PAYMENT
+            - OBSERVED_CUSTOMER
+            - BANKING_VERIFICATION
+            - POSTING
+            - NOTIFICATION
+            - TFJ_CONFIRMATION
+            - REVERSAL
+            - AUDIT_QUERY
+            - AUDIT_EXPORT
+        targetId:
+          type: string
+          description: Opaque target identifier.
+        paymentId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        paymentReference:
+          type:
+            - string
+            - 'null'
+        observedCustomerId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        result:
+          type: string
+          enum: [SUCCESS, FAILURE, DENIED, NO_OP, QUARANTINED]
+        reasonCode:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        traceId:
+          type:
+            - string
+            - 'null'
+        sourceSystem:
+          type: string
+          enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+        beforeState:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentState'
+            - type: 'null'
+        afterState:
+          oneOf:
+            - $ref: '#/components/schemas/PaymentState'
+            - type: 'null'
+        metadata:
+          type: object
+          description: Allow-listed, minimized and masked audit metadata.
+          additionalProperties:
+            type:
+              - string
+              - number
+              - integer
+              - boolean
+              - 'null'
+        integrityEvidence:
+          type: object
+          additionalProperties: false
+          required: [scheme, value]
+          properties:
+            scheme:
+              type: string
+              enum: [HASH_CHAIN, SIGNATURE, WORM_REFERENCE]
+            value:
+              type: string
+              description: Opaque integrity proof or immutable storage reference.
+    PaymentAuditPage:
+      type: object
+      additionalProperties: false
+      required: [items, size, hasMore, snapshotAt]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentAuditRecord'
+        size:
+          type: integer
+          minimum: 0
+        hasMore:
+          type: boolean
+        nextCursor:
+          type:
+            - string
+            - 'null'
+        snapshotAt:
+          type: string
+          format: date-time
+    PaymentAuditExportRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - occurredFrom
+        - occurredTo
+        - businessPurpose
+        - format
+      properties:
+        occurredFrom:
+          type: string
+          format: date-time
+        occurredTo:
+          type: string
+          format: date-time
+        paymentIds:
+          type: array
+          maxItems: 1000
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        financialInstitutionCodes:
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+        actions:
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+        results:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [SUCCESS, FAILURE, DENIED, NO_OP, QUARANTINED]
+        businessPurpose:
+          type: string
+          minLength: 10
+          maxLength: 500
+        format:
+          type: string
+          enum: [CSV, JSONL]
+    PaymentAuditExportJob:
+      type: object
+      additionalProperties: false
+      required:
+        - exportId
+        - status
+        - requestedAt
+        - requestedBy
+        - businessPurpose
+        - expiresAt
+      properties:
+        exportId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ACCEPTED, GENERATING, AVAILABLE, FAILED, EXPIRED]
+        requestedAt:
+          type: string
+          format: date-time
+        requestedBy:
+          type: string
+          description: Opaque actor identifier.
+        businessPurpose:
+          type: string
+        recordCount:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+        checksum:
+          type:
+            - string
+            - 'null'
+        retrievalUri:
+          type:
+            - string
+            - 'null'
+          format: uri-reference
+          description: Time-limited URI, present only while AVAILABLE.
+        expiresAt:
+          type: string
+          format: date-time
+        failureCode:
+          type:
+            - string
+            - 'null'
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        detail:
+          type: string
+        retryAfter:
+          type: integer
+          minimum: 1
+        violations:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, code]
+            properties:
+              field:
+                type: string
+              code:
+                type: string
+              message:
+                type: string
