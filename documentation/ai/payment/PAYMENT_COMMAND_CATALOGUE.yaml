@@ -1,11 +1,11 @@
-schemaVersion: 1.3.0
+schemaVersion: 1.4.0
 document:
   id: SIXPAY-PAYMENT-COMMAND-CATALOGUE
   title: SIXPAY CONNECT — Payment Commands and Aggregate Operations
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 3_5_AGGREGATE_ROOT_DOMAIN_EVENTS
   branch: feat/payment-domain-generation-brief
-  status: FINAL_VALIDATED
+  status: IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
   nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
@@ -950,3 +950,9 @@ finalValidation:
   humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
   machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
   status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+implementation:
+  status: IMPLEMENTED
+  aggregateOperationCount: 17
+  genericStatusSetterAllowed: false
+  genericCommandDispatcherAllowed: false
+  reconstitutionEventless: true

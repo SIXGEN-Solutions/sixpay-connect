@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Commands and Aggregate Operations
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current domain-only increment:** **AUTHORIZED_AND_COMPLETED**
 
 ## 1. Purpose
 
@@ -151,6 +152,17 @@ DOMAIN EVENT BINDINGS: PREPARED
 NEXT: OWNER APPROVAL AND CONTRACT GATE CLOSURE
 CODE GENERATION: FORBIDDEN
 ```
+
+
+## Lot 3.5 implementation mapping
+
+The sixteen application command intents are represented by seventeen named
+Aggregate Root operations, including eventless `reconstitute`.
+
+The implementation accepts explicit immutable policy bundles, controlled
+instants and durable TFJ match proof where the final policy/service flow
+requires them. Command objects, generic dispatch and status setters remain
+outside and forbidden.
 
 ## Final Lot 2.8 validation
 

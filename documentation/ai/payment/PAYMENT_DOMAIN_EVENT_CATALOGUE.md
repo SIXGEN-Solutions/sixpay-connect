@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Domain Event Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current domain-only increment:** **AUTHORIZED_AND_COMPLETED**
 
 ## 1. Purpose
 
@@ -1304,6 +1305,31 @@ STATUS: DRAFT_PENDING_VALIDATION
 NEXT: OWNER APPROVAL AND CONTRACT GATE CLOSURE
 CODE GENERATION: FORBIDDEN
 ```
+
+
+## Lot 3.5 implementation
+
+The complete catalogue is implemented under:
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/event/
+```
+
+Implementation counts:
+
+```text
+Payment domain-event records: 33
+Common event metadata contract: 1
+Safe payload components: 3
+Result/lookup/source enums: 5
+```
+
+Every event is an explicit Java record implementing `PaymentDomainEvent`,
+which extends the shared `DomainEvent`. Events carry UUID v4 identity,
+aggregate identity/reference, correlation, resulting status, resulting
+business version, one-based local sequence and controlled occurrence time.
+
+No event contains `Payment`, `PaymentState` or a complete evidence snapshot.
 
 ## Final Lot 2.8 validation
 

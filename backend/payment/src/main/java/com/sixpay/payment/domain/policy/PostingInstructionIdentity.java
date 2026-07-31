@@ -1,16 +1,21 @@
 package com.sixpay.payment.domain.policy;
 
+import com.sixpay.payment.domain.model.evidence.EvidenceFingerprint;
 import com.sixpay.payment.domain.model.evidence.PostingIdempotencyKey;
 import com.sixpay.payment.domain.model.evidence.PostingInstructionId;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 
 import java.util.Objects;
 
+/**
+ * Immutable identity and safe fingerprint of the sole logical posting.
+ */
 public record PostingInstructionIdentity(
         PostingInstructionId instructionId,
         PostingIdempotencyKey idempotencyKey,
         Money amount,
-        String accountBindingFingerprint
+        String accountBindingFingerprint,
+        EvidenceFingerprint instructionFingerprint
 ) {
     public PostingInstructionIdentity {
         instructionId = Objects.requireNonNull(
@@ -30,6 +35,15 @@ public record PostingInstructionIdentity(
         Objects.requireNonNull(
                 accountBindingFingerprint,
                 "Account binding fingerprint"
+        );
+        if (!accountBindingFingerprint.matches("^v1:[0-9a-f]{64}$")) {
+            throw new IllegalArgumentException(
+                    "Account binding fingerprint has an invalid format"
+            );
+        }
+        instructionFingerprint = Objects.requireNonNull(
+                instructionFingerprint,
+                "Posting instruction fingerprint"
         );
     }
 }

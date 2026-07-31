@@ -1,16 +1,18 @@
-# Traçabilité d’acceptation — Payment Lot 3.4
+# Traçabilité d’acceptation — Payment Lot 3.5
 
-| ID | Critère | Preuve |
+| ID | Critère | Preuve automatisée |
 | --- | --- | --- |
-| `PAY-L3.4-ACC-001` | 14 Policies présentes | `PaymentArchitectureTest.fourteenPoliciesTwelveProfilesAndFourServicesExist` |
-| `PAY-L3.4-ACC-002` | 12 profils immuables présents | même test d’architecture |
-| `PAY-L3.4-ACC-003` | 4 Domain Services présents | même test d’architecture |
-| `PAY-L3.4-ACC-004` | aucun I/O, repository, client externe ou horloge | `policiesAndServicesRemainPure` |
-| `PAY-L3.4-ACC-005` | aucune mutation Payment ni event registration | `noAggregateMutationOrEventPackageIsIntroduced` et scan des tokens |
-| `PAY-L3.4-ACC-006` | décisions temporelles typées | `CoreAcceptancePoliciesTest` |
-| `PAY-L3.4-ACC-007` | acceptation authorization/banking/funds typée | `CoreAcceptancePoliciesTest` |
-| `PAY-L3.4-ACC-008` | replay, instruction unique et failure classification | `ReplayAuthorizationAndFailurePoliciesTest` |
-| `PAY-L3.4-ACC-009` | result intent indépendant de Notification | `ResultAndDisclosurePoliciesTest` |
-| `PAY-L3.4-ACC-010` | divulgation explicite allowlist/denylist | `ResultAndDisclosurePoliciesTest` |
-| `PAY-L3.4-ACC-011` | services posting/TFJ/result retournent des décisions | `DomainServicesTest` |
-| `PAY-L3.4-ACC-012` | seule l’autorisation Lot 3.4 est active | `currentAuthorizationIsLot34DomainOnly` |
+| `PAY-L3.5-ACC-001` | création version 1 + `PaymentReceived` | `PaymentCreationAndReconstitutionTest` |
+| `PAY-L3.5-ACC-002` | reconstitution sans transition ni événement | `reconstitutionRestoresStateWithoutEventOrMutation` |
+| `PAY-L3.5-ACC-003` | progression favorable jusqu’à `APPROVED_FOR_POSTING` | `PaymentPreFinancialLifecycleTest` |
+| `PAY-L3.5-ACC-004` | replay identique strictement no-op | tests authorization, posting et TFJ |
+| `PAY-L3.5-ACC-005` | conflit/transition invalide sans mutation | tests préfinanciers et posting |
+| `PAY-L3.5-ACC-006` | posting complet → résultat immédiat + TFJ tracking | `PaymentPostingLifecycleTest` |
+| `PAY-L3.5-ACC-007` | outcome inconnu résolu uniquement autoritativement | `unknownPostingCanOnlyBeResolvedByAuthoritativeEvidence` |
+| `PAY-L3.5-ACC-008` | finalité uniquement par TFJ intégré et match unique | `PaymentTfjAndReversalLifecycleTest` |
+| `PAY-L3.5-ACC-009` | reversal explicite, original posting préservé | `postingReversalRequirementCanBeAuthorizedAndConfirmed` |
+| `PAY-L3.5-ACC-010` | exactement 33 événements stables | `PaymentEventCatalogueTest` |
+| `PAY-L3.5-ACC-011` | aucun événement ne contient Aggregate/State/Snapshot | `explicitEventsNeverContainWholeAggregateOrSnapshotFields` |
+| `PAY-L3.5-ACC-012` | 17 opérations nommées, aucun setter/dispatcher générique | `PaymentArchitectureTest` |
+| `PAY-L3.5-ACC-013` | domaine sans framework, I/O, persistence ou adapter | `paymentDomainRemainsFrameworkAndIoFree` |
+| `PAY-L3.5-ACC-014` | autorisation limitée au Lot 3.5 | `lot35AuthorizationIsActiveAndGlobalGenerationIsFalse` |

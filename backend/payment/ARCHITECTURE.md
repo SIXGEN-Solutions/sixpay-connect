@@ -1,52 +1,54 @@
-# Architecture Decision Record — Payment Policies and Services
+# Architecture Decision Record — Payment Aggregate and Events
 
 ## Decision
 
-Lot 3.4 implements the complete IA-1 decision model as pure Java 21 domain
-components.
+Lot 3.5 implements the frozen IA-1 Aggregate Root and event catalogue without
+opening application, persistence or integration layers.
 
-## Packages
-
-```text
-com.sixpay.payment.domain.policy
-com.sixpay.payment.domain.service
-```
-
-## Ownership boundary
-
-Policies and services decide. The future `Payment` Aggregate Root will:
-
-- validate legal transitions;
-- mutate its own state;
-- retain accepted evidence;
-- register ordered domain events.
-
-No Lot 3.4 component owns those responsibilities.
-
-## Profiles
-
-The twelve profiles are immutable and carry common metadata:
+## Atomic mutation model
 
 ```text
-profileId
-profileVersion
-effectiveFrom
-effectiveUntil?
-approvedByReference
+validate current state and immutable inputs
+        ↓
+invoke pure policy or Domain Service
+        ↓ typed decision
+construct immutable next PaymentState
+        ↓
+construct complete ordered event batch
+        ↓
+validate event metadata against next state
+        ↓
+commit state and pending events together
 ```
 
-No profile contains credentials, protected account tokens or a hard-coded bank
-default. Values are supplied by the application after approved configuration
-resolution.
+No event is registered until every next-state invariant and event payload has
+been successfully constructed.
 
-## Event disclosure boundary
+## Version and ordering
 
-The final catalogue places `PaymentEventDisclosurePolicy` conceptually near
-application mapping. Because the active authorization is domain-only, the
-implementation remains a pure boundary policy over `ExplicitEventPayload`.
-No application package or Outbox mapper is generated.
+One successful mutation produces:
 
-## Determinism
+```text
+businessVersion = previousVersion + 1
+all events.aggregateVersion = businessVersion
+events.eventSequence = 1..N
+```
 
-For the same input contexts, evidence, `decisionAt` and profile versions, every
-policy and service returns the same typed result.
+No-op replay, conflict, invalid transition and reconstitution produce no
+version increment and no event.
+
+## Reconstitution
+
+`Payment.reconstitute(PaymentState)` accepts a fully validated immutable state,
+restores no pending events and performs no transition.
+
+## Event safety
+
+The 33 event types are explicit records. Common metadata and safe payload
+components are reusable, but no generic domain-event payload or automatic
+aggregate/snapshot serialization exists.
+
+## Boundary
+
+Payment requests external processes only by domain events. It performs no
+network, repository, persistence, broker, configuration or clock I/O.

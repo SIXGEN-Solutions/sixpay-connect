@@ -102,7 +102,10 @@ class ReplayAuthorizationAndFailurePoliciesTest {
                                 "POSTING-IDEMPOTENCY-001"
                         ),
                         PolicyTestFixtures.amount(),
-                        "v1:" + "a".repeat(64)
+                        "v1:" + "a".repeat(64),
+                        EvidenceFingerprint.of(
+                                "v1:sha256:" + "b".repeat(64)
+                        )
                 );
 
         assertEquals(

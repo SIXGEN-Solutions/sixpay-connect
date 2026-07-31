@@ -76,7 +76,16 @@ public final class ReversalDecisionService {
                 input.candidateSnapshot().reversalInstructionId()
                         + ":"
                         + input.candidateSnapshot()
-                                .reversalCommandIdempotencyKey(),
+                                .outcome()
+                                .orElseThrow()
+                                .metadata()
+                                .observationChannel()
+                        + ":"
+                        + input.candidateSnapshot()
+                                .outcome()
+                                .orElseThrow()
+                                .metadata()
+                                .acceptedAt(),
                 input.candidateSnapshot()
                         .outcome()
                         .orElseThrow()

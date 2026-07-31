@@ -1,11 +1,11 @@
-schemaVersion: 2.2.0
+schemaVersion: 2.3.0
 document:
   id: SIXPAY-PAYMENT-DOMAIN-EVENT-CATALOGUE
   title: SIXPAY CONNECT — IA-1 Payment Domain Event Catalogue
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 3_5_AGGREGATE_ROOT_DOMAIN_EVENTS
   branch: feat/payment-domain-generation-brief
-  status: FINAL_VALIDATED
+  status: IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
   nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
@@ -2215,3 +2215,9 @@ finalValidation:
   humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
   machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
   status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+implementation:
+  status: IMPLEMENTED
+  eventRecordCount: 33
+  explicitSafePayloads: true
+  wholeAggregateOrSnapshotFieldsAllowed: false
+  sameMutationVersionAndSequenceEnforced: true

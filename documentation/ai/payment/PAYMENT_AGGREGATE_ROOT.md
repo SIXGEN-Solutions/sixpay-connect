@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Aggregate Root
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED_AND_FROZEN`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current domain-only increment:** **AUTHORIZED_AND_COMPLETED**
 
 ## Final aggregate decision
 
@@ -57,6 +58,37 @@ control and re-execution of Lot 2.8 validation.
 
 The model is ready for implementation planning, but code generation remains
 disabled until explicit owner and contract-gate approval.
+
+
+## Lot 3.5 implementation
+
+```text
+backend/payment/src/main/java/com/sixpay/payment/domain/model/
+├── Payment.java
+├── PaymentState.java
+├── NewPaymentIntent.java
+└── PaymentDomainException.java
+```
+
+The Aggregate Root implements the 17 named operations and remains the sole
+owner of:
+
+- lifecycle validation and state mutation;
+- business-version increments;
+- bounded current evidence;
+- failure/finality timestamps;
+- ordered Payment domain-event registration.
+
+Each operation constructs and validates an immutable next `PaymentState` and
+the complete event batch before committing either. Invalid transitions,
+conflicts and identical replays therefore produce no state change, version
+increment or event.
+
+`Payment.reconstitute(PaymentState)` restores state without transition or
+event.
+
+**Implementation decisions:** `PAY-DEC-IA1-091` through
+`PAY-DEC-IA1-095`.
 
 ## Verdict
 

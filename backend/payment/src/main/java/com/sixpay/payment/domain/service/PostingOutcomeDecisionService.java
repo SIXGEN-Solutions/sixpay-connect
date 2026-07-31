@@ -47,8 +47,10 @@ public final class PostingOutcomeDecisionService {
         EvidenceIdentity candidateIdentity = new EvidenceIdentity(
                 input.candidate().postingInstructionId()
                         + ":"
-                        + input.candidate()
-                                .postingCommandIdempotencyKey(),
+                        + input.candidate().metadata()
+                                .observationChannel()
+                        + ":"
+                        + input.candidate().metadata().acceptedAt(),
                 input.candidate().metadata().evidenceFingerprint()
         );
 
@@ -84,6 +86,43 @@ public final class PostingOutcomeDecisionService {
             return PolicyDecision.of(
                     PostingDecision.CONFLICT,
                     replay.reasonCode()
+            );
+        }
+
+        if (input.candidate().outcome()
+                == com.sixpay.payment.domain.model.evidence
+                        .PostingOutcome
+                        .REJECTED_NO_FINANCIAL_EFFECT) {
+            if (input.failure() == null) {
+                return PolicyDecision.of(
+                        PostingDecision.CONFLICT,
+                        "REJECTED_POSTING_REQUIRES_CLASSIFIED_FAILURE"
+                );
+            }
+
+            PolicyDecision<FailureDispositionDecision> disposition =
+                    failurePolicy.decide(
+                            input.failure(),
+                            FinancialEffectKnowledge.PROVEN_NONE,
+                            input.context().status(),
+                            profiles.failureClassificationProfile()
+                    );
+
+            PostingDecision classified = switch (
+                    disposition.decision()
+            ) {
+                case BUSINESS_REJECT, SECURITY_REJECT ->
+                        PostingDecision.REJECTED_NO_EFFECT;
+                case TECHNICAL_FAIL_NO_EFFECT ->
+                        PostingDecision.FAILED_NO_EFFECT;
+                case DEFER, OUTCOME_UNKNOWN, REVERSAL_REQUIRED ->
+                        PostingDecision.CONFLICT;
+            };
+
+            return PolicyDecision.withProfile(
+                    classified,
+                    disposition.reasonCode(),
+                    profiles.failureClassificationProfile().metadata()
             );
         }
 

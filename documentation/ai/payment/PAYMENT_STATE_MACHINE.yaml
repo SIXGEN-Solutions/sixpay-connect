@@ -1,11 +1,11 @@
-schemaVersion: 2.3.0
+schemaVersion: 2.4.0
 document:
   id: SIXPAY-PAYMENT-STATE-MACHINE
   title: SIXPAY CONNECT — IA-1 Payment State Machine
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 3_5_AGGREGATE_ROOT_DOMAIN_EVENTS
   branch: feat/payment-domain-generation-brief
-  status: FINAL_VALIDATED
+  status: IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
   nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
@@ -1225,3 +1225,10 @@ readiness:
   domainModelComplete: true
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
   codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+implementation:
+  status: IMPLEMENTED
+  stateCount: 17
+  terminalStateCount: 4
+  transitionCount: 38
+  aggregateOwnsTransitions: true
+  invalidTransitionIsAtomic: true

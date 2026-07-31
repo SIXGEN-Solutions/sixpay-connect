@@ -1,62 +1,56 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `3.4 — Policies and Domain Services`  
+> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_3_4_IMPLEMENTED`  
+> **Status:** `LOT_3_5_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
-> **Current increment:** **AUTHORIZED**
+> **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
-## Implemented
+## Implemented domain model
 
 ```text
-14 Payment Policies
+1 Payment Aggregate Root
+1 immutable PaymentState
+17 named Aggregate Root operations
+17 lifecycle states
+38 legal transitions
+33 explicit Payment domain-event records
+14 pure Policies
 12 immutable policy profiles
 4 pure Domain Services
-typed decision enums and immutable decision records
-explicit decision contexts and service inputs
 ```
 
-## Purity guarantees
+## Aggregate guarantees
 
-Every policy and service:
+- Payment is the only state, version and event owner.
+- Every successful operation increments businessVersion exactly once.
+- Every event in one mutation shares that resulting version.
+- eventSequence is one-based in canonical fact order.
+- identical replay, conflict, invalid transition and reconstitution are
+  eventless and versionless.
+- financial outcome uncertainty is resolved only through authoritative lookup.
+- original posting evidence remains preserved through reversal.
+- Notification delivery never changes Payment state.
 
-- receives time and profiles explicitly;
-- performs no I/O;
-- accesses no repository;
-- calls no external client;
-- reads no system clock;
-- mutates no Payment;
-- registers no event;
-- returns a typed immutable decision.
-
-## Packages
-
-```text
-com.sixpay.payment.domain.policy
-com.sixpay.payment.domain.service
-```
-
-`PaymentEventDisclosurePolicy` is kept as a pure domain-only boundary policy
-until application/Outbox mapping is separately authorized.
-
-## Deferred
+## Still forbidden
 
 ```text
-Payment
-PaymentState
-Domain Events
-event registration
 application handlers
-repositories and adapters
+command registry
+repositories and persistence mappings
+database migrations
+Outbox and integration-envelope mapping
+controllers and API changes
+external adapters
+Spring configuration
+bank-specific configuration activation
 ```
 
 ## Verdict
 
 ```text
-LOT 3.4: IMPLEMENTED
-POLICIES: 14
-PROFILES: 12
-DOMAIN SERVICES: 4
+LOT 3.5: IMPLEMENTED
+PAYMENT DOMAIN-ONLY PROGRAM: COMPLETE
 GLOBAL GENERATION: FORBIDDEN
-NEXT: LOT 3.5 EXPLICIT ACTIVATION
+NEXT: OWNER REVIEW AND EXPLICIT NEXT-INCREMENT ACTIVATION
 ```

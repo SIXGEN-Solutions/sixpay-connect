@@ -1,10 +1,11 @@
 # SIXPAY CONNECT — Payment Domain Model
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current sub-lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED_AND_FROZEN`  
-> **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
+> **Status:** `IMPLEMENTED`  
+> **Global code generation:** **FORBIDDEN**  
+> **Current domain-only increment:** **AUTHORIZED_AND_COMPLETED**
 
 ## Normative model
 
@@ -68,3 +69,20 @@ LOT 2: COMPLETE
 GENERATION READINESS: READY_PENDING_EXTERNAL_APPROVALS
 CODE GENERATION: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
 ```
+
+
+## Lot 3.5 implementation status
+
+```text
+Aggregate Root: IMPLEMENTED
+Immutable aggregate state: IMPLEMENTED
+17 named operations: IMPLEMENTED
+17 statuses / 38 transitions: ENFORCED
+33 domain events: IMPLEMENTED
+14 policies / 4 Domain Services: INTEGRATED
+Application, persistence and adapters: NOT AUTHORIZED
+```
+
+The Payment domain-only implementation is complete. Global generation remains
+blocked by the external contract and configuration approvals already recorded
+in the manifest.
