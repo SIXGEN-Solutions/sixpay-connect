@@ -2,23 +2,21 @@ package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.domain.model.PaymentFailure;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.ReversalAuthorizationEvidence;
 import com.sixpay.payment.domain.model.evidence.ReversalSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.ReversalInstructionIdentity;
-import com.sixpay.payment.domain.policy.UniqueTfjMatchProof;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Coordinates posting outcomes, TFJ finality, reversal and terminal failures.
+ * Coordinates posting outcomes, reversal and terminal failures.
  *
- * <p>The class does not call a bank or TFJ source. It only applies evidence
- * already obtained by an inbound adapter or later gateway.</p>
+ * <p>TFJ reconciliation is deliberately owned by
+ * {@link PaymentReconciliationService}.</p>
  */
 @Service
 public class PaymentFinalizationService {
@@ -66,27 +64,6 @@ public class PaymentFinalizationService {
                         payment.resolvePostingOutcome(
                                 evidence,
                                 failure,
-                                decisionAt,
-                                policies
-                        )
-        );
-    }
-
-    public PaymentWorkflowResult recordTfjConfirmation(
-            PaymentId paymentId,
-            EndOfDayConfirmationSnapshot evidence,
-            UniqueTfjMatchProof matchProof,
-            PaymentFailure reconciliationFailure,
-            Instant decisionAt,
-            PaymentPolicyBundle policies
-    ) {
-        return coordinator.mutate(
-                paymentId,
-                payment ->
-                        payment.recordMatchedEndOfDayConfirmation(
-                                evidence,
-                                matchProof,
-                                reconciliationFailure,
                                 decisionAt,
                                 policies
                         )

@@ -5,12 +5,17 @@ import com.sixpay.payment.application.command.FailPaymentWithoutFinancialEffectC
 import com.sixpay.payment.application.command.RecordPostingOutcomeCommand;
 import com.sixpay.payment.application.command.RecordRecoverableFailureCommand;
 import com.sixpay.payment.application.command.RecordReversalOutcomeCommand;
-import com.sixpay.payment.application.command.RecordTfjConfirmationCommand;
 import com.sixpay.payment.application.command.RejectPaymentCommand;
 import com.sixpay.payment.application.command.ResolvePostingOutcomeCommand;
 import com.sixpay.payment.application.command.ResolveReversalOutcomeCommand;
 import com.sixpay.payment.application.view.PaymentCommandResult;
 
+/**
+ * Posting-result, reversal and terminal-failure use cases.
+ *
+ * <p>TFJ reconciliation is intentionally excluded and exposed through
+ * {@link PaymentReconciliationUseCase}.</p>
+ */
 public interface PaymentFinalizationUseCase {
 
     PaymentCommandResult recordPostingOutcome(
@@ -19,10 +24,6 @@ public interface PaymentFinalizationUseCase {
 
     PaymentCommandResult resolvePostingOutcome(
             ResolvePostingOutcomeCommand command
-    );
-
-    PaymentCommandResult recordTfjConfirmation(
-            RecordTfjConfirmationCommand command
     );
 
     PaymentCommandResult authorizeReversal(

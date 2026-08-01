@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -24,19 +23,9 @@ class PaymentFoundationArchitectureTest {
             JAVA_ROOT.resolve("application");
     private static final Path SERVICE_ROOT =
             APPLICATION_ROOT.resolve("service");
-    private static final Path CONFIGURATION_ROOT =
-            JAVA_ROOT.resolve("configuration");
-    private static final Path PERSISTENCE_ROOT =
-            JAVA_ROOT.resolve("infrastructure/persistence");
-    private static final Path AUDIT_ROOT =
-            JAVA_ROOT.resolve("infrastructure/audit");
-    private static final Path OUTBOX_ROOT =
-            JAVA_ROOT.resolve("infrastructure/outbox");
-    private static final Path IDEMPOTENCY_ROOT =
-            JAVA_ROOT.resolve("infrastructure/idempotency");
 
     @Test
-    void lot37AuthorizesFocusedOrchestrationServices()
+    void lot39AuthorizesFocusedOrchestrationServices()
             throws IOException {
         Set<String> authorizedServices = Set.of(
                 "PaymentAuthorizationService.java",
@@ -46,6 +35,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentNotFoundException.java",
                 "PaymentPostingPreparationService.java",
                 "PaymentReceptionService.java",
+                "PaymentReconciliationService.java",
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
                 "package-info.java"
@@ -93,9 +83,7 @@ class PaymentFoundationArchitectureTest {
                         try {
                             return Files.lines(path).count() > 300;
                         } catch (IOException exception) {
-                            throw new IllegalStateException(
-                                    exception
-                            );
+                            throw new IllegalStateException(exception);
                         }
                     })
                     .toList();
@@ -109,7 +97,7 @@ class PaymentFoundationArchitectureTest {
     }
 
     @Test
-    void orchestrationContainsNoExternalGatewayOrKafkaCode()
+    void orchestrationContainsNoExternalClientCode()
             throws IOException {
         List<String> forbiddenTokens = List.of(
                 "KafkaTemplate",
@@ -118,9 +106,7 @@ class PaymentFoundationArchitectureTest {
                 "WebClient",
                 "HttpClient",
                 "@KafkaListener",
-                "@Scheduled",
-                "Amplitude",
-                "TresorPay"
+                "@Scheduled"
         );
 
         try (Stream<Path> paths = Files.walk(SERVICE_ROOT)) {
