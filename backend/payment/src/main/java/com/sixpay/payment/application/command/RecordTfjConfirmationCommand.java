@@ -3,8 +3,9 @@ package com.sixpay.payment.application.command;
 import com.sixpay.payment.domain.model.PaymentFailure;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
-import com.sixpay.payment.domain.model.evidence.UniqueTfjMatchProof;
+
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import com.sixpay.payment.domain.policy.UniqueTfjMatchProof;
 
 import java.time.Instant;
 import java.util.Objects;

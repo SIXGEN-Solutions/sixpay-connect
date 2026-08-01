@@ -1,32 +1,28 @@
 package com.sixpay.payment.application.service;
 
+import com.sixpay.payment.application.port.out.PaymentLookupPort;
 import com.sixpay.payment.domain.model.NewPaymentIntent;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
-import com.sixpay.payment.domain.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 
-/**
- * Receives one new Payment intent.
- */
 @Service
 public class PaymentReceptionService {
 
-    private final PaymentRepository paymentRepository;
+    private final PaymentLookupPort paymentLookupPort;
     private final PaymentMutationCoordinator coordinator;
 
     public PaymentReceptionService(
-            PaymentRepository paymentRepository,
+            PaymentLookupPort paymentLookupPort,
             PaymentMutationCoordinator coordinator
     ) {
-        this.paymentRepository = Objects.requireNonNull(
-                paymentRepository,
-                "Payment repository"
+        this.paymentLookupPort = Objects.requireNonNull(
+                paymentLookupPort,
+                "Payment lookup port"
         );
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -48,7 +44,7 @@ public class PaymentReceptionService {
         Objects.requireNonNull(intent, "New Payment intent");
         Objects.requireNonNull(receivedAt, "Received instant");
 
-        if (paymentRepository
+        if (paymentLookupPort
                 .existsBySourceAndExternalPaymentReference(
                         intent.source(),
                         intent.externalPaymentReference()

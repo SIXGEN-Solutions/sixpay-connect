@@ -6,9 +6,9 @@ import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.ReversalAuthorizationEvidence;
 import com.sixpay.payment.domain.model.evidence.ReversalSnapshot;
-import com.sixpay.payment.domain.model.evidence.UniqueTfjMatchProof;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.ReversalInstructionIdentity;
+import com.sixpay.payment.domain.policy.UniqueTfjMatchProof;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;

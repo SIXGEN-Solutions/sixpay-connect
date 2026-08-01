@@ -1,5 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
+import com.sixpay.payment.application.port.out.PaymentLookupPort;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 @Repository
 @Transactional(readOnly = true)
-public class PaymentRepositoryAdapter implements PaymentRepository {
+public class PaymentRepositoryAdapter implements PaymentRepository, PaymentLookupPort {
 
     private final PaymentSpringDataRepository springDataRepository;
     private final PaymentPersistenceMapper mapper;

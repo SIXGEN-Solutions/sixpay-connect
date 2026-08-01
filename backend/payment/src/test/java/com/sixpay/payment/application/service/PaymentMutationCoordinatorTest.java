@@ -1,14 +1,13 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.common.time.TimeProvider;
+import com.sixpay.payment.application.port.out.PaymentAtomicPersistencePort;
+import com.sixpay.payment.application.port.out.PaymentLookupPort;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.repository.PaymentRepository;
-import com.sixpay.payment.infrastructure.audit.PaymentAuditAdapter;
-import com.sixpay.payment.infrastructure.outbox.PaymentDomainEventMapper;
-import com.sixpay.payment.infrastructure.outbox.PaymentOutboxEntity;
-import com.sixpay.payment.infrastructure.outbox.PaymentOutboxRepository;
+import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,43 +16,40 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PaymentMutationCoordinatorTest {
 
-    private PaymentRepository paymentRepository;
-    private PaymentAuditAdapter auditAdapter;
-    private PaymentOutboxRepository outboxRepository;
-    private PaymentDomainEventMapper eventMapper;
+    private static final Instant CURRENT_TIME =
+            Instant.parse("2026-08-01T20:00:00Z");
+
+    private PaymentLookupPort paymentLookupPort;
+    private PaymentAtomicPersistencePort atomicPersistencePort;
     private PaymentMutationCoordinator coordinator;
 
     @BeforeEach
     void setUp() {
-        paymentRepository = Mockito.mock(
-                PaymentRepository.class
-        );
-        auditAdapter = Mockito.mock(
-                PaymentAuditAdapter.class
-        );
-        outboxRepository = Mockito.mock(
-                PaymentOutboxRepository.class
-        );
-        eventMapper = Mockito.mock(
-                PaymentDomainEventMapper.class
+        paymentLookupPort = Mockito.mock(
+                PaymentLookupPort.class
         );
 
-        TimeProvider timeProvider = () ->
-                Instant.parse("2026-08-01T20:00:00Z");
+        atomicPersistencePort = Mockito.mock(
+                PaymentAtomicPersistencePort.class
+        );
+
+        TimeProvider timeProvider = () -> CURRENT_TIME;
 
         coordinator = new PaymentMutationCoordinator(
-                paymentRepository,
-                auditAdapter,
-                outboxRepository,
-                eventMapper,
+                paymentLookupPort,
+                atomicPersistencePort,
                 timeProvider
         );
     }
@@ -62,28 +58,130 @@ class PaymentMutationCoordinatorTest {
     void persistsAggregateAuditAndOutboxAfterMutation() {
         PaymentId paymentId =
                 new PaymentId(UUID.randomUUID());
+
+        PublicPaymentReference publicReference =
+                publicReference(paymentId);
+
         Payment payment = Mockito.mock(Payment.class);
+        Payment persistedPayment = Mockito.mock(Payment.class);
         PaymentDomainEvent event =
                 Mockito.mock(PaymentDomainEvent.class);
-        PaymentOutboxEntity outbox =
-                Mockito.mock(PaymentOutboxEntity.class);
 
-        when(paymentRepository.findById(paymentId))
+        Instant eventOccurredAt =
+                Instant.parse("2026-08-01T19:59:59Z");
+
+        when(paymentLookupPort.findById(paymentId))
                 .thenReturn(Optional.of(payment));
+
+        /*
+         * Le premier appel représente la version avant mutation.
+         * Le second appel représente la version après mutation.
+         */
         when(payment.businessVersion())
                 .thenReturn(1L, 2L);
+
         when(payment.domainEvents())
                 .thenReturn(List.of(event));
+
         when(event.occurredAt())
-                .thenReturn(
-                        Instant.parse(
-                                "2026-08-01T19:59:59Z"
-                        )
+                .thenReturn(eventOccurredAt);
+
+        when(
+                atomicPersistencePort.persist(
+                        payment,
+                        List.of(event),
+                        CURRENT_TIME
+                )
+        ).thenReturn(persistedPayment);
+
+        stubPaymentResult(
+                persistedPayment,
+                paymentId,
+                publicReference,
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                2L
+        );
+
+        PaymentWorkflowResult result =
+                coordinator.mutate(
+                        paymentId,
+                        ignored -> {
+                            // La mutation métier est simulée par
+                            // l’évolution de businessVersion().
+                        }
                 );
-        when(eventMapper.toOutboxEntity(
-                event,
-                Instant.parse("2026-08-01T20:00:00Z")
-        )).thenReturn(outbox);
+
+        assertThat(result.paymentId())
+                .isEqualTo(paymentId);
+
+        assertThat(result.publicPaymentReference())
+                .isEqualTo(publicReference);
+
+        assertThat(result.status())
+                .isEqualTo(
+                        PaymentStatus.AUTHORIZATION_CHECKING
+                );
+
+        assertThat(result.businessVersion())
+                .isEqualTo(2L);
+
+        assertThat(result.stateChanged())
+                .isTrue();
+
+        verify(paymentLookupPort)
+                .findById(paymentId);
+
+        verify(atomicPersistencePort)
+                .persist(
+                        payment,
+                        List.of(event),
+                        CURRENT_TIME
+                );
+    }
+
+    @Test
+    void usesEventOccurrenceWhenCurrentTimePrecedesEvent() {
+        PaymentId paymentId =
+                new PaymentId(UUID.randomUUID());
+
+        PublicPaymentReference publicReference =
+                publicReference(paymentId);
+
+        Payment payment = Mockito.mock(Payment.class);
+        Payment persistedPayment = Mockito.mock(Payment.class);
+        PaymentDomainEvent event =
+                Mockito.mock(PaymentDomainEvent.class);
+
+        Instant futureEventTime =
+                CURRENT_TIME.plusSeconds(10);
+
+        when(paymentLookupPort.findById(paymentId))
+                .thenReturn(Optional.of(payment));
+
+        when(payment.businessVersion())
+                .thenReturn(1L, 2L);
+
+        when(payment.domainEvents())
+                .thenReturn(List.of(event));
+
+        when(event.occurredAt())
+                .thenReturn(futureEventTime);
+
+        when(
+                atomicPersistencePort.persist(
+                        payment,
+                        List.of(event),
+                        futureEventTime
+                )
+        ).thenReturn(persistedPayment);
+
+        stubPaymentResult(
+                persistedPayment,
+                paymentId,
+                publicReference,
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                2L
+        );
 
         PaymentWorkflowResult result =
                 coordinator.mutate(
@@ -94,33 +192,41 @@ class PaymentMutationCoordinatorTest {
 
         assertThat(result.stateChanged()).isTrue();
 
-        verify(paymentRepository).save(payment);
-        verify(auditAdapter).appendAll(List.of(event));
-        verify(outboxRepository).saveAll(List.of(outbox));
-        verify(outboxRepository).flush();
+        verify(atomicPersistencePort)
+                .persist(
+                        payment,
+                        List.of(event),
+                        futureEventTime
+                );
     }
 
     @Test
     void noOpMutationDoesNotWriteSideEffects() {
         PaymentId paymentId =
                 new PaymentId(UUID.randomUUID());
+
+        PublicPaymentReference publicReference =
+                publicReference(paymentId);
+
         Payment payment = Mockito.mock(Payment.class);
 
-        when(paymentRepository.findById(paymentId))
+        when(paymentLookupPort.findById(paymentId))
                 .thenReturn(Optional.of(payment));
+
+        /*
+         * Même valeur avant et après la mutation :
+         * le domaine n’a produit aucun changement.
+         */
         when(payment.businessVersion())
                 .thenReturn(2L);
-        when(payment.id()).thenReturn(paymentId);
-        when(payment.publicPaymentReference())
-                .thenReturn(Mockito.mock(
-                        com.sixpay.payment.domain.model
-                                .PublicPaymentReference.class
-                ));
-        when(payment.status())
-                .thenReturn(
-                        com.sixpay.payment.domain.model
-                                .PaymentStatus.RECEIVED
-                );
+
+        stubPaymentResult(
+                payment,
+                paymentId,
+                publicReference,
+                PaymentStatus.RECEIVED,
+                2L
+        );
 
         PaymentWorkflowResult result =
                 coordinator.mutate(
@@ -129,13 +235,202 @@ class PaymentMutationCoordinatorTest {
                         }
                 );
 
-        assertThat(result.stateChanged()).isFalse();
+        assertThat(result.paymentId())
+                .isEqualTo(paymentId);
 
-        verify(paymentRepository, never())
-                .save(Mockito.any());
-        verify(auditAdapter, never())
-                .appendAll(Mockito.anyList());
-        verify(outboxRepository, never())
-                .saveAll(Mockito.anyList());
+        assertThat(result.status())
+                .isEqualTo(PaymentStatus.RECEIVED);
+
+        assertThat(result.businessVersion())
+                .isEqualTo(2L);
+
+        assertThat(result.stateChanged())
+                .isFalse();
+
+        verify(paymentLookupPort)
+                .findById(paymentId);
+
+        verify(
+                atomicPersistencePort,
+                never()
+        ).persist(
+                any(Payment.class),
+                any(),
+                any(Instant.class)
+        );
+
+        verify(
+                payment,
+                never()
+        ).domainEvents();
+    }
+
+    @Test
+    void persistsNewPaymentWithItsEvents() {
+        PaymentId paymentId =
+                new PaymentId(UUID.randomUUID());
+
+        PublicPaymentReference publicReference =
+                publicReference(paymentId);
+
+        Payment payment = Mockito.mock(Payment.class);
+        Payment persistedPayment = Mockito.mock(Payment.class);
+        PaymentDomainEvent event =
+                Mockito.mock(PaymentDomainEvent.class);
+
+        when(payment.domainEvents())
+                .thenReturn(List.of(event));
+
+        when(event.occurredAt())
+                .thenReturn(
+                        Instant.parse(
+                                "2026-08-01T19:59:59Z"
+                        )
+                );
+
+        when(
+                atomicPersistencePort.persist(
+                        payment,
+                        List.of(event),
+                        CURRENT_TIME
+                )
+        ).thenReturn(persistedPayment);
+
+        stubPaymentResult(
+                persistedPayment,
+                paymentId,
+                publicReference,
+                PaymentStatus.RECEIVED,
+                1L
+        );
+
+        PaymentWorkflowResult result =
+                coordinator.persistNew(payment);
+
+        assertThat(result.paymentId())
+                .isEqualTo(paymentId);
+
+        assertThat(result.status())
+                .isEqualTo(PaymentStatus.RECEIVED);
+
+        assertThat(result.businessVersion())
+                .isEqualTo(1L);
+
+        assertThat(result.stateChanged())
+                .isTrue();
+
+        verify(atomicPersistencePort)
+                .persist(
+                        payment,
+                        List.of(event),
+                        CURRENT_TIME
+                );
+
+        verify(
+                paymentLookupPort,
+                never()
+        ).findById(any(PaymentId.class));
+    }
+
+    @Test
+    void rejectsChangedPaymentWithoutDomainEvents() {
+        PaymentId paymentId =
+                new PaymentId(UUID.randomUUID());
+
+        Payment payment = Mockito.mock(Payment.class);
+
+        when(paymentLookupPort.findById(paymentId))
+                .thenReturn(Optional.of(payment));
+
+        when(payment.businessVersion())
+                .thenReturn(1L, 2L);
+
+        when(payment.domainEvents())
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() ->
+                coordinator.mutate(
+                        paymentId,
+                        ignored -> {
+                        }
+                )
+        )
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(
+                        "must expose domain events"
+                );
+
+        verify(
+                atomicPersistencePort,
+                never()
+        ).persist(
+                any(Payment.class),
+                any(),
+                any(Instant.class)
+        );
+    }
+
+    @Test
+    void failsWhenPaymentDoesNotExist() {
+        PaymentId paymentId =
+                new PaymentId(UUID.randomUUID());
+
+        when(paymentLookupPort.findById(paymentId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                coordinator.mutate(
+                        paymentId,
+                        ignored -> {
+                        }
+                )
+        )
+                .isInstanceOf(
+                        PaymentNotFoundException.class
+                )
+                .hasMessageContaining(
+                        paymentId.toString()
+                );
+
+        verify(
+                atomicPersistencePort,
+                never()
+        ).persist(
+                any(Payment.class),
+                any(),
+                any(Instant.class)
+        );
+    }
+
+    private static void stubPaymentResult(
+            Payment payment,
+            PaymentId paymentId,
+            PublicPaymentReference publicReference,
+            PaymentStatus status,
+            long businessVersion
+    ) {
+        when(payment.id()).thenReturn(paymentId);
+
+        when(payment.publicPaymentReference())
+                .thenReturn(publicReference);
+
+        when(payment.status()).thenReturn(status);
+
+        when(payment.businessVersion())
+                .thenReturn(businessVersion);
+    }
+
+    private static PublicPaymentReference publicReference(
+            PaymentId paymentId
+    ) {
+        String identifier = paymentId.value()
+                .toString()
+                .replace("-", "")
+                .substring(0, 26)
+                .toUpperCase();
+
+        return PublicPaymentReference.of(
+                "PAY-" + identifier
+        );
     }
 }
