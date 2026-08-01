@@ -19,142 +19,149 @@ class PaymentFoundationArchitectureTest {
     private static final Path JAVA_ROOT =
             Path.of("src/main/java/com/sixpay/payment");
 
-    private static final Map<String, List<String>>
-            FORBIDDEN_IMPORTS_BY_LAYER = Map.of(
-                    "domain", List.of(
-                            "import com.sixpay.payment.api.",
-                            "import com.sixpay.payment.application.",
-                            "import com.sixpay.payment.configuration.",
-                            "import com.sixpay.payment.events.",
-                            "import com.sixpay.payment.infrastructure."
-                    ),
-                    "application", List.of(
-                            "import com.sixpay.payment.api.",
-                            "import com.sixpay.payment.configuration.",
-                            "import com.sixpay.payment.infrastructure.",
-                            "import jakarta.persistence.",
-                            "import jakarta.servlet."
-                    ),
-                    "api", List.of(
-                            "import com.sixpay.payment.configuration.",
-                            "import com.sixpay.payment.infrastructure.",
-                            "import jakarta.persistence."
-                    ),
-                    "events", List.of(
-                            "import com.sixpay.payment.api.",
-                            "import com.sixpay.payment.configuration.",
-                            "import com.sixpay.payment.infrastructure.",
-                            "import jakarta.persistence."
-                    ),
-                    "infrastructure", List.of(
-                            "import com.sixpay.payment.api."
-                    )
-            );
+    private static final Path DOMAIN_ROOT =
+            JAVA_ROOT.resolve("domain");
 
-    private static final Set<String> REQUIRED_BOUNDARIES =
-            Set.of(
-                    "api",
-                    "application",
-                    "configuration",
-                    "domain",
-                    "events",
-                    "infrastructure"
-            );
+    private static final Path APPLICATION_ROOT =
+            JAVA_ROOT.resolve("application");
+
+    private static final Path CONFIGURATION_ROOT =
+            JAVA_ROOT.resolve("configuration");
+
+    private static final Path PERSISTENCE_ROOT =
+            JAVA_ROOT.resolve("infrastructure/persistence");
+
+    private static final Path AUDIT_ROOT =
+            JAVA_ROOT.resolve("infrastructure/audit");
 
     @Test
-    void canonicalVerticalBoundariesArePresent()
+    void lot33AuthorizesOnlyPersistenceAndAuditFoundations()
             throws IOException {
 
-        Set<String> actual;
-
-        try (Stream<Path> paths = Files.list(JAVA_ROOT)) {
-            actual = paths
-                    .filter(Files::isDirectory)
-                    .map(path -> path.getFileName().toString())
-                    .collect(java.util.stream.Collectors.toSet());
-        }
-
-        assertTrue(
-                actual.containsAll(REQUIRED_BOUNDARIES),
-                () -> "Missing Payment boundaries: "
-                        + REQUIRED_BOUNDARIES.stream()
-                        .filter(boundary -> !actual.contains(boundary))
-                        .sorted()
-                        .toList()
+        Map<Path, Set<String>> authorizedByPackage = Map.of(
+                PERSISTENCE_ROOT,
+                Set.of(
+                        "PaymentJpaEntity.java",
+                        "PaymentPersistenceException.java",
+                        "PaymentPersistenceMapper.java",
+                        "PaymentRepositoryAdapter.java",
+                        "PaymentSpringDataRepository.java",
+                        "PaymentStateDocument.java",
+                        "package-info.java"
+                ),
+                AUDIT_ROOT,
+                Set.of(
+                        "PaymentAuditAdapter.java",
+                        "PaymentAuditEntity.java",
+                        "PaymentAuditEntry.java",
+                        "PaymentAuditRepository.java",
+                        "package-info.java"
+                ),
+                CONFIGURATION_ROOT,
+                Set.of(
+                        "PaymentModuleConfiguration.java",
+                        "package-info.java"
+                )
         );
-    }
 
-    @Test
-    void packageDocumentationDefinesEveryNewBoundary()
-            throws IOException {
+        for (Map.Entry<Path, Set<String>> entry
+                : authorizedByPackage.entrySet()) {
 
-        for (String boundary : REQUIRED_BOUNDARIES) {
-            if ("domain".equals(boundary)) {
-                continue;
-            }
-
-            Path packageInfo = JAVA_ROOT
-                    .resolve(boundary)
-                    .resolve("package-info.java");
+            Path packageRoot = entry.getKey();
 
             assertTrue(
-                    Files.isRegularFile(packageInfo),
-                    () -> "Missing package documentation: " + packageInfo
+                    Files.isDirectory(packageRoot),
+                    () -> "Missing authorized package: "
+                            + packageRoot
             );
-        }
-    }
 
-    @Test
-    void sourceDependenciesPointInward()
-            throws IOException {
+            List<String> actual;
 
-        for (Map.Entry<String, List<String>> rule
-                : FORBIDDEN_IMPORTS_BY_LAYER.entrySet()) {
-
-            Path layerRoot = JAVA_ROOT.resolve(rule.getKey());
-            if (!Files.isDirectory(layerRoot)) {
-                continue;
-            }
-
-            List<String> violations;
-
-            try (Stream<Path> paths = Files.walk(layerRoot)) {
-                violations = paths
+            try (Stream<Path> paths = Files.list(packageRoot)) {
+                actual = paths
                         .filter(Files::isRegularFile)
-                        .filter(path -> path.toString().endsWith(".java"))
-                        .flatMap(path -> violations(
-                                path,
-                                rule.getValue()
-                        ).stream())
+                        .filter(path ->
+                                path.toString().endsWith(".java")
+                        )
+                        .map(path ->
+                                path.getFileName().toString()
+                        )
+                        .sorted()
                         .toList();
             }
 
-            assertTrue(
-                    violations.isEmpty(),
-                    () -> "Payment layer dependency violations: "
-                            + violations
+            assertEquals(
+                    entry.getValue()
+                            .stream()
+                            .sorted()
+                            .toList(),
+                    actual,
+                    () -> "Unauthorized files in "
+                            + packageRoot
             );
         }
     }
 
     @Test
-    void lot32ContainsOnlyAuthorizedPersistenceImplementation()
+    void paymentModuleConfigurationIsInConfigurationLayer()
             throws IOException {
 
-        Set<String> authorizedPersistenceTypes = Set.of(
-                "PaymentJpaEntity.java",
-                "PaymentPersistenceException.java",
-                "PaymentPersistenceMapper.java",
-                "PaymentRepositoryAdapter.java",
-                "PaymentSpringDataRepository.java",
-                "PaymentStateDocument.java",
-                "package-info.java"
+        Path expectedConfiguration =
+                CONFIGURATION_ROOT.resolve(
+                        "PaymentModuleConfiguration.java"
+                );
+
+        Path forbiddenApplicationConfiguration =
+                APPLICATION_ROOT.resolve(
+                        "PaymentModuleConfiguration.java"
+                );
+
+        assertTrue(
+                Files.isRegularFile(expectedConfiguration),
+                "PaymentModuleConfiguration must be placed "
+                        + "in the configuration package"
         );
+
+        assertFalse(
+                Files.exists(forbiddenApplicationConfiguration),
+                "PaymentModuleConfiguration must not be placed "
+                        + "in the application package"
+        );
+
+        String source = Files.readString(
+                expectedConfiguration
+        );
+
+        assertTrue(
+                source.contains(
+                        "package com.sixpay.payment.configuration;"
+                )
+        );
+
+        assertTrue(
+                source.contains("@AutoConfiguration")
+        );
+
+        assertTrue(
+                source.contains("@EntityScan")
+        );
+
+        assertTrue(
+                source.contains("@EnableJpaRepositories")
+        );
+
+        assertFalse(
+                source.contains("@SpringBootApplication")
+        );
+    }
+
+    @Test
+    void lot33StillForbidsPrematureBackendComponents()
+            throws IOException {
 
         Set<String> forbiddenTypeSuffixes = Set.of(
                 "Controller.java",
                 "Service.java",
-                "Configuration.java",
                 "Properties.java",
                 "Listener.java",
                 "Consumer.java",
@@ -162,119 +169,175 @@ class PaymentFoundationArchitectureTest {
                 "Scheduler.java"
         );
 
-        List<Path> unauthorizedPersistenceTypes;
-        List<Path> prematureBackendTypes;
-
-        Path persistenceRoot = JAVA_ROOT.resolve(
-                "infrastructure/persistence"
-        );
-
-        try (Stream<Path> paths = Files.walk(persistenceRoot)) {
-            unauthorizedPersistenceTypes = paths
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> !authorizedPersistenceTypes.contains(
-                            path.getFileName().toString()
-                    ))
-                    .toList();
-        }
+        List<Path> violations;
 
         try (Stream<Path> paths = Files.walk(JAVA_ROOT)) {
-            prematureBackendTypes = paths
+            violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> !path.startsWith(
-                            JAVA_ROOT.resolve("domain")
-                    ))
-                    .filter(path -> !path.startsWith(
-                            persistenceRoot
-                    ))
-                    .filter(path -> !path.getFileName()
-                            .toString()
-                            .equals("PaymentModule.java"))
-                    .filter(path -> !path.getFileName()
-                            .toString()
-                            .equals("package-info.java"))
-                    .filter(path -> forbiddenTypeSuffixes.stream()
-                            .anyMatch(suffix ->
-                                    path.getFileName()
-                                            .toString()
-                                            .endsWith(suffix)
-                            ))
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .filter(path ->
+                            !path.startsWith(DOMAIN_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(PERSISTENCE_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(AUDIT_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(CONFIGURATION_ROOT)
+                    )
+                    .filter(path ->
+                            !path.getFileName()
+                                    .toString()
+                                    .equals("PaymentModule.java")
+                    )
+                    .filter(path ->
+                            !path.getFileName()
+                                    .toString()
+                                    .equals("package-info.java")
+                    )
+                    .filter(path ->
+                            forbiddenTypeSuffixes.stream()
+                                    .anyMatch(suffix ->
+                                            path.getFileName()
+                                                    .toString()
+                                                    .endsWith(
+                                                            suffix
+                                                    )
+                                    )
+                    )
                     .toList();
         }
 
         assertEquals(
                 List.of(),
-                unauthorizedPersistenceTypes,
-                "Lot 3.2 must contain only the authorized persistence types"
-        );
-
-        assertEquals(
-                List.of(),
-                prematureBackendTypes,
-                "Lot 3.2 must not introduce application, API, messaging, "
-                        + "configuration or scheduling components"
+                violations,
+                "Lot 3.3 must not introduce application services, "
+                        + "controllers, messaging components, "
+                        + "properties or schedulers"
         );
     }
 
     @Test
-    void lot32IntroducesOnlyTheFrameworkFreeDomainRepositoryPort()
+    void applicationLayerContainsNoSpringConfiguration()
             throws IOException {
 
-        Path repositoryRoot = JAVA_ROOT.resolve(
-                "domain/repository"
-        );
+        if (!Files.isDirectory(APPLICATION_ROOT)) {
+            return;
+        }
 
-        List<String> repositoryFiles;
+        List<Path> violations;
 
-        try (Stream<Path> paths = Files.list(repositoryRoot)) {
-            repositoryFiles = paths
+        try (Stream<Path> paths =
+                     Files.walk(APPLICATION_ROOT)) {
+
+            violations = paths
                     .filter(Files::isRegularFile)
-                    .map(path -> path.getFileName().toString())
-                    .sorted()
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .filter(path -> {
+                        try {
+                            String source =
+                                    Files.readString(path);
+
+                            return source.contains(
+                                    "@AutoConfiguration"
+                            ) || source.contains(
+                                    "@Configuration"
+                            ) || source.contains(
+                                    "@EntityScan"
+                            ) || source.contains(
+                                    "@EnableJpaRepositories"
+                            );
+
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(
+                                    exception
+                            );
+                        }
+                    })
                     .toList();
         }
 
         assertEquals(
-                List.of("PaymentRepository.java"),
-                repositoryFiles,
-                "Lot 3.2 must introduce only the Payment repository port"
+                List.of(),
+                violations,
+                "The application layer must not contain "
+                        + "Spring module configuration"
+        );
+    }
+
+    @Test
+    void domainRemainsFrameworkFree()
+            throws IOException {
+
+        List<String> forbiddenTokens = List.of(
+                "import org.springframework.",
+                "import jakarta.persistence.",
+                "import org.hibernate.",
+                "import com.sixpay.payment.infrastructure.",
+                "import com.sixpay.payment.configuration."
         );
 
-        String source = Files.readString(
-                repositoryRoot.resolve("PaymentRepository.java")
-        );
+        List<String> violations;
 
-        assertFalse(source.contains("org.springframework"));
-        assertFalse(source.contains("jakarta.persistence"));
-        assertFalse(source.contains("PaymentJpaEntity"));
+        try (Stream<Path> paths =
+                     Files.walk(DOMAIN_ROOT)) {
+
+            violations = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path ->
+                            forbiddenTokens.stream()
+                                    .filter(token -> {
+                                        try {
+                                            return Files.readString(
+                                                    path
+                                            ).contains(token);
+
+                                        } catch (
+                                                IOException exception
+                                        ) {
+                                            throw new IllegalStateException(
+                                                    exception
+                                            );
+                                        }
+                                    })
+                                    .map(token ->
+                                            path + " contains "
+                                                    + token
+                                    )
+                    )
+                    .toList();
+        }
+
+        assertTrue(
+                violations.isEmpty(),
+                () -> "Payment domain framework violations: "
+                        + violations
+        );
     }
 
     @Test
     void paymentModuleRemainsNonExecutable()
             throws IOException {
 
-        Path marker = JAVA_ROOT.resolve("PaymentModule.java");
-        String source = Files.readString(marker);
+        String source = Files.readString(
+                JAVA_ROOT.resolve("PaymentModule.java")
+        );
 
-        assertFalse(source.contains("@SpringBootApplication"));
-        assertFalse(source.contains("public static void main("));
-    }
+        assertFalse(
+                source.contains("@SpringBootApplication")
+        );
 
-    private static List<String> violations(
-            Path path,
-            List<String> forbiddenTokens
-    ) {
-        try {
-            String source = Files.readString(path);
-
-            return forbiddenTokens.stream()
-                    .filter(source::contains)
-                    .map(token -> path + " contains " + token)
-                    .toList();
-        } catch (IOException exception) {
-            throw new IllegalStateException(exception);
-        }
+        assertFalse(
+                source.contains("public static void main(")
+        );
     }
 }

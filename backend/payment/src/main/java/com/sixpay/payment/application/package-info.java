@@ -1,9 +1,8 @@
 /**
- * Technology-neutral application orchestration boundary of the Payment module.
+ * Spring assembly boundary of the Payment module.
  *
- * <p>This package will contain commands, queries, views, input and output ports,
- * and cohesive workflow services. It may coordinate the frozen Payment Domain
- * Kernel but must not duplicate domain decisions or depend on HTTP, JPA, broker
- * implementations or bank-specific adapters.</p>
+ * <p>This package will wire application ports to infrastructure adapters and
+ * expose approved module configuration. It must not contain Payment business
+ * rules or bank-specific defaults that have not been contractually approved.</p>
  */
 package com.sixpay.payment.application;

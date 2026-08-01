@@ -35,7 +35,7 @@ class PaymentPersistenceMigrationIT {
                 .locations("classpath:db/migration")
                 .load();
 
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+        assertEquals(2, flyway.migrate().migrationsExecuted);
 
         try (Connection connection = DriverManager.getConnection(
                     POSTGRESQL.getJdbcUrl(),

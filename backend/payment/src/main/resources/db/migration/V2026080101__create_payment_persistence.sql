@@ -7,7 +7,7 @@ CREATE TABLE payments
     external_subscription_reference VARCHAR(128)  NOT NULL,
     financial_institution_code     VARCHAR(32)    NOT NULL,
     requested_amount               NUMERIC(38,18) NOT NULL,
-    requested_currency             CHAR(3)        NOT NULL,
+    requested_currency             VARCHAR(3)        NOT NULL,
     status                         VARCHAR(48)    NOT NULL,
     business_version               BIGINT         NOT NULL,
     received_at                    TIMESTAMPTZ    NOT NULL,
