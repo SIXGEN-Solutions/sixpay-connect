@@ -138,14 +138,21 @@ class PaymentFoundationArchitectureTest {
     }
 
     @Test
-    void lot31ContainsNoPrematureBackendImplementation()
+    void lot32ContainsOnlyAuthorizedPersistenceImplementation()
             throws IOException {
+
+        Set<String> authorizedPersistenceTypes = Set.of(
+                "PaymentJpaEntity.java",
+                "PaymentPersistenceException.java",
+                "PaymentPersistenceMapper.java",
+                "PaymentRepositoryAdapter.java",
+                "PaymentSpringDataRepository.java",
+                "PaymentStateDocument.java",
+                "package-info.java"
+        );
 
         Set<String> forbiddenTypeSuffixes = Set.of(
                 "Controller.java",
-                "Adapter.java",
-                "Entity.java",
-                "Repository.java",
                 "Service.java",
                 "Configuration.java",
                 "Properties.java",
@@ -155,30 +162,93 @@ class PaymentFoundationArchitectureTest {
                 "Scheduler.java"
         );
 
-        List<Path> violations;
+        List<Path> unauthorizedPersistenceTypes;
+        List<Path> prematureBackendTypes;
+
+        Path persistenceRoot = JAVA_ROOT.resolve(
+                "infrastructure/persistence"
+        );
+
+        try (Stream<Path> paths = Files.walk(persistenceRoot)) {
+            unauthorizedPersistenceTypes = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !authorizedPersistenceTypes.contains(
+                            path.getFileName().toString()
+                    ))
+                    .toList();
+        }
 
         try (Stream<Path> paths = Files.walk(JAVA_ROOT)) {
-            violations = paths
+            prematureBackendTypes = paths
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".java"))
                     .filter(path -> !path.startsWith(
                             JAVA_ROOT.resolve("domain")
                     ))
+                    .filter(path -> !path.startsWith(
+                            persistenceRoot
+                    ))
                     .filter(path -> !path.getFileName()
-                            .toString().equals("PaymentModule.java"))
+                            .toString()
+                            .equals("PaymentModule.java"))
                     .filter(path -> !path.getFileName()
-                            .toString().equals("package-info.java"))
+                            .toString()
+                            .equals("package-info.java"))
                     .filter(path -> forbiddenTypeSuffixes.stream()
-                            .anyMatch(suffix -> path.getFileName()
-                                    .toString().endsWith(suffix)))
+                            .anyMatch(suffix ->
+                                    path.getFileName()
+                                            .toString()
+                                            .endsWith(suffix)
+                            ))
                     .toList();
         }
 
         assertEquals(
                 List.of(),
-                violations,
-                "Lot 3.1 must not introduce executable backend components"
+                unauthorizedPersistenceTypes,
+                "Lot 3.2 must contain only the authorized persistence types"
         );
+
+        assertEquals(
+                List.of(),
+                prematureBackendTypes,
+                "Lot 3.2 must not introduce application, API, messaging, "
+                        + "configuration or scheduling components"
+        );
+    }
+
+    @Test
+    void lot32IntroducesOnlyTheFrameworkFreeDomainRepositoryPort()
+            throws IOException {
+
+        Path repositoryRoot = JAVA_ROOT.resolve(
+                "domain/repository"
+        );
+
+        List<String> repositoryFiles;
+
+        try (Stream<Path> paths = Files.list(repositoryRoot)) {
+            repositoryFiles = paths
+                    .filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .sorted()
+                    .toList();
+        }
+
+        assertEquals(
+                List.of("PaymentRepository.java"),
+                repositoryFiles,
+                "Lot 3.2 must introduce only the Payment repository port"
+        );
+
+        String source = Files.readString(
+                repositoryRoot.resolve("PaymentRepository.java")
+        );
+
+        assertFalse(source.contains("org.springframework"));
+        assertFalse(source.contains("jakarta.persistence"));
+        assertFalse(source.contains("PaymentJpaEntity"));
     }
 
     @Test
