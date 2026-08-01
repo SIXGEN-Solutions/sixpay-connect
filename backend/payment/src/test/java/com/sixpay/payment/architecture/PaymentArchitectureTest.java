@@ -213,7 +213,7 @@ class PaymentArchitectureTest {
     }
 
     @Test
-    void lot310FinalValidationIsActiveAndGlobalGenerationIsFalse()
+    void lot4NormativeStateMachineIsActiveAndGlobalGenerationIsFalse()
             throws IOException {
         String manifest = Files.readString(
                 REPOSITORY_ROOT.resolve(
@@ -226,7 +226,7 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_3_10_FINAL_DOMAIN_KERNEL_VALIDATION"
+                        "currentIncrement: LOT_4_NORMATIVE_STATE_MACHINE"
                 )
         );
         assertTrue(
@@ -245,7 +245,7 @@ class PaymentArchitectureTest {
                 )
         );
         assertTrue(
-                manifest.contains("OUTBOX_OR_MESSAGING_GENERATION")
+                manifest.contains("OUTBOX_OR_INTEGRATION_EVENT_GENERATION")
         );
     }
 

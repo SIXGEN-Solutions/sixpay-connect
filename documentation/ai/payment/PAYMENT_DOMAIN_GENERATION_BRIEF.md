@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `3.10 — Final Domain Kernel Validation`  
+> **Current lot:** `4 — Normative State Machine`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_3_10_IMPLEMENTED`  
+> **Status:** `LOT_4_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -54,3 +54,16 @@ PAYMENT DOMAIN-ONLY PROGRAM: COMPLETE
 GLOBAL GENERATION: FORBIDDEN
 NEXT: OWNER REVIEW AND EXPLICIT NEXT-INCREMENT ACTIVATION
 ```
+
+
+## Lot 4 normative state-machine artefacts
+
+```text
+PAYMENT_NORMATIVE_STATE_MACHINE.md
+PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
+PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
+PAYMENT_STATE_MACHINE.yaml
+```
+
+The Lot 4 documentation formalizes the existing 17-state and 38-transition
+implementation. It introduces no new state or Java behavior.

@@ -1,18 +1,24 @@
-schemaVersion: 2.10.0
+schemaVersion: 4.0.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 3_10_FINAL_DOMAIN_KERNEL_VALIDATION
+  lot: 4_NORMATIVE_STATE_MACHINE
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_3_10_IMPLEMENTED
+  status: LOT_4_IMPLEMENTED
   normative: true
   implementationDate: '2026-07-31'
 codeGenerationAllowed: false
-generationReadiness: PAYMENT_DOMAIN_KERNEL_VALIDATED
-nextStep: OWNER_REVIEW_AND_VERTICAL_MODULE_IMPLEMENTATION
+generationReadiness: PAYMENT_NORMATIVE_STATE_MACHINE_COMPLETE
+nextStep: OWNER_REVIEW_AND_NEXT_APPROVED_VERTICAL_INCREMENT
 primaryDocuments:
+- path: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  role: Human exhaustive normative state machine, Mermaid and transition table
+- path: documentation/ai/payment/PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
+  role: Exhaustive state-command invalid-transition matrix
+- path: documentation/ai/payment/PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
+  role: State to external-event intent matrix
 - path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   role: Final IA-1 brief
 - path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
@@ -113,6 +119,14 @@ finalDecisions:
   decision: DOMAIN_ONLY_IMPLEMENTATION_PLANNING_IS_READY_BUT_NOT_AUTOMATICALLY_AUTHORIZED
 - id: PAY-DEC-IA1-070
   decision: LOT_2_IS_COMPLETE_AND_THE_IA1_PAYMENT_MODEL_IS_FROZEN_PENDING_APPROVED_CHANGE_CONTROL
+- id: PAY-DEC-IA1-099
+  decision: LOT_4_FORMALIZES_THE_EXISTING_SEVENTEEN_STATE_THIRTY_EIGHT_TRANSITION_MACHINE_WITHOUT_CHANGING_DOMAIN_BEHAVIOR
+- id: PAY-DEC-IA1-100
+  decision: NOTIFIED_IS_ORTHOGONAL_TO_PAYMENT_AND_NEVER_A_FINANCIAL_STATE
+- id: PAY-DEC-IA1-101
+  decision: POSTING_AND_REVERSAL_UNKNOWN_OUTCOMES_REQUIRE_AUTHORITATIVE_LOOKUP_AND_FORBID_BLIND_REPLAY
+- id: PAY-DEC-IA1-102
+  decision: EVERY_UNDECLARED_STATE_COMMAND_PAIR_DETERMINISTICALLY_RETURNS_PAYMENT_INVALID_TRANSITION_WITH_NO_MUTATION
 openDecisionReview:
 - id: OPEN-BASE-001
   disposition: SUPERSEDED
@@ -212,7 +226,7 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: LOT_3_10_VALIDATION_ONLY_AUTHORIZED
+  codeGeneration: LOT_4_DOCUMENTATION_ONLY_AUTHORIZED
   lot3_1FoundationImplemented: true
   lot3DomainOnlyProgramAuthorized: true
   lot3_2ReadyForExplicitActivation: true
@@ -228,6 +242,9 @@ readiness:
   nextIncrementRequiresExplicitActivation: true
   lot3_10FinalDomainKernelValidationImplemented: true
   paymentDomainKernelValidated: true
+  lot4NormativeStateMachineImplemented: true
+  normativeTransitionArtifactsComplete: true
+  stateCommandDeterminismDocumented: true
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -235,7 +252,7 @@ implementationAuthorization:
   authorizedAt: '2026-07-31'
   scope: PAYMENT_DOMAIN_ONLY
   globalCodeGenerationAllowed: false
-  currentIncrement: LOT_3_10_FINAL_DOMAIN_KERNEL_VALIDATION
+  currentIncrement: LOT_4_NORMATIVE_STATE_MACHINE
   currentIncrementCodeGenerationAllowed: true
   futureIncrementActivationRequired: true
   programAllowedPaths:
@@ -248,35 +265,30 @@ implementationAuthorization:
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   currentIncrementAllowedPaths:
-  - backend/payment/README.md
-  - backend/payment/ARCHITECTURE.md
   - backend/payment/ACCEPTANCE-TRACEABILITY.md
-  - backend/payment/src/main/java/com/sixpay/payment/domain/exception/PaymentDomainException.java
-  - backend/payment/src/main/java/com/sixpay/payment/domain/model/Payment.java
-  - backend/payment/src/test/java/com/sixpay/payment/domain/validation/**
-  - backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTerminalStateProtectionTest.java
-  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
-  - documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-  - documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
-  - documentation/ai/payment/PAYMENT_DOMAIN_KERNEL_VALIDATION.md
+  - documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
+  - documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  - documentation/ai/payment/PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
+  - documentation/ai/payment/PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   allowedChangeKinds:
-  - FINAL_DOMAIN_KERNEL_VALIDATION
-  - EXHAUSTIVE_CATALOGUE_TRACEABILITY
-  - TERMINAL_STATE_TESTS
-  - ARCHITECTURE_TEST_UPDATE
-  - DOMAIN_EXCEPTION_PACKAGE_ALIGNMENT
-  - DOCUMENTATION_SYNCHRONIZATION
+  - NORMATIVE_STATE_MACHINE_DOCUMENTATION
+  - EXHAUSTIVE_TRANSITION_TABLE
+  - MERMAID_STATE_DIAGRAM
+  - TERMINAL_STATE_MATRIX
+  - FORBIDDEN_TRANSITION_MATRIX
+  - STATE_EXTERNAL_EVENT_MATRIX
+  - TRACEABILITY_AND_MANIFEST_SYNCHRONIZATION
   forbiddenChangeKinds:
-  - DOMAIN_BEHAVIOR_DUPLICATION
+  - DOMAIN_BEHAVIOR_CHANGE
+  - STATE_ENUM_CHANGE
+  - TRANSITION_CHANGE
+  - DOMAIN_EVENT_CHANGE
   - APPLICATION_HANDLER_GENERATION
-  - REPOSITORY_GENERATION
   - PERSISTENCE_OR_MIGRATION_GENERATION
-  - OUTBOX_OR_MESSAGING_GENERATION
-  - API_OR_CONTRACT_GENERATION
-  - EXTERNAL_ADAPTER_GENERATION
-  - SPRING_CONFIGURATION_GENERATION
+  - OUTBOX_OR_INTEGRATION_EVENT_GENERATION
+  - API_OR_ADAPTER_GENERATION
   forbiddenProductionPaths:
   - backend/payment/src/main/java/com/sixpay/payment/api/**
   - backend/payment/src/main/java/com/sixpay/payment/application/**
@@ -298,20 +310,20 @@ implementationAuthorization:
     - com.sixpay.common.context.CorrelationId
     - com.sixpay.sharedkernel.domain.valueobject.Money
     - com.sixpay.sharedkernel.domain.valueobject.ValueObject
-    snapshotsDeferred: true
-    aggregateRootDeferred: true
+    snapshotsDeferred: false
+    aggregateRootDeferred: false
     implementedSnapshotCount: 7
     snapshotSupportPackage: com.sixpay.payment.domain.model.evidence
-    policiesDeferred: true
-    domainEventsDeferred: true
+    policiesDeferred: false
+    domainEventsDeferred: false
     systemClockAccessAllowed: false
     ioAllowed: false
     implementedPolicyCount: 14
     implementedPolicyProfileCount: 12
     implementedDomainServiceCount: 4
     decisionResultOnly: true
-    aggregateMutationAllowed: false
-    eventRegistrationAllowed: false
+    aggregateMutationAllowed: true
+    eventRegistrationAllowed: true
     repositoryAccessAllowed: false
     externalClientAccessAllowed: false
     aggregateRootImplemented: true
@@ -333,6 +345,11 @@ implementationAuthorization:
     domainServiceCount: 4
     finalKernelValidationImplemented: true
     payIdentifierTraceabilityRequired: true
+    normativeStateMachineDocumented: true
+    forbiddenTransitionMatrixDocumented: true
+    stateExternalEventMatrixDocumented: true
+    mermaidDiagramDocumented: true
+    domainBehaviorModified: false
 implementationDecisions:
 - id: PAY-DEC-IA1-071
   decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED

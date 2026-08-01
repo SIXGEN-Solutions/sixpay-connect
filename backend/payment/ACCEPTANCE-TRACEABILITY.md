@@ -1,17 +1,17 @@
-# Traçabilité d’acceptation — Payment Lot 3.10
+# Traçabilité d’acceptation — Payment Lot 4
 
-| ID | Critère | Preuve automatisée |
+| ID | Critère | Preuve |
 | --- | --- | --- |
-| `PAY-L3.10-ACC-001` | 17 états et 4 terminaux | `PaymentDomainKernelCatalogueTest` |
-| `PAY-L3.10-ACC-002` | 17 opérations nommées | `PaymentDomainKernelCatalogueTest` |
-| `PAY-L3.10-ACC-003` | 38 transitions `PAY-TR-*` | `PaymentDomainKernelCatalogueTest` + `PAYMENT_STATE_MACHINE.yaml` |
-| `PAY-L3.10-ACC-004` | 76 invariants `PAY-INV-*` | `PaymentDomainKernelCatalogueTest` + `PAYMENT_INVARIANT_CATALOGUE.yaml` |
-| `PAY-L3.10-ACC-005` | 33 événements `PAY-EVT-*` | `PaymentEventCatalogueTest` + `PaymentDomainKernelCatalogueTest` |
-| `PAY-L3.10-ACC-006` | 14 Policies et 4 Domain Services | `PaymentArchitectureTest` |
-| `PAY-L3.10-ACC-007` | quatre états terminaux sans mutation | `PaymentTerminalStateProtectionTest` |
-| `PAY-L3.10-ACC-008` | version et séquence ordonnées | tests de cycles préfinancier, posting, TFJ et reversal |
-| `PAY-L3.10-ACC-009` | replay identique et conflits atomiques | tests Aggregate Root existants |
-| `PAY-L3.10-ACC-010` | confidentialité événementielle | `PaymentEventCatalogueTest` |
-| `PAY-L3.10-ACC-011` | domaine sans Spring/JPA/infrastructure | `PaymentArchitectureTest` |
-| `PAY-L3.10-ACC-012` | exception dans `domain.exception` | `PaymentArchitectureTest` |
-| `PAY-L3.10-ACC-013` | compilation Java 21 | build Maven / validation locale |
+| `PAY-L4-ACC-001` | 17 états normatifs | `PAYMENT_STATE_MACHINE.yaml` |
+| `PAY-L4-ACC-002` | 38 transitions exhaustives | `PAYMENT_NORMATIVE_STATE_MACHINE.md` |
+| `PAY-L4-ACC-003` | source, commande, gardes, cible, événements, audit, replay et effet documentés | table exhaustive Lot 4 |
+| `PAY-L4-ACC-004` | diagramme Mermaid complet | `PAYMENT_NORMATIVE_STATE_MACHINE.md` |
+| `PAY-L4-ACC-005` | quatre états terminaux sans sortie | matrice terminale et machine YAML |
+| `PAY-L4-ACC-006` | matrice état/commande interdite exhaustive | `PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md` |
+| `PAY-L4-ACC-007` | matrice état vers événement externe | `PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md` |
+| `PAY-L4-ACC-008` | `NOTIFIED` exclu de `PaymentStatus` | décision `PAY-DEC-IA1-100` |
+| `PAY-L4-ACC-009` | outcome posting inconnu explicite | `POSTING_OUTCOME_UNKNOWN` |
+| `PAY-L4-ACC-010` | outcome reversal inconnu explicite | `REVERSAL_OUTCOME_UNKNOWN` |
+| `PAY-L4-ACC-011` | aucun rejeu financier aveugle | décisions `PAY-DEC-IA1-101` et machine YAML |
+| `PAY-L4-ACC-012` | toute combinaison non déclarée est déterministe | `PAYMENT_INVALID_TRANSITION` |
+| `PAY-L4-ACC-013` | aucun comportement Java modifié | périmètre documentaire du manifeste |

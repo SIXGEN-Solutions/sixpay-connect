@@ -1,14 +1,14 @@
-schemaVersion: 2.4.0
+schemaVersion: 4.0.0
 document:
   id: SIXPAY-PAYMENT-STATE-MACHINE
   title: SIXPAY CONNECT — IA-1 Payment State Machine
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 3_5_AGGREGATE_ROOT_DOMAIN_EVENTS
+  lot: 4_NORMATIVE_STATE_MACHINE
   branch: feat/payment-domain-generation-brief
-  status: IMPLEMENTED
+  status: NORMATIVE_IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
-  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+  nextLot: LOT_5_APPLICATION_BOUNDARY_OR_OWNER_APPROVED_NEXT_STEP
   replacesSemanticsOf: IA-0P_PAYMENT_STATE_MACHINE_V1
 references:
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
@@ -1232,3 +1232,25 @@ implementation:
   transitionCount: 38
   aggregateOwnsTransitions: true
   invalidTransitionIsAtomic: true
+normativeArtifacts:
+  transitionTable: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  mermaidDiagram: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  terminalStateMatrix: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  forbiddenTransitionMatrix: documentation/ai/payment/PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
+  stateExternalEventMatrix: documentation/ai/payment/PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
+normativeDecisions:
+  notifiedIsPaymentState: false
+  notificationDeliveryChangesFinancialState: false
+  postingUnknownRepresentation: POSTING_OUTCOME_UNKNOWN
+  reversalUnknownRepresentation: REVERSAL_OUTCOME_UNKNOWN
+  blindPostingReplayAllowed: false
+  blindReversalReplayAllowed: false
+  failedRequiresProvenNoFinancialEffect: true
+  originalPostingPreservedAfterReversal: true
+determinism:
+  undeclaredStateCommandCombination: PAYMENT_INVALID_TRANSITION
+  invalidTransitionMutation: false
+  invalidTransitionVersionIncrement: false
+  invalidTransitionEventRegistration: false
+  identicalReplay: TRANSITION_SPECIFIC_NO_OP
+  conflictingEvidence: PAYMENT_EVIDENCE_CONFLICT_NO_MUTATION
