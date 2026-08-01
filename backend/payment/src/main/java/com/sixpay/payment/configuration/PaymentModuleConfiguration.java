@@ -7,6 +7,8 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.PaymentModule;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntity;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditRepository;
+import com.sixpay.payment.infrastructure.outbox.PaymentOutboxEntity;
+import com.sixpay.payment.infrastructure.outbox.PaymentOutboxRepository;
 import com.sixpay.payment.infrastructure.persistence.PaymentJpaEntity;
 import com.sixpay.payment.infrastructure.persistence.PaymentSpringDataRepository;
 import jakarta.persistence.EntityManager;
@@ -25,10 +27,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import java.util.UUID;
 
 @AutoConfiguration
-@ConditionalOnClass({
-        EntityManager.class,
-        JpaRepository.class
-})
+@ConditionalOnClass({EntityManager.class, JpaRepository.class})
 @ComponentScan(
         basePackageClasses = PaymentModule.class,
         excludeFilters = {
@@ -38,23 +37,20 @@ import java.util.UUID;
                 ),
                 @ComponentScan.Filter(
                         type = FilterType.CUSTOM,
-                        classes =
-                                AutoConfigurationExcludeFilter.class
+                        classes = AutoConfigurationExcludeFilter.class
                 )
         }
 )
-@EntityScan(
-        basePackageClasses = {
-                PaymentJpaEntity.class,
-                PaymentAuditEntity.class
-        }
-)
-@EnableJpaRepositories(
-        basePackageClasses = {
-                PaymentSpringDataRepository.class,
-                PaymentAuditRepository.class
-        }
-)
+@EntityScan(basePackageClasses = {
+        PaymentJpaEntity.class,
+        PaymentAuditEntity.class,
+        PaymentOutboxEntity.class
+})
+@EnableJpaRepositories(basePackageClasses = {
+        PaymentSpringDataRepository.class,
+        PaymentAuditRepository.class,
+        PaymentOutboxRepository.class
+})
 public class PaymentModuleConfiguration {
 
     @Bean
