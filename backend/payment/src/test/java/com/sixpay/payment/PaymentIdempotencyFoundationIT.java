@@ -7,6 +7,8 @@ import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyDecision;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyHasher;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyReplayStore;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -85,12 +87,16 @@ class PaymentIdempotencyFoundationIT {
     private PlatformTransactionManager transactionManager;
 
     @Test
-    void replaysCompletedPaymentResult() {
+    void replaysCompletedPaymentResult()
+            throws Exception {
+
         String operation = "PAYMENT_CREATE";
         String key = "replay-" + UUID.randomUUID();
+
         String requestHash = hasher.hash(
                 "{\"amount\":\"1000.00\",\"currency\":\"XAF\"}"
         );
+
         UUID paymentId = UUID.randomUUID();
         String paymentReference =
                 publicReference(paymentId);
@@ -128,6 +134,7 @@ class PaymentIdempotencyFoundationIT {
                                     "{\"result\":\"accepted\"}",
                                     now().plusSeconds(1)
                             );
+
                             return null;
                         }
                 )
@@ -151,21 +158,30 @@ class PaymentIdempotencyFoundationIT {
                 .isEqualTo(
                         PaymentIdempotencyDecision.Kind.REPLAY
                 );
+
         assertThat(replay.paymentId())
                 .isEqualTo(paymentId);
+
         assertThat(replay.responseStatus())
                 .isEqualTo("ACCEPTED");
-        assertThat(replay.responsePayload())
-                .isEqualTo("{\"result\":\"accepted\"}");
+
+        JSONAssert.assertEquals(
+                "{\"result\":\"accepted\"}",
+                replay.responsePayload(),
+                JSONCompareMode.STRICT
+        );
     }
 
     @Test
     void rejectsSameKeyWithDifferentRequest() {
+
         String operation = "PAYMENT_CREATE";
         String key = "conflict-" + UUID.randomUUID();
+
         String originalHash = hasher.hash(
                 "{\"amount\":\"1000.00\"}"
         );
+
         String conflictingHash = hasher.hash(
                 "{\"amount\":\"2000.00\"}"
         );
@@ -181,6 +197,7 @@ class PaymentIdempotencyFoundationIT {
                                     originalHash,
                                     now()
                             );
+
                             return null;
                         }
                 )
@@ -198,13 +215,20 @@ class PaymentIdempotencyFoundationIT {
                                             conflictingHash,
                                             now().plusSeconds(1)
                                     );
+
                                     return null;
                                 }
                         )
                 )
-        ).hasRootCauseInstanceOf(
-                PaymentIdempotencyConflictException.class
-        );
+        )
+                .isInstanceOf(
+                        PaymentIdempotencyConflictException.class
+                )
+                .hasMessageContaining(
+                        "Idempotency key conflict"
+                )
+                .hasMessageContaining(operation)
+                .hasMessageContaining(key);
     }
 
     @Test
