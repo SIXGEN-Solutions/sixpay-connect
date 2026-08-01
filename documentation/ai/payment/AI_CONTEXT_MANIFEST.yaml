@@ -1,18 +1,22 @@
-schemaVersion: 8.0.0
+schemaVersion: 9.0.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 8_TEST_PLAN_TRACEABILITY
+  lot: 9_BRIEF_CONSOLIDATION
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_8_IMPLEMENTED
+  status: IN_REVIEW
   normative: true
   implementationDate: '2026-07-31'
 codeGenerationAllowed: false
-generationReadiness: PAYMENT_TEST_PLAN_AND_TRACEABILITY_COMPLETE
-nextStep: OWNER_REVIEW_AND_NEXT_APPROVED_VERTICAL_INCREMENT
+generationReadiness: IA1_BRIEF_COMPLETE_PENDING_APPROVALS
+nextStep: PRODUCT_ARCHITECTURE_ENGINEERING_REVIEW_AND_APPROVAL
 primaryDocuments:
+- path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  role: Consolidated official twenty-section IA-1 Payment brief
+- path: documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
+  role: Machine-readable IA-1 exit-criteria and approval validation
 - path: documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
   role: Human test strategy and end-to-end requirements traceability
 - path: documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
@@ -29,8 +33,6 @@ primaryDocuments:
   role: Human exhaustive invariant enforcement strategy
 - path: documentation/ai/payment/PAYMENT_INVARIANT_RESPONSIBILITY_MATRIX.md
   role: Cross-layer invariant responsibility matrix
-- path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-  role: Final IA-1 brief
 - path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
   role: Human final validation
 - path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
@@ -155,6 +157,14 @@ finalDecisions:
   decision: FUTURE_APPLICATION_AND_PERSISTENCE_TESTS_ARE_DISTINGUISHED_FROM_CURRENT_IMPLEMENTED_DOMAIN_TESTS
 - id: PAY-DEC-IA1-119
   decision: EVENT_CONFIDENTIALITY_ARCHITECTURE_VALIDATION_INSPECTS_ONLY_RECORD_COMPONENTS_USING_A_ROBUST_PATTERN
+- id: PAY-DEC-IA1-120
+  decision: LOT_9_CONSOLIDATES_ALL_VALIDATED_PAYMENT_DECISIONS_INTO_THE_OFFICIAL_TWENTY_SECTION_BRIEF
+- id: PAY-DEC-IA1-121
+  decision: PAYMENT_IA1_BRIEF_STATUS_IS_IN_REVIEW_UNTIL_PRODUCT_ARCHITECTURE_AND_ENGINEERING_APPROVALS_ARE_RECORDED
+- id: PAY-DEC-IA1-122
+  decision: NO_UNRESOLVED_PLACEHOLDER_IS_ALLOWED_IN_THE_CONSOLIDATED_BRIEF
+- id: PAY-DEC-IA1-123
+  decision: MODEL_COMPLETENESS_DOES_NOT_OVERRIDE_EXTERNAL_GENERATION_BLOCKERS_OR_REQUIRED_APPROVALS
 openDecisionReview:
 - id: OPEN-BASE-001
   disposition: SUPERSEDED
@@ -254,7 +264,7 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: LOT_8_DOCUMENTATION_AND_TEST_VALIDATION_AUTHORIZED
+  codeGeneration: FORBIDDEN_PENDING_APPROVALS
   lot3_1FoundationImplemented: true
   lot3DomainOnlyProgramAuthorized: true
   lot3_2ReadyForExplicitActivation: true
@@ -283,6 +293,11 @@ readiness:
   allInvariantScenariosNamed: true
   allTransitionScenariosNamed: true
   traceabilityValidationTestImplemented: true
+  lot9BriefConsolidationImplemented: true
+  briefTwentySectionsComplete: true
+  briefPlaceholderFree: true
+  requiredApprovalsRecorded: false
+  ia1GateStatus: IN_REVIEW
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -290,7 +305,7 @@ implementationAuthorization:
   authorizedAt: '2026-07-31'
   scope: PAYMENT_DOMAIN_ONLY
   globalCodeGenerationAllowed: false
-  currentIncrement: LOT_8_TEST_PLAN_TRACEABILITY
+  currentIncrement: LOT_9_BRIEF_CONSOLIDATION
   currentIncrementCodeGenerationAllowed: true
   futureIncrementActivationRequired: true
   programAllowedPaths:
@@ -304,29 +319,25 @@ implementationAuthorization:
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   currentIncrementAllowedPaths:
   - backend/payment/ACCEPTANCE-TRACEABILITY.md
-  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
-  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentTraceabilityValidationTest.java
-  - documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
-  - documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentBriefValidationTest.java
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  - documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   allowedChangeKinds:
-  - TEST_PLAN_FORMALIZATION
-  - INVARIANT_TEST_TRACEABILITY
-  - TRANSITION_TEST_TRACEABILITY
-  - FUTURE_APPLICATION_TEST_PLANNING
-  - FUTURE_PERSISTENCE_TEST_PLANNING
-  - ARCHITECTURE_TEST_HARDENING
-  - TRACEABILITY_VALIDATION_TEST
-  - MANIFEST_BRIEF_AND_ACCEPTANCE_SYNCHRONIZATION
+  - OFFICIAL_BRIEF_CONSOLIDATION
+  - TWENTY_SECTION_TEMPLATE_COMPLETION
+  - PLACEHOLDER_ELIMINATION
+  - GATE_EXIT_CRITERIA_VALIDATION
+  - APPROVAL_STATUS_RECORDING
+  - MANIFEST_AND_ACCEPTANCE_SYNCHRONIZATION
   forbiddenChangeKinds:
-  - DOMAIN_BEHAVIOR_CHANGE
-  - DUPLICATE_DOMAIN_TEST_GENERATION
-  - APPLICATION_HANDLER_GENERATION
-  - PERSISTENCE_IMPLEMENTATION_GENERATION
+  - DOMAIN_MODEL_SEMANTIC_CHANGE
+  - AUTOMATIC_GATE_APPROVAL
+  - APPROVAL_FABRICATION
+  - APPLICATION_OR_INFRASTRUCTURE_GENERATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
-  - OUTBOX_PUBLISHER_OR_KAFKA_GENERATION
-  - API_OR_EXTERNAL_ADAPTER_GENERATION
+  - OPENAPI_MODIFICATION
+  - ADAPTER_OR_CONTROLLER_GENERATION
   forbiddenProductionPaths:
   - backend/payment/src/main/java/com/sixpay/payment/api/**
   - backend/payment/src/main/java/com/sixpay/payment/application/**
@@ -411,6 +422,14 @@ implementationAuthorization:
     everyTransitionHasNamedScenario: true
     futureTestsMarkedAsFuture: true
     architectureTestUsesRecordComponentInspection: true
+    briefRequiredSectionCount: 20
+    briefActualSectionCount: 20
+    briefPlaceholderCount: 0
+    briefStatus: IN_REVIEW
+    productApprovalRecorded: false
+    architectureApprovalRecorded: false
+    engineeringApprovalRecorded: false
+    ia1GateApproved: false
 implementationDecisions:
 - id: PAY-DEC-IA1-071
   decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED

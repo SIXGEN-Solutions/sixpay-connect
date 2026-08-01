@@ -1,0 +1,47 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-IA1-GATE-VALIDATION
+  lot: 9_BRIEF_CONSOLIDATION
+  branch: feat/payment-domain-generation-brief
+  status: IN_REVIEW
+  normative: true
+brief:
+  path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  requiredSectionCount: 20
+  actualSectionCount: 20
+  sectionOrderValid: true
+  unresolvedPlaceholderCount: 0
+model:
+  aggregateRoots: 1
+  states: 17
+  terminalStates: 4
+  operations: 17
+  transitions: 38
+  invariants: 76
+  events: 33
+  policies: 14
+  policyProfiles: 12
+  domainServices: 4
+  modelBlockers: 0
+exitCriteria:
+  allModelTypesDefined: true
+  allTransitionsExplicit: true
+  allInvariantsHaveControlMechanism: true
+  sensitiveDataClassified: true
+  domainResponsibilitiesExplicit: true
+  eventsDefined: true
+  idempotencyAndUnknownOutcomeRulesComplete: true
+  persistencePlanDescribed: true
+  testPlanDescribed: true
+  blockingModelDecisionOpen: false
+  briefHasNoPlaceholder: true
+  requiredApprovalsRecorded: false
+approvals:
+  product: NOT_RECORDED
+  architecture: NOT_RECORDED
+  engineering: NOT_RECORDED
+generation:
+  blockerCount: 5
+  globalCodeGenerationAllowed: false
+  gateApproved: false
+  gateStatus: IN_REVIEW

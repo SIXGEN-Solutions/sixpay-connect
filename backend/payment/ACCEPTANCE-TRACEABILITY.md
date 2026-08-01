@@ -1,14 +1,14 @@
-# Traçabilité d’acceptation — Payment Lot 8
+# Traçabilité d’acceptation — Payment Lot 9
 
-| ID | Criterion | Automated or normative evidence |
+| ID | Critère | Preuve |
 | --- | --- | --- |
-| `PAY-L8-ACC-001` | 76 invariants have named scenarios | `PaymentTraceabilityValidationTest` |
-| `PAY-L8-ACC-002` | 38 legal transitions have named scenarios | `PaymentTraceabilityValidationTest` |
-| `PAY-L8-ACC-003` | every transition links invariant, operation and event | `PAYMENT_TEST_TRACEABILITY.yaml` |
-| `PAY-L8-ACC-004` | future application tests are named and targeted | `PAY-TEST-APP-*` |
-| `PAY-L8-ACC-005` | future persistence tests are named and targeted | `PAY-TEST-PERS-*` |
-| `PAY-L8-ACC-006` | architecture tests remain permanent | `PaymentArchitectureTest` |
-| `PAY-L8-ACC-007` | event confidentiality inspects record components only | robust record-signature regex |
-| `PAY-L8-ACC-008` | current and future tests are distinguished | `testStatus` |
-| `PAY-L8-ACC-009` | normative identifiers are validated across catalogues | `traceabilityReferencesOnlyNormativeIdentifiers` |
-| `PAY-L8-ACC-010` | no Payment domain behavior changed | manifest Lot 8 scope |
+| `PAY-L9-ACC-001` | 20 sections présentes et ordonnées | `PaymentBriefValidationTest` |
+| `PAY-L9-ACC-002` | aucun marqueur non résolu | `briefContainsNoUnresolvedMarker` |
+| `PAY-L9-ACC-003` | modèle complet | `PAYMENT_IA1_GATE_VALIDATION.yaml` |
+| `PAY-L9-ACC-004` | persistance et tests décrits | sections 12 et 15 |
+| `PAY-L9-ACC-005` | décisions ouvertes explicitement classées | section 18 |
+| `PAY-L9-ACC-006` | Definition of Ready complète | section 19 |
+| `PAY-L9-ACC-007` | approbations non fabriquées | section 20 et validation YAML |
+| `PAY-L9-ACC-008` | statut `IN_REVIEW` cohérent | manifeste et gate validation |
+| `PAY-L9-ACC-009` | génération globale interdite | manifeste et section 17 |
+| `PAY-L9-ACC-010` | aucun comportement domaine modifié | périmètre Lot 9 |
