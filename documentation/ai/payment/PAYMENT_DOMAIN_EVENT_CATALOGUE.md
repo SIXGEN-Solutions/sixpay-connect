@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Domain Event Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
+> **Current lot:** `6 — Events, Audit and Outbox`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `IMPLEMENTED`  
+> **Status:** `NORMATIVE_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current domain-only increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -1348,3 +1348,32 @@ Normative validation evidence:
 - `PAYMENT_MODEL_VALIDATION_REPORT.md`
 - `PAYMENT_MODEL_VALIDATION.yaml`
 - `PAYMENT_ACCEPTANCE_SCENARIOS.md`
+
+
+## Lot 6 publication boundary
+
+The 33 existing Domain Events remain the canonical facts. Lot 6 adds no
+parallel candidate-event hierarchy.
+
+Publication is governed by:
+
+```text
+PAYMENT_EVENTS_AUDIT_OUTBOX_BRIEF.md
+PAYMENT_EVENT_PUBLICATION_MATRIX.yaml
+PAYMENT_AUDIT_RECORD_SCHEMA.yaml
+PAYMENT_OUTBOX_CONTRACT.yaml
+```
+
+Every event is audited. Only events marked `outboxRequired: true` are mapped
+through an explicit allowlist into a versioned integration contract.
+
+```text
+Payment mutation
++ Payment persistence
++ immutable audit
++ Outbox
+= one database transaction
+```
+
+Kafka publication occurs after commit through the generic integration relay.
+A publication failure never rolls back or repeats the Payment transition.

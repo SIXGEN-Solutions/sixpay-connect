@@ -1,0 +1,87 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-AUDIT-RECORD-SCHEMA
+  lot: 6_EVENTS_AUDIT_OUTBOX
+  status: NORMATIVE_IMPLEMENTED
+  codeGenerationAllowed: false
+storage:
+  logicalTable: payment_audit
+  appendOnly: true
+  updateAllowed: false
+  deleteAllowed: false
+  transaction: SAME_AS_PAYMENT_AND_OUTBOX
+fields:
+- name: auditId
+  type: UUID
+  source: GENERATED_ONCE
+- name: paymentId
+  type: PaymentId
+- name: publicPaymentReference
+  type: PublicPaymentReference
+- name: eventId
+  type: UUID
+- name: eventType
+  type: stable string
+- name: sourceStatus
+  type: PaymentStatus?
+  required: false
+- name: targetStatus
+  type: PaymentStatus
+- name: aggregateVersion
+  type: positive long
+- name: eventSequence
+  type: positive int
+- name: correlationId
+  type: CorrelationId
+- name: causationId
+  type: UUID?
+  required: false
+- name: occurredAt
+  type: Instant
+- name: resultCode
+  type: stable safe code?
+  required: false
+- name: evidenceFingerprint
+  type: EvidenceFingerprint?
+  required: false
+- name: principalPostingReference
+  type: opaque string?
+  required: false
+- name: payloadHash
+  type: SHA-256
+forbiddenData:
+- AUTHORIZATION_TOKEN
+- SUBSCRIPTION_KEY
+- API_KEY_PASSWORD_SECRET_OR_PRIVATE_KEY
+- RAW_JWT_CLAIMS_SIGNATURE_OR_JWKS
+- CLEAR_DEBTOR_OR_TREASURY_ACCOUNT
+- GENERAL_EVENT_ACCOUNT_INTEGRATION_TOKEN
+- FULL_NIU_OR_CUSTOMER_IDENTITY
+- RAW_KYC_DATA
+- AVAILABLE_OR_LEDGER_BALANCE
+- RAW_TRESOR_PAY_OR_AMPLITUDE_PAYLOAD
+- STACK_TRACE_SQL_ENDPOINT_OR_INFRASTRUCTURE_TOPOLOGY
+- FREE_FORM_PROVIDER_ERROR
+- OPERATOR_CREDENTIAL_OR_BANK_INSTRUCTION_DOCUMENT
+indexes:
+- name: idx_payment_audit_payment_version_sequence
+  columns:
+  - payment_id
+  - aggregate_version
+  - event_sequence
+  unique: true
+- name: uk_payment_audit_event_id
+  columns:
+  - event_id
+  unique: true
+- name: idx_payment_audit_reference_occurred
+  columns:
+  - public_payment_reference
+  - occurred_at
+  unique: false
+integrity:
+  payloadHashAlgorithm: SHA-256
+  oneRecordPerDomainEvent: true
+  ordering:
+  - aggregate_version
+  - event_sequence

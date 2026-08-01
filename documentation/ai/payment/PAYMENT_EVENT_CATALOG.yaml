@@ -1,14 +1,14 @@
-schemaVersion: 2.3.0
+schemaVersion: 6.0.0
 document:
   id: SIXPAY-PAYMENT-DOMAIN-EVENT-CATALOGUE
   title: SIXPAY CONNECT — IA-1 Payment Domain Event Catalogue
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 3_5_AGGREGATE_ROOT_DOMAIN_EVENTS
+  lot: 6_EVENTS_AUDIT_OUTBOX
   branch: feat/payment-domain-generation-brief
-  status: IMPLEMENTED
+  status: NORMATIVE_IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
-  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+  nextLot: OWNER_REVIEW_AND_VERTICAL_IMPLEMENTATION_APPROVAL
   replacesSemanticsOf: IA-0P_PAYMENT_EVENT_CATALOG_V1
 scope:
   paymentAggregateEventCount: 33
@@ -129,7 +129,7 @@ payloadComponents:
     - name: failureCode
       type: FailureCode
       required: false
-sensitiveDataDenylist:
+sensitiveDataDenylist: &id006
 - AUTHORIZATION_TOKEN
 - SUBSCRIPTION_KEY
 - API_KEY_PASSWORD_SECRET_OR_PRIVATE_KEY
@@ -209,6 +209,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-002
   name: PaymentAuthorizationCheckingStarted
   factKind: AUTHORIZATION_CHECKING_STARTED
@@ -249,6 +263,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-003
   name: PaymentAuthorizationDecisionRecorded
   factKind: AUTHORIZATION_DECISION_RECORDED
@@ -305,6 +333,20 @@ events:
   - PAY-POL-006
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-004
   name: PaymentBankingVerificationRequested
   factKind: BANKING_VERIFICATION_REQUESTED
@@ -353,6 +395,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-005
   name: PaymentRejected
   factKind: PAYMENT_REJECTED
@@ -425,6 +481,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-006
   name: PaymentImmediateResultAvailable
   factKind: IMMEDIATE_RESULT_AVAILABLE
@@ -528,6 +598,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-007
   name: PaymentBankingVerificationRecorded
   factKind: BANKING_VERIFICATION_RECORDED
@@ -589,6 +673,20 @@ events:
   - PAY-POL-006
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-008
   name: PaymentFundsControlRequested
   factKind: FUNDS_CONTROL_REQUESTED
@@ -637,6 +735,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-009
   name: PaymentProcessingDeferred
   factKind: PAYMENT_PROCESSING_DEFERRED
@@ -686,6 +798,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-010
   name: PaymentFundsControlRecorded
   factKind: FUNDS_CONTROL_RECORDED
@@ -746,6 +872,20 @@ events:
   - PAY-POL-006
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-011
   name: PaymentTreasuryAccountResolutionRequested
   factKind: TREASURY_ACCOUNT_RESOLUTION_REQUESTED
@@ -793,6 +933,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-012
   name: PaymentTreasuryAccountResolutionRecorded
   factKind: TREASURY_ACCOUNT_RESOLUTION_RECORDED
@@ -855,6 +1009,20 @@ events:
   - PAY-POL-006
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-013
   name: PaymentApprovedForPosting
   factKind: PAYMENT_APPROVED_FOR_POSTING
@@ -892,6 +1060,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-014
   name: PaymentPostingAuthorized
   factKind: POSTING_AUTHORIZED
@@ -940,6 +1122,20 @@ events:
   - PAY-POL-007
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-015
   name: PaymentPostingRequested
   factKind: POSTING_REQUESTED
@@ -998,6 +1194,20 @@ events:
   - PAY-POL-007
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-016
   name: PaymentPostingOutcomeRecorded
   factKind: POSTING_OUTCOME_RECORDED
@@ -1086,6 +1296,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-001
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-017
   name: PaymentEndOfDayTrackingRequested
   factKind: TFJ_TRACKING_REQUESTED
@@ -1138,6 +1362,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-018
   name: PaymentDebitConfirmed
   factKind: DEBIT_CONFIRMED
@@ -1193,6 +1431,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-019
   name: PaymentPostingOutcomeLookupRequested
   factKind: POSTING_OUTCOME_LOOKUP_REQUESTED
@@ -1250,6 +1502,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-020
   name: PaymentReversalRequired
   factKind: REVERSAL_REVIEW_REQUESTED
@@ -1319,6 +1585,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-021
   name: PaymentPostingOutcomeResolved
   factKind: POSTING_OUTCOME_RESOLVED
@@ -1399,6 +1679,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-001
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-022
   name: PaymentEndOfDayConfirmationRecorded
   factKind: TFJ_CONFIRMATION_RECORDED
@@ -1480,6 +1774,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-023
   name: TreasuryIntegrationConfirmed
   factKind: TREASURY_INTEGRATION_CONFIRMED
@@ -1529,6 +1837,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-024
   name: PaymentFinalResultAvailable
   factKind: FINAL_RESULT_AVAILABLE
@@ -1587,6 +1909,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-025
   name: PaymentTreasuryReconciliationRequired
   factKind: TREASURY_RECONCILIATION_REQUIRED
@@ -1644,6 +1980,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-026
   name: PaymentReversalAuthorized
   factKind: REVERSAL_AUTHORIZED
@@ -1704,6 +2054,20 @@ events:
   - PAY-POL-010
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-027
   name: PaymentReversalRequested
   factKind: REVERSAL_REQUESTED
@@ -1760,6 +2124,20 @@ events:
   - PAY-POL-010
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-028
   name: PaymentReversalOutcomeRecorded
   factKind: REVERSAL_OUTCOME_RECORDED
@@ -1826,6 +2204,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-029
   name: PaymentReversalResultAvailable
   factKind: REVERSAL_RESULT_AVAILABLE
@@ -1889,6 +2281,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-030
   name: PaymentReversalOutcomeLookupRequested
   factKind: REVERSAL_OUTCOME_LOOKUP_REQUESTED
@@ -1937,6 +2343,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-031
   name: PaymentReversalOutcomeResolved
   factKind: REVERSAL_OUTCOME_RESOLVED
@@ -2006,6 +2426,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-032
   name: PaymentFailedWithoutFinancialEffect
   factKind: PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
@@ -2055,6 +2489,20 @@ events:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 - id: PAY-EVT-033
   name: PaymentReversed
   factKind: PAYMENT_REVERSED
@@ -2107,6 +2555,20 @@ events:
   - PAY-POL-014
   domainServiceRefs:
   - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
 legacyMigration:
   PaymentRequestReceived:
   - PaymentReceived
@@ -2221,3 +2683,104 @@ implementation:
   explicitSafePayloads: true
   wholeAggregateOrSnapshotFieldsAllowed: false
   sameMutationVersionAndSequenceEnforced: true
+transactionBoundary:
+  name: PAYMENT_STATE_AUDIT_OUTBOX_TRANSACTION
+  atomicParticipants:
+  - PAYMENT_AGGREGATE_STATE
+  - PAYMENT_BUSINESS_VERSION
+  - IMMUTABLE_PAYMENT_AUDIT_RECORDS
+  - PAYMENT_OUTBOX_MESSAGES
+  - IDEMPOTENCY_RESULT_WHEN_APPLICABLE
+  commitRule: ALL_OR_NOTHING
+  aggregateDirectKafkaCallAllowed: false
+  applicationDirectKafkaCallAllowedInsideBusinessTransaction: false
+  publisherRunsAfterCommit: true
+  publisherFailureAfterCommit:
+    paymentStateRollback: false
+    auditRollback: false
+    outboxRollback: false
+    outboxStatus: PENDING_OR_RETRYABLE
+    retryOwner: GENERIC_INTEGRATION_OUTBOX_RELAY
+    financialOperationReplayAllowed: false
+    alerting: AFTER_CONFIGURED_RETRY_OR_AGE_THRESHOLD
+auditContract:
+  appendOnly: true
+  mutableOrDeletable: false
+  requiredFields:
+  - name: auditId
+    type: UUID
+    source: GENERATED_ONCE
+  - name: paymentId
+    type: PaymentId
+  - name: publicPaymentReference
+    type: PublicPaymentReference
+  - name: eventId
+    type: UUID
+  - name: eventType
+    type: stable string
+  - name: sourceStatus
+    type: PaymentStatus?
+    required: false
+  - name: targetStatus
+    type: PaymentStatus
+  - name: aggregateVersion
+    type: positive long
+  - name: eventSequence
+    type: positive int
+  - name: correlationId
+    type: CorrelationId
+  - name: causationId
+    type: UUID?
+    required: false
+  - name: occurredAt
+    type: Instant
+  - name: resultCode
+    type: stable safe code?
+    required: false
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint?
+    required: false
+  - name: principalPostingReference
+    type: opaque string?
+    required: false
+  - name: payloadHash
+    type: SHA-256
+  forbiddenFields: *id006
+  auditOrdering:
+  - aggregateVersion
+  - eventSequence
+  auditEventRelation: ONE_AUDIT_RECORD_PER_DOMAIN_EVENT
+outboxContract:
+  deliveryGuarantee: AT_LEAST_ONCE
+  publisher: GENERIC_INTEGRATION_OUTBOX_RELAY
+  partitionKey: paymentId
+  orderingKey:
+  - aggregateVersion
+  - eventSequence
+  deduplicationKey: eventId
+  payloadIdentity:
+  - eventId
+  - eventType
+  - schemaVersion
+  - payloadHash
+  sameEventIdDifferentPayload: QUARANTINE_AND_ALERT
+  republishRule: PRESERVE_EVENT_ID_EVENT_TYPE_SCHEMA_VERSION_OCCURRED_AT_AND_PAYLOAD
+  claimingPattern: FOR_UPDATE_SKIP_LOCKED
+  publishStateModel:
+  - PENDING
+  - PUBLISHED
+  - RETRYABLE
+  - QUARANTINED
+  consumerGuarantee:
+    deduplicateBy: eventId
+    processedMarkerAtomicWithConsumerMutation: true
+    unsupportedSchemaVersion: QUARANTINE_AND_ALERT
+domainToIntegrationEventPolicy:
+  domainEventPackage: com.sixpay.payment.domain.event
+  integrationEventPackage: com.sixpay.payment.events
+  directDomainEventPublicationAllowed: false
+  automaticWholeObjectSerializationAllowed: false
+  mapping: EXPLICIT_ALLOWLIST_MAPPER
+  versioning: INTEGRATION_EVENT_SCHEMA_VERSION_INDEPENDENT_FROM_JAVA_CLASS_VERSION
+  nonPublishableDomainEvents: MAY_REMAIN_AUDIT_ONLY
+  integrationEventNameRule: PAYMENT_<FACT>_V<SCHEMA_VERSION>

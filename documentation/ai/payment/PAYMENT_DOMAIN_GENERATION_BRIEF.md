@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `5 — Invariant Formalization`  
+> **Current lot:** `6 — Events, Audit and Outbox`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_5_IMPLEMENTED`  
+> **Status:** `LOT_6_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -74,3 +74,21 @@ The Aggregate Root remains responsible only for internal consistency and
 transitions. Global uniqueness, distributed idempotence and transactional
 state/audit/Outbox guarantees remain explicit responsibilities of future
 vertical layers.
+
+
+## Lot 6 events, audit and Outbox
+
+The Payment Aggregate continues to register only immutable Domain Events and
+never calls Kafka or an Outbox repository directly.
+
+The future application transaction must atomically persist:
+
+```text
+Payment state and businessVersion
++ one immutable audit record per Domain Event
++ one Outbox row per publishable event
++ idempotency result when applicable
+```
+
+Publication after commit is at-least-once. Republishing preserves event
+identity and payload; consumer deduplication uses `eventId`.

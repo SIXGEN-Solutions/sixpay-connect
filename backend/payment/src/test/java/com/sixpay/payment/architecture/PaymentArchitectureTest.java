@@ -213,8 +213,9 @@ class PaymentArchitectureTest {
     }
 
     @Test
-    void lot5NormativeStateMachineIsActiveAndGlobalGenerationIsFalse()
+    void lot6EventsAuditOutboxIsActiveAndGenerationRemainsRestricted()
             throws IOException {
+
         String manifest = Files.readString(
                 REPOSITORY_ROOT.resolve(
                         "documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml"
@@ -222,30 +223,65 @@ class PaymentArchitectureTest {
         );
 
         assertTrue(
-                manifest.contains("globalCodeGenerationAllowed: false")
-        );
-        assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_5_INVARIANT_FORMALIZATION"
+                        "globalCodeGenerationAllowed: false"
                 )
         );
+
+        assertTrue(
+                manifest.contains(
+                        "currentIncrement: LOT_6_EVENTS_AUDIT_OUTBOX"
+                )
+        );
+
         assertTrue(
                 manifest.contains(
                         "currentIncrementCodeGenerationAllowed: true"
                 )
         );
+
+        // Still forbidden in Lot 6.
         assertTrue(
                 manifest.contains(
                         "APPLICATION_HANDLER_GENERATION"
                 )
         );
+
         assertTrue(
                 manifest.contains(
-                        "PERSISTENCE_AND_INTEGRATION_CONSTRAINT_DOCUMENTATION"
+                        "DATABASE_SCHEMA_OR_MIGRATION_GENERATION"
                 )
         );
+
         assertTrue(
-                manifest.contains("OUTBOX_OR_MESSAGING_GENERATION")
+                manifest.contains(
+                        "OUTBOX_PUBLISHER_OR_KAFKA_GENERATION"
+                )
+        );
+
+        assertTrue(
+                manifest.contains(
+                        "INTEGRATION_EVENT_JAVA_GENERATION"
+                )
+        );
+
+        // Documentation-only capabilities authorized by Lot 6.
+        assertTrue(
+                manifest.contains(
+                        "EVENT_PUBLICATION_FORMALIZATION"
+                )
+        );
+
+        assertTrue(
+                manifest.contains(
+                        "TRANSACTIONAL_OUTBOX_CONTRACT_DOCUMENTATION"
+                )
+        );
+
+        assertTrue(
+                manifest.contains(
+                        "KAFKA_POST_COMMIT_FAILURE_POLICY"
+                )
         );
     }
 
