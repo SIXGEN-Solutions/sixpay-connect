@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `7 — Conceptual Persistence and Concurrency`  
+> **Current lot:** `6 — Events, Audit and Outbox`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_7_IMPLEMENTED`  
+> **Status:** `LOT_6_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -94,23 +94,17 @@ Publication after commit is at-least-once. Republishing preserves event
 identity and payload; consumer deduplication uses `eventId`.
 
 
-## Lot 7 conceptual persistence and concurrency
+## Lot 8 test plan and traceability
 
-The Payment brief now defines persistence capabilities without fixing physical
-table names or generating JPA/migrations.
-
-Mandatory capabilities include:
+The complete test traceability is defined in:
 
 ```text
-aggregate state and optimistic version
-external/public reference uniqueness
-current safe failure and optional failure history
-immutable audit
-request idempotency
-transactional Outbox
-profile-dependent authorization replay protection
-authoritative posting/reversal lookup correlation
+PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+PAYMENT_TEST_TRACEABILITY.yaml
 ```
 
-All eight required concurrency and duplicate-delivery scenarios have a
-deterministic arbitration and stable outcome.
+Every one of the 76 invariants and 38 legal transitions has a stable named
+scenario and a current or future test-file target.
+
+Future application and persistence scenarios are explicitly marked as future
+and are not represented as already implemented.

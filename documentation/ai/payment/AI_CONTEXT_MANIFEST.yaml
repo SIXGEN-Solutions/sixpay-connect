@@ -1,18 +1,22 @@
-schemaVersion: 6.0.0
+schemaVersion: 8.0.0
 context:
   id: sixpay-payment-domain-brief-v1
   domain: payment
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 6_EVENTS_AUDIT_OUTBOX
+  lot: 8_TEST_PLAN_TRACEABILITY
   branch: feat/payment-domain-generation-brief
   baselineDate: '2026-07-31'
-  status: LOT_6_IMPLEMENTED
+  status: LOT_8_IMPLEMENTED
   normative: true
   implementationDate: '2026-07-31'
 codeGenerationAllowed: false
-generationReadiness: PAYMENT_EVENTS_AUDIT_OUTBOX_CONTRACT_COMPLETE
-nextStep: OWNER_REVIEW_AND_VERTICAL_IMPLEMENTATION_APPROVAL
+generationReadiness: PAYMENT_TEST_PLAN_AND_TRACEABILITY_COMPLETE
+nextStep: OWNER_REVIEW_AND_NEXT_APPROVED_VERTICAL_INCREMENT
 primaryDocuments:
+- path: documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+  role: Human test strategy and end-to-end requirements traceability
+- path: documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
+  role: Machine-readable invariant, transition, event and test coverage matrix
 - path: documentation/ai/payment/PAYMENT_EVENTS_AUDIT_OUTBOX_BRIEF.md
   role: Events, immutable audit and transactional Outbox boundary
 - path: documentation/ai/payment/PAYMENT_EVENT_PUBLICATION_MATRIX.yaml
@@ -143,6 +147,14 @@ finalDecisions:
   decision: KAFKA_PUBLICATION_FAILURE_AFTER_COMMIT_NEVER_ROLLS_BACK_OR_REPLAYS_THE_PAYMENT_FINANCIAL_TRANSITION
 - id: PAY-DEC-IA1-107
   decision: OUTBOX_REPUBLICATION_PRESERVES_EVENT_ID_SCHEMA_VERSION_OCCURRED_AT_AND_PAYLOAD_IDENTITY
+- id: PAY-DEC-IA1-116
+  decision: LOT_8_REUSES_EXISTING_TESTS_AND_ADDS_A_MACHINE_VERIFIABLE_TRACEABILITY_MATRIX_WITHOUT_DUPLICATING_DOMAIN_BEHAVIOR_TESTS
+- id: PAY-DEC-IA1-117
+  decision: EVERY_PAYMENT_INVARIANT_AND_LEGAL_TRANSITION_HAS_ONE_STABLE_NAMED_TEST_SCENARIO_AND_TARGET_FILE
+- id: PAY-DEC-IA1-118
+  decision: FUTURE_APPLICATION_AND_PERSISTENCE_TESTS_ARE_DISTINGUISHED_FROM_CURRENT_IMPLEMENTED_DOMAIN_TESTS
+- id: PAY-DEC-IA1-119
+  decision: EVENT_CONFIDENTIALITY_ARCHITECTURE_VALIDATION_INSPECTS_ONLY_RECORD_COMPONENTS_USING_A_ROBUST_PATTERN
 openDecisionReview:
 - id: OPEN-BASE-001
   disposition: SUPERSEDED
@@ -242,7 +254,7 @@ readiness:
   domainModelFrozen: true
   modelBlockers: 0
   generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
-  codeGeneration: LOT_6_DOCUMENTATION_ONLY_AUTHORIZED
+  codeGeneration: LOT_8_DOCUMENTATION_AND_TEST_VALIDATION_AUTHORIZED
   lot3_1FoundationImplemented: true
   lot3DomainOnlyProgramAuthorized: true
   lot3_2ReadyForExplicitActivation: true
@@ -267,6 +279,10 @@ readiness:
   outboxContractComplete: true
   domainToIntegrationMappingPolicyComplete: true
   stableArchitectureAndManifestValidationImplemented: true
+  lot8TestPlanTraceabilityImplemented: true
+  allInvariantScenariosNamed: true
+  allTransitionScenariosNamed: true
+  traceabilityValidationTestImplemented: true
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -274,7 +290,7 @@ implementationAuthorization:
   authorizedAt: '2026-07-31'
   scope: PAYMENT_DOMAIN_ONLY
   globalCodeGenerationAllowed: false
-  currentIncrement: LOT_6_EVENTS_AUDIT_OUTBOX
+  currentIncrement: LOT_8_TEST_PLAN_TRACEABILITY
   currentIncrementCodeGenerationAllowed: true
   futureIncrementActivationRequired: true
   programAllowedPaths:
@@ -288,37 +304,28 @@ implementationAuthorization:
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
   currentIncrementAllowedPaths:
   - backend/payment/ACCEPTANCE-TRACEABILITY.md
-  - documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-  - documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
-  - documentation/ai/payment/PAYMENT_EVENTS_AUDIT_OUTBOX_BRIEF.md
-  - documentation/ai/payment/PAYMENT_EVENT_PUBLICATION_MATRIX.yaml
-  - documentation/ai/payment/PAYMENT_AUDIT_RECORD_SCHEMA.yaml
-  - documentation/ai/payment/PAYMENT_OUTBOX_CONTRACT.yaml
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentTraceabilityValidationTest.java
+  - documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+  - documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
-  - backend/payment/pom.xml
-  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
-  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentManifestValidationTest.java
   allowedChangeKinds:
-  - EVENT_PUBLICATION_FORMALIZATION
-  - IMMUTABLE_AUDIT_SCHEMA_DOCUMENTATION
-  - TRANSACTIONAL_OUTBOX_CONTRACT_DOCUMENTATION
-  - DOMAIN_TO_INTEGRATION_EVENT_MAPPING_POLICY
-  - EVENT_VERSION_ORDER_AND_DEDUPLICATION_RULES
-  - KAFKA_POST_COMMIT_FAILURE_POLICY
-  - MANIFEST_BRIEF_AND_TRACEABILITY_SYNCHRONIZATION
-  - STABLE_ARCHITECTURE_TEST_CORRECTION
-  - GENERIC_MANIFEST_VALIDATION_TEST
-  - MANIFEST_CONTRADICTION_CORRECTION
-  - TEST_DEPENDENCY_UPDATE
+  - TEST_PLAN_FORMALIZATION
+  - INVARIANT_TEST_TRACEABILITY
+  - TRANSITION_TEST_TRACEABILITY
+  - FUTURE_APPLICATION_TEST_PLANNING
+  - FUTURE_PERSISTENCE_TEST_PLANNING
+  - ARCHITECTURE_TEST_HARDENING
+  - TRACEABILITY_VALIDATION_TEST
+  - MANIFEST_BRIEF_AND_ACCEPTANCE_SYNCHRONIZATION
   forbiddenChangeKinds:
-  - DOMAIN_EVENT_DUPLICATION_OR_RENAMING
   - DOMAIN_BEHAVIOR_CHANGE
+  - DUPLICATE_DOMAIN_TEST_GENERATION
   - APPLICATION_HANDLER_GENERATION
-  - AUDIT_REPOSITORY_GENERATION
+  - PERSISTENCE_IMPLEMENTATION_GENERATION
   - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
   - OUTBOX_PUBLISHER_OR_KAFKA_GENERATION
-  - INTEGRATION_EVENT_JAVA_GENERATION
   - API_OR_EXTERNAL_ADAPTER_GENERATION
   forbiddenProductionPaths:
   - backend/payment/src/main/java/com/sixpay/payment/api/**
@@ -398,6 +405,12 @@ implementationAuthorization:
     outboxDeliveryGuarantee: AT_LEAST_ONCE
     kafkaFailureRollsBackPayment: false
     kafkaFailureReplaysFinancialOperation: false
+    testTraceabilityInvariantCount: 76
+    testTraceabilityTransitionCount: 38
+    everyInvariantHasNamedScenario: true
+    everyTransitionHasNamedScenario: true
+    futureTestsMarkedAsFuture: true
+    architectureTestUsesRecordComponentInspection: true
 implementationDecisions:
 - id: PAY-DEC-IA1-071
   decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED

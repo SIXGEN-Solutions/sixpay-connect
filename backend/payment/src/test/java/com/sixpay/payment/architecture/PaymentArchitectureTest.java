@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,22 +20,16 @@ class PaymentArchitectureTest {
 
     private static final Path JAVA_ROOT =
             Path.of("src/main/java/com/sixpay/payment");
-
     private static final Path DOMAIN_ROOT =
             JAVA_ROOT.resolve("domain");
-
     private static final Path MODEL_ROOT =
             DOMAIN_ROOT.resolve("model");
-
     private static final Path EVENT_ROOT =
             DOMAIN_ROOT.resolve("event");
-
     private static final Path EXCEPTION_ROOT =
             DOMAIN_ROOT.resolve("exception");
-
     private static final Path POLICY_ROOT =
             DOMAIN_ROOT.resolve("policy");
-
     private static final Path SERVICE_ROOT =
             DOMAIN_ROOT.resolve("service");
 
@@ -155,7 +151,6 @@ class PaymentArchitectureTest {
             throws IOException {
 
         Path marker = JAVA_ROOT.resolve("PaymentModule.java");
-
         assertTrue(Files.isRegularFile(marker));
 
         String source = Files.readString(marker);
@@ -186,7 +181,6 @@ class PaymentArchitectureTest {
                                 ALLOWED_TOP_LEVEL_PACKAGES
                         )
         );
-
         assertTrue(actual.contains("domain"));
     }
 
@@ -342,6 +336,7 @@ class PaymentArchitectureTest {
             throws IOException {
 
         List<String> forbiddenTypes = List.of(
+                "Payment ",
                 "PaymentState ",
                 "AuthorizationEvidenceSnapshot ",
                 "BankingVerificationSnapshot ",
@@ -363,40 +358,32 @@ class PaymentArchitectureTest {
                     sourceName.length() - ".java".length()
             );
 
-            assertTrue(
-                    source.contains(
-                            "public record " + typeName + "("
-                    )
-            );
-            assertTrue(
-                    source.contains(
-                            "implements PaymentDomainEvent"
-                    )
+            Pattern recordPattern = Pattern.compile(
+                    "public\\s+record\\s+"
+                            + Pattern.quote(typeName)
+                            + "\\s*\\((.*?)\\)\\s*"
+                            + "implements\\s+PaymentDomainEvent",
+                    Pattern.DOTALL
             );
 
-            /*
+            Matcher matcher = recordPattern.matcher(source);
+
+            assertTrue(
+                    matcher.find(),
+                    () -> "Cannot read record signature for "
+                            + typeName
+            );
+
+            String recordComponents = matcher.group(1);
+
             for (String forbidden : forbiddenTypes) {
                 assertFalse(
-                        source.contains(forbidden),
+                        recordComponents.contains(forbidden),
                         () -> typeName
-                                + " exposes "
+                                + " exposes forbidden payload type "
                                 + forbidden.trim()
                 );
             }
-            */
-
-            String header = source.substring(
-                    source.indexOf("record"),
-                    source.indexOf(")")
-            );
-
-            for (String forbidden : forbiddenTypes) {
-                assertFalse(
-                        header.contains(forbidden),
-                        () -> typeName + " exposes forbidden payload type " + forbidden
-                );
-            }
-
         }
     }
 
