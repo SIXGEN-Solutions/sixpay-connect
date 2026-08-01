@@ -79,8 +79,9 @@ class PaymentApplicationLayerArchitectureTest {
     }
 
     @Test
-    void commandsAndQueriesAreImmutableRecords()
+    void commandsAndQueriesAreImmutableValueTypes()
             throws IOException {
+
         for (String packageName : List.of("command", "query")) {
             Path root = APPLICATION_ROOT.resolve(packageName);
 
@@ -97,8 +98,12 @@ class PaymentApplicationLayerArchitectureTest {
                         )
                         .filter(path -> {
                             try {
-                                return !Files.readString(path)
-                                        .contains(" record ");
+                                String source =
+                                        Files.readString(path);
+
+                                return !source.contains(" record ")
+                                        && !source.contains(" enum ");
+
                             } catch (IOException exception) {
                                 throw new IllegalStateException(
                                         exception
@@ -111,7 +116,8 @@ class PaymentApplicationLayerArchitectureTest {
                         List.of(),
                         violations,
                         packageName
-                                + " types must be immutable records"
+                                + " types must be immutable "
+                                + "records or enums"
                 );
             }
         }
