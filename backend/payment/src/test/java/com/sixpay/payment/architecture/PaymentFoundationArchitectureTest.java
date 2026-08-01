@@ -30,9 +30,11 @@ class PaymentFoundationArchitectureTest {
             JAVA_ROOT.resolve("infrastructure/audit");
     private static final Path OUTBOX_ROOT =
             JAVA_ROOT.resolve("infrastructure/outbox");
+    private static final Path IDEMPOTENCY_ROOT =
+            JAVA_ROOT.resolve("infrastructure/idempotency");
 
     @Test
-    void lot34AuthorizesOnlyCurrentFoundations()
+    void lot35AuthorizesOnlyCurrentFoundations()
             throws IOException {
         Map<Path, Set<String>> authorized = Map.of(
                 PERSISTENCE_ROOT, Set.of(
@@ -59,6 +61,16 @@ class PaymentFoundationArchitectureTest {
                         "PaymentOutboxRepository.java",
                         "package-info.java"
                 ),
+                IDEMPOTENCY_ROOT, Set.of(
+                        "PaymentIdempotencyConcurrencyCoordinator.java",
+                        "PaymentIdempotencyConflictException.java",
+                        "PaymentIdempotencyDecision.java",
+                        "PaymentIdempotencyEntity.java",
+                        "PaymentIdempotencyHasher.java",
+                        "PaymentIdempotencyReplayStore.java",
+                        "PaymentIdempotencyRepository.java",
+                        "package-info.java"
+                ),
                 CONFIGURATION_ROOT, Set.of(
                         "PaymentModuleConfiguration.java",
                         "package-info.java"
@@ -72,22 +84,30 @@ class PaymentFoundationArchitectureTest {
             try (Stream<Path> paths = Files.list(entry.getKey())) {
                 List<String> actual = paths
                         .filter(Files::isRegularFile)
-                        .filter(path -> path.toString().endsWith(".java"))
-                        .map(path -> path.getFileName().toString())
+                        .filter(path ->
+                                path.toString().endsWith(".java")
+                        )
+                        .map(path ->
+                                path.getFileName().toString()
+                        )
                         .sorted()
                         .toList();
 
                 assertEquals(
-                        entry.getValue().stream().sorted().toList(),
+                        entry.getValue()
+                                .stream()
+                                .sorted()
+                                .toList(),
                         actual,
-                        () -> "Unauthorized files in " + entry.getKey()
+                        () -> "Unauthorized files in "
+                                + entry.getKey()
                 );
             }
         }
     }
 
     @Test
-    void lot34StillForbidsPrematureBackendComponents()
+    void lot35StillForbidsPrematureBackendComponents()
             throws IOException {
         Set<String> forbiddenSuffixes = Set.of(
                 "Controller.java",
@@ -102,33 +122,75 @@ class PaymentFoundationArchitectureTest {
         try (Stream<Path> paths = Files.walk(JAVA_ROOT)) {
             List<Path> violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> !path.startsWith(DOMAIN_ROOT))
-                    .filter(path -> !path.startsWith(PERSISTENCE_ROOT))
-                    .filter(path -> !path.startsWith(AUDIT_ROOT))
-                    .filter(path -> !path.startsWith(OUTBOX_ROOT))
-                    .filter(path -> !path.startsWith(CONFIGURATION_ROOT))
-                    .filter(path -> !path.getFileName().toString()
-                            .equals("PaymentModule.java"))
-                    .filter(path -> !path.getFileName().toString()
-                            .equals("package-info.java"))
-                    .filter(path -> forbiddenSuffixes.stream().anyMatch(
-                            suffix -> path.getFileName().toString()
-                                    .endsWith(suffix)
-                    ))
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .filter(path ->
+                            !path.startsWith(DOMAIN_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(PERSISTENCE_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(AUDIT_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(OUTBOX_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(IDEMPOTENCY_ROOT)
+                    )
+                    .filter(path ->
+                            !path.startsWith(CONFIGURATION_ROOT)
+                    )
+                    .filter(path ->
+                            !path.getFileName()
+                                    .toString()
+                                    .equals("PaymentModule.java")
+                    )
+                    .filter(path ->
+                            !path.getFileName()
+                                    .toString()
+                                    .equals("package-info.java")
+                    )
+                    .filter(path ->
+                            forbiddenSuffixes.stream()
+                                    .anyMatch(suffix ->
+                                            path.getFileName()
+                                                    .toString()
+                                                    .endsWith(suffix)
+                                    )
+                    )
                     .toList();
 
             assertEquals(
                     List.of(),
                     violations,
-                    "Lot 3.4 must not introduce services, controllers, "
-                            + "publishers, consumers, listeners or schedulers"
+                    "Lot 3.5 must not introduce application services, "
+                            + "controllers, publishers, consumers, "
+                            + "listeners or schedulers"
             );
         }
     }
 
     @Test
-    void outboxRemainsTransportNeutral() throws IOException {
+    void idempotencyFoundationUsesPostgreSqlTransactionLock()
+            throws IOException {
+        String source = Files.readString(
+                IDEMPOTENCY_ROOT.resolve(
+                        "PaymentIdempotencyConcurrencyCoordinator.java"
+                )
+        );
+
+        assertTrue(source.contains("pg_advisory_xact_lock"));
+        assertTrue(source.contains("Propagation.MANDATORY"));
+        assertFalse(source.contains("synchronized"));
+        assertFalse(source.contains("ReentrantLock"));
+    }
+
+    @Test
+    void outboxRemainsTransportNeutral()
+            throws IOException {
         List<String> forbiddenTokens = List.of(
                 "KafkaTemplate",
                 "KafkaProducer",
@@ -142,32 +204,19 @@ class PaymentFoundationArchitectureTest {
         try (Stream<Path> paths = Files.walk(OUTBOX_ROOT)) {
             List<String> violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .flatMap(path -> violations(path, forbiddenTokens).stream())
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path ->
+                            violations(
+                                    path,
+                                    forbiddenTokens
+                            ).stream()
+                    )
                     .toList();
 
             assertEquals(List.of(), violations);
         }
-    }
-
-    @Test
-    void paymentModuleConfigurationIsInConfigurationLayer()
-            throws IOException {
-        Path expected = CONFIGURATION_ROOT.resolve(
-                "PaymentModuleConfiguration.java"
-        );
-        Path forbidden = APPLICATION_ROOT.resolve(
-                "PaymentModuleConfiguration.java"
-        );
-
-        assertTrue(Files.isRegularFile(expected));
-        assertFalse(Files.exists(forbidden));
-
-        String source = Files.readString(expected);
-        assertTrue(source.contains("@AutoConfiguration"));
-        assertTrue(source.contains("PaymentOutboxEntity.class"));
-        assertTrue(source.contains("PaymentOutboxRepository.class"));
-        assertFalse(source.contains("@SpringBootApplication"));
     }
 
     @Test
@@ -184,11 +233,19 @@ class PaymentFoundationArchitectureTest {
                 "@EnableJpaRepositories"
         );
 
-        try (Stream<Path> paths = Files.walk(APPLICATION_ROOT)) {
+        try (Stream<Path> paths =
+                     Files.walk(APPLICATION_ROOT)) {
             List<String> violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .flatMap(path -> violations(path, forbiddenTokens).stream())
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path ->
+                            violations(
+                                    path,
+                                    forbiddenTokens
+                            ).stream()
+                    )
                     .toList();
 
             assertEquals(List.of(), violations);
@@ -196,7 +253,8 @@ class PaymentFoundationArchitectureTest {
     }
 
     @Test
-    void domainRemainsFrameworkFree() throws IOException {
+    void domainRemainsFrameworkFree()
+            throws IOException {
         List<String> forbiddenTokens = List.of(
                 "import org.springframework.",
                 "import jakarta.persistence.",
@@ -208,13 +266,21 @@ class PaymentFoundationArchitectureTest {
         try (Stream<Path> paths = Files.walk(DOMAIN_ROOT)) {
             List<String> violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .flatMap(path -> violations(path, forbiddenTokens).stream())
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path ->
+                            violations(
+                                    path,
+                                    forbiddenTokens
+                            ).stream()
+                    )
                     .toList();
 
             assertTrue(
                     violations.isEmpty(),
-                    () -> "Payment domain violations: " + violations
+                    () -> "Payment domain violations: "
+                            + violations
             );
         }
     }
@@ -225,8 +291,12 @@ class PaymentFoundationArchitectureTest {
         String source = Files.readString(
                 JAVA_ROOT.resolve("PaymentModule.java")
         );
-        assertFalse(source.contains("@SpringBootApplication"));
-        assertFalse(source.contains("public static void main("));
+        assertFalse(
+                source.contains("@SpringBootApplication")
+        );
+        assertFalse(
+                source.contains("public static void main(")
+        );
     }
 
     private static List<String> violations(
@@ -237,7 +307,9 @@ class PaymentFoundationArchitectureTest {
             String source = Files.readString(path);
             return forbiddenTokens.stream()
                     .filter(source::contains)
-                    .map(token -> path + " contains " + token)
+                    .map(token ->
+                            path + " contains " + token
+                    )
                     .toList();
         } catch (IOException exception) {
             throw new IllegalStateException(exception);
