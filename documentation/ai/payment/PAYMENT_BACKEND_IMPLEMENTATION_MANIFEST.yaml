@@ -1,0 +1,86 @@
+schemaVersion: "1.0"
+project: SIXPAY CONNECT
+domain: payment
+phase: PHASE_3_PAYMENT_BACKEND_IMPLEMENTATION
+currentLot: LOT_3_1_BACKEND_FOUNDATION
+status: READY_FOR_HUMAN_APPLICATION
+authoritativeBranch: feat/payment-domain-generation-brief
+
+sourceOfTruth:
+  entryPoint: ENGINEERING_CONTEXT.md
+  precedence:
+    - implementation_branch
+    - documentation/architecture
+    - documentation/requirements
+    - documentation/contracts
+    - documentation/ai
+    - engineering_assets
+    - ENGINEERING_CONTEXT.md
+
+domainKernel:
+  status: FROZEN
+  modificationAllowed: false
+  protectedPath: backend/payment/src/main/java/com/sixpay/payment/domain/**
+  expectedCounts:
+    aggregateRoots: 1
+    namedOperations: 17
+    states: 17
+    legalTransitions: 38
+    invariantAndTransitionChecks: 76
+    domainEvents: 33
+    policies: 14
+    policyProfiles: 12
+    domainServices: 4
+
+generationAuthorization:
+  globalBackendGenerationAllowed: false
+  lotScopedGenerationAllowed: true
+  authorizedLot: LOT_3_1_BACKEND_FOUNDATION
+  authorizedPaths:
+    - backend/payment/pom.xml
+    - backend/payment/src/main/java/com/sixpay/payment/api/package-info.java
+    - backend/payment/src/main/java/com/sixpay/payment/application/package-info.java
+    - backend/payment/src/main/java/com/sixpay/payment/configuration/package-info.java
+    - backend/payment/src/main/java/com/sixpay/payment/events/package-info.java
+    - backend/payment/src/main/java/com/sixpay/payment/infrastructure/package-info.java
+    - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentFoundationArchitectureTest.java
+    - documentation/ai/payment/PAYMENT_BACKEND_IMPLEMENTATION_PLAN.md
+    - documentation/ai/payment/PAYMENT_BACKEND_IMPLEMENTATION_MANIFEST.yaml
+    - documentation/ai/payment/PAYMENT_BACKEND_SOURCE_BASELINE.md
+  forbiddenChanges:
+    - PAYMENT_DOMAIN_MODIFICATION
+    - APPLICATION_USE_CASE_IMPLEMENTATION
+    - CONTROLLER_OR_ADAPTER_IMPLEMENTATION
+    - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
+    - OPENAPI_OR_EVENT_CONTRACT_MODIFICATION
+    - BANK_SPECIFIC_CONFIGURATION_ACTIVATION
+    - DIRECT_KAFKA_PUBLICATION
+
+blockedCapabilities:
+  - capability: APPROVED_PAYMENT_CONTRACT_PACK
+    status: CONTRACT_BLOCKED
+  - capability: AMPLITUDE_PAYMENT_VERIFICATION
+    status: CONTRACT_BLOCKED
+  - capability: INTERNAL_PAYMENT_QUERY_APIS
+    status: CONTRACT_BLOCKED
+  - capability: PAYMENT_SECURITY_PARAMETERS
+    status: CONFIGURATION_BLOCKED
+  - capability: CUTOFF_RECONCILIATION_AND_SLA
+    status: CONFIGURATION_BLOCKED
+
+validation:
+  requiredCommand: >-
+    mvn --batch-mode --no-transfer-progress -pl payment -am test
+  executionStatus: NOT_EXECUTED_IN_DELIVERY_ENVIRONMENT
+  successMayBeClaimedWithoutExecution: false
+  expectedChecks:
+    - PAYMENT_DOMAIN_KERNEL_UNCHANGED
+    - CANONICAL_VERTICAL_BOUNDARIES_PRESENT
+    - INWARD_ONLY_LAYER_DEPENDENCIES
+    - PAYMENT_MODULE_NON_EXECUTABLE
+    - NO_PREMATURE_BACKEND_COMPONENTS
+
+approvals:
+  product: NOT_RECORDED
+  architecture: NOT_RECORDED
+  engineering: NOT_RECORDED
