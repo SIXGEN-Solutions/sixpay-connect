@@ -1,17 +1,18 @@
-# Traçabilité d’acceptation — Payment Lot 4
+# Traçabilité d’acceptation — Payment Lot 5
 
 | ID | Critère | Preuve |
 | --- | --- | --- |
-| `PAY-L4-ACC-001` | 17 états normatifs | `PAYMENT_STATE_MACHINE.yaml` |
-| `PAY-L4-ACC-002` | 38 transitions exhaustives | `PAYMENT_NORMATIVE_STATE_MACHINE.md` |
-| `PAY-L4-ACC-003` | source, commande, gardes, cible, événements, audit, replay et effet documentés | table exhaustive Lot 4 |
-| `PAY-L4-ACC-004` | diagramme Mermaid complet | `PAYMENT_NORMATIVE_STATE_MACHINE.md` |
-| `PAY-L4-ACC-005` | quatre états terminaux sans sortie | matrice terminale et machine YAML |
-| `PAY-L4-ACC-006` | matrice état/commande interdite exhaustive | `PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md` |
-| `PAY-L4-ACC-007` | matrice état vers événement externe | `PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md` |
-| `PAY-L4-ACC-008` | `NOTIFIED` exclu de `PaymentStatus` | décision `PAY-DEC-IA1-100` |
-| `PAY-L4-ACC-009` | outcome posting inconnu explicite | `POSTING_OUTCOME_UNKNOWN` |
-| `PAY-L4-ACC-010` | outcome reversal inconnu explicite | `REVERSAL_OUTCOME_UNKNOWN` |
-| `PAY-L4-ACC-011` | aucun rejeu financier aveugle | décisions `PAY-DEC-IA1-101` et machine YAML |
-| `PAY-L4-ACC-012` | toute combinaison non déclarée est déterministe | `PAYMENT_INVALID_TRANSITION` |
-| `PAY-L4-ACC-013` | aucun comportement Java modifié | périmètre documentaire du manifeste |
+| `PAY-L5-ACC-001` | 76 invariants conservés sans renumérotation | `PAYMENT_INVARIANT_CATALOGUE.yaml` |
+| `PAY-L5-ACC-002` | moment de contrôle pour chaque invariant | champ `applicationStrategy.checkMoment` |
+| `PAY-L5-ACC-003` | composant apportant la preuve | champ `proofProvider` |
+| `PAY-L5-ACC-004` | méthode Aggregate Root concernée | champ `aggregateMethods` |
+| `PAY-L5-ACC-005` | code d’erreur stable | champ `stableErrorCode` |
+| `PAY-L5-ACC-006` | tests associés | champ `testRefs` |
+| `PAY-L5-ACC-007` | impact audit | champ `auditImpact` |
+| `PAY-L5-ACC-008` | index/contrainte DB ou intégration | champ `persistenceOrIntegrationConstraint` |
+| `PAY-L5-ACC-009` | répartition aggregate/application/persistence/idempotency/integration | `PAYMENT_INVARIANT_RESPONSIBILITY_MATRIX.md` |
+| `PAY-L5-ACC-010` | couverture des 22 invariants initiaux | section crosswalk de `PAYMENT_INVARIANT_FORMALIZATION.md` |
+| `PAY-L5-ACC-011` | unicité externe hors Aggregate Root | `PAY-INV-003`, `PAY-INV-067`, `PAY-INV-068`, `PAY-INV-071` |
+| `PAY-L5-ACC-012` | posting inconnu sans resoumission aveugle | `PAY-INV-042` |
+| `PAY-L5-ACC-013` | audit/Outbox atomiques documentés | `PAY-INV-050`, `PAY-INV-074` |
+| `PAY-L5-ACC-014` | aucun comportement Java modifié | périmètre documentaire du manifeste |

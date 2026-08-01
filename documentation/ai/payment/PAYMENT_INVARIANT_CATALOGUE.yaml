@@ -1,14 +1,14 @@
-schemaVersion: 1.2.0
+schemaVersion: 5.0.0
 document:
   id: SIXPAY-PAYMENT-INVARIANT-CATALOGUE
   title: SIXPAY CONNECT — Payment Invariant Catalogue
   gate: IA-1_PAYMENT_DOMAIN_BRIEF
-  lot: 2_8_FINAL_MODEL_VALIDATION
+  lot: 5_INVARIANT_FORMALIZATION
   branch: feat/payment-domain-generation-brief
-  status: FINAL_VALIDATED
+  status: NORMATIVE_IMPLEMENTED
   normative: true
   codeGenerationAllowed: false
-  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+  nextLot: OWNER_REVIEW_AND_NEXT_APPROVED_INCREMENT
 authority:
   markdownCompanion: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
   stateMachineCompatibility: IA1_INVARIANTS_OVERRIDE_CONFLICTING_IA0P_SEMANTICS
@@ -50,6 +50,27 @@ invariants:
   - DOMAIN_UNIT
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-002
   category: IDENTITY_AND_IMMUTABILITY
   statement: PaymentSource and ExternalPaymentReference are required at creation, immutable and never recycled.
@@ -64,6 +85,27 @@ invariants:
   - DOMAIN_UNIT
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-003
   category: IDENTITY_AND_IMMUTABILITY
   statement: The business uniqueness key is PaymentSource plus ExternalPaymentReference; repository-wide uniqueness is enforced atomically outside the aggregate.
@@ -79,10 +121,33 @@ invariants:
   - CONCURRENCY
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+    testRefs:
+    - APPLICATION
+    - POSTGRES_INTEGRATION
+    - CONCURRENCY
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: UNIQUE(payment_source, external_payment_reference)
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: true
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-004
   category: IDENTITY_AND_IMMUTABILITY
-  statement: PublicPaymentReference is required, globally unique in SIXPAY, immutable and distinct from every internal, external, idempotency, correlation
-    and bank reference.
+  statement: PublicPaymentReference is required, globally unique in SIXPAY, immutable and distinct from every internal, external, idempotency, correlation and bank
+    reference.
   enforcement:
   - DOMAIN
   - PERSISTENCE
@@ -94,6 +159,27 @@ invariants:
   - POSTGRES_INTEGRATION
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_REFERENCE_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - POSTGRES_INTEGRATION
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: UNIQUE(public_payment_reference)
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-005
   category: IDENTITY_AND_IMMUTABILITY
   statement: ExternalSubscriptionReference is required for the MVP, immutable and never resolved or mutated as a local Subscription aggregate.
@@ -109,6 +195,27 @@ invariants:
   - ARCHITECTURE_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; architecture and dependency tests
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - ARCHITECTURE_TEST
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: No runtime audit; build-time architecture evidence only.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-006
   category: IDENTITY_AND_IMMUTABILITY
   statement: The original PaymentRequestIdentity is required at creation and its idempotency key, request fingerprint and correlation identifier never change.
@@ -121,6 +228,27 @@ invariants:
   - DOMAIN_UNIT
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-007
   category: IDENTITY_AND_IMMUTABILITY
   statement: FinancialInstitutionCode, DebtorAccountReference, requested Money and TreasuryAllocationIntent are immutable original-intent facts.
@@ -136,6 +264,27 @@ invariants:
   - DOMAIN_UNIT
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-008
   category: IDENTITY_AND_IMMUTABILITY
   statement: Requested Money and every Treasury allocation are strictly positive, use one currency and allocations sum exactly to the requested amount.
@@ -151,6 +300,28 @@ invariants:
   - PROPERTY_BASED
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVALID_CREATION
+    testRefs:
+    - VALUE_OBJECT_UNIT
+    - PROPERTY_BASED
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-009
   category: IDENTITY_AND_IMMUTABILITY
   statement: createdAt is immutable; updatedAt never precedes createdAt and changes only on a successful aggregate mutation.
@@ -165,10 +336,31 @@ invariants:
   policyRefs:
   - PAY-POL-001
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-010
   category: IDENTITY_AND_IMMUTABILITY
-  statement: businessVersion is non-negative and increases exactly once for each successful state-changing mutation; no-op replay and rejected operations
-    do not increase it.
+  statement: businessVersion is non-negative and increases exactly once for each successful state-changing mutation; no-op replay and rejected operations do not increase
+    it.
   enforcement:
   - DOMAIN
   - PERSISTENCE
@@ -182,6 +374,28 @@ invariants:
   - CONCURRENCY
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: CREATION_RECONSTITUTION_AND_EVERY_SUCCESSFUL_MUTATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints
+    aggregateMethods:
+    - Payment.receive
+    - Payment.reconstitute
+    - PaymentState validation
+    stableErrorCode: PAYMENT_VERSION_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - POSTGRES_INTEGRATION
+    - CONCURRENCY
+    - PaymentCreationAndReconstitutionTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: optimistic lock on business_version
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-011
   category: BOUNDARY_AND_CONFIDENTIALITY
   statement: Payment domain state never contains a raw JWT, Subscription Key, credential, signature, JWKS body or secret.
@@ -201,6 +415,29 @@ invariants:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_SECURITY_REJECTION
+    testRefs:
+    - DOMAIN_UNIT
+    - SERIALIZATION_TEST
+    - SECURITY_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-012
   category: BOUNDARY_AND_CONFIDENTIALITY
   statement: Payment never stores a clear debtor or Treasury account number; protected token, mask and keyed fingerprint remain distinct representations.
@@ -219,6 +456,29 @@ invariants:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_SECURITY_REJECTION
+    testRefs:
+    - DOMAIN_UNIT
+    - PERSISTENCE_ENCRYPTION
+    - SECURITY_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-013
   category: BOUNDARY_AND_CONFIDENTIALITY
   statement: Raw TRESOR PAY, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
@@ -236,6 +496,28 @@ invariants:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_MAPPING_REJECTED
+    testRefs:
+    - ARCHITECTURE_TEST
+    - MAPPING_TEST
+    - EVENT_SCHEMA_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-014
   category: BOUNDARY_AND_CONFIDENTIALITY
   statement: Payment domain types have no dependency on Spring, Jakarta Persistence, Hibernate, Jackson, HTTP, Kafka, database entities or another business-domain
@@ -250,10 +532,29 @@ invariants:
   - ARCHITECTURE_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: architecture and dependency tests
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_ARCHITECTURE_VIOLATION
+    testRefs:
+    - ARCHITECTURE_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: No runtime audit; build-time architecture evidence only.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: false
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-015
   category: BOUNDARY_AND_CONFIDENTIALITY
-  statement: Payment retains at most one current accepted snapshot per evidence category and one current relevant PaymentFailure; full histories remain
-    in audit/reporting.
+  statement: Payment retains at most one current accepted snapshot per evidence category and one current relevant PaymentFailure; full histories remain in audit/reporting.
   enforcement:
   - DOMAIN
   violationResult: REJECT_RECONSTITUTION_OR_MUTATION
@@ -266,10 +567,32 @@ invariants:
   - RECONSTITUTION_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_STATE_INCONSISTENT
+    testRefs:
+    - DOMAIN_UNIT
+    - RECONSTITUTION_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-016
   category: BOUNDARY_AND_CONFIDENTIALITY
-  statement: Domain events and external errors expose only explicitly approved safe projections and never serialize complete protected Value Objects or
-    snapshots by default.
+  statement: Domain events and external errors expose only explicitly approved safe projections and never serialize complete protected Value Objects or snapshots
+    by default.
   enforcement:
   - DOMAIN
   - APPLICATION
@@ -285,6 +608,29 @@ invariants:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; approved
+      API or integration-event schema
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_DISCLOSURE_REJECTED
+    testRefs:
+    - EVENT_SCHEMA_TEST
+    - API_CONTRACT_TEST
+    - SECURITY_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-017
   category: BOUNDARY_AND_CONFIDENTIALITY
   statement: Payment does not own transport retry, circuit-breaker state, notification delivery attempts, unmatched TFJ records or generic Outbox mechanics.
@@ -299,10 +645,29 @@ invariants:
   - ARCHITECTURE_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: architecture and dependency tests
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_BOUNDARY_VIOLATION
+    testRefs:
+    - ARCHITECTURE_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: No runtime audit; build-time architecture evidence only.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: false
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-018
   category: BOUNDARY_AND_CONFIDENTIALITY
-  statement: Every safe message, reason code and audit projection is free of credentials, clear account data, raw KYC values, stack traces and raw provider
-    errors.
+  statement: Every safe message, reason code and audit projection is free of credentials, clear account data, raw KYC values, stack traces and raw provider errors.
   enforcement:
   - DOMAIN
   - APPLICATION
@@ -318,6 +683,29 @@ invariants:
   policyRefs:
   - PAY-POL-014
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: MAPPING_SERIALIZATION_PERSISTENCE_AND_EVENT_PUBLICATION_BOUNDARIES
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; canonical
+      adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - PaymentState validation
+    - Payment domain-event construction
+    stableErrorCode: PAYMENT_SECURITY_REJECTION
+    testRefs:
+    - DOMAIN_UNIT
+    - SECURITY_TEST
+    - API_CONTRACT_TEST
+    - PaymentEventCatalogueTest
+    - PaymentArchitectureTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-019
   category: AUTHORIZATION_AND_ADMISSION
   statement: An unauthenticated transport request creates no Payment; a Payment is durably created before any Amplitude business call.
@@ -335,6 +723,28 @@ invariants:
   - POSTGRES_INTEGRATION
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - Payment.receive
+    stableErrorCode: PAYMENT_ADMISSION_REJECTED
+    testRefs:
+    - API_SECURITY_TEST
+    - APPLICATION
+    - POSTGRES_INTEGRATION
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-020
   category: AUTHORIZATION_AND_ADMISSION
   statement: Payment creation requires all mandatory canonical identifiers, positive Money, protected debtor account and balanced Treasury allocation intent.
@@ -349,6 +759,26 @@ invariants:
   - PROPERTY_BASED
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.receive
+    stableErrorCode: PAYMENT_INVALID_CREATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PROPERTY_BASED
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-021
   category: AUTHORIZATION_AND_ADMISSION
   statement: Banking verification cannot begin before Payment has accepted an AuthorizationEvidenceSnapshot with outcome APPROVED.
@@ -364,10 +794,33 @@ invariants:
   policyRefs:
   - PAY-POL-002
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-022
   category: AUTHORIZATION_AND_ADMISSION
-  statement: An approved authorization snapshot requires every mandatory request binding to MATCH, a valid payment scope and acceptance inside the approved
-    validity interval.
+  statement: An approved authorization snapshot requires every mandatory request binding to MATCH, a valid payment scope and acceptance inside the approved validity
+    interval.
   enforcement:
   - DOMAIN
   - POLICY
@@ -382,6 +835,30 @@ invariants:
   - PAY-POL-001
   - PAY-POL-002
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; approved immutable Payment policy profile
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_SECURITY_REJECTION
+    testRefs:
+    - DOMAIN_UNIT
+    - POLICY_TEST
+    - SECURITY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-023
   category: AUTHORIZATION_AND_ADMISSION
   statement: A rejected authorization snapshot forbids all Amplitude customer, funds and posting operations for that Payment.
@@ -397,10 +874,33 @@ invariants:
   policyRefs:
   - PAY-POL-002
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_REJECTED
+    testRefs:
+    - DOMAIN_UNIT
+    - APPLICATION
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-024
   category: AUTHORIZATION_AND_ADMISSION
-  statement: Authorization infrastructure failure without a canonical decision is represented as a technical PaymentFailure and never fabricated as APPROVED
-    or REJECTED evidence.
+  statement: Authorization infrastructure failure without a canonical decision is represented as a technical PaymentFailure and never fabricated as APPROVED or REJECTED
+    evidence.
   enforcement:
   - APPLICATION
   - DOMAIN
@@ -415,6 +915,29 @@ invariants:
   - PAY-POL-002
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+    testRefs:
+    - APPLICATION
+    - DOMAIN_UNIT
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-025
   category: AUTHORIZATION_AND_ADMISSION
   statement: An identical authorization evidence replay is a no-op; the same authorization evidence identity with another fingerprint is a security conflict.
@@ -433,6 +956,29 @@ invariants:
   - PAY-POL-002
   - PAY-POL-006
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - REPLAY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-026
   category: AUTHORIZATION_AND_ADMISSION
   statement: Payment never infers, manages or changes a TRESOR PAY Subscription status from ExternalSubscriptionReference.
@@ -448,6 +994,28 @@ invariants:
   - ARCHITECTURE_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REQUEST_ADMISSION_AND_AUTHORIZATION_DECISION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; architecture and dependency tests
+    aggregateMethods:
+    - Payment.startAuthorizationChecking
+    - Payment.recordAuthorizationDecision
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - ARCHITECTURE_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: No runtime audit; build-time architecture evidence only.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-027
   category: BANKING_AND_FUNDS
   statement: BankingVerificationSnapshot and FundsControlSnapshot are distinct evidence categories and neither substitutes for the other.
@@ -465,6 +1033,27 @@ invariants:
   - PAY-POL-003
   - PAY-POL-004
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordBankingVerification
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-028
   category: BANKING_AND_FUNDS
   statement: Only a BankingVerificationSnapshot with outcome VERIFIED may permit progression to funds control.
@@ -480,6 +1069,28 @@ invariants:
   policyRefs:
   - PAY-POL-003
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordBankingVerification
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_EVIDENCE_NOT_ACCEPTED
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-029
   category: BANKING_AND_FUNDS
   statement: A banking verification outcome REJECTED produces a definitive business rejection before financial submission; INDETERMINATE never permits approval.
@@ -494,6 +1105,27 @@ invariants:
   - PAY-POL-003
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordBankingVerification
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-030
   category: BANKING_AND_FUNDS
   statement: Every accepted banking verification must match the aggregate institution and debtor-account binding fingerprint.
@@ -509,6 +1141,28 @@ invariants:
   policyRefs:
   - PAY-POL-003
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordBankingVerification
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - MAPPING_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-031
   category: BANKING_AND_FUNDS
   statement: ObservedCustomer or any read projection can inform operations but can never authorize Payment progression or replace a fresh Amplitude verification.
@@ -525,6 +1179,28 @@ invariants:
   policyRefs:
   - PAY-POL-003
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.recordBankingVerification
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - APPLICATION
+    - ARCHITECTURE_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-032
   category: BANKING_AND_FUNDS
   statement: Only a FundsControlSnapshot with outcome VERIFIED, exact Payment amount/account binding and unexpired validity may authorize posting.
@@ -543,6 +1219,28 @@ invariants:
   - PAY-POL-004
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; approved immutable Payment policy profile
+    aggregateMethods:
+    - Payment.recordFundsControl
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - POLICY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-033
   category: BANKING_AND_FUNDS
   statement: Funds outcome REJECTED forbids posting and supports business rejection; INDETERMINATE supports only controlled recovery or technical failure.
@@ -557,6 +1255,27 @@ invariants:
   - PAY-POL-004
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordFundsControl
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-034
   category: BANKING_AND_FUNDS
   statement: Available balance and provider-disclosed available amount are never retained in Payment.
@@ -573,10 +1292,31 @@ invariants:
   policyRefs:
   - PAY-POL-004
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - Payment.recordFundsControl
+    - Payment.recordRecoverableFailure
+    - Payment.reject
+    stableErrorCode: PAYMENT_MAPPING_REJECTED
+    testRefs:
+    - MAPPING_TEST
+    - SECURITY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: true
+      accounting: false
 - id: PAY-INV-035
   category: BANKING_AND_FUNDS
-  statement: Posting authorization requires a TreasuryAccountResolutionSnapshot with outcome RESOLVED and a TreasuryAccountReference produced from protected
-    bank configuration.
+  statement: Posting authorization requires a TreasuryAccountResolutionSnapshot with outcome RESOLVED and a TreasuryAccountReference produced from protected bank
+    configuration.
   enforcement:
   - DOMAIN
   violationResult: REJECT_NO_MUTATION
@@ -589,10 +1329,31 @@ invariants:
   - PAY-POL-005
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordTreasuryAccountResolution
+    - Payment.authorizePosting
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-036
   category: BANKING_AND_FUNDS
-  statement: Resolved Treasury institution and allocation-intent fingerprint must match the Payment; inbound beneficiary/account data cannot create or override
-    the CUT reference.
+  statement: Resolved Treasury institution and allocation-intent fingerprint must match the Payment; inbound beneficiary/account data cannot create or override the
+    CUT reference.
   enforcement:
   - DOMAIN
   - POLICY
@@ -606,10 +1367,32 @@ invariants:
   policyRefs:
   - PAY-POL-005
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; approved immutable Payment policy profile
+    aggregateMethods:
+    - Payment.recordTreasuryAccountResolution
+    - Payment.authorizePosting
+    - Payment.reject
+    stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - POLICY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-037
   category: BANKING_AND_FUNDS
-  statement: Once posting is authorized, the accepted favorable authorization, banking, funds and Treasury-resolution evidence cannot be replaced by a less
-    authoritative, stale or differently bound result.
+  statement: Once posting is authorized, the accepted favorable authorization, banking, funds and Treasury-resolution evidence cannot be replaced by a less authoritative,
+    stale or differently bound result.
   enforcement:
   - DOMAIN
   violationResult: REJECT_CONFLICT
@@ -623,10 +1406,32 @@ invariants:
   - PAY-POL-006
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordTreasuryAccountResolution
+    - Payment.authorizePosting
+    - Payment.reject
+    stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - REPLAY_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-038
   category: BANKING_AND_FUNDS
-  statement: A Payment is approved for financial submission only when authorization, banking verification, funds control and Treasury resolution are all
-    favorable and mutually coherent.
+  statement: A Payment is approved for financial submission only when authorization, banking verification, funds control and Treasury resolution are all favorable
+    and mutually coherent.
   enforcement:
   - DOMAIN
   violationResult: REJECT_NO_MUTATION
@@ -641,6 +1446,28 @@ invariants:
   - PAY-POL-005
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: BANKING_FUNDS_AND_TREASURY_EVIDENCE_ACCEPTANCE
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordTreasuryAccountResolution
+    - Payment.authorizePosting
+    - Payment.reject
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPreFinancialLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-039
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: One Payment authorizes at most one logical posting instruction for its original payment intention.
@@ -659,10 +1486,30 @@ invariants:
   policyRefs:
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; Payment
+      repository transaction, optimistic version and PostgreSQL constraints; idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - Payment.authorizePosting
+    stableErrorCode: PAYMENT_SECOND_POSTING_FORBIDDEN
+    testRefs:
+    - DOMAIN_UNIT
+    - APPLICATION
+    - POSTGRES_INTEGRATION
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: UNIQUE(payment_id) for the sole logical posting instruction
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: true
+      idempotencyStore: true
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-040
   category: POSTING_AND_FINANCIAL_SAFETY
-  statement: Every retry of the same posting instruction reuses the exact posting idempotency key and immutable instruction fingerprint; a new key is not
-    a retry.
+  statement: Every retry of the same posting instruction reuses the exact posting idempotency key and immutable instruction fingerprint; a new key is not a retry.
   enforcement:
   - APPLICATION
   - INTEGRATION
@@ -678,6 +1525,27 @@ invariants:
   policyRefs:
   - PAY-POL-007
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      canonical adapter mapping and authoritative external evidence; idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - Payment.authorizePosting
+    stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+    testRefs:
+    - APPLICATION
+    - CONTRACT_TEST
+    - CONCURRENCY
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: UNIQUE(posting_idempotency_key); immutable posting_instruction_fingerprint
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: true
+      bankIntegration: true
+      accounting: false
 - id: PAY-INV-041
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: A posting outcome must match the original Payment reference, amount, institution, debtor account, Treasury reference and posting command identity.
@@ -695,6 +1563,27 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - MAPPING_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-042
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: Posting outcome UNKNOWN means neither success nor failure, forbids blind financial resubmission and requires authoritative lookup or reconciliation.
@@ -714,10 +1603,30 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_EXTERNAL_OUTCOME_UNKNOWN
+    testRefs:
+    - DOMAIN_UNIT
+    - RESILIENCE_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-043
   category: POSTING_AND_FINANCIAL_SAFETY
-  statement: A posting may be classified REJECTED_NO_FINANCIAL_EFFECT or Payment FAILED only when authoritative evidence proves that neither debit nor CUT
-    credit occurred.
+  statement: A posting may be classified REJECTED_NO_FINANCIAL_EFFECT or Payment FAILED only when authoritative evidence proves that neither debit nor CUT credit
+    occurred.
   enforcement:
   - DOMAIN
   violationResult: REJECT_INVALID_FAILURE_CLASSIFICATION
@@ -732,6 +1641,26 @@ invariants:
   - PAY-POL-012
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_FAILURE_CLASSIFICATION_INVALID
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-044
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: Posting outcome COMPLETED requires debit SUCCEEDED, CUT credit SUCCEEDED, exact Money and a principal BankPostingReference.
@@ -747,6 +1676,26 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_EVIDENCE_INVALID
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-045
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: DEBIT_CONFIRMED_CUT_CREDIT_PENDING requires debit SUCCEEDED, CUT credit PENDING or UNKNOWN, a principal posting reference and no success finalization.
@@ -761,6 +1710,26 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_EVIDENCE_INVALID
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-046
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: A confirmed debit with explicit CUT-credit failure requires reversal review/authorization and can never be represented as successful or failed-without-effect.
@@ -777,6 +1746,26 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_REVERSAL_REQUIRED
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-047
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: When principal or leg references are present in multiple domain objects, they must be equal and immutable.
@@ -793,6 +1782,26 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: immutable principal/debit/CUT reference columns after first non-null assignment
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-048
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: The original BankPostingReference is retained for the lifetime of Payment, including after TFJ processing or reversal.
@@ -810,6 +1819,27 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - RECONSTITUTION_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: posting references retained after TFJ and reversal
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-049
   category: POSTING_AND_FINANCIAL_SAFETY
   statement: Confirmed debit and CUT credit establish immediate posting facts only; they never establish TFJ finality.
@@ -826,10 +1856,30 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_INVALID_TRANSITION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-050
   category: POSTING_AND_FINANCIAL_SAFETY
-  statement: A posting or posting-resolution mutation is committed atomically with aggregate state, immutable audit and Outbox intent, or none of them is
-    committed.
+  statement: A posting or posting-resolution mutation is committed atomically with aggregate state, immutable audit and Outbox intent, or none of them is committed.
   enforcement:
   - APPLICATION
   - PERSISTENCE
@@ -844,6 +1894,27 @@ invariants:
   - PAY-POL-008
   domainServiceRefs:
   - PAY-DS-001
+  applicationStrategy:
+    checkMoment: POSTING_AUTHORIZATION_OUTCOME_RECORDING_AND_AUTHORITATIVE_RESOLUTION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - Payment.recordPostingOutcome
+    - Payment.resolvePostingOutcome
+    stableErrorCode: PAYMENT_ATOMIC_COMMIT_FAILED
+    testRefs:
+    - POSTGRES_INTEGRATION
+    - CRASH_RECOVERY_TEST
+    - PaymentPostingLifecycleTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: 'single database transaction: Payment state + audit + Outbox'
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-051
   category: NOTIFICATION_AND_TFJ
   statement: Notification is a domain intent/event orthogonal to financial state; delivery success or failure never changes Payment financial status.
@@ -861,10 +1932,30 @@ invariants:
   - PAY-POL-013
   domainServiceRefs:
   - PAY-DS-004
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment result-intent registration; no notification-delivery mutation
+    stableErrorCode: PAYMENT_NOTIFICATION_DELIVERY_IGNORED
+    testRefs:
+    - DOMAIN_UNIT
+    - INTERMODULE_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-052
   category: NOTIFICATION_AND_TFJ
-  statement: At most one logical notification intent exists per Payment, notification purpose and business result version; replay reuses the original event
-    identity.
+  statement: At most one logical notification intent exists per Payment, notification purpose and business result version; replay reuses the original event identity.
   enforcement:
   - APPLICATION
   - PERSISTENCE
@@ -879,6 +1970,27 @@ invariants:
   - PAY-POL-013
   domainServiceRefs:
   - PAY-DS-004
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints
+    aggregateMethods:
+    - Payment result-intent registration; no notification-delivery mutation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - POSTGRES_INTEGRATION
+    - REPLAY_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-053
   category: NOTIFICATION_AND_TFJ
   statement: TFJ tracking begins from a confirmed completed posting and does not wait for notification delivery acknowledgement.
@@ -898,10 +2010,30 @@ invariants:
   domainServiceRefs:
   - PAY-DS-002
   - PAY-DS-004
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - INTERMODULE_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-054
   category: NOTIFICATION_AND_TFJ
-  statement: An EndOfDayConfirmationSnapshot enters Payment only after authentication, durable persistence and unique matching on institution, business
-    date, public Payment reference and principal posting reference.
+  statement: An EndOfDayConfirmationSnapshot enters Payment only after authentication, durable persistence and unique matching on institution, business date, public
+    Payment reference and principal posting reference.
   enforcement:
   - ACCOUNTING
   - APPLICATION
@@ -918,6 +2050,28 @@ invariants:
   - PAY-POL-009
   domainServiceRefs:
   - PAY-DS-002
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; Accounting/TFJ
+      unique-match proof
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - APPLICATION
+    - POSTGRES_INTEGRATION
+    - CONTRACT_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: true
 - id: PAY-INV-055
   category: NOTIFICATION_AND_TFJ
   statement: TFJ PENDING, unmatched, ambiguous or conflicting evidence remains outside Payment and cannot change its state.
@@ -935,6 +2089,26 @@ invariants:
   - PAY-POL-009
   domainServiceRefs:
   - PAY-DS-002
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Accounting/TFJ unique-match proof
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - APPLICATION
+    - RECONCILIATION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: true
 - id: PAY-INV-056
   category: NOTIFICATION_AND_TFJ
   statement: Only a uniquely matched TFJ status INTEGRATED establishes TREASURY_INTEGRATED and finalization.
@@ -951,6 +2125,26 @@ invariants:
   - PAY-POL-009
   domainServiceRefs:
   - PAY-DS-002
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVALID_TRANSITION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-057
   category: NOTIFICATION_AND_TFJ
   statement: TFJ delay or cutoff expiry keeps Payment pending and cannot alone authorize reversal, failure or another posting.
@@ -970,6 +2164,26 @@ invariants:
   domainServiceRefs:
   - PAY-DS-002
   - PAY-DS-004
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - SCHEDULER_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-058
   category: NOTIFICATION_AND_TFJ
   statement: An identical terminal TFJ replay is a no-op; conflicting final TFJ evidence is quarantined and never silently replaces terminal evidence.
@@ -990,10 +2204,30 @@ invariants:
   - PAY-POL-009
   domainServiceRefs:
   - PAY-DS-002
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Accounting/TFJ unique-match proof
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - REPLAY_TEST
+    - RECONCILIATION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: true
 - id: PAY-INV-059
   category: REVERSAL_AND_FAILURE
-  statement: A reversal can be requested only for a confirmed or authoritatively reconciled financial effect and requires BANK_INSTRUCTION or APPROVED_RUNBOOK
-    authorization.
+  statement: A reversal can be requested only for a confirmed or authoritatively reconciled financial effect and requires BANK_INSTRUCTION or APPROVED_RUNBOOK authorization.
   enforcement:
   - DOMAIN
   - APPLICATION
@@ -1010,6 +2244,29 @@ invariants:
   - PAY-POL-010
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; approved immutable Payment policy profile; application use-case orchestration
+      and canonical request comparison
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - POLICY_TEST
+    - AUTHORIZATION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-060
   category: REVERSAL_AND_FAILURE
   statement: Reversal uses a distinct immutable idempotency key and reversal reference and never overwrites the original posting identity.
@@ -1028,6 +2285,27 @@ invariants:
   - PAY-POL-011
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: NOTIFICATION_INTENT_TFJ_MATCHING_AND_FINALITY
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.recordMatchedEndOfDayConfirmation
+    stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - APPLICATION
+    - PaymentTfjAndReversalLifecycleTest
+    - ResultAndDisclosurePoliciesTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-061
   category: REVERSAL_AND_FAILURE
   statement: Reversal outcome UNKNOWN requires authoritative lookup and forbids blind reversal resubmission.
@@ -1045,6 +2323,28 @@ invariants:
   - PAY-POL-011
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_EXTERNAL_OUTCOME_UNKNOWN
+    testRefs:
+    - DOMAIN_UNIT
+    - RESILIENCE_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-062
   category: REVERSAL_AND_FAILURE
   statement: REVERSED requires an authoritative outcome REVERSED with a stable reversal reference linked to the same Payment and original posting.
@@ -1062,6 +2362,28 @@ invariants:
   - PAY-POL-012
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVALID_TRANSITION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-063
   category: REVERSAL_AND_FAILURE
   statement: A rejected or not-allowed reversal does not make the original financial effect disappear and cannot transition Payment to FAILED-without-effect.
@@ -1076,6 +2398,27 @@ invariants:
   - PAY-POL-011
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-064
   category: REVERSAL_AND_FAILURE
   statement: REJECTED is terminal only for a conclusive business/security rejection before any financial instruction can have produced an effect.
@@ -1094,6 +2437,28 @@ invariants:
   - PAY-POL-012
   domainServiceRefs:
   - PAY-DS-003
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-065
   category: REVERSAL_AND_FAILURE
   statement: FAILED is terminal only when absence of financial effect is proven; an uncertain, partial or reversal-required Payment cannot become FAILED.
@@ -1109,6 +2474,28 @@ invariants:
   policyRefs:
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - STATE_TRANSITION_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-066
   category: REVERSAL_AND_FAILURE
   statement: Every terminal state has finalizedAt, immutable terminal evidence and no later state-changing command; an identical fact replay remains a no-op.
@@ -1124,10 +2511,32 @@ invariants:
   policyRefs:
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - REPLAY_TEST
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-067
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
-  statement: Same PaymentSource and ExternalPaymentReference with the same canonical request fingerprint resolves to the original Payment and creates no
-    new business effect.
+  statement: Same PaymentSource and ExternalPaymentReference with the same canonical request fingerprint resolves to the original Payment and creates no new business
+    effect.
   enforcement:
   - APPLICATION
   - PERSISTENCE
@@ -1141,6 +2550,29 @@ invariants:
   policyRefs:
   - PAY-POL-012
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - APPLICATION
+    - CONCURRENCY
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-068
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: Same source/reference or idempotency scope with a different canonical request fingerprint is a conflict and leaves the original Payment unchanged.
@@ -1159,10 +2591,32 @@ invariants:
   - PAY-POL-013
   domainServiceRefs:
   - PAY-DS-004
+  applicationStrategy:
+    checkMoment: REVERSAL_AUTHORIZATION_OUTCOME_AND_TERMINAL_FAILURE_CLASSIFICATION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints
+    aggregateMethods:
+    - Payment.authorizeReversal
+    - Payment.recordReversalOutcome
+    - Payment.resolveReversalOutcome
+    - Payment.failWithoutFinancialEffect
+    stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+    testRefs:
+    - APPLICATION
+    - CONCURRENCY
+    - PaymentTfjAndReversalLifecycleTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: repository mapping and database checks derived from the invariant
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-069
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
-  statement: Same evidence identity and fingerprint is a no-op without version increment or new domain event; same identity with another fingerprint is
-    a conflict.
+  statement: Same evidence identity and fingerprint is a no-op without version increment or new domain event; same identity with another fingerprint is a conflict.
   enforcement:
   - DOMAIN
   violationResult: NO_OP_OR_CONFLICT
@@ -1176,6 +2630,29 @@ invariants:
   policyRefs:
   - PAY-POL-006
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+    testRefs:
+    - DOMAIN_UNIT
+    - REPLAY_TEST
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: idempotency-store unique key and canonical request fingerprint
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: true
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-070
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: A command with an expected business version different from the current version is rejected before mutation.
@@ -1191,6 +2668,30 @@ invariants:
   - CONCURRENCY
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - CONCURRENCY
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: idempotency-store unique key and canonical request fingerprint
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: true
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-071
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: Concurrent creation for the same business uniqueness key results in one Payment; losing transactions reload the winner or return a conflict.
@@ -1205,10 +2706,33 @@ invariants:
   - CONCURRENCY
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: application use-case orchestration and canonical request comparison; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - POSTGRES_INTEGRATION
+    - CONCURRENCY
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: Outbox uniqueness by eventId and aggregateVersion/eventSequence
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-072
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
-  statement: Aggregate reconstitution restores structurally valid persisted state, performs no business transition, changes no timestamp/version and raises
-    no event.
+  statement: Aggregate reconstitution restores structurally valid persisted state, performs no business transition, changes no timestamp/version and raises no event.
   enforcement:
   - DOMAIN
   - PERSISTENCE
@@ -1221,6 +2745,30 @@ invariants:
   - PERSISTENCE_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; Payment repository transaction, optimistic version and PostgreSQL constraints;
+      idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - RECONSTITUTION_TEST
+    - PERSISTENCE_TEST
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: Outbox uniqueness by eventId and aggregateVersion/eventSequence
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-073
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: An invariant violation causes no partial state mutation, no event registration, no audit transition, no Outbox intent and no version change.
@@ -1237,6 +2785,30 @@ invariants:
   - POSTGRES_INTEGRATION
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; Payment
+      repository transaction, optimistic version and PostgreSQL constraints; idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - DOMAIN_UNIT
+    - POSTGRES_INTEGRATION
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: transactional audit/outbox foreign key to Payment/version
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-074
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: Every successful aggregate mutation registers the exact corresponding domain fact once and commits state, audit and Outbox intent atomically.
@@ -1253,6 +2825,30 @@ invariants:
   - POSTGRES_INTEGRATION
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; application use-case orchestration and canonical request comparison; Payment
+      repository transaction, optimistic version and PostgreSQL constraints; idempotency store / Outbox / transaction boundary
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_ATOMIC_COMMIT_FAILED
+    testRefs:
+    - DOMAIN_UNIT
+    - POSTGRES_INTEGRATION
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+    persistenceOrIntegrationConstraint: transactional audit/outbox foreign key to Payment/version
+    responsibilitySplit:
+      aggregate: true
+      application: true
+      persistence: true
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 - id: PAY-INV-075
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: Outbox republication and consumer redelivery preserve eventId and payload identity and never repeat the aggregate transition or financial effect.
@@ -1268,6 +2864,30 @@ invariants:
   - REPLAY_TEST
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: application use-case orchestration and canonical request comparison; canonical adapter mapping and authoritative external evidence
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+    testRefs:
+    - MESSAGING_INTEGRATION
+    - REPLAY_TEST
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition
+      audit.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: false
+      application: true
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: true
+      accounting: false
 - id: PAY-INV-076
   category: REPLAY_CONCURRENCY_AND_ATOMICITY
   statement: The aggregate never performs a network call; external results are accepted only after application orchestration returns a canonical result.
@@ -1283,6 +2903,29 @@ invariants:
   - APPLICATION
   policyRefs: []
   domainServiceRefs: []
+  applicationStrategy:
+    checkMoment: REPLAY_CONCURRENCY_TRANSACTION_COMMIT_AUDIT_AND_RECONSTITUTION
+    proofProvider: Payment Aggregate / immutable Value Objects / accepted snapshots; architecture and dependency tests
+    aggregateMethods:
+    - all state-changing Payment operations
+    - Payment.reconstitute
+    - Payment internal atomic commit
+    stableErrorCode: PAYMENT_BOUNDARY_VIOLATION
+    testRefs:
+    - ARCHITECTURE_TEST
+    - APPLICATION
+    - PaymentDomainKernelCatalogueTest
+    - PaymentTerminalStateProtectionTest
+    - PaymentArchitectureTest
+    auditImpact: No runtime audit; build-time architecture evidence only.
+    persistenceOrIntegrationConstraint: Aucune contrainte DB spécifique; contrôle domaine/application/intégration.
+    responsibilitySplit:
+      aggregate: true
+      application: false
+      persistence: false
+      idempotencyStore: false
+      bankIntegration: false
+      accounting: false
 decisions:
 - id: PAY-DEC-IA1-027
   decision: IA1_INVARIANTS_OVERRIDE_CONFLICTING_IA0P_STATE_SEMANTICS
@@ -1315,3 +2958,26 @@ finalValidation:
   humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
   machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
   status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+applicationStrategySchema:
+  requiredFields:
+  - checkMoment
+  - proofProvider
+  - aggregateMethods
+  - stableErrorCode
+  - testRefs
+  - auditImpact
+  - persistenceOrIntegrationConstraint
+  - responsibilitySplit
+  violationDefault:
+    paymentMutation: false
+    businessVersionIncrement: false
+    domainEventRegistration: false
+    stateTransitionAudit: false
+    outboxIntentCreation: false
+responsibilityModel:
+  aggregate: internal coherence, accepted evidence, transitions, version and domain events
+  application: orchestration, canonical payload comparison and transaction demarcation
+  persistence: atomic uniqueness, optimistic locking and durable state/audit/outbox
+  idempotencyStore: return original result for an identical request and reject a conflicting payload
+  bankIntegration: reuse immutable idempotency keys and perform authoritative lookup for unknown outcomes
+  accounting: produce unique matched TFJ evidence consumed by Payment

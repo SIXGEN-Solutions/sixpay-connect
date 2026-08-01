@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `4 — Normative State Machine`  
+> **Current lot:** `5 — Invariant Formalization`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_4_IMPLEMENTED`  
+> **Status:** `LOT_5_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -56,14 +56,21 @@ NEXT: OWNER REVIEW AND EXPLICIT NEXT-INCREMENT ACTIVATION
 ```
 
 
-## Lot 4 normative state-machine artefacts
+## Lot 5 invariant enforcement strategy
 
-```text
-PAYMENT_NORMATIVE_STATE_MACHINE.md
-PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
-PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
-PAYMENT_STATE_MACHINE.yaml
-```
+The 76 frozen invariants are now formalized end-to-end. Each invariant states:
 
-The Lot 4 documentation formalizes the existing 17-state and 38-transition
-implementation. It introduces no new state or Java behavior.
+- when it is checked;
+- which component supplies the proof;
+- which Aggregate Root operation applies it;
+- the stable error code;
+- the tests;
+- the audit impact;
+- the persistence or integration constraint;
+- the split between aggregate, application, persistence, idempotency store,
+  banking integration and Accounting.
+
+The Aggregate Root remains responsible only for internal consistency and
+transitions. Global uniqueness, distributed idempotence and transactional
+state/audit/Outbox guarantees remain explicit responsibilities of future
+vertical layers.

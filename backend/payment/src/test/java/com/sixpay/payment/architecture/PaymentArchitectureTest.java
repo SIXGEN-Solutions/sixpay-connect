@@ -213,7 +213,7 @@ class PaymentArchitectureTest {
     }
 
     @Test
-    void lot4NormativeStateMachineIsActiveAndGlobalGenerationIsFalse()
+    void lot5NormativeStateMachineIsActiveAndGlobalGenerationIsFalse()
             throws IOException {
         String manifest = Files.readString(
                 REPOSITORY_ROOT.resolve(
@@ -226,7 +226,7 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_4_NORMATIVE_STATE_MACHINE"
+                        "currentIncrement: LOT_5_INVARIANT_FORMALIZATION"
                 )
         );
         assertTrue(
@@ -241,11 +241,11 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 manifest.contains(
-                        "PERSISTENCE_OR_MIGRATION_GENERATION"
+                        "PERSISTENCE_AND_INTEGRATION_CONSTRAINT_DOCUMENTATION"
                 )
         );
         assertTrue(
-                manifest.contains("OUTBOX_OR_INTEGRATION_EVENT_GENERATION")
+                manifest.contains("OUTBOX_OR_MESSAGING_GENERATION")
         );
     }
 

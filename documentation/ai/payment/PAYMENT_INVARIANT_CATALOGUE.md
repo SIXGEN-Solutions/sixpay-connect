@@ -1,9 +1,9 @@
 # SIXPAY CONNECT — Payment Invariant Catalogue
 
 > **Gate:** `IA-1 — PAYMENT DOMAIN BRIEF`  
-> **Current lot:** `2.8 — Final Model Validation`  
+> **Current lot:** `5 — Invariant Formalization`  
 > **Authoritative branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `FINAL_VALIDATED`  
+> **Status:** `NORMATIVE_IMPLEMENTED`  
 > **Code generation:** **FORBIDDEN_PENDING_EXPLICIT_APPROVAL**
 
 ## 1. Purpose
@@ -366,3 +366,29 @@ Normative validation evidence:
 - `PAYMENT_MODEL_VALIDATION_REPORT.md`
 - `PAYMENT_MODEL_VALIDATION.yaml`
 - `PAYMENT_ACCEPTANCE_SCENARIOS.md`
+
+
+## Lot 5 enforcement formalization
+
+Every one of the 76 invariants now has a complete enforcement strategy in:
+
+```text
+PAYMENT_INVARIANT_FORMALIZATION.md
+PAYMENT_INVARIANT_RESPONSIBILITY_MATRIX.md
+PAYMENT_INVARIANT_CATALOGUE.yaml
+```
+
+The machine-readable catalogue adds:
+
+```text
+checkMoment
+proofProvider
+aggregateMethods
+stableErrorCode
+testRefs
+auditImpact
+persistenceOrIntegrationConstraint
+responsibilitySplit
+```
+
+No invariant identifier or business statement is renumbered or replaced.
