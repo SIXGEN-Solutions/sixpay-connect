@@ -266,6 +266,7 @@ readiness:
   auditRecordSchemaComplete: true
   outboxContractComplete: true
   domainToIntegrationMappingPolicyComplete: true
+  stableArchitectureAndManifestValidationImplemented: true
 implementationAuthorization:
   id: PAY-AUTH-IA1-001
   status: ACTIVE
@@ -295,6 +296,9 @@ implementationAuthorization:
   - documentation/ai/payment/PAYMENT_OUTBOX_CONTRACT.yaml
   - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
   - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+  - backend/payment/pom.xml
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentManifestValidationTest.java
   allowedChangeKinds:
   - EVENT_PUBLICATION_FORMALIZATION
   - IMMUTABLE_AUDIT_SCHEMA_DOCUMENTATION
@@ -303,6 +307,10 @@ implementationAuthorization:
   - EVENT_VERSION_ORDER_AND_DEDUPLICATION_RULES
   - KAFKA_POST_COMMIT_FAILURE_POLICY
   - MANIFEST_BRIEF_AND_TRACEABILITY_SYNCHRONIZATION
+  - STABLE_ARCHITECTURE_TEST_CORRECTION
+  - GENERIC_MANIFEST_VALIDATION_TEST
+  - MANIFEST_CONTRADICTION_CORRECTION
+  - TEST_DEPENDENCY_UPDATE
   forbiddenChangeKinds:
   - DOMAIN_EVENT_DUPLICATION_OR_RENAMING
   - DOMAIN_BEHAVIOR_CHANGE
@@ -333,20 +341,20 @@ implementationAuthorization:
     - com.sixpay.common.context.CorrelationId
     - com.sixpay.sharedkernel.domain.valueobject.Money
     - com.sixpay.sharedkernel.domain.valueobject.ValueObject
-    snapshotsDeferred: true
-    aggregateRootDeferred: true
+    snapshotsDeferred: false
+    aggregateRootDeferred: false
     implementedSnapshotCount: 7
     snapshotSupportPackage: com.sixpay.payment.domain.model.evidence
-    policiesDeferred: true
-    domainEventsDeferred: true
+    policiesDeferred: false
+    domainEventsDeferred: false
     systemClockAccessAllowed: false
     ioAllowed: false
     implementedPolicyCount: 14
     implementedPolicyProfileCount: 12
     implementedDomainServiceCount: 4
     decisionResultOnly: true
-    aggregateMutationAllowed: false
-    eventRegistrationAllowed: false
+    aggregateMutationAllowed: true
+    eventRegistrationAllowed: true
     repositoryAccessAllowed: false
     externalClientAccessAllowed: false
     aggregateRootImplemented: true
@@ -447,3 +455,9 @@ implementationDecisions:
   decision: PAYMENT_DOMAIN_EXCEPTION_RESIDES_IN_THE_CANONICAL_DOMAIN_EXCEPTION_PACKAGE
 - id: PAY-DEC-IA1-098
   decision: SEVENTEEN_STATES_SEVENTEEN_OPERATIONS_THIRTY_EIGHT_TRANSITIONS_SEVENTY_SIX_INVARIANTS_AND_THIRTY_THREE_EVENTS_ARE_MACHINE_TRACEABLE
+- id: PAY-DEC-IA1-113
+  decision: ARCHITECTURE_TESTS_VALIDATE_STABLE_CODE_BOUNDARIES_WITHOUT_HARD_CODING_THE_ACTIVE_INCREMENT
+- id: PAY-DEC-IA1-114
+  decision: MANIFEST_TESTS_PARSE_YAML_AND_VALIDATE_GENERIC_AUTHORIZATION_COUNTS_READINESS_AND_FREEZE
+- id: PAY-DEC-IA1-115
+  decision: IMPLEMENTED_DOMAIN_CAPABILITIES_ARE_NOT_MARKED_DEFERRED

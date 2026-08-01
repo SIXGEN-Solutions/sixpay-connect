@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `6 — Events, Audit and Outbox`  
+> **Current lot:** `7 — Conceptual Persistence and Concurrency`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_6_IMPLEMENTED`  
+> **Status:** `LOT_7_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
@@ -92,3 +92,25 @@ Payment state and businessVersion
 
 Publication after commit is at-least-once. Republishing preserves event
 identity and payload; consumer deduplication uses `eventId`.
+
+
+## Lot 7 conceptual persistence and concurrency
+
+The Payment brief now defines persistence capabilities without fixing physical
+table names or generating JPA/migrations.
+
+Mandatory capabilities include:
+
+```text
+aggregate state and optimistic version
+external/public reference uniqueness
+current safe failure and optional failure history
+immutable audit
+request idempotency
+transactional Outbox
+profile-dependent authorization replay protection
+authoritative posting/reversal lookup correlation
+```
+
+All eight required concurrency and duplicate-delivery scenarios have a
+deterministic arbitration and stable outcome.

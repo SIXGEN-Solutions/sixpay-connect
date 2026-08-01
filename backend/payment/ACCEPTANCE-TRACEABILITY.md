@@ -1,19 +1,21 @@
-# Traçabilité d’acceptation — Payment Lot 6
+# Traçabilité d’acceptation — Payment Lot 7
 
 | ID | Critère | Preuve |
 | --- | --- | --- |
-| `PAY-L6-ACC-001` | 33 Domain Events conservés sans duplication | `PAYMENT_EVENT_CATALOG.yaml` |
-| `PAY-L6-ACC-002` | payload minimal et classification pour chaque événement | catalogue événementiel et matrice de publication |
-| `PAY-L6-ACC-003` | denylist globale et interdictions spécifiques | `sensitiveDataDenylist` et `sensitiveDataForbidden` |
-| `PAY-L6-ACC-004` | version Payment présente dans chaque événement | `aggregateVersion` obligatoire |
-| `PAY-L6-ACC-005` | ordre déterministe | `aggregateVersion,eventSequence` |
-| `PAY-L6-ACC-006` | déduplication | `eventId` |
-| `PAY-L6-ACC-007` | audit append-only par Domain Event | `PAYMENT_AUDIT_RECORD_SCHEMA.yaml` |
-| `PAY-L6-ACC-008` | Payment + audit + Outbox atomiques | `transactionBoundary` |
-| `PAY-L6-ACC-009` | Domain Event distinct de Integration Event | `domainToIntegrationEventPolicy` |
-| `PAY-L6-ACC-010` | publication directe Kafka interdite | `aggregateDirectKafkaCallAllowed: false` |
-| `PAY-L6-ACC-011` | échec Kafka après commit sans rollback Payment | `publisherFailureAfterCommit` |
-| `PAY-L6-ACC-012` | republication avec identité inchangée | `republishRule` |
-| `PAY-L6-ACC-013` | consommateurs idempotents | `consumerGuarantee` |
-| `PAY-L6-ACC-014` | chaque événement publiable est reproductible | `lot6Publication.reproducibleFrom` |
-| `PAY-L6-ACC-015` | aucun comportement Java modifié | périmètre documentaire du manifeste |
+| `PAY-L7-ACC-001` | capacités définies sans imposer les tables physiques | `PAYMENT_CONCEPTUAL_PERSISTENCE.yaml` |
+| `PAY-L7-ACC-002` | unicité référence TRESOR PAY | `PAY-PERS-001`, `PAY-IDX-002` |
+| `PAY-L7-ACC-003` | unicité référence publique SIXPAY | `PAY-PERS-001`, `PAY-IDX-003` |
+| `PAY-L7-ACC-004` | optimistic locking par `businessVersion` | brief section 7 |
+| `PAY-L7-ACC-005` | atomicité Payment/audit/Outbox | `PAY-PERS-004`, `PAY-PERS-006` |
+| `PAY-L7-ACC-006` | neuf besoins d’index documentés | `queryIndexes` |
+| `PAY-L7-ACC-007` | références de compte protégées | `protectedData` |
+| `PAY-L7-ACC-008` | aucun token ou credential brut | `rawTokensAllowed: false` |
+| `PAY-L7-ACC-009` | conservation et immutabilité audit | `PAY-PERS-004`, `retention.audit` |
+| `PAY-L7-ACC-010` | résolution durable des outcomes inconnus | `PAY-PERS-008` |
+| `PAY-L7-ACC-011` | 8 scénarios de concurrence déterministes | `concurrencyScenarios` |
+| `PAY-L7-ACC-012` | même clé/même payload : une mutation | `PAY-CONC-001` |
+| `PAY-L7-ACC-013` | même référence/payload différent : conflit | `PAY-CONC-003` |
+| `PAY-L7-ACC-014` | callbacks dupliqués : no-op ou conflit | `PAY-CONC-004`, `PAY-CONC-007` |
+| `PAY-L7-ACC-015` | TFJ précoce durablement différé | `PAY-CONC-005` |
+| `PAY-L7-ACC-016` | transition concurrente : reload et réévaluation | `PAY-CONC-008` |
+| `PAY-L7-ACC-017` | aucune JPA entity ou migration générée | manifeste Lot 7 |
