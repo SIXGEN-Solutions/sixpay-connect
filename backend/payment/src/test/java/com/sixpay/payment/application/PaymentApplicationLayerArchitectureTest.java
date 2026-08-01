@@ -1,0 +1,173 @@
+package com.sixpay.payment.application;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PaymentApplicationLayerArchitectureTest {
+
+    private static final Path APPLICATION_ROOT =
+            Path.of(
+                    "src/main/java/com/sixpay/payment/application"
+            );
+
+    @Test
+    void expectedApplicationPackagesExist() {
+        Set<String> expected = Set.of(
+                "command",
+                "query",
+                "view",
+                "port"
+        );
+
+        for (String packageName : expected) {
+            assertTrue(
+                    Files.isDirectory(
+                            APPLICATION_ROOT.resolve(packageName)
+                    ),
+                    () -> "Missing application package: "
+                            + packageName
+            );
+        }
+    }
+
+    @Test
+    void applicationLayerContainsNoControllerOrInfrastructureDependency()
+            throws IOException {
+        List<String> forbidden = List.of(
+                "@RestController",
+                "@Controller",
+                "jakarta.persistence",
+                "org.hibernate",
+                "com.sixpay.payment.infrastructure",
+                "KafkaTemplate",
+                "RestClient",
+                "WebClient"
+        );
+
+        try (Stream<Path> paths = Files.walk(APPLICATION_ROOT)) {
+            List<String> violations = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path -> {
+                        try {
+                            String source = Files.readString(path);
+                            return forbidden.stream()
+                                    .filter(source::contains)
+                                    .map(token ->
+                                            path + " contains " + token
+                                    );
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .toList();
+
+            assertEquals(List.of(), violations);
+        }
+    }
+
+    @Test
+    void commandsAndQueriesAreImmutableRecords()
+            throws IOException {
+        for (String packageName : List.of("command", "query")) {
+            Path root = APPLICATION_ROOT.resolve(packageName);
+
+            try (Stream<Path> paths = Files.list(root)) {
+                List<Path> violations = paths
+                        .filter(Files::isRegularFile)
+                        .filter(path ->
+                                path.toString().endsWith(".java")
+                        )
+                        .filter(path ->
+                                !path.getFileName()
+                                        .toString()
+                                        .equals("package-info.java")
+                        )
+                        .filter(path -> {
+                            try {
+                                return !Files.readString(path)
+                                        .contains(" record ");
+                            } catch (IOException exception) {
+                                throw new IllegalStateException(
+                                        exception
+                                );
+                            }
+                        })
+                        .toList();
+
+                assertEquals(
+                        List.of(),
+                        violations,
+                        packageName
+                                + " types must be immutable records"
+                );
+            }
+        }
+    }
+
+    @Test
+    void noControllerExistsInApplicationLayer()
+            throws IOException {
+        try (Stream<Path> paths = Files.walk(APPLICATION_ROOT)) {
+            List<Path> controllers = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path ->
+                            path.getFileName()
+                                    .toString()
+                                    .endsWith("Controller.java")
+                    )
+                    .toList();
+
+            assertTrue(controllers.isEmpty());
+        }
+    }
+
+    @Test
+    void outboundPortsDoNotInventBankingContracts()
+            throws IOException {
+        Path out = APPLICATION_ROOT.resolve("port/out");
+
+        try (Stream<Path> paths = Files.list(out)) {
+            List<String> actual = paths
+                    .filter(Files::isRegularFile)
+                    .map(path ->
+                            path.getFileName().toString()
+                    )
+                    .sorted()
+                    .toList();
+
+            assertEquals(
+                    List.of(
+                            "PaymentAtomicPersistencePort.java",
+                            "PaymentLookupPort.java",
+                            "package-info.java"
+                    ),
+                    actual
+            );
+        }
+    }
+
+    @Test
+    void applicationPackageDocumentationNoLongerClaimsSpringAssembly()
+            throws IOException {
+        String source = Files.readString(
+                APPLICATION_ROOT.resolve("package-info.java")
+        );
+
+        assertFalse(
+                source.contains("Spring assembly boundary")
+        );
+    }
+}

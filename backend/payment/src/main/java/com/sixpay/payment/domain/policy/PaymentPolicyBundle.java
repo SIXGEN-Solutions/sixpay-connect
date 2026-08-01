@@ -1,6 +1,4 @@
-package com.sixpay.payment.domain.service;
-
-import com.sixpay.payment.domain.policy.*;
+package com.sixpay.payment.domain.policy;
 
 import java.util.Objects;
 

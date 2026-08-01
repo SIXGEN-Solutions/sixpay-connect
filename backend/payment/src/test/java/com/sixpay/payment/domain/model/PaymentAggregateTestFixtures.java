@@ -3,7 +3,7 @@ package com.sixpay.payment.domain.model;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.*;
-import com.sixpay.payment.domain.service.PaymentPolicyBundle;
+import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 
 import java.math.BigDecimal;

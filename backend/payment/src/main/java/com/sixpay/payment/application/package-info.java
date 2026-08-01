@@ -1,8 +1,9 @@
 /**
- * Spring assembly boundary of the Payment module.
+ * Technology-neutral Payment application layer.
  *
- * <p>This package will wire application ports to infrastructure adapters and
- * expose approved module configuration. It must not contain Payment business
- * rules or bank-specific defaults that have not been contractually approved.</p>
+ * <p>This layer defines commands, queries, views and use-case ports. It
+ * coordinates the Payment domain through implementations introduced in the
+ * orchestration lot, but contains no HTTP controller, JPA mapping, broker
+ * client or bank-specific adapter.</p>
  */
 package com.sixpay.payment.application;

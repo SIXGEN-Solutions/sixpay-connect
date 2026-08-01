@@ -54,7 +54,7 @@ class PaymentPersistenceMigrationIT {
             while (columns.next()) {
                 count++;
             }
-            
+
             assertTrue(count >= 15);
         }
 

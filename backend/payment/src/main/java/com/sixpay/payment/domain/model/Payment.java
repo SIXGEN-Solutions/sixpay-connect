@@ -5,7 +5,6 @@ import com.sixpay.payment.domain.exception.PaymentDomainException;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.*;
 import com.sixpay.payment.domain.service.*;
-import com.sixpay.sharedkernel.domain.valueobject.Money;
 
 import java.time.Instant;
 import java.time.LocalDate;
