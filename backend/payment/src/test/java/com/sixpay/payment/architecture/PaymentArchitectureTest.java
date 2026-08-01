@@ -83,8 +83,8 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 Files.isRegularFile(
-                        MODEL_ROOT.resolve(
-                                "PaymentDomainException.java"
+                        DOMAIN_ROOT.resolve(
+                                "exception/PaymentDomainException.java"
                         )
                 )
         );
@@ -196,7 +196,7 @@ class PaymentArchitectureTest {
         )) {
             assertFalse(
                     containsJavaSources(JAVA_ROOT.resolve(layer)),
-                    "Lot 3.5 forbids layer " + layer
+                    "Domain-kernel validation forbids layer " + layer
             );
         }
 
@@ -213,7 +213,7 @@ class PaymentArchitectureTest {
     }
 
     @Test
-    void lot35AuthorizationIsActiveAndGlobalGenerationIsFalse()
+    void lot310FinalValidationIsActiveAndGlobalGenerationIsFalse()
             throws IOException {
         String manifest = Files.readString(
                 REPOSITORY_ROOT.resolve(
@@ -226,7 +226,7 @@ class PaymentArchitectureTest {
         );
         assertTrue(
                 manifest.contains(
-                        "currentIncrement: LOT_3_5_AGGREGATE_ROOT_DOMAIN_EVENTS"
+                        "currentIncrement: LOT_3_10_FINAL_DOMAIN_KERNEL_VALIDATION"
                 )
         );
         assertTrue(

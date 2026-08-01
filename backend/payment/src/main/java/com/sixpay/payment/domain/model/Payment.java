@@ -1,6 +1,7 @@
 package com.sixpay.payment.domain.model;
 
 import com.sixpay.payment.domain.event.*;
+import com.sixpay.payment.domain.exception.PaymentDomainException;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.*;
 import com.sixpay.payment.domain.service.*;

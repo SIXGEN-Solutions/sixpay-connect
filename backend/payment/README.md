@@ -3,7 +3,7 @@
 ## Current increment
 
 ```text
-Lot 3.5 — Aggregate Root Payment and Domain Events
+Lot 3.10 — Final Domain Kernel Validation
 Scope: PAYMENT_DOMAIN_ONLY
 Global generation: FORBIDDEN
 ```
@@ -77,3 +77,9 @@ From `backend/`:
 mvn --batch-mode --no-transfer-progress -pl payment -am test
 mvn --batch-mode --no-transfer-progress clean verify
 ```
+
+## Lot 3.10 validation
+
+The existing domain behavior is not duplicated. The final gate verifies the
+17/17/38/76/33/14/4 counts, terminal-state protection, PAY-* traceability and
+the canonical `domain.exception` package.

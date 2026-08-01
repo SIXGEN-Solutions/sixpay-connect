@@ -1,8 +1,8 @@
 # SIXPAY CONNECT — Payment Domain Generation Brief
 
-> **Current lot:** `3.5 — Aggregate Root Payment and Domain Events`  
+> **Current lot:** `3.10 — Final Domain Kernel Validation`  
 > **Branch:** `feat/payment-domain-generation-brief`  
-> **Status:** `LOT_3_5_IMPLEMENTED`  
+> **Status:** `LOT_3_10_IMPLEMENTED`  
 > **Global code generation:** **FORBIDDEN**  
 > **Current increment:** **AUTHORIZED_AND_COMPLETED**
 
