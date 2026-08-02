@@ -1,10 +1,10 @@
 package com.sixpay.bootstrap.configuration;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +26,8 @@ import org.springframework.context.annotation.Configuration;
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
         bearerFormat = "JWT",
-        description = "OAuth2 access token issued for SIXPAY CONNECT"
+        description =
+                "OAuth2 access token issued for SIXPAY CONNECT"
 )
 public class OpenApiConfiguration {
 
@@ -35,7 +36,21 @@ public class OpenApiConfiguration {
         return GroupedOpenApi.builder()
                 .group("partner")
                 .displayName("Partner API")
-                .pathsToMatch("/api/v1/partners/**")
+                .pathsToMatch(
+                        "/api/v1/partners/**"
+                )
+                .build();
+    }
+
+    @Bean
+    GroupedOpenApi paymentOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("payment")
+                .displayName("Payment API")
+                .pathsToMatch(
+                        "/internal/api/v1/payments",
+                        "/internal/api/v1/payments/**"
+                )
                 .build();
     }
 }
