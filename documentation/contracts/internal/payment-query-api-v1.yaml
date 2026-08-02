@@ -276,20 +276,21 @@ components:
       enum:
         - RECEIVED
         - AUTHORIZATION_CHECKING
-        - BANKING_CHECKING
-        - REJECTED
-        - APPROVED
-        - POSTING
-        - ACCOUNTING_OUTCOME_UNKNOWN
-        - DEBITED
-        - CUT_CREDITED
+        - BANKING_VERIFICATION_PENDING
+        - FUNDS_CONTROL_PENDING
+        - TREASURY_ACCOUNT_RESOLUTION_PENDING
+        - APPROVED_FOR_POSTING
+        - POSTING_PENDING
+        - POSTING_OUTCOME_UNKNOWN
+        - DEBIT_CONFIRMED
+        - POSTED_PENDING_TFJ
         - REVERSAL_REQUIRED
         - REVERSAL_PENDING
-        - REVERSED
+        - REVERSAL_OUTCOME_UNKNOWN
+        - REJECTED
         - FAILED
-        - NOTIFIED
-        - PENDING_END_OF_DAY_CONFIRMATION
         - TREASURY_INTEGRATED
+        - REVERSED
     Money:
       type: object
       additionalProperties: false
