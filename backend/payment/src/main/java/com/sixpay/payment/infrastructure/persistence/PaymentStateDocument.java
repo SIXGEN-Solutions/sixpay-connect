@@ -89,7 +89,7 @@ record PaymentStateDocument(
         );
     }
 
-    PaymentState toState() {
+    private void validateSchemaCompatibility() {
         if (schemaVersion < 1
                 || schemaVersion > CURRENT_SCHEMA_VERSION) {
             throw new PaymentPersistenceException(
@@ -97,6 +97,39 @@ record PaymentStateDocument(
                             + schemaVersion
             );
         }
+
+        if (schemaVersion == 1
+                && (initiationContext != null
+                || customerConfirmationEvidence != null)) {
+            throw new PaymentPersistenceException(
+                    "Legacy Payment state payload must not contain "
+                            + "initiation context or confirmation evidence"
+            );
+        }
+
+        if (schemaVersion == CURRENT_SCHEMA_VERSION
+                && status == PaymentStatus.PENDING_CONFIRMATION
+                && initiationContext == null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version 2 requires "
+                            + "initiation context for PENDING_CONFIRMATION"
+            );
+        }
+
+        if (schemaVersion == CURRENT_SCHEMA_VERSION
+                && initiationContext != null
+                && status != PaymentStatus.RECEIVED
+                && status != PaymentStatus.PENDING_CONFIRMATION
+                && customerConfirmationEvidence == null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version 2 requires "
+                            + "confirmation evidence after confirmation"
+            );
+        }
+    }
+
+    PaymentState toState() {
+        validateSchemaCompatibility();
 
         return PaymentState.builder()
                 .paymentId(paymentId)

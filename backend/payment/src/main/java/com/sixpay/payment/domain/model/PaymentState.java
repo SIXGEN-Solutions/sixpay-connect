@@ -224,7 +224,68 @@ public final class PaymentState implements ValueObject {
             }
         }
 
+        validateInitiationAndConfirmationCoherence();
         validateLifecycleCoherence();
+    }
+
+    private void validateInitiationAndConfirmationCoherence() {
+        if (status == PaymentStatus.PENDING_CONFIRMATION
+                && initiationContext == null) {
+            throw new IllegalArgumentException(
+                    "PENDING_CONFIRMATION requires initiation context"
+            );
+        }
+
+        if (customerConfirmationEvidence != null
+                && initiationContext == null) {
+            throw new IllegalArgumentException(
+                    "Customer confirmation evidence requires initiation context"
+            );
+        }
+
+        if (customerConfirmationEvidence != null) {
+            Instant confirmedAt =
+                    customerConfirmationEvidence.confirmedAt();
+
+            if (confirmedAt.isBefore(receivedAt)) {
+                throw new IllegalArgumentException(
+                        "Customer confirmation evidence must not precede receipt"
+                );
+            }
+            if (confirmedAt.isAfter(updatedAt)) {
+                throw new IllegalArgumentException(
+                        "Customer confirmation evidence must not follow updatedAt"
+                );
+            }
+        }
+
+        if (status == PaymentStatus.RECEIVED
+                && customerConfirmationEvidence != null) {
+            throw new IllegalArgumentException(
+                    "RECEIVED must not contain customer confirmation evidence"
+            );
+        }
+
+        if (status == PaymentStatus.PENDING_CONFIRMATION
+                && customerConfirmationEvidence != null) {
+            throw new IllegalArgumentException(
+                    "PENDING_CONFIRMATION must not contain accepted confirmation evidence"
+            );
+        }
+
+        /*
+         * A state without initiationContext is a legacy pre-command-API state.
+         * Once the new context exists, every state after confirmation must
+         * retain the accepted bank evidence.
+         */
+        if (initiationContext != null
+                && status != PaymentStatus.RECEIVED
+                && status != PaymentStatus.PENDING_CONFIRMATION
+                && customerConfirmationEvidence == null) {
+            throw new IllegalArgumentException(
+                    "Confirmed initiated Payment requires customer confirmation evidence"
+            );
+        }
     }
 
     private void validateLifecycleCoherence() {

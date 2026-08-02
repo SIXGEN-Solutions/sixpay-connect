@@ -6,7 +6,11 @@ import com.sixpay.payment.domain.event.PaymentCustomerConfirmationRecorded;
 import com.sixpay.payment.domain.event.PaymentCustomerConfirmationRequested;
 import com.sixpay.payment.domain.event.PaymentReceived;
 import com.sixpay.payment.domain.exception.PaymentDomainException;
+import com.sixpay.payment.domain.model.evidence.CustomerConfirmationEvidence;
+import com.sixpay.payment.domain.model.evidence.CustomerConfirmationReference;
 import com.sixpay.payment.domain.model.evidence.EvidenceFingerprint;
+import com.sixpay.payment.domain.model.evidence.EvidenceMetadata;
+import com.sixpay.payment.domain.model.evidence.EvidenceObservationChannel;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -23,6 +27,17 @@ class PaymentPendingConfirmationLifecycleTest {
 
     private static final Instant RECEIVED_AT =
             Instant.parse("2026-08-02T18:00:00Z");
+
+    private static final CorrelationId CORRELATION_ID =
+            CorrelationId.of(
+                    "11111111-1111-1111-1111-111111111111"
+            );
+
+    private static final EvidenceFingerprint
+            CONFIRMATION_FINGERPRINT =
+            EvidenceFingerprint.of(
+                    "v1:sha256:" + "a".repeat(64)
+            );
 
     @Test
     void movesFromReceivedToPendingConfirmation() {
@@ -49,6 +64,16 @@ class PaymentPendingConfirmationLifecycleTest {
                         PaymentCustomerConfirmationRequested.class
                                 .getName()
                 );
+
+        assertThat(
+                payment.toState()
+                        .initiationContext()
+        ).isPresent();
+
+        assertThat(
+                payment.toState()
+                        .customerConfirmationEvidence()
+        ).isEmpty();
     }
 
     @Test
@@ -90,8 +115,13 @@ class PaymentPendingConfirmationLifecycleTest {
                 RECEIVED_AT
         );
 
+        CustomerConfirmationEvidence evidence =
+                confirmationEvidence(
+                        RECEIVED_AT.plusSeconds(30)
+                );
+
         payment.recordCustomerConfirmation(
-                RECEIVED_AT.plusSeconds(30)
+                evidence
         );
 
         assertThat(payment.status())
@@ -115,6 +145,11 @@ class PaymentPendingConfirmationLifecycleTest {
                         PaymentAuthorizationCheckingStarted.class
                                 .getName()
                 );
+
+        assertThat(
+                payment.toState()
+                        .customerConfirmationEvidence()
+        ).contains(evidence);
     }
 
     @Test
@@ -125,12 +160,17 @@ class PaymentPendingConfirmationLifecycleTest {
                 RECEIVED_AT
         );
 
+        CustomerConfirmationEvidence evidence =
+                confirmationEvidence(
+                        RECEIVED_AT.plusSeconds(30)
+                );
+
         payment.recordCustomerConfirmation(
-                RECEIVED_AT.plusSeconds(30)
+                evidence
         );
 
         payment.recordCustomerConfirmation(
-                RECEIVED_AT.plusSeconds(31)
+                evidence
         );
 
         assertThat(payment.status())
@@ -154,15 +194,86 @@ class PaymentPendingConfirmationLifecycleTest {
                         PaymentAuthorizationCheckingStarted.class
                                 .getName()
                 );
+
+        assertThat(
+                payment.toState()
+                        .customerConfirmationEvidence()
+        ).contains(evidence);
+    }
+
+    @Test
+    void conflictingConfirmationEvidenceIsRejected() {
+        Payment payment = newPayment();
+
+        payment.requestCustomerConfirmation(
+                RECEIVED_AT
+        );
+
+        CustomerConfirmationEvidence originalEvidence =
+                confirmationEvidence(
+                        RECEIVED_AT.plusSeconds(30)
+                );
+
+        payment.recordCustomerConfirmation(
+                originalEvidence
+        );
+
+        EvidenceFingerprint conflictingFingerprint =
+                EvidenceFingerprint.of(
+                        "v1:sha256:" + "b".repeat(64)
+                );
+
+        CustomerConfirmationEvidence conflictingEvidence =
+                new CustomerConfirmationEvidence(
+                        CustomerConfirmationReference.of(
+                                "AMP-CONF-000002"
+                        ),
+                        conflictingFingerprint,
+                        RECEIVED_AT.plusSeconds(31),
+                        new EvidenceMetadata(
+                                ExternalSystem.AMPLITUDE,
+                                CORRELATION_ID,
+                                EvidenceObservationChannel
+                                        .DIRECT_RESPONSE,
+                                conflictingFingerprint,
+                                RECEIVED_AT.plusSeconds(31),
+                                RECEIVED_AT.plusSeconds(31)
+                        )
+                );
+
+        assertThatThrownBy(() ->
+                payment.recordCustomerConfirmation(
+                        conflictingEvidence
+                )
+        )
+                .isInstanceOf(
+                        PaymentDomainException.class
+                )
+                .hasMessageContaining(
+                        "Conflicting customer confirmation evidence"
+                );
+
+        assertThat(payment.businessVersion())
+                .isEqualTo(3L);
+
+        assertThat(
+                payment.toState()
+                        .customerConfirmationEvidence()
+        ).contains(originalEvidence);
     }
 
     @Test
     void confirmationCannotBypassPendingConfirmation() {
         Payment payment = newPayment();
 
+        CustomerConfirmationEvidence evidence =
+                confirmationEvidence(
+                        RECEIVED_AT.plusSeconds(1)
+                );
+
         assertThatThrownBy(() ->
                 payment.recordCustomerConfirmation(
-                        RECEIVED_AT.plusSeconds(1)
+                        evidence
                 )
         )
                 .isInstanceOf(
@@ -176,7 +287,9 @@ class PaymentPendingConfirmationLifecycleTest {
                 );
 
         assertThat(payment.status())
-                .isEqualTo(PaymentStatus.RECEIVED);
+                .isEqualTo(
+                        PaymentStatus.RECEIVED
+                );
 
         assertThat(payment.businessVersion())
                 .isEqualTo(1L);
@@ -188,6 +301,11 @@ class PaymentPendingConfirmationLifecycleTest {
                 .containsExactly(
                         PaymentReceived.class.getName()
                 );
+
+        assertThat(
+                payment.toState()
+                        .customerConfirmationEvidence()
+        ).isEmpty();
     }
 
     private Payment newPayment() {
@@ -211,7 +329,8 @@ class PaymentPendingConfirmationLifecycleTest {
                         ExternalPaymentReference.class
                 );
 
-        ExternalSubscriptionReference subscriptionReference =
+        ExternalSubscriptionReference
+                subscriptionReference =
                 Mockito.mock(
                         ExternalSubscriptionReference.class
                 );
@@ -236,15 +355,18 @@ class PaymentPendingConfirmationLifecycleTest {
                         TreasuryAllocationIntent.class
                 );
 
-        EvidenceFingerprint fingerprint =
-                Mockito.mock(
-                        EvidenceFingerprint.class
+        EvidenceFingerprint allocationFingerprint =
+                EvidenceFingerprint.of(
+                        "v1:sha256:" + "c".repeat(64)
                 );
 
         Money amount = Money.of(
                 new BigDecimal("600000"),
                 "XAF"
         );
+
+        PaymentInitiationContext initiationContext =
+                initiationContext();
 
         when(intent.source())
                 .thenReturn(
@@ -268,10 +390,7 @@ class PaymentPendingConfirmationLifecycleTest {
 
         when(requestIdentity.correlationId())
                 .thenReturn(
-                        CorrelationId.of(
-                                UUID.randomUUID()
-                                        .toString()
-                        )
+                        CORRELATION_ID
                 );
 
         when(intent.financialInstitutionCode())
@@ -311,14 +430,64 @@ class PaymentPendingConfirmationLifecycleTest {
 
         when(intent.allocationIntentFingerprint())
                 .thenReturn(
-                        fingerprint
+                        allocationFingerprint
+                );
+
+        when(intent.initiationContext())
+                .thenReturn(
+                        initiationContext
                 );
 
         return Payment.receive(
                 paymentId,
                 publicReference,
                 intent,
+                initiationContext,
                 RECEIVED_AT
+        );
+    }
+
+    private PaymentInitiationContext initiationContext() {
+        return new PaymentInitiationContext(
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                Instant.parse(
+                        "2026-08-03T10:30:00Z"
+                ),
+                CallbackEndpoint.of(
+                        "https://tresorpay.cm/"
+                                + "v1/callbacks/"
+                                + "payment-status"
+                )
+        );
+    }
+
+    private CustomerConfirmationEvidence
+    confirmationEvidence(
+            Instant confirmedAt
+    ) {
+
+        EvidenceMetadata metadata =
+                new EvidenceMetadata(
+                        ExternalSystem.AMPLITUDE,
+                        CORRELATION_ID,
+                        EvidenceObservationChannel
+                                .DIRECT_RESPONSE,
+                        CONFIRMATION_FINGERPRINT,
+                        confirmedAt,
+                        confirmedAt
+                );
+
+        return new CustomerConfirmationEvidence(
+                CustomerConfirmationReference.of(
+                        "AMP-CONF-000001"
+                ),
+                CONFIRMATION_FINGERPRINT,
+                confirmedAt,
+                metadata
         );
     }
 }
