@@ -38,6 +38,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentReconciliationService.java",
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
+                "SecuredPaymentProjectionQueryService.java",
                 "package-info.java"
         );
 
