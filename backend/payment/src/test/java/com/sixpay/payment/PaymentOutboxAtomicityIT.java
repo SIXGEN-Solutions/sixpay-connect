@@ -1,9 +1,7 @@
 package com.sixpay.payment;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.configuration.PaymentModuleConfiguration;
-import com.sixpay.security.authentication.AuthenticatedUser;
-import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.support.PaymentOutboxAtomicityTestConfiguration;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
 import com.sixpay.payment.domain.event.PaymentEventMetadata;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -13,10 +11,7 @@ import com.sixpay.payment.infrastructure.outbox.PaymentDomainEventMapper;
 import com.sixpay.payment.infrastructure.outbox.PaymentOutboxRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,7 +25,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -178,14 +172,10 @@ class PaymentOutboxAtomicityIT {
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration
-    @ImportAutoConfiguration(PaymentModuleConfiguration.class)
+    @org.springframework.context.annotation.Import(
+            PaymentOutboxAtomicityTestConfiguration.class
+    )
     static class TestApplication {
-
-        @Bean
-        CurrentUserProvider currentUserProvider() {
-            return () -> Optional.<AuthenticatedUser>empty();
-        }
     }
 
     private record TestPaymentEvent(

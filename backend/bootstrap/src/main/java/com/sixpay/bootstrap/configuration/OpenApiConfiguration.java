@@ -48,6 +48,8 @@ public class OpenApiConfiguration {
                 .group("payment")
                 .displayName("Payment API")
                 .pathsToMatch(
+                        "/v1/payments",
+                        "/v1/payments/**",
                         "/internal/api/v1/payments",
                         "/internal/api/v1/payments/**"
                 )

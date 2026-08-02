@@ -28,7 +28,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal/api/v1/payments")
-@Validated
 @Tag(
         name = "Payments",
         description = "Internal Payment query API"

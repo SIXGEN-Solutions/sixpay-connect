@@ -95,7 +95,7 @@ public record InitiateDebitCommand(
         );
         idempotencyKey = requireText(
                 idempotencyKey,
-                150,
+                128,
                 "Idempotency key"
         );
         correlationId = Objects.requireNonNull(

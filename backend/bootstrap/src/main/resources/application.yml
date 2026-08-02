@@ -23,6 +23,7 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
     clean-disabled: true
+    out-of-order: true
 
 springdoc:
   api-docs:
