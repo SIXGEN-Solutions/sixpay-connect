@@ -74,6 +74,22 @@ public final class Payment {
             NewPaymentIntent intent,
             Instant receivedAt
     ) {
+        return receive(
+                paymentId,
+                publicPaymentReference,
+                intent,
+                intent.initiationContext(),
+                receivedAt
+        );
+    }
+
+    public static Payment receive(
+            PaymentId paymentId,
+            PublicPaymentReference publicPaymentReference,
+            NewPaymentIntent intent,
+            PaymentInitiationContext initiationContext,
+            Instant receivedAt
+    ) {
         Objects.requireNonNull(paymentId, "Payment ID");
         Objects.requireNonNull(
                 publicPaymentReference,
@@ -106,6 +122,7 @@ public final class Payment {
                 .allocationIntentFingerprint(
                         intent.allocationIntentFingerprint()
                 )
+                .initiationContext(initiationContext)
                 .status(PaymentStatus.RECEIVED)
                 .businessVersion(1L)
                 .receivedAt(receivedAt)
@@ -166,6 +183,57 @@ public final class Payment {
                         new PaymentCustomerConfirmationRequested(
                                 batch.metadata(),
                                 requestedAt
+                        )
+                )
+        );
+    }
+
+    public void recordCustomerConfirmation(
+            CustomerConfirmationEvidence evidence
+    ) {
+        Objects.requireNonNull(
+                evidence,
+                "Customer confirmation evidence"
+        );
+
+        if (state.status()
+                == PaymentStatus.AUTHORIZATION_CHECKING) {
+            if (state.customerConfirmationEvidence()
+                    .filter(evidence::equals)
+                    .isPresent()) {
+                return;
+            }
+
+            throw PaymentDomainException.conflict(
+                    "Conflicting customer confirmation evidence"
+            );
+        }
+
+        requireStatus(
+                "recordCustomerConfirmation",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        Instant confirmedAt = evidence.confirmedAt();
+        PaymentState next = nextBuilder(
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                confirmedAt
+        )
+                .customerConfirmationEvidence(evidence)
+                .failure(null)
+                .build();
+
+        EventBatch batch = new EventBatch(next, confirmedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentCustomerConfirmationRecorded(
+                                batch.metadata(),
+                                confirmedAt
+                        ),
+                        new PaymentAuthorizationCheckingStarted(
+                                batch.metadata(),
+                                confirmedAt
                         )
                 )
         );

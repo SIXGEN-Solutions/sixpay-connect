@@ -28,6 +28,8 @@ public final class PaymentState implements ValueObject {
     private final Money requestedAmount;
     private final TreasuryAllocationIntent treasuryAllocationIntent;
     private final EvidenceFingerprint allocationIntentFingerprint;
+    private final PaymentInitiationContext initiationContext;
+    private final CustomerConfirmationEvidence customerConfirmationEvidence;
     private final PaymentStatus status;
     private final AuthorizationEvidenceSnapshot authorizationEvidence;
     private final BankingVerificationSnapshot bankingVerificationEvidence;
@@ -86,6 +88,9 @@ public final class PaymentState implements ValueObject {
                 builder.allocationIntentFingerprint,
                 "Allocation intent fingerprint"
         );
+        initiationContext = builder.initiationContext;
+        customerConfirmationEvidence =
+                builder.customerConfirmationEvidence;
         status = Objects.requireNonNull(builder.status, "Payment status");
         authorizationEvidence = builder.authorizationEvidence;
         bankingVerificationEvidence = builder.bankingVerificationEvidence;
@@ -224,8 +229,15 @@ public final class PaymentState implements ValueObject {
 
     private void validateLifecycleCoherence() {
         switch (status) {
-            case RECEIVED, PENDING_CONFIRMATION, AUTHORIZATION_CHECKING -> {
-                // No favorable downstream evidence is required yet.
+            case RECEIVED, PENDING_CONFIRMATION -> {
+                // Confirmation evidence is not required yet.
+            }
+            case AUTHORIZATION_CHECKING -> {
+                /*
+                 * Legacy reconstituted states may not yet contain evidence.
+                 * New command flows persist confirmation evidence before
+                 * entering AUTHORIZATION_CHECKING.
+                 */
             }
             case BANKING_VERIFICATION_PENDING -> requireAuthorizationApproved();
             case FUNDS_CONTROL_PENDING -> {
@@ -461,6 +473,15 @@ public final class PaymentState implements ValueObject {
         return allocationIntentFingerprint;
     }
 
+    public Optional<PaymentInitiationContext> initiationContext() {
+        return Optional.ofNullable(initiationContext);
+    }
+
+    public Optional<CustomerConfirmationEvidence>
+            customerConfirmationEvidence() {
+        return Optional.ofNullable(customerConfirmationEvidence);
+    }
+
     public PaymentStatus status() {
         return status;
     }
@@ -572,6 +593,14 @@ public final class PaymentState implements ValueObject {
                 && allocationIntentFingerprint.equals(
                         that.allocationIntentFingerprint
                 )
+                && Objects.equals(
+                        initiationContext,
+                        that.initiationContext
+                )
+                && Objects.equals(
+                        customerConfirmationEvidence,
+                        that.customerConfirmationEvidence
+                )
                 && status == that.status
                 && Objects.equals(
                         authorizationEvidence,
@@ -641,6 +670,8 @@ public final class PaymentState implements ValueObject {
                 requestedAmount,
                 treasuryAllocationIntent,
                 allocationIntentFingerprint,
+                initiationContext,
+                customerConfirmationEvidence,
                 status,
                 authorizationEvidence,
                 bankingVerificationEvidence,
@@ -686,6 +717,8 @@ public final class PaymentState implements ValueObject {
         private Money requestedAmount;
         private TreasuryAllocationIntent treasuryAllocationIntent;
         private EvidenceFingerprint allocationIntentFingerprint;
+        private PaymentInitiationContext initiationContext;
+        private CustomerConfirmationEvidence customerConfirmationEvidence;
         private PaymentStatus status;
         private AuthorizationEvidenceSnapshot authorizationEvidence;
         private BankingVerificationSnapshot bankingVerificationEvidence;
@@ -722,6 +755,9 @@ public final class PaymentState implements ValueObject {
             treasuryAllocationIntent = state.treasuryAllocationIntent;
             allocationIntentFingerprint =
                     state.allocationIntentFingerprint;
+            initiationContext = state.initiationContext;
+            customerConfirmationEvidence =
+                    state.customerConfirmationEvidence;
             status = state.status;
             authorizationEvidence = state.authorizationEvidence;
             bankingVerificationEvidence =
@@ -812,6 +848,20 @@ public final class PaymentState implements ValueObject {
                 EvidenceFingerprint value
         ) {
             allocationIntentFingerprint = value;
+            return this;
+        }
+
+        public Builder initiationContext(
+                PaymentInitiationContext value
+        ) {
+            initiationContext = value;
+            return this;
+        }
+
+        public Builder customerConfirmationEvidence(
+                CustomerConfirmationEvidence value
+        ) {
+            customerConfirmationEvidence = value;
             return this;
         }
 

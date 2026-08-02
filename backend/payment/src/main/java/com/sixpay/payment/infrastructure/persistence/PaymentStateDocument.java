@@ -28,6 +28,8 @@ record PaymentStateDocument(
         Money requestedAmount,
         TreasuryAllocationIntent treasuryAllocationIntent,
         EvidenceFingerprint allocationIntentFingerprint,
+        PaymentInitiationContext initiationContext,
+        CustomerConfirmationEvidence customerConfirmationEvidence,
         PaymentStatus status,
         AuthorizationEvidenceSnapshot authorizationEvidence,
         BankingVerificationSnapshot bankingVerificationEvidence,
@@ -48,7 +50,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 1;
+    static final int CURRENT_SCHEMA_VERSION = 2;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -64,6 +66,8 @@ record PaymentStateDocument(
                 state.requestedAmount(),
                 state.treasuryAllocationIntent(),
                 state.allocationIntentFingerprint(),
+                state.initiationContext().orElse(null),
+                state.customerConfirmationEvidence().orElse(null),
                 state.status(),
                 state.authorizationEvidence().orElse(null),
                 state.bankingVerificationEvidence().orElse(null),
@@ -86,7 +90,8 @@ record PaymentStateDocument(
     }
 
     PaymentState toState() {
-        if (schemaVersion != CURRENT_SCHEMA_VERSION) {
+        if (schemaVersion < 1
+                || schemaVersion > CURRENT_SCHEMA_VERSION) {
             throw new PaymentPersistenceException(
                     "Unsupported Payment state schema version: "
                             + schemaVersion
@@ -108,6 +113,10 @@ record PaymentStateDocument(
                 .treasuryAllocationIntent(treasuryAllocationIntent)
                 .allocationIntentFingerprint(
                         allocationIntentFingerprint
+                )
+                .initiationContext(initiationContext)
+                .customerConfirmationEvidence(
+                        customerConfirmationEvidence
                 )
                 .status(status)
                 .authorizationEvidence(authorizationEvidence)
