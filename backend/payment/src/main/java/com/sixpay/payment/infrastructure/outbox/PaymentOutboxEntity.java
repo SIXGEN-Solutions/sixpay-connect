@@ -115,7 +115,7 @@ public class PaymentOutboxEntity {
         nextAttemptAt = createdAt;
     }
 
-    void claim(Instant at, String owner) {
+    public void claim(Instant at, String owner) {
         status = Status.PROCESSING;
         attemptCount++;
         lastAttemptAt = Objects.requireNonNull(at, "Claim instant");
@@ -123,7 +123,7 @@ public class PaymentOutboxEntity {
         claimedBy = requireText(owner, 100, "Claim owner");
     }
 
-    void markPublished(Instant at) {
+    public void markPublished(Instant at) {
         status = Status.PUBLISHED;
         publishedAt = Objects.requireNonNull(at, "Publication instant");
         failureReason = null;
@@ -131,7 +131,7 @@ public class PaymentOutboxEntity {
         clearClaim();
     }
 
-    void markFailed(String reason, Instant failedAt, Instant retryAt) {
+    public void markFailed(String reason, Instant failedAt, Instant retryAt) {
         status = Status.FAILED;
         failureReason = normalizeFailureReason(reason);
         lastAttemptAt = Objects.requireNonNull(failedAt, "Failure instant");
@@ -139,7 +139,7 @@ public class PaymentOutboxEntity {
         clearClaim();
     }
 
-    void markDead(String reason, Instant failedAt) {
+    public void markDead(String reason, Instant failedAt) {
         status = Status.DEAD;
         failureReason = normalizeFailureReason(reason);
         lastAttemptAt = Objects.requireNonNull(failedAt, "Dead-letter instant");

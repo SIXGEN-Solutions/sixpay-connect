@@ -55,3 +55,15 @@ sixpay:
       mode: logging
       from: no-reply@sixpay.local
       subject-prefix: "[SIXPAY]"
+  payment:
+    callback:
+      enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}
+      poll-delay: ${SIXPAY_PAYMENT_CALLBACK_POLL_DELAY:PT2S}
+      batch-size: ${SIXPAY_PAYMENT_CALLBACK_BATCH_SIZE:50}
+      max-attempts: ${SIXPAY_PAYMENT_CALLBACK_MAX_ATTEMPTS:8}
+      claim-timeout: ${SIXPAY_PAYMENT_CALLBACK_CLAIM_TIMEOUT:PT5M}
+      initial-retry-delay: ${SIXPAY_PAYMENT_CALLBACK_INITIAL_RETRY_DELAY:PT10S}
+      maximum-retry-delay: ${SIXPAY_PAYMENT_CALLBACK_MAXIMUM_RETRY_DELAY:PT1H}
+      worker-id: ${SIXPAY_PAYMENT_CALLBACK_WORKER_ID:payment-callback-worker}
+      signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID:}
+      signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
