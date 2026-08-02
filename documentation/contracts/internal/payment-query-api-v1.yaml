@@ -275,6 +275,7 @@ components:
       type: string
       enum:
         - RECEIVED
+        - PENDING_CONFIRMATION
         - AUTHORIZATION_CHECKING
         - BANKING_VERIFICATION_PENDING
         - FUNDS_CONTROL_PENDING

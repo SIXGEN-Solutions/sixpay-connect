@@ -7,6 +7,7 @@ import com.sixpay.sharedkernel.domain.valueobject.ValueObject;
  */
 public enum PaymentStatus implements ValueObject {
     RECEIVED(false),
+    PENDING_CONFIRMATION(false),
     AUTHORIZATION_CHECKING(false),
     BANKING_VERIFICATION_PENDING(false),
     FUNDS_CONTROL_PENDING(false),

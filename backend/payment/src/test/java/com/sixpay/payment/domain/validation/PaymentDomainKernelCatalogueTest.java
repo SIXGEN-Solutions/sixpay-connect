@@ -199,8 +199,8 @@ class PaymentDomainKernelCatalogueTest {
     );
 
     @Test
-    void kernelContainsSeventeenStatesAndFourTerminalStates() {
-        assertEquals(17, PaymentStatus.values().length);
+    void kernelContainsEighteenStatesAndFourTerminalStates() {
+        assertEquals(18, PaymentStatus.values().length);
         assertEquals(
                 Set.of(
                         PaymentStatus.REJECTED,

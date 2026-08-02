@@ -63,6 +63,7 @@ public class PaymentReceptionService {
                 intent,
                 receivedAt
         );
+        payment.requestCustomerConfirmation(receivedAt);
 
         return coordinator.persistNew(payment);
     }

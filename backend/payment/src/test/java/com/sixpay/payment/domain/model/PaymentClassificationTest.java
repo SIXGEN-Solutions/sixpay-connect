@@ -12,10 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaymentClassificationTest {
 
     @Test
-    void paymentStatusContainsExactlyTheSeventeenIa1Values() {
+    void paymentStatusContainsExactlyTheEighteenValues() {
         assertEquals(
                 Set.of(
                         PaymentStatus.RECEIVED,
+                        PaymentStatus.PENDING_CONFIRMATION,
                         PaymentStatus.AUTHORIZATION_CHECKING,
                         PaymentStatus.BANKING_VERIFICATION_PENDING,
                         PaymentStatus.FUNDS_CONTROL_PENDING,

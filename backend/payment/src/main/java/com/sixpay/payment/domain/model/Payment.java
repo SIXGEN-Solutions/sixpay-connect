@@ -137,12 +137,95 @@ public final class Payment {
         );
     }
 
+    public void requestCustomerConfirmation(
+            Instant requestedAt
+    ) {
+        Objects.requireNonNull(
+                requestedAt,
+                "Confirmation-request instant"
+        );
+
+        if (state.status()
+                == PaymentStatus.PENDING_CONFIRMATION) {
+            return;
+        }
+        requireStatus(
+                "requestCustomerConfirmation",
+                PaymentStatus.RECEIVED
+        );
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.PENDING_CONFIRMATION,
+                requestedAt
+        ).failure(null).build();
+
+        EventBatch batch = new EventBatch(next, requestedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentCustomerConfirmationRequested(
+                                batch.metadata(),
+                                requestedAt
+                        )
+                )
+        );
+    }
+
+    public void recordCustomerConfirmation(
+            Instant confirmedAt
+    ) {
+        Objects.requireNonNull(
+                confirmedAt,
+                "Customer-confirmation instant"
+        );
+
+        if (state.status()
+                == PaymentStatus.AUTHORIZATION_CHECKING) {
+            return;
+        }
+        requireStatus(
+                "recordCustomerConfirmation",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                confirmedAt
+        ).failure(null).build();
+
+        EventBatch batch = new EventBatch(next, confirmedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentCustomerConfirmationRecorded(
+                                batch.metadata(),
+                                confirmedAt
+                        ),
+                        new PaymentAuthorizationCheckingStarted(
+                                batch.metadata(),
+                                confirmedAt
+                        )
+                )
+        );
+    }
+
     public void startAuthorizationChecking(Instant startedAt) {
         Objects.requireNonNull(startedAt, "Started instant");
 
         if (state.status() == PaymentStatus.AUTHORIZATION_CHECKING) {
             return;
         }
+        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
+            recordCustomerConfirmation(startedAt);
+            return;
+        }
+
+        /*
+         * Backward-compatible domain entry for existing internal workflows and
+         * test fixtures. New externally received payments are persisted by
+         * PaymentReceptionService in PENDING_CONFIRMATION, so the TresorPay
+         * command path cannot bypass customer confirmation.
+         */
         requireStatus(
                 "startAuthorizationChecking",
                 PaymentStatus.RECEIVED

@@ -224,7 +224,7 @@ public final class PaymentState implements ValueObject {
 
     private void validateLifecycleCoherence() {
         switch (status) {
-            case RECEIVED, AUTHORIZATION_CHECKING -> {
+            case RECEIVED, PENDING_CONFIRMATION, AUTHORIZATION_CHECKING -> {
                 // No favorable downstream evidence is required yet.
             }
             case BANKING_VERIFICATION_PENDING -> requireAuthorizationApproved();
