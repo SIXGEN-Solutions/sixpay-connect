@@ -31,6 +31,8 @@ class PaymentFoundationArchitectureTest {
                 "PaymentAuthorizationService.java",
                 "PaymentFinalizationService.java",
                 "PaymentFundsControlService.java",
+                "PaymentInitiationOrchestrationService.java",
+                "PaymentInitiationInProgressException.java",
                 "PaymentMutationCoordinator.java",
                 "PaymentNotFoundException.java",
                 "PaymentPostingPreparationService.java",

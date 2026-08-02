@@ -7,23 +7,22 @@ import com.sixpay.sharedkernel.domain.valueobject.Money;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Stable application result for the contracted InitiateDebit operation.
+ *
+ * <p>The confirmation challenge is optional until the core-banking contract is
+ * approved. SIXPAY never fabricates bank identifiers, fees or QR data.</p>
  */
 public record InitiateDebitResult(
         PaymentId paymentId,
         PublicPaymentReference paymentReference,
         String endToEndId,
-        String bankOperationId,
         Money totalAmount,
-        Money fees,
-        Money netAmount,
         Instant initiatedAt,
-        int validityInMinutes,
-        String transactionNumber,
-        String transactionQrCode,
-        PaymentStatus status
+        PaymentStatus status,
+        PaymentConfirmationChallengeView confirmationChallenge
 ) {
 
     public InitiateDebitResult {
@@ -39,44 +38,18 @@ public record InitiateDebitResult(
                 endToEndId,
                 "End-to-end ID"
         );
-        bankOperationId = requireText(
-                bankOperationId,
-                "Bank operation ID"
-        );
         totalAmount = Objects.requireNonNull(
                 totalAmount,
                 "Total amount"
-        );
-        fees = Objects.requireNonNull(
-                fees,
-                "Fees"
-        );
-        netAmount = Objects.requireNonNull(
-                netAmount,
-                "Net amount"
         );
         initiatedAt = Objects.requireNonNull(
                 initiatedAt,
                 "Initiated instant"
         );
-        transactionNumber = requireText(
-                transactionNumber,
-                "Transaction number"
-        );
-        transactionQrCode = requireText(
-                transactionQrCode,
-                "Transaction QR code"
-        );
         status = Objects.requireNonNull(
                 status,
                 "Payment status"
         );
-
-        if (validityInMinutes <= 0) {
-            throw new IllegalArgumentException(
-                    "Validity must be positive"
-            );
-        }
 
         if (status != PaymentStatus.PENDING_CONFIRMATION) {
             throw new IllegalArgumentException(
@@ -84,17 +57,29 @@ public record InitiateDebitResult(
                             + "PENDING_CONFIRMATION"
             );
         }
+    }
 
-        if (!totalAmount.currency().equals(
-                fees.currency()
-        )
-                || !totalAmount.currency().equals(
-                        netAmount.currency()
-                )) {
-            throw new IllegalArgumentException(
-                    "All response amounts must use the same currency"
-            );
-        }
+    public static InitiateDebitResult accepted(
+            PaymentId paymentId,
+            PublicPaymentReference paymentReference,
+            String endToEndId,
+            Money totalAmount,
+            Instant initiatedAt
+    ) {
+        return new InitiateDebitResult(
+                paymentId,
+                paymentReference,
+                endToEndId,
+                totalAmount,
+                initiatedAt,
+                PaymentStatus.PENDING_CONFIRMATION,
+                null
+        );
+    }
+
+    public Optional<PaymentConfirmationChallengeView>
+            optionalConfirmationChallenge() {
+        return Optional.ofNullable(confirmationChallenge);
     }
 
     private static String requireText(
