@@ -20,7 +20,8 @@ class PaymentFinalArchitectureGateTest {
     );
 
     @Test
-    void paymentModuleRemainsNonExecutable() throws IOException {
+    void paymentModuleRemainsNonExecutable()
+            throws IOException {
         String module = Files.readString(
                 MAIN.resolve("PaymentModule.java")
         );
@@ -32,32 +33,29 @@ class PaymentFinalArchitectureGateTest {
     @Test
     void domainHasNoFrameworkOrOuterLayerDependency()
             throws IOException {
-        Path domain = MAIN.resolve("domain");
-
-        List<String> forbidden = List.of(
-                "org.springframework.",
-                "jakarta.persistence.",
-                "org.hibernate.",
-                "com.sixpay.payment.application.",
-                "com.sixpay.payment.infrastructure.",
-                "com.sixpay.payment.configuration."
-        );
-
         assertEquals(
                 List.of(),
-                violations(domain, forbidden)
+                violations(
+                        MAIN.resolve("domain"),
+                        List.of(
+                                "org.springframework.",
+                                "jakarta.persistence.",
+                                "org.hibernate.",
+                                "com.sixpay.payment.application.",
+                                "com.sixpay.payment.infrastructure.",
+                                "com.sixpay.payment.configuration."
+                        )
+                )
         );
     }
 
     @Test
     void applicationHasNoInfrastructureDependency()
             throws IOException {
-        Path application = MAIN.resolve("application");
-
         assertEquals(
                 List.of(),
                 violations(
-                        application,
+                        MAIN.resolve("application"),
                         List.of(
                                 "com.sixpay.payment.infrastructure."
                         )
@@ -66,11 +64,13 @@ class PaymentFinalArchitectureGateTest {
     }
 
     @Test
-    void restApiRemainsReadOnly() throws IOException {
-        Path controller = MAIN.resolve(
-                "infrastructure/web/PaymentQueryController.java"
+    void restApiRemainsReadOnly()
+            throws IOException {
+        String source = Files.readString(
+                MAIN.resolve(
+                        "api/PaymentQueryController.java"
+                )
         );
-        String source = Files.readString(controller);
 
         assertTrue(source.contains(
                 "@RequestMapping(\"/internal/api/v1/payments\")"
@@ -108,7 +108,6 @@ class PaymentFinalArchitectureGateTest {
         assertFalse(finalization.contains(
                 "EndOfDayConfirmationSnapshot"
         ));
-
         assertTrue(reconciliation.contains(
                 "recordMatchedEndOfDayConfirmation"
         ));

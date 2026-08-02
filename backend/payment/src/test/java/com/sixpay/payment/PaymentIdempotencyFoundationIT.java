@@ -1,6 +1,8 @@
 package com.sixpay.payment;
 
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
+import com.sixpay.security.authentication.AuthenticatedUser;
+import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConcurrencyCoordinator;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyDecision;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -26,6 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -419,5 +423,10 @@ class PaymentIdempotencyFoundationIT {
             PaymentModuleConfiguration.class
     )
     static class TestApplication {
+
+        @Bean
+        CurrentUserProvider currentUserProvider() {
+            return () -> Optional.<AuthenticatedUser>empty();
+        }
     }
 }

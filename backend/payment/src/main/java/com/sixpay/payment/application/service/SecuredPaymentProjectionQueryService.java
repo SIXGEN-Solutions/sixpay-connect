@@ -9,7 +9,6 @@ import com.sixpay.payment.application.security.PaymentAccessPolicy;
 import com.sixpay.payment.application.security.PaymentAction;
 import com.sixpay.payment.application.view.PaymentProjectionViews;
 import com.sixpay.payment.domain.model.PaymentId;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -20,11 +19,6 @@ import java.util.UUID;
  * Security boundary for Payment query projections.
  */
 @Service
-@ConditionalOnBean({
-        PaymentProjectionReadPort.class,
-        PaymentObjectAccessPort.class,
-        PaymentAccessPolicy.class
-})
 public class SecuredPaymentProjectionQueryService
         implements PaymentProjectionQueryUseCase {
 

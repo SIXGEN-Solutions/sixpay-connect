@@ -2,6 +2,8 @@ package com.sixpay.payment.infrastructure.audit;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
+import com.sixpay.security.authentication.AuthenticatedUser;
+import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
 import com.sixpay.payment.domain.event.PaymentEventMetadata;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -9,6 +11,7 @@ import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -25,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -261,6 +265,11 @@ class PaymentAuditAtomicityIT {
             PaymentModuleConfiguration.class
     )
     static class TestApplication {
+
+        @Bean
+        CurrentUserProvider currentUserProvider() {
+            return () -> Optional.<AuthenticatedUser>empty();
+        }
     }
 
     private record TestPaymentEvent(

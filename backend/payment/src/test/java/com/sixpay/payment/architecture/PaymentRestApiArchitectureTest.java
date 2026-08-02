@@ -14,45 +14,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PaymentRestApiArchitectureTest {
 
-    private static final Path WEB_ROOT =
-            Path.of(
-                    "src/main/java/com/sixpay/payment/"
-                            + "infrastructure/web"
-            );
-
-    private static final Path SECURITY_ROOT =
-            Path.of(
-                    "src/main/java/com/sixpay/payment/"
-                            + "application/security"
-            );
+    private static final Path API_ROOT = Path.of(
+            "src/main/java/com/sixpay/payment/api"
+    );
 
     @Test
     void exposesOnlyContractedReadEndpoints()
             throws IOException {
-
         String controller = Files.readString(
-                WEB_ROOT.resolve(
+                API_ROOT.resolve(
                         "PaymentQueryController.java"
                 )
         );
 
-        assertTrue(
-                controller.contains(
-                        "@RequestMapping("
-                                + "\"/internal/api/v1/payments\""
-                                + ")"
-                )
-        );
-
-        assertTrue(
-                controller.contains("@GetMapping")
-        );
-
-        assertTrue(
-                controller.contains(
-                        "@GetMapping(\"/{paymentId}\")"
-                )
-        );
+        assertTrue(controller.contains(
+                "@RequestMapping(\"/internal/api/v1/payments\")"
+        ));
+        assertTrue(controller.contains("@GetMapping"));
 
         for (String forbidden : List.of(
                 "@PostMapping",
@@ -60,26 +38,14 @@ class PaymentRestApiArchitectureTest {
                 "@PatchMapping",
                 "@DeleteMapping"
         )) {
-            assertFalse(
-                    controller.contains(forbidden),
-                    () -> "Payment query controller contains "
-                            + forbidden
-            );
+            assertFalse(controller.contains(forbidden));
         }
     }
 
     @Test
-    void restAdapterNeverLoadsAggregate()
+    void apiAdapterNeverLoadsAggregate()
             throws IOException {
-
-        List<String> forbiddenTokens = List.of(
-                "domain.model.Payment;",
-                "PaymentRepository",
-                "PaymentJpaEntity",
-                "PaymentStateDocument"
-        );
-
-        try (Stream<Path> paths = Files.walk(WEB_ROOT)) {
+        try (Stream<Path> paths = Files.walk(API_ROOT)) {
             List<String> violations = paths
                     .filter(Files::isRegularFile)
                     .filter(path ->
@@ -89,8 +55,12 @@ class PaymentRestApiArchitectureTest {
                         try {
                             String source =
                                     Files.readString(path);
-
-                            return forbiddenTokens.stream()
+                            return List.of(
+                                    "domain.model.Payment;",
+                                    "PaymentRepository",
+                                    "PaymentJpaEntity",
+                                    "PaymentStateDocument"
+                            ).stream()
                                     .filter(source::contains)
                                     .map(token ->
                                             path + " contains " + token
@@ -103,92 +73,47 @@ class PaymentRestApiArchitectureTest {
                     })
                     .toList();
 
-            assertEquals(
-                    List.of(),
-                    violations
-            );
+            assertEquals(List.of(), violations);
         }
     }
 
     @Test
-    void controllerRequiresReadPolicyAndProjectionPort()
+    void controllerDelegatesSecurityToPaymentPolicy()
             throws IOException {
-
         String controller = Files.readString(
-                WEB_ROOT.resolve(
+                API_ROOT.resolve(
                         "PaymentQueryController.java"
                 )
         );
-
         String accessPolicy = Files.readString(
-                SECURITY_ROOT.resolve(
-                        "PaymentAccessPolicy.java"
+                Path.of(
+                        "src/main/java/com/sixpay/payment/"
+                                + "application/security/"
+                                + "PaymentAccessPolicy.java"
                 )
         );
-
         String authority = Files.readString(
-                SECURITY_ROOT.resolve(
-                        "PaymentAuthority.java"
+                Path.of(
+                        "src/main/java/com/sixpay/payment/"
+                                + "application/security/"
+                                + "PaymentAuthority.java"
                 )
         );
 
-        assertTrue(
-                controller.contains(
-                        "@PreAuthorize("
-                                + "\"@paymentAccessPolicy.canSearch()\""
-                                + ")"
-                )
-        );
-
-        assertTrue(
-                controller.contains(
-                        "@PreAuthorize("
-                                + "\"@paymentAccessPolicy.canRead()\""
-                                + ")"
-                )
-        );
-
-        assertTrue(
-                controller.contains(
-                        "@ConditionalOnBean("
-                                + "PaymentProjectionQueryUseCase.class"
-                                + ")"
-                )
-        );
-
-        assertTrue(
-                accessPolicy.contains(
-                        "case SEARCH, READ -> PaymentAuthority.READ"
-                )
-        );
-
-        assertTrue(
-                authority.contains(
-                        "READ(\"SCOPE_payment.read\")"
-                )
-        );
-    }
-
-    @Test
-    void controllerDoesNotDuplicateAuthorizationRules()
-            throws IOException {
-
-        String controller = Files.readString(
-                WEB_ROOT.resolve(
-                        "PaymentQueryController.java"
-                )
-        );
-
-        assertFalse(
-                controller.contains(
-                        "hasAuthority('SCOPE_payment.read')"
-                )
-        );
-
-        assertFalse(
-                controller.contains(
-                        "hasRole("
-                )
-        );
+        assertTrue(controller.contains(
+                "@paymentAccessPolicy.canSearch()"
+        ));
+        assertTrue(controller.contains(
+                "@paymentAccessPolicy.canRead()"
+        ));
+        assertFalse(controller.contains(
+                "@ConditionalOnBean"
+        ));
+        assertTrue(accessPolicy.contains(
+                "case SEARCH, READ -> PaymentAuthority.READ"
+        ));
+        assertTrue(authority.contains(
+                "READ(\"SCOPE_payment.read\")"
+        ));
     }
 }

@@ -18,8 +18,8 @@ class PaymentSecurityArchitectureTest {
             "src/main/java/com/sixpay/payment/application/security"
     );
 
-    private static final Path WEB_ROOT = Path.of(
-            "src/main/java/com/sixpay/payment/infrastructure/web"
+    private static final Path API_ROOT = Path.of(
+            "src/main/java/com/sixpay/payment/api"
     );
 
     @Test
@@ -77,7 +77,7 @@ class PaymentSecurityArchitectureTest {
     void controllerUsesPaymentPolicy()
             throws IOException {
         String source = Files.readString(
-                WEB_ROOT.resolve(
+                API_ROOT.resolve(
                         "PaymentQueryController.java"
                 )
         );
@@ -87,6 +87,28 @@ class PaymentSecurityArchitectureTest {
         ));
         assertTrue(source.contains(
                 "@paymentAccessPolicy.canRead()"
+        ));
+    }
+
+    @Test
+    void partnerOwnershipRemainsFailClosedInPersistence()
+            throws IOException {
+        String source = Files.readString(
+                Path.of(
+                        "src/main/java/com/sixpay/payment/"
+                                + "infrastructure/query/"
+                                + "PaymentObjectAccessAdapter.java"
+                )
+        );
+
+        assertTrue(source.contains(
+                "new PaymentObjectAccessDescriptor"
+        ));
+        assertTrue(source.contains(
+                "null"
+        ));
+        assertFalse(source.contains(
+                "external_subscription_reference AS partner"
         ));
     }
 }

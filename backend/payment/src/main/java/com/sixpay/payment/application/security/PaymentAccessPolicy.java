@@ -2,7 +2,6 @@ package com.sixpay.payment.application.security;
 
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -11,7 +10,6 @@ import java.util.Objects;
  * Central Payment authorization policy.
  */
 @Component("paymentAccessPolicy")
-@ConditionalOnBean(CurrentUserProvider.class)
 public final class PaymentAccessPolicy {
 
     private final CurrentUserProvider currentUserProvider;
