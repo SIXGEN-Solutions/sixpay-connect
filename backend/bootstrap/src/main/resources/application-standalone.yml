@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb}
+    url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb?currentSchema=sixpay}
     username: ${SIXPAY_DB_USERNAME:sixpay_user}
     password: ${SIXPAY_DB_PASSWORD:sixpay_password}
 
