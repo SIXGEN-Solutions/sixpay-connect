@@ -62,7 +62,7 @@ class PaymentSecurityArchitectureTest {
             throws IOException {
         Path port = Path.of(
                 "src/main/java/com/sixpay/payment/"
-                        + "application/port/out/security/"
+                        + "application/port/output/security/"
                         + "PaymentObjectAccessPort.java"
         );
 

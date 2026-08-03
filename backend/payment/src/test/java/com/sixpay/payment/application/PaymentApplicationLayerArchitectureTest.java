@@ -143,7 +143,7 @@ class PaymentApplicationLayerArchitectureTest {
     @Test
     void outboundPortsDoNotInventBankingContracts()
             throws IOException {
-        Path out = APPLICATION_ROOT.resolve("port/out");
+        Path out = APPLICATION_ROOT.resolve("port/output");
 
         try (Stream<Path> paths = Files.list(out)) {
             List<String> actual = paths

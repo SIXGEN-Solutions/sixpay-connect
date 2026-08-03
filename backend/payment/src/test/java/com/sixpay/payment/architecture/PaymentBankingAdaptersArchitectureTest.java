@@ -17,7 +17,7 @@ class PaymentBankingAdaptersArchitectureTest {
 
     private static final Path PORT_ROOT = Path.of(
             "src/main/java/com/sixpay/payment/"
-                    + "application/port/out/banking"
+                    + "application/port/output/banking"
     );
 
     private static final Path ADAPTER_ROOT = Path.of(

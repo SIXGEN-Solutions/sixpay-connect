@@ -17,7 +17,7 @@ class BankingVerificationHttpArchitectureTest {
 
     private static final Path PORT_ROOT = Path.of(
             "src/main/java/com/sixpay/customer/verification/"
-                    + "application/port/out"
+                    + "application/port/output"
     );
 
     private static final Path BANKING_INFRASTRUCTURE = Path.of(

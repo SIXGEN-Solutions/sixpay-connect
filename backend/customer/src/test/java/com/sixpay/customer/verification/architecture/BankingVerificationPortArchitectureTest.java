@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BankingVerificationPortArchitectureTest {
 
     private static final Path PORT_ROOT = Path.of(
-            "src/main/java/com/sixpay/customer/verification/application/port/out"
+            "src/main/java/com/sixpay/customer/verification/application/port/output"
     );
 
     private static final Path BANKING_ROOT = Path.of(
