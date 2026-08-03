@@ -1,6 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
-import com.sixpay.payment.application.port.out.PaymentAtomicPersistencePort;
+import com.sixpay.payment.application.port.output.PaymentAtomicPersistencePort;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.repository.PaymentRepository;

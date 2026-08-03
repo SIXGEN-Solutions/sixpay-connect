@@ -1,11 +1,11 @@
 package com.sixpay.payment.infrastructure.banking.amplitude;
 
-import com.sixpay.payment.application.port.out.banking.BankingIdempotencyKey;
-import com.sixpay.payment.application.port.out.banking.BankingRequestContext;
-import com.sixpay.payment.application.port.out.banking.FundsGateway;
-import com.sixpay.payment.application.port.out.banking.PostingGateway;
-import com.sixpay.payment.application.port.out.banking.ReversalGateway;
-import com.sixpay.payment.application.port.out.banking.VerificationGateway;
+import com.sixpay.payment.application.port.output.banking.BankingIdempotencyKey;
+import com.sixpay.payment.application.port.output.banking.BankingRequestContext;
+import com.sixpay.payment.application.port.output.banking.FundsGateway;
+import com.sixpay.payment.application.port.output.banking.PostingGateway;
+import com.sixpay.payment.application.port.output.banking.ReversalGateway;
+import com.sixpay.payment.application.port.output.banking.VerificationGateway;
 import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
 import com.sixpay.payment.domain.model.evidence.FundsControlSnapshot;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;

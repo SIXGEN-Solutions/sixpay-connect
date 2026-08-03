@@ -7,7 +7,7 @@ import com.sixpay.customer.verification.application.exception.BankingVerificatio
 import com.sixpay.customer.verification.application.exception.BankingVerificationProtocolException;
 import com.sixpay.customer.verification.application.exception.BankingVerificationTimeoutException;
 import com.sixpay.customer.verification.application.exception.BankingVerificationUnavailableException;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.domain.model.VerificationCheckResult;
 import com.sixpay.customer.verification.domain.model.VerificationCheckType;
 import com.sixpay.customer.verification.infrastructure.banking.retry.RetryingBankingCustomerVerificationAdapter;

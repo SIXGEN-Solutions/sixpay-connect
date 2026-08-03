@@ -1,6 +1,6 @@
 package com.sixpay.partner.application.view;
 
-import com.sixpay.partner.application.port.out.PartnerAuditRecord;
+import com.sixpay.partner.application.port.output.PartnerAuditRecord;
 
 import java.time.Instant;
 import java.util.UUID;

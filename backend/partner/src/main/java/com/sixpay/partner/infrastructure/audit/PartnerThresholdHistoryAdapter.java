@@ -1,7 +1,7 @@
 package com.sixpay.partner.infrastructure.audit;
 
-import com.sixpay.partner.application.port.out.PartnerThresholdHistory;
-import com.sixpay.partner.application.port.out.PartnerThresholdHistoryRecord;
+import com.sixpay.partner.application.port.output.PartnerThresholdHistory;
+import com.sixpay.partner.application.port.output.PartnerThresholdHistoryRecord;
 import org.springframework.stereotype.Repository;
 
 @Repository

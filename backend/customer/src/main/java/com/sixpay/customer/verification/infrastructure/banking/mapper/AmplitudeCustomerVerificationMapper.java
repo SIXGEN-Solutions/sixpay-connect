@@ -1,7 +1,7 @@
 package com.sixpay.customer.verification.infrastructure.banking.mapper;
 
-import com.sixpay.customer.verification.application.port.out.BankingVerificationQuery;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.domain.exception.CustomerVerificationDomainException;
 import com.sixpay.customer.verification.domain.model.VerificationCheck;
 import com.sixpay.customer.verification.domain.model.VerificationCheckResult;

@@ -1,7 +1,7 @@
 package com.sixpay.partner.infrastructure.outbox;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.partner.application.port.out.PartnerEventPublisher;
+import com.sixpay.partner.application.port.output.PartnerEventPublisher;
 import com.sixpay.partner.events.PartnerIntegrationEvent;
 import org.springframework.stereotype.Repository;
 import tools.jackson.core.JacksonException;

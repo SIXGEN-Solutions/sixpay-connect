@@ -1,8 +1,8 @@
 package com.sixpay.partner.infrastructure.audit;
 
-import com.sixpay.partner.application.port.out.PartnerAuditRecord;
-import com.sixpay.partner.application.port.out.PartnerAuditResult;
-import com.sixpay.partner.application.port.out.PartnerAuditTrail;
+import com.sixpay.partner.application.port.output.PartnerAuditRecord;
+import com.sixpay.partner.application.port.output.PartnerAuditResult;
+import com.sixpay.partner.application.port.output.PartnerAuditTrail;
 import com.sixpay.partner.domain.model.PartnerId;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;

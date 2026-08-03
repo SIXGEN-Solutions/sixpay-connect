@@ -1,6 +1,6 @@
 package com.sixpay.partner.infrastructure.observability;
 
-import com.sixpay.partner.application.port.out.PartnerOperationMetrics;
+import com.sixpay.partner.application.port.output.PartnerOperationMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 

@@ -1,9 +1,9 @@
 package com.sixpay.customer.verification.infrastructure.banking.support;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.customer.verification.application.port.out.BankingAccountAccessReference;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationQuery;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.BankingAccountAccessReference;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.domain.model.AccountBindingFingerprint;
 import com.sixpay.customer.verification.domain.model.CustomerIdentity;
 import com.sixpay.customer.verification.domain.model.CustomerNiu;

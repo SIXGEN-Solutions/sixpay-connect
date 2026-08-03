@@ -1,8 +1,8 @@
 package com.sixpay.payment.infrastructure.callback;
 
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackDelivery;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackTransportPort;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;

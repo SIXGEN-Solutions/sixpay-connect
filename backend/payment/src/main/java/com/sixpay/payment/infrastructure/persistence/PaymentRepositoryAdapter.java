@@ -1,6 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
-import com.sixpay.payment.application.port.out.PaymentLookupPort;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;

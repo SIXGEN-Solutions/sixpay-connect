@@ -2,7 +2,7 @@ package com.sixpay.payment.infrastructure.idempotency;
 
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
-import com.sixpay.payment.application.port.out.idempotency
+import com.sixpay.payment.application.port.output.idempotency
         .PaymentInitiationIdempotencyPort;
 import com.sixpay.payment.application.service
         .PaymentInitiationInProgressException;

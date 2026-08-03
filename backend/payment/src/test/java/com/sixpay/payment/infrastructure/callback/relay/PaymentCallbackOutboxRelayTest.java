@@ -1,11 +1,11 @@
 package com.sixpay.payment.infrastructure.callback.relay;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackDelivery;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackMessage;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackTransportPort;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import org.junit.jupiter.api.Test;

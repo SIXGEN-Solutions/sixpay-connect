@@ -1,9 +1,9 @@
 package com.sixpay.customer.verification.infrastructure.banking.retry;
 
 import com.sixpay.customer.verification.application.exception.BankingVerificationException;
-import com.sixpay.customer.verification.application.port.out.BankingCustomerVerificationPort;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationQuery;
-import com.sixpay.customer.verification.application.port.out.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
+import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.observability.BankingVerificationObservation;
 import org.slf4j.Logger;

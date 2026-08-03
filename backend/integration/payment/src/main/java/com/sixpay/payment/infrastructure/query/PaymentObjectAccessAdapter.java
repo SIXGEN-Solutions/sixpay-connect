@@ -1,6 +1,6 @@
 package com.sixpay.payment.infrastructure.query;
 
-import com.sixpay.payment.application.port.out.security.PaymentObjectAccessPort;
+import com.sixpay.payment.application.port.output.security.PaymentObjectAccessPort;
 import com.sixpay.payment.application.security.PaymentObjectAccessDescriptor;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentSource;

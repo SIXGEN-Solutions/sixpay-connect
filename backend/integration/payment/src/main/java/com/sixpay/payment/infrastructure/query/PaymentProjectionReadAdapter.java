@@ -1,7 +1,7 @@
 package com.sixpay.payment.infrastructure.query;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.payment.application.port.out.security.PaymentProjectionReadPort;
+import com.sixpay.payment.application.port.output.security.PaymentProjectionReadPort;
 import com.sixpay.payment.application.query.PaymentSearchSort;
 import com.sixpay.payment.application.query.SearchPaymentProjectionsQuery;
 import com.sixpay.payment.application.security.PaymentVisibilityScope;

@@ -1,6 +1,6 @@
 package com.sixpay.partner.infrastructure.idempotency;
 
-import com.sixpay.partner.application.port.out.PartnerIdempotencyStore;
+import com.sixpay.partner.application.port.output.PartnerIdempotencyStore;
 import com.sixpay.partner.domain.model.PartnerId;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;

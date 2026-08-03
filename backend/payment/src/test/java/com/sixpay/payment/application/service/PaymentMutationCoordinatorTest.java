@@ -1,8 +1,8 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.payment.application.port.out.PaymentAtomicPersistencePort;
-import com.sixpay.payment.application.port.out.PaymentLookupPort;
+import com.sixpay.payment.application.port.output.PaymentAtomicPersistencePort;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

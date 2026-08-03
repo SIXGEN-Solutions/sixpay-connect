@@ -1,6 +1,6 @@
 package com.sixpay.payment.infrastructure.banking.amplitude;
 
-import com.sixpay.payment.application.port.out.banking.FundsGateway;
+import com.sixpay.payment.application.port.output.banking.FundsGateway;
 import com.sixpay.payment.domain.model.evidence.FundsControlSnapshot;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

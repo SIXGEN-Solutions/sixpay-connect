@@ -1,7 +1,7 @@
 package com.sixpay.partner.api;
 
 import com.sixpay.partner.application.exception.PartnerNotFoundException;
-import com.sixpay.partner.application.port.out.PartnerOperationMetrics;
+import com.sixpay.partner.application.port.output.PartnerOperationMetrics;
 import com.sixpay.partner.domain.exception.PartnerDomainException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;

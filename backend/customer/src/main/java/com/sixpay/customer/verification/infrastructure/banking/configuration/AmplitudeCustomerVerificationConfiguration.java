@@ -1,6 +1,6 @@
 package com.sixpay.customer.verification.infrastructure.banking.configuration;
 
-import com.sixpay.customer.verification.application.port.out.BankingCustomerVerificationPort;
+import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
 import com.sixpay.customer.verification.infrastructure.banking.client.CoreBankingAccessTokenProvider;

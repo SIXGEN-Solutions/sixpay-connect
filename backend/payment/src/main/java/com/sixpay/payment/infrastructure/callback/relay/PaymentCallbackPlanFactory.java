@@ -1,12 +1,9 @@
 package com.sixpay.payment.infrastructure.callback.relay;
 
-import com.sixpay.payment.infrastructure.outbox.PaymentOutboxEntity;
-import com.sixpay.payment.infrastructure.outbox.PaymentOutboxRepository;
-
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackDelivery;
-import com.sixpay.payment.application.port.out.callback
+import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackMessage;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;

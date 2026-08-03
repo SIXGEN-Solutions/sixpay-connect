@@ -1,12 +1,9 @@
 package com.sixpay.payment.infrastructure.outbox;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
-import com.sixpay.payment.application.port.out.banking.PostingGateway;
+import com.sixpay.payment.application.port.output.banking.PostingGateway;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
-import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
-import com.sixpay.payment.domain.model.evidence.FundsControlSnapshot;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
-import com.sixpay.payment.domain.model.evidence.ReversalSnapshot;
 import com.sixpay.payment.infrastructure.banking.amplitude.AmplitudeBankingClient;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
@@ -30,7 +27,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
