@@ -7,6 +7,7 @@ import com.sixpay.customer.verification.application.exception.BankingVerificatio
 import com.sixpay.customer.verification.application.exception.BankingVerificationTimeoutException;
 import com.sixpay.customer.verification.application.exception.BankingVerificationUnavailableException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -25,12 +26,37 @@ public final class BankingVerificationErrorClassifier {
             return classified;
         }
 
+        /*
+         * Inspect the complete cause chain first.
+         *
+         * With RestClient, a read timeout may be wrapped inside a generic
+         * RestClientException raised while reading headers or converting
+         * the response, rather than directly inside ResourceAccessException.
+         */
+        if (containsTimeout(failure)) {
+            return new BankingVerificationTimeoutException(
+                    "Core Banking request timed out",
+                    failure
+            );
+        }
+
+        if (containsConnectionFailure(failure)) {
+            return new BankingVerificationUnavailableException(
+                    "Core Banking connection failed",
+                    failure
+            );
+        }
+
         if (failure instanceof AmplitudeClientException httpFailure) {
             return classifyHttp(httpFailure);
         }
 
-        if (failure instanceof ResourceAccessException accessFailure) {
-            return classifyAccess(accessFailure);
+        if (failure instanceof ResourceAccessException
+                || failure instanceof RestClientException) {
+            return new BankingVerificationUnavailableException(
+                    "Core Banking could not be reached",
+                    failure
+            );
         }
 
         if (failure instanceof IllegalArgumentException
@@ -56,16 +82,19 @@ public final class BankingVerificationErrorClassifier {
                             "Core Banking authentication or authorization failed",
                             failure
                     );
+
             case 502, 503, 504 ->
                     new BankingVerificationUnavailableException(
                             "Core Banking is temporarily unavailable",
                             failure
                     );
+
             case 400, 404, 422 ->
                     new BankingVerificationProtocolException(
                             "Core Banking rejected the verification request",
                             failure
                     );
+
             default -> {
                 if (failure.httpStatus() >= 500) {
                     yield new BankingVerificationUnavailableException(
@@ -73,6 +102,7 @@ public final class BankingVerificationErrorClassifier {
                             failure
                     );
                 }
+
                 yield new BankingVerificationProtocolException(
                         "Core Banking returned a non-retryable HTTP error",
                         failure
@@ -81,41 +111,48 @@ public final class BankingVerificationErrorClassifier {
         };
     }
 
-    private BankingVerificationException classifyAccess(
-            ResourceAccessException failure
-    ) {
-        Throwable cause = rootCause(failure);
-
-        if (cause instanceof SocketTimeoutException
-                || cause instanceof HttpTimeoutException
-                || cause instanceof HttpConnectTimeoutException) {
-            return new BankingVerificationTimeoutException(
-                    "Core Banking request timed out",
-                    failure
-            );
-        }
-
-        if (cause instanceof ConnectException) {
-            return new BankingVerificationUnavailableException(
-                    "Core Banking connection failed",
-                    failure
-            );
-        }
-
-        return new BankingVerificationUnavailableException(
-                "Core Banking could not be reached",
-                failure
+    private static boolean containsTimeout(Throwable failure) {
+        return causeChainContains(
+                failure,
+                SocketTimeoutException.class,
+                HttpTimeoutException.class,
+                HttpConnectTimeoutException.class
         );
     }
 
-    private static Throwable rootCause(Throwable failure) {
+    private static boolean containsConnectionFailure(
+            Throwable failure
+    ) {
+        return causeChainContains(
+                failure,
+                ConnectException.class
+        );
+    }
+
+    @SafeVarargs
+    private static boolean causeChainContains(
+            Throwable failure,
+            Class<? extends Throwable>... expectedTypes
+    ) {
         Throwable current = failure;
 
-        while (current.getCause() != null
-                && current.getCause() != current) {
-            current = current.getCause();
+        while (current != null) {
+            for (Class<? extends Throwable> expectedType
+                    : expectedTypes) {
+                if (expectedType.isInstance(current)) {
+                    return true;
+                }
+            }
+
+            Throwable next = current.getCause();
+
+            if (next == current) {
+                break;
+            }
+
+            current = next;
         }
 
-        return current;
+        return false;
     }
 }
