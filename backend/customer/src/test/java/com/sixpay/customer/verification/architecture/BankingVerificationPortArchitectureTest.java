@@ -15,6 +15,10 @@ class BankingVerificationPortArchitectureTest {
             "src/main/java/com/sixpay/customer/verification/application/port/out"
     );
 
+    private static final Path BANKING_ROOT = Path.of(
+            "src/main/java/com/sixpay/customer/verification/infrastructure/banking"
+    );
+
     @Test
     void portBoundaryContainsNoFrameworkExternalOrPaymentType()
             throws Exception {
@@ -36,6 +40,7 @@ class BankingVerificationPortArchitectureTest {
                                             "HttpClient",
                                             "HttpHeaders",
                                             "HttpServlet",
+                                            "Amplitude",
                                             "@Service",
                                             "@Component",
                                             "@Repository"
@@ -57,29 +62,64 @@ class BankingVerificationPortArchitectureTest {
     }
 
     @Test
-    void noEndpointOrExternalDtoIsInvented() throws Exception {
-        Path banking = Path.of(
-                "src/main/java/com/sixpay/customer/verification/infrastructure/banking"
+    void bankingInfrastructureContainsTheApprovedAdapterLayers()
+            throws Exception {
+
+        for (String required : List.of(
+                "AmplitudeCustomerVerificationAdapter.java",
+                "client/AmplitudeCustomerVerificationClient.java",
+                "dto/AmplitudeCustomerVerificationRequest.java",
+                "dto/AmplitudeCustomerVerificationResponse.java",
+                "mapper/AmplitudeCustomerVerificationMapper.java",
+                "error/AmplitudeErrorResponse.java",
+                "configuration/AmplitudeCustomerVerificationConfiguration.java",
+                "configuration/BankingVerificationProperties.java"
+        )) {
+            assertTrue(
+                    Files.isRegularFile(BANKING_ROOT.resolve(required)),
+                    () -> "Missing approved banking infrastructure file: "
+                            + required
+            );
+        }
+    }
+
+    @Test
+    void endpointAndExternalDtosRemainConfinedToInfrastructure()
+            throws Exception {
+
+        Path customerRoot = Path.of(
+                "src/main/java/com/sixpay/customer"
         );
 
-        try (var paths = Files.walk(banking)) {
-            for (Path path : paths.filter(Files::isRegularFile).toList()) {
-                String source = Files.readString(path);
+        try (var paths = Files.walk(customerRoot)) {
+            var violations = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.startsWith(BANKING_ROOT))
+                    .flatMap(path -> {
+                        try {
+                            String source = Files.readString(path);
+                            return List.of(
+                                            "AmplitudeCustomerVerificationRequest",
+                                            "AmplitudeCustomerVerificationResponse",
+                                            "AmplitudeVerificationCheckResponse",
+                                            "AmplitudeErrorResponse",
+                                            "RestClient",
+                                            "/v1/accounts/verify"
+                                    )
+                                    .stream()
+                                    .filter(source::contains)
+                                    .map(token -> path + " leaks " + token);
+                        } catch (Exception exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .toList();
 
-                for (String forbidden : List.of(
-                        "http://",
-                        "https://",
-                        "/api/",
-                        "RestClient",
-                        "AmplitudeCustomerVerificationRequest",
-                        "AmplitudeCustomerVerificationResponse"
-                )) {
-                    assertFalse(
-                            source.contains(forbidden),
-                            () -> "Invented contract found: " + forbidden
-                    );
-                }
-            }
+            assertTrue(
+                    violations.isEmpty(),
+                    () -> "Banking infrastructure leakage: " + violations
+            );
         }
     }
 }
