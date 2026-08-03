@@ -1,15 +1,20 @@
 package com.sixpay.customer.verification.infrastructure.banking.configuration;
 
 import com.sixpay.customer.verification.application.port.out.BankingCustomerVerificationPort;
-import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
 import com.sixpay.customer.verification.infrastructure.banking.client.CoreBankingAccessTokenProvider;
 import com.sixpay.customer.verification.infrastructure.banking.client.OAuth2CoreBankingAccessTokenProvider;
+import com.sixpay.customer.verification.infrastructure.banking.error.BankingVerificationErrorClassifier;
 import com.sixpay.customer.verification.infrastructure.banking.mapper.AmplitudeCustomerVerificationMapper;
+import com.sixpay.customer.verification.infrastructure.banking.observability.BankingVerificationObservation;
+import com.sixpay.customer.verification.infrastructure.banking.retry.RetrySleeper;
+import com.sixpay.customer.verification.infrastructure.banking.retry.RetryingBankingCustomerVerificationAdapter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
@@ -48,9 +53,7 @@ public class AmplitudeCustomerVerificationConfiguration {
 
         JdkClientHttpRequestFactory requestFactory =
                 new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(
-                properties.readTimeout()
-        );
+        requestFactory.setReadTimeout(properties.readTimeout());
 
         return builder
                 .baseUrl(properties.baseUrl().toString())
@@ -85,13 +88,50 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    BankingCustomerVerificationPort bankingCustomerVerificationPort(
-            AmplitudeCustomerVerificationClient client,
-            AmplitudeCustomerVerificationMapper mapper
-    ) {
+    BankingVerificationErrorClassifier
+            bankingVerificationErrorClassifier() {
+        return new BankingVerificationErrorClassifier();
+    }
+
+    @Bean
+    AmplitudeCustomerVerificationAdapter
+            amplitudeCustomerVerificationAdapter(
+                    AmplitudeCustomerVerificationClient client,
+                    AmplitudeCustomerVerificationMapper mapper,
+                    BankingVerificationErrorClassifier classifier
+            ) {
         return new AmplitudeCustomerVerificationAdapter(
                 client,
-                mapper
+                mapper,
+                classifier
+        );
+    }
+
+    @Bean
+    RetrySleeper bankingVerificationRetrySleeper() {
+        return RetrySleeper.threadSleep();
+    }
+
+    @Bean
+    BankingVerificationObservation bankingVerificationObservation(
+            MeterRegistry meterRegistry
+    ) {
+        return new BankingVerificationObservation(meterRegistry);
+    }
+
+    @Bean
+    @Primary
+    BankingCustomerVerificationPort bankingCustomerVerificationPort(
+            AmplitudeCustomerVerificationAdapter delegate,
+            BankingVerificationProperties properties,
+            RetrySleeper sleeper,
+            BankingVerificationObservation observation
+    ) {
+        return new RetryingBankingCustomerVerificationAdapter(
+                delegate,
+                properties,
+                sleeper,
+                observation
         );
     }
 }

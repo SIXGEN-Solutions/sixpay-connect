@@ -4,23 +4,33 @@ import com.sixpay.customer.verification.application.port.out.BankingCustomerVeri
 import com.sixpay.customer.verification.application.port.out.BankingVerificationQuery;
 import com.sixpay.customer.verification.application.port.out.BankingVerificationResponse;
 import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
+import com.sixpay.customer.verification.infrastructure.banking.error.BankingVerificationErrorClassifier;
 import com.sixpay.customer.verification.infrastructure.banking.mapper.AmplitudeCustomerVerificationMapper;
 
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Core Banking output adapter.
+ *
+ * <p>Business-negative evidence is returned normally as canonical FAIL checks.
+ * Only technical/protocol failures are translated to internal exceptions.</p>
+ */
 public final class AmplitudeCustomerVerificationAdapter
         implements BankingCustomerVerificationPort {
 
     private final AmplitudeCustomerVerificationClient client;
     private final AmplitudeCustomerVerificationMapper mapper;
+    private final BankingVerificationErrorClassifier errorClassifier;
 
     public AmplitudeCustomerVerificationAdapter(
             AmplitudeCustomerVerificationClient client,
-            AmplitudeCustomerVerificationMapper mapper
+            AmplitudeCustomerVerificationMapper mapper,
+            BankingVerificationErrorClassifier errorClassifier
     ) {
         this.client = Objects.requireNonNull(client);
         this.mapper = Objects.requireNonNull(mapper);
+        this.errorClassifier = Objects.requireNonNull(errorClassifier);
     }
 
     @Override
@@ -29,12 +39,16 @@ public final class AmplitudeCustomerVerificationAdapter
     ) {
         Objects.requireNonNull(query, "query is required");
 
-        return mapper.toInternalResponse(
-                client.verify(
-                        mapper.toExternalRequest(query),
-                        query.context().correlationId().value(),
-                        UUID.randomUUID()
-                )
-        );
+        try {
+            return mapper.toInternalResponse(
+                    client.verify(
+                            mapper.toExternalRequest(query),
+                            query.context().correlationId().value(),
+                            UUID.randomUUID()
+                    )
+            );
+        } catch (RuntimeException failure) {
+            throw errorClassifier.classify(failure);
+        }
     }
 }
