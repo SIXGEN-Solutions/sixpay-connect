@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Core Banking Customer Verification API
+  version: 1.0.0-provisional
+  description: |
+    Provisional contract for read-only customer and account verification between
+    SIXPAY CONNECT and the bank Core Banking system. Promotion to production
+    requires formal validation by the bank.
+  x-sixpay-contract-status: provisional
+  x-sixpay-owner: customer
+  x-sixpay-capability: customer-verification
+  x-sixpay-data-classification: confidential
+servers:
+  - url: https://{coreBankingHost}
+    variables:
+      coreBankingHost:
+        default: core-banking.invalid
+paths:
+  /v1/accounts/verify:
+    post:
+      operationId: verifyCustomerAccount
+      summary: Verify a customer account against Core Banking evidence
+      security:
+        - mutualTls: []
+          oauth2ClientCredentials:
+            - customer-verification.write
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountVerificationRequest'
+      responses:
+        '200':
+          description: Verification completed, including negative or partial evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountVerificationResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/UnprocessableEvidence' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+components:
+  securitySchemes:
+    mutualTls:
+      type: mutualTLS
+    oauth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.invalid/oauth2/token
+          scopes:
+            customer-verification.write: Execute read-only customer/account verification
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    RequestId:
+      name: X-Request-ID
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    AccountVerificationRequest:
+      type: object
+      additionalProperties: false
+      required: [accountReference]
+      properties:
+        accountReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Confidential bank-recognized account reference; never logged
+        expectedNiu:
+          type: string
+          minLength: 1
+          maxLength: 64
+        expectedAccountHolder:
+          type: string
+          minLength: 2
+          maxLength: 200
+        financialInstitutionCode:
+          type: string
+          minLength: 2
+          maxLength: 32
+          pattern: '^[A-Z0-9][A-Z0-9_-]{1,31}$'
+    AccountVerificationResponse:
+      type: object
+      additionalProperties: false
+      required: [code, accountFound, accountStatus, canDebit, description, result, observedAt, checks]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 32 }
+        accountFound: { type: boolean }
+        accountStatus:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, BLOCKED, OPPOSED, CLOSED, UNKNOWN]
+        accountHolder:
+          type: string
+          maxLength: 200
+        accountReferenceMasked:
+          type: string
+          maxLength: 64
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        availableBalance: { type: number }
+        accountBalance: { type: number }
+        canDebit: { type: boolean }
+        description: { type: string, maxLength: 500 }
+        result:
+          type: string
+          enum: [SUCCESS, FAILED, INDETERMINATE]
+        observedAt: { type: string, format: date-time }
+        validUntil: { type: string, format: date-time }
+        checks:
+          $ref: '#/components/schemas/VerificationChecks'
+    VerificationChecks:
+      type: object
+      additionalProperties: false
+      required:
+        - CUSTOMER_EXISTS
+        - FINANCIAL_INSTITUTION_MATCHES
+        - NIU_MATCHES
+        - IDENTITY_MATCHES
+        - ACCOUNT_EXISTS
+        - ACCOUNT_BELONGS_TO_CUSTOMER
+        - ACCOUNT_IS_ACTIVE
+        - ACCOUNT_NOT_BLOCKED
+        - ACCOUNT_NOT_OPPOSED
+        - REQUIRED_KYC_PRESENT
+        - REQUIRED_KYC_VERIFIED
+      properties:
+        CUSTOMER_EXISTS: { $ref: '#/components/schemas/CheckResult' }
+        FINANCIAL_INSTITUTION_MATCHES: { $ref: '#/components/schemas/CheckResult' }
+        NIU_MATCHES: { $ref: '#/components/schemas/CheckResult' }
+        IDENTITY_MATCHES: { $ref: '#/components/schemas/CheckResult' }
+        ACCOUNT_EXISTS: { $ref: '#/components/schemas/CheckResult' }
+        ACCOUNT_BELONGS_TO_CUSTOMER: { $ref: '#/components/schemas/CheckResult' }
+        ACCOUNT_IS_ACTIVE: { $ref: '#/components/schemas/CheckResult' }
+        ACCOUNT_NOT_BLOCKED: { $ref: '#/components/schemas/CheckResult' }
+        ACCOUNT_NOT_OPPOSED: { $ref: '#/components/schemas/CheckResult' }
+        REQUIRED_KYC_PRESENT: { $ref: '#/components/schemas/CheckResult' }
+        REQUIRED_KYC_VERIFIED: { $ref: '#/components/schemas/CheckResult' }
+    CheckResult:
+      type: string
+      enum: [PASS, FAIL, UNKNOWN]
+    Problem:
+      type: object
+      required: [type, title, status, code, detail, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        code: { type: string }
+        detail: { type: string }
+        correlationId: { type: string }
+        retryable: { type: boolean }
+  responses:
+    BadRequest: { description: Invalid request, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    Unauthorized: { description: Invalid service authentication, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    Forbidden: { description: Service not authorized, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    UnprocessableEvidence: { description: Banking evidence cannot be interpreted, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    TooManyRequests: { description: Rate limit reached, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    InternalError: { description: Internal Core Banking error, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    BadGateway: { description: Upstream failure, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    ServiceUnavailable: { description: Temporarily unavailable, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    GatewayTimeout: { description: Core Banking timeout, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
