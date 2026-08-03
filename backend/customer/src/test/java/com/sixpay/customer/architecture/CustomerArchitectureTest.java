@@ -18,6 +18,9 @@ class CustomerArchitectureTest {
     private static final Path JAVA_ROOT =
             Path.of("src/main/java/com/sixpay/customer");
 
+    private static final Path VERIFICATION_DOMAIN =
+            JAVA_ROOT.resolve("verification/domain");
+
     private static final List<String> CAPABILITIES =
             List.of("verification", "observation");
 
@@ -29,6 +32,16 @@ class CustomerArchitectureTest {
                     "domain",
                     "events",
                     "infrastructure"
+            );
+
+    private static final Set<String> ALLOWED_VERIFICATION_DOMAIN_PACKAGES =
+            Set.of(
+                    "model",
+                    "event",
+                    "exception",
+                    "policy",
+                    "service",
+                    "repository"
             );
 
     private static final List<String> FORBIDDEN_DOMAIN_TOKENS =
@@ -44,10 +57,31 @@ class CustomerArchitectureTest {
                     "import com.sixpay.customer.verification.application.",
                     "import com.sixpay.customer.verification.configuration.",
                     "import com.sixpay.customer.verification.infrastructure.",
-                    "import com.sixpay.customer.observation.api.",
-                    "import com.sixpay.customer.observation.application.",
-                    "import com.sixpay.customer.observation.configuration.",
-                    "import com.sixpay.customer.observation.infrastructure."
+                    "import com.sixpay.customer.observation.",
+                    "import com.sixpay.payment.",
+                    "RestClient",
+                    "WebClient",
+                    "HttpClient",
+                    "KafkaTemplate",
+                    "EntityManager",
+                    "JdbcTemplate",
+                    "@Entity",
+                    "@MappedSuperclass",
+                    "@Embeddable",
+                    "@Repository",
+                    "@Service",
+                    "@Component"
+            );
+
+    private static final List<String> FORBIDDEN_CURRENT_TIME_TOKENS =
+            List.of(
+                    "Instant.now(",
+                    "LocalDate.now(",
+                    "LocalDateTime.now(",
+                    "OffsetDateTime.now(",
+                    "ZonedDateTime.now(",
+                    "System.currentTimeMillis(",
+                    "System.nanoTime("
             );
 
     private static final List<String> FORBIDDEN_BUSINESS_DOMAIN_IMPORTS =
@@ -114,7 +148,9 @@ class CustomerArchitectureTest {
     }
 
     @Test
-    void capabilitiesFollowGoldenModuleTopLevelPackages() throws IOException {
+    void capabilitiesFollowGoldenModuleTopLevelPackages()
+            throws IOException {
+
         for (String capability : CAPABILITIES) {
             Path capabilityRoot = JAVA_ROOT.resolve(capability);
 
@@ -148,11 +184,137 @@ class CustomerArchitectureTest {
     }
 
     @Test
-    void capabilityDomainsRemainFrameworkAgnostic() throws IOException {
+    void verificationDomainUsesOnlyApprovedSubpackages()
+            throws IOException {
+
+        Set<String> actual =
+                directDirectoriesContainingJavaSources(
+                        VERIFICATION_DOMAIN
+                );
+
+        assertTrue(
+                ALLOWED_VERIFICATION_DOMAIN_PACKAGES.containsAll(actual),
+                () -> "Unexpected verification domain packages: "
+                        + difference(
+                                actual,
+                                ALLOWED_VERIFICATION_DOMAIN_PACKAGES
+                        )
+        );
+
+        for (String required : List.of(
+                "model",
+                "event",
+                "exception",
+                "policy",
+                "service"
+        )) {
+            assertTrue(
+                    actual.contains(required),
+                    () -> "Missing verification domain package: "
+                            + required
+            );
+        }
+    }
+
+    @Test
+    void capabilityDomainsRemainFrameworkAgnostic()
+            throws IOException {
+
         for (String capability : CAPABILITIES) {
             assertSourcesDoNotContain(
                     JAVA_ROOT.resolve(capability).resolve("domain"),
                     FORBIDDEN_DOMAIN_TOKENS
+            );
+        }
+    }
+
+    @Test
+    void verificationDomainNeverObtainsCurrentTime()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                VERIFICATION_DOMAIN,
+                FORBIDDEN_CURRENT_TIME_TOKENS
+        );
+    }
+
+    @Test
+    void verificationDomainDoesNotDependOnPaymentOrObservation()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                VERIFICATION_DOMAIN,
+                List.of(
+                        "import com.sixpay.payment.",
+                        "import com.sixpay.customer.observation."
+                )
+        );
+    }
+
+    @Test
+    void verificationDomainContainsNoHttpClientOrJpaConcept()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                VERIFICATION_DOMAIN,
+                List.of(
+                        "RestClient",
+                        "WebClient",
+                        "HttpClient",
+                        "java.net.http",
+                        "jakarta.persistence",
+                        "EntityManager",
+                        "JdbcTemplate",
+                        "@Entity",
+                        "@Repository"
+                )
+        );
+    }
+
+    @Test
+    void verificationEventPayloadRemainsSafe()
+            throws IOException {
+
+        Path event = VERIFICATION_DOMAIN.resolve(
+                "event/CustomerVerificationCompleted.java"
+        );
+
+        assertTrue(Files.isRegularFile(event));
+
+        String source = Files.readString(event);
+
+        for (String forbidden : List.of(
+                "CustomerNiu ",
+                "CustomerIdentity ",
+                "String legalName",
+                "String accountNumber",
+                "String phone",
+                "String email",
+                "String password",
+                "String token",
+                "String credential",
+                "String rawResponse",
+                "Amplitude"
+        )) {
+            assertFalse(
+                    source.contains(forbidden),
+                    () -> "Sensitive event payload concept found: "
+                            + forbidden
+            );
+        }
+
+        for (String required : List.of(
+                "CustomerVerificationId",
+                "VerificationOutcome",
+                "List<VerificationCheck>",
+                "VerificationEvidenceFingerprint",
+                "AccountBindingFingerprint",
+                "Instant completedAt"
+        )) {
+            assertTrue(
+                    source.contains(required),
+                    () -> "Missing safe event payload concept: "
+                            + required
             );
         }
     }
@@ -192,19 +354,6 @@ class CustomerArchitectureTest {
                     )
             );
         }
-    }
-
-    @Test
-    void capabilityDomainsDoNotDependOnEachOther() throws IOException {
-        assertSourcesDoNotContain(
-                JAVA_ROOT.resolve("verification/domain"),
-                List.of("import com.sixpay.customer.observation.")
-        );
-
-        assertSourcesDoNotContain(
-                JAVA_ROOT.resolve("observation/domain"),
-                List.of("import com.sixpay.customer.verification.")
-        );
     }
 
     @Test
@@ -343,7 +492,9 @@ class CustomerArchitectureTest {
 
             return forbiddenTokens.stream()
                     .filter(source::contains)
-                    .map(token -> path + " contains forbidden token " + token)
+                    .map(token ->
+                            path + " contains forbidden token " + token
+                    )
                     .toList();
         } catch (IOException exception) {
             throw new IllegalStateException(
