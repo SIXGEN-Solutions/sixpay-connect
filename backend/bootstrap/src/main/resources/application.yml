@@ -43,3 +43,8 @@ sixpay:
     transport: internal
     outbox:
       enabled: true
+
+  customer:
+    verification:
+      banking:
+        enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:false}

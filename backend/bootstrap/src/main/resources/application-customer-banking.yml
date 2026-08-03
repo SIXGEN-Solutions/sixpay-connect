@@ -1,0 +1,15 @@
+sixpay:
+  customer:
+    verification:
+      banking:
+        enabled: true
+        base-url: ${CORE_BANKING_BASE_URL}
+        endpoint-path: ${CORE_BANKING_CUSTOMER_VERIFICATION_PATH:/v1/accounts/verify}
+        connect-timeout: ${CORE_BANKING_CONNECT_TIMEOUT:2s}
+        read-timeout: ${CORE_BANKING_READ_TIMEOUT:5s}
+        max-attempts: ${CORE_BANKING_MAX_ATTEMPTS:3}
+        retry-backoff: ${CORE_BANKING_RETRY_BACKOFF:250ms}
+        evidence-ttl: ${CORE_BANKING_EVIDENCE_TTL:5m}
+        security:
+          oauth2-registration-id: ${CORE_BANKING_OAUTH2_REGISTRATION_ID:core-banking-customer-verification}
+          ssl-bundle: ${CORE_BANKING_SSL_BUNDLE:core-banking-client}
