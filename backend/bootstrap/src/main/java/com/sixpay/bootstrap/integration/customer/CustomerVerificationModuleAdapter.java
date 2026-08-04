@@ -1,6 +1,8 @@
 package com.sixpay.bootstrap.integration.customer;
 
 import com.sixpay.common.context.CorrelationId;
+import com.sixpay.customer.verification.application.exception.BankingVerificationTimeoutException;
+import com.sixpay.customer.verification.application.exception.BankingVerificationUnavailableException;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
@@ -15,12 +17,12 @@ import com.sixpay.customer.verification.domain.model.FinancialInstitutionCode;
 import com.sixpay.payment.application.port.output.CustomerVerificationPort;
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
 import com.sixpay.payment.application.port.output.CustomerVerificationResponse;
+import com.sixpay.payment.application.port.output.CustomerVerificationTechnicalException;
 
 import java.util.Objects;
 
 /**
- * Composition-layer adapter between the Payment-owned output contract and the
- * Customer Verification input API.
+ * Composition-layer adapter between Payment and Customer Verification.
  */
 public final class CustomerVerificationModuleAdapter
         implements CustomerVerificationPort {
@@ -42,11 +44,40 @@ public final class CustomerVerificationModuleAdapter
     ) {
         Objects.requireNonNull(request, "request is required");
 
-        VerifyCustomerResult result = verifyCustomerUseCase.verify(
-                toCustomerCommand(request)
-        );
+        try {
+            VerifyCustomerResult result = verifyCustomerUseCase.verify(
+                    toCustomerCommand(request)
+            );
+            return toPaymentResponse(result);
+        } catch (BankingVerificationTimeoutException exception) {
+            throw technicalFailure(
+                    request,
+                    CustomerVerificationTechnicalException.ErrorType.TIMEOUT,
+                    "Customer verification timed out",
+                    exception
+            );
+        } catch (BankingVerificationUnavailableException exception) {
+            throw technicalFailure(
+                    request,
+                    CustomerVerificationTechnicalException.ErrorType.UNAVAILABLE,
+                    "Customer verification is unavailable",
+                    exception
+            );
+        }
+    }
 
-        return toPaymentResponse(result);
+    private static CustomerVerificationTechnicalException technicalFailure(
+            CustomerVerificationRequest request,
+            CustomerVerificationTechnicalException.ErrorType errorType,
+            String message,
+            Throwable cause
+    ) {
+        return new CustomerVerificationTechnicalException(
+                request.verificationId(),
+                errorType,
+                message,
+                cause
+        );
     }
 
     static VerifyCustomerCommand toCustomerCommand(

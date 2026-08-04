@@ -1,9 +1,11 @@
 package com.sixpay.payment.application.service;
 
+import com.sixpay.payment.application.exception.PaymentCustomerVerificationRetryableException;
 import com.sixpay.payment.application.port.output.CustomerVerificationEvidenceMapper;
 import com.sixpay.payment.application.port.output.CustomerVerificationPort;
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
 import com.sixpay.payment.application.port.output.CustomerVerificationResponse;
+import com.sixpay.payment.application.port.output.CustomerVerificationTechnicalException;
 import com.sixpay.payment.application.port.output.PaymentCustomerVerificationIdGenerator;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentStatus;
@@ -13,14 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Orchestrates the Payment-to-Customer verification workflow.
- *
- * <p>The workflow bean is available only when the intermodule
- * {@link CustomerVerificationPort} adapter is present. This keeps isolated
- * Payment tests and deployments valid while enabling the workflow in the full
- * SIXPAY bootstrap.</p>
  */
 @Service
 @ConditionalOnBean(CustomerVerificationPort.class)
@@ -76,6 +74,8 @@ public final class PaymentCustomerVerificationService {
         Objects.requireNonNull(decisionAt, "decisionAt is required");
         Objects.requireNonNull(policies, "policies are required");
 
+        UUID verificationId = idGenerator.forPayment(paymentId);
+
         return coordinator.mutate(
                 paymentId,
                 payment -> {
@@ -92,24 +92,47 @@ public final class PaymentCustomerVerificationService {
                     CustomerVerificationRequest request =
                             requestFactory.from(
                                     payment,
-                                    idGenerator.nextId(),
+                                    verificationId,
                                     decisionAt
                             );
 
-                    CustomerVerificationResponse response =
-                            customerVerificationPort.verify(request);
+                    CustomerVerificationResponse response;
+                    try {
+                        response =
+                                customerVerificationPort.verify(request);
+                    } catch (CustomerVerificationTechnicalException failure) {
+                        /*
+                         * No aggregate mutation has occurred. The coordinator
+                         * therefore persists neither Payment nor new events.
+                         * The already durable
+                         * PaymentBankingVerificationRequested message can be
+                         * replayed with the same paymentId, correlationId,
+                         * binding fingerprint and verificationId.
+                         */
+                        throw new PaymentCustomerVerificationRetryableException(
+                                paymentId,
+                                failure.verificationId(),
+                                failure.errorType(),
+                                failure
+                        );
+                    }
 
+                    /*
+                     * Customer timestamps are canonical and stable across a
+                     * replay. Using completedAt rather than the current retry
+                     * time makes the resulting evidence and failure identical.
+                     */
                     var snapshot = evidenceMapper.toSnapshot(
                             response,
                             payment.toState()
                                     .requestIdentity()
                                     .correlationId(),
-                            decisionAt
+                            response.completedAt()
                     );
 
                     var failure = failureMapper.from(
                             response,
-                            decisionAt
+                            response.completedAt()
                     );
 
                     payment.recordBankingVerification(

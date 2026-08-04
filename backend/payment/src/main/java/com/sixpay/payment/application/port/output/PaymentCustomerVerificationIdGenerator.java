@@ -1,13 +1,14 @@
 package com.sixpay.payment.application.port.output;
 
+import com.sixpay.payment.domain.model.PaymentId;
+
 import java.util.UUID;
 
 /**
- * Generates stable identifiers for Customer Verification requests initiated by
- * Payment.
+ * Derives the stable Customer Verification identifier owned by one Payment.
  */
 @FunctionalInterface
 public interface PaymentCustomerVerificationIdGenerator {
 
-    UUID nextId();
+    UUID forPayment(PaymentId paymentId);
 }
