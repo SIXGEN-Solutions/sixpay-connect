@@ -25,10 +25,14 @@ class PaymentFoundationArchitectureTest {
             APPLICATION_ROOT.resolve("service");
 
     @Test
-    void lot39AuthorizesFocusedOrchestrationServices()
+    void lot39AndCustomerVerificationAuthorizeFocusedOrchestrationServices()
             throws IOException {
+
         Set<String> authorizedServices = Set.of(
+                "CustomerVerificationFailureMapper.java",
                 "PaymentAuthorizationService.java",
+                "PaymentCustomerVerificationRequestFactory.java",
+                "PaymentCustomerVerificationService.java",
                 "PaymentFinalizationService.java",
                 "PaymentFundsControlService.java",
                 "PaymentInitiationOrchestrationService.java",
