@@ -21,6 +21,9 @@ class CustomerArchitectureTest {
     private static final Path VERIFICATION_DOMAIN =
             JAVA_ROOT.resolve("verification/domain");
 
+    private static final Path OBSERVATION_DOMAIN =
+            JAVA_ROOT.resolve("observation/domain");
+
     private static final List<String> CAPABILITIES =
             List.of("verification", "observation");
 
@@ -44,6 +47,13 @@ class CustomerArchitectureTest {
                     "repository"
             );
 
+    private static final Set<String> ALLOWED_OBSERVATION_DOMAIN_PACKAGES =
+            Set.of(
+                    "model",
+                    "exception",
+                    "policy"
+            );
+
     private static final List<String> FORBIDDEN_DOMAIN_TOKENS =
             List.of(
                     "import org.springframework.",
@@ -53,18 +63,30 @@ class CustomerArchitectureTest {
                     "import tools.jackson.",
                     "import java.net.",
                     "import java.sql.",
+
+                    // Verification domain must not depend on outer layers.
                     "import com.sixpay.customer.verification.api.",
                     "import com.sixpay.customer.verification.application.",
                     "import com.sixpay.customer.verification.configuration.",
                     "import com.sixpay.customer.verification.infrastructure.",
-                    "import com.sixpay.customer.observation.",
+                    "import com.sixpay.customer.verification.events.",
+
+                    // Observation domain must not depend on outer layers.
+                    "import com.sixpay.customer.observation.api.",
+                    "import com.sixpay.customer.observation.application.",
+                    "import com.sixpay.customer.observation.configuration.",
+                    "import com.sixpay.customer.observation.infrastructure.",
+                    "import com.sixpay.customer.observation.events.",
+
                     "import com.sixpay.payment.",
+
                     "RestClient",
                     "WebClient",
                     "HttpClient",
                     "KafkaTemplate",
                     "EntityManager",
                     "JdbcTemplate",
+
                     "@Entity",
                     "@MappedSuperclass",
                     "@Embeddable",
@@ -96,16 +118,28 @@ class CustomerArchitectureTest {
             );
 
     @Test
-    void moduleMarkerIsPresentAndNonExecutable() throws IOException {
+    void moduleMarkerIsPresentAndNonExecutable()
+            throws IOException {
+
         Path marker = JAVA_ROOT.resolve("CustomerModule.java");
 
         assertTrue(Files.isRegularFile(marker));
 
         String source = Files.readString(marker);
 
-        assertTrue(source.contains("public final class CustomerModule"));
-        assertFalse(source.contains("@SpringBootApplication"));
-        assertFalse(source.contains("public static void main("));
+        assertTrue(
+                source.contains(
+                        "public final class CustomerModule"
+                )
+        );
+
+        assertFalse(
+                source.contains("@SpringBootApplication")
+        );
+
+        assertFalse(
+                source.contains("public static void main(")
+        );
     }
 
     @Test
@@ -115,6 +149,7 @@ class CustomerArchitectureTest {
         Path configuration = JAVA_ROOT.resolve(
                 "configuration/CustomerModuleConfiguration.java"
         );
+
         Path imports = Path.of(
                 "src/main/resources/META-INF/spring/"
                         + "org.springframework.boot.autoconfigure."
@@ -124,25 +159,43 @@ class CustomerArchitectureTest {
         assertTrue(Files.isRegularFile(configuration));
         assertTrue(Files.isRegularFile(imports));
 
-        String configurationSource = Files.readString(configuration);
-        String importsSource = Files.readString(imports);
+        String configurationSource =
+                Files.readString(configuration);
 
-        assertTrue(configurationSource.contains("@AutoConfiguration"));
-        assertTrue(configurationSource.contains(
-                "@ComponentScan(basePackageClasses = CustomerModule.class)"
-        ));
-        assertTrue(importsSource.contains(
-                "com.sixpay.customer.configuration."
-                        + "CustomerModuleConfiguration"
-        ));
+        String importsSource =
+                Files.readString(imports);
+
+        assertTrue(
+                configurationSource.contains(
+                        "@AutoConfiguration"
+                )
+        );
+
+        assertTrue(
+                configurationSource.contains(
+                        "@ComponentScan(basePackageClasses = "
+                                + "CustomerModule.class)"
+                )
+        );
+
+        assertTrue(
+                importsSource.contains(
+                        "com.sixpay.customer.configuration."
+                                + "CustomerModuleConfiguration"
+                )
+        );
     }
 
     @Test
     void moduleContainsTheTwoApprovedCapabilities() {
+
         for (String capability : CAPABILITIES) {
             assertTrue(
-                    Files.isDirectory(JAVA_ROOT.resolve(capability)),
-                    () -> "Missing Customer capability: " + capability
+                    Files.isDirectory(
+                            JAVA_ROOT.resolve(capability)
+                    ),
+                    () -> "Missing Customer capability: "
+                            + capability
             );
         }
     }
@@ -152,23 +205,35 @@ class CustomerArchitectureTest {
             throws IOException {
 
         for (String capability : CAPABILITIES) {
-            Path capabilityRoot = JAVA_ROOT.resolve(capability);
+            Path capabilityRoot =
+                    JAVA_ROOT.resolve(capability);
 
             Set<String> actual =
-                    directDirectoriesContainingJavaSources(capabilityRoot);
+                    directDirectoriesContainingJavaSources(
+                            capabilityRoot
+                    );
 
             assertTrue(
-                    actual.containsAll(REQUIRED_CAPABILITY_PACKAGES),
+                    actual.containsAll(
+                            REQUIRED_CAPABILITY_PACKAGES
+                    ),
                     () -> capability
                             + " is missing packages: "
-                            + difference(REQUIRED_CAPABILITY_PACKAGES, actual)
+                            + difference(
+                            REQUIRED_CAPABILITY_PACKAGES,
+                            actual
+                    )
             );
 
             assertTrue(
-                    REQUIRED_CAPABILITY_PACKAGES.containsAll(actual),
+                    REQUIRED_CAPABILITY_PACKAGES
+                            .containsAll(actual),
                     () -> capability
                             + " contains unexpected packages: "
-                            + difference(actual, REQUIRED_CAPABILITY_PACKAGES)
+                            + difference(
+                            actual,
+                            REQUIRED_CAPABILITY_PACKAGES
+                    )
             );
 
             assertTrue(
@@ -178,7 +243,8 @@ class CustomerArchitectureTest {
                             )
                     ),
                     () -> capability
-                            + " must expose infrastructure/persistence"
+                            + " must expose "
+                            + "infrastructure/persistence"
             );
         }
     }
@@ -193,12 +259,13 @@ class CustomerArchitectureTest {
                 );
 
         assertTrue(
-                ALLOWED_VERIFICATION_DOMAIN_PACKAGES.containsAll(actual),
+                ALLOWED_VERIFICATION_DOMAIN_PACKAGES
+                        .containsAll(actual),
                 () -> "Unexpected verification domain packages: "
                         + difference(
-                                actual,
-                                ALLOWED_VERIFICATION_DOMAIN_PACKAGES
-                        )
+                        actual,
+                        ALLOWED_VERIFICATION_DOMAIN_PACKAGES
+                )
         );
 
         for (String required : List.of(
@@ -217,25 +284,63 @@ class CustomerArchitectureTest {
     }
 
     @Test
+    void observationDomainUsesOnlyApprovedSubpackages()
+            throws IOException {
+
+        Set<String> actual =
+                directDirectoriesContainingJavaSources(
+                        OBSERVATION_DOMAIN
+                );
+
+        assertTrue(
+                ALLOWED_OBSERVATION_DOMAIN_PACKAGES
+                        .containsAll(actual),
+                () -> "Unexpected observation domain packages: "
+                        + difference(
+                        actual,
+                        ALLOWED_OBSERVATION_DOMAIN_PACKAGES
+                )
+        );
+
+        for (String required : List.of(
+                "model",
+                "exception",
+                "policy"
+        )) {
+            assertTrue(
+                    actual.contains(required),
+                    () -> "Missing observation domain package: "
+                            + required
+            );
+        }
+    }
+
+    @Test
     void capabilityDomainsRemainFrameworkAgnostic()
             throws IOException {
 
         for (String capability : CAPABILITIES) {
             assertSourcesDoNotContain(
-                    JAVA_ROOT.resolve(capability).resolve("domain"),
+                    JAVA_ROOT
+                            .resolve(capability)
+                            .resolve("domain"),
                     FORBIDDEN_DOMAIN_TOKENS
             );
         }
     }
 
     @Test
-    void verificationDomainNeverObtainsCurrentTime()
+    void capabilityDomainsNeverObtainCurrentTime()
             throws IOException {
 
-        assertSourcesDoNotContain(
-                VERIFICATION_DOMAIN,
-                FORBIDDEN_CURRENT_TIME_TOKENS
-        );
+        for (String capability : CAPABILITIES) {
+            assertSourcesDoNotContain(
+                    JAVA_ROOT
+                            .resolve(capability)
+                            .resolve("domain"),
+                    FORBIDDEN_CURRENT_TIME_TOKENS
+            );
+        }
     }
 
     @Test
@@ -252,11 +357,44 @@ class CustomerArchitectureTest {
     }
 
     @Test
+    void observationDomainDoesNotDependOnPaymentOrVerification()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                OBSERVATION_DOMAIN,
+                List.of(
+                        "import com.sixpay.payment.",
+                        "import com.sixpay.customer.verification."
+                )
+        );
+    }
+
+    @Test
     void verificationDomainContainsNoHttpClientOrJpaConcept()
             throws IOException {
 
         assertSourcesDoNotContain(
                 VERIFICATION_DOMAIN,
+                List.of(
+                        "RestClient",
+                        "WebClient",
+                        "HttpClient",
+                        "java.net.http",
+                        "jakarta.persistence",
+                        "EntityManager",
+                        "JdbcTemplate",
+                        "@Entity",
+                        "@Repository"
+                )
+        );
+    }
+
+    @Test
+    void observationDomainContainsNoHttpClientOrJpaConcept()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                OBSERVATION_DOMAIN,
                 List.of(
                         "RestClient",
                         "WebClient",
@@ -320,15 +458,59 @@ class CustomerArchitectureTest {
     }
 
     @Test
+    void observationAccountModelContainsNoRawAccountConcept()
+            throws IOException {
+
+        Path accountReference =
+                OBSERVATION_DOMAIN.resolve(
+                        "model/ObservedAccountReference.java"
+                );
+
+        assertTrue(Files.isRegularFile(accountReference));
+
+        String source =
+                Files.readString(accountReference);
+
+        for (String forbidden : List.of(
+                "accountNumber",
+                "ribDebiteur",
+                "rawAccount",
+                "iban",
+                "IntegrationAccountToken",
+                "BankingAccountAccessReference"
+        )) {
+            assertFalse(
+                    source.contains(forbidden),
+                    () -> "Raw account concept found: "
+                            + forbidden
+            );
+        }
+
+        assertTrue(
+                source.contains(
+                        "accountBindingFingerprint"
+                )
+        );
+
+        assertTrue(
+                source.contains("maskedValue")
+        );
+    }
+
+    @Test
     void applicationsDoNotDependOnApiInfrastructureOrConfiguration()
             throws IOException {
 
         for (String capability : CAPABILITIES) {
-            String prefix = "import com.sixpay.customer."
-                    + capability + ".";
+            String prefix =
+                    "import com.sixpay.customer."
+                            + capability
+                            + ".";
 
             assertSourcesDoNotContain(
-                    JAVA_ROOT.resolve(capability).resolve("application"),
+                    JAVA_ROOT
+                            .resolve(capability)
+                            .resolve("application"),
                     List.of(
                             prefix + "api.",
                             prefix + "infrastructure.",
@@ -343,11 +525,15 @@ class CustomerArchitectureTest {
             throws IOException {
 
         for (String capability : CAPABILITIES) {
-            String prefix = "import com.sixpay.customer."
-                    + capability + ".";
+            String prefix =
+                    "import com.sixpay.customer."
+                            + capability
+                            + ".";
 
             assertSourcesDoNotContain(
-                    JAVA_ROOT.resolve(capability).resolve("infrastructure"),
+                    JAVA_ROOT
+                            .resolve(capability)
+                            .resolve("infrastructure"),
                     List.of(
                             prefix + "api.",
                             prefix + "configuration."
@@ -370,13 +556,20 @@ class CustomerArchitectureTest {
     void customerDoesNotDeclarePaymentOrIntegrationAsMavenDependencies()
             throws IOException {
 
-        String pom = Files.readString(Path.of("pom.xml"));
+        String pom = Files.readString(
+                Path.of("pom.xml")
+        );
 
         assertFalse(
-                pom.contains("<artifactId>payment</artifactId>")
+                pom.contains(
+                        "<artifactId>payment</artifactId>"
+                )
         );
+
         assertFalse(
-                pom.contains("<artifactId>integration</artifactId>")
+                pom.contains(
+                        "<artifactId>integration</artifactId>"
+                )
         );
     }
 
@@ -384,7 +577,9 @@ class CustomerArchitectureTest {
     void moduleDeclaresTheGoldenPlatformAndTestFoundation()
             throws IOException {
 
-        String pom = Files.readString(Path.of("pom.xml"));
+        String pom = Files.readString(
+                Path.of("pom.xml")
+        );
 
         for (String artifactId : List.of(
                 "common",
@@ -407,9 +602,12 @@ class CustomerArchitectureTest {
         )) {
             assertTrue(
                     pom.contains(
-                            "<artifactId>" + artifactId + "</artifactId>"
+                            "<artifactId>"
+                                    + artifactId
+                                    + "</artifactId>"
                     ),
-                    () -> "Missing Customer dependency: " + artifactId
+                    () -> "Missing Customer dependency: "
+                            + artifactId
             );
         }
     }
@@ -435,24 +633,36 @@ class CustomerArchitectureTest {
         try (Stream<Path> paths = Files.list(root)) {
             return paths
                     .filter(Files::isDirectory)
-                    .filter(CustomerArchitectureTest::containsJavaSources)
-                    .map(path -> path.getFileName().toString())
+                    .filter(
+                            CustomerArchitectureTest
+                                    ::containsJavaSources
+                    )
+                    .map(
+                            path ->
+                                    path.getFileName().toString()
+                    )
                     .collect(Collectors.toSet());
         }
     }
 
-    private static boolean containsJavaSources(Path root) {
+    private static boolean containsJavaSources(
+            Path root
+    ) {
         if (!Files.isDirectory(root)) {
             return false;
         }
 
         try (Stream<Path> paths = Files.walk(root)) {
             return paths.anyMatch(
-                    path -> Files.isRegularFile(path)
-                            && path.toString().endsWith(".java")
+                    path ->
+                            Files.isRegularFile(path)
+                                    && path.toString()
+                                    .endsWith(".java")
             );
         } catch (IOException exception) {
-            throw new IllegalStateException(exception);
+            throw new IllegalStateException(
+                    exception
+            );
         }
     }
 
@@ -470,16 +680,25 @@ class CustomerArchitectureTest {
         try (Stream<Path> paths = Files.walk(root)) {
             violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .flatMap(path ->
-                            violations(path, forbiddenTokens).stream()
+                    .filter(
+                            path ->
+                                    path.toString()
+                                            .endsWith(".java")
+                    )
+                    .flatMap(
+                            path ->
+                                    violations(
+                                            path,
+                                            forbiddenTokens
+                                    ).stream()
                     )
                     .toList();
         }
 
         assertTrue(
                 violations.isEmpty(),
-                () -> "Architecture violations: " + violations
+                () -> "Architecture violations: "
+                        + violations
         );
     }
 
@@ -492,8 +711,11 @@ class CustomerArchitectureTest {
 
             return forbiddenTokens.stream()
                     .filter(source::contains)
-                    .map(token ->
-                            path + " contains forbidden token " + token
+                    .map(
+                            token ->
+                                    path
+                                            + " contains forbidden token "
+                                            + token
                     )
                     .toList();
         } catch (IOException exception) {
@@ -509,7 +731,10 @@ class CustomerArchitectureTest {
             Set<String> right
     ) {
         return left.stream()
-                .filter(value -> !right.contains(value))
+                .filter(
+                        value ->
+                                !right.contains(value)
+                )
                 .collect(Collectors.toSet());
     }
 }
