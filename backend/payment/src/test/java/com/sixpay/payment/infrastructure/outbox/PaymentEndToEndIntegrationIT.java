@@ -302,7 +302,7 @@ class PaymentEndToEndIntegrationIT {
             Instant occurredAt
     ) {
         outboxRepository.save(
-                new PaymentOutboxEntity(
+                PaymentOutboxEntity.create(
                         UUID.randomUUID(),
                         paymentId,
                         eventType,
