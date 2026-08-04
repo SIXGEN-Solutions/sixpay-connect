@@ -54,6 +54,11 @@ public final class JpaObservedCustomerRepositoryAdapter
     public Optional<ObservedCustomer> findByNormalizedNiu(
             String normalizedNiu
     ) {
+        Objects.requireNonNull(
+                normalizedNiu,
+                "normalizedNiu is required"
+        );
+
         String searchHash =
                 protector.searchHash(normalizedNiu);
 
@@ -75,17 +80,21 @@ public final class JpaObservedCustomerRepositoryAdapter
 
     @Override
     public void save(ObservedCustomer observedCustomer) {
-        ObservedCustomerJpaEntity entity =
-                customers.findById(
-                        observedCustomer.id().value()
-                ).orElseGet(
-                        ObservedCustomerJpaEntity::new
-                );
-
-        mapper.copyToEntity(
+        Objects.requireNonNull(
                 observedCustomer,
-                entity
+                "observedCustomer is required"
         );
+
+        ObservedCustomerJpaEntity entity =
+                customers
+                        .findDetailedByObservedCustomerId(
+                                observedCustomer.id().value()
+                        )
+                        .orElseGet(
+                                ObservedCustomerJpaEntity::create
+                        );
+
+        mapper.copyToEntity(observedCustomer, entity);
         customers.save(entity);
     }
 }

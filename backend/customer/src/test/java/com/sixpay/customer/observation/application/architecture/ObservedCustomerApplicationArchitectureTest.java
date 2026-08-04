@@ -114,7 +114,7 @@ class ObservedCustomerApplicationArchitectureTest {
                 "findByNormalizedNiu(",
                 "ObservedCustomer.observeFirst(",
                 "customer.observePayment(",
-                "customerRepository.save(customer)",
+                "customerRepository.save(",
                 "paymentRepository.save("
         )) {
             assertTrue(

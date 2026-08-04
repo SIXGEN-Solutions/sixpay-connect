@@ -1,7 +1,7 @@
 CREATE TABLE customer_observed_customer (
     observed_customer_id UUID PRIMARY KEY,
     niu_protected VARCHAR(1024) NOT NULL,
-    niu_search_hash CHAR(64) NOT NULL,
+    niu_search_hash VARCHAR(64) NOT NULL,
     legal_name_protected VARCHAR(2048) NOT NULL,
     legal_name_search_normalized VARCHAR(256) NOT NULL,
     phone_masked VARCHAR(128),
@@ -52,7 +52,7 @@ CREATE INDEX ix_customer_observed_customer_last_observed
     );
 
 CREATE TABLE customer_observed_institution (
-    observed_institution_id BIGSERIAL PRIMARY KEY,
+    observed_institution_id UUID PRIMARY KEY,
     observed_customer_id UUID NOT NULL,
     financial_institution_code VARCHAR(32) NOT NULL,
     first_observed_at TIMESTAMPTZ NOT NULL,
@@ -79,8 +79,8 @@ CREATE INDEX ix_customer_observed_institution_customer
     );
 
 CREATE TABLE customer_observed_account (
-    observed_account_id BIGSERIAL PRIMARY KEY,
-    observed_institution_id BIGINT NOT NULL,
+    observed_account_id UUID PRIMARY KEY,
+    observed_institution_id UUID NOT NULL,
     account_binding_fingerprint VARCHAR(67) NOT NULL,
     masked_value VARCHAR(32) NOT NULL,
 
@@ -108,7 +108,7 @@ CREATE TABLE customer_observed_payment (
     public_payment_reference VARCHAR(128) NOT NULL,
     financial_institution_code VARCHAR(32) NOT NULL,
     amount NUMERIC(19, 2) NOT NULL,
-    currency CHAR(3) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     payment_status VARCHAR(64) NOT NULL,
     failure_reason_code VARCHAR(64),
     payment_created_at TIMESTAMPTZ NOT NULL,

@@ -21,42 +21,22 @@ public class ObservedPaymentJpaEntity {
     private UUID paymentId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "observed_customer_id",
-            nullable = false
-    )
+    @JoinColumn(name = "observed_customer_id", nullable = false)
     private ObservedCustomerJpaEntity observedCustomer;
 
-    @Column(
-            name = "public_payment_reference",
-            nullable = false,
-            length = 128
-    )
+    @Column(name = "public_payment_reference", nullable = false, length = 128)
     private String publicPaymentReference;
 
-    @Column(
-            name = "financial_institution_code",
-            nullable = false,
-            length = 32
-    )
+    @Column(name = "financial_institution_code", nullable = false, length = 32)
     private String financialInstitutionCode;
 
-    @Column(
-            name = "amount",
-            nullable = false,
-            precision = 19,
-            scale = 2
-    )
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "currency", nullable = false, length = 3)
     private String currency;
 
-    @Column(
-            name = "payment_status",
-            nullable = false,
-            length = 64
-    )
+    @Column(name = "payment_status", nullable = false, length = 64)
     private String paymentStatus;
 
     @Column(name = "failure_reason_code", length = 64)
@@ -68,95 +48,32 @@ public class ObservedPaymentJpaEntity {
     @Column(name = "payment_updated_at", nullable = false)
     private Instant paymentUpdatedAt;
 
-    public ObservedPaymentJpaEntity() {
+    protected ObservedPaymentJpaEntity() {
+        // Required by JPA.
     }
 
-    public UUID getPaymentId() {
-        return paymentId;
+    public static ObservedPaymentJpaEntity create() {
+        return new ObservedPaymentJpaEntity();
     }
 
-    public void setPaymentId(UUID paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    public ObservedCustomerJpaEntity getObservedCustomer() {
-        return observedCustomer;
-    }
-
-    public void setObservedCustomer(
-            ObservedCustomerJpaEntity observedCustomer
-    ) {
-        this.observedCustomer = observedCustomer;
-    }
-
-    public String getPublicPaymentReference() {
-        return publicPaymentReference;
-    }
-
-    public void setPublicPaymentReference(
-            String publicPaymentReference
-    ) {
-        this.publicPaymentReference = publicPaymentReference;
-    }
-
-    public String getFinancialInstitutionCode() {
-        return financialInstitutionCode;
-    }
-
-    public void setFinancialInstitutionCode(
-            String financialInstitutionCode
-    ) {
-        this.financialInstitutionCode =
-                financialInstitutionCode;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public String getFailureReasonCode() {
-        return failureReasonCode;
-    }
-
-    public void setFailureReasonCode(
-            String failureReasonCode
-    ) {
-        this.failureReasonCode = failureReasonCode;
-    }
-
-    public Instant getPaymentCreatedAt() {
-        return paymentCreatedAt;
-    }
-
-    public void setPaymentCreatedAt(Instant paymentCreatedAt) {
-        this.paymentCreatedAt = paymentCreatedAt;
-    }
-
-    public Instant getPaymentUpdatedAt() {
-        return paymentUpdatedAt;
-    }
-
-    public void setPaymentUpdatedAt(Instant paymentUpdatedAt) {
-        this.paymentUpdatedAt = paymentUpdatedAt;
-    }
+    public UUID getPaymentId() { return paymentId; }
+    public void setPaymentId(UUID value) { this.paymentId = value; }
+    public ObservedCustomerJpaEntity getObservedCustomer() { return observedCustomer; }
+    public void setObservedCustomer(ObservedCustomerJpaEntity value) { this.observedCustomer = value; }
+    public String getPublicPaymentReference() { return publicPaymentReference; }
+    public void setPublicPaymentReference(String value) { this.publicPaymentReference = value; }
+    public String getFinancialInstitutionCode() { return financialInstitutionCode; }
+    public void setFinancialInstitutionCode(String value) { this.financialInstitutionCode = value; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal value) { this.amount = value; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String value) { this.currency = value; }
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String value) { this.paymentStatus = value; }
+    public String getFailureReasonCode() { return failureReasonCode; }
+    public void setFailureReasonCode(String value) { this.failureReasonCode = value; }
+    public Instant getPaymentCreatedAt() { return paymentCreatedAt; }
+    public void setPaymentCreatedAt(Instant value) { this.paymentCreatedAt = value; }
+    public Instant getPaymentUpdatedAt() { return paymentUpdatedAt; }
+    public void setPaymentUpdatedAt(Instant value) { this.paymentUpdatedAt = value; }
 }

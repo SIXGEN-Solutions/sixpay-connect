@@ -5,49 +5,38 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(
         name = "customer_observed_institution",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_customer_observed_institution",
-                columnNames = {
-                        "observed_customer_id",
-                        "financial_institution_code"
-                }
+                columnNames = {"observed_customer_id", "financial_institution_code"}
         )
 )
 public class ObservedCustomerInstitutionJpaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "observed_institution_id")
-    private Long id;
+    @GeneratedValue
+    @Column(name = "observed_institution_id", nullable = false, updatable = false)
+    private UUID observedInstitutionId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "observed_customer_id",
-            nullable = false
-    )
+    @JoinColumn(name = "observed_customer_id", nullable = false)
     private ObservedCustomerJpaEntity observedCustomer;
 
-    @Column(
-            name = "financial_institution_code",
-            nullable = false,
-            length = 32
-    )
+    @Column(name = "financial_institution_code", nullable = false, length = 32)
     private String financialInstitutionCode;
 
     @Column(name = "first_observed_at", nullable = false)
@@ -62,57 +51,48 @@ public class ObservedCustomerInstitutionJpaEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    @OrderBy("maskedValue ASC")
-    private List<ObservedAccountJpaEntity> accounts =
-            new ArrayList<>();
+    private Set<ObservedAccountJpaEntity> accounts = new LinkedHashSet<>();
 
-    public ObservedCustomerInstitutionJpaEntity() {
+    protected ObservedCustomerInstitutionJpaEntity() {
+        // Required by JPA.
     }
 
-    public void attachTo(
-            ObservedCustomerJpaEntity observedCustomer
-    ) {
-        this.observedCustomer = observedCustomer;
+    public static ObservedCustomerInstitutionJpaEntity create() {
+        return new ObservedCustomerInstitutionJpaEntity();
     }
 
-    public void replaceAccounts(
-            List<ObservedAccountJpaEntity> values
-    ) {
-        accounts.clear();
-        values.forEach(value -> {
-            value.attachTo(this);
-            accounts.add(value);
-        });
+    public void attachTo(ObservedCustomerJpaEntity customer) {
+        this.observedCustomer = customer;
     }
 
-    public String getFinancialInstitutionCode() {
-        return financialInstitutionCode;
+    public void detach() {
+        this.observedCustomer = null;
     }
 
-    public void setFinancialInstitutionCode(
-            String financialInstitutionCode
-    ) {
-        this.financialInstitutionCode =
-                financialInstitutionCode;
+    public void addAccount(ObservedAccountJpaEntity account) {
+        account.attachTo(this);
+        accounts.add(account);
     }
 
-    public Instant getFirstObservedAt() {
-        return firstObservedAt;
+    public void removeAccount(ObservedAccountJpaEntity account) {
+        accounts.remove(account);
+        account.detach();
     }
 
-    public void setFirstObservedAt(Instant firstObservedAt) {
-        this.firstObservedAt = firstObservedAt;
-    }
-
-    public Instant getLastObservedAt() {
-        return lastObservedAt;
-    }
-
-    public void setLastObservedAt(Instant lastObservedAt) {
-        this.lastObservedAt = lastObservedAt;
-    }
-
-    public List<ObservedAccountJpaEntity> getAccounts() {
+    public Set<ObservedAccountJpaEntity> mutableAccounts() {
         return accounts;
     }
+
+    public Set<ObservedAccountJpaEntity> getAccounts() {
+        return Set.copyOf(accounts);
+    }
+
+    public UUID getObservedInstitutionId() { return observedInstitutionId; }
+    public ObservedCustomerJpaEntity getObservedCustomer() { return observedCustomer; }
+    public String getFinancialInstitutionCode() { return financialInstitutionCode; }
+    public void setFinancialInstitutionCode(String value) { this.financialInstitutionCode = value; }
+    public Instant getFirstObservedAt() { return firstObservedAt; }
+    public void setFirstObservedAt(Instant value) { this.firstObservedAt = value; }
+    public Instant getLastObservedAt() { return lastObservedAt; }
+    public void setLastObservedAt(Instant value) { this.lastObservedAt = value; }
 }

@@ -16,11 +16,16 @@ import com.sixpay.customer.observation.infrastructure.persistence.entity.Process
 import com.sixpay.customer.observation.infrastructure.persistence.protection.ObservedCustomerDataProtector;
 
 import java.text.Normalizer;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class ObservedCustomerPersistenceMapper {
@@ -40,72 +45,45 @@ public final class ObservedCustomerPersistenceMapper {
             ObservedCustomer source,
             ObservedCustomerJpaEntity target
     ) {
+        Objects.requireNonNull(source, "source is required");
+        Objects.requireNonNull(target, "target is required");
+
         target.setObservedCustomerId(source.id().value());
         target.setNiuProtected(
-                protector.protect(
-                        source.identity().normalizedNiu()
-                )
+                protector.protect(source.identity().normalizedNiu())
         );
         target.setNiuSearchHash(
-                protector.searchHash(
-                        source.identity().normalizedNiu()
-                )
+                protector.searchHash(source.identity().normalizedNiu())
         );
         target.setLegalNameProtected(
-                protector.protect(
-                        source.identity().legalName()
-                )
+                protector.protect(source.identity().legalName())
         );
         target.setLegalNameSearchNormalized(
-                normalizeSearchName(
-                        source.identity().legalName()
-                )
+                normalizeSearchName(source.identity().legalName())
         );
-        target.setPhoneMasked(
-                source.identity().phoneMasked()
-        );
-        target.setEmailMasked(
-                source.identity().emailMasked()
-        );
-        target.setFirstObservedAt(
-                source.firstObservedAt()
-        );
-        target.setLastObservedAt(
-                source.lastObservedAt()
-        );
-        target.setTotalPayments(
-                source.totalPayments()
-        );
-        target.setSuccessfulPayments(
-                source.successfulPayments()
-        );
-        target.setFailedPayments(
-                source.failedPayments()
-        );
-        target.setLastPaymentStatus(
-                source.lastPaymentStatus().name()
-        );
+        target.setPhoneMasked(source.identity().phoneMasked());
+        target.setEmailMasked(source.identity().emailMasked());
+        target.setFirstObservedAt(source.firstObservedAt());
+        target.setLastObservedAt(source.lastObservedAt());
+        target.setTotalPayments(source.totalPayments());
+        target.setSuccessfulPayments(source.successfulPayments());
+        target.setFailedPayments(source.failedPayments());
+        target.setLastPaymentStatus(source.lastPaymentStatus().name());
         target.setLastFailureReasonCode(
-                source.lastFailureReasonCode()
-                        .orElse(null)
+                source.lastFailureReasonCode().orElse(null)
         );
-        target.setProjectionVersion(
-                source.projectionVersion()
-        );
+        target.setProjectionVersion(source.projectionVersion());
         target.setSourceEventWatermark(
                 source.sourceEventWatermark().value()
         );
+
         if (target.getCreatedAt() == null) {
-            target.setCreatedAt(
-                    source.firstObservedAt()
-            );
+            target.setCreatedAt(source.firstObservedAt());
         }
+
         target.setUpdatedAt(source.updatedAt());
-        target.replaceInstitutions(
-                source.institutions().stream()
-                        .map(this::toInstitutionEntity)
-                        .toList()
-        );
+
+        synchronizeInstitutions(source, target);
     }
 
     public ObservedCustomer toDomain(
@@ -113,32 +91,37 @@ public final class ObservedCustomerPersistenceMapper {
             List<ObservedPaymentJpaEntity> payments,
             List<ProcessedObservationEventJpaEntity> events
     ) {
+        Objects.requireNonNull(customer, "customer is required");
+        Objects.requireNonNull(payments, "payments is required");
+        Objects.requireNonNull(events, "events is required");
+
+        List<ObservedCustomerInstitution> institutions =
+                customer.getInstitutions()
+                        .stream()
+                        .map(this::toInstitutionDomain)
+                        .toList();
+
+        List<ObservedPaymentReference> paymentReferences =
+                payments.stream()
+                        .map(this::toPaymentDomain)
+                        .toList();
+
+        Set<UUID> appliedSourceEventIds =
+                events.stream()
+                        .map(ProcessedObservationEventJpaEntity::getSourceEventId)
+                        .collect(Collectors.toUnmodifiableSet());
+
         return ObservedCustomer.reconstitute(
-                ObservedCustomerId.of(
-                        customer.getObservedCustomerId()
-                ),
+                ObservedCustomerId.of(customer.getObservedCustomerId()),
                 ObservedCustomerIdentity.of(
-                        protector.reveal(
-                                customer.getNiuProtected()
-                        ),
-                        protector.reveal(
-                                customer.getLegalNameProtected()
-                        ),
+                        protector.reveal(customer.getNiuProtected()),
+                        protector.reveal(customer.getLegalNameProtected()),
                         customer.getPhoneMasked(),
                         customer.getEmailMasked()
                 ),
-                customer.getInstitutions().stream()
-                        .map(this::toInstitutionDomain)
-                        .toList(),
-                payments.stream()
-                        .map(this::toPaymentDomain)
-                        .toList(),
-                events.stream()
-                        .map(
-                                ProcessedObservationEventJpaEntity
-                                        ::getSourceEventId
-                        )
-                        .collect(Collectors.toUnmodifiableSet()),
+                institutions,
+                paymentReferences,
+                appliedSourceEventIds,
                 customer.getFirstObservedAt(),
                 customer.getLastObservedAt(),
                 customer.getTotalPayments(),
@@ -156,96 +139,176 @@ public final class ObservedCustomerPersistenceMapper {
         );
     }
 
-    public ObservedPaymentJpaEntity toPaymentEntity(
-            ObservedPaymentReference source,
-            ObservedCustomerJpaEntity customer
-    ) {
-        ObservedPaymentJpaEntity target =
-                new ObservedPaymentJpaEntity();
-        copyPayment(source, customer, target);
-        return target;
-    }
-
     public void copyPayment(
             ObservedPaymentReference source,
             ObservedCustomerJpaEntity customer,
             ObservedPaymentJpaEntity target
     ) {
+        Objects.requireNonNull(source, "source is required");
+        Objects.requireNonNull(customer, "customer is required");
+        Objects.requireNonNull(target, "target is required");
+
         target.setPaymentId(source.paymentId());
         target.setObservedCustomer(customer);
-        target.setPublicPaymentReference(
-                source.paymentReference()
-        );
+        target.setPublicPaymentReference(source.paymentReference());
         target.setFinancialInstitutionCode(
                 source.financialInstitutionCode()
         );
         target.setAmount(source.amount());
         target.setCurrency(source.currency());
-        target.setPaymentStatus(
-                source.status().name()
-        );
-        target.setFailureReasonCode(
-                source.failureReasonCode()
-        );
-        target.setPaymentCreatedAt(
-                source.createdAt()
-        );
-        target.setPaymentUpdatedAt(
-                source.updatedAt()
-        );
+        target.setPaymentStatus(source.status().name());
+        target.setFailureReasonCode(source.failureReasonCode());
+        target.setPaymentCreatedAt(source.createdAt());
+        target.setPaymentUpdatedAt(source.updatedAt());
     }
 
     public ProcessedObservationEventJpaEntity toEventEntity(
             UUID sourceEventId,
             ObservedCustomerJpaEntity customer,
             ProjectionWatermark watermark,
-            java.time.Instant observedAt
+            Instant observedAt
     ) {
+        Objects.requireNonNull(
+                sourceEventId,
+                "sourceEventId is required"
+        );
+        Objects.requireNonNull(
+                customer,
+                "customer is required"
+        );
+        Objects.requireNonNull(
+                watermark,
+                "watermark is required"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "observedAt is required"
+        );
+
         ProcessedObservationEventJpaEntity target =
-                new ProcessedObservationEventJpaEntity();
+                ProcessedObservationEventJpaEntity.create();
+
         target.setSourceEventId(sourceEventId);
         target.setObservedCustomer(customer);
-        target.setSourceEventWatermark(
-                watermark.value()
-        );
+        target.setSourceEventWatermark(watermark.value());
         target.setObservedAt(observedAt);
         target.setProcessedAt(observedAt);
         return target;
     }
 
-    private ObservedCustomerInstitutionJpaEntity
-            toInstitutionEntity(
-                    ObservedCustomerInstitution source
-            ) {
-        ObservedCustomerInstitutionJpaEntity target =
-                new ObservedCustomerInstitutionJpaEntity();
-        target.setFinancialInstitutionCode(
-                source.financialInstitutionCode()
-        );
-        target.setFirstObservedAt(
-                source.firstObservedAt()
-        );
-        target.setLastObservedAt(
-                source.lastObservedAt()
-        );
-        target.replaceAccounts(
-                source.accounts().stream()
-                        .map(this::toAccountEntity)
-                        .toList()
-        );
-        return target;
+    private void synchronizeInstitutions(
+            ObservedCustomer source,
+            ObservedCustomerJpaEntity target
+    ) {
+        Map<String, ObservedCustomerInstitutionJpaEntity>
+                existingByCode =
+                target.mutableInstitutions()
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ObservedCustomerInstitutionJpaEntity
+                                                ::getFinancialInstitutionCode,
+                                        Function.identity(),
+                                        (left, right) -> left,
+                                        HashMap::new
+                                )
+                        );
+
+        Set<String> expectedCodes = new HashSet<>();
+
+        for (ObservedCustomerInstitution domainInstitution
+                : source.institutions()) {
+
+            String code =
+                    domainInstitution.financialInstitutionCode();
+
+            expectedCodes.add(code);
+
+            ObservedCustomerInstitutionJpaEntity entity =
+                    existingByCode.get(code);
+
+            if (entity == null) {
+                entity =
+                        ObservedCustomerInstitutionJpaEntity.create();
+                target.addInstitution(entity);
+            }
+
+            entity.setFinancialInstitutionCode(code);
+            entity.setFirstObservedAt(
+                    domainInstitution.firstObservedAt()
+            );
+            entity.setLastObservedAt(
+                    domainInstitution.lastObservedAt()
+            );
+
+            synchronizeAccounts(domainInstitution, entity);
+        }
+
+        List<ObservedCustomerInstitutionJpaEntity> obsolete =
+                target.mutableInstitutions()
+                        .stream()
+                        .filter(entity ->
+                                !expectedCodes.contains(
+                                        entity.getFinancialInstitutionCode()
+                                )
+                        )
+                        .toList();
+
+        obsolete.forEach(target::removeInstitution);
     }
 
-    private ObservedAccountJpaEntity toAccountEntity(
-            ObservedAccountReference source
+    private void synchronizeAccounts(
+            ObservedCustomerInstitution source,
+            ObservedCustomerInstitutionJpaEntity target
     ) {
-        ObservedAccountJpaEntity target =
-                new ObservedAccountJpaEntity();
-        target.setAccountBindingFingerprint(
-                source.accountBindingFingerprint()
-        );
-        target.setMaskedValue(source.maskedValue());
-        return target;
+        Map<String, ObservedAccountJpaEntity>
+                existingByFingerprint =
+                target.mutableAccounts()
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ObservedAccountJpaEntity
+                                                ::getAccountBindingFingerprint,
+                                        Function.identity(),
+                                        (left, right) -> left,
+                                        HashMap::new
+                                )
+                        );
+
+        Set<String> expectedFingerprints = new HashSet<>();
+
+        for (ObservedAccountReference domainAccount
+                : source.accounts()) {
+
+            String fingerprint =
+                    domainAccount.accountBindingFingerprint();
+
+            expectedFingerprints.add(fingerprint);
+
+            ObservedAccountJpaEntity entity =
+                    existingByFingerprint.get(fingerprint);
+
+            if (entity == null) {
+                entity = ObservedAccountJpaEntity.create();
+                target.addAccount(entity);
+            }
+
+            entity.setAccountBindingFingerprint(fingerprint);
+            entity.setMaskedValue(domainAccount.maskedValue());
+        }
+
+        List<ObservedAccountJpaEntity> obsolete =
+                target.mutableAccounts()
+                        .stream()
+                        .filter(entity ->
+                                !expectedFingerprints.contains(
+                                        entity
+                                                .getAccountBindingFingerprint()
+                                )
+                        )
+                        .toList();
+
+        obsolete.forEach(target::removeAccount);
     }
 
     private ObservedCustomerInstitution toInstitutionDomain(
@@ -255,15 +318,19 @@ public final class ObservedCustomerPersistenceMapper {
                 source.getFinancialInstitutionCode(),
                 source.getFirstObservedAt(),
                 source.getLastObservedAt(),
-                source.getAccounts().stream()
-                        .map(account ->
-                                ObservedAccountReference.of(
-                                        account
-                                                .getAccountBindingFingerprint(),
-                                        account.getMaskedValue()
-                                )
-                        )
+                source.getAccounts()
+                        .stream()
+                        .map(this::toAccountDomain)
                         .toList()
+        );
+    }
+
+    private ObservedAccountReference toAccountDomain(
+            ObservedAccountJpaEntity source
+    ) {
+        return ObservedAccountReference.of(
+                source.getAccountBindingFingerprint(),
+                source.getMaskedValue()
         );
     }
 
@@ -285,9 +352,9 @@ public final class ObservedCustomerPersistenceMapper {
         );
     }
 
-    private static String normalizeSearchName(
-            String value
-    ) {
+    private static String normalizeSearchName(String value) {
+        Objects.requireNonNull(value, "legal name is required");
+
         String decomposed = Normalizer.normalize(
                 value,
                 Normalizer.Form.NFD

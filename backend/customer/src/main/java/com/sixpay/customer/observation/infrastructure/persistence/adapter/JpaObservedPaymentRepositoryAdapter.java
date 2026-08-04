@@ -55,6 +55,27 @@ public final class JpaObservedPaymentRepositoryAdapter
             ProjectionWatermark watermark,
             Instant observedAt
     ) {
+        Objects.requireNonNull(
+                observedCustomerId,
+                "observedCustomerId is required"
+        );
+        Objects.requireNonNull(
+                sourceEventId,
+                "sourceEventId is required"
+        );
+        Objects.requireNonNull(
+                payment,
+                "payment is required"
+        );
+        Objects.requireNonNull(
+                watermark,
+                "watermark is required"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "observedAt is required"
+        );
+
         if (events.existsById(sourceEventId)) {
             return;
         }
@@ -65,17 +86,21 @@ public final class JpaObservedPaymentRepositoryAdapter
                 );
 
         ObservedPaymentJpaEntity paymentEntity =
-                payments.findById(payment.paymentId())
-                        .orElseGet(
-                                ObservedPaymentJpaEntity::new
-                        );
+                payments.findById(
+                        payment.paymentId()
+                ).orElseGet(
+                        ObservedPaymentJpaEntity::create
+                );
 
         mapper.copyPayment(
                 payment,
                 customer,
                 paymentEntity
         );
-        payments.save(paymentEntity);
+
+        payments.save(
+                paymentEntity
+        );
 
         events.save(
                 mapper.toEventEntity(

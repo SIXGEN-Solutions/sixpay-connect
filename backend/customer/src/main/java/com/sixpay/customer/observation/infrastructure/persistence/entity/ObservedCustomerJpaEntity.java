@@ -6,13 +6,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -20,32 +19,19 @@ import java.util.UUID;
 public class ObservedCustomerJpaEntity {
 
     @Id
-    @Column(name = "observed_customer_id", nullable = false)
+    @Column(name = "observed_customer_id", nullable = false, updatable = false)
     private UUID observedCustomerId;
 
     @Column(name = "niu_protected", nullable = false, length = 1024)
     private String niuProtected;
 
-    @Column(
-            name = "niu_search_hash",
-            nullable = false,
-            unique = true,
-            length = 64
-    )
+    @Column(name = "niu_search_hash", nullable = false, unique = true, length = 64)
     private String niuSearchHash;
 
-    @Column(
-            name = "legal_name_protected",
-            nullable = false,
-            length = 2048
-    )
+    @Column(name = "legal_name_protected", nullable = false, length = 2048)
     private String legalNameProtected;
 
-    @Column(
-            name = "legal_name_search_normalized",
-            nullable = false,
-            length = 256
-    )
+    @Column(name = "legal_name_search_normalized", nullable = false, length = 256)
     private String legalNameSearchNormalized;
 
     @Column(name = "phone_masked", length = 128)
@@ -69,11 +55,7 @@ public class ObservedCustomerJpaEntity {
     @Column(name = "failed_payments", nullable = false)
     private long failedPayments;
 
-    @Column(
-            name = "last_payment_status",
-            nullable = false,
-            length = 64
-    )
+    @Column(name = "last_payment_status", nullable = false, length = 64)
     private String lastPaymentStatus;
 
     @Column(name = "last_failure_reason_code", length = 64)
@@ -82,11 +64,7 @@ public class ObservedCustomerJpaEntity {
     @Column(name = "projection_version", nullable = false)
     private long projectionVersion;
 
-    @Column(
-            name = "source_event_watermark",
-            nullable = false,
-            length = 256
-    )
+    @Column(name = "source_event_watermark", nullable = false, length = 256)
     private String sourceEventWatermark;
 
     @Column(name = "created_at", nullable = false)
@@ -105,180 +83,74 @@ public class ObservedCustomerJpaEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    @OrderBy("financialInstitutionCode ASC")
-    private List<ObservedCustomerInstitutionJpaEntity> institutions =
-            new ArrayList<>();
+    private Set<ObservedCustomerInstitutionJpaEntity> institutions =
+            new LinkedHashSet<>();
 
-    public ObservedCustomerJpaEntity() {
+    protected ObservedCustomerJpaEntity() {
+        // Required by JPA.
     }
 
-    public UUID getObservedCustomerId() {
-        return observedCustomerId;
+    public static ObservedCustomerJpaEntity create() {
+        return new ObservedCustomerJpaEntity();
     }
 
-    public void setObservedCustomerId(UUID observedCustomerId) {
-        this.observedCustomerId = observedCustomerId;
-    }
-
-    public String getNiuProtected() {
-        return niuProtected;
-    }
-
-    public void setNiuProtected(String niuProtected) {
-        this.niuProtected = niuProtected;
-    }
-
-    public String getNiuSearchHash() {
-        return niuSearchHash;
-    }
-
-    public void setNiuSearchHash(String niuSearchHash) {
-        this.niuSearchHash = niuSearchHash;
-    }
-
-    public String getLegalNameProtected() {
-        return legalNameProtected;
-    }
-
-    public void setLegalNameProtected(String legalNameProtected) {
-        this.legalNameProtected = legalNameProtected;
-    }
-
-    public String getLegalNameSearchNormalized() {
-        return legalNameSearchNormalized;
-    }
-
-    public void setLegalNameSearchNormalized(
-            String legalNameSearchNormalized
+    public void addInstitution(
+            ObservedCustomerInstitutionJpaEntity institution
     ) {
-        this.legalNameSearchNormalized =
-                legalNameSearchNormalized;
+        institution.attachTo(this);
+        institutions.add(institution);
     }
 
-    public String getPhoneMasked() {
-        return phoneMasked;
-    }
-
-    public void setPhoneMasked(String phoneMasked) {
-        this.phoneMasked = phoneMasked;
-    }
-
-    public String getEmailMasked() {
-        return emailMasked;
-    }
-
-    public void setEmailMasked(String emailMasked) {
-        this.emailMasked = emailMasked;
-    }
-
-    public Instant getFirstObservedAt() {
-        return firstObservedAt;
-    }
-
-    public void setFirstObservedAt(Instant firstObservedAt) {
-        this.firstObservedAt = firstObservedAt;
-    }
-
-    public Instant getLastObservedAt() {
-        return lastObservedAt;
-    }
-
-    public void setLastObservedAt(Instant lastObservedAt) {
-        this.lastObservedAt = lastObservedAt;
-    }
-
-    public long getTotalPayments() {
-        return totalPayments;
-    }
-
-    public void setTotalPayments(long totalPayments) {
-        this.totalPayments = totalPayments;
-    }
-
-    public long getSuccessfulPayments() {
-        return successfulPayments;
-    }
-
-    public void setSuccessfulPayments(long successfulPayments) {
-        this.successfulPayments = successfulPayments;
-    }
-
-    public long getFailedPayments() {
-        return failedPayments;
-    }
-
-    public void setFailedPayments(long failedPayments) {
-        this.failedPayments = failedPayments;
-    }
-
-    public String getLastPaymentStatus() {
-        return lastPaymentStatus;
-    }
-
-    public void setLastPaymentStatus(String lastPaymentStatus) {
-        this.lastPaymentStatus = lastPaymentStatus;
-    }
-
-    public String getLastFailureReasonCode() {
-        return lastFailureReasonCode;
-    }
-
-    public void setLastFailureReasonCode(
-            String lastFailureReasonCode
+    public void removeInstitution(
+            ObservedCustomerInstitutionJpaEntity institution
     ) {
-        this.lastFailureReasonCode = lastFailureReasonCode;
+        institutions.remove(institution);
+        institution.detach();
     }
 
-    public long getProjectionVersion() {
-        return projectionVersion;
-    }
-
-    public void setProjectionVersion(long projectionVersion) {
-        this.projectionVersion = projectionVersion;
-    }
-
-    public String getSourceEventWatermark() {
-        return sourceEventWatermark;
-    }
-
-    public void setSourceEventWatermark(
-            String sourceEventWatermark
-    ) {
-        this.sourceEventWatermark = sourceEventWatermark;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public long getRowVersion() {
-        return rowVersion;
-    }
-
-    public List<ObservedCustomerInstitutionJpaEntity>
-            getInstitutions() {
+    public Set<ObservedCustomerInstitutionJpaEntity> mutableInstitutions() {
         return institutions;
     }
 
-    public void replaceInstitutions(
-            List<ObservedCustomerInstitutionJpaEntity> values
-    ) {
-        institutions.clear();
-        values.forEach(value -> {
-            value.attachTo(this);
-            institutions.add(value);
-        });
+    public Set<ObservedCustomerInstitutionJpaEntity> getInstitutions() {
+        return Set.copyOf(institutions);
     }
+
+    public UUID getObservedCustomerId() { return observedCustomerId; }
+    public void setObservedCustomerId(UUID value) { this.observedCustomerId = value; }
+    public String getNiuProtected() { return niuProtected; }
+    public void setNiuProtected(String value) { this.niuProtected = value; }
+    public String getNiuSearchHash() { return niuSearchHash; }
+    public void setNiuSearchHash(String value) { this.niuSearchHash = value; }
+    public String getLegalNameProtected() { return legalNameProtected; }
+    public void setLegalNameProtected(String value) { this.legalNameProtected = value; }
+    public String getLegalNameSearchNormalized() { return legalNameSearchNormalized; }
+    public void setLegalNameSearchNormalized(String value) { this.legalNameSearchNormalized = value; }
+    public String getPhoneMasked() { return phoneMasked; }
+    public void setPhoneMasked(String value) { this.phoneMasked = value; }
+    public String getEmailMasked() { return emailMasked; }
+    public void setEmailMasked(String value) { this.emailMasked = value; }
+    public Instant getFirstObservedAt() { return firstObservedAt; }
+    public void setFirstObservedAt(Instant value) { this.firstObservedAt = value; }
+    public Instant getLastObservedAt() { return lastObservedAt; }
+    public void setLastObservedAt(Instant value) { this.lastObservedAt = value; }
+    public long getTotalPayments() { return totalPayments; }
+    public void setTotalPayments(long value) { this.totalPayments = value; }
+    public long getSuccessfulPayments() { return successfulPayments; }
+    public void setSuccessfulPayments(long value) { this.successfulPayments = value; }
+    public long getFailedPayments() { return failedPayments; }
+    public void setFailedPayments(long value) { this.failedPayments = value; }
+    public String getLastPaymentStatus() { return lastPaymentStatus; }
+    public void setLastPaymentStatus(String value) { this.lastPaymentStatus = value; }
+    public String getLastFailureReasonCode() { return lastFailureReasonCode; }
+    public void setLastFailureReasonCode(String value) { this.lastFailureReasonCode = value; }
+    public long getProjectionVersion() { return projectionVersion; }
+    public void setProjectionVersion(long value) { this.projectionVersion = value; }
+    public String getSourceEventWatermark() { return sourceEventWatermark; }
+    public void setSourceEventWatermark(String value) { this.sourceEventWatermark = value; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant value) { this.createdAt = value; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant value) { this.updatedAt = value; }
+    public long getRowVersion() { return rowVersion; }
 }
