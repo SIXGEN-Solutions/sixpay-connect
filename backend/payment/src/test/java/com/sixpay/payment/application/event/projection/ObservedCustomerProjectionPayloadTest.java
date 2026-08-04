@@ -5,8 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ObservedCustomerProjectionPayloadTest {
     private static final Instant AT =
@@ -71,6 +70,36 @@ class ObservedCustomerProjectionPayloadTest {
         assertFalse(rendered.contains("•••• 1234"));
     }
 
+    @Test
+    void amountUsesCanonicalContractScale() {
+        ObservedCustomerProjectionPayload payload =
+                new ObservedCustomerProjectionPayload(
+                        "PAY-2026-000123",
+                        "M0123456",
+                        "Société ABC SARL",
+                        "***-***-1234",
+                        "a***@example.com",
+                        "AMPLITUDE",
+                        "v1:" + "a".repeat(64),
+                        "•••• 1234",
+                        new BigDecimal("15000"),
+                        "XAF",
+                        ProjectionPaymentStatus.RECEIVED,
+                        null,
+                        Instant.parse(
+                                "2026-08-04T00:55:00Z"
+                        ),
+                        Instant.parse(
+                                "2026-08-04T00:55:00Z"
+                        )
+                );
+
+        assertEquals(
+                new BigDecimal("15000.00"),
+                payload.amount()
+        );
+    }
+
     private static ObservedCustomerProjectionPayload payload(
             String maskedAccount,
             String fingerprint,
@@ -94,4 +123,5 @@ class ObservedCustomerProjectionPayloadTest {
                 AT
         );
     }
+
 }
