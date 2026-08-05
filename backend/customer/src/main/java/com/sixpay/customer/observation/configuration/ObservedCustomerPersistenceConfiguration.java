@@ -18,6 +18,10 @@ import com.sixpay.customer.observation.application.service.audit
         .AuditedObserveCustomerUseCase;
 import com.sixpay.customer.observation.application.service.audit
         .ProjectionFailureAuditingObserveCustomerUseCase;
+import com.sixpay.customer.observation.infrastructure.observability
+        .ObservedCustomerProjectionMetrics;
+import com.sixpay.customer.observation.infrastructure.observability
+        .ObservedCustomerProjectionObservation;
 import com.sixpay.customer.observation.infrastructure.persistence.adapter
         .JpaObservedCustomerRepositoryAdapter;
 import com.sixpay.customer.observation.infrastructure.persistence.adapter
@@ -128,9 +132,11 @@ public class ObservedCustomerPersistenceConfiguration {
                     auditPortProvider,
             ObjectProvider<ObservedCustomerAuditIdGenerator>
                     auditIdGeneratorProvider,
+            ObjectProvider<ObservedCustomerProjectionMetrics>
+                    metricsProvider,
             ObjectProvider<Clock> clockProvider
     ) {
-        ObserveCustomerUseCase projectionService =
+        ObserveCustomerUseCase projection =
                 new ObservedCustomerProjectionService(
                         customers,
                         payments,
@@ -139,93 +145,75 @@ public class ObservedCustomerPersistenceConfiguration {
 
         ObservedCustomerAuditPort auditPort =
                 auditPortProvider.getIfAvailable();
-
         ObservedCustomerAuditIdGenerator auditIdGenerator =
                 auditIdGeneratorProvider.getIfAvailable();
-
+        ObservedCustomerProjectionMetrics metrics =
+                metricsProvider.getIfAvailable();
         Clock clock =
                 clockProvider.getIfAvailable();
 
-        /*
-         * Audit disabled:
-         *
-         * Preserve the historical projection behavior and still expose
-         * ObserveCustomerUseCase.
-         */
-        if (auditPort == null
-                && auditIdGenerator == null) {
-
-            return transactional(
-                    projectionService,
-                    transactionManager,
-                    properties
-            );
-        }
-
-        /*
-         * Partial audit wiring is invalid.
-         *
-         * If one audit dependency is present, all mandatory audit
-         * dependencies must be available.
-         */
-        if (auditPort == null
-                || auditIdGenerator == null
-                || clock == null) {
-
+        if ((auditPort == null)
+                != (auditIdGenerator == null)) {
             throw new IllegalStateException(
                     "Observed Customer projection audit "
                             + "configuration is incomplete"
             );
         }
 
-        /*
-         * Audit enabled:
-         *
-         * The successful audit is inside the projection transaction,
-         * providing fail-closed behavior.
-         */
-        ObserveCustomerUseCase successAudited =
-                new AuditedObserveCustomerUseCase(
-                        projectionService,
-                        auditPort,
-                        auditIdGenerator,
-                        clock
-                );
+        if ((auditPort != null || metrics != null)
+                && clock == null) {
+            throw new IllegalStateException(
+                    "Observed Customer projection Clock "
+                            + "is required"
+            );
+        }
+
+        ObserveCustomerUseCase transactionalDelegate =
+                projection;
+
+        if (auditPort != null) {
+            transactionalDelegate =
+                    new AuditedObserveCustomerUseCase(
+                            projection,
+                            auditPort,
+                            auditIdGenerator,
+                            clock
+                    );
+        }
 
         ObserveCustomerUseCase transactional =
-                transactional(
-                        successAudited,
-                        transactionManager,
-                        properties
+                new TransactionalObserveCustomerUseCase(
+                        transactionalDelegate,
+                        Objects.requireNonNull(
+                                transactionManager,
+                                "transactionManager is required"
+                        ),
+                        properties.maxOptimisticAttempts(),
+                        metrics
                 );
 
-        /*
-         * Final failure audit occurs after the projection transaction
-         * has rolled back.
-         */
-        return new ProjectionFailureAuditingObserveCustomerUseCase(
-                transactional,
-                auditPort,
-                auditIdGenerator,
-                clock
-        );
-    }
+        ObserveCustomerUseCase finalDelegate =
+                transactional;
 
-    private static ObserveCustomerUseCase transactional(
-            ObserveCustomerUseCase delegate,
-            PlatformTransactionManager transactionManager,
-            ObservedCustomerPersistenceProperties properties
-    ) {
-        return new TransactionalObserveCustomerUseCase(
-                Objects.requireNonNull(
-                        delegate,
-                        "delegate is required"
-                ),
-                Objects.requireNonNull(
-                        transactionManager,
-                        "transactionManager is required"
-                ),
-                properties.maxOptimisticAttempts()
-        );
+        if (auditPort != null) {
+            finalDelegate =
+                    new ProjectionFailureAuditingObserveCustomerUseCase(
+                            transactional,
+                            auditPort,
+                            auditIdGenerator,
+                            clock
+                    );
+        }
+
+        if (metrics != null) {
+            finalDelegate =
+                    new ObservedCustomerProjectionObservation(
+                            finalDelegate,
+                            metrics,
+                            clock
+                    );
+        }
+
+        return finalDelegate;
     }
 }
