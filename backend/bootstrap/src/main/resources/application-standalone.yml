@@ -11,6 +11,7 @@ spring:
       idle-timeout: 300000
       connection-timeout: 20000
       max-lifetime: 1200000
+
   jpa:
     open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -34,6 +35,9 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+    groups-order: ASC
+    operations-sorter: alpha
+    tags-sorter: alpha
 
 management:
   endpoints:
@@ -55,6 +59,7 @@ sixpay:
       mode: logging
       from: no-reply@sixpay.local
       subject-prefix: "[SIXPAY]"
+
   payment:
     callback:
       enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}
@@ -69,12 +74,27 @@ sixpay:
       signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
 
   customer:
+    verification:
+      banking:
+        enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:false}
+
     observation:
       persistence:
         enabled: true
         max-optimistic-attempts: 3
         protection-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_PROTECTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
 
+      query:
+        enabled: true
+        cursor-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_CURSOR_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
       audit:
         persistence:
           enabled: true
+
+      resilience:
+        max-attempts: ${SIXPAY_CUSTOMER_OBSERVATION_MAX_ATTEMPTS:3}
+        initial-backoff: ${SIXPAY_CUSTOMER_OBSERVATION_INITIAL_BACKOFF:10ms}
+        max-backoff: ${SIXPAY_CUSTOMER_OBSERVATION_MAX_BACKOFF:250ms}
+        multiplier: ${SIXPAY_CUSTOMER_OBSERVATION_BACKOFF_MULTIPLIER:2}
+        jitter: ${SIXPAY_CUSTOMER_OBSERVATION_BACKOFF_JITTER:0.20}

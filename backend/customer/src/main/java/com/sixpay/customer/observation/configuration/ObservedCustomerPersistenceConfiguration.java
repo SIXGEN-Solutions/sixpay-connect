@@ -28,6 +28,16 @@ import com.sixpay.customer.observation.infrastructure.persistence.adapter
         .JpaObservedPaymentRepositoryAdapter;
 import com.sixpay.customer.observation.infrastructure.persistence.adapter
         .UuidObservedCustomerIdGenerator;
+import com.sixpay.customer.observation.infrastructure.persistence.entity
+        .ObservedAccountJpaEntity;
+import com.sixpay.customer.observation.infrastructure.persistence.entity
+        .ObservedCustomerInstitutionJpaEntity;
+import com.sixpay.customer.observation.infrastructure.persistence.entity
+        .ObservedCustomerJpaEntity;
+import com.sixpay.customer.observation.infrastructure.persistence.entity
+        .ObservedPaymentJpaEntity;
+import com.sixpay.customer.observation.infrastructure.persistence.entity
+        .ProcessedObservationEventJpaEntity;
 import com.sixpay.customer.observation.infrastructure.persistence.mapper
         .ObservedCustomerPersistenceMapper;
 import com.sixpay.customer.observation.infrastructure.persistence.protection
@@ -51,8 +61,11 @@ import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;
 import org.springframework.boot.context.properties
         .EnableConfigurationProperties;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config
+        .EnableJpaRepositories;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.Clock;
@@ -66,6 +79,22 @@ import java.util.Objects;
         prefix = "sixpay.customer.observation.persistence",
         name = "enabled",
         havingValue = "true"
+)
+@EntityScan(
+        basePackageClasses = {
+                ObservedCustomerJpaEntity.class,
+                ObservedCustomerInstitutionJpaEntity.class,
+                ObservedAccountJpaEntity.class,
+                ObservedPaymentJpaEntity.class,
+                ProcessedObservationEventJpaEntity.class
+        }
+)
+@EnableJpaRepositories(
+        basePackageClasses = {
+                ObservedCustomerSpringDataRepository.class,
+                ObservedPaymentSpringDataRepository.class,
+                ProcessedObservationEventSpringDataRepository.class
+        }
 )
 public class ObservedCustomerPersistenceConfiguration {
 
@@ -150,10 +179,13 @@ public class ObservedCustomerPersistenceConfiguration {
 
         ObservedCustomerAuditPort auditPort =
                 auditPortProvider.getIfAvailable();
+
         ObservedCustomerAuditIdGenerator auditIdGenerator =
                 auditIdGeneratorProvider.getIfAvailable();
+
         ObservedCustomerProjectionMetrics metrics =
                 metricsProvider.getIfAvailable();
+
         Clock clock =
                 clockProvider.getIfAvailable();
 

@@ -18,45 +18,28 @@ import com.sixpay.customer.observation.application.service
         .ObservedCustomerProjectionService;
 import com.sixpay.customer.observation.configuration
         .ObservedCustomerPersistenceConfiguration;
-import com.sixpay.customer.observation.configuration
-        .ObservedCustomerProjectionResilienceConfiguration;
 import com.sixpay.customer.observation.domain.model
         .ObservedCustomerId;
 import com.sixpay.customer.observation.domain.model
         .ObservedPaymentStatus;
-import com.sixpay.customer.observation.infrastructure.persistence.entity
-        .ObservedAccountJpaEntity;
-import com.sixpay.customer.observation.infrastructure.persistence.entity
-        .ObservedCustomerInstitutionJpaEntity;
-import com.sixpay.customer.observation.infrastructure.persistence.entity
-        .ObservedCustomerJpaEntity;
-import com.sixpay.customer.observation.infrastructure.persistence.entity
-        .ObservedPaymentJpaEntity;
-import com.sixpay.customer.observation.infrastructure.persistence.entity
-        .ProcessedObservationEventJpaEntity;
-import com.sixpay.customer.observation.infrastructure.persistence.repository
-        .ObservedCustomerSpringDataRepository;
-import com.sixpay.customer.observation.infrastructure.persistence.repository
-        .ObservedPaymentSpringDataRepository;
-import com.sixpay.customer.observation.infrastructure.persistence.repository
-        .ProcessedObservationEventSpringDataRepository;
 import com.sixpay.customer.observation.infrastructure.persistence.transaction
         .TransactionalObserveCustomerUseCase;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionFailureClassifier;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionRetryPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.data.jpa.autoconfigure
         .DataJpaRepositoriesAutoConfiguration;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.jpa.repository.config
-        .EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -70,6 +53,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -103,16 +87,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "sixpay.customer.verification."
                         + "banking.enabled=false",
 
-                /*
-                 * Legacy persistence property still required by
-                 * ObservedCustomerPersistenceProperties.
-                 */
                 "sixpay.customer.observation.persistence."
                         + "max-optimistic-attempts=3",
 
-                /*
-                 * New Lot 4.8.5 resilience properties.
-                 */
                 "sixpay.customer.observation.resilience."
                         + "max-attempts=3",
 
@@ -233,80 +210,57 @@ class ObservedCustomerJpaIntegrationTest {
     void flywayCreatesCompleteProjectionAndLookupUsesExactNiuHash() {
         ObserveCustomerCommand command =
                 command(
-                        event(
-                                "11111111"
-                        ),
-                        payment(
-                                "aaaaaaaa"
-                        ),
+                        event("11111111"),
+                        payment("aaaaaaaa"),
                         ObservedPaymentStatus.RECEIVED,
                         null,
                         FIRST,
-                        FIRST.plusSeconds(
-                                1
-                        )
+                        FIRST.plusSeconds(1)
                 );
 
         ObserveCustomerResult result =
-                useCase.observe(
-                        command
-                );
+                useCase.observe(command);
 
         assertEquals(
-                ObserveCustomerResult
-                        .Disposition.APPLIED,
+                ObserveCustomerResult.Disposition.APPLIED,
                 result.disposition()
         );
 
         assertTrue(
                 customerRepository
-                        .findByNormalizedNiu(
-                                "M0123456"
-                        )
+                        .findByNormalizedNiu("M0123456")
                         .isPresent()
         );
 
         assertTrue(
                 customerRepository
-                        .findByNormalizedNiu(
-                                "M9999999"
-                        )
+                        .findByNormalizedNiu("M9999999")
                         .isEmpty()
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_customer"
-                )
+                count("customer_observed_customer")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_institution"
-                )
+                count("customer_observed_institution")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_account"
-                )
+                count("customer_observed_account")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_payment"
-                )
+                count("customer_observed_payment")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observation_processed_event"
-                )
+                count("customer_observation_processed_event")
         );
 
         String niuProtected =
@@ -337,9 +291,7 @@ class ObservedCustomerJpaIntegrationTest {
                 );
 
         assertFalse(
-                niuProtected.contains(
-                        "M0123456"
-                )
+                niuProtected.contains("M0123456")
         );
 
         assertFalse(
@@ -354,9 +306,7 @@ class ObservedCustomerJpaIntegrationTest {
         );
 
         assertFalse(
-                niuHash.equals(
-                        "M0123456"
-                )
+                niuHash.equals("M0123456")
         );
     }
 
@@ -364,53 +314,37 @@ class ObservedCustomerJpaIntegrationTest {
     void replayIsIdempotentAndWatermarkUpdatesForNewEvent() {
         ObserveCustomerCommand first =
                 command(
-                        event(
-                                "11111111"
-                        ),
-                        payment(
-                                "aaaaaaaa"
-                        ),
+                        event("11111111"),
+                        payment("aaaaaaaa"),
                         ObservedPaymentStatus.RECEIVED,
                         null,
                         FIRST,
-                        FIRST.plusSeconds(
-                                1
-                        )
+                        FIRST.plusSeconds(1)
                 );
 
         ObserveCustomerResult applied =
-                useCase.observe(
-                        first
-                );
+                useCase.observe(first);
 
         ObserveCustomerResult replayed =
-                useCase.observe(
-                        first
-                );
+                useCase.observe(first);
 
         assertEquals(
-                ObserveCustomerResult
-                        .Disposition.APPLIED,
+                ObserveCustomerResult.Disposition.APPLIED,
                 applied.disposition()
         );
 
         assertEquals(
-                ObserveCustomerResult
-                        .Disposition.REPLAYED,
+                ObserveCustomerResult.Disposition.REPLAYED,
                 replayed.disposition()
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observation_processed_event"
-                )
+                count("customer_observation_processed_event")
         );
 
         UUID secondEvent =
-                event(
-                        "22222222"
-                );
+                event("22222222");
 
         useCase.observe(
                 command(
@@ -418,12 +352,8 @@ class ObservedCustomerJpaIntegrationTest {
                         first.paymentId(),
                         ObservedPaymentStatus.DEBITED,
                         null,
-                        FIRST.plusSeconds(
-                                30
-                        ),
-                        FIRST.plusSeconds(
-                                31
-                        )
+                        FIRST.plusSeconds(30),
+                        FIRST.plusSeconds(31)
                 )
         );
 
@@ -464,71 +394,52 @@ class ObservedCustomerJpaIntegrationTest {
     @Test
     void outOfOrderEventsSurviveRestartAndKeepLatestPaymentStatus() {
         UUID paymentId =
-                payment(
-                        "aaaaaaaa"
-                );
+                payment("aaaaaaaa");
 
         useCase.observe(
                 command(
-                        event(
-                                "11111111"
-                        ),
+                        event("11111111"),
                         paymentId,
                         ObservedPaymentStatus.RECEIVED,
                         null,
                         FIRST,
-                        FIRST.plusSeconds(
-                                1
-                        )
+                        FIRST.plusSeconds(1)
                 )
         );
 
         useCase.observe(
                 command(
-                        event(
-                                "22222222"
-                        ),
+                        event("22222222"),
                         paymentId,
                         ObservedPaymentStatus.DEBITED,
                         null,
-                        FIRST.plusSeconds(
-                                60
-                        ),
-                        FIRST.plusSeconds(
-                                61
-                        )
+                        FIRST.plusSeconds(60),
+                        FIRST.plusSeconds(61)
                 )
         );
 
         ObserveCustomerResult stale =
                 useCase.observe(
                         command(
-                                event(
-                                        "33333333"
-                                ),
+                                event("33333333"),
                                 paymentId,
                                 ObservedPaymentStatus.REJECTED,
                                 "ACCOUNT_NOT_FOUND",
-                                FIRST.plusSeconds(
-                                        20
-                                ),
-                                FIRST.plusSeconds(
-                                        62
-                                )
+                                FIRST.plusSeconds(20),
+                                FIRST.plusSeconds(62)
                         )
                 );
 
         assertEquals(
                 ObserveCustomerResult
-                        .Disposition.IGNORED_STALE,
+                        .Disposition
+                        .IGNORED_STALE,
                 stale.disposition()
         );
 
         var restored =
                 customerRepository
-                        .findByNormalizedNiu(
-                                "M0123456"
-                        )
+                        .findByNormalizedNiu("M0123456")
                         .orElseThrow();
 
         assertEquals(
@@ -587,34 +498,24 @@ class ObservedCustomerJpaIntegrationTest {
                 IllegalStateException.class,
                 () -> transactional.observe(
                         command(
-                                event(
-                                        "11111111"
-                                ),
-                                payment(
-                                        "aaaaaaaa"
-                                ),
+                                event("11111111"),
+                                payment("aaaaaaaa"),
                                 ObservedPaymentStatus.RECEIVED,
                                 null,
                                 FIRST,
-                                FIRST.plusSeconds(
-                                        1
-                                )
+                                FIRST.plusSeconds(1)
                         )
                 )
         );
 
         assertEquals(
                 0,
-                count(
-                        "customer_observed_customer"
-                )
+                count("customer_observed_customer")
         );
 
         assertEquals(
                 0,
-                count(
-                        "customer_observed_payment"
-                )
+                count("customer_observed_payment")
         );
     }
 
@@ -624,39 +525,25 @@ class ObservedCustomerJpaIntegrationTest {
 
         ObserveCustomerCommand command =
                 command(
-                        event(
-                                "11111111"
-                        ),
-                        payment(
-                                "aaaaaaaa"
-                        ),
+                        event("11111111"),
+                        payment("aaaaaaaa"),
                         ObservedPaymentStatus.RECEIVED,
                         null,
                         FIRST,
-                        FIRST.plusSeconds(
-                                1
-                        )
+                        FIRST.plusSeconds(1)
                 );
 
         try (var executor =
-                     Executors.newFixedThreadPool(
-                             2
-                     )) {
+                     Executors.newFixedThreadPool(2)) {
 
             List<Callable<ObserveCustomerResult>> tasks =
                     List.of(
-                            () -> useCase.observe(
-                                    command
-                            ),
-                            () -> useCase.observe(
-                                    command
-                            )
+                            () -> useCase.observe(command),
+                            () -> useCase.observe(command)
                     );
 
             List<ObserveCustomerResult> results =
-                    executor.invokeAll(
-                                    tasks
-                            )
+                    executor.invokeAll(tasks)
                             .stream()
                             .map(future -> {
                                 try {
@@ -694,23 +581,17 @@ class ObservedCustomerJpaIntegrationTest {
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_customer"
-                )
+                count("customer_observed_customer")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observed_payment"
-                )
+                count("customer_observed_payment")
         );
 
         assertEquals(
                 1,
-                count(
-                        "customer_observation_processed_event"
-                )
+                count("customer_observation_processed_event")
         );
     }
 
@@ -718,23 +599,15 @@ class ObservedCustomerJpaIntegrationTest {
     void sourceEventPrimaryKeyRejectsDuplicateRawInsert() {
         ObserveCustomerCommand command =
                 command(
-                        event(
-                                "11111111"
-                        ),
-                        payment(
-                                "aaaaaaaa"
-                        ),
+                        event("11111111"),
+                        payment("aaaaaaaa"),
                         ObservedPaymentStatus.RECEIVED,
                         null,
                         FIRST,
-                        FIRST.plusSeconds(
-                                1
-                        )
+                        FIRST.plusSeconds(1)
                 );
 
-        useCase.observe(
-                command
-        );
+        useCase.observe(command);
 
         UUID customerId =
                 jdbc.queryForObject(
@@ -779,8 +652,7 @@ class ObservedCustomerJpaIntegrationTest {
     ) {
         Integer value =
                 jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM "
-                                + table,
+                        "SELECT COUNT(*) FROM " + table,
                         Integer.class
                 );
 
@@ -806,13 +678,9 @@ class ObservedCustomerJpaIntegrationTest {
                 "***-***-1234",
                 "a***@example.com",
                 "AMPLITUDE",
-                "v1:" + "a".repeat(
-                        64
-                ),
+                "v1:" + "a".repeat(64),
                 "•••• 1234",
-                new BigDecimal(
-                        "15000.00"
-                ),
+                new BigDecimal("15000.00"),
                 "XAF",
                 status,
                 failureCode,
@@ -848,24 +716,7 @@ class ObservedCustomerJpaIntegrationTest {
                     CustomerModuleConfiguration.class
             }
     )
-    @EntityScan(
-            basePackageClasses = {
-                    ObservedCustomerJpaEntity.class,
-                    ObservedCustomerInstitutionJpaEntity.class,
-                    ObservedAccountJpaEntity.class,
-                    ObservedPaymentJpaEntity.class,
-                    ProcessedObservationEventJpaEntity.class
-            }
-    )
-    @EnableJpaRepositories(
-            basePackageClasses = {
-                    ObservedCustomerSpringDataRepository.class,
-                    ObservedPaymentSpringDataRepository.class,
-                    ProcessedObservationEventSpringDataRepository.class
-            }
-    )
     @Import({
-            ObservedCustomerProjectionResilienceConfiguration.class,
             ObservedCustomerPersistenceConfiguration.class,
             IntegrationTestConfiguration.class
     })
@@ -887,11 +738,31 @@ class ObservedCustomerJpaIntegrationTest {
         }
 
         @Bean
+        ObservedCustomerProjectionFailureClassifier
+        observedCustomerProjectionFailureClassifier() {
+            return new ObservedCustomerProjectionFailureClassifier();
+        }
+
+        @Bean
+        ObservedCustomerProjectionRetryPolicy
+        observedCustomerProjectionRetryPolicy() {
+            return new ObservedCustomerProjectionRetryPolicy(
+                    3,
+                    Duration.ofMillis(1),
+                    Duration.ofMillis(5),
+                    2.0D,
+                    0.0D,
+                    duration -> {
+                        // Aucun délai réel dans le test d’intégration.
+                    },
+                    () -> 0.5D
+            );
+        }
+
+        @Bean
         Clock testClock() {
             return Clock.fixed(
-                    FIRST.plusSeconds(
-                            120
-                    ),
+                    FIRST.plusSeconds(120),
                     ZoneOffset.UTC
             );
         }
@@ -899,9 +770,7 @@ class ObservedCustomerJpaIntegrationTest {
         @Bean
         JwtDecoder testJwtDecoder() {
             return token ->
-                    Jwt.withTokenValue(
-                                    token
-                            )
+                    Jwt.withTokenValue(token)
                             .header(
                                     "alg",
                                     "none"

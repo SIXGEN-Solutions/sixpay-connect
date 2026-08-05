@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ObservedCustomerQueryLot477FinalArchitectureTest {
@@ -15,8 +14,12 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
             "src/main/java/com/sixpay/customer/observation"
     );
 
+    private static final String OBSERVED_CUSTOMER_ROUTE =
+            "/internal/api/v1/observed-customers";
+
     @Test
     void customerObservationHasTheApprovedLayeredStructure() {
+
         for (String directory : List.of(
                 "api/controller",
                 "api/dto",
@@ -34,9 +37,13 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
                 "infrastructure/query/model",
                 "configuration"
         )) {
+            Path expected =
+                    ROOT.resolve(directory);
+
             assertTrue(
-                    Files.isDirectory(ROOT.resolve(directory)),
-                    () -> "Missing required directory: " + directory
+                    Files.isDirectory(expected),
+                    () -> "Missing required directory: "
+                            + expected.toAbsolutePath()
             );
         }
     }
@@ -44,6 +51,7 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
     @Test
     void customerNeverDependsOnPaymentOrAmplitude()
             throws Exception {
+
         assertNoTokens(
                 ROOT,
                 List.of(
@@ -58,6 +66,7 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
     @Test
     void applicationAndDomainRemainFreeOfApiSpringAndJpa()
             throws Exception {
+
         for (Path layer : List.of(
                 ROOT.resolve("application"),
                 ROOT.resolve("domain")
@@ -81,6 +90,7 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
     @Test
     void apiDoesNotDependOnSpringDataRepositories()
             throws Exception {
+
         assertNoTokens(
                 ROOT.resolve("api"),
                 List.of(
@@ -98,6 +108,7 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
     @Test
     void portsContainNoJpaOrApiDtos()
             throws Exception {
+
         assertNoTokens(
                 ROOT.resolve("application/port"),
                 List.of(
@@ -114,28 +125,42 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
     void onlyCustomerExposesObservedCustomerRestRoute()
             throws Exception {
 
-        String controller = Files.readString(
+        Path customerController =
                 ROOT.resolve(
                         "api/controller/"
                                 + "ObservedCustomerQueryController.java"
-                )
+                );
+
+        String controllerSource =
+                Files.readString(customerController);
+
+        assertTrue(
+                controllerSource.contains("@RestController"),
+                "Observed Customer controller must be a REST controller"
         );
 
         assertTrue(
-                controller.contains(
-                        "/internal/api/v1/observed-customers"
-                )
+                controllerSource.contains(
+                        "@RequestMapping("
+                                + "\""
+                                + OBSERVED_CUSTOMER_ROUTE
+                                + "\""
+                                + ")"
+                ),
+                "Observed Customer controller must expose the canonical route"
         );
 
-        Path backendRoot = Path.of("..")
-                .toAbsolutePath()
-                .normalize();
+        Path customerModuleRoot =
+                Path.of("")
+                        .toAbsolutePath()
+                        .normalize();
 
-        Path customerModuleRoot = Path.of(".")
-                .toAbsolutePath()
-                .normalize();
+        Path backendRoot =
+                customerModuleRoot
+                        .getParent();
 
-        if (!Files.isDirectory(backendRoot)) {
+        if (backendRoot == null
+                || !Files.isDirectory(backendRoot)) {
             return;
         }
 
@@ -146,13 +171,8 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
                             path.toString().endsWith(".java")
                     )
                     /*
-                     * Ignore the complete Customer module, including:
-                     * - src/main
-                     * - src/test
-                     * - generated sources if present
-                     *
-                     * The purpose is to detect another backend module
-                     * exposing the same route.
+                     * Customer itself is the owner of the REST API.
+                     * Its production and test sources are excluded.
                      */
                     .filter(path ->
                             !path.toAbsolutePath()
@@ -161,11 +181,13 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
                     )
                     .filter(path -> {
                         try {
-                            return Files.readString(path)
-                                    .contains(
-                                            "/internal/api/v1/"
-                                                    + "observed-customers"
-                                    );
+                            String source =
+                                    Files.readString(path);
+
+                            return exposesRestRoute(
+                                    source,
+                                    OBSERVED_CUSTOMER_ROUTE
+                            );
                         } catch (Exception exception) {
                             throw new IllegalStateException(
                                     "Cannot inspect " + path,
@@ -177,38 +199,88 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
 
             assertTrue(
                     offenders.isEmpty(),
-                    () -> "Observed Customer API exposed outside "
-                            + "Customer: "
+                    () -> "Observed Customer REST API exposed "
+                            + "outside Customer: "
                             + offenders
             );
         }
+    }
+
+    private static boolean exposesRestRoute(
+            String source,
+            String route
+    ) {
+        /*
+         * A simple occurrence in OpenAPI pathsToMatch, tests or
+         * documentation is not an endpoint exposure.
+         *
+         * Only Spring MVC controller classes are considered.
+         */
+        boolean isController =
+                source.contains("@RestController")
+                        || source.contains("@Controller");
+
+        if (!isController) {
+            return false;
+        }
+
+        boolean containsRoute =
+                source.contains(route);
+
+        if (!containsRoute) {
+            return false;
+        }
+
+        return source.contains("@RequestMapping")
+                || source.contains("@GetMapping")
+                || source.contains("@PostMapping")
+                || source.contains("@PutMapping")
+                || source.contains("@PatchMapping")
+                || source.contains("@DeleteMapping");
     }
 
     private static void assertNoTokens(
             Path root,
             List<String> forbidden
     ) throws Exception {
+
+        assertTrue(
+                Files.isDirectory(root),
+                () -> "Missing source directory: "
+                        + root.toAbsolutePath()
+        );
+
         try (var paths = Files.walk(root)) {
             List<String> violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
                     .flatMap(path -> {
                         try {
-                            String source = Files.readString(path);
+                            String source =
+                                    Files.readString(path);
+
                             return forbidden.stream()
                                     .filter(source::contains)
                                     .map(token ->
-                                            path + " contains " + token
+                                            path
+                                                    + " contains "
+                                                    + token
                                     );
                         } catch (Exception exception) {
-                            throw new IllegalStateException(exception);
+                            throw new IllegalStateException(
+                                    "Cannot inspect " + path,
+                                    exception
+                            );
                         }
                     })
                     .toList();
 
             assertTrue(
                     violations.isEmpty(),
-                    () -> "Architecture violations: " + violations
+                    () -> "Architecture violations: "
+                            + violations
             );
         }
     }

@@ -55,4 +55,16 @@ public class OpenApiConfiguration {
                 )
                 .build();
     }
+
+    @Bean
+    GroupedOpenApi customerOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("customer")
+                .displayName("Observed Customer API")
+                .pathsToMatch(
+                        "/internal/api/v1/observed-customers",
+                        "/internal/api/v1/observed-customers/**"
+                )
+                .build();
+    }
 }

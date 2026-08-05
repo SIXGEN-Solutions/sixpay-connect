@@ -91,19 +91,19 @@ class ObservedCustomerHealthArchitectureTest {
     void indicatorsExposeRequiredOperationalConcepts()
             throws Exception {
 
-        String projection = Files.readString(
+        String projection = normalizedSource(
                 ROOT.resolve(
                         "ObservedCustomerProjectionHealthIndicator.java"
                 )
         );
 
-        String query = Files.readString(
+        String query = normalizedSource(
                 ROOT.resolve(
                         "ObservedCustomerQueryHealthIndicator.java"
                 )
         );
 
-        String audit = Files.readString(
+        String audit = normalizedSource(
                 ROOT.resolve(
                         "ObservedCustomerAuditHealthIndicator.java"
                 )
@@ -181,6 +181,14 @@ class ObservedCustomerHealthArchitectureTest {
                 audit.contains(".withException("),
                 "Audit health must not expose exceptions"
         );
+    }
+
+    private static String normalizedSource(
+            Path sourcePath
+    ) throws Exception {
+
+        return Files.readString(sourcePath)
+                .replaceAll("\\s+", "");
     }
 
     private static String removeComments(

@@ -15,21 +15,15 @@ import com.sixpay.customer.observation.configuration
         .ObservedCustomerAuditPersistenceConfiguration;
 import com.sixpay.customer.observation.domain.model
         .ObservedCustomerId;
-import com.sixpay.customer.observation.infrastructure.audit.entity
-        .ObservedCustomerAuditJpaEntity;
-import com.sixpay.customer.observation.infrastructure.audit.repository
-        .ObservedCustomerAuditSpringDataRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.data.jpa.autoconfigure
+        .DataJpaRepositoriesAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.jpa.repository.config
-        .EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -73,22 +67,27 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 "spring.datasource.url",
                 POSTGRES::getJdbcUrl
         );
+
         registry.add(
                 "spring.datasource.username",
                 POSTGRES::getUsername
         );
+
         registry.add(
                 "spring.datasource.password",
                 POSTGRES::getPassword
         );
+
         registry.add(
                 "spring.jpa.hibernate.ddl-auto",
                 () -> "validate"
         );
+
         registry.add(
                 "spring.jpa.open-in-view",
                 () -> false
         );
+
         registry.add(
                 "spring.flyway.enabled",
                 () -> true
@@ -113,13 +112,23 @@ class ObservedCustomerAuditJpaIntegrationTest {
         UUID auditId = UUID.fromString(
                 "11111111-1111-4111-8111-111111111111"
         );
+
         UUID customerId = UUID.fromString(
                 "44444444-4444-4444-8444-444444444444"
         );
 
-        auditPort.append(queryRecord(auditId, customerId));
+        auditPort.append(
+                queryRecord(
+                        auditId,
+                        customerId
+                )
+        );
 
-        assertEquals(1, countAuditRows());
+        assertEquals(
+                1,
+                countAuditRows()
+        );
+
         assertEquals(
                 customerId,
                 jdbc.queryForObject(
@@ -153,7 +162,10 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 () -> auditPort.append(record)
         );
 
-        assertEquals(1, countAuditRows());
+        assertEquals(
+                1,
+                countAuditRows()
+        );
     }
 
     @Test
@@ -194,7 +206,10 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 )
         );
 
-        assertEquals(1, countAuditRows());
+        assertEquals(
+                1,
+                countAuditRows()
+        );
     }
 
     @Test
@@ -215,7 +230,10 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 Integer.class
         );
 
-        assertEquals(4, indexCount);
+        assertEquals(
+                4,
+                indexCount
+        );
     }
 
     @Test
@@ -231,7 +249,10 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 Integer.class
         );
 
-        assertEquals(0, foreignKeyCount);
+        assertEquals(
+                0,
+                foreignKeyCount
+        );
     }
 
     private int countAuditRows() {
@@ -243,7 +264,9 @@ class ObservedCustomerAuditJpaIntegrationTest {
                 Integer.class
         );
 
-        return result == null ? 0 : result;
+        return result == null
+                ? 0
+                : result;
     }
 
     private static ObservedCustomerAuditRecord queryRecord(
@@ -259,7 +282,9 @@ class ObservedCustomerAuditJpaIntegrationTest {
                         "service-account:customer",
                         "55555555-5555-4555-8555-555555555555"
                 ),
-                Instant.parse("2026-08-05T15:00:00Z"),
+                Instant.parse(
+                        "2026-08-05T15:00:00Z"
+                ),
                 null
         );
     }
@@ -269,16 +294,6 @@ class ObservedCustomerAuditJpaIntegrationTest {
             exclude = {
                     DataJpaRepositoriesAutoConfiguration.class,
                     CustomerModuleConfiguration.class
-            }
-    )
-    @EntityScan(
-            basePackageClasses = {
-                    ObservedCustomerAuditJpaEntity.class
-            }
-    )
-    @EnableJpaRepositories(
-            basePackageClasses = {
-                    ObservedCustomerAuditSpringDataRepository.class
             }
     )
     @Import(
