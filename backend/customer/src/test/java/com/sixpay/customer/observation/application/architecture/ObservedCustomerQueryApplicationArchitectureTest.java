@@ -97,11 +97,14 @@ class ObservedCustomerQueryApplicationArchitectureTest {
                 "ObservedCustomerQueryRepository",
                 "ObservedCustomerPaymentQueryRepository",
                 "ObservedCustomerCursorCodec",
-                "cursorCodec.resolveSearch(",
-                "cursorCodec.resolvePayments(",
+                "cursorCodec.decodeSearch(",
+                "cursorCodec.decodePayments(",
                 "customerQueries.findDetailById(",
                 "customerQueries.existsById(",
-                "paymentQueries.findByCustomer("
+                "customerQueries.search(criteria)",
+                "paymentQueries.findByCustomerId(criteria)",
+                "cursorCodec.encodeSearch(",
+                "cursorCodec.encodePayments("
         )) {
             assertTrue(
                     source.contains(required),
@@ -129,22 +132,22 @@ class ObservedCustomerQueryApplicationArchitectureTest {
     }
 
     @Test
-    void serviceValidatesCursorSnapshotAndPageSize()
+    void serviceValidatesSlicesAndBuildsStablePages()
             throws Exception {
 
         String source = normalizedSource(SERVICE);
 
         for (String required : List.of(
-                "validateSearchQuery(canonical)",
-                "validatePaymentQuery(canonical)",
-                "query.snapshotAt().equals(page.snapshotAt())",
-                "page.size()>query.size()",
-                "SearchObservedCustomersQuery.MAX_SIZE",
-                "ListObservedCustomerPaymentsQuery.MAX_SIZE"
+                "slice.items().size()>criteria.size()",
+                "criteria.snapshotAt()",
+                "slice.hasMore()",
+                "slice.nextPosition()",
+                "newObservedCustomerSearchPage(",
+                "newObservedCustomerPaymentPage("
         )) {
             assertTrue(
                     source.contains(required),
-                    () -> "Missing query validation: "
+                    () -> "Missing query pagination validation: "
                             + required
             );
         }
@@ -157,10 +160,10 @@ class ObservedCustomerQueryApplicationArchitectureTest {
         String source = normalizedSource(SERVICE);
 
         for (String forbidden : List.of(
-                "ObservedCustomercustomer",
                 "ObservedCustomer.reconstitute(",
                 "ObservedCustomer.observeFirst(",
-                "customerQueries.findByNormalizedNiu(",
+                "ObservedCustomer.observePayment(",
+                "findByNormalizedNiu(",
                 "customerRepository",
                 "paymentRepository",
                 ".save("
@@ -210,14 +213,16 @@ class ObservedCustomerQueryApplicationArchitectureTest {
                 )
         );
 
+        String service = normalizedSource(SERVICE);
+
         assertTrue(
-                normalizedSource(SERVICE).contains(
+                service.contains(
                         "newObservedCustomerNotFoundException("
                 )
         );
 
         assertTrue(
-                normalizedSource(SERVICE).contains(
+                service.contains(
                         "newObservedCustomerQueryUnavailableException("
                 )
         );
@@ -227,13 +232,13 @@ class ObservedCustomerQueryApplicationArchitectureTest {
     void outputPortsRemainCustomerOwnedAndProjectionFocused()
             throws Exception {
 
-        String customerRepository = normalizedSource(
+        String customers = normalizedSource(
                 OUTPUT_ROOT.resolve(
                         "ObservedCustomerQueryRepository.java"
                 )
         );
 
-        String paymentRepository = normalizedSource(
+        String payments = normalizedSource(
                 OUTPUT_ROOT.resolve(
                         "ObservedCustomerPaymentQueryRepository.java"
                 )
@@ -246,40 +251,66 @@ class ObservedCustomerQueryApplicationArchitectureTest {
         );
 
         assertTrue(
-                customerRepository.contains(
-                        "ObservedCustomerSearchPagesearch("
+                customers.contains(
+                        "ObservedCustomerSearchSlicesearch("
                 )
         );
 
         assertTrue(
-                customerRepository.contains(
+                customers.contains(
+                        "ObservedCustomerSearchCriteriacriteria"
+                )
+        );
+
+        assertTrue(
+                customers.contains(
                         "Optional<ObservedCustomerDetailView>"
                                 + "findDetailById("
                 )
         );
 
         assertTrue(
-                customerRepository.contains(
+                customers.contains(
                         "booleanexistsById("
                 )
         );
 
         assertTrue(
-                paymentRepository.contains(
-                        "ObservedCustomerPaymentPagefindByCustomer("
+                payments.contains(
+                        "ObservedCustomerPaymentSlice"
+                                + "findByCustomerId("
+                )
+        );
+
+        assertTrue(
+                payments.contains(
+                        "ObservedCustomerPaymentCriteriacriteria"
                 )
         );
 
         assertTrue(
                 cursorCodec.contains(
-                        "SearchObservedCustomersQueryresolveSearch("
+                        "ObservedCustomerSearchCriteria"
+                                + "decodeSearch("
                 )
         );
 
         assertTrue(
                 cursorCodec.contains(
-                        "ListObservedCustomerPaymentsQuery"
-                                + "resolvePayments("
+                        "ObservedCustomerPaymentCriteria"
+                                + "decodePayments("
+                )
+        );
+
+        assertTrue(
+                cursorCodec.contains(
+                        "ObservedCustomerCursorencodeSearch("
+                )
+        );
+
+        assertTrue(
+                cursorCodec.contains(
+                        "ObservedCustomerCursorencodePayments("
                 )
         );
     }

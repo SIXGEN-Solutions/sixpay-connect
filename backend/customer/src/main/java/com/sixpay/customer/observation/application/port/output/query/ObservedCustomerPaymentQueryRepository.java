@@ -1,17 +1,17 @@
 package com.sixpay.customer.observation.application.port.output.query;
 
 import com.sixpay.customer.observation.application.query
-        .ListObservedCustomerPaymentsQuery;
+        .ObservedCustomerPaymentCriteria;
 import com.sixpay.customer.observation.application.query
-        .ObservedCustomerPaymentPage;
+        .ObservedCustomerPaymentSlice;
 
 /**
- * Customer-owned read port for linked Payment projection rows.
+ * Dedicated read port for Payment observations linked to one customer.
  */
 @FunctionalInterface
 public interface ObservedCustomerPaymentQueryRepository {
 
-    ObservedCustomerPaymentPage findByCustomer(
-            ListObservedCustomerPaymentsQuery query
+    ObservedCustomerPaymentSlice findByCustomerId(
+            ObservedCustomerPaymentCriteria criteria
     );
 }

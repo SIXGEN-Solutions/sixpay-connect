@@ -38,6 +38,17 @@ class ObservedCustomerQueryModelArchitectureTest {
                 "ObservedInstitutionView.java",
                 "ObservedAccountView.java",
                 "MaskedIdentifierView.java",
+
+                /*
+                 * Lot 4.7.3 — decoded keyset query model.
+                 */
+                "ObservedCustomerSearchCriteria.java",
+                "ObservedCustomerPaymentCriteria.java",
+                "ObservedCustomerSearchPosition.java",
+                "ObservedCustomerPaymentPosition.java",
+                "ObservedCustomerSearchSlice.java",
+                "ObservedCustomerPaymentSlice.java",
+
                 "package-info.java"
         );
 
@@ -52,7 +63,10 @@ class ObservedCustomerQueryModelArchitectureTest {
                     )
                     .collect(Collectors.toSet());
 
-            assertEquals(expected, actual);
+            assertEquals(
+                    expected,
+                    actual
+            );
         }
     }
 

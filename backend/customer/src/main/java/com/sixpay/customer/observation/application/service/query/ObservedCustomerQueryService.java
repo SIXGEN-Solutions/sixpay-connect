@@ -1,6 +1,8 @@
 package com.sixpay.customer.observation.application.service.query;
 
 import com.sixpay.customer.observation.application.exception
+        .InvalidObservedCustomerCursorException;
+import com.sixpay.customer.observation.application.exception
         .ObservedCustomerNotFoundException;
 import com.sixpay.customer.observation.application.exception
         .ObservedCustomerQueryUnavailableException;
@@ -21,11 +23,21 @@ import com.sixpay.customer.observation.application.query
 import com.sixpay.customer.observation.application.query
         .ListObservedCustomerPaymentsQuery;
 import com.sixpay.customer.observation.application.query
+        .ObservedCustomerCursor;
+import com.sixpay.customer.observation.application.query
         .ObservedCustomerDetailView;
+import com.sixpay.customer.observation.application.query
+        .ObservedCustomerPaymentCriteria;
 import com.sixpay.customer.observation.application.query
         .ObservedCustomerPaymentPage;
 import com.sixpay.customer.observation.application.query
+        .ObservedCustomerPaymentSlice;
+import com.sixpay.customer.observation.application.query
+        .ObservedCustomerSearchCriteria;
+import com.sixpay.customer.observation.application.query
         .ObservedCustomerSearchPage;
+import com.sixpay.customer.observation.application.query
+        .ObservedCustomerSearchSlice;
 import com.sixpay.customer.observation.application.query
         .SearchObservedCustomersQuery;
 
@@ -33,12 +45,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Framework-free orchestration service for the internal
- * Observed Customer query capability.
- *
- * <p>The service reads dedicated query projections only.
- * It never loads or reconstitutes the mutable
- * ObservedCustomer aggregate.</p>
+ * Framework-free query orchestration over dedicated read projections.
  */
 public final class ObservedCustomerQueryService
         implements SearchObservedCustomersUseCase,
@@ -58,12 +65,10 @@ public final class ObservedCustomerQueryService
                 customerQueries,
                 "customerQueries is required"
         );
-
         this.paymentQueries = Objects.requireNonNull(
                 paymentQueries,
                 "paymentQueries is required"
         );
-
         this.cursorCodec = Objects.requireNonNull(
                 cursorCodec,
                 "cursorCodec is required"
@@ -80,31 +85,15 @@ public final class ObservedCustomerQueryService
                         "query is required"
                 );
 
-        /*
-         * Cursor errors representing an invalid client cursor must remain
-         * IllegalArgumentException so the API layer can return HTTP 400.
-         *
-         * Repository failures and incoherent repository responses are
-         * translated to query-unavailable.
-         */
-        SearchObservedCustomersQuery canonical =
-                resolveSearchCursor(requested);
-
-        validateSearchQuery(canonical);
+        ObservedCustomerSearchCriteria criteria =
+                decodeSearch(requested);
 
         return executeRead(
                 "Observed Customer search is unavailable",
-                () -> {
-                    ObservedCustomerSearchPage page =
-                            customerQueries.search(canonical);
-
-                    validateSearchPage(
-                            canonical,
-                            page
-                    );
-
-                    return page;
-                }
+                () -> toSearchPage(
+                        criteria,
+                        customerQueries.search(criteria)
+                )
         );
     }
 
@@ -142,50 +131,39 @@ public final class ObservedCustomerQueryService
                         "query is required"
                 );
 
-        ListObservedCustomerPaymentsQuery canonical =
-                resolvePaymentCursor(requested);
-
-        validatePaymentQuery(canonical);
+        ObservedCustomerPaymentCriteria criteria =
+                decodePayments(requested);
 
         return executeRead(
                 "Observed Customer payments are unavailable",
                 () -> {
                     if (!customerQueries.existsById(
-                            canonical.observedCustomerId()
+                            criteria.observedCustomerId()
                     )) {
                         throw new ObservedCustomerNotFoundException(
-                                canonical.observedCustomerId()
+                                criteria.observedCustomerId()
                         );
                     }
 
-                    ObservedCustomerPaymentPage page =
-                            paymentQueries.findByCustomer(
-                                    canonical
-                            );
-
-                    validatePaymentPage(
-                            canonical,
-                            page
+                    return toPaymentPage(
+                            criteria,
+                            paymentQueries.findByCustomerId(
+                                    criteria
+                            )
                     );
-
-                    return page;
                 }
         );
     }
 
-    private SearchObservedCustomersQuery resolveSearchCursor(
+    private ObservedCustomerSearchCriteria decodeSearch(
             SearchObservedCustomersQuery query
     ) {
         try {
             return Objects.requireNonNull(
-                    cursorCodec.resolveSearch(query),
-                    "cursor codec returned no search query"
+                    cursorCodec.decodeSearch(query),
+                    "cursor codec returned no search criteria"
             );
         } catch (IllegalArgumentException exception) {
-            /*
-             * Invalid, altered or incompatible cursor:
-             * preserve as a client validation error.
-             */
             throw exception;
         } catch (RuntimeException exception) {
             throw new ObservedCustomerQueryUnavailableException(
@@ -196,19 +174,15 @@ public final class ObservedCustomerQueryService
         }
     }
 
-    private ListObservedCustomerPaymentsQuery resolvePaymentCursor(
+    private ObservedCustomerPaymentCriteria decodePayments(
             ListObservedCustomerPaymentsQuery query
     ) {
         try {
             return Objects.requireNonNull(
-                    cursorCodec.resolvePayments(query),
-                    "cursor codec returned no payment query"
+                    cursorCodec.decodePayments(query),
+                    "cursor codec returned no payment criteria"
             );
         } catch (IllegalArgumentException exception) {
-            /*
-             * Invalid, altered or incompatible cursor:
-             * preserve as a client validation error.
-             */
             throw exception;
         } catch (RuntimeException exception) {
             throw new ObservedCustomerQueryUnavailableException(
@@ -219,132 +193,68 @@ public final class ObservedCustomerQueryService
         }
     }
 
-    private static void validateSearchQuery(
-            SearchObservedCustomersQuery query
-    ) {
-        requireSize(
-                query.size(),
-                SearchObservedCustomersQuery.MAX_SIZE
-        );
-
-        requireOrdered(
-                query.firstObservedFrom(),
-                query.firstObservedTo(),
-                "firstObserved"
-        );
-
-        requireOrdered(
-                query.lastObservedFrom(),
-                query.lastObservedTo(),
-                "lastObserved"
-        );
-
-        requireOrdered(
-                query.paymentFrom(),
-                query.paymentTo(),
-                "payment"
-        );
-
-        Objects.requireNonNull(
-                query.snapshotAt(),
-                "snapshotAt is required"
-        );
-    }
-
-    private static void validatePaymentQuery(
-            ListObservedCustomerPaymentsQuery query
-    ) {
-        requireSize(
-                query.size(),
-                ListObservedCustomerPaymentsQuery.MAX_SIZE
-        );
-
-        requireOrdered(
-                query.createdFrom(),
-                query.createdTo(),
-                "created"
-        );
-
-        Objects.requireNonNull(
-                query.snapshotAt(),
-                "snapshotAt is required"
-        );
-    }
-
-    private static void validateSearchPage(
-            SearchObservedCustomersQuery query,
-            ObservedCustomerSearchPage page
+    private ObservedCustomerSearchPage toSearchPage(
+            ObservedCustomerSearchCriteria criteria,
+            ObservedCustomerSearchSlice slice
     ) {
         Objects.requireNonNull(
-                page,
-                "customer query repository returned no page"
+                slice,
+                "customer query repository returned no slice"
         );
 
-        if (!query.snapshotAt().equals(
-                page.snapshotAt()
-        )) {
+        if (slice.items().size() > criteria.size()) {
             throw new IllegalStateException(
-                    "search page snapshot does not match "
-                            + "query snapshot"
+                    "search slice exceeds requested size"
             );
         }
 
-        if (page.size() > query.size()) {
-            throw new IllegalStateException(
-                    "search page exceeds requested size"
-            );
-        }
+        ObservedCustomerCursor nextCursor =
+                slice.hasMore()
+                        ? cursorCodec.encodeSearch(
+                                criteria,
+                                slice.nextPosition()
+                        )
+                        : null;
+
+        return new ObservedCustomerSearchPage(
+                slice.items(),
+                slice.items().size(),
+                slice.hasMore(),
+                nextCursor,
+                criteria.snapshotAt()
+        );
     }
 
-    private static void validatePaymentPage(
-            ListObservedCustomerPaymentsQuery query,
-            ObservedCustomerPaymentPage page
+    private ObservedCustomerPaymentPage toPaymentPage(
+            ObservedCustomerPaymentCriteria criteria,
+            ObservedCustomerPaymentSlice slice
     ) {
         Objects.requireNonNull(
-                page,
-                "payment query repository returned no page"
+                slice,
+                "payment query repository returned no slice"
         );
 
-        if (!query.snapshotAt().equals(
-                page.snapshotAt()
-        )) {
+        if (slice.items().size() > criteria.size()) {
             throw new IllegalStateException(
-                    "payment page snapshot does not match "
-                            + "query snapshot"
+                    "payment slice exceeds requested size"
             );
         }
 
-        if (page.size() > query.size()) {
-            throw new IllegalStateException(
-                    "payment page exceeds requested size"
-            );
-        }
-    }
+        ObservedCustomerCursor nextCursor =
+                slice.hasMore()
+                        ? cursorCodec.encodePayments(
+                                criteria,
+                                slice.nextPosition()
+                        )
+                        : null;
 
-    private static void requireSize(
-            int size,
-            int maximum
-    ) {
-        if (size < 1 || size > maximum) {
-            throw new IllegalArgumentException(
-                    "size must be between 1 and "
-                            + maximum
-            );
-        }
-    }
-
-    private static void requireOrdered(
-            java.time.Instant from,
-            java.time.Instant to,
-            String field
-    ) {
-        if (from != null
-                && to != null
-                && from.isAfter(to)) {
-            throw new IllegalArgumentException(
-                    field + " from must not be after to"
-            );
-        }
+        return new ObservedCustomerPaymentPage(
+                slice.items(),
+                slice.items().size(),
+                slice.hasMore(),
+                nextCursor,
+                criteria.snapshotAt()
+        );
     }
 
     private static <T> T executeRead(
