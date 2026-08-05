@@ -18,6 +18,8 @@ import com.sixpay.customer.observation.application.service
         .ObservedCustomerProjectionService;
 import com.sixpay.customer.observation.configuration
         .ObservedCustomerPersistenceConfiguration;
+import com.sixpay.customer.observation.configuration
+        .ObservedCustomerProjectionResilienceConfiguration;
 import com.sixpay.customer.observation.domain.model
         .ObservedCustomerId;
 import com.sixpay.customer.observation.domain.model
@@ -67,7 +69,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -99,8 +103,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "sixpay.customer.verification."
                         + "banking.enabled=false",
 
+                /*
+                 * Legacy persistence property still required by
+                 * ObservedCustomerPersistenceProperties.
+                 */
                 "sixpay.customer.observation.persistence."
                         + "max-optimistic-attempts=3",
+
+                /*
+                 * New Lot 4.8.5 resilience properties.
+                 */
+                "sixpay.customer.observation.resilience."
+                        + "max-attempts=3",
+
+                "sixpay.customer.observation.resilience."
+                        + "initial-backoff=1ms",
+
+                "sixpay.customer.observation.resilience."
+                        + "max-backoff=5ms",
+
+                "sixpay.customer.observation.resilience."
+                        + "multiplier=2",
+
+                "sixpay.customer.observation.resilience."
+                        + "jitter=0",
 
                 "sixpay.customer.observation.persistence."
                         + "protection-key-base64="
@@ -839,6 +865,7 @@ class ObservedCustomerJpaIntegrationTest {
             }
     )
     @Import({
+            ObservedCustomerProjectionResilienceConfiguration.class,
             ObservedCustomerPersistenceConfiguration.class,
             IntegrationTestConfiguration.class
     })
@@ -856,6 +883,16 @@ class ObservedCustomerJpaIntegrationTest {
         testObservedCustomerIdGenerator() {
             return () -> ObservedCustomerId.of(
                     FIXED_CUSTOMER_ID
+            );
+        }
+
+        @Bean
+        Clock testClock() {
+            return Clock.fixed(
+                    FIRST.plusSeconds(
+                            120
+                    ),
+                    ZoneOffset.UTC
             );
         }
 

@@ -7,29 +7,41 @@ import com.sixpay.customer.observation.application.port.input
 import com.sixpay.customer.observation.application.port.input
         .ObserveCustomerUseCase;
 import com.sixpay.customer.observation.infrastructure.observability
-        .ObservedCustomerProjectionMetrics;
+        .ObservedCustomerProjectionErrorType;
 import com.sixpay.customer.observation.infrastructure.observability
-        .ObservedCustomerProjectionObservation;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+        .ObservedCustomerProjectionMetrics;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionFailureClassifier;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionFailureType;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionRetryExhaustedException;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionRetryPolicy;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Executes the complete projection mutation in one transaction.
+ * Executes the complete projection mutation in a bounded retry loop.
+ *
+ * <p>Each attempt receives a fresh transaction. Idempotence races are retried
+ * by invoking the application service again, which reloads the winning
+ * projection and can return REPLAYED or continue from the winning state.</p>
  */
 public final class TransactionalObserveCustomerUseCase
         implements ObserveCustomerUseCase {
 
     private final ObserveCustomerUseCase delegate;
     private final TransactionTemplate transactionTemplate;
-    private final int maxAttempts;
+    private final ObservedCustomerProjectionFailureClassifier classifier;
+    private final ObservedCustomerProjectionRetryPolicy retryPolicy;
     private final ObservedCustomerProjectionMetrics metrics;
 
     /**
-     * Compatibility constructor used by existing tests and isolated contexts.
+     * Compatibility constructor for existing isolated tests.
      */
     public TransactionalObserveCustomerUseCase(
             ObserveCustomerUseCase delegate,
@@ -39,15 +51,35 @@ public final class TransactionalObserveCustomerUseCase
         this(
                 delegate,
                 transactionManager,
-                maxAttempts,
+                new ObservedCustomerProjectionFailureClassifier(),
+                compatibilityPolicy(maxAttempts),
                 null
+        );
+    }
+
+    /**
+     * Compatibility constructor introduced by lot 4.8.4.
+     */
+    public TransactionalObserveCustomerUseCase(
+            ObserveCustomerUseCase delegate,
+            PlatformTransactionManager transactionManager,
+            int maxAttempts,
+            ObservedCustomerProjectionMetrics metrics
+    ) {
+        this(
+                delegate,
+                transactionManager,
+                new ObservedCustomerProjectionFailureClassifier(),
+                compatibilityPolicy(maxAttempts),
+                metrics
         );
     }
 
     public TransactionalObserveCustomerUseCase(
             ObserveCustomerUseCase delegate,
             PlatformTransactionManager transactionManager,
-            int maxAttempts,
+            ObservedCustomerProjectionFailureClassifier classifier,
+            ObservedCustomerProjectionRetryPolicy retryPolicy,
             ObservedCustomerProjectionMetrics metrics
     ) {
         this.delegate = Objects.requireNonNull(
@@ -60,14 +92,14 @@ public final class TransactionalObserveCustomerUseCase
                         "transactionManager is required"
                 )
         );
-
-        if (maxAttempts < 1 || maxAttempts > 10) {
-            throw new IllegalArgumentException(
-                    "maxAttempts must be between 1 and 10"
-            );
-        }
-
-        this.maxAttempts = maxAttempts;
+        this.classifier = Objects.requireNonNull(
+                classifier,
+                "classifier is required"
+        );
+        this.retryPolicy = Objects.requireNonNull(
+                retryPolicy,
+                "retryPolicy is required"
+        );
         this.metrics = metrics;
     }
 
@@ -77,10 +109,8 @@ public final class TransactionalObserveCustomerUseCase
     ) {
         Objects.requireNonNull(command, "command is required");
 
-        RuntimeException lastFailure = null;
-
         for (int attempt = 1;
-             attempt <= maxAttempts;
+             attempt <= retryPolicy.maxAttempts();
              attempt++) {
 
             markAttempt(attempt);
@@ -89,25 +119,38 @@ public final class TransactionalObserveCustomerUseCase
                 return transactionTemplate.execute(
                         status -> delegate.observe(command)
                 );
-            } catch (ObjectOptimisticLockingFailureException
-                     | DataIntegrityViolationException exception) {
-                lastFailure = exception;
+            } catch (RuntimeException failure) {
+                ObservedCustomerProjectionFailureType failureType =
+                        classifier.classify(failure);
 
-                if (attempt == maxAttempts) {
-                    throw exception;
+                if (!failureType.retryable()) {
+                    throw failure;
+                }
+
+                if (!retryPolicy.shouldRetry(
+                        attempt,
+                        failureType
+                )) {
+                    throw new
+                            ObservedCustomerProjectionRetryExhaustedException(
+                                    attempt,
+                                    failureType,
+                                    failure
+                            );
                 }
 
                 recordRetry(
                         command,
                         attempt,
-                        exception
+                        failureType
                 );
+
+                retryPolicy.beforeRetry(attempt);
             }
         }
 
         throw new IllegalStateException(
-                "Observed Customer transaction retry exhausted",
-                lastFailure
+                "Observed Customer retry loop ended unexpectedly"
         );
     }
 
@@ -119,16 +162,53 @@ public final class TransactionalObserveCustomerUseCase
 
     private void recordRetry(
             ObserveCustomerCommand command,
-            int failedAttempt,
-            RuntimeException exception
+            int attempt,
+            ObservedCustomerProjectionFailureType failureType
     ) {
         if (metrics != null) {
             metrics.retry(
                     command,
-                    failedAttempt,
-                    ObservedCustomerProjectionObservation
-                            .classify(exception)
+                    attempt,
+                    metricErrorType(failureType)
             );
         }
+    }
+
+    private static ObservedCustomerProjectionErrorType
+    metricErrorType(
+            ObservedCustomerProjectionFailureType failureType
+    ) {
+        return switch (failureType) {
+            case OPTIMISTIC_LOCK ->
+                    ObservedCustomerProjectionErrorType
+                            .OPTIMISTIC_LOCK;
+            case IDEMPOTENCE_RACE ->
+                    ObservedCustomerProjectionErrorType
+                            .DATA_INTEGRITY;
+            case DEADLOCK,
+                 SERIALIZATION_FAILURE,
+                 TRANSIENT_TRANSACTION,
+                 TEMPORARY_CONNECTION ->
+                    ObservedCustomerProjectionErrorType
+                            .TRANSACTION;
+            default ->
+                    ObservedCustomerProjectionErrorType
+                            .UNEXPECTED;
+        };
+    }
+
+    private static ObservedCustomerProjectionRetryPolicy
+    compatibilityPolicy(int maxAttempts) {
+        return new ObservedCustomerProjectionRetryPolicy(
+                maxAttempts,
+                Duration.ofNanos(1),
+                Duration.ofNanos(1),
+                1.0,
+                0.0,
+                ignored -> {
+                    // Compatibility mode intentionally has no wait.
+                },
+                () -> 0.5
+        );
     }
 }

@@ -1,19 +1,23 @@
 package com.sixpay.customer.observation.configuration;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
-import java.util.Objects;
+import org.springframework.boot.context.properties
+        .ConfigurationProperties;
+import org.springframework.boot.context.properties.bind
+        .DefaultValue;
 
 @ConfigurationProperties(
         prefix = "sixpay.customer.observation.persistence"
 )
 public record ObservedCustomerPersistenceProperties(
+        @DefaultValue("true")
         boolean enabled,
-        String protectionKeyBase64,
-        int maxOptimisticAttempts
-) {
 
-    private static final int MIN_KEY_BASE64_LENGTH = 44;
+        @Deprecated
+        @DefaultValue("3")
+        int maxOptimisticAttempts,
+
+        String protectionKeyBase64
+) {
 
     public ObservedCustomerPersistenceProperties {
         if (maxOptimisticAttempts < 1
@@ -23,20 +27,14 @@ public record ObservedCustomerPersistenceProperties(
             );
         }
 
-        if (enabled) {
-            protectionKeyBase64 = Objects.requireNonNull(
-                    protectionKeyBase64,
-                    "protectionKeyBase64 is required when "
-                            + "Observed Customer persistence is enabled"
-            ).strip();
-
-            if (protectionKeyBase64.length()
-                    < MIN_KEY_BASE64_LENGTH) {
-                throw new IllegalArgumentException(
-                        "protectionKeyBase64 must contain at least "
-                                + "32 bytes encoded in Base64"
-                );
-            }
+        if (protectionKeyBase64 == null
+                || protectionKeyBase64.isBlank()) {
+            throw new IllegalArgumentException(
+                    "protectionKeyBase64 must not be blank"
+            );
         }
+
+        protectionKeyBase64 =
+                protectionKeyBase64.strip();
     }
 }

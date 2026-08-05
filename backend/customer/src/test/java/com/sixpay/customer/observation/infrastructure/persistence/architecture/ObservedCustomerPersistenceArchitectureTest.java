@@ -1,4 +1,5 @@
-package com.sixpay.customer.observation.infrastructure.persistence.architecture;
+package com.sixpay.customer.observation.infrastructure
+        .persistence.architecture;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,14 +26,18 @@ class ObservedCustomerPersistenceArchitectureTest {
         try (var paths = Files.walk(ROOT)) {
             var violations = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
                     .flatMap(path -> {
                         try {
-                            String source = Files.readString(path);
+                            String source =
+                                    Files.readString(path);
 
                             return List.of(
                                             "import com.sixpay.payment.",
-                                            "import com.sixpay.customer.verification.",
+                                            "import com.sixpay.customer."
+                                                    + "verification.",
                                             "RestClient",
                                             "WebClient",
                                             "HttpClient",
@@ -42,10 +47,14 @@ class ObservedCustomerPersistenceArchitectureTest {
                                     .stream()
                                     .filter(source::contains)
                                     .map(token ->
-                                            path + " contains " + token
+                                            path
+                                                    + " contains "
+                                                    + token
                                     );
                         } catch (Exception exception) {
-                            throw new IllegalStateException(exception);
+                            throw new IllegalStateException(
+                                    exception
+                            );
                         }
                     })
                     .toList();
@@ -68,21 +77,35 @@ class ObservedCustomerPersistenceArchitectureTest {
                 )
         );
 
-        assertTrue(source.contains("@Version"));
-        assertTrue(source.contains("long rowVersion"));
-        assertTrue(source.contains(
-                "name = \"niu_search_hash\""
-        ));
-        assertTrue(source.contains(
-                "name = \"niu_protected\""
-        ));
-        assertTrue(source.contains(
-                "name = \"legal_name_protected\""
-        ));
+        assertTrue(
+                source.contains("@Version")
+        );
+
+        assertTrue(
+                source.contains("long rowVersion")
+        );
+
+        assertTrue(
+                source.contains(
+                        "name = \"niu_search_hash\""
+                )
+        );
+
+        assertTrue(
+                source.contains(
+                        "name = \"niu_protected\""
+                )
+        );
+
+        assertTrue(
+                source.contains(
+                        "name = \"legal_name_protected\""
+                )
+        );
     }
 
     @Test
-    void transactionDecoratorRetriesBoundedConflicts()
+    void transactionDecoratorUsesExplicitBoundedRetryPolicy()
             throws Exception {
 
         String source = Files.readString(
@@ -92,17 +115,82 @@ class ObservedCustomerPersistenceArchitectureTest {
                 )
         );
 
-        assertTrue(source.contains(
-                "ObjectOptimisticLockingFailureException"
-        ));
-        assertTrue(source.contains(
-                "DataIntegrityViolationException"
-        ));
-        assertTrue(source.contains(
-                "attempt <= maxAttempts"
-        ));
-        assertFalse(source.contains("Thread.sleep("));
-        assertFalse(source.contains("Instant.now("));
+        assertTrue(
+                source.contains(
+                        "ObservedCustomerProjectionFailureClassifier"
+                ),
+                "Transaction decorator must use the explicit "
+                        + "failure classifier"
+        );
+
+        assertTrue(
+                source.contains(
+                        "ObservedCustomerProjectionRetryPolicy"
+                ),
+                "Transaction decorator must use the bounded "
+                        + "retry policy"
+        );
+
+        assertTrue(
+                source.contains(
+                        "classifier.classify("
+                ),
+                "Failures must be classified before retry"
+        );
+
+        assertTrue(
+                source.contains(
+                        "retryPolicy.maxAttempts()"
+                ),
+                "Retry loop must use the configured maximum attempts"
+        );
+
+        assertTrue(
+                source.contains(
+                        "retryPolicy.shouldRetry("
+                ),
+                "Retry decision must be delegated to the policy"
+        );
+
+        assertTrue(
+                source.contains(
+                        "retryPolicy.beforeRetry("
+                ),
+                "Backoff must be delegated to the retry policy"
+        );
+
+        assertTrue(
+                source.contains(
+                        "ObservedCustomerProjectionRetryExhaustedException"
+                ),
+                "Retry exhaustion must be represented explicitly"
+        );
+
+        assertFalse(
+                source.contains(
+                        "ObjectOptimisticLockingFailureException"
+                ),
+                "Optimistic locking classification must not remain "
+                        + "inside the transaction decorator"
+        );
+
+        assertFalse(
+                source.contains(
+                        "DataIntegrityViolationException"
+                ),
+                "Integrity failure classification must not remain "
+                        + "inside the transaction decorator"
+        );
+
+        assertFalse(
+                source.contains("Thread.sleep("),
+                "Retry must not use Thread.sleep()"
+        );
+
+        assertFalse(
+                source.contains("Instant.now("),
+                "Retry must not use an uncontrolled system clock"
+        );
     }
 
     @Test
@@ -126,23 +214,43 @@ class ObservedCustomerPersistenceArchitectureTest {
         )) {
             assertFalse(
                     migration.toLowerCase()
-                            .contains(forbidden.strip()
-                                    .toLowerCase()),
-                    () -> "Unsafe column found: " + forbidden
+                            .contains(
+                                    forbidden.strip()
+                                            .toLowerCase()
+                            ),
+                    () -> "Unsafe column found: "
+                            + forbidden
             );
         }
 
-        assertTrue(migration.contains("niu_protected"));
-        assertTrue(migration.contains("niu_search_hash"));
-        assertTrue(migration.contains(
-                "account_binding_fingerprint"
-        ));
-        assertTrue(migration.contains("masked_value"));
-        assertTrue(migration.contains(
-                "UNIQUE (niu_search_hash)"
-        ));
-        assertTrue(migration.contains(
-                "source_event_id UUID PRIMARY KEY"
-        ));
+        assertTrue(
+                migration.contains("niu_protected")
+        );
+
+        assertTrue(
+                migration.contains("niu_search_hash")
+        );
+
+        assertTrue(
+                migration.contains(
+                        "account_binding_fingerprint"
+                )
+        );
+
+        assertTrue(
+                migration.contains("masked_value")
+        );
+
+        assertTrue(
+                migration.contains(
+                        "UNIQUE (niu_search_hash)"
+                )
+        );
+
+        assertTrue(
+                migration.contains(
+                        "source_event_id UUID PRIMARY KEY"
+                )
+        );
     }
 }

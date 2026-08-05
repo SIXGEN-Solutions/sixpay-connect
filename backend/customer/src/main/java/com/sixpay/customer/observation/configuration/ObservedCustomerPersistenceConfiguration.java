@@ -42,6 +42,10 @@ import com.sixpay.customer.observation.infrastructure.persistence.repository
         .ProcessedObservationEventSpringDataRepository;
 import com.sixpay.customer.observation.infrastructure.persistence.transaction
         .TransactionalObserveCustomerUseCase;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionFailureClassifier;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionRetryPolicy;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;
@@ -127,7 +131,8 @@ public class ObservedCustomerPersistenceConfiguration {
             ObservedPaymentRepository payments,
             ObservedCustomerIdGenerator idGenerator,
             PlatformTransactionManager transactionManager,
-            ObservedCustomerPersistenceProperties properties,
+            ObservedCustomerProjectionFailureClassifier classifier,
+            ObservedCustomerProjectionRetryPolicy retryPolicy,
             ObjectProvider<ObservedCustomerAuditPort>
                     auditPortProvider,
             ObjectProvider<ObservedCustomerAuditIdGenerator>
@@ -188,7 +193,8 @@ public class ObservedCustomerPersistenceConfiguration {
                                 transactionManager,
                                 "transactionManager is required"
                         ),
-                        properties.maxOptimisticAttempts(),
+                        classifier,
+                        retryPolicy,
                         metrics
                 );
 

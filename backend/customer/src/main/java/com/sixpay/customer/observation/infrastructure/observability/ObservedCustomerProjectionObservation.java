@@ -8,6 +8,10 @@ import com.sixpay.customer.observation.application.port.input
         .ObserveCustomerUseCase;
 import com.sixpay.customer.observation.domain.exception
         .ObservedCustomerDomainException;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionFailureType;
+import com.sixpay.customer.observation.infrastructure.resilience
+        .ObservedCustomerProjectionRetryExhaustedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -149,6 +153,14 @@ public final class ObservedCustomerProjectionObservation
             RuntimeException exception
     ) {
         if (exception
+                instanceof ObservedCustomerProjectionRetryExhaustedException
+                exhausted) {
+            return metricErrorType(
+                    exhausted.failureType()
+            );
+        }
+
+        if (exception
                 instanceof ObjectOptimisticLockingFailureException) {
             return ObservedCustomerProjectionErrorType
                     .OPTIMISTIC_LOCK;
@@ -177,6 +189,34 @@ public final class ObservedCustomerProjectionObservation
         }
 
         return ObservedCustomerProjectionErrorType.UNEXPECTED;
+    }
+
+    private static ObservedCustomerProjectionErrorType
+    metricErrorType(
+            ObservedCustomerProjectionFailureType failureType
+    ) {
+        return switch (failureType) {
+            case OPTIMISTIC_LOCK ->
+                    ObservedCustomerProjectionErrorType
+                            .OPTIMISTIC_LOCK;
+            case IDEMPOTENCE_RACE ->
+                    ObservedCustomerProjectionErrorType
+                            .DATA_INTEGRITY;
+            case TRANSIENT_TRANSACTION,
+                 DEADLOCK,
+                 SERIALIZATION_FAILURE,
+                 TEMPORARY_CONNECTION ->
+                    ObservedCustomerProjectionErrorType.TRANSACTION;
+            case INVALID_PAYLOAD,
+                 CONTRADICTORY_IDENTITY,
+                 UNKNOWN_STATUS,
+                 MISSING_REQUIRED_DATA,
+                 INCOMPATIBLE_CONTRACT ->
+                    ObservedCustomerProjectionErrorType.DOMAIN;
+            case PERMANENT_CRYPTOGRAPHY,
+                 NON_RETRYABLE ->
+                    ObservedCustomerProjectionErrorType.UNEXPECTED;
+        };
     }
 
     private static Duration between(
