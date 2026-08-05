@@ -8,6 +8,10 @@ import com.sixpay.customer.observation.api.dto
         .ObservedCustomerSearchPageResponse;
 import com.sixpay.customer.observation.api.mapper
         .ObservedCustomerQueryApiMapper;
+import com.sixpay.customer.observation.api.observability
+        .ObservedCustomerQueryObservation;
+import com.sixpay.customer.observation.api.observability
+        .ObservedCustomerQueryOperation;
 import com.sixpay.customer.observation.application.port.input.query
         .GetObservedCustomerUseCase;
 import com.sixpay.customer.observation.application.port.input.query
@@ -28,13 +32,16 @@ import com.sixpay.customer.observation.domain.model
         .ObservedCustomerId;
 import com.sixpay.customer.observation.domain.model
         .ObservedPaymentStatus;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnWebApplication;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,21 +59,22 @@ import java.util.UUID;
 @ConditionalOnBean({
         SearchObservedCustomersUseCase.class,
         GetObservedCustomerUseCase.class,
-        ListObservedCustomerPaymentsUseCase.class
+        ListObservedCustomerPaymentsUseCase.class,
+        ObservedCustomerQueryObservation.class
 })
 public final class ObservedCustomerQueryController {
 
-    private final SearchObservedCustomersUseCase
-            searchUseCase;
+    public static final String CORRELATION_HEADER =
+            "X-Correlation-ID";
 
-    private final GetObservedCustomerUseCase
-            getUseCase;
+    private static final String REQUIRED_SCOPE =
+            "hasAuthority('SCOPE_observed-customer.read')";
 
-    private final ListObservedCustomerPaymentsUseCase
-            paymentsUseCase;
-
+    private final SearchObservedCustomersUseCase searchUseCase;
+    private final GetObservedCustomerUseCase getUseCase;
+    private final ListObservedCustomerPaymentsUseCase paymentsUseCase;
     private final ObservedCustomerQueryApiMapper mapper;
-
+    private final ObservedCustomerQueryObservation observation;
     private final Clock clock;
 
     public ObservedCustomerQueryController(
@@ -74,28 +82,29 @@ public final class ObservedCustomerQueryController {
             GetObservedCustomerUseCase getUseCase,
             ListObservedCustomerPaymentsUseCase paymentsUseCase,
             ObservedCustomerQueryApiMapper mapper,
+            ObservedCustomerQueryObservation observation,
             Clock clock
     ) {
         this.searchUseCase = Objects.requireNonNull(
                 searchUseCase,
                 "searchUseCase is required"
         );
-
         this.getUseCase = Objects.requireNonNull(
                 getUseCase,
                 "getUseCase is required"
         );
-
         this.paymentsUseCase = Objects.requireNonNull(
                 paymentsUseCase,
                 "paymentsUseCase is required"
         );
-
         this.mapper = Objects.requireNonNull(
                 mapper,
                 "mapper is required"
         );
-
+        this.observation = Objects.requireNonNull(
+                observation,
+                "observation is required"
+        );
         this.clock = Objects.requireNonNull(
                 clock,
                 "clock is required"
@@ -103,19 +112,20 @@ public final class ObservedCustomerQueryController {
     }
 
     @GetMapping
+    @PreAuthorize(REQUIRED_SCOPE)
     public ObservedCustomerSearchPageResponse search(
+            @RequestHeader(CORRELATION_HEADER)
+            String correlationId,
+            HttpServletResponse response,
+
             @RequestParam(required = false)
             String normalizedNiu,
-
             @RequestParam(required = false)
             String legalName,
-
             @RequestParam(required = false)
             String financialInstitutionCode,
-
             @RequestParam(required = false)
             ObservedPaymentStatus lastPaymentStatus,
-
             @RequestParam(required = false)
             String lastFailureReasonCode,
 
@@ -170,6 +180,16 @@ public final class ObservedCustomerQueryController {
             )
             Instant snapshotAt
     ) {
+        String normalizedCorrelationId =
+                requireCorrelationId(correlationId);
+
+        response.setHeader(
+                CORRELATION_HEADER,
+                normalizedCorrelationId
+        );
+
+        int effectiveSize = resolveSearchSize(size);
+
         SearchObservedCustomersQuery query =
                 new SearchObservedCustomersQuery(
                         normalizedNiu,
@@ -185,19 +205,41 @@ public final class ObservedCustomerQueryController {
                         paymentTo,
                         sort,
                         toCursor(cursor),
-                        resolveSearchSize(size),
+                        effectiveSize,
                         resolveSnapshot(snapshotAt)
                 );
 
-        return mapper.toResponse(
-                searchUseCase.search(query)
+        return observation.observe(
+                ObservedCustomerQueryOperation.SEARCH,
+                normalizedCorrelationId,
+                null,
+                effectiveSize,
+                () -> mapper.toResponse(
+                        searchUseCase.search(query)
+                ),
+                page ->
+                        ObservedCustomerQueryObservation
+                                .ResultMetadata
+                                .page(page.hasMore())
         );
     }
 
     @GetMapping("/{observedCustomerId}")
+    @PreAuthorize(REQUIRED_SCOPE)
     public ObservedCustomerDetailResponse get(
+            @RequestHeader(CORRELATION_HEADER)
+            String correlationId,
+            HttpServletResponse response,
             @PathVariable UUID observedCustomerId
     ) {
+        String normalizedCorrelationId =
+                requireCorrelationId(correlationId);
+
+        response.setHeader(
+                CORRELATION_HEADER,
+                normalizedCorrelationId
+        );
+
         GetObservedCustomerQuery query =
                 new GetObservedCustomerQuery(
                         ObservedCustomerId.of(
@@ -205,35 +247,41 @@ public final class ObservedCustomerQueryController {
                         )
                 );
 
-        return mapper.toResponse(
-                getUseCase.get(query)
+        return observation.observe(
+                ObservedCustomerQueryOperation.GET,
+                normalizedCorrelationId,
+                observedCustomerId,
+                null,
+                () -> mapper.toResponse(
+                        getUseCase.get(query)
+                ),
+                detail ->
+                        ObservedCustomerQueryObservation
+                                .ResultMetadata
+                                .none()
         );
     }
 
-    @GetMapping(
-            "/{observedCustomerId}/payments"
-    )
-    public ObservedCustomerPaymentPageResponse
-    listPayments(
-            @PathVariable
-            UUID observedCustomerId,
+    @GetMapping("/{observedCustomerId}/payments")
+    @PreAuthorize(REQUIRED_SCOPE)
+    public ObservedCustomerPaymentPageResponse listPayments(
+            @RequestHeader(CORRELATION_HEADER)
+            String correlationId,
+            HttpServletResponse response,
+            @PathVariable UUID observedCustomerId,
 
             @RequestParam(required = false)
             ObservedPaymentStatus status,
 
             @RequestParam(required = false)
             @DateTimeFormat(
-                    iso =
-                            DateTimeFormat.ISO
-                                    .DATE_TIME
+                    iso = DateTimeFormat.ISO.DATE_TIME
             )
             Instant createdFrom,
 
             @RequestParam(required = false)
             @DateTimeFormat(
-                    iso =
-                            DateTimeFormat.ISO
-                                    .DATE_TIME
+                    iso = DateTimeFormat.ISO.DATE_TIME
             )
             Instant createdTo,
 
@@ -245,12 +293,19 @@ public final class ObservedCustomerQueryController {
 
             @RequestParam(required = false)
             @DateTimeFormat(
-                    iso =
-                            DateTimeFormat.ISO
-                                    .DATE_TIME
+                    iso = DateTimeFormat.ISO.DATE_TIME
             )
             Instant snapshotAt
     ) {
+        String normalizedCorrelationId =
+                requireCorrelationId(correlationId);
+
+        response.setHeader(
+                CORRELATION_HEADER,
+                normalizedCorrelationId
+        );
+
+        int effectiveSize = resolvePaymentSize(size);
 
         ListObservedCustomerPaymentsQuery query =
                 new ListObservedCustomerPaymentsQuery(
@@ -261,12 +316,22 @@ public final class ObservedCustomerQueryController {
                         createdFrom,
                         createdTo,
                         toCursor(cursor),
-                        resolvePaymentSize(size),
+                        effectiveSize,
                         resolveSnapshot(snapshotAt)
                 );
 
-        return mapper.toResponse(
-                paymentsUseCase.listPayments(query)
+        return observation.observe(
+                ObservedCustomerQueryOperation.LIST_PAYMENTS,
+                normalizedCorrelationId,
+                observedCustomerId,
+                effectiveSize,
+                () -> mapper.toResponse(
+                        paymentsUseCase.listPayments(query)
+                ),
+                page ->
+                        ObservedCustomerQueryObservation
+                                .ResultMetadata
+                                .page(page.hasMore())
         );
     }
 
@@ -282,8 +347,7 @@ public final class ObservedCustomerQueryController {
             Integer requestedSize
     ) {
         return requestedSize == null
-                ? SearchObservedCustomersQuery
-                .DEFAULT_SIZE
+                ? SearchObservedCustomersQuery.DEFAULT_SIZE
                 : requestedSize;
     }
 
@@ -291,8 +355,7 @@ public final class ObservedCustomerQueryController {
             Integer requestedSize
     ) {
         return requestedSize == null
-                ? ListObservedCustomerPaymentsQuery
-                .DEFAULT_SIZE
+                ? ListObservedCustomerPaymentsQuery.DEFAULT_SIZE
                 : requestedSize;
     }
 
@@ -311,8 +374,27 @@ public final class ObservedCustomerQueryController {
             );
         }
 
-        return new ObservedCustomerCursor(
-                normalized
-        );
+        return new ObservedCustomerCursor(normalized);
+    }
+
+    private static String requireCorrelationId(
+            String value
+    ) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    "X-Correlation-ID must not be blank"
+            );
+        }
+
+        String normalized = value.strip();
+
+        if (normalized.length() > 150) {
+            throw new IllegalArgumentException(
+                    "X-Correlation-ID must not exceed "
+                            + "150 characters"
+            );
+        }
+
+        return normalized;
     }
 }
