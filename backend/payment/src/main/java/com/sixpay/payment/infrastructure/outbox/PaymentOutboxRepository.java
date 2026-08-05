@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface PaymentOutboxRepository
@@ -47,9 +48,6 @@ public interface PaymentOutboxRepository
             @Param("batchSize") int batchSize
     );
 
-    /**
-     * Claims only rows belonging to one stable logical contract.
-     */
     @Query(value = """
             SELECT candidate.*
               FROM payment_outbox_events candidate
@@ -87,6 +85,26 @@ public interface PaymentOutboxRepository
             @Param("now") Instant now,
             @Param("staleBefore") Instant staleBefore,
             @Param("batchSize") int batchSize
+    );
+
+    @Query(value = """
+            SELECT COUNT(*)
+              FROM payment_outbox_events
+             WHERE event_type = :eventType
+               AND status NOT IN ('PUBLISHED', 'DEAD')
+            """, nativeQuery = true)
+    long countOutstandingByEventType(
+            @Param("eventType") String eventType
+    );
+
+    @Query(value = """
+            SELECT MIN(occurred_at)
+              FROM payment_outbox_events
+             WHERE event_type = :eventType
+               AND status NOT IN ('PUBLISHED', 'DEAD')
+            """, nativeQuery = true)
+    Optional<Instant> findOldestOutstandingOccurredAt(
+            @Param("eventType") String eventType
     );
 
     boolean existsByEventId(UUID eventId);
