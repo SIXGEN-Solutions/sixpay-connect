@@ -41,7 +41,7 @@ class PaymentOutboxEventSerializationTest {
             Instant.parse("2026-08-04T01:00:00Z");
 
     @Test
-    void roundTripPreservesTheVersionedProjectionContract() {
+    void roundTripPreservesVersionOneContractAndCanonicalIdentity() {
         ObjectMapper mapper = objectMapper();
         PaymentOutboxEventTypeRegistry registry =
                 new PaymentOutboxEventTypeRegistry();
@@ -65,49 +65,49 @@ class PaymentOutboxEventSerializationTest {
                 deserializer.deserialize(json);
 
         assertEquals(source, restored);
+        assertEquals(EVENT_ID, restored.eventId());
+        assertEquals(PAYMENT_ID, restored.paymentId());
+        assertEquals(8L, restored.aggregateVersion());
+        assertEquals(CORRELATION_ID, restored.correlationId());
+        assertEquals(
+                ObservedCustomerProjectionEvent
+                        .CURRENT_EVENT_VERSION,
+                restored.eventVersion()
+        );
+
         assertTrue(json.contains(
                 "\"eventType\":\"payment.observation-projection\""
         ));
-        assertTrue(json.contains(
-                "\"eventVersion\":1"
-        ));
+        assertTrue(json.contains("\"eventVersion\":1"));
+        assertTrue(json.contains("\"aggregateVersion\":8"));
         assertTrue(json.contains(
                 "\"projectionEventType\":\"PAYMENT_REJECTED\""
         ));
-        assertFalse(json.contains(
-                "com.sixpay.payment."
-        ));
+
+        assertFalse(json.contains("com.sixpay.payment."));
         assertFalse(json.contains(
                 "ObservedCustomerProjectionEvent\""
         ));
     }
 
     @Test
-    void aPersistedEventRemainsReadableByFreshCodecInstances() {
+    void freshCodecInstancesReadPersistedVersionOneEvent() {
         String persistedJson =
                 new PaymentOutboxEventSerializer(
                         objectMapper(),
                         new PaymentOutboxEventTypeRegistry()
                 ).serialize(event());
 
-        PaymentOutboxEventDeserializer restartedDeserializer =
+        ObservedCustomerProjectionEvent restored =
                 new PaymentOutboxEventDeserializer(
                         objectMapper(),
                         new PaymentOutboxEventTypeRegistry()
-                );
-
-        ObservedCustomerProjectionEvent restored =
-                restartedDeserializer.deserialize(
-                        persistedJson
-                );
+                ).deserialize(persistedJson);
 
         assertEquals(EVENT_ID, restored.eventId());
         assertEquals(PAYMENT_ID, restored.paymentId());
-        assertEquals(
-                ObservedCustomerProjectionEventType
-                        .PAYMENT_REJECTED,
-                restored.eventType()
-        );
+        assertEquals(8L, restored.aggregateVersion());
+        assertEquals(CORRELATION_ID, restored.correlationId());
         assertEquals(
                 ProjectionPaymentStatus.REJECTED,
                 restored.payload().paymentStatus()
@@ -115,89 +115,88 @@ class PaymentOutboxEventSerializationTest {
     }
 
     @Test
-    void unknownTypeIsRejectedAsAContractError() {
-        String json =
-                new PaymentOutboxEventSerializer(
-                        objectMapper(),
-                        new PaymentOutboxEventTypeRegistry()
-                ).serialize(event());
-
-        String unknownType = json.replace(
+    void unknownTypeIsRejectedAsContractError() {
+        String json = serialize(event()).replace(
                 "payment.observation-projection",
                 "payment.unknown-contract"
         );
 
         assertThrows(
                 UnknownPaymentOutboxEventTypeException.class,
-                () -> new PaymentOutboxEventDeserializer(
-                        objectMapper(),
-                        new PaymentOutboxEventTypeRegistry()
-                ).deserialize(unknownType)
+                () -> deserialize(json)
         );
     }
 
     @Test
-    void unsupportedVersionIsRejectedAsAContractError() {
-        String json =
-                new PaymentOutboxEventSerializer(
-                        objectMapper(),
-                        new PaymentOutboxEventTypeRegistry()
-                ).serialize(event());
-
-        String unsupportedVersion = json.replace(
+    void unsupportedVersionIsRejectedAsContractError() {
+        String json = serialize(event()).replace(
                 "\"eventVersion\":1",
                 "\"eventVersion\":99"
         );
 
         assertThrows(
                 UnsupportedPaymentOutboxEventVersionException.class,
-                () -> new PaymentOutboxEventDeserializer(
-                        objectMapper(),
-                        new PaymentOutboxEventTypeRegistry()
-                ).deserialize(unsupportedVersion)
+                () -> deserialize(json)
         );
     }
 
     @Test
-    void malformedPayloadIsRejectedWithoutLeakingIt() {
-        String json =
-                new PaymentOutboxEventSerializer(
-                        objectMapper(),
-                        new PaymentOutboxEventTypeRegistry()
-                ).serialize(event());
-
-        String malformed = json.replace(
-                "\"currency\":\"XAF\"",
-                "\"currency\":\"INVALID\""
+    void incompletePayloadIsRejectedWithoutLeakingPayload() {
+        String json = serialize(event()).replace(
+                "\"currency\":\"XAF\",",
+                ""
         );
 
         PaymentOutboxSerializationException exception =
                 assertThrows(
                         PaymentOutboxSerializationException.class,
-                        () -> new PaymentOutboxEventDeserializer(
-                                objectMapper(),
-                                new PaymentOutboxEventTypeRegistry()
-                        ).deserialize(malformed)
+                        () -> deserialize(json)
                 );
 
-        assertFalse(
-                exception.getMessage().contains("M0123456")
-        );
-        assertFalse(
-                exception.getMessage().contains(
-                        "Société ABC SARL"
-                )
-        );
+        assertFalse(exception.getMessage().contains("M0123456"));
+        assertFalse(exception.getMessage().contains(
+                "Société ABC SARL"
+        ));
+        assertFalse(exception.getMessage().contains(
+                "v1:" + "a".repeat(64)
+        ));
     }
 
     @Test
-    void envelopeRenderingNeverIncludesThePayload() throws Exception {
+    void serializedContractContainsNoRawBankingCredentialOrAccount() {
+        String json = serialize(event());
+
+        for (String forbidden : new String[] {
+                "23700123456789012345678",
+                "ribDebiteur",
+                "accountNumber",
+                "integrationAccountToken",
+                "DebtorAccountReference",
+                "Authorization",
+                "Bearer ",
+                "JWT",
+                "apiKey",
+                "clientSecret",
+                "rawResponse"
+        }) {
+            assertFalse(
+                    json.contains(forbidden),
+                    () -> "Forbidden contract data: " + forbidden
+            );
+        }
+
+        assertTrue(json.contains(
+                "\"maskedAccountReference\":\"•••• 1234\""
+        ));
+        assertTrue(json.contains(
+                "\"accountBindingFingerprint\":\"v1:"
+        ));
+    }
+
+    @Test
+    void envelopeAndEventRenderingProtectPayload() throws Exception {
         ObjectMapper mapper = objectMapper();
-        String json =
-                new PaymentOutboxEventSerializer(
-                        mapper,
-                        new PaymentOutboxEventTypeRegistry()
-                ).serialize(event());
+        String json = serialize(event());
 
         PaymentOutboxEventEnvelope envelope =
                 mapper.readValue(
@@ -205,18 +204,35 @@ class PaymentOutboxEventSerializationTest {
                         PaymentOutboxEventEnvelope.class
                 );
 
-        String rendered = envelope.toString();
+        for (String rendered : new String[] {
+                envelope.toString(),
+                event().toString()
+        }) {
+            assertFalse(rendered.contains("M0123456"));
+            assertFalse(rendered.contains("Société ABC SARL"));
+            assertFalse(rendered.contains(
+                    "v1:" + "a".repeat(64)
+            ));
+            assertTrue(rendered.contains("payload=[PROTECTED]"));
+        }
+    }
 
-        assertFalse(rendered.contains("M0123456"));
-        assertFalse(rendered.contains(
-                "Société ABC SARL"
-        ));
-        assertFalse(rendered.contains(
-                "v1:" + "a".repeat(64)
-        ));
-        assertTrue(rendered.contains(
-                "payload=[PROTECTED]"
-        ));
+    private static String serialize(
+            ObservedCustomerProjectionEvent event
+    ) {
+        return new PaymentOutboxEventSerializer(
+                objectMapper(),
+                new PaymentOutboxEventTypeRegistry()
+        ).serialize(event);
+    }
+
+    private static ObservedCustomerProjectionEvent deserialize(
+            String json
+    ) {
+        return new PaymentOutboxEventDeserializer(
+                objectMapper(),
+                new PaymentOutboxEventTypeRegistry()
+        ).deserialize(json);
     }
 
     private static ObjectMapper objectMapper() {
@@ -238,7 +254,7 @@ class PaymentOutboxEventSerializationTest {
                         "Société ABC SARL",
                         "***-***-1234",
                         "a***@example.com",
-                        "AMPLITUDE",
+                        "SIXPAY_BANK",
                         "v1:" + "a".repeat(64),
                         "•••• 1234",
                         new BigDecimal("15000.00"),
