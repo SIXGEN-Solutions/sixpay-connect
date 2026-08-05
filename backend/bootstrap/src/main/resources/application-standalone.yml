@@ -67,3 +67,14 @@ sixpay:
       worker-id: ${SIXPAY_PAYMENT_CALLBACK_WORKER_ID:payment-callback-worker}
       signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID:}
       signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
+
+  customer:
+    observation:
+      persistence:
+        enabled: true
+        max-optimistic-attempts: 3
+        protection-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_PROTECTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
+      audit:
+        persistence:
+          enabled: true
