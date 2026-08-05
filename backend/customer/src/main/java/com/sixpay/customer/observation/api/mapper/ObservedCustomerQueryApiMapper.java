@@ -2,7 +2,6 @@ package com.sixpay.customer.observation.api.mapper;
 
 import com.sixpay.customer.observation.api.dto.*;
 import com.sixpay.customer.observation.application.query.*;
-
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -119,8 +118,10 @@ public final class ObservedCustomerQueryApiMapper {
                 view.paymentId(),
                 view.paymentReference(),
                 view.financialInstitutionCode(),
-                view.amount(),
-                view.currency(),
+                new ObservedCustomerPaymentResponse.AmountResponse(
+                        view.amount(),
+                        view.currency()
+                ),
                 view.status().name(),
                 view.reasonCode(),
                 view.createdAt(),
