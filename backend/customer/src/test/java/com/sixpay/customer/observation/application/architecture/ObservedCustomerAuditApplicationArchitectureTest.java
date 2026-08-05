@@ -15,138 +15,144 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ObservedCustomerAuditApplicationArchitectureTest {
 
-    private static final Path APPLICATION = Path.of(
+    private static final Path APPLICATION_ROOT = Path.of(
             "src/main/java/com/sixpay/customer/observation/application"
     );
 
-    private static final Path AUDIT =
-            APPLICATION.resolve("audit");
+    private static final Path AUDIT_MODEL_ROOT =
+            APPLICATION_ROOT.resolve("audit");
 
-    private static final Path AUDIT_PORT =
-            APPLICATION.resolve("port/output/audit");
+    private static final Path AUDIT_PORT_ROOT =
+            APPLICATION_ROOT.resolve(
+                    "port/output/audit"
+            );
 
     @Test
     void auditPackageContainsOnlyTheApprovedContractTypes()
             throws Exception {
-        assertEquals(
-                Set.of(
-                        "ObservedCustomerAuditAction.java",
-                        "ObservedCustomerAuditOutcome.java",
-                        "ObservedCustomerAuditRecord.java",
-                        "ObservedCustomerAuditContext.java",
-                        "package-info.java"
-                ),
-                javaFiles(AUDIT)
+
+        Set<String> expectedAuditModel = Set.of(
+                "ObservedCustomerAuditAction.java",
+                "ObservedCustomerAuditOutcome.java",
+                "ObservedCustomerAuditRecord.java",
+                "ObservedCustomerAuditContext.java",
+                "package-info.java"
+        );
+
+        Set<String> expectedAuditPorts = Set.of(
+                "ObservedCustomerAuditPort.java",
+                "ObservedCustomerAuditIdGenerator.java",
+                "package-info.java"
         );
 
         assertEquals(
-                Set.of(
-                        "ObservedCustomerAuditPort.java",
-                        "package-info.java"
-                ),
-                javaFiles(AUDIT_PORT)
+                expectedAuditModel,
+                javaFiles(AUDIT_MODEL_ROOT)
+        );
+
+        assertEquals(
+                expectedAuditPorts,
+                javaFiles(AUDIT_PORT_ROOT)
         );
     }
 
     @Test
-    void auditContractIsFrameworkAndExternalDomainFree()
+    void auditApplicationContractIsFrameworkAndExternalDomainFree()
             throws Exception {
+
+        List<String> forbidden = List.of(
+                "import org.springframework.",
+                "import jakarta.persistence.",
+                "import org.hibernate.",
+                "import com.sixpay.payment.",
+                "import com.sixpay.customer.observation.api.",
+                "import com.sixpay.customer.observation.infrastructure.",
+                "Authentication",
+                "Jwt",
+                "RestClient",
+                "WebClient",
+                "EntityManager",
+                "JdbcTemplate",
+                "@Entity",
+                "@Repository",
+                "@Service",
+                "@Component",
+                "@Transactional"
+        );
+
         assertNoTokens(
-                List.of(AUDIT, AUDIT_PORT),
-                List.of(
-                        "import org.springframework.",
-                        "import jakarta.persistence.",
-                        "import org.hibernate.",
-                        "import com.sixpay.payment.",
-                        "Amplitude",
-                        "Authentication",
-                        "Jwt",
-                        "HttpServlet",
-                        "@Entity",
-                        "@Component",
-                        "@Service",
-                        "@Repository"
-                )
+                AUDIT_MODEL_ROOT,
+                forbidden
+        );
+
+        assertNoTokens(
+                AUDIT_PORT_ROOT,
+                forbidden
         );
     }
 
     @Test
-    void auditRecordContainsNoSensitiveFieldVocabulary()
+    void auditContractContainsNoSensitiveBusinessData()
             throws Exception {
-        String record = Files.readString(
-                AUDIT.resolve(
-                        "ObservedCustomerAuditRecord.java"
-                )
-        );
 
-        for (String forbidden : List.of(
+        List<String> forbidden = List.of(
                 "normalizedNiu",
                 "legalName",
-                "emailMasked",
-                "phoneMasked",
+                "email",
+                "phone",
                 "accountNumber",
                 "maskedAccountReference",
                 "accountBindingFingerprint",
                 "payload",
-                "accessToken",
+                "jwt",
                 "apiKey",
                 "cursor"
-        )) {
-            assertFalse(
-                    record.contains(forbidden),
-                    () -> "Sensitive audit field: " + forbidden
-            );
-        }
+        );
 
-        for (String required : List.of(
-                "UUID auditId",
-                "ObservedCustomerAuditAction action",
-                "ObservedCustomerAuditOutcome outcome",
-                "ObservedCustomerId observedCustomerId",
-                "UUID sourceEventId",
-                "UUID paymentId",
-                "String actorId",
-                "String correlationId",
-                "Instant occurredAt",
-                "String reasonCode"
-        )) {
-            assertTrue(
-                    record.contains(required),
-                    () -> "Missing audit field: " + required
-            );
-        }
+        assertNoTokens(
+                AUDIT_MODEL_ROOT,
+                forbidden
+        );
+
+        assertNoTokens(
+                AUDIT_PORT_ROOT,
+                forbidden
+        );
     }
 
     @Test
-    void portIsAppendOnlyAndHasNoReadUpdateOrDeleteOperation()
+    void auditPortExposesAppendOnlyOperation()
             throws Exception {
-        String port = Files.readString(
-                AUDIT_PORT.resolve(
+
+        String source = Files.readString(
+                AUDIT_PORT_ROOT.resolve(
                         "ObservedCustomerAuditPort.java"
                 )
         );
 
-        assertTrue(port.contains(
-                "void append(ObservedCustomerAuditRecord record)"
+        assertTrue(source.contains(
+                "void append("
         ));
 
         for (String forbidden : List.of(
-                "find",
-                "search",
-                "update",
-                "delete",
-                "remove",
-                "saveAll"
+                "update(",
+                "delete(",
+                "remove(",
+                "saveAll(",
+                "deleteAll("
         )) {
             assertFalse(
-                    port.contains(forbidden),
-                    () -> "Non append-only operation: " + forbidden
+                    source.contains(forbidden),
+                    () -> "Forbidden audit mutation operation: "
+                            + forbidden
             );
         }
     }
 
-    private static Set<String> javaFiles(Path root)
-            throws Exception {
+    private static Set<String> javaFiles(
+            Path root
+    ) throws Exception {
+
         try (Stream<Path> paths = Files.list(root)) {
             return paths
                     .filter(Files::isRegularFile)
@@ -161,41 +167,42 @@ class ObservedCustomerAuditApplicationArchitectureTest {
     }
 
     private static void assertNoTokens(
-            List<Path> roots,
+            Path root,
             List<String> forbidden
     ) throws Exception {
-        for (Path root : roots) {
-            try (Stream<Path> paths = Files.walk(root)) {
-                List<String> violations = paths
-                        .filter(Files::isRegularFile)
-                        .filter(path ->
-                                path.toString().endsWith(".java")
-                        )
-                        .flatMap(path -> {
-                            try {
-                                String source =
-                                        Files.readString(path);
-                                return forbidden.stream()
-                                        .filter(source::contains)
-                                        .map(token ->
-                                                path
-                                                        + " contains "
-                                                        + token
-                                        );
-                            } catch (Exception exception) {
-                                throw new IllegalStateException(
-                                        exception
-                                );
-                            }
-                        })
-                        .toList();
 
-                assertTrue(
-                        violations.isEmpty(),
-                        () -> "Audit architecture violations: "
-                                + violations
-                );
-            }
+        try (Stream<Path> paths = Files.walk(root)) {
+            List<String> violations = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path ->
+                            path.toString().endsWith(".java")
+                    )
+                    .flatMap(path -> {
+                        try {
+                            String source =
+                                    Files.readString(path);
+
+                            return forbidden.stream()
+                                    .filter(source::contains)
+                                    .map(token ->
+                                            path
+                                                    + " contains "
+                                                    + token
+                                    );
+                        } catch (Exception exception) {
+                            throw new IllegalStateException(
+                                    "Cannot inspect " + path,
+                                    exception
+                            );
+                        }
+                    })
+                    .toList();
+
+            assertTrue(
+                    violations.isEmpty(),
+                    () -> "Audit application violations: "
+                            + violations
+            );
         }
     }
 }

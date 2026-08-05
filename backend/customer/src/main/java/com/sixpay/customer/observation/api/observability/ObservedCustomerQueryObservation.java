@@ -1,5 +1,7 @@
 package com.sixpay.customer.observation.api.observability;
 
+import com.sixpay.customer.observation.api.audit
+        .ObservedCustomerQueryAuditTrail;
 import com.sixpay.customer.observation.application.exception
         .InvalidObservedCustomerCursorException;
 import com.sixpay.customer.observation.application.exception
@@ -24,13 +26,10 @@ public final class ObservedCustomerQueryObservation {
 
     public static final String REQUESTS =
             "sixpay.customer.observation.query.requests";
-
     public static final String DURATION =
             "sixpay.customer.observation.query.duration";
-
     public static final String RESULTS =
             "sixpay.customer.observation.query.results";
-
     public static final String FAILURES =
             "sixpay.customer.observation.query.failures";
 
@@ -41,19 +40,16 @@ public final class ObservedCustomerQueryObservation {
 
     private final MeterRegistry meterRegistry;
     private final Clock clock;
+    private final ObservedCustomerQueryAuditTrail auditTrail;
 
     public ObservedCustomerQueryObservation(
             MeterRegistry meterRegistry,
-            Clock clock
+            Clock clock,
+            ObservedCustomerQueryAuditTrail auditTrail
     ) {
-        this.meterRegistry = Objects.requireNonNull(
-                meterRegistry,
-                "meterRegistry is required"
-        );
-        this.clock = Objects.requireNonNull(
-                clock,
-                "clock is required"
-        );
+        this.meterRegistry = Objects.requireNonNull(meterRegistry);
+        this.clock = Objects.requireNonNull(clock);
+        this.auditTrail = Objects.requireNonNull(auditTrail);
     }
 
     public <T> T observe(
@@ -64,18 +60,12 @@ public final class ObservedCustomerQueryObservation {
             Supplier<T> action,
             ResultMetadataExtractor<T> metadataExtractor
     ) {
-        Objects.requireNonNull(
-                operation,
-                "operation is required"
-        );
+        Objects.requireNonNull(operation, "operation is required");
         Objects.requireNonNull(
                 correlationId,
                 "correlationId is required"
         );
-        Objects.requireNonNull(
-                action,
-                "action is required"
-        );
+        Objects.requireNonNull(action, "action is required");
         Objects.requireNonNull(
                 metadataExtractor,
                 "metadataExtractor is required"
@@ -93,7 +83,6 @@ public final class ObservedCustomerQueryObservation {
                              "correlationId",
                              correlationId
                      )) {
-
             T value = action.get();
             ResultMetadata metadata =
                     metadataExtractor.extract(value);
@@ -115,15 +104,18 @@ public final class ObservedCustomerQueryObservation {
                     .register(meterRegistry)
                     .increment();
 
+            auditTrail.success(
+                    operation,
+                    observedCustomerId,
+                    correlationId
+            );
+
             LOGGER.info(
                     "Observed Customer query completed: "
-                            + "operation={}, "
-                            + "result={}, "
+                            + "operation={}, result={}, "
                             + "observedCustomerId={}, "
-                            + "correlationId={}, "
-                            + "durationMs={}, "
-                            + "pageSize={}, "
-                            + "hasMore={}",
+                            + "correlationId={}, durationMs={}, "
+                            + "pageSize={}, hasMore={}",
                     operation,
                     ObservedCustomerQueryResult.SUCCESS,
                     observedCustomerId,
@@ -145,10 +137,7 @@ public final class ObservedCustomerQueryObservation {
 
             Counter.builder(FAILURES)
                     .tag("operation", operation.name())
-                    .tag(
-                            "result",
-                            failure.result().name()
-                    )
+                    .tag("result", failure.result().name())
                     .tag(
                             "error_type",
                             failure.errorType().name()
@@ -156,14 +145,18 @@ public final class ObservedCustomerQueryObservation {
                     .register(meterRegistry)
                     .increment();
 
+            auditTrail.failure(
+                    operation,
+                    failure.result(),
+                    observedCustomerId,
+                    correlationId
+            );
+
             LOGGER.warn(
                     "Observed Customer query failed: "
-                            + "operation={}, "
-                            + "result={}, "
-                            + "errorType={}, "
-                            + "observedCustomerId={}, "
-                            + "correlationId={}, "
-                            + "durationMs={}, "
+                            + "operation={}, result={}, "
+                            + "errorType={}, observedCustomerId={}, "
+                            + "correlationId={}, durationMs={}, "
                             + "pageSize={}",
                     operation,
                     failure.result(),
@@ -195,9 +188,7 @@ public final class ObservedCustomerQueryObservation {
                 );
     }
 
-    private long elapsedMillis(
-            Instant startedAt
-    ) {
+    private long elapsedMillis(Instant startedAt) {
         return Math.max(
                 0,
                 Duration.between(
@@ -214,8 +205,7 @@ public final class ObservedCustomerQueryObservation {
                 instanceof InvalidObservedCustomerCursorException) {
             return new Failure(
                     ObservedCustomerQueryResult.INVALID,
-                    ObservedCustomerQueryErrorType
-                            .INVALID_CURSOR
+                    ObservedCustomerQueryErrorType.INVALID_CURSOR
             );
         }
 
@@ -247,8 +237,7 @@ public final class ObservedCustomerQueryObservation {
         if (exception instanceof IllegalArgumentException) {
             return new Failure(
                     ObservedCustomerQueryResult.INVALID,
-                    ObservedCustomerQueryErrorType
-                            .INVALID_FILTER
+                    ObservedCustomerQueryErrorType.INVALID_FILTER
             );
         }
 
@@ -259,21 +248,15 @@ public final class ObservedCustomerQueryObservation {
     }
 
     public interface ResultMetadataExtractor<T> {
-
         ResultMetadata extract(T value);
     }
 
-    public record ResultMetadata(
-            boolean hasMore
-    ) {
-
+    public record ResultMetadata(boolean hasMore) {
         public static ResultMetadata none() {
             return new ResultMetadata(false);
         }
 
-        public static ResultMetadata page(
-                boolean hasMore
-        ) {
+        public static ResultMetadata page(boolean hasMore) {
             return new ResultMetadata(hasMore);
         }
     }

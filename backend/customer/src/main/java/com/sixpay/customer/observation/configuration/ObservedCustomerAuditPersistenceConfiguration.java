@@ -1,9 +1,13 @@
 package com.sixpay.customer.observation.configuration;
 
 import com.sixpay.customer.observation.application.port.output.audit
+        .ObservedCustomerAuditIdGenerator;
+import com.sixpay.customer.observation.application.port.output.audit
         .ObservedCustomerAuditPort;
 import com.sixpay.customer.observation.infrastructure.audit.adapter
         .JpaObservedCustomerAuditAdapter;
+import com.sixpay.customer.observation.infrastructure.audit.adapter
+        .UuidObservedCustomerAuditIdGenerator;
 import com.sixpay.customer.observation.infrastructure.audit.mapper
         .ObservedCustomerAuditPersistenceMapper;
 import com.sixpay.customer.observation.infrastructure.audit.repository
@@ -25,6 +29,12 @@ public class ObservedCustomerAuditPersistenceConfiguration {
     ObservedCustomerAuditPersistenceMapper
     observedCustomerAuditPersistenceMapper() {
         return new ObservedCustomerAuditPersistenceMapper();
+    }
+
+    @Bean
+    ObservedCustomerAuditIdGenerator
+    observedCustomerAuditIdGenerator() {
+        return new UuidObservedCustomerAuditIdGenerator();
     }
 
     @Bean
