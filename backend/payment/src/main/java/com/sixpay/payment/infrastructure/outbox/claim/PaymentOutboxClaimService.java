@@ -1,9 +1,7 @@
 package com.sixpay.payment.infrastructure.outbox.claim;
 
-import com.sixpay.payment.infrastructure.outbox
-        .PaymentOutboxEntity;
-import com.sixpay.payment.infrastructure.outbox
-        .PaymentOutboxRepository;
+import com.sixpay.payment.infrastructure.outbox.PaymentOutboxEntity;
+import com.sixpay.payment.infrastructure.outbox.PaymentOutboxRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -11,13 +9,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
- * Claims a bounded batch of Payment outbox events in one short database
- * transaction.
- *
- * <p>The transaction ends before event delivery begins. This prevents calls to
- * downstream modules from holding PostgreSQL row locks.</p>
+ * Claims a bounded batch in one short database transaction.
  */
 @Component
 public final class PaymentOutboxClaimService {
@@ -35,16 +30,12 @@ public final class PaymentOutboxClaimService {
                 repository,
                 "repository is required"
         );
-
-        Objects.requireNonNull(
-                transactionManager,
-                "transactionManager is required"
+        this.transactionTemplate = new TransactionTemplate(
+                Objects.requireNonNull(
+                        transactionManager,
+                        "transactionManager is required"
+                )
         );
-
-        this.transactionTemplate =
-                new TransactionTemplate(
-                        transactionManager
-                );
     }
 
     public List<PaymentOutboxClaim> claimAvailable(
@@ -53,14 +44,68 @@ public final class PaymentOutboxClaimService {
             int batchSize,
             String owner
     ) {
-        Objects.requireNonNull(
+        validate(now, staleBefore, batchSize, owner);
+        return claim(
                 now,
-                "now is required"
+                owner,
+                () -> repository.lockClaimable(
+                        now,
+                        staleBefore,
+                        batchSize
+                )
         );
-        Objects.requireNonNull(
-                staleBefore,
-                "staleBefore is required"
+    }
+
+    public List<PaymentOutboxClaim> claimAvailableByEventType(
+            String eventType,
+            Instant now,
+            Instant staleBefore,
+            int batchSize,
+            String owner
+    ) {
+        String normalizedType = requireText(eventType, "eventType");
+        validate(now, staleBefore, batchSize, owner);
+
+        return claim(
+                now,
+                owner,
+                () -> repository.lockClaimableByEventType(
+                        normalizedType,
+                        now,
+                        staleBefore,
+                        batchSize
+                )
         );
+    }
+
+    private List<PaymentOutboxClaim> claim(
+            Instant now,
+            String owner,
+            Supplier<List<PaymentOutboxEntity>> loader
+    ) {
+        String normalizedOwner = requireText(owner, "owner");
+
+        List<PaymentOutboxClaim> claims = transactionTemplate.execute(status -> {
+            List<PaymentOutboxEntity> locked = loader.get();
+            locked.forEach(entity -> entity.claim(now, normalizedOwner));
+            repository.flush();
+            return locked.stream()
+                    .map(PaymentOutboxClaim::from)
+                    .toList();
+        });
+
+        return claims == null ? List.of() : List.copyOf(claims);
+    }
+
+    private static void validate(
+            Instant now,
+            Instant staleBefore,
+            int batchSize,
+            String owner
+    ) {
+        Objects.requireNonNull(now, "now is required");
+        Objects.requireNonNull(staleBefore, "staleBefore is required");
+        requireText(owner, "owner");
 
         if (staleBefore.isAfter(now)) {
             throw new IllegalArgumentException(
@@ -68,68 +113,23 @@ public final class PaymentOutboxClaimService {
             );
         }
 
-        if (batchSize < 1
-                || batchSize > MAX_BATCH_SIZE) {
+        if (batchSize < 1 || batchSize > MAX_BATCH_SIZE) {
             throw new IllegalArgumentException(
-                    "batchSize must be between 1 and "
-                            + MAX_BATCH_SIZE
+                    "batchSize must be between 1 and " + MAX_BATCH_SIZE
             );
         }
-
-        String normalizedOwner = requireOwner(
-                owner
-        );
-
-        List<PaymentOutboxClaim> claims =
-                transactionTemplate.execute(status -> {
-                    List<PaymentOutboxEntity> locked =
-                            repository.lockClaimable(
-                                    now,
-                                    staleBefore,
-                                    batchSize
-                            );
-
-                    locked.forEach(entity ->
-                            entity.claim(
-                                    now,
-                                    normalizedOwner
-                            )
-                    );
-
-                    /*
-                     * Managed entities would be flushed at commit. An explicit
-                     * flush makes the state transition deterministic before
-                     * detached claims are returned.
-                     */
-                    repository.flush();
-
-                    return locked.stream()
-                            .map(PaymentOutboxClaim::from)
-                            .toList();
-                });
-
-        return claims == null
-                ? List.of()
-                : List.copyOf(claims);
     }
 
-    private static String requireOwner(
-            String owner
-    ) {
-        if (owner == null || owner.isBlank()) {
+    private static String requireText(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " must not be blank");
+        }
+        String normalized = value.strip();
+        if (normalized.length() > 150) {
             throw new IllegalArgumentException(
-                    "owner must not be blank"
+                    field + " must not exceed 150 characters"
             );
         }
-
-        String normalized = owner.strip();
-
-        if (normalized.length() > 100) {
-            throw new IllegalArgumentException(
-                    "owner must not exceed 100 characters"
-            );
-        }
-
         return normalized;
     }
 }

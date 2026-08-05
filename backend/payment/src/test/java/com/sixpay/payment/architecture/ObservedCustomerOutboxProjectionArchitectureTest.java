@@ -16,7 +16,7 @@ class ObservedCustomerOutboxProjectionArchitectureTest {
     );
 
     @Test
-    void paymentProjectionUsesCanonicalDomainEventIdentity()
+    void paymentProjectionUsesDurableEventSnapshot()
             throws Exception {
 
         String service = normalizedSource(
@@ -34,33 +34,98 @@ class ObservedCustomerOutboxProjectionArchitectureTest {
         );
 
         assertTrue(
-                service.contains("PaymentDomainEventevent"),
-                "Projection service must receive a PaymentDomainEvent"
+                service.contains(
+                        "ObservedCustomerProjectionEventevent"
+                ),
+                "Projection service must receive the durable "
+                        + "ObservedCustomerProjectionEvent"
         );
 
         assertTrue(
                 service.contains(
-                        "paymentLookupPort.findById(event.paymentId())"
+                        "requestFactory.from(event)"
                 ),
-                "Projection service must reload Payment using "
-                        + "the event paymentId"
+                "Projection request must be created directly "
+                        + "from the durable event"
+        );
+
+        assertTrue(
+                service.contains(
+                        "projectionPort.project("
+                ),
+                "Projection service must invoke the "
+                        + "Payment-owned projection port"
+        );
+
+        assertFalse(
+                service.contains("PaymentLookupPort"),
+                "Projection service must not depend on "
+                        + "PaymentLookupPort"
+        );
+
+        assertFalse(
+                service.contains("paymentLookupPort"),
+                "Projection service must not reload Payment"
+        );
+
+        assertFalse(
+                service.contains("findById("),
+                "Projection service must not reload the "
+                        + "current aggregate state"
+        );
+
+        assertFalse(
+                service.contains("PaymentDomainEvent"),
+                "The dispatcher flow must consume the durable "
+                        + "projection event, not the original "
+                        + "domain event"
         );
 
         assertTrue(
                 factory.contains("event.eventId()"),
-                "Payment eventId must become the projection sourceEventId"
+                "Durable eventId must become the projection "
+                        + "sourceEventId"
+        );
+
+        assertTrue(
+                factory.contains("event.paymentId()"),
+                "Durable paymentId must be propagated"
+        );
+
+        assertTrue(
+                factory.contains("event.payload()"),
+                "Projection data must come from the durable "
+                        + "event payload"
         );
 
         assertTrue(
                 factory.contains("event.occurredAt()"),
-                "Payment event occurredAt must become observedAt"
+                "Durable occurredAt must become observedAt"
         );
 
         assertTrue(
+                factory.contains("event.correlationId()"),
+                "Original correlation ID must be propagated"
+        );
+
+        assertFalse(
+                factory.contains("Paymentpayment"),
+                "Request factory must no longer receive the "
+                        + "current Payment aggregate"
+        );
+
+        assertFalse(
+                factory.contains("payment.toState()"),
+                "Request factory must not extract the current "
+                        + "Payment state"
+        );
+
+        assertFalse(
                 factory.contains(
-                        "event.correlationId().value()"
+                        "requestFactory.from(payment,event)"
                 ),
-                "The original Payment correlation ID must be propagated"
+                "Request factory must not combine current state "
+                        + "with a historical event"
         );
     }
 
@@ -101,6 +166,42 @@ class ObservedCustomerOutboxProjectionArchitectureTest {
                                 + forbidden
                 );
             }
+        }
+    }
+
+    @Test
+    void durableProjectionDoesNotReloadCurrentPaymentState()
+            throws Exception {
+
+        String service = Files.readString(
+                PAYMENT_ROOT.resolve(
+                        "application/service/"
+                                + "PaymentObservedCustomerProjectionService.java"
+                )
+        );
+
+        String factory = Files.readString(
+                PAYMENT_ROOT.resolve(
+                        "application/service/"
+                                + "PaymentObservedCustomerProjectionRequestFactory.java"
+                )
+        );
+
+        for (String forbidden : List.of(
+                "PaymentLookupPort",
+                "Payment payment",
+                "PaymentState",
+                "payment.toState()",
+                "findById(event.paymentId())",
+                "from(payment, event)"
+        )) {
+            assertFalse(
+                    service.contains(forbidden)
+                            || factory.contains(forbidden),
+                    () -> "Durable projection reloads current "
+                            + "Payment state through: "
+                            + forbidden
+            );
         }
     }
 

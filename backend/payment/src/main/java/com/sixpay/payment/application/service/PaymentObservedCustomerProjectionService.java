@@ -1,32 +1,24 @@
 package com.sixpay.payment.application.service;
 
+import com.sixpay.payment.application.event.projection.ObservedCustomerProjectionEvent;
 import com.sixpay.payment.application.port.output.ObservedCustomerProjectionPort;
 import com.sixpay.payment.application.port.output.ObservedCustomerProjectionResult;
-import com.sixpay.payment.application.port.output.PaymentLookupPort;
-import com.sixpay.payment.domain.event.PaymentDomainEvent;
 
 import java.util.Objects;
 
 /**
- * Handles one durable Payment domain event for the Observed Customer
- * projection.
+ * Projects one durable Payment snapshot into the Observed Customer capability.
+ * The current Payment aggregate is never reloaded.
  */
 public final class PaymentObservedCustomerProjectionService {
 
-    private final PaymentLookupPort paymentLookupPort;
     private final ObservedCustomerProjectionPort projectionPort;
-    private final PaymentObservedCustomerProjectionRequestFactory
-            requestFactory;
+    private final PaymentObservedCustomerProjectionRequestFactory requestFactory;
 
     public PaymentObservedCustomerProjectionService(
-            PaymentLookupPort paymentLookupPort,
             ObservedCustomerProjectionPort projectionPort,
             PaymentObservedCustomerProjectionRequestFactory requestFactory
     ) {
-        this.paymentLookupPort = Objects.requireNonNull(
-                paymentLookupPort,
-                "paymentLookupPort is required"
-        );
         this.projectionPort = Objects.requireNonNull(
                 projectionPort,
                 "projectionPort is required"
@@ -38,21 +30,19 @@ public final class PaymentObservedCustomerProjectionService {
     }
 
     public ObservedCustomerProjectionResult project(
-            PaymentDomainEvent event
+            ObservedCustomerProjectionEvent event
     ) {
         Objects.requireNonNull(event, "event is required");
 
-        var payment = paymentLookupPort
-                .findById(event.paymentId())
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Payment not found for durable event "
-                                        + event.eventId()
-                        )
-                );
+        ObservedCustomerProjectionResult result =
+                projectionPort.project(requestFactory.from(event));
 
-        return projectionPort.project(
-                requestFactory.from(payment, event)
-        );
+        if (!event.eventId().equals(result.sourceEventId())) {
+            throw new IllegalStateException(
+                    "Observed Customer projection returned a different sourceEventId"
+            );
+        }
+
+        return result;
     }
 }
