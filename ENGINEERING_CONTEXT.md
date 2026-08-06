@@ -14,7 +14,7 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/backend-payment-tresorapi`
+**Primary implementation branch:** `'feat/integration-contracts`
 
 ---
 
@@ -32,7 +32,7 @@ The repository is the single source of engineering knowledge.
 
 Unless explicitly instructed otherwise, information shall be interpreted using the following precedence:
 
-1. **`'feat/backend-payment-tresorapi`** (latest implementation)
+1. **`'feat/integration-contracts`** (latest implementation)
 2. **`documentation/architecture/`**
 3. **`documentation/requirements/`**
 4. **`documentation/contracts/`**
