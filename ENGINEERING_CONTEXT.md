@@ -2,9 +2,7 @@
 
 > **Purpose**
 >
-> This document is the mandatory entry point for every engineer and AI coding assistant contributing to SIXPAY CONNECT.
->
-> It explains **how to work with the repository**, not how the system is implemented. Architecture, requirements, contracts, and implementation details are maintained in their respective locations.
+> Mandatory entry point for engineers and AI coding assistants contributing to SIXPAY CONNECT.
 
 ---
 
@@ -16,31 +14,26 @@
 
 **Primary implementation branch:** `'feat/integration-contracts'`
 
-**Current delivery focus:** Phase 5 — Integrations, Lot 5.0 — Integration inventory and contracts.
+**Current delivery focus:** Phase 5 — Integrations, Lot 5.1 — Transverse integration foundation.
 
 ---
 
 # Repository Philosophy
 
-SIXPAY CONNECT follows a **Documentation-as-Code** approach.
-
-Requirements, architecture, contracts, implementation, infrastructure, tests, and AI assets evolve together.
-
-The repository is the single source of engineering knowledge.
+SIXPAY CONNECT follows Documentation-as-Code. Requirements, architecture,
+contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 ---
 
 # Source of Truth
 
-Unless explicitly instructed otherwise, information shall be interpreted using the following precedence:
-
-1. **`'feat/integration-contracts'`** (latest implementation)
-2. **`documentation/architecture/`**
-3. **`documentation/requirements/`**
-4. **`documentation/contracts/`**
-5. **`documentation/ai/`**
-6. Engineering assets (AI manifests, generation contracts, prompts, technology matrices)
-7. **ENGINEERING_CONTEXT.md**
+1. `'feat/integration-contracts'`
+2. `documentation/architecture/`
+3. `documentation/requirements/`
+4. `documentation/contracts/`
+5. `documentation/ai/`
+6. Engineering assets
+7. `ENGINEERING_CONTEXT.md`
 
 When sources conflict, the higher-priority source prevails.
 
@@ -49,98 +42,70 @@ When sources conflict, the higher-priority source prevails.
 # Repository Navigation
 
 | Looking for | Location |
-|-------------|----------|
+|---|---|
 | Business requirements | `documentation/requirements/` |
 | Architecture | `documentation/architecture/` |
-| Integration landscape and flow ownership | `documentation/architecture/integration/` |
-| API & Integration contracts | `documentation/contracts/` |
-| AI engineering guidance | `documentation/ai/` |
-| Backend implementation | `backend/` |
-| Frontend implementation | `frontend/` |
+| Integration landscape | `documentation/architecture/integration/` |
+| API and integration contracts | `documentation/contracts/` |
+| Backend | `backend/` |
+| Shared integration foundation | `backend/integration/` |
 | Infrastructure | `infrastructure/` |
 | Deployment | `deployment/` |
-| Automation & scripts | `scripts/` |
+| Scripts | `scripts/` |
 
 ---
 
 # Integration Change Gate
 
-Before implementing or changing an integration, contributors SHALL:
+Before changing an integration:
 
-1. identify the producer and consumer;
-2. identify the owning module and contract owner;
-3. classify the interaction as synchronous or asynchronous;
-4. reference the published contract or explicitly mark it `TO_DEFINE`;
-5. define security, error handling and test mode;
-6. update `documentation/architecture/integration/`;
-7. preserve business-module ports and anti-corruption boundaries;
-8. avoid converting internal modular-monolith calls to HTTP or Kafka without an approved deployment-boundary decision.
+1. identify producer and consumer;
+2. identify owning module and contract owner;
+3. classify synchronous or asynchronous;
+4. reference a published contract or mark it `TO_DEFINE`;
+5. define security, errors and testing;
+6. update integration architecture documentation;
+7. preserve module boundaries and anti-corruption layers;
+8. keep co-deployed internal calls in-process unless a deployment decision says otherwise.
 
-The `partner` module remains the golden reference for business-module implementation quality and package structure.
+The `partner` module remains the golden business-module reference.
+
+The `integration` module contains only provider-neutral HTTP, correlation,
+resilience, observability, serialization, Kafka, DLQ and consumer-idempotency
+support. Provider payloads and mappings stay in the owning domain.
 
 ---
 
 # Engineering Workflow
 
-Every feature should follow this lifecycle:
-
+```text
+Requirements -> Architecture -> Contracts -> Implementation
+-> Tests -> Documentation -> Validation
 ```
-Requirements
-    ↓
-Architecture
-    ↓
-Contracts
-    ↓
-Implementation
-    ↓
-Tests
-    ↓
-Documentation
-    ↓
-Validation
-```
-
-No implementation is complete until documentation, contracts, and tests are consistent.
 
 ---
 
 # AI Working Agreement
 
-## AI SHALL
+AI SHALL read existing implementation, reuse patterns, preserve contracts,
+synchronize tests and documentation, and reuse `backend/integration` only for
+provider-neutral concerns.
 
-- Read the existing implementation before generating code.
-- Reuse existing architecture and implementation patterns.
-- Respect module boundaries and published contracts.
-- Keep tests and documentation synchronized with code.
-- Prefer extending existing components over creating new ones.
-- Produce production-ready code.
-- Consult `documentation/architecture/integration/` before changing integration code.
-- Treat `TO_DEFINE` contracts as blockers, not as permission to invent provider payloads.
-
-## AI SHALL NOT
-
-- Invent repository structures.
-- Introduce alternative architectures.
-- Rename packages or modules without approval.
-- Duplicate business logic.
-- Break published contracts.
-- Generate placeholder or incomplete production code.
-- Ignore existing engineering standards.
-- Introduce a generic omnipotent `CoreBankingService`.
-- Move provider-specific business mappings into the transverse `integration` module without an approved reuse case.
+AI SHALL NOT invent structures, duplicate business logic, introduce an
+omnipotent Core Banking service, move provider mappings into `integration`, or
+blindly retry financial commands with unknown outcomes.
 
 ---
 
 # Definition of Done
 
-A change is complete only when:
-
-- Implementation is complete.
-- Tests pass.
-- Contracts remain valid.
-- Documentation is updated.
-- Repository conventions are respected.
-- Integration ownership, security, error policy and test mode are documented.
+- implementation complete;
+- tests pass;
+- contracts valid;
+- documentation updated;
+- conventions respected;
+- ownership, security, errors and testing documented;
+- provider logic remains in its owning domain;
 - CI succeeds.
 
 ---
@@ -148,5 +113,3 @@ A change is complete only when:
 # Final Rule
 
 **Consistency takes precedence over creativity.**
-
-Every contribution—whether produced by a human or an AI—must make the repository more maintainable, more coherent, and better documented than it was before.

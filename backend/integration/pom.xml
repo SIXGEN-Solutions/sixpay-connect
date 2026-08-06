@@ -1,84 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0
-                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <!-- ========================================================= -->
-    <!-- PARENT                                                    -->
-    <!-- ========================================================= -->
-
     <parent>
         <groupId>com.sixpay</groupId>
         <artifactId>sixpay-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <!-- ========================================================= -->
-    <!-- MODULE IDENTIFICATION                                     -->
-    <!-- ========================================================= -->
-
     <artifactId>integration</artifactId>
     <packaging>jar</packaging>
-
     <name>SIXPAY CONNECT - Integration</name>
-
-    <description>
-        Shared infrastructure for external system integrations
-        in SIXPAY CONNECT.
-    </description>
-
-    <!-- ========================================================= -->
-    <!-- DEPENDENCIES                                              -->
-    <!-- ========================================================= -->
-
+    <description>Provider-neutral shared integration infrastructure.</description>
     <dependencies>
-
-        <!-- SIXPAY technical components -->
-
         <dependency>
             <groupId>com.sixpay</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- Spring Boot synchronous REST client support -->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
-
-        <!-- Transport adapters for distributed integration events -->
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
-
-        <!-- Unit testing -->
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
-
 </project>
