@@ -26,26 +26,47 @@ class ObservedCustomerLot487SecurityArchitectureTest {
                 )
         );
 
-        assertTrue(source.contains(
-                "hasAuthority('SCOPE_observed-customer.read')"
-        ));
+        String compactSource = compact(source);
+
+        assertTrue(
+                source.contains(
+                        "hasAuthority('SCOPE_observed-customer.read')"
+                ),
+                "The exact Observed Customer read scope is missing"
+        );
+
         assertEquals(
                 3,
-                occurrences(source, "@PreAuthorize(REQUIRED_SCOPE)")
+                occurrences(
+                        source,
+                        "@PreAuthorize(REQUIRED_SCOPE)"
+                ),
+                "All three endpoints must require the read scope"
         );
+
         assertEquals(
                 3,
                 occurrences(
                         source,
                         "@RequestHeader(CORRELATION_HEADER)"
-                )
+                ),
+                "All three endpoints must require the correlation header"
         );
-        assertTrue(source.contains(
-                "X-Correlation-ID must be a valid UUID"
-        ));
-        assertTrue(source.contains(
-                "response.setHeader(CORRELATION_HEADER"
-        ));
+
+        assertTrue(
+                source.contains(
+                        "X-Correlation-ID must be a valid UUID"
+                ),
+                "Correlation ID UUID validation is missing"
+        );
+
+        assertTrue(
+                compactSource.contains(
+                        "response.setHeader("
+                                + "CORRELATION_HEADER,"
+                ),
+                "The correlation ID must be propagated to the response"
+        );
     }
 
     @Test
@@ -58,7 +79,12 @@ class ObservedCustomerLot487SecurityArchitectureTest {
                 )
         );
 
-        assertEquals(3, occurrences(source, "@GetMapping"));
+        assertEquals(
+                3,
+                occurrences(source, "@GetMapping"),
+                "Exactly three GET endpoints are expected"
+        );
+
         for (String mutation : List.of(
                 "@PostMapping",
                 "@PutMapping",
@@ -79,6 +105,7 @@ class ObservedCustomerLot487SecurityArchitectureTest {
         Path handler = API.resolve(
                 "error/ObservedCustomerQueryExceptionHandler.java"
         );
+
         String source = Files.readString(handler);
 
         for (String forbidden : List.of(
@@ -101,6 +128,15 @@ class ObservedCustomerLot487SecurityArchitectureTest {
                     () -> "Unsafe error concept: " + forbidden
             );
         }
+    }
+
+    private static String compact(
+            String source
+    ) {
+        return source.replaceAll(
+                "\\s+",
+                ""
+        );
     }
 
     private static int occurrences(

@@ -20,8 +20,6 @@ import com.sixpay.customer.observation.infrastructure.query.mapper
         .ObservedCustomerQueryRowMapper;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;
 import org.springframework.boot.context.properties
         .EnableConfigurationProperties;
@@ -37,16 +35,13 @@ import org.springframework.context.annotation.Configuration;
         name = "enabled",
         havingValue = "true"
 )
-@ConditionalOnBean(
-        ObservedCustomerDataProtector.class
-)
 public class ObservedCustomerQueryConfiguration {
 
     @Bean
     ObservedCustomerQueryRowMapper
-            observedCustomerQueryRowMapper(
-                    ObservedCustomerDataProtector protector
-            ) {
+    observedCustomerQueryRowMapper(
+            ObservedCustomerDataProtector protector
+    ) {
         return new ObservedCustomerQueryRowMapper(
                 protector
         );
@@ -54,9 +49,9 @@ public class ObservedCustomerQueryConfiguration {
 
     @Bean
     ObservedCustomerCursorCodec
-            observedCustomerCursorCodec(
-                    ObservedCustomerQueryProperties properties
-            ) {
+    observedCustomerCursorCodec(
+            ObservedCustomerQueryProperties properties
+    ) {
         return new HmacObservedCustomerCursorCodec(
                 properties.decodedCursorKey()
         );
@@ -64,11 +59,11 @@ public class ObservedCustomerQueryConfiguration {
 
     @Bean
     ObservedCustomerQueryRepository
-            observedCustomerQueryRepository(
-                    EntityManager entityManager,
-                    ObservedCustomerDataProtector protector,
-                    ObservedCustomerQueryRowMapper mapper
-            ) {
+    observedCustomerQueryRepository(
+            EntityManager entityManager,
+            ObservedCustomerDataProtector protector,
+            ObservedCustomerQueryRowMapper mapper
+    ) {
         return new JpaObservedCustomerQueryAdapter(
                 entityManager,
                 protector,
@@ -78,10 +73,10 @@ public class ObservedCustomerQueryConfiguration {
 
     @Bean
     ObservedCustomerPaymentQueryRepository
-            observedCustomerPaymentQueryRepository(
-                    EntityManager entityManager,
-                    ObservedCustomerQueryRowMapper mapper
-            ) {
+    observedCustomerPaymentQueryRepository(
+            EntityManager entityManager,
+            ObservedCustomerQueryRowMapper mapper
+    ) {
         return new JpaObservedCustomerPaymentQueryAdapter(
                 entityManager,
                 mapper
@@ -90,11 +85,11 @@ public class ObservedCustomerQueryConfiguration {
 
     @Bean
     ObservedCustomerQueryService
-            observedCustomerQueryService(
-                    ObservedCustomerQueryRepository customers,
-                    ObservedCustomerPaymentQueryRepository payments,
-                    ObservedCustomerCursorCodec cursorCodec
-            ) {
+    observedCustomerQueryService(
+            ObservedCustomerQueryRepository customers,
+            ObservedCustomerPaymentQueryRepository payments,
+            ObservedCustomerCursorCodec cursorCodec
+    ) {
         return new ObservedCustomerQueryService(
                 customers,
                 payments,

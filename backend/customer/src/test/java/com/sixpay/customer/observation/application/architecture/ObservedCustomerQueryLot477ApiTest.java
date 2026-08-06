@@ -18,6 +18,7 @@ class ObservedCustomerQueryLot477ApiTest {
     @Test
     void controllerMatchesPublishedRoutesScopeAndCorrelationContract()
             throws Exception {
+
         String source = Files.readString(
                 API.resolve(
                         "controller/"
@@ -25,6 +26,11 @@ class ObservedCustomerQueryLot477ApiTest {
                 )
         );
 
+        String compactSource = compact(source);
+
+        /*
+         * Tokens whose formatting is stable.
+         */
         for (String required : List.of(
                 "@RequestMapping("
                         + "\"/internal/api/v1/observed-customers\"",
@@ -33,16 +39,44 @@ class ObservedCustomerQueryLot477ApiTest {
                 "@GetMapping(\"/{observedCustomerId}/payments\")",
                 "SCOPE_observed-customer.read",
                 "@RequestHeader(CORRELATION_HEADER)",
-                "X-Correlation-ID",
-                "@RequestParam(name = \"niu\"",
-                "UUID.fromString(value.strip())",
-                "response.setHeader("
+                "X-Correlation-ID"
         )) {
             assertTrue(
                     source.contains(required),
-                    () -> "Missing API contract behavior: " + required
+                    () -> "Missing API contract behavior: "
+                            + required
             );
         }
+
+        /*
+         * Formatting-insensitive checks.
+         */
+        assertTrue(
+                compactSource.contains(
+                        "@RequestParam("
+                                + "name=\"niu\","
+                                + "required=false"
+                                + ")"
+                ),
+                "Missing NIU request parameter declaration"
+        );
+
+        assertTrue(
+                compactSource.contains(
+                        "UUID.fromString("
+                                + "value.strip()"
+                                + ")"
+                ),
+                "Missing correlation ID UUID validation"
+        );
+
+        assertTrue(
+                compactSource.contains(
+                        "response.setHeader("
+                                + "CORRELATION_HEADER,"
+                ),
+                "Missing response correlation header propagation"
+        );
 
         for (String forbidden : List.of(
                 "@PostMapping",
@@ -57,7 +91,8 @@ class ObservedCustomerQueryLot477ApiTest {
         )) {
             assertFalse(
                     source.contains(forbidden),
-                    () -> "Forbidden controller concept: " + forbidden
+                    () -> "Forbidden controller concept: "
+                            + forbidden
             );
         }
     }
@@ -65,6 +100,7 @@ class ObservedCustomerQueryLot477ApiTest {
     @Test
     void handlerSupportsRequiredHttpStatusesWithoutSensitiveEcho()
             throws Exception {
+
         String source = Files.readString(
                 API.resolve(
                         "error/"
@@ -81,7 +117,8 @@ class ObservedCustomerQueryLot477ApiTest {
         )) {
             assertTrue(
                     source.contains(required),
-                    () -> "Missing handler status: " + required
+                    () -> "Missing handler status: "
+                            + required
             );
         }
 
@@ -95,7 +132,8 @@ class ObservedCustomerQueryLot477ApiTest {
         )) {
             assertFalse(
                     source.contains(forbidden),
-                    () -> "Sensitive error behavior: " + forbidden
+                    () -> "Sensitive error behavior: "
+                            + forbidden
             );
         }
     }
@@ -103,34 +141,59 @@ class ObservedCustomerQueryLot477ApiTest {
     @Test
     void paymentDtoMatchesNestedAmountOpenApiShape()
             throws Exception {
+
         String dto = Files.readString(
                 API.resolve(
                         "dto/ObservedCustomerPaymentResponse.java"
                 )
         );
+
         String mapper = Files.readString(
                 API.resolve(
                         "mapper/ObservedCustomerQueryApiMapper.java"
                 )
         );
 
-        assertTrue(dto.contains("AmountResponse amount"));
-        assertTrue(dto.contains(
-                "public record AmountResponse("
-        ));
-        assertTrue(dto.contains("BigDecimal amount"));
-        assertTrue(dto.contains("String currency"));
-        assertTrue(mapper.contains(
-                "new ObservedCustomerPaymentResponse.AmountResponse("
-        ));
+        assertTrue(
+                dto.contains("AmountResponse amount")
+        );
 
-        assertFalse(dto.contains("String accountNumber"));
-        assertFalse(dto.contains("accountBindingFingerprint"));
+        assertTrue(
+                dto.contains(
+                        "public record AmountResponse("
+                )
+        );
+
+        assertTrue(
+                dto.contains("BigDecimal amount")
+        );
+
+        assertTrue(
+                dto.contains("String currency")
+        );
+
+        assertTrue(
+                mapper.contains(
+                        "new ObservedCustomerPaymentResponse"
+                                + ".AmountResponse("
+                )
+        );
+
+        assertFalse(
+                dto.contains("String accountNumber")
+        );
+
+        assertFalse(
+                dto.contains(
+                        "accountBindingFingerprint"
+                )
+        );
     }
 
     @Test
     void apiObservabilityUsesOnlyBoundedMetricTags()
             throws Exception {
+
         String source = Files.readString(
                 API.resolve(
                         "observability/"
@@ -144,7 +207,10 @@ class ObservedCustomerQueryLot477ApiTest {
                 "sixpay.customer.observation.query.results",
                 "sixpay.customer.observation.query.failures"
         )) {
-            assertTrue(source.contains(metric));
+            assertTrue(
+                    source.contains(metric),
+                    () -> "Missing query metric: " + metric
+            );
         }
 
         for (String forbidden : List.of(
@@ -154,7 +220,20 @@ class ObservedCustomerQueryLot477ApiTest {
                 ".tag(\"cursor\"",
                 ".tag(\"account\""
         )) {
-            assertFalse(source.contains(forbidden));
+            assertFalse(
+                    source.contains(forbidden),
+                    () -> "Forbidden metric tag: "
+                            + forbidden
+            );
         }
+    }
+
+    private static String compact(
+            String source
+    ) {
+        return source.replaceAll(
+                "\\s+",
+                ""
+        );
     }
 }
