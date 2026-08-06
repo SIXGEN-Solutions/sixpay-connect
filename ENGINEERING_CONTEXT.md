@@ -1,23 +1,14 @@
 # ENGINEERING_CONTEXT.md
 
-> **Purpose**
->
-> Mandatory entry point for every engineer and AI coding assistant contributing
-> to SIXPAY CONNECT.
-
----
+> Mandatory entry point for engineers and AI coding assistants contributing to
+> SIXPAY CONNECT.
 
 # Repository
 
-**Project:** SIXPAY CONNECT
-
-**Organization:** SIXGEN-Solutions
-
-**Primary implementation branch:** `'feat/integration-contracts'`
-
-**Current delivery focus:** Phase 5 — Integrations, Lot 5.2 — TresorPay consolidation.
-
----
+**Project:** SIXPAY CONNECT  
+**Organization:** SIXGEN-Solutions  
+**Primary implementation branch:** `'feat/integration-contracts'`  
+**Current delivery focus:** Phase 5, Lot 5.4.1 — Payment account, opposition and funds.
 
 # Source of Truth
 
@@ -29,101 +20,24 @@
 6. Engineering assets
 7. `ENGINEERING_CONTEXT.md`
 
-When sources conflict, the higher-priority source prevails.
+# Rules
 
----
-
-# Repository Navigation
-
-| Looking for | Location |
-|---|---|
-| Business requirements | `documentation/requirements/` |
-| Architecture | `documentation/architecture/` |
-| Integration landscape | `documentation/architecture/integration/` |
-| External contracts | `documentation/contracts/external/` |
-| TresorPay onboarding | `documentation/onboarding/tresorpay/` |
-| TresorPay runbooks and stubs | `documentation/runbooks/tresorpay/`, `documentation/stubs/tresorpay/` |
-| Backend | `backend/` |
-| Shared integration foundation | `backend/integration/` |
-
----
-
-# Integration Change Gate
-
-Before changing an integration:
-
-1. identify producer, consumer and contract owner;
-2. classify synchronous or asynchronous;
-3. reference a versioned contract;
-4. define security, errors, replay and test mode;
-5. preserve module boundaries and anti-corruption mappings;
-6. update architecture and onboarding documentation.
-
-The `partner` module remains the golden business-module reference.
-
-The `integration` module contains only provider-neutral capabilities.
-TresorPay payloads, guards and mappings remain in Payment infrastructure.
-
----
-
-# TresorPay Baseline
-
-Inbound Payment initiation uses:
-
-- HTTPS and production mTLS;
-- OAuth2 client-credentials JWT;
-- audience `sixpay-payment-api`;
-- scope `payment.initiate`;
-- authenticated partner identity matching `LoginName`;
-- `Idempotency-Key`;
-- correlation ID;
-- timestamp and nonce replay protection;
-- callback-host allowlist;
-- per-partner rate limiting.
-
-API key support is disabled by default and exists only as a configurable
-compatibility mechanism.
-
-Callbacks use HTTPS/mTLS and detached RS256 JWS with a mandatory `kid`.
-
-Temporary in-memory nonce and rate-limit components must be replaced before
-horizontal production deployment.
-
----
-
-# Engineering Workflow
-
-```text
-Requirements -> Architecture -> Contracts -> Implementation
--> Tests -> Documentation -> Validation
-```
-
----
-
-# AI Working Agreement
-
-AI SHALL reuse existing Payment orchestration and idempotency, keep provider
-logic in Payment infrastructure, use the shared integration foundation, and
-keep tests and contracts synchronized.
-
-AI SHALL NOT move TresorPay DTOs into the domain, put API keys in request bodies,
-blindly retry financial operations, expose sensitive error details, or place
-private keys in Git.
-
----
+- `partner` remains the golden business-module reference.
+- Payment owns its banking application ports.
+- Provider DTOs and mappings remain in Payment infrastructure.
+- `integration` contains provider-neutral transport and resilience only.
+- Account verification and funds checks are read-only operations.
+- Posting and reversal must not be implemented or simulated in Lot 5.4.1.
+- Unknown provider codes are technical invalid responses, not business rejects.
+- Production banking traffic requires OAuth2 client credentials and mTLS.
+- No direct repository writes are performed by the AI delivery workflow.
 
 # Definition of Done
 
-- implementation complete;
-- contract and simulated-client tests pass;
-- mTLS/JWT/API-key policy is configurable;
-- replay, idempotency and rate limiting are covered;
-- audit contains no sensitive payload;
-- onboarding documentation is current;
+- account existence, active status and opposition are mapped to Payment evidence;
+- balance and funds eligibility are mapped to Payment evidence;
+- OAuth2, mTLS, headers, timeout and retry are configurable;
+- provider responses are validated;
+- business rejection is not retried;
+- tests, contract and runbook are aligned;
 - CI succeeds.
-
----
-
-# Final Rule
-
-**Consistency takes precedence over creativity.**

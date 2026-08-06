@@ -1,0 +1,59 @@
+contract: amplitude-payment-account-funds
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Payment
+operations:
+  verifyAccount:
+    method: POST
+    path: /v1/payment/accounts/verify
+    purpose:
+      - account existence
+      - account active status
+      - debit authorization
+      - opposition status
+    retryable: true
+  checkFunds:
+    method: POST
+    path: /v1/payment/accounts/funds-check
+    purpose:
+      - currency support
+      - available funds
+      - transaction limit
+      - daily limit
+    retryable: true
+security:
+  oauth2:
+    grantType: client_credentials
+    registrationId: amplitude-payment
+    scopes:
+      - account.verify
+      - funds.read
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+    sslBundle: amplitude-payment-client
+headers:
+  required:
+    - Authorization
+    - X-Correlation-ID
+    - X-Request-ID
+functionalCodes:
+  success:
+    - "00"
+  rejection:
+    accountNotFound: "01"
+    accountBlocked: "02"
+    accountOpposed: "03"
+    insufficientFunds: "04"
+  note: All values are provisional and configuration-backed.
+errorPolicy:
+  "401": AUTHENTICATION
+  "403": AUTHORIZATION
+  "404": PROTOCOL
+  "409": PROTOCOL
+  "429": RATE_LIMIT
+  "5xx": UNAVAILABLE
+  timeout: TIMEOUT
+  malformed2xx: INVALID_RESPONSE

@@ -1,0 +1,6 @@
+spring:
+  config:
+    activate:
+      on-profile: amplitude-payment-sandbox
+    import:
+      - classpath:application-payment-banking.yml
