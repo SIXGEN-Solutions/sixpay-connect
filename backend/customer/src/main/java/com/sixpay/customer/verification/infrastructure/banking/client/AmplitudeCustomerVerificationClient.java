@@ -5,21 +5,21 @@ import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCust
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
 import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeClientException;
 import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeErrorResponse;
+import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeInvalidResponseException;
+import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeRateLimitException;
+import com.sixpay.integration.http.IntegrationHttpHeaders;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 
 public final class AmplitudeCustomerVerificationClient {
-
-    public static final String CORRELATION_HEADER =
-            "X-Correlation-ID";
-    public static final String REQUEST_ID_HEADER =
-            "X-Request-ID";
 
     private final RestClient restClient;
     private final CoreBankingAccessTokenProvider accessTokenProvider;
@@ -33,7 +33,9 @@ public final class AmplitudeCustomerVerificationClient {
             ObjectMapper objectMapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.accessTokenProvider = Objects.requireNonNull(accessTokenProvider);
+        this.accessTokenProvider = Objects.requireNonNull(
+                accessTokenProvider
+        );
         this.properties = Objects.requireNonNull(properties);
         this.objectMapper = Objects.requireNonNull(objectMapper);
     }
@@ -62,9 +64,12 @@ public final class AmplitudeCustomerVerificationClient {
                                     "Bearer "
                                             + accessTokenProvider.accessToken()
                             )
-                            .header(CORRELATION_HEADER, correlationId)
                             .header(
-                                    REQUEST_ID_HEADER,
+                                    IntegrationHttpHeaders.CORRELATION_ID,
+                                    correlationId
+                            )
+                            .header(
+                                    IntegrationHttpHeaders.REQUEST_ID,
                                     requestId.toString()
                             )
                             .body(request)
@@ -74,19 +79,25 @@ public final class AmplitudeCustomerVerificationClient {
                             );
 
             if (response == null) {
-                throw new AmplitudeClientException(
-                        200,
-                        AmplitudeErrorResponse.unknown(
-                                200,
-                                correlationId
-                        ),
-                        null
+                throw new AmplitudeInvalidResponseException(
+                        "Amplitude response body is empty"
                 );
             }
 
             return response;
         } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().value() == 429) {
+                throw new AmplitudeRateLimitException(
+                        retryAfter(exception),
+                        exception
+                );
+            }
             throw structured(exception, correlationId);
+        } catch (HttpMessageConversionException exception) {
+            throw new AmplitudeInvalidResponseException(
+                    "Amplitude response is malformed",
+                    exception
+            );
         }
     }
 
@@ -114,5 +125,25 @@ public final class AmplitudeCustomerVerificationClient {
                 error,
                 exception
         );
+    }
+
+    private static Duration retryAfter(
+            RestClientResponseException exception
+    ) {
+        String value = exception.getResponseHeaders() == null
+                ? null
+                : exception.getResponseHeaders().getFirst(
+                        HttpHeaders.RETRY_AFTER
+                );
+        if (value == null || value.isBlank()) {
+            return Duration.ofSeconds(1);
+        }
+        try {
+            return Duration.ofSeconds(
+                    Math.max(1L, Long.parseLong(value.strip()))
+            );
+        } catch (NumberFormatException ignored) {
+            return Duration.ofSeconds(1);
+        }
     }
 }

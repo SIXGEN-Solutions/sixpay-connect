@@ -17,6 +17,7 @@ import com.sixpay.customer.verification.domain.model.VerificationEvidenceFingerp
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
+import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeResponseValidator;
 import com.sixpay.customer.verification.infrastructure.banking.error.BankingVerificationErrorClassifier;
 import com.sixpay.customer.verification.infrastructure.banking.mapper.AmplitudeCustomerVerificationMapper;
 import com.sixpay.customer.verification.infrastructure.banking.observability.BankingVerificationObservation;
@@ -32,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public final class BankingVerificationHttpTestSupport {
@@ -78,7 +80,7 @@ public final class BankingVerificationHttpTestSupport {
         return new BankingVerificationProperties(
                 baseUrl,
                 "/v1/accounts/verify",
-                Duration.ofMillis(250),
+                Duration.ofMillis(10),
                 readTimeout,
                 maxAttempts,
                 Duration.ofMillis(1),
@@ -86,24 +88,42 @@ public final class BankingVerificationHttpTestSupport {
                 new BankingVerificationProperties.Security(
                         "core-banking-test",
                         "core-banking-test"
+                ),
+                new BankingVerificationProperties.Contract(
+                        "test-v1",
+                        Set.of(
+                                "00",
+                                "200"
+                        ),
+                        Set.of(
+                                "01",
+                                "02",
+                                "03",
+                                "04"
+                        )
                 )
         );
     }
 
     public static RetryingBankingCustomerVerificationAdapter
-            realHttpAdapter(
-                    URI baseUrl,
-                    Duration readTimeout,
-                    int maxAttempts,
-                    MeterRegistry registry,
-                    RetrySleeper sleeper
-            ) {
+    realHttpAdapter(
+            URI baseUrl,
+            Duration readTimeout,
+            int maxAttempts,
+            MeterRegistry registry,
+            RetrySleeper sleeper
+    ) {
 
         BankingVerificationProperties properties =
-                properties(baseUrl, readTimeout, maxAttempts);
+                properties(
+                        baseUrl,
+                        readTimeout,
+                        maxAttempts
+                );
 
         SimpleClientHttpRequestFactory requestFactory =
                 new SimpleClientHttpRequestFactory();
+
         requestFactory.setConnectTimeout(
                 properties.connectTimeout()
         );
@@ -129,10 +149,16 @@ public final class BankingVerificationHttpTestSupport {
                         properties.evidenceTtl()
                 );
 
+        AmplitudeResponseValidator responseValidator =
+                new AmplitudeResponseValidator(
+                        properties
+                );
+
         AmplitudeCustomerVerificationAdapter rawAdapter =
                 new AmplitudeCustomerVerificationAdapter(
                         client,
                         mapper,
+                        responseValidator,
                         new BankingVerificationErrorClassifier()
                 );
 
@@ -171,7 +197,11 @@ public final class BankingVerificationHttpTestSupport {
                         "\"ACCOUNT_EXISTS\":\"FAIL\""
                 );
 
-        return responseJson(checks, "FAILED", false);
+        return responseJson(
+                checks,
+                "FAILURE",
+                false
+        );
     }
 
     public static String partialJson() {

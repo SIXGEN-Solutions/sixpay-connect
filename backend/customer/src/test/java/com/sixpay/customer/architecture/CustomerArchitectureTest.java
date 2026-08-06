@@ -553,24 +553,32 @@ class CustomerArchitectureTest {
     }
 
     @Test
-    void customerDoesNotDeclarePaymentOrIntegrationAsMavenDependencies()
+    void customerDoesNotDeclareAnotherBusinessDomainAsMavenDependency()
             throws IOException {
 
         String pom = Files.readString(
                 Path.of("pom.xml")
         );
 
-        assertFalse(
-                pom.contains(
-                        "<artifactId>payment</artifactId>"
-                )
-        );
-
-        assertFalse(
-                pom.contains(
-                        "<artifactId>integration</artifactId>"
-                )
-        );
+        for (String forbiddenArtifactId : List.of(
+                "payment",
+                "partner",
+                "subscription",
+                "accounting",
+                "reporting",
+                "notification",
+                "administration"
+        )) {
+            assertFalse(
+                    pom.contains(
+                            "<artifactId>"
+                                    + forbiddenArtifactId
+                                    + "</artifactId>"
+                    ),
+                    () -> "Customer must not depend on business module: "
+                            + forbiddenArtifactId
+            );
+        }
     }
 
     @Test
@@ -585,7 +593,10 @@ class CustomerArchitectureTest {
                 "common",
                 "shared-kernel",
                 "security",
+                "integration",
                 "spring-boot-starter-webmvc",
+                "spring-boot-starter-restclient",
+                "spring-boot-starter-oauth2-client",
                 "spring-boot-starter-validation",
                 "spring-boot-starter-data-jpa",
                 "spring-boot-starter-security",

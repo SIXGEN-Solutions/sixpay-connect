@@ -1,8 +1,36 @@
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          core-banking:
+            token-uri: ${CORE_BANKING_OAUTH2_TOKEN_URI}
+        registration:
+          core-banking-customer-verification:
+            provider: core-banking
+            authorization-grant-type: client_credentials
+            client-id: ${CORE_BANKING_OAUTH2_CLIENT_ID}
+            client-secret: ${CORE_BANKING_OAUTH2_CLIENT_SECRET}
+            scope: ${CORE_BANKING_OAUTH2_SCOPE:customer.verify}
+
+  ssl:
+    bundle:
+      jks:
+        core-banking-client:
+          keystore:
+            location: ${CORE_BANKING_KEYSTORE_LOCATION}
+            password: ${CORE_BANKING_KEYSTORE_PASSWORD}
+            type: ${CORE_BANKING_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${CORE_BANKING_TRUSTSTORE_LOCATION}
+            password: ${CORE_BANKING_TRUSTSTORE_PASSWORD}
+            type: ${CORE_BANKING_TRUSTSTORE_TYPE:PKCS12}
+
 sixpay:
   customer:
     verification:
       banking:
-        enabled: true
+        enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:true}
         base-url: ${CORE_BANKING_BASE_URL}
         endpoint-path: ${CORE_BANKING_CUSTOMER_VERIFICATION_PATH:/v1/accounts/verify}
         connect-timeout: ${CORE_BANKING_CONNECT_TIMEOUT:2s}
@@ -13,3 +41,12 @@ sixpay:
         security:
           oauth2-registration-id: ${CORE_BANKING_OAUTH2_REGISTRATION_ID:core-banking-customer-verification}
           ssl-bundle: ${CORE_BANKING_SSL_BUNDLE:core-banking-client}
+        contract:
+          version: ${CORE_BANKING_CUSTOMER_VERIFICATION_CONTRACT_VERSION:provisional-v1}
+          success-codes:
+            - ${CORE_BANKING_SUCCESS_CODE:00}
+          business-failure-codes:
+            - ${CORE_BANKING_CUSTOMER_NOT_FOUND_CODE:01}
+            - ${CORE_BANKING_ACCOUNT_NOT_FOUND_CODE:02}
+            - ${CORE_BANKING_ACCOUNT_BLOCKED_CODE:03}
+            - ${CORE_BANKING_ACCOUNT_OPPOSED_CODE:04}

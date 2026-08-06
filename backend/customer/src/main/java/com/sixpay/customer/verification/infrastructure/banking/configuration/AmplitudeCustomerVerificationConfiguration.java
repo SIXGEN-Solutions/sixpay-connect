@@ -2,27 +2,23 @@ package com.sixpay.customer.verification.infrastructure.banking.configuration;
 
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
-import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
-import com.sixpay.customer.verification.infrastructure.banking.client.CoreBankingAccessTokenProvider;
-import com.sixpay.customer.verification.infrastructure.banking.client.OAuth2CoreBankingAccessTokenProvider;
-import com.sixpay.customer.verification.infrastructure.banking.error.BankingVerificationErrorClassifier;
+import com.sixpay.customer.verification.infrastructure.banking.client.*;
+import com.sixpay.customer.verification.infrastructure.banking.error.*;
 import com.sixpay.customer.verification.infrastructure.banking.mapper.AmplitudeCustomerVerificationMapper;
 import com.sixpay.customer.verification.infrastructure.banking.observability.BankingVerificationObservation;
-import com.sixpay.customer.verification.infrastructure.banking.retry.RetrySleeper;
-import com.sixpay.customer.verification.infrastructure.banking.retry.RetryingBankingCustomerVerificationAdapter;
+import com.sixpay.customer.verification.infrastructure.banking.retry.*;
+import com.sixpay.integration.http.HttpTimeoutPolicy;
+import com.sixpay.integration.http.StandardRestClientFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.context.annotation.*;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.http.HttpClient;
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(BankingVerificationProperties.class)
@@ -46,27 +42,28 @@ public class AmplitudeCustomerVerificationConfiguration {
 
     @Bean
     RestClient amplitudeCustomerVerificationRestClient(
-            RestClient.Builder builder,
+            StandardRestClientFactory factory,
             BankingVerificationProperties properties,
             SslBundles sslBundles
     ) {
-        HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(properties.connectTimeout())
-                .sslContext(
-                        sslBundles.getBundle(
-                                properties.security().sslBundle()
-                        ).createSslContext()
-                )
-                .build();
+        return factory.create(
+                properties.baseUrl(),
+                new HttpTimeoutPolicy(
+                        properties.connectTimeout(),
+                        properties.readTimeout()
+                ),
+                sslBundles.getBundle(
+                        properties.security().sslBundle()
+                ).createSslContext(),
+                List.of()
+        );
+    }
 
-        JdkClientHttpRequestFactory requestFactory =
-                new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(properties.readTimeout());
-
-        return builder
-                .baseUrl(properties.baseUrl().toString())
-                .requestFactory(requestFactory)
-                .build();
+    @Bean
+    AmplitudeResponseValidator amplitudeResponseValidator(
+            BankingVerificationProperties properties
+    ) {
+        return new AmplitudeResponseValidator(properties);
     }
 
     @Bean
@@ -102,11 +99,13 @@ public class AmplitudeCustomerVerificationConfiguration {
     AmplitudeCustomerVerificationAdapter amplitudeCustomerVerificationAdapter(
             AmplitudeCustomerVerificationClient client,
             AmplitudeCustomerVerificationMapper mapper,
+            AmplitudeResponseValidator validator,
             BankingVerificationErrorClassifier classifier
     ) {
         return new AmplitudeCustomerVerificationAdapter(
                 client,
                 mapper,
+                validator,
                 classifier
         );
     }

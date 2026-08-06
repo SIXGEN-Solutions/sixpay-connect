@@ -26,6 +26,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -205,6 +206,16 @@ class RetryingBankingCustomerVerificationAdapterTest {
                 new BankingVerificationProperties.Security(
                         "core-banking",
                         "core-banking-client"
+                ),
+                new BankingVerificationProperties.Contract(
+                        "test-v1",
+                        Set.of("00", "200"),
+                        Set.of(
+                                "01",
+                                "02",
+                                "03",
+                                "04"
+                        )
                 )
         );
     }

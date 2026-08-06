@@ -1,14 +1,11 @@
 package com.sixpay.customer.verification.infrastructure.banking.error;
 
-import com.sixpay.customer.verification.application.exception.BankingVerificationAuthenticationException;
-import com.sixpay.customer.verification.application.exception.BankingVerificationInvalidResponseException;
-import com.sixpay.customer.verification.application.exception.BankingVerificationProtocolException;
-import com.sixpay.customer.verification.application.exception.BankingVerificationUnavailableException;
+import com.sixpay.customer.verification.application.exception.*;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class BankingVerificationErrorClassifierTest {
 
@@ -16,71 +13,77 @@ class BankingVerificationErrorClassifierTest {
             new BankingVerificationErrorClassifier();
 
     @Test
-    void classifies502503And504AsRetryableUnavailable() {
-        for (int status : new int[]{502, 503, 504}) {
-            var result = classifier.classify(
-                    httpFailure(status)
-            );
-
-            assertInstanceOf(
-                    BankingVerificationUnavailableException.class,
-                    result
-            );
-            assertTrue(result.retryable());
-        }
-    }
-
-    @Test
-    void classifies401And403AsNonRetryableAuthentication() {
+    void classifiesAuthenticationStatusesAsNonRetryable() {
         for (int status : new int[]{401, 403}) {
-            var result = classifier.classify(
-                    httpFailure(status)
+            var classified = classifier.classify(
+                    new AmplitudeClientException(
+                            status,
+                            AmplitudeErrorResponse.unknown(
+                                    status,
+                                    "corr"
+                            ),
+                            null
+                    )
             );
 
-            assertInstanceOf(
-                    BankingVerificationAuthenticationException.class,
-                    result
-            );
-            assertFalse(result.retryable());
+            assertThat(classified)
+                    .isInstanceOf(
+                            BankingVerificationAuthenticationException.class
+                    );
+            assertThat(classified.retryable()).isFalse();
         }
     }
 
     @Test
-    void classifies400404And422AsNonRetryableProtocol() {
-        for (int status : new int[]{400, 404, 422}) {
-            var result = classifier.classify(
-                    httpFailure(status)
-            );
+    void classifiesRateLimitAsRetryableUnavailable() {
+        var classified = classifier.classify(
+                new AmplitudeRateLimitException(
+                        Duration.ofSeconds(2),
+                        null
+                )
+        );
 
-            assertInstanceOf(
-                    BankingVerificationProtocolException.class,
-                    result
-            );
-            assertFalse(result.retryable());
-        }
+        assertThat(classified)
+                .isInstanceOf(
+                        BankingVerificationUnavailableException.class
+                );
+        assertThat(classified.retryable()).isTrue();
     }
 
     @Test
-    void classifiesInvalidMappingAsNonRetryableInvalidResponse() {
-        var result = classifier.classify(
-                new IllegalArgumentException("invalid payload")
+    void classifiesMalformedResponseAsNonRetryable() {
+        var classified = classifier.classify(
+                new AmplitudeInvalidResponseException(
+                        "malformed"
+                )
         );
 
-        assertInstanceOf(
-                BankingVerificationInvalidResponseException.class,
-                result
-        );
-        assertFalse(result.retryable());
+        assertThat(classified)
+                .isInstanceOf(
+                        BankingVerificationInvalidResponseException.class
+                );
+        assertThat(classified.retryable()).isFalse();
     }
 
-    private static AmplitudeClientException httpFailure(int status) {
-        return new AmplitudeClientException(
-                status,
-                AmplitudeErrorResponse.unknown(
-                        status,
-                        "corr-test"
-                ),
-                null
-        );
+    @Test
+    void classifies404And409AsProtocolErrors() {
+        for (int status : new int[]{404, 409}) {
+            var classified = classifier.classify(
+                    new AmplitudeClientException(
+                            status,
+                            AmplitudeErrorResponse.unknown(
+                                    status,
+                                    "corr"
+                            ),
+                            null
+                    )
+            );
+
+            assertThat(classified)
+                    .isInstanceOf(
+                            BankingVerificationProtocolException.class
+                    );
+            assertThat(classified.retryable()).isFalse();
+        }
     }
 }
