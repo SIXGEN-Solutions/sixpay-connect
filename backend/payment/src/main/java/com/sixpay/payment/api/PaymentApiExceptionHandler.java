@@ -1,7 +1,10 @@
 package com.sixpay.payment.api;
 
+import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.response.PaymentProblemResponse;
 import com.sixpay.payment.application.security.PaymentAccessDeniedException;
+import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
+import com.sixpay.payment.infrastructure.tresorpay.TresorPayRequestRejectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -19,6 +22,50 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class PaymentApiExceptionHandler {
+
+    @ExceptionHandler(TresorPayRequestRejectedException.class)
+    ResponseEntity<PaymentProblemResponse> tresorPayRejected(
+            TresorPayRequestRejectedException exception,
+            HttpServletRequest request
+    ) {
+        ResponseEntity.BodyBuilder builder =
+                ResponseEntity.status(exception.status());
+
+        if (exception.retryAfterSeconds() != null) {
+            builder.header(
+                    "Retry-After",
+                    exception.retryAfterSeconds().toString()
+            );
+        }
+
+        UUID correlationId = correlationId(request);
+
+        return builder
+                .header(
+                        IntegrationHttpHeaders.CORRELATION_ID,
+                        correlationId.toString()
+                )
+                .body(problemBody(
+                        exception.status(),
+                        exception.code().name(),
+                        exception.getMessage(),
+                        correlationId,
+                        exception.retryAfterSeconds()
+                ));
+    }
+
+    @ExceptionHandler(PaymentIdempotencyConflictException.class)
+    ResponseEntity<PaymentProblemResponse> idempotencyConflict(
+            PaymentIdempotencyConflictException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "IDEMPOTENCY_KEY_CONFLICT",
+                "Idempotency key is already associated with another request",
+                request
+        );
+    }
 
     @ExceptionHandler(PaymentNotFoundException.class)
     ResponseEntity<PaymentProblemResponse> notFound(
@@ -72,8 +119,8 @@ public class PaymentApiExceptionHandler {
     ) {
         return problem(
                 HttpStatus.BAD_REQUEST,
-                "INVALID_PAYMENT_REQUEST",
-                exception.getMessage(),
+                "INVALID_REQUEST",
+                "Payment request is invalid",
                 request
         );
     }
@@ -85,25 +132,52 @@ public class PaymentApiExceptionHandler {
             HttpServletRequest request
     ) {
         UUID correlationId = correlationId(request);
-        var response = new PaymentProblemResponse(
-                URI.create("urn:sixpay:problem:" + code.toLowerCase()),
+
+        return ResponseEntity.status(status)
+                .header(
+                        IntegrationHttpHeaders.CORRELATION_ID,
+                        correlationId.toString()
+                )
+                .body(problemBody(
+                        status,
+                        code,
+                        detail,
+                        correlationId,
+                        null
+                ));
+    }
+
+    private static PaymentProblemResponse problemBody(
+            HttpStatus status,
+            String code,
+            String detail,
+            UUID correlationId,
+            Integer retryAfter
+    ) {
+        return new PaymentProblemResponse(
+                URI.create(
+                        "urn:sixpay:problem:"
+                                + code.toLowerCase()
+                ),
                 status.getReasonPhrase(),
                 status.value(),
                 code,
                 correlationId,
                 detail,
-                null,
+                retryAfter,
                 List.of()
         );
-
-        return ResponseEntity.status(status)
-                .header("X-Correlation-ID", correlationId.toString())
-                .body(response);
     }
 
-    private static UUID correlationId(HttpServletRequest request) {
+    private static UUID correlationId(
+            HttpServletRequest request
+    ) {
         try {
-            return UUID.fromString(request.getHeader("X-Correlation-ID"));
+            return UUID.fromString(
+                    request.getHeader(
+                            IntegrationHttpHeaders.CORRELATION_ID
+                    )
+            );
         } catch (RuntimeException exception) {
             return UUID.randomUUID();
         }

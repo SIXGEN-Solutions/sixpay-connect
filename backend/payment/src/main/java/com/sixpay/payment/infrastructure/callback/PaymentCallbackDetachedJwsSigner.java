@@ -5,10 +5,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
@@ -22,31 +19,33 @@ import java.util.Objects;
 public final class PaymentCallbackDetachedJwsSigner {
 
     private final ObjectMapper objectMapper;
-    private final PaymentCallbackProperties properties;
+    private final CallbackSigningKeyProvider keyProvider;
 
     public PaymentCallbackDetachedJwsSigner(
             ObjectMapper objectMapper,
-            PaymentCallbackProperties properties
+            CallbackSigningKeyProvider keyProvider
     ) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.properties = Objects.requireNonNull(properties);
-        properties.validateEnabledConfiguration();
+        this.keyProvider = Objects.requireNonNull(keyProvider);
     }
 
     public String sign(byte[] payload) {
         Objects.requireNonNull(payload, "Callback payload");
 
         try {
+            CallbackSigningKeyProvider.SigningKey key =
+                    keyProvider.current();
+
             String protectedHeader = base64Url(
                     objectMapper.writeValueAsBytes(
                             Map.of(
-                                    "alg", "RS256",
-                                    "kid", properties
-                                            .getSigningKeyId(),
+                                    "alg", key.algorithm(),
+                                    "kid", key.keyId(),
                                     "typ", "JOSE"
                             )
                     )
             );
+
             String encodedPayload = base64Url(payload);
             byte[] signingInput = (
                     protectedHeader
@@ -56,7 +55,7 @@ public final class PaymentCallbackDetachedJwsSigner {
 
             Signature signature =
                     Signature.getInstance("SHA256withRSA");
-            signature.initSign(privateKey());
+            signature.initSign(key.privateKey());
             signature.update(signingInput);
 
             return protectedHeader
@@ -68,28 +67,6 @@ public final class PaymentCallbackDetachedJwsSigner {
                     exception
             );
         }
-    }
-
-    private PrivateKey privateKey() throws Exception {
-        String normalized = properties
-                .getSigningPrivateKeyPem()
-                .replace(
-                        "-----BEGIN PRIVATE KEY-----",
-                        ""
-                )
-                .replace(
-                        "-----END PRIVATE KEY-----",
-                        ""
-                )
-                .replaceAll("\\s", "");
-
-        byte[] encoded =
-                Base64.getDecoder().decode(normalized);
-
-        return KeyFactory.getInstance("RSA")
-                .generatePrivate(
-                        new PKCS8EncodedKeySpec(encoded)
-                );
     }
 
     private static String base64Url(byte[] value) {

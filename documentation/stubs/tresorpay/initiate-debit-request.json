@@ -1,0 +1,27 @@
+{
+  "LoginName": "TRESOR_PAY",
+  "AppID": "TP_APP_001",
+  "endToEndId": "AVI-2026-00045678",
+  "montantTotal": 600000,
+  "devise": "XAF",
+  "ribDebiteur": "10005-00001-12345678901-12",
+  "nomDebiteur": "Societe ABC SARL",
+  "typeCreance": "AVI",
+  "NUI": "100200300",
+  "dateExecution": "2026-08-06T14:00:00Z",
+  "beneficiaires": [
+    {
+      "rib": "10005-00001-000000TRESDGI-97",
+      "montant": 300000
+    },
+    {
+      "rib": "10005-00001-000000TRESDOUANE-11",
+      "montant": 200000
+    },
+    {
+      "rib": "10005-00001-000000TRESDOMAINE-22",
+      "montant": 100000
+    }
+  ],
+  "callbackURL": "https://tresorpay.cm/v1/callbacks/payment-status"
+}

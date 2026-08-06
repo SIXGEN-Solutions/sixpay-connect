@@ -1,6 +1,8 @@
 package com.sixpay.payment.api;
 
 import com.sixpay.common.context.CorrelationId;
+import com.sixpay.integration.http.CorrelationIdResolver;
+import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.in.PaymentInitiationUseCase;
@@ -13,72 +15,55 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/payments")
-@Tag(
-        name = "Payment Commands",
-        description = "TresorPay Payment initiation API"
-)
-@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Payment Commands", description = "TresorPay Payment initiation API")
+@SecurityRequirement(name = "mutualTLS")
+@SecurityRequirement(name = "oauth2")
 public class PaymentCommandController {
-
-    private static final String CORRELATION_HEADER =
-            "X-Correlation-ID";
-    private static final String IDEMPOTENCY_HEADER =
-            "Idempotency-Key";
 
     private final PaymentInitiationUseCase initiationUseCase;
     private final PaymentCommandApiMapper mapper;
     private final CurrentUserProvider currentUserProvider;
+    private final CorrelationIdResolver correlationIdResolver;
 
     public PaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
             PaymentCommandApiMapper mapper,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            CorrelationIdResolver correlationIdResolver
     ) {
         this.initiationUseCase = initiationUseCase;
         this.mapper = mapper;
         this.currentUserProvider = currentUserProvider;
+        this.correlationIdResolver = correlationIdResolver;
     }
 
     @PostMapping("/initiate")
-    @PreAuthorize(
-            "hasAuthority('SCOPE_payment.initiate')"
-    )
-    @Operation(
-            operationId = "initiateDebit",
-            summary = "Initiate a debit order"
-    )
+    @PreAuthorize("hasAuthority('SCOPE_payment.initiate')")
+    @Operation(operationId = "initiateDebit", summary = "Initiate a debit order")
     public ResponseEntity<InitiateDebitResponse> initiateDebit(
             @Valid @RequestBody InitiateDebitRequest request,
-            @RequestHeader(name = IDEMPOTENCY_HEADER)
-            @NotBlank @Size(max = 128)
-            String idempotencyKey,
+            @RequestHeader(name = IntegrationHttpHeaders.IDEMPOTENCY_KEY)
+            @NotBlank @Size(max = 128) String idempotencyKey,
             @RequestHeader(
-                    name = CORRELATION_HEADER,
+                    name = IntegrationHttpHeaders.CORRELATION_ID,
                     required = false
             )
-            @Size(max = 150)
-            String correlationHeader
+            @Size(max = 64) String correlationHeader
     ) {
         CorrelationId correlationId =
-                correlation(correlationHeader);
+                correlationIdResolver.resolve(correlationHeader);
 
-        String authenticatedPartnerLoginName =
-                currentUserProvider
-                        .requireCurrentUser()
-                        .username();
+        String authenticatedPartner =
+                currentUserProvider.requireCurrentUser().username();
 
         var result = initiationUseCase.initiateDebit(
                 mapper.toCommand(
                         request,
-                        authenticatedPartnerLoginName,
+                        authenticatedPartner,
                         idempotencyKey,
                         correlationId
                 )
@@ -86,20 +71,9 @@ public class PaymentCommandController {
 
         return ResponseEntity.ok()
                 .header(
-                        CORRELATION_HEADER,
+                        IntegrationHttpHeaders.CORRELATION_ID,
                         correlationId.value()
                 )
                 .body(mapper.toResponse(result));
-    }
-
-    private static CorrelationId correlation(
-            String correlationHeader
-    ) {
-        return correlationHeader == null
-                || correlationHeader.isBlank()
-                ? CorrelationId.generate()
-                : CorrelationId.of(
-                        correlationHeader.strip()
-                );
     }
 }

@@ -1,0 +1,48 @@
+contract: tresorpay-security-profile
+version: 1.0.0
+status: IMPLEMENTATION_BASELINE
+direction: TRESORPAY_TO_SIXPAY
+transport:
+  tls: "1.3"
+  mutualTls:
+    required: true
+    sandboxOverrideAllowed: true
+authentication:
+  oauth2:
+    grantType: client_credentials
+    tokenType: JWT
+    requiredAudience: sixpay-payment-api
+    requiredScope: payment.initiate
+    partnerIdentityClaim: client_id
+  apiKey:
+    enabledByDefault: false
+    compatibilityHeader: X-API-Key
+requestProtection:
+  idempotency:
+    header: Idempotency-Key
+    maximumLength: 150
+    scope: PARTNER_AND_OPERATION
+    samePayload: REPLAY_PERSISTED_RESPONSE
+    differentPayload: HTTP_409
+    retentionBaseline: P30D
+  antiReplay:
+    timestampHeader: X-Request-Timestamp
+    nonceHeader: X-Request-Nonce
+    timestampFormat: RFC3339
+    allowedClockSkew: PT5M
+    nonceTtl: PT10M
+correlation:
+  header: X-Correlation-ID
+  format: UUID
+callback:
+  transport: HTTPS_MTLS
+  signature:
+    header: X-SIXPAY-Signature
+    format: DETACHED_JWS
+    algorithm: RS256
+    keyIdRequired: true
+    signingInput: BASE64URL_PROTECTED_HEADER_DOT_BASE64URL_EXACT_BODY
+  delivery:
+    semantics: AT_LEAST_ONCE
+    deduplicationKey: eventId
+    expirationBaseline: PT24H

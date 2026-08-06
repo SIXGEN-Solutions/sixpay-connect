@@ -31,7 +31,6 @@ spring:
 springdoc:
   api-docs:
     enabled: true
-
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
@@ -61,6 +60,31 @@ sixpay:
       subject-prefix: "[SIXPAY]"
 
   payment:
+    tresorpay:
+      enabled: ${TRESORPAY_ENABLED:true}
+      security:
+        mtls-required: ${TRESORPAY_MTLS_REQUIRED:false}
+        oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:false}
+        api-key-enabled: ${TRESORPAY_API_KEY_ENABLED:false}
+        api-key-header: ${TRESORPAY_API_KEY_HEADER:X-API-Key}
+        api-key-value: ${TRESORPAY_API_KEY_VALUE:}
+        audience: ${TRESORPAY_JWT_AUDIENCE:sixpay-payment-api}
+        partner-claim: ${TRESORPAY_PARTNER_CLAIM:client_id}
+        required-scope: ${TRESORPAY_REQUIRED_SCOPE:payment.initiate}
+      anti-replay:
+        enabled: ${TRESORPAY_ANTI_REPLAY_ENABLED:true}
+        allowed-clock-skew: ${TRESORPAY_ALLOWED_CLOCK_SKEW:PT5M}
+        nonce-ttl: ${TRESORPAY_NONCE_TTL:PT10M}
+      rate-limit:
+        enabled: ${TRESORPAY_RATE_LIMIT_ENABLED:true}
+        requests-per-minute: ${TRESORPAY_REQUESTS_PER_MINUTE:120}
+      callback:
+        signature-enabled: ${TRESORPAY_CALLBACK_SIGNATURE_ENABLED:true}
+        algorithm: ${TRESORPAY_CALLBACK_SIGNATURE_ALGORITHM:RS256}
+        delivery-expiration: ${TRESORPAY_CALLBACK_DELIVERY_EXPIRATION:PT24H}
+      allowed-callback-hosts:
+        - ${TRESORPAY_CALLBACK_HOST:tresorpay.cm}
+
     callback:
       enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}
       poll-delay: ${SIXPAY_PAYMENT_CALLBACK_POLL_DELAY:PT2S}
@@ -83,15 +107,12 @@ sixpay:
         enabled: true
         max-optimistic-attempts: 3
         protection-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_PROTECTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
-
       query:
         enabled: true
         cursor-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_CURSOR_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
-
       audit:
         persistence:
           enabled: true
-
       resilience:
         max-attempts: ${SIXPAY_CUSTOMER_OBSERVATION_MAX_ATTEMPTS:3}
         initial-backoff: ${SIXPAY_CUSTOMER_OBSERVATION_INITIAL_BACKOFF:10ms}

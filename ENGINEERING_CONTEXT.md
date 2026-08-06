@@ -2,7 +2,8 @@
 
 > **Purpose**
 >
-> Mandatory entry point for engineers and AI coding assistants contributing to SIXPAY CONNECT.
+> Mandatory entry point for every engineer and AI coding assistant contributing
+> to SIXPAY CONNECT.
 
 ---
 
@@ -14,14 +15,7 @@
 
 **Primary implementation branch:** `'feat/integration-contracts'`
 
-**Current delivery focus:** Phase 5 — Integrations, Lot 5.1 — Transverse integration foundation.
-
----
-
-# Repository Philosophy
-
-SIXPAY CONNECT follows Documentation-as-Code. Requirements, architecture,
-contracts, implementation, infrastructure, tests and AI assets evolve together.
+**Current delivery focus:** Phase 5 — Integrations, Lot 5.2 — TresorPay consolidation.
 
 ---
 
@@ -46,12 +40,11 @@ When sources conflict, the higher-priority source prevails.
 | Business requirements | `documentation/requirements/` |
 | Architecture | `documentation/architecture/` |
 | Integration landscape | `documentation/architecture/integration/` |
-| API and integration contracts | `documentation/contracts/` |
+| External contracts | `documentation/contracts/external/` |
+| TresorPay onboarding | `documentation/onboarding/tresorpay/` |
+| TresorPay runbooks and stubs | `documentation/runbooks/tresorpay/`, `documentation/stubs/tresorpay/` |
 | Backend | `backend/` |
 | Shared integration foundation | `backend/integration/` |
-| Infrastructure | `infrastructure/` |
-| Deployment | `deployment/` |
-| Scripts | `scripts/` |
 
 ---
 
@@ -59,20 +52,42 @@ When sources conflict, the higher-priority source prevails.
 
 Before changing an integration:
 
-1. identify producer and consumer;
-2. identify owning module and contract owner;
-3. classify synchronous or asynchronous;
-4. reference a published contract or mark it `TO_DEFINE`;
-5. define security, errors and testing;
-6. update integration architecture documentation;
-7. preserve module boundaries and anti-corruption layers;
-8. keep co-deployed internal calls in-process unless a deployment decision says otherwise.
+1. identify producer, consumer and contract owner;
+2. classify synchronous or asynchronous;
+3. reference a versioned contract;
+4. define security, errors, replay and test mode;
+5. preserve module boundaries and anti-corruption mappings;
+6. update architecture and onboarding documentation.
 
 The `partner` module remains the golden business-module reference.
 
-The `integration` module contains only provider-neutral HTTP, correlation,
-resilience, observability, serialization, Kafka, DLQ and consumer-idempotency
-support. Provider payloads and mappings stay in the owning domain.
+The `integration` module contains only provider-neutral capabilities.
+TresorPay payloads, guards and mappings remain in Payment infrastructure.
+
+---
+
+# TresorPay Baseline
+
+Inbound Payment initiation uses:
+
+- HTTPS and production mTLS;
+- OAuth2 client-credentials JWT;
+- audience `sixpay-payment-api`;
+- scope `payment.initiate`;
+- authenticated partner identity matching `LoginName`;
+- `Idempotency-Key`;
+- correlation ID;
+- timestamp and nonce replay protection;
+- callback-host allowlist;
+- per-partner rate limiting.
+
+API key support is disabled by default and exists only as a configurable
+compatibility mechanism.
+
+Callbacks use HTTPS/mTLS and detached RS256 JWS with a mandatory `kid`.
+
+Temporary in-memory nonce and rate-limit components must be replaced before
+horizontal production deployment.
 
 ---
 
@@ -87,25 +102,24 @@ Requirements -> Architecture -> Contracts -> Implementation
 
 # AI Working Agreement
 
-AI SHALL read existing implementation, reuse patterns, preserve contracts,
-synchronize tests and documentation, and reuse `backend/integration` only for
-provider-neutral concerns.
+AI SHALL reuse existing Payment orchestration and idempotency, keep provider
+logic in Payment infrastructure, use the shared integration foundation, and
+keep tests and contracts synchronized.
 
-AI SHALL NOT invent structures, duplicate business logic, introduce an
-omnipotent Core Banking service, move provider mappings into `integration`, or
-blindly retry financial commands with unknown outcomes.
+AI SHALL NOT move TresorPay DTOs into the domain, put API keys in request bodies,
+blindly retry financial operations, expose sensitive error details, or place
+private keys in Git.
 
 ---
 
 # Definition of Done
 
 - implementation complete;
-- tests pass;
-- contracts valid;
-- documentation updated;
-- conventions respected;
-- ownership, security, errors and testing documented;
-- provider logic remains in its owning domain;
+- contract and simulated-client tests pass;
+- mTLS/JWT/API-key policy is configurable;
+- replay, idempotency and rate limiting are covered;
+- audit contains no sensitive payload;
+- onboarding documentation is current;
 - CI succeeds.
 
 ---

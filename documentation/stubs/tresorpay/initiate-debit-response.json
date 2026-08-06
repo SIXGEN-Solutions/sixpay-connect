@@ -1,0 +1,17 @@
+{
+  "OK": "200",
+  "Description": "Payment order initiated",
+  "Result": "Success",
+  "paymentReference": "PAY-01K1D4XVA8ND2SACM7Y62F0R2E",
+  "endToEndId": "AVI-2026-00045678",
+  "bankOperationId": "BANK-OP-00045678",
+  "montantTotal": {"amount": 600000, "currency": "XAF"},
+  "frais": {"amount": 0, "currency": "XAF"},
+  "montantNet": {"amount": 600000, "currency": "XAF"},
+  "Date": "2026-08-06T14:00:00Z",
+  "ValidityInMinutes": 10,
+  "TransactionNumber": "TP-00045678",
+  "TransactionQRCode": "https://tresorpay.cm/qr/TP-00045678",
+  "Status": "PENDING_CONFIRMATION",
+  "NextStep": "Awaiting customer confirmation via OTP/SMS"
+}

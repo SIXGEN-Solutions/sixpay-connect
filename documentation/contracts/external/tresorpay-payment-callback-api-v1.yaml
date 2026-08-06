@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TresorPay Payment Callback API
+  version: 1.0.0
+  description: Callback contract implemented by TresorPay and invoked by SIXPAY.
+paths:
+  /v1/callbacks/payment-status:
+    post:
+      operationId: receivePaymentStatusCallback
+      parameters:
+        - name: X-Correlation-ID
+          in: header
+          required: true
+          schema: {type: string, format: uuid}
+        - name: X-SIXPAY-Signature
+          in: header
+          required: true
+          schema: {type: string, minLength: 1, maxLength: 4096}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStatusCallbackRequest'
+      responses:
+        '200':
+          description: Callback acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallbackAcknowledgement'
+        '400': {description: Invalid payload}
+        '401': {description: mTLS or JWS validation failed}
+        '409': {description: Event conflict}
+components:
+  schemas:
+    PaymentStatusCallbackRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - eventId
+        - eventType
+        - occurredAt
+        - paymentReference
+        - endToEndId
+        - previousStatus
+        - status
+      properties:
+        eventId: {type: string, format: uuid}
+        eventType: {type: string, const: PAYMENT_STATUS_CHANGED}
+        occurredAt: {type: string, format: date-time}
+        paymentReference: {type: string}
+        endToEndId: {type: string}
+        bankOperationId: {type: [string, 'null']}
+        previousStatus: {type: string}
+        status: {type: string}
+        reasonCode: {type: [string, 'null']}
+        description: {type: [string, 'null']}
+        transactionNumber: {type: [string, 'null']}
+    CallbackAcknowledgement:
+      type: object
+      additionalProperties: false
+      required: [OK, Result, eventId]
+      properties:
+        OK: {type: string, const: "200"}
+        Result: {type: string, const: ACKNOWLEDGED}
+        eventId: {type: string, format: uuid}
