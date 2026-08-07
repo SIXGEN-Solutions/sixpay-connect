@@ -58,7 +58,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,flyway,mappings
+        include: health,info,flyway,mappings,metrics
 
 sixpay:
   security:
@@ -93,6 +93,15 @@ sixpay:
         max-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_BACKOFF:15m}
         batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_BATCH_SIZE:50}
         poll-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_POLL_INTERVAL_MS:30000}
+
+      operations:
+        metrics-enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_ENABLED:true}
+        metrics-refresh-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_REFRESH_MS:30000}
+        retention-enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_RETENTION_ENABLED:true}
+        delivered-retention: ${SIXPAY_NOTIFICATION_OPERATIONAL_DELIVERED_RETENTION:90d}
+        failed-retention: ${SIXPAY_NOTIFICATION_OPERATIONAL_FAILED_RETENTION:365d}
+        purge-batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_BATCH_SIZE:500}
+        purge-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_INTERVAL_MS:86400000}
 
   payment:
     tresorpay:

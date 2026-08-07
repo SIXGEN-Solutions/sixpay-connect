@@ -6,9 +6,12 @@ import java.util.Objects;
 public record OperationalNotificationDelivery(
         NotificationIntent intent,
         int attemptCount,
+        int cycleAttemptCount,
+        int replayCount,
         Instant nextAttemptAt,
         Instant lastAttemptAt,
         Instant deliveredAt,
+        Instant lastReplayAt,
         String lastErrorCode,
         String providerReference
 ) {
@@ -21,6 +24,24 @@ public record OperationalNotificationDelivery(
         if (attemptCount < 0) {
             throw new IllegalArgumentException(
                     "attemptCount must be >= 0"
+            );
+        }
+
+        if (cycleAttemptCount < 0) {
+            throw new IllegalArgumentException(
+                    "cycleAttemptCount must be >= 0"
+            );
+        }
+
+        if (cycleAttemptCount > attemptCount) {
+            throw new IllegalArgumentException(
+                    "cycleAttemptCount cannot exceed attemptCount"
+            );
+        }
+
+        if (replayCount < 0) {
+            throw new IllegalArgumentException(
+                    "replayCount must be >= 0"
             );
         }
 
@@ -49,7 +70,10 @@ public record OperationalNotificationDelivery(
         return new OperationalNotificationDelivery(
                 intent,
                 0,
+                0,
+                0,
                 intent.createdAt(),
+                null,
                 null,
                 null,
                 null,
@@ -65,9 +89,12 @@ public record OperationalNotificationDelivery(
                         NotificationDeliveryStatus.DISPATCHING
                 ),
                 attemptCount + 1,
+                cycleAttemptCount + 1,
+                replayCount,
                 null,
                 Objects.requireNonNull(at, "at"),
                 deliveredAt,
+                lastReplayAt,
                 null,
                 providerReference
         );
@@ -76,13 +103,9 @@ public record OperationalNotificationDelivery(
     public OperationalNotificationDelivery accepted(
             String externalReference
     ) {
-        return new OperationalNotificationDelivery(
-                intent.withStatus(
-                        NotificationDeliveryStatus.ACCEPTED
-                ),
-                attemptCount,
+        return copy(
+                NotificationDeliveryStatus.ACCEPTED,
                 null,
-                lastAttemptAt,
                 deliveredAt,
                 null,
                 externalReference
@@ -93,13 +116,9 @@ public record OperationalNotificationDelivery(
             Instant at,
             String externalReference
     ) {
-        return new OperationalNotificationDelivery(
-                intent.withStatus(
-                        NotificationDeliveryStatus.DELIVERED
-                ),
-                attemptCount,
+        return copy(
+                NotificationDeliveryStatus.DELIVERED,
                 null,
-                lastAttemptAt,
                 Objects.requireNonNull(at, "at"),
                 null,
                 externalReference
@@ -110,16 +129,12 @@ public record OperationalNotificationDelivery(
             Instant nextAttempt,
             String errorCode
     ) {
-        return new OperationalNotificationDelivery(
-                intent.withStatus(
-                        NotificationDeliveryStatus.FAILED_RETRYABLE
-                ),
-                attemptCount,
+        return copy(
+                NotificationDeliveryStatus.FAILED_RETRYABLE,
                 Objects.requireNonNull(
                         nextAttempt,
                         "nextAttempt"
                 ),
-                lastAttemptAt,
                 deliveredAt,
                 requiredErrorCode(errorCode),
                 providerReference
@@ -129,13 +144,9 @@ public record OperationalNotificationDelivery(
     public OperationalNotificationDelivery permanentFailure(
             String errorCode
     ) {
-        return new OperationalNotificationDelivery(
-                intent.withStatus(
-                        NotificationDeliveryStatus.FAILED_PERMANENT
-                ),
-                attemptCount,
+        return copy(
+                NotificationDeliveryStatus.FAILED_PERMANENT,
                 null,
-                lastAttemptAt,
                 deliveredAt,
                 requiredErrorCode(errorCode),
                 providerReference
@@ -145,16 +156,64 @@ public record OperationalNotificationDelivery(
     public OperationalNotificationDelivery deadLetter(
             String errorCode
     ) {
-        return new OperationalNotificationDelivery(
-                intent.withStatus(
-                        NotificationDeliveryStatus.DEAD_LETTERED
-                ),
-                attemptCount,
+        return copy(
+                NotificationDeliveryStatus.DEAD_LETTERED,
                 null,
-                lastAttemptAt,
                 deliveredAt,
                 requiredErrorCode(errorCode),
                 providerReference
+        );
+    }
+
+    public OperationalNotificationDelivery replayed(
+            Instant replayedAt
+    ) {
+        if (intent.status()
+                != NotificationDeliveryStatus.DEAD_LETTERED) {
+            throw new IllegalStateException(
+                    "Only DEAD_LETTERED notifications can be replayed"
+            );
+        }
+
+        Instant at = Objects.requireNonNull(
+                replayedAt,
+                "replayedAt"
+        );
+
+        return new OperationalNotificationDelivery(
+                intent.withStatus(
+                        NotificationDeliveryStatus.FAILED_RETRYABLE
+                ),
+                attemptCount,
+                0,
+                replayCount + 1,
+                at,
+                lastAttemptAt,
+                deliveredAt,
+                at,
+                null,
+                providerReference
+        );
+    }
+
+    private OperationalNotificationDelivery copy(
+            NotificationDeliveryStatus status,
+            Instant nextAttempt,
+            Instant delivered,
+            String errorCode,
+            String externalReference
+    ) {
+        return new OperationalNotificationDelivery(
+                intent.withStatus(status),
+                attemptCount,
+                cycleAttemptCount,
+                replayCount,
+                nextAttempt,
+                lastAttemptAt,
+                delivered,
+                lastReplayAt,
+                errorCode,
+                externalReference
         );
     }
 

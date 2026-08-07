@@ -104,12 +104,6 @@ public final class OperationalNotificationDeliveryService
                         counters
                 );
             } catch (RuntimeException ignored) {
-                /*
-                 * One broken notification must not stop the batch.
-                 * Any provider failure should normally be classified and
-                 * persisted by processOne. This catch is a final isolation
-                 * boundary for unexpected infrastructure failures.
-                 */
                 counters.skipped++;
             }
         }
@@ -135,8 +129,14 @@ public final class OperationalNotificationDeliveryService
         OperationalNotificationDelivery delivery =
                 claimed.orElseThrow();
 
+        /*
+         * claimForDispatch already moved the persisted state to DISPATCHING.
+         * A first attempt in a cycle originates from PENDING (initial cycle)
+         * or FAILED_RETRYABLE (replayed cycle). Later attempts originate from
+         * FAILED_RETRYABLE.
+         */
         lifecycle.requireTransition(
-                previousStatus(delivery),
+                sourceStatusForClaim(delivery),
                 NotificationDeliveryStatus.DISPATCHING
         );
 
@@ -244,7 +244,7 @@ public final class OperationalNotificationDeliveryService
         Instant failedAt = clock.instant();
 
         if (retryPolicy.exhausted(
-                delivery.attemptCount()
+                delivery.cycleAttemptCount()
         )) {
             lifecycle.requireTransition(
                     NotificationDeliveryStatus.DISPATCHING,
@@ -281,7 +281,7 @@ public final class OperationalNotificationDeliveryService
                 delivery.retryableFailure(
                         retryPolicy.nextAttemptAt(
                                 failedAt,
-                                delivery.attemptCount()
+                                delivery.cycleAttemptCount()
                         ),
                         errorCode
                 )
@@ -345,18 +345,16 @@ public final class OperationalNotificationDeliveryService
         );
     }
 
-    private static NotificationDeliveryStatus previousStatus(
+    private static NotificationDeliveryStatus sourceStatusForClaim(
             OperationalNotificationDelivery claimed
     ) {
-        /*
-         * claimForDispatch already atomically changed the persisted state to
-         * DISPATCHING. The valid source state is therefore inferred from the
-         * attempt number: first claim came from PENDING, later claims from
-         * FAILED_RETRYABLE.
-         */
-        return claimed.attemptCount() == 1
-                ? NotificationDeliveryStatus.PENDING
-                : NotificationDeliveryStatus.FAILED_RETRYABLE;
+        if (claimed.replayCount() == 0
+                && claimed.cycleAttemptCount() == 1
+                && claimed.attemptCount() == 1) {
+            return NotificationDeliveryStatus.PENDING;
+        }
+
+        return NotificationDeliveryStatus.FAILED_RETRYABLE;
     }
 
     private static final class Counters {

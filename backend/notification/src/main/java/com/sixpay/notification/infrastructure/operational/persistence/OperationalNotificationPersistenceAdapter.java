@@ -1,17 +1,7 @@
 package com.sixpay.notification.infrastructure.operational.persistence;
 
-import com.sixpay.notification.domain.model.NotificationAttempt;
-import com.sixpay.notification.domain.model.NotificationChannel;
-import com.sixpay.notification.domain.model.NotificationDeduplicationKey;
-import com.sixpay.notification.domain.model.NotificationDeliveryStatus;
-import com.sixpay.notification.domain.model.NotificationIntent;
-import com.sixpay.notification.domain.model.NotificationRecipient;
-import com.sixpay.notification.domain.model.NotificationSourceReference;
-import com.sixpay.notification.domain.model.NotificationTemplateKey;
-import com.sixpay.notification.domain.model.OperationalNotificationDelivery;
-import com.sixpay.notification.domain.repository.NotificationAttemptRepository;
-import com.sixpay.notification.domain.repository.NotificationSaveResult;
-import com.sixpay.notification.domain.repository.OperationalNotificationRepository;
+import com.sixpay.notification.domain.model.*;
+import com.sixpay.notification.domain.repository.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,23 +14,24 @@ import java.util.UUID;
 @Repository
 public class OperationalNotificationPersistenceAdapter
         implements OperationalNotificationRepository,
-        NotificationAttemptRepository {
+        NotificationAttemptRepository,
+        OperationalNotificationOperationsRepository,
+        NotificationReplayRepository {
 
-    private final OperationalNotificationSpringDataRepository
-            notificationRepository;
-
-    private final OperationalNotificationAttemptSpringDataRepository
-            attemptRepository;
-
+    private final OperationalNotificationSpringDataRepository notificationRepository;
+    private final OperationalNotificationAttemptSpringDataRepository attemptRepository;
+    private final OperationalNotificationReplaySpringDataRepository replayRepository;
     private final NotificationTemplateVariablesCodec variablesCodec;
 
     public OperationalNotificationPersistenceAdapter(
             OperationalNotificationSpringDataRepository notificationRepository,
             OperationalNotificationAttemptSpringDataRepository attemptRepository,
+            OperationalNotificationReplaySpringDataRepository replayRepository,
             NotificationTemplateVariablesCodec variablesCodec
     ) {
         this.notificationRepository = notificationRepository;
         this.attemptRepository = attemptRepository;
+        this.replayRepository = replayRepository;
         this.variablesCodec = variablesCodec;
     }
 
@@ -61,9 +52,7 @@ public class OperationalNotificationPersistenceAdapter
                 intent.channel().name(),
                 intent.templateKey().name(),
                 intent.deduplicationKey().value(),
-                variablesCodec.encode(
-                        intent.templateVariables()
-                ),
+                variablesCodec.encode(intent.templateVariables()),
                 intent.createdAt(),
                 intent.correlationId()
         );
@@ -94,8 +83,7 @@ public class OperationalNotificationPersistenceAdapter
     ) {
         OperationalNotificationJpaEntity entity =
                 notificationRepository.findById(
-                                delivery.intent()
-                                        .notificationId()
+                                delivery.intent().notificationId()
                         )
                         .orElseThrow(
                                 () -> new IllegalStateException(
@@ -106,15 +94,12 @@ public class OperationalNotificationPersistenceAdapter
         entity.synchronize(
                 delivery,
                 variablesCodec.encode(
-                        delivery.intent()
-                                .templateVariables()
+                        delivery.intent().templateVariables()
                 )
         );
 
         return toDomain(
-                notificationRepository.saveAndFlush(
-                        entity
-                )
+                notificationRepository.saveAndFlush(entity)
         );
     }
 
@@ -123,8 +108,7 @@ public class OperationalNotificationPersistenceAdapter
     public Optional<OperationalNotificationDelivery> findById(
             UUID notificationId
     ) {
-        return notificationRepository
-                .findById(notificationId)
+        return notificationRepository.findById(notificationId)
                 .map(this::toDomain);
     }
 
@@ -161,18 +145,16 @@ public class OperationalNotificationPersistenceAdapter
             UUID notificationId,
             Instant claimedAt
     ) {
-        int claimed =
-                notificationRepository.claimForDispatch(
-                        notificationId,
-                        claimedAt
-                );
-
-        if (claimed == 0) {
+        if (notificationRepository.claimForDispatch(
+                notificationId,
+                claimedAt
+        ) == 0) {
             return Optional.empty();
         }
 
-        return notificationRepository
-                .findById(notificationId)
+        return notificationRepository.findById(
+                        notificationId
+                )
                 .map(this::toDomain);
     }
 
@@ -186,17 +168,14 @@ public class OperationalNotificationPersistenceAdapter
                                 attempt.attemptId()
                         )
                         .orElseGet(
-                                () ->
-                                        OperationalNotificationAttemptJpaEntity
-                                                .from(attempt)
+                                () -> OperationalNotificationAttemptJpaEntity
+                                        .from(attempt)
                         );
 
         entity.synchronize(attempt);
 
         return toDomain(
-                attemptRepository.saveAndFlush(
-                        entity
-                )
+                attemptRepository.saveAndFlush(entity)
         );
     }
 
@@ -207,6 +186,100 @@ public class OperationalNotificationPersistenceAdapter
     ) {
         return attemptRepository
                 .findByNotificationIdOrderByAttemptNumberAsc(
+                        notificationId
+                )
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> findIdsByStatus(
+            NotificationDeliveryStatus status,
+            int limit
+    ) {
+        return notificationRepository.findIdsByStatus(
+                status.name(),
+                limit
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByStatus(
+            NotificationDeliveryStatus status
+    ) {
+        return notificationRepository.countByStatus(
+                status
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countDue(
+            Instant dueAt
+    ) {
+        return notificationRepository.countDue(
+                dueAt
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Instant> findOldestDueAt(
+            Instant dueAt
+    ) {
+        return notificationRepository.findOldestDueAt(
+                dueAt
+        );
+    }
+
+    @Override
+    @Transactional
+    public int purgeTerminal(
+            Instant deliveredBefore,
+            Instant failedBefore,
+            int limit
+    ) {
+        return notificationRepository.purgeTerminal(
+                deliveredBefore,
+                failedBefore,
+                limit
+        );
+    }
+
+    @Override
+    @Transactional
+    public Optional<OperationalNotificationDelivery> replayDeadLetter(
+            NotificationReplayAudit audit
+    ) {
+        if (notificationRepository.replayDeadLetter(
+                audit.notificationId(),
+                audit.requestedAt()
+        ) == 0) {
+            return Optional.empty();
+        }
+
+        replayRepository.saveAndFlush(
+                OperationalNotificationReplayJpaEntity
+                        .from(audit)
+        );
+
+        return notificationRepository
+                .findById(
+                        audit.notificationId()
+                )
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationReplayAudit> findReplaysByNotificationId(
+            UUID notificationId
+    ) {
+        return replayRepository
+                .findByNotificationIdOrderByRequestedAtAsc(
                         notificationId
                 )
                 .stream()
@@ -247,9 +320,12 @@ public class OperationalNotificationPersistenceAdapter
         return new OperationalNotificationDelivery(
                 intent,
                 entity.attemptCount(),
+                entity.cycleAttemptCount(),
+                entity.replayCount(),
                 entity.nextAttemptAt(),
                 entity.lastAttemptAt(),
                 entity.deliveredAt(),
+                entity.lastReplayAt(),
                 entity.lastErrorCode(),
                 entity.providerReference()
         );
@@ -266,6 +342,19 @@ public class OperationalNotificationPersistenceAdapter
                 entity.completedAt(),
                 entity.outcome(),
                 entity.errorCode()
+        );
+    }
+
+    private NotificationReplayAudit toDomain(
+            OperationalNotificationReplayJpaEntity entity
+    ) {
+        return new NotificationReplayAudit(
+                entity.replayId(),
+                entity.notificationId(),
+                entity.operatorReference(),
+                entity.reason(),
+                entity.previousStatus(),
+                entity.requestedAt()
         );
     }
 }

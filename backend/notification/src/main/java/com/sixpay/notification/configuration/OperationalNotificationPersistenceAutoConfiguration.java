@@ -1,11 +1,14 @@
 package com.sixpay.notification.configuration;
 
 import com.sixpay.notification.domain.repository.NotificationAttemptRepository;
+import com.sixpay.notification.domain.repository.NotificationReplayRepository;
+import com.sixpay.notification.domain.repository.OperationalNotificationOperationsRepository;
 import com.sixpay.notification.domain.repository.OperationalNotificationRepository;
 import com.sixpay.notification.infrastructure.operational.persistence.NotificationTemplateVariablesCodec;
 import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationAttemptSpringDataRepository;
-import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationPersistenceAdapter;
 import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationJpaEntity;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationPersistenceAdapter;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationReplaySpringDataRepository;
 import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationSpringDataRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -48,19 +51,22 @@ public class OperationalNotificationPersistenceAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean({
             OperationalNotificationRepository.class,
-            NotificationAttemptRepository.class
+            NotificationAttemptRepository.class,
+            OperationalNotificationOperationsRepository.class,
+            NotificationReplayRepository.class
     })
     OperationalNotificationPersistenceAdapter
     operationalNotificationPersistenceAdapter(
             OperationalNotificationSpringDataRepository notificationRepository,
             OperationalNotificationAttemptSpringDataRepository attemptRepository,
+            OperationalNotificationReplaySpringDataRepository replayRepository,
             NotificationTemplateVariablesCodec variablesCodec
     ) {
         return new OperationalNotificationPersistenceAdapter(
                 notificationRepository,
                 attemptRepository,
+                replayRepository,
                 variablesCodec
         );
     }
-
 }
