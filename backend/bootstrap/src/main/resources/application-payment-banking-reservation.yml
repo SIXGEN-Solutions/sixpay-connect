@@ -1,0 +1,23 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        reservation:
+          enabled: ${AMPLITUDE_FUNDS_RESERVATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          reservation-path: ${AMPLITUDE_FUNDS_RESERVATION_PATH:/v1/payment/funds/reservations}
+          connect-timeout: ${AMPLITUDE_FUNDS_RESERVATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_FUNDS_RESERVATION_READ_TIMEOUT:5s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_FUNDS_RESERVATION_CONTRACT_VERSION:provisional-v1}
+            reserved-codes:
+              - ${AMPLITUDE_FUNDS_RESERVED_CODE:00}
+            rejected-codes:
+              - ${AMPLITUDE_FUNDS_INSUFFICIENT_CODE:04}
+              - ${AMPLITUDE_FUNDS_ACCOUNT_BLOCKED_CODE:02}
+              - ${AMPLITUDE_FUNDS_ACCOUNT_OPPOSED_CODE:03}
+              - ${AMPLITUDE_FUNDS_LIMIT_EXCEEDED_CODE:05}
+            idempotency-header: ${AMPLITUDE_FUNDS_IDEMPOTENCY_HEADER:Idempotency-Key}

@@ -1,14 +1,29 @@
 # ENGINEERING_CONTEXT.md
 
-> Mandatory entry point for engineers and AI coding assistants contributing to
-> SIXPAY CONNECT.
+> **Purpose**
+>
+> Mandatory entry point for engineers and AI coding assistants contributing to SIXPAY CONNECT.
+
+---
 
 # Repository
 
-**Project:** SIXPAY CONNECT  
-**Organization:** SIXGEN-Solutions  
-**Primary implementation branch:** `'feat/integration-contracts'`  
-**Current delivery focus:** Phase 5, Lot 5.4.1 — Payment account, opposition and funds.
+**Project:** SIXPAY CONNECT
+
+**Organization:** SIXGEN-Solutions
+
+**Primary implementation branch:** `'feat/integration-contracts'`
+
+**Current delivery focus:** Phase 5 — Integrations, Lot 5.1 — Transverse integration foundation.
+
+---
+
+# Repository Philosophy
+
+SIXPAY CONNECT follows Documentation-as-Code. Requirements, architecture,
+contracts, implementation, infrastructure, tests and AI assets evolve together.
+
+---
 
 # Source of Truth
 
@@ -20,24 +35,81 @@
 6. Engineering assets
 7. `ENGINEERING_CONTEXT.md`
 
-# Rules
+When sources conflict, the higher-priority source prevails.
 
-- `partner` remains the golden business-module reference.
-- Payment owns its banking application ports.
-- Provider DTOs and mappings remain in Payment infrastructure.
-- `integration` contains provider-neutral transport and resilience only.
-- Account verification and funds checks are read-only operations.
-- Posting and reversal must not be implemented or simulated in Lot 5.4.1.
-- Unknown provider codes are technical invalid responses, not business rejects.
-- Production banking traffic requires OAuth2 client credentials and mTLS.
-- No direct repository writes are performed by the AI delivery workflow.
+---
+
+# Repository Navigation
+
+| Looking for | Location |
+|---|---|
+| Business requirements | `documentation/requirements/` |
+| Architecture | `documentation/architecture/` |
+| Integration landscape | `documentation/architecture/integration/` |
+| API and integration contracts | `documentation/contracts/` |
+| Backend | `backend/` |
+| Shared integration foundation | `backend/integration/` |
+| Infrastructure | `infrastructure/` |
+| Deployment | `deployment/` |
+| Scripts | `scripts/` |
+
+---
+
+# Integration Change Gate
+
+Before changing an integration:
+
+1. identify producer and consumer;
+2. identify owning module and contract owner;
+3. classify synchronous or asynchronous;
+4. reference a published contract or mark it `TO_DEFINE`;
+5. define security, errors and testing;
+6. update integration architecture documentation;
+7. preserve module boundaries and anti-corruption layers;
+8. keep co-deployed internal calls in-process unless a deployment decision says otherwise.
+
+The `partner` module remains the golden business-module reference.
+
+The `integration` module contains only provider-neutral HTTP, correlation,
+resilience, observability, serialization, Kafka, DLQ and consumer-idempotency
+support. Provider payloads and mappings stay in the owning domain.
+
+---
+
+# Engineering Workflow
+
+```text
+Requirements -> Architecture -> Contracts -> Implementation
+-> Tests -> Documentation -> Validation
+```
+
+---
+
+# AI Working Agreement
+
+AI SHALL read existing implementation, reuse patterns, preserve contracts,
+synchronize tests and documentation, and reuse `backend/integration` only for
+provider-neutral concerns.
+
+AI SHALL NOT invent structures, duplicate business logic, introduce an
+omnipotent Core Banking service, move provider mappings into `integration`, or
+blindly retry financial commands with unknown outcomes.
+
+---
 
 # Definition of Done
 
-- account existence, active status and opposition are mapped to Payment evidence;
-- balance and funds eligibility are mapped to Payment evidence;
-- OAuth2, mTLS, headers, timeout and retry are configurable;
-- provider responses are validated;
-- business rejection is not retried;
-- tests, contract and runbook are aligned;
+- implementation complete;
+- tests pass;
+- contracts valid;
+- documentation updated;
+- conventions respected;
+- ownership, security, errors and testing documented;
+- provider logic remains in its owning domain;
 - CI succeeds.
+
+---
+
+# Final Rule
+
+**Consistency takes precedence over creativity.**
