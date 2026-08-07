@@ -1,25 +1,27 @@
-package com.sixpay.payment.infrastructure.banking.amplitude;
+package com.sixpay.payment.infrastructure.banking.amplitude.posting;
 
 import com.sixpay.payment.application.port.output.banking.PostingGateway;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
 @Component
-@ConditionalOnBean(AmplitudeBankingClient.class)
-public final class AmplitudePostingAdapter
+@ConditionalOnBean(AmplitudePostingClient.class)
+@ConditionalOnMissingBean(PostingGateway.class)
+public final class DedicatedAmplitudePostingAdapter
         implements PostingGateway {
 
-    private final AmplitudeBankingClient client;
+    private final AmplitudePostingClient client;
 
-    public AmplitudePostingAdapter(
-            AmplitudeBankingClient client
+    public DedicatedAmplitudePostingAdapter(
+            AmplitudePostingClient client
     ) {
         this.client = Objects.requireNonNull(
                 client,
-                "Amplitude banking client"
+                "Amplitude posting client"
         );
     }
 
@@ -27,6 +29,6 @@ public final class AmplitudePostingAdapter
     public PostingOutcomeSnapshot post(
             PostingRequest request
     ) {
-        return client.postPayment(request);
+        return client.post(request);
     }
 }

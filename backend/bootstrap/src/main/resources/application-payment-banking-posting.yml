@@ -1,0 +1,23 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        posting:
+          enabled: ${AMPLITUDE_POSTING_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          posting-path: ${AMPLITUDE_POSTING_PATH:/v1/payment/postings}
+          connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_POSTING_CONTRACT_VERSION:provisional-v1}
+            idempotency-header: ${AMPLITUDE_POSTING_IDEMPOTENCY_HEADER:Idempotency-Key}
+            completed-codes:
+              - ${AMPLITUDE_POSTING_COMPLETED_CODE:00}
+            rejected-codes:
+              - ${AMPLITUDE_POSTING_REJECTED_CODE:10}
+            pending-codes:
+              - ${AMPLITUDE_POSTING_PENDING_CODE:20}
+              - ${AMPLITUDE_POSTING_UNKNOWN_CODE:21}

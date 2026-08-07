@@ -28,6 +28,9 @@ class PaymentBankingAdaptersArchitectureTest {
     private static final Path RESERVATION_ROOT =
             ADAPTER_ROOT.resolve("reservation");
 
+    private static final Path POSTING_ROOT =
+            ADAPTER_ROOT.resolve("posting");
+
     @Test
     void exposesOnlyApprovedBankingGateways()
             throws IOException {
@@ -127,14 +130,40 @@ class PaymentBankingAdaptersArchitectureTest {
                         "implements FundsReservationGateway"
                 )
         );
-
-        assertTrue(
-                source.contains("@ConditionalOnBean")
-        );
-
+        assertTrue(source.contains("@ConditionalOnBean"));
         assertTrue(
                 source.contains(
                         "AmplitudeFundsReservationClient.class"
+                )
+        );
+    }
+
+    @Test
+    void dedicatedPostingAdapterIsConditionalAndNonConflicting()
+            throws IOException {
+
+        Path adapter = POSTING_ROOT.resolve(
+                "DedicatedAmplitudePostingAdapter.java"
+        );
+
+        assertTrue(
+                Files.isRegularFile(adapter),
+                "Missing dedicated posting adapter"
+        );
+
+        String source = Files.readString(adapter);
+
+        assertTrue(
+                source.contains("implements PostingGateway")
+        );
+        assertTrue(
+                source.contains(
+                        "AmplitudePostingClient.class"
+                )
+        );
+        assertTrue(
+                source.contains(
+                        "@ConditionalOnMissingBean(PostingGateway.class)"
                 )
         );
     }
@@ -168,9 +197,7 @@ class PaymentBankingAdaptersArchitectureTest {
                             return forbiddenTokens.stream()
                                     .filter(source::contains)
                                     .map(token ->
-                                            path
-                                                    + " contains "
-                                                    + token
+                                            path + " contains " + token
                                     );
                         } catch (IOException exception) {
                             throw new IllegalStateException(
@@ -195,33 +222,17 @@ class PaymentBankingAdaptersArchitectureTest {
                 "client/RestAmplitudeFundsReservationClient.java"
         );
 
-        assertTrue(
-                Files.isRegularFile(client)
-        );
+        assertTrue(Files.isRegularFile(client));
 
         String source = Files.readString(client);
 
-        for (String forbidden : List.of(
-                "RetryingIntegrationExecutor",
-                "IntegrationOperationType",
-                "RetryTemplate",
-                "@Retryable",
-                "while (",
-                "for (int attempt"
-        )) {
-            assertFalse(
-                    source.contains(forbidden),
-                    () -> "Forbidden retry mechanism: "
-                            + forbidden
-            );
-        }
+        assertNoRetryMechanism(source);
 
         assertTrue(
                 source.contains(
                         "FundsReservationOutcomeUnknownException"
                 )
         );
-
         assertTrue(
                 source.contains(
                         "status == 429 || status >= 500"
@@ -230,38 +241,75 @@ class PaymentBankingAdaptersArchitectureTest {
     }
 
     @Test
-    void reservationClientRequiresIdempotencyKey()
+    void postingClientNeverRetriesFinancialSideEffect()
             throws IOException {
 
-        Path client = RESERVATION_ROOT.resolve(
-                "client/RestAmplitudeFundsReservationClient.java"
+        Path client = POSTING_ROOT.resolve(
+                "client/RestAmplitudePostingClient.java"
         );
+
+        assertTrue(Files.isRegularFile(client));
 
         String source = Files.readString(client);
 
-        assertTrue(
-                source.contains(
-                        "properties.contract().idempotencyHeader()"
-                )
-        );
+        assertNoRetryMechanism(source);
 
         assertTrue(
                 source.contains(
-                        "request.idempotencyKey().toString()"
+                        "PostingOutcomeUnknownException"
+                )
+        );
+        assertTrue(
+                source.contains(
+                        "status == 429 || status >= 500"
                 )
         );
     }
 
     @Test
-    void reservationClientDoesNotImplementLaterCapabilities()
+    void financialCommandsRequireIdempotencyKeys()
+            throws IOException {
+
+        String reservation = Files.readString(
+                RESERVATION_ROOT.resolve(
+                        "client/RestAmplitudeFundsReservationClient.java"
+                )
+        );
+
+        String posting = Files.readString(
+                POSTING_ROOT.resolve(
+                        "client/RestAmplitudePostingClient.java"
+                )
+        );
+
+        for (String source : List.of(
+                reservation,
+                posting
+        )) {
+            assertTrue(
+                    source.contains(
+                            "properties.contract().idempotencyHeader()"
+                    )
+            );
+            assertTrue(
+                    source.contains(
+                            "request.idempotencyKey().toString()"
+                    )
+            );
+        }
+    }
+
+    @Test
+    void reservationAndPostingDoNotImplementLaterCapabilities()
             throws IOException {
 
         String sources = readAllJavaSources(
                 RESERVATION_ROOT
+        ) + readAllJavaSources(
+                POSTING_ROOT
         );
 
         for (String forbidden : List.of(
-                "postPayment(",
                 "findPostingByIdempotencyKey(",
                 "findPostingByBankReference(",
                 "reversePayment(",
@@ -328,7 +376,32 @@ class PaymentBankingAdaptersArchitectureTest {
         )
                 || normalized.contains(
                 "/infrastructure/banking/amplitude/reservation/configuration/"
+        )
+                || normalized.contains(
+                "/infrastructure/banking/amplitude/posting/client/"
+        )
+                || normalized.contains(
+                "/infrastructure/banking/amplitude/posting/configuration/"
         );
+    }
+
+    private static void assertNoRetryMechanism(
+            String source
+    ) {
+        for (String forbidden : List.of(
+                "RetryingIntegrationExecutor",
+                "IntegrationOperationType",
+                "RetryTemplate",
+                "@Retryable",
+                "while (",
+                "for (int attempt"
+        )) {
+            assertFalse(
+                    source.contains(forbidden),
+                    () -> "Forbidden retry mechanism: "
+                            + forbidden
+            );
+        }
     }
 
     private static String readAllJavaSources(
