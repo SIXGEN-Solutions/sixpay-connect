@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Accounting Batch API
+  version: provisional-v1
+  description: |
+    Provisional contract for SIXPAY Accounting to submit canonical Payment
+    batches to the accounting/TFJ provider. TFJ generation, accounting codes,
+    debit/credit rules and SFTP remain outside SIXPAY.
+servers:
+  - url: ${ACCOUNTING_API_BASE_URL}
+paths:
+  /v1/accounting/batches:
+    post:
+      operationId: submitAccountingBatch
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{64}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./accounting-batch-request-v1.schema.json
+      responses:
+        '200':
+          description: Batch processed synchronously
+          content:
+            application/json:
+              schema:
+                $ref: ./accounting-batch-response-v1.schema.json
+        '202':
+          description: Batch accepted for asynchronous processing
+          content:
+            application/json:
+              schema:
+                $ref: ./accounting-batch-response-v1.schema.json
+        '409':
+          description: Same idempotency key used with incompatible content
+        '422':
+          description: Batch rejected by accounting validation
+  /v1/accounting/batches/{batchId}:
+    get:
+      operationId: getAccountingBatch
+      parameters:
+        - in: path
+          name: batchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current batch result
+          content:
+            application/json:
+              schema:
+                $ref: ./accounting-batch-response-v1.schema.json
+        '404':
+          description: Batch not found
+  /v1/accounting/batches/by-idempotency-key/{idempotencyKey}:
+    get:
+      operationId: getAccountingBatchByIdempotencyKey
+      parameters:
+        - in: path
+          name: idempotencyKey
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Existing batch for the idempotency key
+          content:
+            application/json:
+              schema:
+                $ref: ./accounting-batch-response-v1.schema.json
+        '404':
+          description: Batch not found

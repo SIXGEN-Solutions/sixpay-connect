@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:accounting:batch-request:v1",
+  "title": "AccountingBatchRequestV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "batchId",
+    "idempotencyKey",
+    "businessDate",
+    "financialInstitutionCode",
+    "createdAt",
+    "items"
+  ],
+  "properties": {
+    "batchId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "businessDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "financialInstitutionCode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paymentId",
+          "publicPaymentReference",
+          "partnerId",
+          "amount",
+          "currency",
+          "paymentOccurredAt",
+          "paymentBusinessDate",
+          "tresorPayStatus",
+          "tresorPayStatusCheckedAt"
+        ],
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicPaymentReference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "partnerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "paymentOccurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentBusinessDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "bankPostingReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tresorPayStatus": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tresorPayStatusCheckedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}
