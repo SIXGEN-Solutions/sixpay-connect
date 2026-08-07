@@ -28,6 +28,22 @@ spring:
             non_contextual_creation: true
           time_zone: UTC
 
+  mail:
+    host: ${SIXPAY_SMTP_HOST:localhost}
+    port: ${SIXPAY_SMTP_PORT:1025}
+    username: ${SIXPAY_SMTP_USERNAME:}
+    password: ${SIXPAY_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SIXPAY_SMTP_AUTH:false}
+          starttls:
+            enable: ${SIXPAY_SMTP_STARTTLS:false}
+            required: ${SIXPAY_SMTP_STARTTLS_REQUIRED:false}
+          connectiontimeout: ${SIXPAY_SMTP_CONNECTION_TIMEOUT_MS:5000}
+          timeout: ${SIXPAY_SMTP_READ_TIMEOUT_MS:5000}
+          writetimeout: ${SIXPAY_SMTP_WRITE_TIMEOUT_MS:5000}
+
 springdoc:
   api-docs:
     enabled: true
@@ -58,6 +74,25 @@ sixpay:
       mode: logging
       from: no-reply@sixpay.local
       subject-prefix: "[SIXPAY]"
+
+    operational:
+      email:
+        enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_ENABLED:false}
+        from: ${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_FROM:no-reply@sixpay.local}
+        subject-prefix: "${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_SUBJECT_PREFIX:[SIXPAY]}"
+        admin-recipients:
+          - reference: operations-admin
+            email: ${SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_EMAIL:operations@sixpay.local}
+            locale: fr
+            enabled: ${SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_ENABLED:true}
+
+      retry:
+        enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_RETRY_ENABLED:true}
+        max-attempts: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_ATTEMPTS:5}
+        initial-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_INITIAL_BACKOFF:30s}
+        max-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_BACKOFF:15m}
+        batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_BATCH_SIZE:50}
+        poll-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_POLL_INTERVAL_MS:30000}
 
   payment:
     tresorpay:
