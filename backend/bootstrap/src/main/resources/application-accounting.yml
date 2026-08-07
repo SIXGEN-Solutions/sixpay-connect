@@ -1,0 +1,5 @@
+sixpay:
+  accounting:
+    batch:
+      cutoff-zone: ${SIXPAY_ACCOUNTING_CUTOFF_ZONE:Africa/Douala}
+      cutoff-time: ${SIXPAY_ACCOUNTING_CUTOFF_TIME:23:00}
