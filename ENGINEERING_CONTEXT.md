@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/integration-contracts'`
+**Primary implementation branch:** `'feat/internal-audit-query'`
 
-**Current delivery focus:** Phase 5 — Integrations, Lot 5.1 — Transverse integration foundation.
+**Current delivery focus:** Phase 6 — implémenter les API interne de suivi.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `'feat/integration-contracts'`
+1. `'feat/internal-audit-query'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
