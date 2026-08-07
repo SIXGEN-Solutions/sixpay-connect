@@ -66,4 +66,24 @@ public record NotificationIntent(
 
         correlationId = correlationId.strip();
     }
+
+    public NotificationIntent withStatus(
+            NotificationDeliveryStatus newStatus
+    ) {
+        return new NotificationIntent(
+                notificationId,
+                source,
+                recipient,
+                channel,
+                templateKey,
+                deduplicationKey,
+                templateVariables,
+                Objects.requireNonNull(
+                        newStatus,
+                        "newStatus"
+                ),
+                createdAt,
+                correlationId
+        );
+    }
 }

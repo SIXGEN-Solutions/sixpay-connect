@@ -1,0 +1,10 @@
+sixpay:
+  notification:
+    operational:
+      retry:
+        enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_RETRY_ENABLED:true}
+        max-attempts: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_ATTEMPTS:5}
+        initial-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_INITIAL_BACKOFF:30s}
+        max-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_BACKOFF:15m}
+        batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_BATCH_SIZE:50}
+        poll-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_POLL_INTERVAL_MS:30000}
