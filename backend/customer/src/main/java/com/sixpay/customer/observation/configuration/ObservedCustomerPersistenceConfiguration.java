@@ -57,6 +57,7 @@ import com.sixpay.customer.observation.infrastructure.resilience
 import com.sixpay.customer.observation.infrastructure.resilience
         .ObservedCustomerProjectionRetryPolicy;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;
 import org.springframework.boot.context.properties
@@ -168,6 +169,10 @@ public class ObservedCustomerPersistenceConfiguration {
                     auditIdGeneratorProvider,
             ObjectProvider<ObservedCustomerProjectionMetrics>
                     metricsProvider,
+            @Qualifier(
+                    ObservedCustomerObservabilityConfiguration
+                            .OBSERVED_CUSTOMER_CLOCK
+            )
             ObjectProvider<Clock> clockProvider
     ) {
         ObserveCustomerUseCase projection =

@@ -28,12 +28,15 @@ import com.sixpay.customer.observation.application.query
         .ObservedCustomerSort;
 import com.sixpay.customer.observation.application.query
         .SearchObservedCustomersQuery;
+import com.sixpay.customer.observation.configuration
+        .ObservedCustomerObservabilityConfiguration;
 import com.sixpay.customer.observation.domain.model
         .ObservedCustomerId;
 import com.sixpay.customer.observation.domain.model
         .ObservedPaymentStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +52,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 @RestController
-@Tag(name = "Customers", description = "Customers verification and observation")
+@Tag(
+        name = "Customers",
+        description = "Customers verification and observation"
+)
 @RequestMapping("/internal/api/v1/observed-customers")
 public class ObservedCustomerQueryController {
 
@@ -73,6 +79,10 @@ public class ObservedCustomerQueryController {
             ListObservedCustomerPaymentsUseCase paymentsUseCase,
             ObservedCustomerQueryApiMapper mapper,
             ObservedCustomerQueryObservation observation,
+            @Qualifier(
+                    ObservedCustomerObservabilityConfiguration
+                            .OBSERVED_CUSTOMER_CLOCK
+            )
             Clock clock
     ) {
         this.searchUseCase = Objects.requireNonNull(

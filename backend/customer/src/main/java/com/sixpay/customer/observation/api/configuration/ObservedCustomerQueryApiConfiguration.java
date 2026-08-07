@@ -10,7 +10,10 @@ import com.sixpay.customer.observation.application.port.output.audit
         .ObservedCustomerAuditIdGenerator;
 import com.sixpay.customer.observation.application.port.output.audit
         .ObservedCustomerAuditPort;
+import com.sixpay.customer.observation.configuration
+        .ObservedCustomerObservabilityConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition
@@ -40,6 +43,10 @@ public class ObservedCustomerQueryApiConfiguration {
             ObservedCustomerAuditPort auditPort,
             ObservedCustomerAuditIdGenerator auditIdGenerator,
             MeterRegistry meterRegistry,
+            @Qualifier(
+                    ObservedCustomerObservabilityConfiguration
+                            .OBSERVED_CUSTOMER_CLOCK
+            )
             Clock clock
     ) {
         return new ObservedCustomerQueryAuditTrail(
@@ -64,6 +71,10 @@ public class ObservedCustomerQueryApiConfiguration {
     ObservedCustomerQueryObservation
     observedCustomerQueryObservation(
             MeterRegistry meterRegistry,
+            @Qualifier(
+                    ObservedCustomerObservabilityConfiguration
+                            .OBSERVED_CUSTOMER_CLOCK
+            )
             Clock clock,
             ObservedCustomerQueryAuditTrail auditTrail
     ) {

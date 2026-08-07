@@ -17,6 +17,7 @@ import com.sixpay.accounting.domain.repository.AccountingReconciliationRepositor
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchJpaEntity;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchSpringDataRepository;
 import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -63,8 +64,13 @@ import java.time.Clock;
 )
 public class AccountingModuleConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
+    public static final String ACCOUNTING_CLOCK =
+            "accountingClock";
+
+    @Bean(name = ACCOUNTING_CLOCK)
+    @ConditionalOnMissingBean(
+            name = ACCOUNTING_CLOCK
+    )
     Clock accountingClock() {
         return Clock.systemUTC();
     }
@@ -99,6 +105,7 @@ public class AccountingModuleConfiguration {
     AccountingBatchBuilder accountingBatchBuilder(
             AccountingEligibilityPolicy eligibilityPolicy,
             AccountingBatchIdempotencyKeyFactory keyFactory,
+            @Qualifier(ACCOUNTING_CLOCK)
             Clock accountingClock
     ) {
         return new AccountingBatchBuilder(
@@ -139,6 +146,7 @@ public class AccountingModuleConfiguration {
             AccountingBatchTrackingRepository trackingRepository,
             AccountingReconciliationRepository reconciliationRepository,
             AccountingBatchGateway gateway,
+            @Qualifier(ACCOUNTING_CLOCK)
             Clock accountingClock
     ) {
         return new AccountingBatchReconciliationService(

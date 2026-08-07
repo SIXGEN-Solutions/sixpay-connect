@@ -14,8 +14,13 @@ import java.time.Clock;
 @Configuration(proxyBeanMethods = false)
 public class ObservedCustomerObservabilityConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean(Clock.class)
+    public static final String OBSERVED_CUSTOMER_CLOCK =
+            "observedCustomerClock";
+
+    @Bean(name = OBSERVED_CUSTOMER_CLOCK)
+    @ConditionalOnMissingBean(
+            name = OBSERVED_CUSTOMER_CLOCK
+    )
     Clock observedCustomerClock() {
         return Clock.systemUTC();
     }
