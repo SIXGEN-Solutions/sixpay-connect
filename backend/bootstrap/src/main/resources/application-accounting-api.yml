@@ -1,0 +1,15 @@
+sixpay:
+  accounting:
+    api:
+      enabled: ${SIXPAY_ACCOUNTING_API_ENABLED:false}
+      base-url: ${ACCOUNTING_API_BASE_URL:https://accounting-api.invalid}
+      submit-path: ${ACCOUNTING_API_SUBMIT_PATH:/v1/accounting/batches}
+      batch-lookup-path: ${ACCOUNTING_API_BATCH_LOOKUP_PATH:/v1/accounting/batches/{batchId}}
+      idempotency-lookup-path: ${ACCOUNTING_API_IDEMPOTENCY_LOOKUP_PATH:/v1/accounting/batches/by-idempotency-key/{idempotencyKey}}
+      connect-timeout: ${ACCOUNTING_API_CONNECT_TIMEOUT:2s}
+      read-timeout: ${ACCOUNTING_API_READ_TIMEOUT:5s}
+      security:
+        oauth2-registration-id: ${ACCOUNTING_API_OAUTH2_REGISTRATION_ID:accounting-api}
+        ssl-bundle: ${ACCOUNTING_API_SSL_BUNDLE:accounting-api-client}
+      contract:
+        idempotency-header: ${ACCOUNTING_API_IDEMPOTENCY_HEADER:Idempotency-Key}

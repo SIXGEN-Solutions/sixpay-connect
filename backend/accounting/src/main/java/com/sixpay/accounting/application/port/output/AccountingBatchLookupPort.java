@@ -6,6 +6,10 @@ import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 
 import java.util.Optional;
 
+/**
+ * Local Accounting persistence lookup boundary introduced before the external
+ * Accounting API client. External provider lookups use AccountingBatchGateway.
+ */
 public interface AccountingBatchLookupPort {
 
     Optional<AccountingBatch> findById(
