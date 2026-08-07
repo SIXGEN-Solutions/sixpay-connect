@@ -1,0 +1,44 @@
+contract: amplitude-payment-status
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Payment
+security:
+  oauth2:
+    grantType: client_credentials
+    scope: payment.read
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+operations:
+  byIdempotencyKey:
+    method: GET
+    path: /v1/payment/postings/idempotency/{lookupValue}
+    observationChannel: IDEMPOTENCY_LOOKUP
+  byBankReference:
+    method: GET
+    path: /v1/payment/postings/reference/{lookupValue}
+    observationChannel: BANK_REFERENCE_LOOKUP
+responses:
+  "200":
+    description: authoritative posting snapshot
+  "404":
+    description: no posting currently found
+  "401": AUTHENTICATION
+  "403": AUTHORIZATION
+  "429": RATE_LIMIT
+  "5xx": UNAVAILABLE
+reconciliation:
+  replayFinancialCommand: forbidden
+  firstStrategy: idempotency key
+  fallbackStrategy: bank reference
+  terminalOutcomes:
+    - COMPLETED
+    - REJECTED_NO_FINANCIAL_EFFECT
+  continuePolling:
+    - DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+    - UNKNOWN
+  escalation:
+    - REVERSAL_REQUIRED
+    - OPEN_RECONCILIATION

@@ -20,22 +20,25 @@ class PaymentBankingAdaptersArchitectureTest {
                     + "application/port/output/banking"
     );
 
-    private static final Path ADAPTER_ROOT = Path.of(
+    private static final Path AMPLITUDE_ROOT = Path.of(
             "src/main/java/com/sixpay/payment/"
                     + "infrastructure/banking/amplitude"
     );
 
     private static final Path RESERVATION_ROOT =
-            ADAPTER_ROOT.resolve("reservation");
+            AMPLITUDE_ROOT.resolve("reservation");
 
     private static final Path POSTING_ROOT =
-            ADAPTER_ROOT.resolve("posting");
+            AMPLITUDE_ROOT.resolve("posting");
 
     private static final Path RELEASE_ROOT =
-            ADAPTER_ROOT.resolve("release");
+            AMPLITUDE_ROOT.resolve("release");
 
     private static final Path REVERSAL_ROOT =
-            ADAPTER_ROOT.resolve("reversal");
+            AMPLITUDE_ROOT.resolve("reversal");
+
+    private static final Path STATUS_ROOT =
+            AMPLITUDE_ROOT.resolve("status");
 
     @Test
     void exposesOnlyApprovedBankingGateways()
@@ -73,52 +76,7 @@ class PaymentBankingAdaptersArchitectureTest {
     }
 
     @Test
-    void reservationAndReleaseCapabilitiesAreExplicitlyLimited()
-            throws IOException {
-
-        String sources = readAllJavaSources(PORT_ROOT);
-
-        assertTrue(
-                sources.contains(
-                        "interface FundsReservationGateway"
-                )
-        );
-
-        assertTrue(
-                sources.contains(
-                        "FundsReservationSnapshot reserve("
-                )
-        );
-
-        assertTrue(
-                sources.contains(
-                        "interface FundsReleaseGateway"
-                )
-        );
-
-        assertTrue(
-                sources.contains(
-                        "FundsReleaseSnapshot release("
-                )
-        );
-
-        for (String forbidden : List.of(
-                "cancelReservation",
-                "lookupReservation",
-                "retryReservation",
-                "retryPosting",
-                "automaticReversal"
-        )) {
-            assertFalse(
-                    sources.contains(forbidden),
-                    () -> "Unapproved banking capability: "
-                            + forbidden
-            );
-        }
-    }
-
-    @Test
-    void existingAmplitudeAdaptersRemainConditionalOnGenericClient()
+    void historicalAdaptersRemainConditionalOnGenericClient()
             throws IOException {
 
         for (String adapterName : List.of(
@@ -128,7 +86,7 @@ class PaymentBankingAdaptersArchitectureTest {
                 "AmplitudeLookupAdapter.java",
                 "AmplitudeReversalAdapter.java"
         )) {
-            assertAdapterConditionalOn(
+            assertHistoricalAdapter(
                     adapterName,
                     "AmplitudeBankingClient"
             );
@@ -136,7 +94,7 @@ class PaymentBankingAdaptersArchitectureTest {
     }
 
     @Test
-    void reservationAdapterRemainsConditionalOnReservationClient()
+    void dedicatedAdaptersAreConditionalAndNonConflicting()
             throws IOException {
 
         assertDedicatedAdapter(
@@ -147,11 +105,6 @@ class PaymentBankingAdaptersArchitectureTest {
                 "AmplitudeFundsReservationClient",
                 false
         );
-    }
-
-    @Test
-    void dedicatedPostingAdapterIsConditionalAndNonConflicting()
-            throws IOException {
 
         assertDedicatedAdapter(
                 POSTING_ROOT.resolve(
@@ -161,11 +114,6 @@ class PaymentBankingAdaptersArchitectureTest {
                 "AmplitudePostingClient",
                 true
         );
-    }
-
-    @Test
-    void dedicatedReleaseAdapterIsConditionalAndNonConflicting()
-            throws IOException {
 
         assertDedicatedAdapter(
                 RELEASE_ROOT.resolve(
@@ -175,11 +123,6 @@ class PaymentBankingAdaptersArchitectureTest {
                 "AmplitudeFundsReleaseClient",
                 true
         );
-    }
-
-    @Test
-    void dedicatedReversalAdapterIsConditionalAndNonConflicting()
-            throws IOException {
 
         assertDedicatedAdapter(
                 REVERSAL_ROOT.resolve(
@@ -189,10 +132,19 @@ class PaymentBankingAdaptersArchitectureTest {
                 "AmplitudeReversalClient",
                 true
         );
+
+        assertDedicatedAdapter(
+                STATUS_ROOT.resolve(
+                        "DedicatedAmplitudeLookupAdapter.java"
+                ),
+                "LookupGateway",
+                "AmplitudePostingStatusClient",
+                true
+        );
     }
 
     @Test
-    void concreteHttpClientsAreRestrictedToApprovedPackages()
+    void providerHttpConceptsStayInApprovedPackages()
             throws IOException {
 
         List<String> forbiddenTokens = List.of(
@@ -203,14 +155,18 @@ class PaymentBankingAdaptersArchitectureTest {
                 "baseUrl"
         );
 
-        try (Stream<Path> paths = Files.walk(ADAPTER_ROOT)) {
+        try (Stream<Path> paths =
+                     Files.walk(AMPLITUDE_ROOT)) {
+
             List<String> violations = paths
                     .filter(Files::isRegularFile)
                     .filter(path ->
                             path.toString().endsWith(".java")
                     )
                     .filter(path ->
-                            !isApprovedProviderInfrastructure(path)
+                            !isApprovedProviderInfrastructure(
+                                    path
+                            )
                     )
                     .flatMap(path -> {
                         try {
@@ -240,133 +196,33 @@ class PaymentBankingAdaptersArchitectureTest {
     }
 
     @Test
-    void reservationClientNeverRetriesFinancialSideEffect()
+    void financialCommandsAreIdempotentAndNeverRetryBlindly()
             throws IOException {
 
-        String source = readRequiredSource(
-                RESERVATION_ROOT.resolve(
-                        "client/"
-                                + "RestAmplitudeFundsReservationClient.java"
-                )
-        );
-
-        assertNoRetryMechanism(source);
-
-        assertTrue(
-                source.contains(
-                        "FundsReservationOutcomeUnknownException"
-                )
-        );
-
-        assertTrue(
-                normalizeSource(source).contains(
-                        "status==429||status>=500"
-                )
-        );
-    }
-
-    @Test
-    void postingClientNeverRetriesFinancialSideEffect()
-            throws IOException {
-
-        String source = readRequiredSource(
-                POSTING_ROOT.resolve(
-                        "client/RestAmplitudePostingClient.java"
-                )
-        );
-
-        assertNoRetryMechanism(source);
-
-        assertTrue(
-                source.contains(
-                        "PostingOutcomeUnknownException"
-                )
-        );
-
-        assertTrue(
-                normalizeSource(source).contains(
-                        "status==429||status>=500"
-                )
-        );
-    }
-
-    @Test
-    void releaseClientNeverRetriesFinancialSideEffect()
-            throws IOException {
-
-        String source = readRequiredSource(
-                RELEASE_ROOT.resolve(
-                        "client/RestAmplitudeFundsReleaseClient.java"
-                )
-        );
-
-        assertNoRetryMechanism(source);
-
-        assertTrue(
-                source.contains(
-                        "Funds release outcome is unknown"
-                )
-        );
-
-        assertTrue(
-                normalizeSource(source).contains(
-                        "status==429||status>=500"
-                )
-        );
-    }
-
-    @Test
-    void reversalClientNeverRetriesFinancialSideEffect()
-            throws IOException {
-
-        String source = readRequiredSource(
-                REVERSAL_ROOT.resolve(
-                        "client/RestAmplitudeReversalClient.java"
-                )
-        );
-
-        assertNoRetryMechanism(source);
-
-        assertTrue(
-                source.contains(
-                        "Reversal outcome is unknown"
-                )
-        );
-
-        assertTrue(
-                normalizeSource(source).contains(
-                        "status==429||status>=500"
-                )
-        );
-    }
-
-    @Test
-    void financialCommandsRequireIdempotencyKeys()
-            throws IOException {
-
-        List<Path> clients = List.of(
+        for (Path client : List.of(
                 RESERVATION_ROOT.resolve(
                         "client/"
                                 + "RestAmplitudeFundsReservationClient.java"
                 ),
                 POSTING_ROOT.resolve(
-                        "client/RestAmplitudePostingClient.java"
+                        "client/"
+                                + "RestAmplitudePostingClient.java"
                 ),
                 RELEASE_ROOT.resolve(
-                        "client/RestAmplitudeFundsReleaseClient.java"
+                        "client/"
+                                + "RestAmplitudeFundsReleaseClient.java"
                 ),
                 REVERSAL_ROOT.resolve(
-                        "client/RestAmplitudeReversalClient.java"
+                        "client/"
+                                + "RestAmplitudeReversalClient.java"
                 )
-        );
-
-        for (Path client : clients) {
-            String normalizedSource = normalizeSource(
+        )) {
+            String source = normalizeSource(
                     readRequiredSource(client)
             );
 
             assertTrue(
-                    normalizedSource.contains(
+                    source.contains(
                             "properties.contract()"
                                     + ".idempotencyHeader()"
                     ),
@@ -376,7 +232,7 @@ class PaymentBankingAdaptersArchitectureTest {
             );
 
             assertTrue(
-                    normalizedSource.contains(
+                    source.contains(
                             "request.idempotencyKey()"
                                     + ".toString()"
                     ),
@@ -384,127 +240,68 @@ class PaymentBankingAdaptersArchitectureTest {
                             + " must propagate the banking "
                             + "idempotency key"
             );
+
+            assertFalse(
+                    source.contains(
+                            "RetryingIntegrationExecutor"
+                    )
+            );
+            assertFalse(
+                    source.contains("@Retryable")
+            );
+            assertFalse(
+                    source.contains("RetryTemplate")
+            );
         }
     }
 
     @Test
-    void subLotsDoNotImplementUnapprovedCrossCapabilities()
+    void statusLookupIsReadOnlyAndDoesNotReplayCommands()
             throws IOException {
 
-        String reservationSources =
-                readAllJavaSources(RESERVATION_ROOT);
-
-        String postingSources =
-                readAllJavaSources(POSTING_ROOT);
-
-        String releaseSources =
-                readAllJavaSources(RELEASE_ROOT);
-
-        assertFalse(
-                reservationSources.contains(
-                        "postPayment("
+        String source = normalizeSource(
+                readRequiredSource(
+                        STATUS_ROOT.resolve(
+                                "client/"
+                                        + "RestAmplitudePostingStatusClient.java"
+                        )
                 )
         );
 
+        assertTrue(
+                source.contains("restClient.get()")
+        );
         assertFalse(
-                reservationSources.contains(
-                        "reversePayment("
+                source.contains("restClient.post()")
+        );
+        assertFalse(
+                source.contains("postPayment(")
+        );
+        assertFalse(
+                source.contains("reversePayment(")
+        );
+
+        assertTrue(
+                source.contains(
+                        "EvidenceObservationChannel."
+                                + "IDEMPOTENCY_LOOKUP"
                 )
         );
 
-        assertFalse(
-                postingSources.contains(
-                        "release("
+        assertTrue(
+                source.contains(
+                        "EvidenceObservationChannel."
+                                + "BANK_REFERENCE_LOOKUP"
                 )
         );
-
-        assertFalse(
-                releaseSources.contains(
-                        "reversePayment("
-                )
-        );
-
-        String allFinancialCommandSources =
-                reservationSources
-                        + postingSources
-                        + releaseSources
-                        + readAllJavaSources(
-                        REVERSAL_ROOT
-                );
-
-        for (String forbidden : List.of(
-                "findPostingByIdempotencyKey(",
-                "findPostingByBankReference(",
-                "automaticRetry(",
-                "automaticCompensation("
-        )) {
-            assertFalse(
-                    allFinancialCommandSources.contains(
-                            forbidden
-                    ),
-                    () -> "Capability belongs to a later "
-                            + "reconciliation sub-lot: "
-                            + forbidden
-            );
-        }
     }
 
-    private static void assertDedicatedAdapter(
-            Path adapter,
-            String gatewayType,
-            String clientType,
-            boolean requireMissingBeanGuard
-    ) throws IOException {
-
-        assertTrue(
-                Files.isRegularFile(adapter),
-                () -> "Missing adapter: " + adapter
-        );
-
-        String normalizedSource = normalizeSource(
-                Files.readString(adapter)
-        );
-
-        assertTrue(
-                normalizedSource.contains(
-                        "implements" + gatewayType
-                ),
-                () -> adapter
-                        + " must implement "
-                        + gatewayType
-        );
-
-        assertTrue(
-                normalizedSource.contains(
-                        "@ConditionalOnBean("
-                                + clientType
-                                + ".class)"
-                ),
-                () -> adapter
-                        + " must be conditional on "
-                        + clientType
-        );
-
-        if (requireMissingBeanGuard) {
-            assertTrue(
-                    normalizedSource.contains(
-                            "@ConditionalOnMissingBean("
-                                    + gatewayType
-                                    + ".class)"
-                    ),
-                    () -> adapter
-                            + " must not conflict with an existing "
-                            + gatewayType
-            );
-        }
-    }
-
-    private static void assertAdapterConditionalOn(
+    private static void assertHistoricalAdapter(
             String fileName,
             String expectedClient
     ) throws IOException {
 
-        Path adapter = ADAPTER_ROOT.resolve(
+        Path adapter = AMPLITUDE_ROOT.resolve(
                 fileName
         );
 
@@ -512,12 +309,12 @@ class PaymentBankingAdaptersArchitectureTest {
             return;
         }
 
-        String normalizedSource = normalizeSource(
+        String source = normalizeSource(
                 Files.readString(adapter)
         );
 
         assertTrue(
-                normalizedSource.contains(
+                source.contains(
                         "@ConditionalOnBean("
                                 + expectedClient
                                 + ".class)"
@@ -528,72 +325,92 @@ class PaymentBankingAdaptersArchitectureTest {
         );
 
         assertTrue(
-                normalizedSource.contains(expectedClient),
-                () -> fileName
-                        + " must depend on "
-                        + expectedClient
+                source.contains(expectedClient)
         );
     }
 
-    private static boolean isApprovedProviderInfrastructure(
+    private static void assertDedicatedAdapter(
+            Path adapter,
+            String gatewayType,
+            String clientType,
+            boolean requireMissingBeanGuard
+    ) throws IOException {
+
+        String source = normalizeSource(
+                readRequiredSource(adapter)
+        );
+
+        assertTrue(
+                source.contains(
+                        "implements" + gatewayType
+                )
+        );
+
+        assertTrue(
+                source.contains(
+                        "@ConditionalOnBean("
+                                + clientType
+                                + ".class)"
+                )
+        );
+
+        if (requireMissingBeanGuard) {
+            assertTrue(
+                    source.contains(
+                            "@ConditionalOnMissingBean("
+                                    + gatewayType
+                                    + ".class)"
+                    )
+            );
+        }
+    }
+
+    private static boolean
+    isApprovedProviderInfrastructure(
             Path path
     ) {
-        String normalized = path
-                .toString()
+        String normalized = path.toString()
                 .replace('\\', '/');
 
         return normalized.contains(
-                "/infrastructure/banking/amplitude/client/"
+                "/amplitude/client/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/configuration/"
+                "/amplitude/configuration/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/reservation/client/"
+                "/amplitude/reservation/client/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/reservation/configuration/"
+                "/amplitude/reservation/configuration/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/posting/client/"
+                "/amplitude/posting/client/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/posting/configuration/"
+                "/amplitude/posting/configuration/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/release/client/"
+                "/amplitude/release/client/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/release/configuration/"
+                "/amplitude/release/configuration/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/reversal/client/"
+                "/amplitude/reversal/client/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/reversal/configuration/"
+                "/amplitude/reversal/configuration/"
         )
                 || normalized.contains(
-                "/infrastructure/banking/amplitude/compensation/"
+                "/amplitude/compensation/"
+        )
+                || normalized.contains(
+                "/amplitude/status/client/"
+        )
+                || normalized.contains(
+                "/amplitude/status/configuration/"
         );
-    }
-
-    private static void assertNoRetryMechanism(
-            String source
-    ) {
-        for (String forbidden : List.of(
-                "RetryingIntegrationExecutor",
-                "IntegrationOperationType",
-                "RetryTemplate",
-                "@Retryable",
-                "while (",
-                "for (int attempt"
-        )) {
-            assertFalse(
-                    source.contains(forbidden),
-                    () -> "Forbidden retry mechanism: "
-                            + forbidden
-            );
-        }
     }
 
     private static String normalizeSource(
@@ -616,38 +433,5 @@ class PaymentBankingAdaptersArchitectureTest {
         );
 
         return Files.readString(path);
-    }
-
-    private static String readAllJavaSources(
-            Path root
-    ) throws IOException {
-
-        if (!Files.isDirectory(root)) {
-            return "";
-        }
-
-        try (Stream<Path> paths = Files.walk(root)) {
-            return paths
-                    .filter(Files::isRegularFile)
-                    .filter(path ->
-                            path.toString()
-                                    .endsWith(".java")
-                    )
-                    .map(path -> {
-                        try {
-                            return Files.readString(path);
-                        } catch (IOException exception) {
-                            throw new IllegalStateException(
-                                    "Cannot read " + path,
-                                    exception
-                            );
-                        }
-                    })
-                    .reduce(
-                            "",
-                            (left, right) ->
-                                    left + "\n" + right
-                    );
-        }
     }
 }

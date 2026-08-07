@@ -1,0 +1,14 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        status:
+          enabled: ${AMPLITUDE_POSTING_STATUS_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          by-idempotency-path: ${AMPLITUDE_POSTING_STATUS_BY_IDEMPOTENCY_PATH:/v1/payment/postings/idempotency/{lookupValue}}
+          by-bank-reference-path: ${AMPLITUDE_POSTING_STATUS_BY_BANK_REFERENCE_PATH:/v1/payment/postings/reference/{lookupValue}}
+          connect-timeout: ${AMPLITUDE_POSTING_STATUS_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_POSTING_STATUS_READ_TIMEOUT:5s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}

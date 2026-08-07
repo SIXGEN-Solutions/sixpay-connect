@@ -7,3 +7,4 @@ spring:
       - classpath:application-payment-banking-reservation.yml
       - classpath:application-payment-banking-posting.yml
       - classpath:application-payment-banking-compensation.yml
+      - classpath:application-payment-banking-status.yml
