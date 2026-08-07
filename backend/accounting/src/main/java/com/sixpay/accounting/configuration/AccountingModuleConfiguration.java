@@ -1,15 +1,19 @@
 package com.sixpay.accounting.configuration;
 
 import com.sixpay.accounting.AccountingModule;
+import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
 import com.sixpay.accounting.application.service.AccountingBatchConstitutionService;
 import com.sixpay.accounting.application.service.AccountingBatchIdempotencyKeyFactory;
+import com.sixpay.accounting.application.service.AccountingBatchReconciliationService;
 import com.sixpay.accounting.domain.policy.AccountingCutoffPolicy;
 import com.sixpay.accounting.domain.policy.AccountingEligibilityPolicy;
 import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
 import com.sixpay.accounting.domain.policy.VerifiedTresorPayStatusEligibilityPolicy;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
+import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository;
+import com.sixpay.accounting.domain.repository.AccountingReconciliationRepository;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchJpaEntity;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchSpringDataRepository;
 import jakarta.persistence.EntityManager;
@@ -121,6 +125,28 @@ public class AccountingModuleConfiguration {
                 candidateSource,
                 batchBuilder,
                 batchRepository
+        );
+    }
+
+    @Bean
+    @ConditionalOnBean(
+            AccountingBatchGateway.class
+    )
+    @ConditionalOnMissingBean
+    AccountingBatchReconciliationService
+    accountingBatchReconciliationService(
+            AccountingBatchRepository batchRepository,
+            AccountingBatchTrackingRepository trackingRepository,
+            AccountingReconciliationRepository reconciliationRepository,
+            AccountingBatchGateway gateway,
+            Clock accountingClock
+    ) {
+        return new AccountingBatchReconciliationService(
+                batchRepository,
+                trackingRepository,
+                reconciliationRepository,
+                gateway,
+                accountingClock
         );
     }
 }

@@ -16,7 +16,9 @@ import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -113,15 +115,41 @@ public class AccountingBatchJpaEntity {
     public void synchronize(AccountingBatch batch) {
         status = batch.status();
 
-        items.clear();
-        batch.items().stream()
-                .map(item ->
+        Map<UUID, AccountingBatchItemJpaEntity> existing =
+                new HashMap<>();
+
+        for (AccountingBatchItemJpaEntity item : items) {
+            existing.put(
+                    item.paymentId(),
+                    item
+            );
+        }
+
+        for (var domainItem : batch.items()) {
+            AccountingBatchItemJpaEntity entity =
+                    existing.remove(
+                            domainItem.paymentId()
+                    );
+
+            if (entity == null) {
+                items.add(
                         AccountingBatchItemJpaEntity.create(
                                 this,
-                                item
+                                domainItem
                         )
-                )
-                .forEach(items::add);
+                );
+            } else {
+                entity.synchronize(domainItem);
+            }
+        }
+
+        if (!existing.isEmpty()) {
+            items.removeIf(item ->
+                    existing.containsKey(
+                            item.paymentId()
+                    )
+            );
+        }
     }
 
     public UUID id() {

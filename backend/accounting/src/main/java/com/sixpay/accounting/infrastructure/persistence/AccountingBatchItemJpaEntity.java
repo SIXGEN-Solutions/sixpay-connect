@@ -148,6 +148,18 @@ public class AccountingBatchItemJpaEntity {
         return entity;
     }
 
+    void synchronize(
+            AccountingBatchItem item
+    ) {
+        if (!paymentId.equals(item.paymentId())) {
+            throw new IllegalArgumentException(
+                    "Cannot change accounting item paymentId"
+            );
+        }
+
+        status = item.status();
+    }
+
     public UUID paymentId() {
         return paymentId;
     }
