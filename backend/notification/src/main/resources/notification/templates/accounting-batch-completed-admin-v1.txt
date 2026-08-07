@@ -1,0 +1,7 @@
+SIXPAY accounting batch completed
+
+Batch ID: {{batchId}}
+Business date: {{businessDate}}
+Financial institution: {{financialInstitutionCode}}
+Item count: {{itemCount}}
+Completed at: {{completedAt}}
