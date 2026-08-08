@@ -1,11 +1,8 @@
 package com.sixpay.reporting.api.exception;
 
-import com.sixpay.reporting.application.exception.PaymentAuditNotFoundException;
-import com.sixpay.reporting.application.exception.PaymentAuditQueryUnavailableException;
+import com.sixpay.reporting.application.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,9 +20,12 @@ public final class PaymentAuditQueryExceptionHandler {
 
     private static final String CORRELATION = "X-Correlation-ID";
 
-    @ExceptionHandler(PaymentAuditNotFoundException.class)
+    @ExceptionHandler({
+            PaymentAuditNotFoundException.class,
+            AuditExportNotFoundException.class
+    })
     ResponseEntity<ProblemDetail> notFound(
-            PaymentAuditNotFoundException exception,
+            RuntimeException exception,
             HttpServletRequest request
     ) {
         return problem(
@@ -63,6 +63,36 @@ public final class PaymentAuditQueryExceptionHandler {
                 "Payment audit access denied",
                 "Payment audit evidence is not accessible",
                 "PAYMENT_AUDIT_FORBIDDEN",
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(AuditExportConflictException.class)
+    ResponseEntity<ProblemDetail> conflict(
+            AuditExportConflictException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "Audit export idempotency conflict",
+                "Idempotency-Key was reused with a different request",
+                "PAYMENT_AUDIT_EXPORT_IDEMPOTENCY_CONFLICT",
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(AuditExportPolicyException.class)
+    ResponseEntity<ProblemDetail> unprocessable(
+            AuditExportPolicyException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "Audit export rejected",
+                "Audit export policy rejected the request",
+                "PAYMENT_AUDIT_EXPORT_REJECTED",
                 request,
                 null
         );

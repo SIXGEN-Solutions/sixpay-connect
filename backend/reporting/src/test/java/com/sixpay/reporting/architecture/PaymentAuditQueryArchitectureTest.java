@@ -15,7 +15,7 @@ class PaymentAuditQueryArchitectureTest {
             Path.of("src/main/java/com/sixpay/reporting");
 
     @Test
-    void exposesOnlyLot64ReadEndpoints()
+    void lot64ReadControllerRemainsReadOnly()
             throws Exception {
 
         String controller = Files.readString(
@@ -33,9 +33,6 @@ class PaymentAuditQueryArchitectureTest {
         ));
         assertTrue(controller.contains(
                 "/internal/api/v1/payment-audit-records/{auditId}"
-        ));
-        assertFalse(controller.contains(
-                "/internal/api/v1/payment-audit-exports"
         ));
         assertFalse(controller.contains("@PostMapping"));
         assertFalse(controller.contains("@PutMapping"));

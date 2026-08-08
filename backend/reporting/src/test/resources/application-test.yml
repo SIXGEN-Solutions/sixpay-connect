@@ -2,3 +2,8 @@ sixpay:
   reporting:
     audit-query:
       cursor-hmac-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    audit-export:
+      storage-directory: target/test-audit-exports
+      retrieval-base-uri: https://audit-artifacts.test.local/
+      retention: PT1H
+      recovery-delay-ms: 60000
