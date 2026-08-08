@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/internal-audit-query'`
+**Primary implementation branch:** `'feat/frontend-sixpay'`
 
-**Current delivery focus:** Phase 6 — implémenter les API interne de suivi.
+**Current delivery focus:** Phase 7 — implémenter le Frontend SIXPAY.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `'feat/internal-audit-query'`
+1. `'feat/frontend-sixpay'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
