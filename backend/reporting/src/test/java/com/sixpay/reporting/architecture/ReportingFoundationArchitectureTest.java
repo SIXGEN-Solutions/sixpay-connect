@@ -122,19 +122,47 @@ class ReportingFoundationArchitectureTest {
     }
 
     @Test
-    void foundationDoesNotPrematurelyExposeAuditEndpoints()
+    void reportingExposesOnlyImplementedPhase6AuditEndpoints()
             throws Exception {
 
-        assertNoTokens(
-                REPORTING,
-                List.of(
-                        "/internal/api/v1/payment-audit-records",
-                        "/internal/api/v1/payment-audit-exports",
+        String controller = Files.readString(
+                REPORTING.resolve(
+                        "api/controller/"
+                                + "PaymentAuditQueryController.java"
+                )
+        );
+
+        assertTrue(
+                controller.contains(
+                        "/internal/api/v1/payment-audit-records"
+                )
+        );
+
+        assertTrue(
+                controller.contains(
+                        "/internal/api/v1/payment-audit-records/{auditId}"
+                )
+        );
+
+        assertTrue(
+                controller.contains(
                         "/internal/api/v1/payments/{paymentId}/timeline"
                 )
         );
-    }
 
+        /*
+         * Export belongs to Lot 6.5 and must still be absent.
+         */
+        assertFalse(
+                controller.contains(
+                        "/internal/api/v1/payment-audit-exports"
+                )
+        );
+
+        assertFalse(controller.contains("@PostMapping"));
+        assertFalse(controller.contains("@PutMapping"));
+        assertFalse(controller.contains("@DeleteMapping"));
+    }
     private static void assertNoTokens(
             Path root,
             List<String> forbidden

@@ -1,0 +1,4 @@
+sixpay:
+  reporting:
+    audit-query:
+      cursor-hmac-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
