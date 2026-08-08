@@ -35,6 +35,13 @@ export const routes: Routes = [
           import('./features/payments/payments.routes').then((routes) => routes.PAYMENT_ROUTES),
       },
       {
+        path: 'reporting',
+        loadChildren: () =>
+          import('./features/reporting/reporting.routes').then(
+            (routes) => routes.REPORTING_ROUTES,
+          ),
+      },
+      {
         path: 'customers',
         loadChildren: () =>
           import('./features/customers/customers.routes').then((routes) => routes.CUSTOMER_ROUTES),
@@ -75,12 +82,6 @@ export const routes: Routes = [
         (component) => component.ForbiddenComponent,
       ),
   },
-  {
-    path: 'unauthorized',
-    redirectTo: 'forbidden',
-  },
-  {
-    path: '**',
-    redirectTo: '',
-  },
+  { path: 'unauthorized', redirectTo: 'forbidden' },
+  { path: '**', redirectTo: '' },
 ];

@@ -3,6 +3,7 @@ import { NavigationItem } from './navigation.model';
 export const SIXPAY_NAVIGATION: readonly NavigationItem[] = [
   { label: 'Tableau de bord', icon: 'dashboard', route: '/', exact: true },
   { label: 'Paiements', icon: 'payments', route: '/payments', roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
+  { label: 'Audit / Reporting', icon: 'fact_check', route: '/reporting', roles: ['AUDITOR'] },
   { label: 'Clients observés', icon: 'group', route: '/customers', roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
   { label: 'Comptabilisation', icon: 'account_balance', route: '/accounting', roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
   { label: 'Incidents', icon: 'warning', route: '/incidents', roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
