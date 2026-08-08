@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
-@Profile("standalone")
+@Profile("standalone & !integration & !oidc")
 public class StandaloneSecurityConfiguration {
 
     private static final String LOCAL_SUBJECT =
