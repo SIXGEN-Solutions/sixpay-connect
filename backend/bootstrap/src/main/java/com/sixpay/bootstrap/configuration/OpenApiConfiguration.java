@@ -42,6 +42,7 @@ public class OpenApiConfiguration {
                 .build();
     }
 
+    /*
     @Bean
     GroupedOpenApi paymentOpenApi() {
         return GroupedOpenApi.builder()
@@ -55,6 +56,7 @@ public class OpenApiConfiguration {
                 )
                 .build();
     }
+    */
 
     @Bean
     GroupedOpenApi customerOpenApi() {
@@ -64,6 +66,38 @@ public class OpenApiConfiguration {
                 .pathsToMatch(
                         "/internal/api/v1/observed-customers",
                         "/internal/api/v1/observed-customers/**"
+                )
+                .build();
+    }
+
+    @Bean
+    GroupedOpenApi paymentOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("payment")
+                .displayName("Payment API")
+                .pathsToMatch(
+                        "/v1/payments",
+                        "/v1/payments/**",
+                        "/internal/api/v1/payments",
+                        "/internal/api/v1/payments/{paymentId}"
+                )
+                .pathsToExclude(
+                        "/internal/api/v1/payments/*/timeline"
+                )
+                .build();
+    }
+
+    @Bean
+    GroupedOpenApi reportingOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("reporting")
+                .displayName("Payment Audit API")
+                .pathsToMatch(
+                        "/internal/api/v1/payments/*/timeline",
+                        "/internal/api/v1/payment-audit-records",
+                        "/internal/api/v1/payment-audit-records/**",
+                        "/internal/api/v1/payment-audit-exports",
+                        "/internal/api/v1/payment-audit-exports/**"
                 )
                 .build();
     }
