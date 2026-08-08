@@ -165,12 +165,7 @@ public class ObservedCustomerQueryController {
             @RequestParam(required = false)
             String cursor,
             @RequestParam(required = false)
-            Integer size,
-            @RequestParam(required = false)
-            @DateTimeFormat(
-                    iso = DateTimeFormat.ISO.DATE_TIME
-            )
-            Instant snapshotAt
+            Integer size
     ) {
         String correlation =
                 requireCorrelationId(correlationId);
@@ -182,6 +177,9 @@ public class ObservedCustomerQueryController {
 
         int effectiveSize =
                 searchSize(size);
+
+        ObservedCustomerCursor effectiveCursor =
+                cursor(cursor);
 
         SearchObservedCustomersQuery query =
                 new SearchObservedCustomersQuery(
@@ -197,9 +195,9 @@ public class ObservedCustomerQueryController {
                         paymentFrom,
                         paymentTo,
                         sort,
-                        cursor(cursor),
+                        effectiveCursor,
                         effectiveSize,
-                        snapshot(snapshotAt)
+                        snapshot(effectiveCursor)
                 );
 
         return observation.observe(
@@ -279,12 +277,7 @@ public class ObservedCustomerQueryController {
             @RequestParam(required = false)
             String cursor,
             @RequestParam(required = false)
-            Integer size,
-            @RequestParam(required = false)
-            @DateTimeFormat(
-                    iso = DateTimeFormat.ISO.DATE_TIME
-            )
-            Instant snapshotAt
+            Integer size
     ) {
         String correlation =
                 requireCorrelationId(correlationId);
@@ -297,6 +290,9 @@ public class ObservedCustomerQueryController {
         int effectiveSize =
                 paymentSize(size);
 
+        ObservedCustomerCursor effectiveCursor =
+                cursor(cursor);
+
         ListObservedCustomerPaymentsQuery query =
                 new ListObservedCustomerPaymentsQuery(
                         ObservedCustomerId.of(
@@ -305,9 +301,9 @@ public class ObservedCustomerQueryController {
                         status,
                         createdFrom,
                         createdTo,
-                        cursor(cursor),
+                        effectiveCursor,
                         effectiveSize,
-                        snapshot(snapshotAt)
+                        snapshot(effectiveCursor)
                 );
 
         return observation.observe(
@@ -327,11 +323,11 @@ public class ObservedCustomerQueryController {
     }
 
     private Instant snapshot(
-            Instant requested
+            ObservedCustomerCursor cursor
     ) {
-        return requested == null
+        return cursor == null
                 ? clock.instant()
-                : requested;
+                : null;
     }
 
     private static int searchSize(

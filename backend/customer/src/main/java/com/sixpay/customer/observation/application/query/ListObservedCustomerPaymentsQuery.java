@@ -42,10 +42,12 @@ public record ListObservedCustomerPaymentsQuery(
             );
         }
 
-        snapshotAt = Objects.requireNonNull(
-                snapshotAt,
-                "snapshotAt is required"
-        );
+        if (cursor == null) {
+            snapshotAt = Objects.requireNonNull(
+                    snapshotAt,
+                    "snapshotAt is required for the first page"
+            );
+        }
     }
 
     public static ListObservedCustomerPaymentsQuery firstPage(

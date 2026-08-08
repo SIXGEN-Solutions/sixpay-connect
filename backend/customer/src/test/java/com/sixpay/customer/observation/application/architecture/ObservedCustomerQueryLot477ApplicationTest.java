@@ -62,8 +62,9 @@ class ObservedCustomerQueryLot477ApplicationTest {
     }
 
     @Test
-    void cursorCodecAuthenticatesVersionSortSnapshotAndQuery()
+    void cursorCodecAuthenticatesVersionSnapshotAndQuery()
             throws Exception {
+
         String codec = Files.readString(
                 Path.of(
                         "src/main/java/com/sixpay/customer/observation/"
@@ -77,14 +78,23 @@ class ObservedCustomerQueryLot477ApplicationTest {
                 "HmacSHA256",
                 "MessageDigest.isEqual(",
                 "cursor sort does not match the request",
-                "cursor snapshot does not match the request",
-                "cursor query does not match the request"
+                "cursor query does not match the request",
+                "Instant snapshotAt = readInstant(input);",
+                "writeInstant(output, criteria.snapshotAt())"
         )) {
             assertTrue(
                     codec.contains(required),
                     () -> "Missing cursor guarantee: " + required
             );
         }
+
+        assertFalse(
+                codec.contains(
+                        "cursor snapshot does not match the request"
+                ),
+                "snapshotAt must be restored from the signed cursor, "
+                        + "not compared with a caller-supplied value"
+        );
     }
 
     @Test

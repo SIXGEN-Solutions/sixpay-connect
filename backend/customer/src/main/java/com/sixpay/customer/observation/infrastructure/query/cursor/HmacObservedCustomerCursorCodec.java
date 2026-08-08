@@ -83,6 +83,7 @@ public final class HmacObservedCustomerCursorCodec
         if (query.cursor() == null) {
             return searchCriteria(
                     query,
+                    query.snapshotAt(),
                     null
             );
         }
@@ -116,12 +117,6 @@ public final class HmacObservedCustomerCursorCodec
                 );
             }
 
-            if (!query.snapshotAt().equals(snapshotAt)) {
-                throw invalid(
-                        "cursor snapshot does not match the request"
-                );
-            }
-
             requireFingerprint(
                     encodedFingerprint,
                     searchFingerprint(query)
@@ -129,6 +124,7 @@ public final class HmacObservedCustomerCursorCodec
 
             return searchCriteria(
                     query,
+                    snapshotAt,
                     new ObservedCustomerSearchPosition(
                             lastSortValue,
                             lastCustomerId
@@ -153,6 +149,7 @@ public final class HmacObservedCustomerCursorCodec
         if (query.cursor() == null) {
             return paymentCriteria(
                     query,
+                    query.snapshotAt(),
                     null
             );
         }
@@ -180,12 +177,6 @@ public final class HmacObservedCustomerCursorCodec
 
             requireFullyConsumed(input);
 
-            if (!query.snapshotAt().equals(snapshotAt)) {
-                throw invalid(
-                        "cursor snapshot does not match the request"
-                );
-            }
-
             if (!query.observedCustomerId().equals(
                     encodedCustomerId
             )) {
@@ -201,6 +192,7 @@ public final class HmacObservedCustomerCursorCodec
 
             return paymentCriteria(
                     query,
+                    snapshotAt,
                     new ObservedCustomerPaymentPosition(
                             lastCreatedAt,
                             lastPaymentId
@@ -341,6 +333,7 @@ public final class HmacObservedCustomerCursorCodec
     private static ObservedCustomerSearchCriteria
             searchCriteria(
                     SearchObservedCustomersQuery query,
+                    Instant snapshotAt,
                     ObservedCustomerSearchPosition position
             ) {
         return new ObservedCustomerSearchCriteria(
@@ -357,7 +350,7 @@ public final class HmacObservedCustomerCursorCodec
                 query.paymentTo(),
                 query.sort(),
                 query.size(),
-                query.snapshotAt(),
+                snapshotAt,
                 position
         );
     }
@@ -365,6 +358,7 @@ public final class HmacObservedCustomerCursorCodec
     private static ObservedCustomerPaymentCriteria
             paymentCriteria(
                     ListObservedCustomerPaymentsQuery query,
+                    Instant snapshotAt,
                     ObservedCustomerPaymentPosition position
             ) {
         return new ObservedCustomerPaymentCriteria(
@@ -373,7 +367,7 @@ public final class HmacObservedCustomerCursorCodec
                 query.createdFrom(),
                 query.createdTo(),
                 query.size(),
-                query.snapshotAt(),
+                snapshotAt,
                 position
         );
     }
