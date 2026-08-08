@@ -9,21 +9,58 @@
       <mat-icon matListItemIcon aria-hidden="true">dashboard</mat-icon>
       <span matListItemTitle>Tableau de bord</span>
     </a>
-    <a mat-list-item routerLink="/design-system" routerLinkActive="sp-sidebar__link--active">
-      <mat-icon matListItemIcon aria-hidden="true">palette</mat-icon>
-      <span matListItemTitle>Design System</span>
-    </a>
+
     @if (authentication.hasAnyRole(['ADMIN', 'MANAGER', 'AUDITOR'])) {
+      <a mat-list-item routerLink="/payments" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">payments</mat-icon>
+        <span matListItemTitle>Paiements</span>
+      </a>
+
+      <a mat-list-item routerLink="/customers" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">group</mat-icon>
+        <span matListItemTitle>Clients observés</span>
+      </a>
+
+      <a mat-list-item routerLink="/accounting" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">account_balance</mat-icon>
+        <span matListItemTitle>Comptabilisation</span>
+      </a>
+
+      <a mat-list-item routerLink="/incidents" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">warning</mat-icon>
+        <span matListItemTitle>Incidents</span>
+      </a>
+
       <a mat-list-item routerLink="/partners" routerLinkActive="sp-sidebar__link--active">
         <mat-icon matListItemIcon aria-hidden="true">handshake</mat-icon>
         <span matListItemTitle>Partenaires</span>
       </a>
     }
+
+    @if (authentication.hasRole('ADMIN')) {
+      <a mat-list-item routerLink="/administration" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">settings</mat-icon>
+        <span matListItemTitle>Administration</span>
+      </a>
+
+      <a mat-list-item routerLink="/identity" routerLinkActive="sp-sidebar__link--active">
+        <mat-icon matListItemIcon aria-hidden="true">admin_panel_settings</mat-icon>
+        <span matListItemTitle>Gestion des accès</span>
+      </a>
+    }
+
     @if (authentication.hasRole('PARTNER')) {
       <a mat-list-item routerLink="/partners/status" routerLinkActive="sp-sidebar__link--active">
         <mat-icon matListItemIcon aria-hidden="true">verified_user</mat-icon>
         <span matListItemTitle>Mon statut Partner</span>
       </a>
     }
+
+    <a mat-list-item routerLink="/design-system" routerLinkActive="sp-sidebar__link--active">
+      <mat-icon matListItemIcon aria-hidden="true">palette</mat-icon>
+      <span matListItemTitle>Design System</span>
+    </a>
   </mat-nav-list>
+
+  <sp-role-simulator />
 </nav>

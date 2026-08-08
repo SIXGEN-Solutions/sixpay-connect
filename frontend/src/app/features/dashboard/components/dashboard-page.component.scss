@@ -1,13 +1,90 @@
-:host {
+:host,
+.sp-dashboard {
+  display: grid;
+  gap: var(--sp-space-4);
+}
+
+.sp-kpi-grid,
+.sp-dashboard-grid {
+  display: grid;
+  gap: var(--sp-space-3);
+}
+
+.sp-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sp-dashboard-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.sp-kpi {
   display: block;
-  max-width: 60rem;
-  margin-inline: auto;
+  margin: var(--sp-space-2) 0;
+  font-size: 2rem;
 }
 
-h1 {
-  margin-top: 0;
+.sp-bars {
+  height: 14rem;
+  display: flex;
+  align-items: end;
+  gap: var(--sp-space-2);
 }
 
-.sp-dashboard__intro {
-  color: var(--sp-color-text-muted);
+.sp-bars span {
+  flex: 1;
+  min-width: 0.5rem;
+  border-radius: 6px 6px 0 0;
+  background: var(--sp-color-primary);
+  opacity: 0.75;
+}
+
+.sp-health-list {
+  display: grid;
+  gap: var(--sp-space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.sp-health-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-space-2);
+}
+
+.sp-table-scroll {
+  overflow-x: auto;
+}
+
+.sp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sp-table th,
+.sp-table td {
+  padding: var(--sp-space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.sp-status {
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .sp-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sp-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .sp-kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }

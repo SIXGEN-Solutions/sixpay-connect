@@ -29,6 +29,38 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/partners/partners.routes').then((routes) => routes.PARTNER_ROUTES),
       },
+      {
+        path: 'payments',
+        loadChildren: () =>
+          import('./features/payments/payments.routes').then((routes) => routes.PAYMENT_ROUTES),
+      },
+      {
+        path: 'customers',
+        loadChildren: () =>
+          import('./features/customers/customers.routes').then((routes) => routes.CUSTOMER_ROUTES),
+      },
+      {
+        path: 'accounting',
+        loadChildren: () =>
+          import('./features/accounting/accounting.routes').then((routes) => routes.ACCOUNTING_ROUTES),
+      },
+      {
+        path: 'incidents',
+        loadChildren: () =>
+          import('./features/incidents/incidents.routes').then((routes) => routes.INCIDENT_ROUTES),
+      },
+      {
+        path: 'administration',
+        loadChildren: () =>
+          import('./features/administration/administration.routes').then(
+            (routes) => routes.ADMINISTRATION_ROUTES,
+          ),
+      },
+      {
+        path: 'identity',
+        loadChildren: () =>
+          import('./features/identity/identity.routes').then((routes) => routes.IDENTITY_ROUTES),
+      },
     ],
   },
   {

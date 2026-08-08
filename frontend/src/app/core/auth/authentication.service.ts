@@ -29,6 +29,7 @@ export class AuthenticationService {
   readonly subject = computed(() => this.identityState()?.subject ?? null);
   readonly roles = computed(() => this.identityState()?.roles ?? new Set<SixpayRole>());
   readonly ready$ = this.readyState.asObservable();
+  readonly isStandaloneMode = authenticationEnvironment.mode === 'standalone';
 
   constructor() {
     if (authenticationEnvironment.mode === 'standalone') {
@@ -68,6 +69,17 @@ export class AuthenticationService {
 
   hasAnyRole(roles: readonly SixpayRole[]): boolean {
     return roles.some((role) => this.hasRole(role));
+  }
+
+  simulateStandaloneRole(role: SixpayRole): void {
+    if (!this.isStandaloneMode) {
+      return;
+    }
+
+    this.identityState.set({
+      subject: role === 'PARTNER' ? '11111111-1111-4111-8111-111111111111' : 'local-security-user',
+      roles: new Set<SixpayRole>([role]),
+    });
   }
 
   accessTokenForRequest(): Observable<string | null> {

@@ -1,15 +1,63 @@
-<section aria-labelledby="dashboard-title">
-  <h1 id="dashboard-title">SIXPAY CONNECT</h1>
-  <p class="sp-dashboard__intro">Socle applicatif Angular de référence.</p>
+<section class="sp-dashboard" aria-labelledby="dashboard-title">
+  <sp-toolbar
+    title="Tableau de bord"
+    description="Vue opérationnelle mockée de SIXPAY CONNECT — Phase 7.0."
+  />
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-icon mat-card-avatar aria-hidden="true">hub</mat-icon>
-      <mat-card-title>Golden Frontend Partner</mat-card-title>
-      <mat-card-subtitle>Fondation Angular</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <p>Le shell, le routage et le socle HTTP sont opérationnels.</p>
-    </mat-card-content>
-  </mat-card>
+  <div class="sp-kpi-grid">
+    <sp-card title="Paiements du jour">
+      <strong class="sp-kpi">1 248</strong>
+      <span>+8,4 % vs hier</span>
+    </sp-card>
+    <sp-card title="Taux de succès">
+      <strong class="sp-kpi">97,8 %</strong>
+      <span>Objectif ≥ 97 %</span>
+    </sp-card>
+    <sp-card title="Échecs">
+      <strong class="sp-kpi">27</strong>
+      <span>12 nécessitent une analyse</span>
+    </sp-card>
+    <sp-card title="En traitement">
+      <strong class="sp-kpi">14</strong>
+      <span>5 depuis plus de 2 minutes</span>
+    </sp-card>
+  </div>
+
+  <div class="sp-dashboard-grid">
+    <sp-card title="Activité des dernières heures" subtitle="Volume mocké">
+      <div class="sp-bars" aria-label="Histogramme mocké des paiements">
+        @for (height of [48, 65, 56, 82, 74, 92, 68, 77, 96, 84, 71, 88]; track $index) {
+          <span [style.height.%]="height"></span>
+        }
+      </div>
+    </sp-card>
+
+    <sp-card title="État des intégrations">
+      <ul class="sp-health-list">
+        <li><mat-icon>check_circle</mat-icon> TresorPay <strong>Disponible</strong></li>
+        <li><mat-icon>check_circle</mat-icon> Amplitude <strong>Disponible</strong></li>
+        <li><mat-icon>warning</mat-icon> Comptabilisation <strong>Dégradée</strong></li>
+      </ul>
+    </sp-card>
+  </div>
+
+  <sp-card title="Paiements récents">
+    <div class="sp-table-scroll">
+      <table class="sp-table">
+        <thead>
+          <tr><th>Référence</th><th>Client</th><th>Montant</th><th>Statut</th></tr>
+        </thead>
+        <tbody>
+          @for (payment of recentPayments; track payment.reference) {
+            <tr>
+              <td><a [routerLink]="['/payments', payment.reference]">{{ payment.reference }}</a></td>
+              <td>{{ payment.customer }}</td>
+              <td>{{ payment.amount }}</td>
+              <td><span class="sp-status">{{ payment.status }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </sp-card>
 </section>
