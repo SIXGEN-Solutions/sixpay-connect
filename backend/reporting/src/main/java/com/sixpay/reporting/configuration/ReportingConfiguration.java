@@ -5,6 +5,7 @@ import com.sixpay.reporting.application.service.PaymentAuditExportService;
 import com.sixpay.reporting.application.service.PaymentAuditQueryService;
 import com.sixpay.reporting.infrastructure.export.AsyncPaymentAuditExportWorker;
 import com.sixpay.reporting.infrastructure.query.HmacAuditCursorCodec;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -71,6 +72,7 @@ public class ReportingConfiguration {
     PaymentAuditExportService paymentAuditExportService(
             AuditExportJobStore jobStore,
             AsyncPaymentAuditExportWorker worker,
+            @Qualifier("reportingAuditClock")
             Clock reportingAuditClock,
             ReportingAuditExportProperties properties
     ) {

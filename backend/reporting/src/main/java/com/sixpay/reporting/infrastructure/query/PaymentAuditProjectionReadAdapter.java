@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-public final class PaymentAuditProjectionReadAdapter
+public class PaymentAuditProjectionReadAdapter
         implements PaymentAuditReadPort {
 
     private final NamedParameterJdbcTemplate jdbc;

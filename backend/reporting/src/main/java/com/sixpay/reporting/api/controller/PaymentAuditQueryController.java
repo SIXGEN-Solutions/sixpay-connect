@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -25,7 +26,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @RestController
-public final class PaymentAuditQueryController {
+public class PaymentAuditQueryController {
 
     private static final String READ_SCOPE =
             "hasAuthority('SCOPE_payment.audit.read')";
@@ -37,7 +38,7 @@ public final class PaymentAuditQueryController {
     private final GetPaymentAuditRecordUseCase getUseCase;
     private final PaymentAuditQueryApiMapper mapper;
     private final PaymentAuditAccessRecorder accessRecorder;
-    private final Clock clock;
+    private final @Qualifier("reportingAuditClock") Clock clock;
 
     public PaymentAuditQueryController(
             GetPaymentTimelineUseCase timelineUseCase,
@@ -45,7 +46,7 @@ public final class PaymentAuditQueryController {
             GetPaymentAuditRecordUseCase getUseCase,
             PaymentAuditQueryApiMapper mapper,
             PaymentAuditAccessRecorder accessRecorder,
-            Clock clock
+            @Qualifier("reportingAuditClock") Clock clock
     ) {
         this.timelineUseCase = Objects.requireNonNull(timelineUseCase);
         this.searchUseCase = Objects.requireNonNull(searchUseCase);

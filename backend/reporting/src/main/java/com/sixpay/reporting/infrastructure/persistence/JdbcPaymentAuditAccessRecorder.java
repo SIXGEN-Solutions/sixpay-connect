@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Repository
-public final class JdbcPaymentAuditAccessRecorder
+public class JdbcPaymentAuditAccessRecorder
         implements PaymentAuditAccessRecorder {
 
     private final NamedParameterJdbcTemplate jdbc;

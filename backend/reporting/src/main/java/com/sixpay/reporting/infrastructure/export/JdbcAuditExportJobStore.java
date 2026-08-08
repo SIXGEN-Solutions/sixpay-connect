@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-public final class JdbcAuditExportJobStore
+public class JdbcAuditExportJobStore
         implements AuditExportJobStore {
 
     private static final String SEP = "\u001f";

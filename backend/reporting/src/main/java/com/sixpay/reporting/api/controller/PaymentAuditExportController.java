@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal/api/v1/payment-audit-exports")
-public final class PaymentAuditExportController {
+public class PaymentAuditExportController {
 
     private static final String EXPORT_SCOPE =
             "hasAuthority('SCOPE_payment.audit.read') "

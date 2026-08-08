@@ -105,4 +105,5 @@ class ControlledAuditExportArchitectureTest {
                 "HttpStatus.UNPROCESSABLE_ENTITY"
         ));
     }
+
 }
