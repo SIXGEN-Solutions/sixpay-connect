@@ -10,6 +10,9 @@ export interface AuthenticationEnvironment {
     readonly subject: string;
     readonly roles: readonly string[];
   };
+  readonly standalonePartner?: {
+    readonly subject: string;
+  };
 }
 
 export interface BackendEnvironment {

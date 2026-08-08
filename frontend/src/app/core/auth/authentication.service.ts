@@ -14,8 +14,12 @@ import {
 } from './authentication.model';
 
 const RETURN_URL_STORAGE_KEY = 'sixpay.authentication.return-url';
-const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
 const STANDALONE_ROLE_STORAGE_KEY = 'sixpay.authentication.standalone-role';
+const FALLBACK_STANDALONE_PARTNER_SUBJECT =
+  '11111111-1111-4111-8111-111111111111';
+
+const authenticationEnvironment: AuthenticationEnvironment =
+  environment.authentication;
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
@@ -28,29 +32,28 @@ export class AuthenticationService {
   readonly identity = this.identityState.asReadonly();
   readonly isAuthenticated = computed(() => this.identityState() !== null);
   readonly subject = computed(() => this.identityState()?.subject ?? null);
-  readonly roles = computed(() => this.identityState()?.roles ?? new Set<SixpayRole>());
+  readonly roles = computed(
+    () => this.identityState()?.roles ?? new Set<SixpayRole>(),
+  );
   readonly ready$ = this.readyState.asObservable();
   readonly isStandaloneMode = authenticationEnvironment.mode === 'standalone';
 
   constructor() {
     if (authenticationEnvironment.mode === 'standalone') {
       const localUser = authenticationEnvironment.standaloneUser;
-
       const storedRole = this.storage?.getItem(
         STANDALONE_ROLE_STORAGE_KEY,
       ) as SixpayRole | null;
 
       const roles = storedRole
         ? new Set<SixpayRole>([storedRole])
-        : extractSixpayRoles({
-            roles: localUser?.roles ?? [],
-          });
+        : extractSixpayRoles({ roles: localUser?.roles ?? [] });
+
+      const effectiveRole =
+        storedRole ?? this.firstConfiguredStandaloneRole(localUser?.roles ?? []);
 
       this.identityState.set({
-        subject:
-          storedRole === 'PARTNER'
-            ? '11111111-1111-4111-8111-111111111111'
-            : (localUser?.subject ?? 'local-user'),
+        subject: this.standaloneSubjectForRole(effectiveRole),
         roles,
       });
 
@@ -66,7 +69,10 @@ export class AuthenticationService {
     this.oidc.checkAuth().subscribe({
       next: (response) => {
         if (response.isAuthenticated) {
-          this.setAuthenticatedSession(response.accessToken, response.userData as JwtClaims);
+          this.setAuthenticatedSession(
+            response.accessToken,
+            response.userData as JwtClaims,
+          );
         } else {
           this.clearLocalSession();
         }
@@ -80,7 +86,9 @@ export class AuthenticationService {
   }
 
   hasRole(role: SixpayRole | string): boolean {
-    return this.roles().has(role.replace(/^ROLE_/, '').toUpperCase() as SixpayRole);
+    return this.roles().has(
+      role.replace(/^ROLE_/, '').toUpperCase() as SixpayRole,
+    );
   }
 
   hasAnyRole(roles: readonly SixpayRole[]): boolean {
@@ -95,14 +103,11 @@ export class AuthenticationService {
     this.storage?.setItem(STANDALONE_ROLE_STORAGE_KEY, role);
 
     this.identityState.set({
-      subject:
-        role === 'PARTNER'
-          ? '11111111-1111-4111-8111-111111111111'
-          : 'local-security-user',
+      subject: this.standaloneSubjectForRole(role),
       roles: new Set<SixpayRole>([role]),
     });
   }
-  
+
   accessTokenForRequest(): Observable<string | null> {
     if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
       return this.oidc.getAccessToken();
@@ -120,7 +125,10 @@ export class AuthenticationService {
     if (!this.isAuthenticated()) {
       return;
     }
-    const returnUrl = this.safeReturnUrl(this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/');
+
+    const returnUrl = this.safeReturnUrl(
+      this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
+    );
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
     void this.router.navigateByUrl(returnUrl);
   }
@@ -128,10 +136,14 @@ export class AuthenticationService {
   logout(): void {
     this.clearLocalSession();
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
+
     if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
-      this.oidc.logoffAndRevokeTokens().subscribe({ error: () => this.oidc?.logoffLocal() });
+      this.oidc
+        .logoffAndRevokeTokens()
+        .subscribe({ error: () => this.oidc?.logoffLocal() });
       return;
     }
+
     void this.router.navigate(['/login']);
   }
 
@@ -140,14 +152,39 @@ export class AuthenticationService {
     this.oidc?.logoffLocal();
   }
 
-  private setAuthenticatedSession(accessToken: string, userData: JwtClaims | null): void {
+  private standaloneSubjectForRole(role: SixpayRole | null): string {
+    if (role === 'PARTNER') {
+      return (
+        authenticationEnvironment.standalonePartner?.subject ??
+        FALLBACK_STANDALONE_PARTNER_SUBJECT
+      );
+    }
+
+    return authenticationEnvironment.standaloneUser?.subject ?? 'local-user';
+  }
+
+  private firstConfiguredStandaloneRole(
+    roles: readonly string[],
+  ): SixpayRole | null {
+    return extractSixpayRoles({ roles }).values().next().value ?? null;
+  }
+
+  private setAuthenticatedSession(
+    accessToken: string,
+    userData: JwtClaims | null,
+  ): void {
     const claims = this.decodePayload(accessToken) ?? userData ?? {};
     const subject = claims.sub ?? userData?.sub;
+
     if (!subject || this.isExpired(claims)) {
       this.clearLocalSession();
       return;
     }
-    this.identityState.set({ subject, roles: extractSixpayRoles(claims) });
+
+    this.identityState.set({
+      subject,
+      roles: extractSixpayRoles(claims),
+    });
   }
 
   private clearLocalSession(): void {
@@ -159,7 +196,9 @@ export class AuthenticationService {
   }
 
   private safeReturnUrl(returnUrl: string): string {
-    return returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
+    return returnUrl.startsWith('/') && !returnUrl.startsWith('//')
+      ? returnUrl
+      : '/';
   }
 
   private isExpired(claims: JwtClaims): boolean {
@@ -172,10 +211,12 @@ export class AuthenticationService {
       if (!encodedPayload) {
         return null;
       }
+
       const normalizedPayload = encodedPayload
         .replace(/-/g, '+')
         .replace(/_/g, '/')
         .padEnd(Math.ceil(encodedPayload.length / 4) * 4, '=');
+
       return JSON.parse(atob(normalizedPayload)) as JwtClaims;
     } catch {
       return null;
