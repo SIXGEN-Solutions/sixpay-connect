@@ -8,7 +8,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
+    "start:integration": "ng serve --configuration integration --proxy-config proxy.conf.json",
+    "start:netlify": "ng serve --configuration netlify",
     "build": "ng build",
+    "build:integration": "ng build --configuration integration",
+    "build:netlify": "ng build --configuration netlify",
     "watch": "ng build --watch --configuration development",
     "lint": "ng lint",
     "format": "prettier --write .",

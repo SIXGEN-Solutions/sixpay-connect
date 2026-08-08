@@ -4,7 +4,7 @@ export const environment = {
   production: false,
   apiBaseUrl: '',
   backend: {
-    mode: 'mock',
+    mode: 'api',
   },
   authentication: {
     mode: 'standalone',
@@ -12,7 +12,7 @@ export const environment = {
     clientId: '',
     scope: 'openid profile email roles',
     standaloneUser: {
-      subject: 'local-security-user',
+      subject: 'local-integration-user',
       roles: ['ADMIN'],
     },
   },

@@ -20,7 +20,9 @@
             "outputPath": "dist/frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -29,7 +31,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles/styles.scss"],
+            "styles": [
+              "src/styles/styles.scss"
+            ],
             "scripts": []
           },
           "configurations": {
@@ -58,6 +62,29 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "integration": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.integration.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            },
+            "netlify": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.netlify.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "outputHashing": "none"
             }
           },
           "defaultConfiguration": "production"
@@ -70,6 +97,12 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "integration": {
+              "buildTarget": "frontend:build:integration"
+            },
+            "netlify": {
+              "buildTarget": "frontend:build:netlify"
             }
           },
           "defaultConfiguration": "development"
@@ -80,7 +113,10 @@
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         },
         "test": {

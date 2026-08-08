@@ -12,7 +12,7 @@ export const environment = {
     clientId: '',
     scope: 'openid profile email roles',
     standaloneUser: {
-      subject: 'local-security-user',
+      subject: 'sixpay-netlify-demo',
       roles: ['ADMIN'],
     },
   },

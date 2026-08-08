@@ -1,4 +1,5 @@
 export type AuthenticationMode = 'oidc' | 'standalone';
+export type BackendMode = 'mock' | 'api';
 
 export interface AuthenticationEnvironment {
   readonly mode: AuthenticationMode;
@@ -11,8 +12,13 @@ export interface AuthenticationEnvironment {
   };
 }
 
+export interface BackendEnvironment {
+  readonly mode: BackendMode;
+}
+
 export interface AppEnvironment {
   readonly production: boolean;
   readonly apiBaseUrl: string;
+  readonly backend: BackendEnvironment;
   readonly authentication: AuthenticationEnvironment;
 }
