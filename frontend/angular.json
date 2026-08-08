@@ -58,6 +58,18 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "mock": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.mock.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "outputHashing": "none"
             }
           },
           "defaultConfiguration": "production"
@@ -70,6 +82,9 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "mock": {
+              "buildTarget": "frontend:build:mock"
             }
           },
           "defaultConfiguration": "development"
