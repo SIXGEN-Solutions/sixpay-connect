@@ -59,6 +59,7 @@ public final class ObservedCustomerProjectionModuleAdapter
 
         return new ObservedCustomerProjectionResult(
                 result.sourceEventId(),
+                result.observedCustomerId().value(),
                 switch (result.disposition()) {
                     case APPLIED -> ObservedCustomerProjectionResult.Disposition.APPLIED;
                     case REPLAYED -> ObservedCustomerProjectionResult.Disposition.REPLAYED;

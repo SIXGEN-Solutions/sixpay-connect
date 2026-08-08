@@ -18,6 +18,30 @@ public record SearchPaymentProjectionsQuery(
                     "Payment search size must be between 1 and 200"
             );
         }
+        if (createdFrom != null
+                && createdTo != null
+                && createdFrom.isAfter(createdTo)) {
+            throw new IllegalArgumentException(
+                    "createdFrom must not be after createdTo"
+            );
+        }
+        if (amountMin != null && amountMin.signum() < 0) {
+            throw new IllegalArgumentException(
+                    "amountMin must not be negative"
+            );
+        }
+        if (amountMax != null && amountMax.signum() < 0) {
+            throw new IllegalArgumentException(
+                    "amountMax must not be negative"
+            );
+        }
+        if (amountMin != null
+                && amountMax != null
+                && amountMin.compareTo(amountMax) > 0) {
+            throw new IllegalArgumentException(
+                    "amountMin must not exceed amountMax"
+            );
+        }
         sort = sort == null
                 ? PaymentSearchSort.CREATED_AT_DESC
                 : sort;

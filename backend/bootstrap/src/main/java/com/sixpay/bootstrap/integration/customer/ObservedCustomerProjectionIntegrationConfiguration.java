@@ -6,6 +6,8 @@ import com.sixpay.customer.observation.application.port.input
         .ObserveCustomerUseCase;
 import com.sixpay.payment.application.port.output
         .ObservedCustomerProjectionPort;
+import com.sixpay.payment.application.port.output.query
+        .PaymentObservedCustomerLinkPort;
 import com.sixpay.payment.application.service
         .PaymentObservedCustomerProjectionRequestFactory;
 import com.sixpay.payment.application.service
@@ -49,11 +51,13 @@ public class ObservedCustomerProjectionIntegrationConfiguration {
     paymentObservedCustomerProjectionService(
             ObservedCustomerProjectionPort projectionPort,
             PaymentObservedCustomerProjectionRequestFactory
-                    requestFactory
+                    requestFactory,
+            PaymentObservedCustomerLinkPort linkPort
     ) {
         return new PaymentObservedCustomerProjectionService(
                 projectionPort,
-                requestFactory
+                requestFactory,
+                linkPort
         );
     }
 

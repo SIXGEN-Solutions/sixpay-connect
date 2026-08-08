@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record ObservedCustomerProjectionResult(
         UUID sourceEventId,
+        UUID observedCustomerId,
         Disposition disposition,
         long projectionVersion
 ) {
@@ -23,6 +24,14 @@ public record ObservedCustomerProjectionResult(
                     "projectionVersion must be at least one"
             );
         }
+    }
+
+    public ObservedCustomerProjectionResult(
+            UUID sourceEventId,
+            Disposition disposition,
+            long projectionVersion
+    ) {
+        this(sourceEventId, null, disposition, projectionVersion);
     }
 
     public enum Disposition {

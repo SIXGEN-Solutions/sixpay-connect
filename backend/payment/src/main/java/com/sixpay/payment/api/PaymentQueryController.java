@@ -7,6 +7,7 @@ import com.sixpay.payment.application.query.SearchPaymentProjectionsQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -61,7 +62,7 @@ public class PaymentQueryController {
             UUID correlationId,
 
             @RequestParam(required = false)
-            @Size(max = 2048)
+            @Size(min = 1, max = 2048)
             String cursor,
 
             @RequestParam(defaultValue = "50")
@@ -70,25 +71,25 @@ public class PaymentQueryController {
             int size,
 
             @RequestParam(required = false)
-            @Size(max = 64)
+            @Size(min = 1, max = 64)
             String paymentReference,
 
             @RequestParam(required = false)
-            @Size(max = 100)
+            @Size(min = 1, max = 100)
             String tresorPayRequestId,
 
             @RequestParam(required = false)
             UUID observedCustomerId,
 
             @RequestParam(required = false)
-            @Size(max = 32)
+            @Size(min = 1, max = 32)
             String financialInstitutionCode,
 
             @RequestParam(required = false)
-            String status,
+            PaymentQueryStatus status,
 
             @RequestParam(required = false)
-            @Size(max = 64)
+            @Size(min = 1, max = 64)
             String reasonCode,
 
             @RequestParam(required = false)
@@ -104,9 +105,11 @@ public class PaymentQueryController {
             Instant createdTo,
 
             @RequestParam(required = false)
+            @DecimalMin(value = "0.0", inclusive = true)
             BigDecimal amountMin,
 
             @RequestParam(required = false)
+            @DecimalMin(value = "0.0", inclusive = true)
             BigDecimal amountMax,
 
             @RequestParam(required = false)
@@ -126,7 +129,9 @@ public class PaymentQueryController {
                         tresorPayRequestId,
                         observedCustomerId,
                         financialInstitutionCode,
-                        status,
+                        status == null
+                                ? null
+                                : status.name(),
                         reasonCode,
                         createdFrom,
                         createdTo,

@@ -2,12 +2,14 @@ package com.sixpay.payment.api;
 
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.response.PaymentProblemResponse;
+import com.sixpay.payment.application.exception.PaymentQueryUnavailableException;
 import com.sixpay.payment.application.security.PaymentAccessDeniedException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
 import com.sixpay.payment.infrastructure.tresorpay.TresorPayRequestRejectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -106,6 +108,44 @@ public class PaymentApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(PaymentQueryRateLimitExceededException.class)
+    ResponseEntity<PaymentProblemResponse> rateLimited(
+            PaymentQueryRateLimitExceededException exception,
+            HttpServletRequest request
+    ) {
+        UUID correlationId = correlationId(request);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .header("Retry-After", Integer.toString(exception.retryAfterSeconds()))
+                .header(IntegrationHttpHeaders.CORRELATION_ID, correlationId.toString())
+                .body(problemBody(
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        "PAYMENT_QUERY_RATE_LIMITED",
+                        "Payment query rate limit exceeded",
+                        correlationId,
+                        exception.retryAfterSeconds()
+                ));
+    }
+
+    @ExceptionHandler(PaymentQueryUnavailableException.class)
+    ResponseEntity<PaymentProblemResponse> unavailable(
+            PaymentQueryUnavailableException exception,
+            HttpServletRequest request
+    ) {
+        UUID correlationId = correlationId(request);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .header("Retry-After", "5")
+                .header(IntegrationHttpHeaders.CORRELATION_ID, correlationId.toString())
+                .body(problemBody(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "PAYMENT_QUERY_UNAVAILABLE",
+                        "Payment query projection is temporarily unavailable",
+                        correlationId,
+                        5
+                ));
+    }
+
     @ExceptionHandler({
             ConstraintViolationException.class,
             MethodArgumentNotValidException.class,
@@ -134,6 +174,7 @@ public class PaymentApiExceptionHandler {
         UUID correlationId = correlationId(request);
 
         return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .header(
                         IntegrationHttpHeaders.CORRELATION_ID,
                         correlationId.toString()

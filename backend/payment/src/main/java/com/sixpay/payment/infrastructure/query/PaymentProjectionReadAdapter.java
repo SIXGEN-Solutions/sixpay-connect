@@ -42,6 +42,7 @@ public final class PaymentProjectionReadAdapter
             p.payment_id,
             p.public_payment_reference,
             p.external_payment_reference,
+            pocl.observed_customer_id,
             p.financial_institution_code,
             p.requested_amount,
             BTRIM(p.requested_currency) AS requested_currency,
@@ -161,8 +162,7 @@ public final class PaymentProjectionReadAdapter
 
         Instant defaultSnapshot = timeProvider.now();
 
-        if (visibility instanceof PaymentVisibilityScope.Partner
-                || query.observedCustomerId() != null) {
+        if (visibility instanceof PaymentVisibilityScope.Partner) {
             return emptyPage(defaultSnapshot);
         }
 
@@ -207,6 +207,13 @@ public final class PaymentProjectionReadAdapter
                 "p.external_payment_reference",
                 "tresorPayRequestId",
                 query.tresorPayRequestId()
+        );
+        appendEquals(
+                where,
+                parameters,
+                "pocl.observed_customer_id",
+                "observedCustomerId",
+                query.observedCustomerId()
         );
         appendEquals(
                 where,
@@ -292,6 +299,8 @@ public final class PaymentProjectionReadAdapter
                 + PROJECTION_COLUMNS
                 + """
                   FROM payments p
+                  LEFT JOIN payment_observed_customer_link pocl
+                    ON pocl.payment_id = p.payment_id
                 """
                 + where
                 + " ORDER BY "
@@ -351,6 +360,8 @@ public final class PaymentProjectionReadAdapter
                 + PROJECTION_COLUMNS
                 + """
                   FROM payments p
+                  LEFT JOIN payment_observed_customer_link pocl
+                    ON pocl.payment_id = p.payment_id
                  WHERE p.payment_id = :paymentId
                 """;
 
@@ -471,6 +482,7 @@ public final class PaymentProjectionReadAdapter
                 resultSet.getObject("payment_id", UUID.class),
                 resultSet.getString("public_payment_reference"),
                 resultSet.getString("external_payment_reference"),
+                resultSet.getObject("observed_customer_id", UUID.class),
                 resultSet.getString("financial_institution_code"),
                 resultSet.getBigDecimal("requested_amount"),
                 resultSet.getString("requested_currency"),
@@ -605,6 +617,7 @@ public final class PaymentProjectionReadAdapter
             UUID paymentId,
             String paymentReference,
             String tresorPayRequestId,
+            UUID observedCustomerId,
             String financialInstitutionCode,
             java.math.BigDecimal amount,
             String currency,
@@ -646,7 +659,7 @@ public final class PaymentProjectionReadAdapter
                     paymentId,
                     paymentReference,
                     tresorPayRequestId,
-                    null,
+                    observedCustomerId,
                     financialInstitutionCode,
                     account,
                     new PaymentProjectionViews.MoneyView(
