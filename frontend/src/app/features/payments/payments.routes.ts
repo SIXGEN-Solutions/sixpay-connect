@@ -10,13 +10,17 @@ export const PAYMENT_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: PAYMENT_READ_ROLES },
     loadComponent: () =>
-      import('./components/payment-list-page.component').then((component) => component.PaymentListPageComponent),
+      import('./components/payment-list-page.component').then(
+        (component) => component.PaymentListPageComponent,
+      ),
   },
   {
     path: ':paymentId',
     canActivate: [roleGuard],
     data: { roles: PAYMENT_READ_ROLES },
     loadComponent: () =>
-      import('./components/payment-detail-page.component').then((component) => component.PaymentDetailPageComponent),
+      import('./components/payment-detail-page.component').then(
+        (component) => component.PaymentDetailPageComponent,
+      ),
   },
 ];
