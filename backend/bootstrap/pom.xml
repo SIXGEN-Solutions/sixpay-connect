@@ -60,6 +60,12 @@
 
         <dependency>
             <groupId>com.sixpay</groupId>
+            <artifactId>reporting</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
             <artifactId>notification</artifactId>
             <version>${project.version}</version>
         </dependency>
