@@ -11,13 +11,17 @@ export const IDENTITY_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: ADMIN_ONLY },
     loadComponent: () =>
-      import('./components/users-page.component').then((component) => component.UsersPageComponent),
+      import('./components/users-page.component').then(
+        (component) => component.UsersPageComponent,
+      ),
   },
   {
     path: 'roles',
     canActivate: [roleGuard],
     data: { roles: ADMIN_ONLY },
     loadComponent: () =>
-      import('./components/roles-page.component').then((component) => component.RolesPageComponent),
+      import('./components/roles-page.component').then(
+        (component) => component.RolesPageComponent,
+      ),
   },
 ];
