@@ -15,6 +15,7 @@ import {
 
 const RETURN_URL_STORAGE_KEY = 'sixpay.authentication.return-url';
 const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
+const STANDALONE_ROLE_STORAGE_KEY = 'sixpay.authentication.standalone-role';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
@@ -34,10 +35,25 @@ export class AuthenticationService {
   constructor() {
     if (authenticationEnvironment.mode === 'standalone') {
       const localUser = authenticationEnvironment.standaloneUser;
+
+      const storedRole = this.storage?.getItem(
+        STANDALONE_ROLE_STORAGE_KEY,
+      ) as SixpayRole | null;
+
+      const roles = storedRole
+        ? new Set<SixpayRole>([storedRole])
+        : extractSixpayRoles({
+            roles: localUser?.roles ?? [],
+          });
+
       this.identityState.set({
-        subject: localUser?.subject ?? 'local-user',
-        roles: extractSixpayRoles({ roles: localUser?.roles ?? [] }),
+        subject:
+          storedRole === 'PARTNER'
+            ? '11111111-1111-4111-8111-111111111111'
+            : (localUser?.subject ?? 'local-user'),
+        roles,
       });
+
       this.readyState.next(true);
       return;
     }
@@ -76,12 +92,17 @@ export class AuthenticationService {
       return;
     }
 
+    this.storage?.setItem(STANDALONE_ROLE_STORAGE_KEY, role);
+
     this.identityState.set({
-      subject: role === 'PARTNER' ? '11111111-1111-4111-8111-111111111111' : 'local-security-user',
+      subject:
+        role === 'PARTNER'
+          ? '11111111-1111-4111-8111-111111111111'
+          : 'local-security-user',
       roles: new Set<SixpayRole>([role]),
     });
   }
-
+  
   accessTokenForRequest(): Observable<string | null> {
     if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
       return this.oidc.getAccessToken();

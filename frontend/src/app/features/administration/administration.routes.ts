@@ -1,30 +1,29 @@
 import { Routes } from '@angular/router';
 
-import { administrationGuard } from './guards/administration.guard';
+import { roleGuard } from '../../core/auth/role.guard';
+
+const ADMIN_ONLY = ['ADMIN'] as const;
 
 export const ADMINISTRATION_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [administrationGuard],
+    canActivate: [roleGuard],
+    data: { roles: ADMIN_ONLY },
     loadComponent: () =>
-      import('./components/administration-page.component').then(
-        (component) => component.AdministrationPageComponent,
-      ),
+      import('./components/administration-page.component').then((component) => component.AdministrationPageComponent),
   },
   {
     path: 'settings',
-    canActivate: [administrationGuard],
+    canActivate: [roleGuard],
+    data: { roles: ADMIN_ONLY },
     loadComponent: () =>
-      import('./components/settings-page.component').then(
-        (component) => component.SettingsPageComponent,
-      ),
+      import('./components/settings-page.component').then((component) => component.SettingsPageComponent),
   },
   {
     path: 'integrations',
-    canActivate: [administrationGuard],
+    canActivate: [roleGuard],
+    data: { roles: ADMIN_ONLY },
     loadComponent: () =>
-      import('./components/integrations-page.component').then(
-        (component) => component.IntegrationsPageComponent,
-      ),
+      import('./components/integrations-page.component').then((component) => component.IntegrationsPageComponent),
   },
 ];

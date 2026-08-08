@@ -10,7 +10,7 @@ export const environment = {
     scope: 'openid profile email roles',
     standaloneUser: {
       subject: 'local-security-user',
-      roles: ['ADMIN', 'MANAGER', 'AUDITOR'],
+      roles: ['ADMIN'],
     },
   },
 } satisfies AppEnvironment;
