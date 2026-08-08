@@ -10,13 +10,17 @@ export const INCIDENT_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: INCIDENT_READ_ROLES },
     loadComponent: () =>
-      import('./components/incident-list-page.component').then((component) => component.IncidentListPageComponent),
+      import('./components/incident-list-page.component').then(
+        (component) => component.IncidentListPageComponent,
+      ),
   },
   {
     path: ':incidentId',
     canActivate: [roleGuard],
     data: { roles: INCIDENT_READ_ROLES },
     loadComponent: () =>
-      import('./components/incident-detail-page.component').then((component) => component.IncidentDetailPageComponent),
+      import('./components/incident-detail-page.component').then(
+        (component) => component.IncidentDetailPageComponent,
+      ),
   },
 ];

@@ -10,13 +10,17 @@ export const ACCOUNTING_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: ACCOUNTING_READ_ROLES },
     loadComponent: () =>
-      import('./components/accounting-overview-page.component').then((component) => component.AccountingOverviewPageComponent),
+      import('./components/accounting-overview-page.component').then(
+        (component) => component.AccountingOverviewPageComponent,
+      ),
   },
   {
     path: 'batches/:batchId',
     canActivate: [roleGuard],
     data: { roles: ACCOUNTING_READ_ROLES },
     loadComponent: () =>
-      import('./components/accounting-batch-detail-page.component').then((component) => component.AccountingBatchDetailPageComponent),
+      import('./components/accounting-batch-detail-page.component').then(
+        (component) => component.AccountingBatchDetailPageComponent,
+      ),
   },
 ];
