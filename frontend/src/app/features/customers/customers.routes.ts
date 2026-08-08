@@ -10,13 +10,17 @@ export const CUSTOMER_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: CUSTOMER_READ_ROLES },
     loadComponent: () =>
-      import('./components/customer-list-page.component').then((component) => component.CustomerListPageComponent),
+      import('./components/customer-list-page.component').then(
+        (component) => component.CustomerListPageComponent,
+      ),
   },
   {
     path: ':observedCustomerId',
     canActivate: [roleGuard],
     data: { roles: CUSTOMER_READ_ROLES },
     loadComponent: () =>
-      import('./components/customer-detail-page.component').then((component) => component.CustomerDetailPageComponent),
+      import('./components/customer-detail-page.component').then(
+        (component) => component.CustomerDetailPageComponent,
+      ),
   },
 ];
