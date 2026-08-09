@@ -11,6 +11,7 @@ import {
 } from '../models/create-partners.request';
 import {
   PartnerAuditPageResponse,
+  PartnerPageResponse,
   PartnerResponse,
   PartnerStatusResponse,
 } from '../models/partners.response';
@@ -20,6 +21,20 @@ const PARTNERS_API_PATH = '/api/v1/partners';
 @Injectable({ providedIn: 'root' })
 export class PartnerApiClient {
   private readonly http = inject(HttpClient);
+
+  listPartners(
+    page = 0,
+    size = 20,
+  ): Observable<PartnerPageResponse> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    return this.http.get<PartnerPageResponse>(
+      PARTNERS_API_PATH,
+      { params },
+    );
+  }
 
   createPartner(request: CreatePartnerRequest): Observable<PartnerResponse> {
     return this.http.post<PartnerResponse>(PARTNERS_API_PATH, request);

@@ -12,15 +12,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
 
-@RestControllerAdvice(assignableTypes = PartnerController.class)
+@RestControllerAdvice(
+        assignableTypes = {
+                PartnerController.class,
+                PartnerCatalogController.class
+        }
+)
 public class PartnerApiExceptionHandler {
 
     private final PartnerOperationMetrics metrics;
@@ -30,27 +35,63 @@ public class PartnerApiExceptionHandler {
     }
 
     @ExceptionHandler(PartnerNotFoundException.class)
-    ResponseEntity<ProblemDetail> notFound(PartnerNotFoundException exception, HttpServletRequest request) {
+    ResponseEntity<ProblemDetail> notFound(
+            PartnerNotFoundException exception,
+            HttpServletRequest request
+    ) {
         metrics.rejected(PartnerOperationMetrics.Rejection.NOT_FOUND);
-        return problem(HttpStatus.NOT_FOUND, "Partner not found", exception.getMessage(), request);
+        return problem(
+                HttpStatus.NOT_FOUND,
+                "Partner not found",
+                exception.getMessage(),
+                request
+        );
     }
 
-    @ExceptionHandler({PartnerDomainException.class, IllegalArgumentException.class})
-    ResponseEntity<ProblemDetail> businessRule(RuntimeException exception, HttpServletRequest request) {
+    @ExceptionHandler({
+            PartnerDomainException.class,
+            IllegalArgumentException.class
+    })
+    ResponseEntity<ProblemDetail> businessRule(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
         metrics.rejected(PartnerOperationMetrics.Rejection.DOMAIN_RULE);
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Partner operation rejected", exception.getMessage(), request);
+        return problem(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "Partner operation rejected",
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<ProblemDetail> validation(MethodArgumentNotValidException exception, HttpServletRequest request) {
-        metrics.rejected(PartnerOperationMetrics.Rejection.INVALID_REQUEST);
-        var detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
+    ResponseEntity<ProblemDetail> validation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
+        metrics.rejected(
+                PartnerOperationMetrics.Rejection.INVALID_REQUEST
+        );
+
+        var detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Request validation failed"
+        );
         detail.setTitle("Invalid request");
-        detail.setType(URI.create("urn:sixpay:problem:invalid-request"));
+        detail.setType(
+                URI.create("urn:sixpay:problem:invalid-request")
+        );
         detail.setInstance(URI.create(request.getRequestURI()));
+
         var errors = new LinkedHashMap<String, String>();
-        exception.getBindingResult().getFieldErrors()
-                .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        exception.getBindingResult()
+                .getFieldErrors()
+                .forEach(error -> errors.putIfAbsent(
+                        error.getField(),
+                        error.getDefaultMessage()
+                ));
+
         detail.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(detail);
     }
@@ -58,10 +99,14 @@ public class PartnerApiExceptionHandler {
     @ExceptionHandler({
             MissingRequestHeaderException.class,
             HttpMessageNotReadableException.class
-            //HandlerMethodValidationException.class
     })
-    ResponseEntity<ProblemDetail> malformedRequest(Exception exception, HttpServletRequest request) {
-        metrics.rejected(PartnerOperationMetrics.Rejection.INVALID_REQUEST);
+    ResponseEntity<ProblemDetail> malformedRequest(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        metrics.rejected(
+                PartnerOperationMetrics.Rejection.INVALID_REQUEST
+        );
         return problem(
                 HttpStatus.BAD_REQUEST,
                 "Invalid request",
@@ -74,7 +119,10 @@ public class PartnerApiExceptionHandler {
             OptimisticLockingFailureException.class,
             DataIntegrityViolationException.class
     })
-    ResponseEntity<ProblemDetail> conflict(RuntimeException exception, HttpServletRequest request) {
+    ResponseEntity<ProblemDetail> conflict(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
         metrics.rejected(PartnerOperationMetrics.Rejection.DOMAIN_RULE);
         return problem(
                 HttpStatus.CONFLICT,
@@ -84,33 +132,23 @@ public class PartnerApiExceptionHandler {
         );
     }
 
-    private static ResponseEntity<ProblemDetail> problem(
-            HttpStatus status,
-            String title,
-            String detail,
-            HttpServletRequest request
-    ) {
-        var problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(title);
-        problem.setType(URI.create("urn:sixpay:problem:" + status.value()));
-        problem.setInstance(URI.create(request.getRequestURI()));
-        return ResponseEntity.status(status).body(problem);
-    }
-
     @ExceptionHandler(HandlerMethodValidationException.class)
     ResponseEntity<ProblemDetail> methodValidation(
             HandlerMethodValidationException exception,
             HttpServletRequest request
     ) {
-        metrics.rejected(PartnerOperationMetrics.Rejection.INVALID_REQUEST);
+        metrics.rejected(
+                PartnerOperationMetrics.Rejection.INVALID_REQUEST
+        );
 
         var detail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
                 "Request validation failed"
         );
-
         detail.setTitle("Invalid request");
-        detail.setType(URI.create("urn:sixpay:problem:invalid-request"));
+        detail.setType(
+                URI.create("urn:sixpay:problem:invalid-request")
+        );
         detail.setInstance(URI.create(request.getRequestURI()));
 
         var errors = new LinkedHashMap<String, String>();
@@ -127,7 +165,21 @@ public class PartnerApiExceptionHandler {
                 });
 
         detail.setProperty("errors", errors);
-
         return ResponseEntity.badRequest().body(detail);
+    }
+
+    private static ResponseEntity<ProblemDetail> problem(
+            HttpStatus status,
+            String title,
+            String detail,
+            HttpServletRequest request
+    ) {
+        var problem = ProblemDetail.forStatusAndDetail(status, detail);
+        problem.setTitle(title);
+        problem.setType(
+                URI.create("urn:sixpay:problem:" + status.value())
+        );
+        problem.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(status).body(problem);
     }
 }

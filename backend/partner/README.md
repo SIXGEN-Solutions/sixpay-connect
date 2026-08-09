@@ -71,6 +71,7 @@ Base path : `/api/v1/partners`
 
 | Méthode | URI | Rôle |
 |---|---|---|
+| `GET` | `/` | `ADMIN`, `MANAGER`, `AUDITOR` ou autorité `partner.read` |
 | `POST` | `/` | `ADMIN` |
 | `POST` | `/{id}/validation` | `MANAGER` |
 | `POST` | `/{id}/suspension` | `ADMIN` |
@@ -79,6 +80,9 @@ Base path : `/api/v1/partners`
 | `GET` | `/{id}` | `ADMIN`, `MANAGER` ou `AUDITOR` |
 | `GET` | `/{id}/status` | propriétaire `PARTNER` ou rôle interne |
 | `GET` | `/{id}/audit?from=...&to=...&page=0&size=50` | `AUDITOR` |
+
+
+La collection `GET /api/v1/partners` utilise une pagination `page/size` stable : `page >= 0`, `1 <= size <= 100`, avec `totalElements` et `totalPages` dans la réponse. Le catalogue est trié par `legalName`, puis `id`, afin de garantir un ordre déterministe entre les pages.
 
 Les erreurs HTTP suivent `ProblemDetail` (RFC 9457). Les requêtes mutantes acceptent `X-Correlation-ID`; une valeur est générée lorsqu'elle est absente. Elles exigent également `Idempotency-Key`. Un verrou transactionnel PostgreSQL et la table `partner_idempotency` empêchent les doubles effets, y compris lors de requêtes concurrentes ou rejouées.
 
