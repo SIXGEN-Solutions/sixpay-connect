@@ -12,7 +12,7 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `''feat/sixpay-test-validate-pilote'`
+**Primary implementation branch:** `'feat/sixpay-test-validate-pilote'`
 
 **Current delivery focus:** Phase 8 — Tests et validation du pilote.
 
