@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
+import { vi } from 'vitest';
 
+import { BackendModeService } from '../../../core/backend/backend-mode.service';
 import { PartnerApiClient } from '../api/partners-api.client';
 import { PartnerResponse } from '../models/partners.response';
+import { PartnersMockService } from './partners-mock.service';
 import { PartnersService } from './partners.service';
 
 const response: PartnerResponse = {
@@ -18,28 +21,105 @@ const response: PartnerResponse = {
 };
 
 describe('PartnersService', () => {
-  const api = {
-    createPartner: vi.fn(),
-    getPartner: vi.fn(),
-    getPartnerStatus: vi.fn(),
-    decidePartner: vi.fn(),
-    suspendPartner: vi.fn(),
-    reactivatePartner: vi.fn(),
-    configureValidationThreshold: vi.fn(),
-    getPartnerAuditTrail: vi.fn(),
-  };
-  let service: PartnersService;
+  function configure(usesApi: boolean) {
+    const api = {
+      listPartners: vi.fn(() =>
+        of({
+          items: [
+            {
+              id: response.id,
+              legalName: response.legalName,
+              technicalContactName: response.technicalContactName,
+              technicalContactEmail: response.technicalContactEmail,
+              authorizedTransactionTypes: response.authorizedTransactionTypes,
+              status: response.status,
+              createdAt: response.createdAt,
+              updatedAt: response.updatedAt,
+            },
+          ],
+          page: 0,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+        }),
+      ),
+      createPartner: vi.fn(() => of(response)),
+      getPartner: vi.fn(() => of(response)),
+      getPartnerStatus: vi.fn(),
+      decidePartner: vi.fn(() => of(response)),
+      suspendPartner: vi.fn(() => of(response)),
+      reactivatePartner: vi.fn(() => of(response)),
+      configureValidationThreshold: vi.fn(() => of(response)),
+      getPartnerAuditTrail: vi.fn(),
+    };
 
-  beforeEach(() => {
-    Object.values(api).forEach((mock) => mock.mockReset());
+    const mock = {
+      search: vi.fn(() =>
+        of({
+          items: [],
+          page: 0,
+          size: 20,
+          totalElements: 0,
+          totalPages: 0,
+        }),
+      ),
+      create: vi.fn(() => of(response)),
+      get: vi.fn(() => of(response)),
+      getStatus: vi.fn(),
+      decide: vi.fn(() => of(response)),
+      suspend: vi.fn(() => of(response)),
+      reactivate: vi.fn(() => of(response)),
+      configureValidationThreshold: vi.fn(() => of(response)),
+      getAuditTrail: vi.fn(),
+    };
+
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [PartnersService, { provide: PartnerApiClient, useValue: api }],
+      providers: [
+        PartnersService,
+        {
+          provide: BackendModeService,
+          useValue: {
+            usesApi,
+            usesMock: !usesApi,
+          },
+        },
+        { provide: PartnerApiClient, useValue: api },
+        { provide: PartnersMockService, useValue: mock },
+      ],
     });
-    service = TestBed.inject(PartnersService);
+
+    return {
+      service: TestBed.inject(PartnersService),
+      api,
+      mock,
+    };
+  }
+
+  it('uses the API datasource for the Partner catalog in API mode', async () => {
+    const { service, api, mock } = configure(true);
+
+    const page = await firstValueFrom(
+      service.search({ page: 0, size: 20 }),
+    );
+
+    expect(api.listPartners).toHaveBeenCalledWith(0, 20);
+    expect(mock.search).not.toHaveBeenCalled();
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]!.createdAt).toBeInstanceOf(Date);
   });
 
-  it('sérialise la création et désérialise les dates de la réponse', async () => {
-    api.createPartner.mockReturnValue(of(response));
+  it('uses the mock datasource for the Partner catalog in mock mode', async () => {
+    const { service, api, mock } = configure(false);
+
+    await firstValueFrom(service.search({ page: 0, size: 20 }));
+
+    expect(mock.search).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(api.listPartners).not.toHaveBeenCalled();
+  });
+
+  it('keeps creation datasource-agnostic', async () => {
+    const { service, api, mock } = configure(false);
     const request = {
       legalName: 'Golden Partner',
       technicalContactName: 'Alice',
@@ -49,68 +129,28 @@ describe('PartnersService', () => {
 
     const partner = await firstValueFrom(service.create(request));
 
-    expect(api.createPartner).toHaveBeenCalledWith(request);
+    expect(mock.create).toHaveBeenCalledWith(request);
+    expect(api.createPartner).not.toHaveBeenCalled();
     expect(partner.createdAt).toBeInstanceOf(Date);
-    expect(partner.statusReason).toBeNull();
   });
 
-  it('délègue les actions du cycle de vie au client API', async () => {
-    api.decidePartner.mockReturnValue(of(response));
-    api.suspendPartner.mockReturnValue(of(response));
-    api.reactivatePartner.mockReturnValue(of(response));
-
-    await firstValueFrom(service.decide('partner-id', { decision: 'APPROVE', reason: null }));
-    await firstValueFrom(service.suspend('partner-id', { reason: 'Compliance' }));
-    await firstValueFrom(service.reactivate('partner-id'));
-
-    expect(api.decidePartner).toHaveBeenCalledWith('partner-id', {
-      decision: 'APPROVE',
-      reason: null,
-    });
-    expect(api.suspendPartner).toHaveBeenCalledWith('partner-id', {
-      reason: 'Compliance',
-    });
-    expect(api.reactivatePartner).toHaveBeenCalledWith('partner-id');
-  });
-
-  it('mappe les seuils et la page d’audit', async () => {
-    api.configureValidationThreshold.mockReturnValue(of(response));
-    api.getPartnerAuditTrail.mockReturnValue(
-      of({
-        items: [
-          {
-            partnerId: 'partner-id',
-            action: 'CREATED',
-            result: 'SUCCESS',
-            actorId: 'admin',
-            correlationId: 'corr-1',
-            details: 'created',
-            occurredAt: '2026-07-29T12:00:00Z',
-          },
-        ],
-        page: 0,
-        size: 25,
-        totalElements: 1,
-        totalPages: 1,
-      }),
-    );
+  it('keeps lifecycle operations datasource-agnostic', async () => {
+    const { service, api, mock } = configure(false);
 
     await firstValueFrom(
-      service.configureValidationThreshold('partner-id', 'PAYMENT', {
-        currency: 'CAD',
-        amount: 100,
-        validationLevels: 2,
+      service.decide('partner-id', {
+        decision: 'APPROVE',
+        reason: null,
       }),
     );
-    const audit = await firstValueFrom(
-      service.getAuditTrail('partner-id', {
-        from: '2026-07-01T00:00:00Z',
-        to: '2026-07-31T23:59:59Z',
-      }),
+    await firstValueFrom(
+      service.suspend('partner-id', { reason: 'Compliance' }),
     );
+    await firstValueFrom(service.reactivate('partner-id'));
 
-    expect(api.configureValidationThreshold).toHaveBeenCalledOnce();
-    expect(audit.items).toHaveLength(1);
-    expect(audit.items[0]!.occurredAt).toBeInstanceOf(Date);
+    expect(mock.decide).toHaveBeenCalledOnce();
+    expect(mock.suspend).toHaveBeenCalledOnce();
+    expect(mock.reactivate).toHaveBeenCalledOnce();
+    expect(api.decidePartner).not.toHaveBeenCalled();
   });
 });

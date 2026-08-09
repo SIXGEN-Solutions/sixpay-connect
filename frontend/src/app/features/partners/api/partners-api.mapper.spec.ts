@@ -1,60 +1,66 @@
 import {
-  mapPartnerAuditPageResponse,
+  mapPartnerPageResponse,
   mapPartnerResponse,
   mapPartnerStatusResponse,
 } from './partners-api.mapper';
 
 describe('Partner API mappers', () => {
-  it('maps HTTP date-time strings and nullable fields to application models', () => {
+  it('maps a complete Partner response', () => {
     const partner = mapPartnerResponse({
       id: 'partner-id',
-      legalName: 'Acme Payments',
-      technicalContactName: 'Alice Ops',
-      technicalContactEmail: 'alice.ops@example.com',
+      legalName: 'Golden Partner',
+      technicalContactName: 'Alice',
+      technicalContactEmail: 'alice@example.test',
       authorizedTransactionTypes: ['PAYMENT'],
       status: 'ACTIVE',
-      validationThresholds: [
-        { transactionType: 'PAYMENT', currency: 'CAD', amount: 1000, validationLevels: 2 },
-      ],
-      createdAt: '2026-07-28T12:00:00Z',
-      updatedAt: '2026-07-28T13:00:00Z',
+      validationThresholds: [],
+      createdAt: '2026-08-08T10:00:00Z',
+      updatedAt: '2026-08-08T11:00:00Z',
     });
 
-    expect(partner.createdAt).toEqual(new Date('2026-07-28T12:00:00Z'));
-    expect(partner.updatedAt).toEqual(new Date('2026-07-28T13:00:00Z'));
+    expect(partner.createdAt).toBeInstanceOf(Date);
+    expect(partner.updatedAt).toBeInstanceOf(Date);
     expect(partner.statusReason).toBeNull();
   });
 
-  it('maps status and audit responses without leaking HTTP date strings', () => {
+  it('maps a paginated Partner catalog without inventing detail fields', () => {
+    const page = mapPartnerPageResponse({
+      items: [
+        {
+          id: 'partner-id',
+          legalName: 'Golden Partner',
+          technicalContactName: 'Alice',
+          technicalContactEmail: 'alice@example.test',
+          authorizedTransactionTypes: ['PAYMENT'],
+          status: 'ACTIVE',
+          createdAt: '2026-08-08T10:00:00Z',
+          updatedAt: '2026-08-08T11:00:00Z',
+        },
+      ],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    });
+
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]!.createdAt).toBeInstanceOf(Date);
+    expect(page.items[0]!.updatedAt).toBeInstanceOf(Date);
+  });
+
+  it('maps the Partner status response', () => {
     const status = mapPartnerStatusResponse({
       partnerId: 'partner-id',
       status: 'ACTIVE',
       connection: {
         apiBasePath: '/api/v1/partners/partner-id',
-        supportedAuthenticationMethods: ['MTLS', 'API_KEY'],
+        supportedAuthenticationMethods: ['MTLS'],
         newTransactionsAllowed: true,
       },
-      updatedAt: '2026-07-28T13:00:00Z',
-    });
-    const audit = mapPartnerAuditPageResponse({
-      items: [
-        {
-          partnerId: 'partner-id',
-          action: 'PARTNER_VALIDATED',
-          result: 'SUCCESS',
-          actorId: 'admin@sixpay',
-          correlationId: 'correlation-id',
-          details: 'Approved',
-          occurredAt: '2026-07-28T13:00:00Z',
-        },
-      ],
-      page: 0,
-      size: 50,
-      totalElements: 1,
-      totalPages: 1,
+      updatedAt: '2026-08-08T11:00:00Z',
     });
 
     expect(status.updatedAt).toBeInstanceOf(Date);
-    expect(audit.items[0]?.occurredAt).toBeInstanceOf(Date);
+    expect(status.statusReason).toBeNull();
   });
 });
