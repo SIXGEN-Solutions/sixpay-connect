@@ -13,6 +13,7 @@
     "build": "ng build",
     "build:integration": "ng build --configuration integration",
     "build:netlify": "ng build --configuration netlify",
+    "build:all": "npm run build && npm run build:netlify && npm run build:integration",
     "watch": "ng build --watch --configuration development",
     "lint": "ng lint",
     "format": "prettier --write .",

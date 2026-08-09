@@ -30,7 +30,7 @@ describe('PartnerAccessPageComponent hardening', () => {
     size: 20,
     totalElements: 28,
     totalPages: 2,
-};
+  };
 
   function configure(
     searchImplementation: (
@@ -86,12 +86,13 @@ describe('PartnerAccessPageComponent hardening', () => {
   });
 
   it('requests page one when next is selected', () => {
-    const search = vi.fn((query: { page?: number; size?: number }) =>
-      of({
-        ...page,
-        page: query.page ?? 0,
-        size: query.size ?? 20,
-      }),
+    const search = vi.fn(
+      (query: PartnerSearchQuery): Observable<PartnerPage> =>
+        of({
+          ...page,
+          page: query.page ?? 0,
+          size: query.size ?? 20,
+        }),
     );
 
     configure(search);

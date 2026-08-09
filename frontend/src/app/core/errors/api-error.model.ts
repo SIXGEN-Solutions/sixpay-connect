@@ -1,3 +1,13 @@
+export type ApplicationErrorKind =
+  | 'network'
+  | 'validation'
+  | 'unauthorized'
+  | 'forbidden'
+  | 'not-found'
+  | 'rate-limit'
+  | 'server'
+  | 'generic';
+
 export interface ProblemDetail {
   readonly type: string;
   readonly title: string;
@@ -8,11 +18,13 @@ export interface ProblemDetail {
 }
 
 export interface ApplicationError {
+  readonly kind: ApplicationErrorKind;
   readonly status: number;
   readonly title: string;
   readonly detail: string;
   readonly fieldErrors: Readonly<Record<string, string>>;
   readonly correlationId: string | null;
+  readonly retryAfterSeconds: number | null;
 }
 
 export function isProblemDetail(value: unknown): value is ProblemDetail {
@@ -21,6 +33,7 @@ export function isProblemDetail(value: unknown): value is ProblemDetail {
   }
 
   const candidate = value as Partial<ProblemDetail>;
+
   return (
     typeof candidate.type === 'string' &&
     typeof candidate.title === 'string' &&

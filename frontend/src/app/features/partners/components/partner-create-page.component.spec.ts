@@ -93,13 +93,16 @@ describe('PartnerCreatePageComponent', () => {
 
   it('rend une erreur backend de champ prioritaire', () => {
     TestBed.inject(ErrorService).publish({
+      kind: 'validation',
       status: 400,
       title: 'Invalid request',
-      detail: 'Invalid data',
-      fieldErrors: { legalName: 'Raison sociale déjà utilisée.' },
-      correlationId: 'corr-1',
+      detail: 'Request contains invalid data',
+      fieldErrors: {
+        legalName: 'Raison sociale déjà utilisée.',
+      },
+      correlationId: 'corr-123',
+      retryAfterSeconds: null,
     });
-
     expect(component.fieldError('legalName')).toBe('Raison sociale déjà utilisée.');
   });
 });
