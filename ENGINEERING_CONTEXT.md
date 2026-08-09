@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `''feat/frontend-sixpay-domains'`
+**Primary implementation branch:** `''feat/sixpay-test-validate-pilote'`
 
-**Current delivery focus:** Phase 7 — implémenter le Frontend SIXPAY.
+**Current delivery focus:** Phase 8 — Tests et validation du pilote.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `''feat/frontend-sixpay-domains'`
+1. `''feat/sixpay-test-validate-pilote'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
