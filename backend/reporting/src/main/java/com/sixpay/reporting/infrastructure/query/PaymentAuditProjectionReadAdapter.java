@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -58,7 +60,10 @@ public class PaymentAuditProjectionReadAdapter
         );
         MapSqlParameterSource p = new MapSqlParameterSource()
                 .addValue("paymentId", criteria.paymentId())
-                .addValue("snapshotAt", criteria.snapshotAt());
+                .addValue(
+                        "snapshotAt",
+                        timestamp(criteria.snapshotAt())
+                );
 
         if (criteria.category() != null) {
             sql.append(" AND category = :category");
@@ -81,7 +86,7 @@ public class PaymentAuditProjectionReadAdapter
                     """);
             p.addValue(
                     "lastOccurredAt",
-                    criteria.position().occurredAt()
+                    timestamp(criteria.position().occurredAt())
             );
             p.addValue("lastId", criteria.position().id());
         }
@@ -120,9 +125,18 @@ public class PaymentAuditProjectionReadAdapter
                 """
         );
         MapSqlParameterSource p = new MapSqlParameterSource()
-                .addValue("snapshotAt", criteria.snapshotAt())
-                .addValue("occurredFrom", criteria.occurredFrom())
-                .addValue("occurredTo", criteria.occurredTo());
+                .addValue(
+                        "snapshotAt",
+                        timestamp(criteria.snapshotAt())
+                )
+                .addValue(
+                        "occurredFrom",
+                        timestamp(criteria.occurredFrom())
+                )
+                .addValue(
+                        "occurredTo",
+                        timestamp(criteria.occurredTo())
+                );
 
         eq(sql, p, "payment_id", "paymentId", criteria.paymentId());
         eq(sql, p, "payment_reference", "paymentReference",
@@ -160,7 +174,7 @@ public class PaymentAuditProjectionReadAdapter
                     .append(" :lastId))");
             p.addValue(
                     "lastOccurredAt",
-                    criteria.position().occurredAt()
+                    timestamp(criteria.position().occurredAt())
             );
             p.addValue("lastId", criteria.position().id());
         }
@@ -255,7 +269,7 @@ public class PaymentAuditProjectionReadAdapter
                         rs.getString("timeline_result")
                 ),
                 rs.getString("reason_code"),
-                rs.getObject("occurred_at", Instant.class),
+                instant(rs, "occurred_at"),
                 rs.getObject("correlation_id", UUID.class),
                 AuditSourceSystem.valueOf(
                         rs.getString("source_system")
@@ -280,7 +294,7 @@ public class PaymentAuditProjectionReadAdapter
 
         return new PaymentAuditRecordView(
                 rs.getObject("evidence_id", UUID.class),
-                rs.getObject("occurred_at", Instant.class),
+                instant(rs, "occurred_at"),
                 new AuditActorView(
                         AuditActorType.valueOf(
                                 rs.getString("actor_type")
@@ -328,11 +342,17 @@ public class PaymentAuditProjectionReadAdapter
     ) {
         if (from != null) {
             sql.append(" AND occurred_at >= :occurredFrom");
-            p.addValue("occurredFrom", from);
+            p.addValue(
+                    "occurredFrom",
+                    timestamp(from)
+            );
         }
         if (to != null) {
             sql.append(" AND occurred_at <= :occurredTo");
-            p.addValue("occurredTo", to);
+            p.addValue(
+                    "occurredTo",
+                    timestamp(to)
+            );
         }
     }
 
@@ -350,6 +370,19 @@ public class PaymentAuditProjectionReadAdapter
                     .append(name);
             p.addValue(name, value);
         }
+    }
+
+    private static Timestamp timestamp(Instant value) {
+        return value == null ? null : Timestamp.from(value);
+    }
+
+    private static Instant instant(
+            ResultSet rs,
+            String column
+    ) throws SQLException {
+        OffsetDateTime value =
+                rs.getObject(column, OffsetDateTime.class);
+        return value == null ? null : value.toInstant();
     }
 
     private static String name(Enum<?> value) {

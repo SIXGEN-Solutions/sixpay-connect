@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
@@ -101,6 +102,7 @@ public final class PaymentAuditQueryExceptionHandler {
     @ExceptionHandler({
             IllegalArgumentException.class,
             MissingRequestHeaderException.class,
+            HandlerMethodValidationException.class,
             MethodArgumentTypeMismatchException.class
     })
     ResponseEntity<ProblemDetail> badRequest(

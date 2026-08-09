@@ -14,6 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.Connection;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -88,8 +89,10 @@ class PaymentAuditPersistenceIT {
                     paymentId,
                     paymentId.toString(),
                     UUID.randomUUID(),
-                    Instant.parse(
-                            "2026-08-07T20:00:00Z"
+                    Timestamp.from(
+                            Instant.parse(
+                                    "2026-08-07T20:00:00Z"
+                            )
                     )
             );
 

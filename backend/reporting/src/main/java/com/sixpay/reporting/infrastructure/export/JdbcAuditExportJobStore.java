@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
 import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,11 +91,11 @@ public class JdbcAuditExportJobStore
                             .addValue("fingerprint", fingerprint)
                             .addValue(
                                     "occurredFrom",
-                                    command.occurredFrom()
+                                    timestamp(command.occurredFrom())
                             )
                             .addValue(
                                     "occurredTo",
-                                    command.occurredTo()
+                                    timestamp(command.occurredTo())
                             )
                             .addValue(
                                     "paymentIds",
@@ -137,9 +139,12 @@ public class JdbcAuditExportJobStore
                             )
                             .addValue(
                                     "requestedAt",
-                                    requestedAt
+                                    timestamp(requestedAt)
                             )
-                            .addValue("expiresAt", expiresAt)
+                            .addValue(
+                                    "expiresAt",
+                                    timestamp(expiresAt)
+                            )
             );
 
             AuditExportJobDefinition job =
@@ -296,7 +301,10 @@ public class JdbcAuditExportJobStore
                     WHERE status = 'AVAILABLE'
                       AND expires_at <= :now
                     """,
-                    new MapSqlParameterSource("now", now)
+                    new MapSqlParameterSource(
+                            "now",
+                            timestamp(now)
+                    )
             );
         } catch (DataAccessException exception) {
             throw unavailable(exception);
@@ -351,12 +359,8 @@ public class JdbcAuditExportJobStore
                 AuditExportStatus.valueOf(
                         rs.getString("status")
                 ),
-                rs.getObject(
-                        "occurred_from", Instant.class
-                ),
-                rs.getObject(
-                        "occurred_to", Instant.class
-                ),
+                instant(rs, "occurred_from"),
+                instant(rs, "occurred_to"),
                 splitUuid(rs.getString("payment_ids")),
                 split(rs.getString(
                         "financial_institution_codes"
@@ -374,10 +378,8 @@ public class JdbcAuditExportJobStore
                 rs.getObject(
                         "correlation_id", UUID.class
                 ),
-                rs.getObject(
-                        "requested_at", Instant.class
-                ),
-                rs.getObject("expires_at", Instant.class),
+                instant(rs, "requested_at"),
+                instant(rs, "expires_at"),
                 nullableLong(rs, "record_count"),
                 rs.getString("checksum"),
                 uri == null ? null : URI.create(uri),
@@ -402,6 +404,19 @@ public class JdbcAuditExportJobStore
     ) throws SQLException {
         long value = rs.getLong(column);
         return rs.wasNull() ? null : value;
+    }
+
+    private static Timestamp timestamp(Instant value) {
+        return value == null ? null : Timestamp.from(value);
+    }
+
+    private static Instant instant(
+            ResultSet rs,
+            String column
+    ) throws SQLException {
+        OffsetDateTime value =
+                rs.getObject(column, OffsetDateTime.class);
+        return value == null ? null : value.toInstant();
     }
 
     private static String join(List<?> values) {

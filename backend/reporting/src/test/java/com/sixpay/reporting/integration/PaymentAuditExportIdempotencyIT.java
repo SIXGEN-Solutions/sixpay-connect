@@ -37,13 +37,16 @@ class PaymentAuditExportIdempotencyIT {
         try (Connection connection =
                      postgres.createConnection("")) {
 
-            ScriptUtils.executeSqlScript(
+            executeMigration(
                     connection,
-                    new ClassPathResource(
-                            "db/migration/"
-                                    + "V202608072120__create_"
-                                    + "reporting_audit_export.sql"
-                    )
+                    "V202608072058__create_"
+                            + "reporting_payment_audit_projection.sql"
+            );
+
+            executeMigration(
+                    connection,
+                    "V202608072120__create_"
+                            + "reporting_audit_export.sql"
             );
 
             JdbcAuditExportJobStore store =
@@ -96,6 +99,18 @@ class PaymentAuditExportIdempotencyIT {
                     )
             );
         }
+    }
+
+    private static void executeMigration(
+            Connection connection,
+            String migration
+    ) {
+        ScriptUtils.executeSqlScript(
+                connection,
+                new ClassPathResource(
+                        "db/migration/" + migration
+                )
+        );
     }
 
     private static RequestPaymentAuditExportCommand command(
