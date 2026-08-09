@@ -29,7 +29,7 @@ jobs:
   quality:
     name: Frontend quality gate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -60,8 +60,8 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high --json > dependency-audit.json
 
-      - name: Production build
-        run: npm run build
+      - name: Build integration, Netlify and production profiles
+        run: npm run build:all
 
       - name: Upload coverage report
         if: always()
@@ -93,7 +93,7 @@ jobs:
   e2e:
     name: Frontend E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -112,15 +112,27 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E and accessibility tests
+      - name: Run standalone/mock E2E and accessibility
         run: npm run test:e2e
 
-      - name: Upload Playwright report
+      - name: Run integration-profile E2E
+        run: npm run test:e2e:integration
+
+      - name: Upload mock Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-playwright-report
           path: frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload integration Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-playwright-integration-report
+          path: frontend/playwright-report-integration
           if-no-files-found: warn
           retention-days: 14
 

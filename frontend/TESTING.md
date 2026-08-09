@@ -1,41 +1,35 @@
-# Tests de référence
+# Tests de référence — Phase 7.8
 
-## Périmètre
+## Objectif
 
-Il couvre les composants et parcours Partner sans modifier le comportement métier
-validé par les Gates précédentes :
+La stratégie de test frontend SIXPAY couvre désormais deux chemins d’exécution
+distincts :
 
-- tests unitaires et de composants Angular avec Vitest ;
-- intégration du client HTTP avec `HttpTestingController` ;
-- parcours E2E avec Playwright et backend Partner simulé ;
-- accessibilité automatisée avec axe-core ;
-- couverture V8 avec seuils bloquants ;
-- compilation Angular de production.
-
-## Seuils de couverture
-
-| Mesure     | Seuil minimal |
-| ---------- | ------------: |
-| Statements |          70 % |
-| Branches   |          60 % |
-| Functions  |          60 % |
-| Lines      |          70 % |
-
-Le rapport HTML est généré dans `coverage/index.html`.
-
-## Installation E2E
-
-Après `npm ci`, installer une seule fois Chromium :
-
-```bash
-npm run test:e2e:install
+```text
+standalone + mock
+integration + API
 ```
 
-Sous Linux CI, installer également les dépendances système si nécessaire :
+Le premier valide le Functional Mock Frame autonome. Le second compile
+réellement avec `environment.integration.ts`, donc :
 
-```bash
-npx playwright install --with-deps chromium
+```text
+authentication.mode = local
+backend.mode = api
 ```
+
+et simule uniquement les réponses backend au niveau réseau Playwright.
+
+## Couverture
+
+Les seuils Vitest restent bloquants :
+
+| Mesure | Seuil |
+| --- | ---: |
+| Statements | 70 % |
+| Branches | 60 % |
+| Functions | 60 % |
+| Lines | 70 % |
 
 ## Commandes
 
@@ -43,20 +37,112 @@ npx playwright install --with-deps chromium
 npm test
 npm run test:coverage
 npm run test:e2e
+npm run test:e2e:integration
 npm run test:e2e:a11y
-npm run gate:6
+npm run build:all
+npm run gate:8
 ```
 
-## Parcours E2E
+## E2E standalone/mock
 
-- création d’un Partner et redirection vers sa fiche ;
-- approbation et consultation du statut ;
-- configuration d’un seuil ;
-- suspension avec motif ;
+Configuration :
+
+```text
+playwright.config.ts
+```
+
+Serveur :
+
+```bash
+npm start
+```
+
+Ce mode valide notamment :
+
+- Partner Golden Module ;
+- rôles ADMIN / MANAGER / AUDITOR / PARTNER ;
+- création ;
+- approbation ;
+- seuil ;
+- suspension ;
 - réactivation ;
-- consultation de l’audit ;
-- refus d’un accès non autorisé ;
-- navigation clavier, focus, labels, erreurs de formulaire, contraste et dialogues.
+- audit ;
+- accessibilité ;
+- navigation 404 ;
+- absence de dépendance backend.
 
-Le backend est simulé au niveau réseau par Playwright. Les scénarios contrôlent également
-la présence de `X-Correlation-ID` et de `Idempotency-Key` sur les mutations.
+Les tests `integration-*.spec.ts` sont exclus de ce runner.
+
+## E2E integration/API
+
+Configuration :
+
+```text
+playwright.integration.config.ts
+```
+
+Serveur :
+
+```bash
+npm run start:integration
+```
+
+sur le port `4201`.
+
+Playwright simule :
+
+```text
+GET /api/v1/auth/me
+GET /api/v1/partners
+```
+
+mais le frontend reste réellement compilé en mode `api`.
+
+Les scénarios 7.8 vérifient :
+
+- restauration d’une session locale ADMIN ;
+- absence du panneau Functional Mock Frame ;
+- loading réel avant réponse API ;
+- success ;
+- empty ;
+- erreur 429 ;
+- `Retry-After` ;
+- `X-Correlation-ID`.
+
+## Navigation 404
+
+Une route inconnue ne redirige plus silencieusement vers `/`.
+
+Elle conserve son URL et affiche :
+
+```text
+404
+Page introuvable
+Page précédente
+Retour au tableau de bord
+```
+
+## 429
+
+Le modèle global d’erreur conserve :
+
+```text
+kind = rate-limit
+retryAfterSeconds
+correlationId
+```
+
+La bannière du shell affiche le délai et la référence support quand ils sont
+présents.
+
+## Installation Playwright
+
+```bash
+npm run test:e2e:install
+```
+
+CI Linux :
+
+```bash
+npx playwright install --with-deps chromium
+```
