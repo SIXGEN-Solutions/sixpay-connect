@@ -7,6 +7,17 @@ export interface AuthenticatedIdentity {
   readonly roles: ReadonlySet<SixpayRole>;
 }
 
+export interface LocalLoginRequest {
+  readonly username: string;
+  readonly password: string;
+}
+
+export interface LocalSessionResponse {
+  readonly subject: string;
+  readonly username: string;
+  readonly roles: readonly string[];
+}
+
 export interface JwtClaims {
   readonly exp?: number;
   readonly sub?: string;

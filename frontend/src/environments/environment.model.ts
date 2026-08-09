@@ -1,4 +1,4 @@
-export type AuthenticationMode = 'oidc' | 'standalone';
+export type AuthenticationMode = 'oidc' | 'standalone' | 'local';
 export type BackendMode = 'mock' | 'api';
 
 export interface AuthenticationEnvironment {

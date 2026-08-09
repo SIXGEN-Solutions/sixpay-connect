@@ -2,7 +2,16 @@ import { DOCUMENT } from '@angular/common';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
-import { Observable, of, ReplaySubject } from 'rxjs';
+import {
+  catchError,
+  finalize,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthenticationEnvironment } from '../../../environments/environment.model';
@@ -10,8 +19,11 @@ import {
   AuthenticatedIdentity,
   extractSixpayRoles,
   JwtClaims,
+  LocalLoginRequest,
+  LocalSessionResponse,
   SixpayRole,
 } from './authentication.model';
+import { LocalAuthenticationClient } from './local-authentication.client';
 
 const RETURN_URL_STORAGE_KEY = 'sixpay.authentication.return-url';
 const STANDALONE_ROLE_STORAGE_KEY = 'sixpay.authentication.standalone-role';
@@ -26,63 +38,36 @@ export class AuthenticationService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly oidc = inject(OidcSecurityService, { optional: true });
+  private readonly localClient = inject(LocalAuthenticationClient);
   private readonly identityState = signal<AuthenticatedIdentity | null>(null);
+  private readonly usernameState = signal<string | null>(null);
   private readonly readyState = new ReplaySubject<boolean>(1);
 
   readonly identity = this.identityState.asReadonly();
+  readonly username = this.usernameState.asReadonly();
   readonly isAuthenticated = computed(() => this.identityState() !== null);
   readonly subject = computed(() => this.identityState()?.subject ?? null);
   readonly roles = computed(
     () => this.identityState()?.roles ?? new Set<SixpayRole>(),
   );
   readonly ready$ = this.readyState.asObservable();
+
   readonly isStandaloneMode = authenticationEnvironment.mode === 'standalone';
+  readonly isLocalMode = authenticationEnvironment.mode === 'local';
+  readonly isOidcMode = authenticationEnvironment.mode === 'oidc';
 
   constructor() {
-    if (authenticationEnvironment.mode === 'standalone') {
-      const localUser = authenticationEnvironment.standaloneUser;
-      const storedRole = this.storage?.getItem(
-        STANDALONE_ROLE_STORAGE_KEY,
-      ) as SixpayRole | null;
-
-      const roles = storedRole
-        ? new Set<SixpayRole>([storedRole])
-        : extractSixpayRoles({ roles: localUser?.roles ?? [] });
-
-      const effectiveRole =
-        storedRole ?? this.firstConfiguredStandaloneRole(localUser?.roles ?? []);
-
-      this.identityState.set({
-        subject: this.standaloneSubjectForRole(effectiveRole),
-        roles,
-      });
-
-      this.readyState.next(true);
-      return;
+    switch (authenticationEnvironment.mode) {
+      case 'standalone':
+        this.initializeStandaloneIdentity();
+        break;
+      case 'local':
+        this.restoreLocalSession();
+        break;
+      case 'oidc':
+        this.initializeOidcSession();
+        break;
     }
-
-    if (!this.oidc) {
-      this.readyState.next(false);
-      return;
-    }
-
-    this.oidc.checkAuth().subscribe({
-      next: (response) => {
-        if (response.isAuthenticated) {
-          this.setAuthenticatedSession(
-            response.accessToken,
-            response.userData as JwtClaims,
-          );
-        } else {
-          this.clearLocalSession();
-        }
-        this.readyState.next(response.isAuthenticated);
-      },
-      error: () => {
-        this.clearLocalSession();
-        this.readyState.next(false);
-      },
-    });
   }
 
   hasRole(role: SixpayRole | string): boolean {
@@ -108,16 +93,37 @@ export class AuthenticationService {
     });
   }
 
-  accessTokenForRequest(): Observable<string | null> {
-    if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
-      return this.oidc.getAccessToken();
+  loginLocal(
+    request: LocalLoginRequest,
+    returnUrl = '/',
+  ): Observable<void> {
+    if (!this.isLocalMode) {
+      return throwError(
+        () => new Error('Local authentication is not enabled'),
+      );
     }
-    return of(null);
+
+    this.storage?.setItem(
+      RETURN_URL_STORAGE_KEY,
+      this.safeReturnUrl(returnUrl),
+    );
+
+    return this.localClient.login(request).pipe(
+      tap((session) => this.setLocalSession(session)),
+      tap(() => this.completeLoginNavigation()),
+      map(() => undefined),
+    );
   }
 
   login(returnUrl = '/'): void {
-    const safeReturnUrl = this.safeReturnUrl(returnUrl);
-    this.storage?.setItem(RETURN_URL_STORAGE_KEY, safeReturnUrl);
+    if (!this.isOidcMode) {
+      return;
+    }
+
+    this.storage?.setItem(
+      RETURN_URL_STORAGE_KEY,
+      this.safeReturnUrl(returnUrl),
+    );
     this.oidc?.authorize();
   }
 
@@ -129,15 +135,32 @@ export class AuthenticationService {
     const returnUrl = this.safeReturnUrl(
       this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
     );
+
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
     void this.router.navigateByUrl(returnUrl);
   }
 
   logout(): void {
-    this.clearLocalSession();
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
-    if (authenticationEnvironment.mode === 'oidc' && this.oidc) {
+    if (this.isLocalMode) {
+      this.localClient
+        .logout()
+        .pipe(
+          catchError(() => of(undefined)),
+          finalize(() => {
+            this.clearLocalSession();
+            void this.router.navigate(['/login']);
+          }),
+        )
+        .subscribe();
+
+      return;
+    }
+
+    this.clearLocalSession();
+
+    if (this.isOidcMode && this.oidc) {
       this.oidc
         .logoffAndRevokeTokens()
         .subscribe({ error: () => this.oidc?.logoffLocal() });
@@ -149,7 +172,87 @@ export class AuthenticationService {
 
   expireSession(): void {
     this.clearLocalSession();
-    this.oidc?.logoffLocal();
+
+    if (this.isOidcMode) {
+      this.oidc?.logoffLocal();
+    }
+  }
+
+  accessTokenForRequest(): Observable<string | null> {
+    if (this.isOidcMode && this.oidc) {
+      return this.oidc.getAccessToken();
+    }
+
+    return of(null);
+  }
+
+  private initializeStandaloneIdentity(): void {
+    const localUser = authenticationEnvironment.standaloneUser;
+    const storedRole = this.storage?.getItem(
+      STANDALONE_ROLE_STORAGE_KEY,
+    ) as SixpayRole | null;
+
+    const roles = storedRole
+      ? new Set<SixpayRole>([storedRole])
+      : extractSixpayRoles({ roles: localUser?.roles ?? [] });
+
+    const effectiveRole =
+      storedRole ??
+      this.firstConfiguredStandaloneRole(localUser?.roles ?? []);
+
+    this.identityState.set({
+      subject: this.standaloneSubjectForRole(effectiveRole),
+      roles,
+    });
+    this.usernameState.set(null);
+    this.readyState.next(true);
+  }
+
+  private restoreLocalSession(): void {
+    this.localClient.currentUser().subscribe({
+      next: (session) => {
+        this.setLocalSession(session);
+        this.readyState.next(true);
+      },
+      error: () => {
+        this.clearLocalSession();
+        this.readyState.next(true);
+      },
+    });
+  }
+
+  private initializeOidcSession(): void {
+    if (!this.oidc) {
+      this.readyState.next(true);
+      return;
+    }
+
+    this.oidc.checkAuth().subscribe({
+      next: (response) => {
+        if (response.isAuthenticated) {
+          this.setAuthenticatedSession(
+            response.accessToken,
+            response.userData as JwtClaims,
+          );
+        } else {
+          this.clearLocalSession();
+        }
+
+        this.readyState.next(true);
+      },
+      error: () => {
+        this.clearLocalSession();
+        this.readyState.next(true);
+      },
+    });
+  }
+
+  private setLocalSession(session: LocalSessionResponse): void {
+    this.identityState.set({
+      subject: session.subject,
+      roles: extractSixpayRoles({ roles: session.roles }),
+    });
+    this.usernameState.set(session.username);
   }
 
   private standaloneSubjectForRole(role: SixpayRole | null): string {
@@ -185,10 +288,12 @@ export class AuthenticationService {
       subject,
       roles: extractSixpayRoles(claims),
     });
+    this.usernameState.set(null);
   }
 
   private clearLocalSession(): void {
     this.identityState.set(null);
+    this.usernameState.set(null);
   }
 
   private get storage(): Storage | undefined {
