@@ -20,6 +20,25 @@ export interface Partner {
   readonly updatedAt: Date;
 }
 
+export interface PartnerSummary {
+  readonly id: string;
+  readonly legalName: string;
+  readonly technicalContactName: string;
+  readonly technicalContactEmail: string;
+  readonly authorizedTransactionTypes: readonly string[];
+  readonly status: PartnerStatus;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface PartnerPage {
+  readonly items: readonly PartnerSummary[];
+  readonly page: number;
+  readonly size: number;
+  readonly totalElements: number;
+  readonly totalPages: number;
+}
+
 export interface PartnerConnectionInfo {
   readonly apiBasePath: string;
   readonly supportedAuthenticationMethods: readonly PartnerAuthenticationMethod[];

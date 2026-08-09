@@ -24,6 +24,8 @@ const interfaceSources = new Map([
   ['SuspendPartnerRequest', resolve(modelRoot, 'create-partners.request.ts')],
   ['ConfigureValidationThresholdRequest', resolve(modelRoot, 'create-partners.request.ts')],
   ['PartnerResponse', resolve(modelRoot, 'partners.response.ts')],
+  ['PartnerSummaryResponse', resolve(modelRoot, 'partners.response.ts')],
+  ['PartnerPageResponse', resolve(modelRoot, 'partners.response.ts')],
   ['ValidationThresholdResponse', resolve(modelRoot, 'partners.response.ts')],
   ['PartnerStatusResponse', resolve(modelRoot, 'partners.response.ts')],
   ['PartnerConnectionInfoResponse', resolve(modelRoot, 'partners.response.ts')],

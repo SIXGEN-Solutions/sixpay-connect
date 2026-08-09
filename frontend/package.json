@@ -8,9 +8,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
+    "start:integration": "ng serve --configuration integration --proxy-config proxy.conf.json",
     "start:netlify": "ng serve --configuration netlify",
     "build": "ng build",
+    "build:integration": "ng build --configuration integration",
     "build:netlify": "ng build --configuration netlify",
+    "build:all": "npm run build:integration && npm run build:netlify && npm run build",
     "watch": "ng build --watch --configuration development",
     "lint": "ng lint",
     "format": "prettier --write .",
@@ -19,6 +22,7 @@
     "test:coverage": "ng test --watch=false --coverage",
     "test:e2e:install": "playwright install chromium",
     "test:e2e": "playwright test",
+    "test:e2e:integration": "playwright test --config playwright.integration.config.ts",
     "test:e2e:a11y": "playwright test --grep @a11y",
     "dependencies:audit": "npm audit --omit=dev --audit-level=high",
     "contract:partner": "node verify-partner-openapi.mjs",
@@ -26,7 +30,8 @@
     "gate:4": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
     "gate:5": "npm run contract:partner && npm run lint && npm run test && npm run build && npm run format:check",
     "gate:6": "npm run contract:partner && npm run lint && npm run test:coverage && npm run test:e2e && npm run build && npm run format:check",
-    "gate:7": "npm run contract:partner && npm run lint && npm run test:coverage && npm run dependencies:audit && npm run build && npm run format:check"
+    "gate:7": "npm run contract:partner && npm run lint && npm run test:coverage && npm run dependencies:audit && npm run build && npm run format:check",
+    "gate:8": "npm run contract:partner && npm run lint && npm run test:coverage && npm run dependencies:audit && npm run build:all && npm run test:e2e && npm run test:e2e:integration && npm run format:check"
   },
   "private": true,
   "dependencies": {

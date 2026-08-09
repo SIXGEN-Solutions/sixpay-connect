@@ -1,48 +1,92 @@
-# Intégration continue frontend
+# Intégration continue frontend — Phase 7.8
 
-Le workflow [frontend-ci.yml](../.github/workflows/frontend-ci.yml) s’exécute sur les
-Pull Requests qui modifient le frontend, ainsi que sur les pushes vers `main` et
-`develop`.
+## Checks obligatoires
 
-## Contrôles bloquants
+Le workflow `.github/workflows/frontend-ci.yml` expose deux jobs bloquants :
 
-| Job                   | Contrôles                                                              |
-| --------------------- | ---------------------------------------------------------------------- |
-| Frontend quality gate | `npm ci`, format, contrat API, lint, tests, couverture, audit et build |
-| Frontend E2E          | installation Chromium, parcours Playwright et accessibilité            |
+```text
+Frontend quality gate
+Frontend E2E
+```
 
-Les rapports de couverture, d’audit des dépendances, le bundle de production et les
-rapports Playwright sont conservés pendant 14 jours.
+## Frontend quality gate
 
-## Activer le blocage des Pull Requests
+Exécute :
 
-La configuration suivante doit être réalisée une fois par un administrateur GitHub :
+```text
+npm ci
+format:check
+contract:partner
+lint
+test:coverage
+dependencies:audit
+build:all
+```
 
-1. ouvrir **Settings > Rules > Rulesets** ;
-2. créer une règle visant `main` et, si nécessaire, `develop` ;
-3. activer **Require a pull request before merging** ;
-4. activer **Require status checks to pass** ;
-5. sélectionner `Frontend quality gate` et `Frontend E2E` ;
-6. exiger une branche à jour avant fusion ;
-7. exiger au moins une approbation ;
-8. interdire suppressions et force-pushes sur les branches protégées.
+`build:all` compile les trois profils supportés :
 
-La règle ne peut pas être déclarée par le fichier du workflow : le workflow produit les
-statuts, tandis que le ruleset GitHub les rend obligatoires.
+```text
+integration
+netlify
+production
+```
 
-## Rapports
+Production est compilé en dernier afin que `dist/frontend` corresponde au
+bundle de production archivé par GitHub Actions.
 
-- couverture : `frontend-coverage` ;
-- audit npm : `frontend-dependency-audit` ;
-- bundle : `frontend-production-build` ;
-- rapport E2E : `frontend-playwright-report` ;
-- traces d’échec : `frontend-playwright-traces`.
+## Frontend E2E
 
-## Reproduction locale
+Exécute :
+
+```text
+npm run test:e2e
+npm run test:e2e:integration
+```
+
+Le premier runner valide le mode standalone/mock.
+
+Le second valide le profil integration/API avec backend simulé au niveau réseau.
+
+## Gate local final de Phase 7
 
 ```bash
-cd frontend
-npm ci
-npm run gate:7
-npm run test:e2e
+npm run gate:8
 ```
+
+Équivalent logique :
+
+```text
+contract
+→ lint
+→ coverage
+→ dependency audit
+→ integration build
+→ netlify build
+→ production build
+→ standalone/mock E2E
+→ integration/API E2E
+→ format
+```
+
+## Protection de branche
+
+Configurer un Ruleset GitHub sur `main` et `develop` avec :
+
+- PR obligatoire ;
+- branche à jour ;
+- au moins une approbation ;
+- `Frontend quality gate` obligatoire ;
+- `Frontend E2E` obligatoire ;
+- interdiction du force-push ;
+- interdiction de suppression de branche protégée.
+
+## Artifacts
+
+Le workflow conserve pendant 14 jours :
+
+- couverture ;
+- audit npm ;
+- bundle production ;
+- rapport Playwright mock ;
+- rapport Playwright integration ;
+- traces/vidéos/screenshots d’échec Playwright.

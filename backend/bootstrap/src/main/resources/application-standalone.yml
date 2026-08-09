@@ -3,7 +3,6 @@ spring:
     url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb?currentSchema=sixpay}
     username: ${SIXPAY_DB_USERNAME:sixpay_user}
     password: ${SIXPAY_DB_PASSWORD:sixpay_password}
-
     hikari:
       schema: sixpay
       maximum-pool-size: 10
@@ -17,16 +16,15 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-      default_schema: sixpay
     show-sql: false
     properties:
       hibernate:
         format_sql: true
         default_schema: sixpay
         jdbc:
+          time_zone: UTC
           lob:
             non_contextual_creation: true
-          time_zone: UTC
 
   mail:
     host: ${SIXPAY_SMTP_HOST:localhost}
@@ -61,9 +59,6 @@ management:
         include: health,info,flyway,mappings,metrics
 
 sixpay:
-  security:
-    mode: standalone
-
   messaging:
     transport: internal
     outbox:

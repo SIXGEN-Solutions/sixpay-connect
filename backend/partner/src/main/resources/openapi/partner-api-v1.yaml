@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SIXPAY CONNECT Partner API
-  version: 1.0.0
+  version: 1.1.0
   description: Frozen HTTP contract for the Golden Partner module.
 servers:
   - url: /
@@ -12,6 +12,43 @@ tags:
 
 paths:
   /api/v1/partners:
+    get:
+      tags: [Partners]
+      operationId: listPartners
+      summary: List partners with page-based pagination
+      description: >-
+        Requires the partner.read authority. Internal ADMIN, MANAGER and AUDITOR
+        roles remain accepted by the implementation for backward-compatible RBAC.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Partner page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
     post:
       tags: [Partners]
       operationId: createPartner
@@ -417,6 +454,68 @@ components:
           type: integer
           minimum: 1
           maximum: 10
+
+    PartnerPageResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerSummaryResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+
+    PartnerSummaryResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - legalName
+        - technicalContactName
+        - technicalContactEmail
+        - authorizedTransactionTypes
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        legalName:
+          type: string
+        technicalContactName:
+          type: string
+        technicalContactEmail:
+          type: string
+          format: email
+        authorizedTransactionTypes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     PartnerResponse:
       type: object

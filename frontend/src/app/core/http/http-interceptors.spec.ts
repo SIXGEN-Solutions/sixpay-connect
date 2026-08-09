@@ -1,18 +1,20 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpClient,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 
-import { AuthenticationService } from '../auth/authentication.service';
 import { authenticationInterceptor } from '../auth/authentication.interceptor';
 import { correlationIdInterceptor } from './correlation-id.interceptor';
 import { idempotencyKeyInterceptor } from './idempotency-key.interceptor';
 
 describe('HTTP foundation interceptors', () => {
   let httpTesting: HttpTestingController;
-  const authentication = {
-    accessTokenForRequest: () => of('header.payload.signature'),
-  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -25,7 +27,6 @@ describe('HTTP foundation interceptors', () => {
           ]),
         ),
         provideHttpClientTesting(),
-        { provide: AuthenticationService, useValue: authentication },
       ],
     });
 
@@ -36,14 +37,21 @@ describe('HTTP foundation interceptors', () => {
     httpTesting.verify();
   });
 
-  it('propagates a bearer token and a correlation identifier', () => {
+  it('propagates a correlation identifier without Bearer authentication in standalone mode', () => {
     const http = TestBed.inject(HttpClient);
 
     http.get('/api/v1/partners/partner-id').subscribe();
 
-    const request = httpTesting.expectOne('/api/v1/partners/partner-id');
-    expect(request.request.headers.get('Authorization')).toBe('Bearer header.payload.signature');
-    expect(request.request.headers.get('X-Correlation-ID')).toMatch(/^[0-9a-f-]{36}$/i);
+    const request = httpTesting.expectOne(
+      '/api/v1/partners/partner-id',
+    );
+
+    expect(request.request.headers.has('Authorization')).toBe(false);
+
+    expect(
+      request.request.headers.get('X-Correlation-ID'),
+    ).toMatch(/^[0-9a-f-]{36}$/i);
+
     request.flush({});
   });
 
@@ -51,13 +59,25 @@ describe('HTTP foundation interceptors', () => {
     const http = TestBed.inject(HttpClient);
 
     http.post('/api/v1/partners', {}).subscribe();
+
     const mutation = httpTesting.expectOne('/api/v1/partners');
-    expect(mutation.request.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/i);
+
+    expect(
+      mutation.request.headers.get('Idempotency-Key'),
+    ).toMatch(/^[0-9a-f-]{36}$/i);
+
     mutation.flush({});
 
     http.get('/api/v1/partners/partner-id').subscribe();
-    const query = httpTesting.expectOne('/api/v1/partners/partner-id');
-    expect(query.request.headers.has('Idempotency-Key')).toBe(false);
+
+    const query = httpTesting.expectOne(
+      '/api/v1/partners/partner-id',
+    );
+
+    expect(
+      query.request.headers.has('Idempotency-Key'),
+    ).toBe(false);
+
     query.flush({});
   });
 });
