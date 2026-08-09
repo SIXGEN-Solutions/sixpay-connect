@@ -1,0 +1,10 @@
+module,domain,application,api,infrastructure,assessment
+partner,COVERED,COVERED,COVERED,COVERED,GOLDEN
+customer,UNVERIFIED,PARTIAL,PARTIAL,PARTIAL,Review gaps only; significant test estate already exists
+subscription,UNVERIFIED,UNVERIFIED,UNVERIFIED,UNVERIFIED,Dedicated 8.2.2 inventory required
+payment,COVERED,PARTIAL,PARTIAL,PARTIAL,Preserve domain tests; focus post-domain layers
+accounting,PARTIAL,COVERED,N/A,PARTIAL,Verify behavioral persistence coverage
+reporting,UNVERIFIED,PARTIAL,PARTIAL,PARTIAL,Verify module-local completeness
+notification,UNVERIFIED,UNVERIFIED,N/A,UNVERIFIED,Dedicated 8.2.6 inventory required
+administration,N/A / UNVERIFIED,UNVERIFIED,UNVERIFIED,UNVERIFIED,Apply only to implemented backend capabilities
+security,N/A,PARTIAL,PARTIAL,PARTIAL,Assess by authn/authz responsibility
