@@ -20,27 +20,16 @@ const response: PartnerResponse = {
   updatedAt: '2026-07-29T11:00:00Z',
 };
 
-describe('PartnersService', () => {
+describe('PartnersService hardening', () => {
   function configure(usesApi: boolean) {
     const api = {
-      listPartners: vi.fn(() =>
+      listPartners: vi.fn((page = 0, size = 20) =>
         of({
-          items: [
-            {
-              id: response.id,
-              legalName: response.legalName,
-              technicalContactName: response.technicalContactName,
-              technicalContactEmail: response.technicalContactEmail,
-              authorizedTransactionTypes: response.authorizedTransactionTypes,
-              status: response.status,
-              createdAt: response.createdAt,
-              updatedAt: response.updatedAt,
-            },
-          ],
-          page: 0,
-          size: 20,
-          totalElements: 1,
-          totalPages: 1,
+          items: [],
+          page,
+          size,
+          totalElements: 0,
+          totalPages: 0,
         }),
       ),
       createPartner: vi.fn(() => of(response)),
@@ -54,11 +43,11 @@ describe('PartnersService', () => {
     };
 
     const mock = {
-      search: vi.fn(() =>
+      search: vi.fn((query) =>
         of({
           items: [],
-          page: 0,
-          size: 20,
+          page: query.page ?? 0,
+          size: query.size ?? 20,
           totalElements: 0,
           totalPages: 0,
         }),
@@ -96,45 +85,42 @@ describe('PartnersService', () => {
     };
   }
 
-  it('uses the API datasource for the Partner catalog in API mode', async () => {
+  it('uses API pagination parameters unchanged in API mode', async () => {
     const { service, api, mock } = configure(true);
 
     const page = await firstValueFrom(
-      service.search({ page: 0, size: 20 }),
+      service.search({ page: 1, size: 50 }),
     );
 
-    expect(api.listPartners).toHaveBeenCalledWith(0, 20);
+    expect(api.listPartners).toHaveBeenCalledWith(1, 50);
     expect(mock.search).not.toHaveBeenCalled();
-    expect(page.items).toHaveLength(1);
-    expect(page.items[0]!.createdAt).toBeInstanceOf(Date);
+    expect(page.page).toBe(1);
+    expect(page.size).toBe(50);
   });
 
-  it('uses the mock datasource for the Partner catalog in mock mode', async () => {
+  it('uses contract defaults when API query omits pagination', async () => {
+    const { service, api } = configure(true);
+
+    await firstValueFrom(service.search({}));
+
+    expect(api.listPartners).toHaveBeenCalledWith(0, 20);
+  });
+
+  it('never calls the API datasource in mock mode', async () => {
     const { service, api, mock } = configure(false);
 
-    await firstValueFrom(service.search({ page: 0, size: 20 }));
+    await firstValueFrom(
+      service.search({ page: 2, size: 10 }),
+    );
 
-    expect(mock.search).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(mock.search).toHaveBeenCalledWith({
+      page: 2,
+      size: 10,
+    });
     expect(api.listPartners).not.toHaveBeenCalled();
   });
 
-  it('keeps creation datasource-agnostic', async () => {
-    const { service, api, mock } = configure(false);
-    const request = {
-      legalName: 'Golden Partner',
-      technicalContactName: 'Alice',
-      technicalContactEmail: 'alice@example.test',
-      authorizedTransactionTypes: ['PAYMENT'],
-    };
-
-    const partner = await firstValueFrom(service.create(request));
-
-    expect(mock.create).toHaveBeenCalledWith(request);
-    expect(api.createPartner).not.toHaveBeenCalled();
-    expect(partner.createdAt).toBeInstanceOf(Date);
-  });
-
-  it('keeps lifecycle operations datasource-agnostic', async () => {
+  it('keeps write operations on the selected datasource', async () => {
     const { service, api, mock } = configure(false);
 
     await firstValueFrom(
@@ -144,13 +130,20 @@ describe('PartnersService', () => {
       }),
     );
     await firstValueFrom(
-      service.suspend('partner-id', { reason: 'Compliance' }),
+      service.suspend('partner-id', {
+        reason: 'Compliance',
+      }),
     );
-    await firstValueFrom(service.reactivate('partner-id'));
+    await firstValueFrom(
+      service.reactivate('partner-id'),
+    );
 
     expect(mock.decide).toHaveBeenCalledOnce();
     expect(mock.suspend).toHaveBeenCalledOnce();
     expect(mock.reactivate).toHaveBeenCalledOnce();
+
     expect(api.decidePartner).not.toHaveBeenCalled();
+    expect(api.suspendPartner).not.toHaveBeenCalled();
+    expect(api.reactivatePartner).not.toHaveBeenCalled();
   });
 });

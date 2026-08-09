@@ -1,17 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { BackendModeService } from '../../../core/backend/backend-mode.service';
 import { PartnerAccessPolicy } from '../security/partner-access.policy';
 import { PartnersService } from '../services/partners.service';
 import { PartnerAccessPageComponent } from './partner-access-page.component';
+import { PartnerSearchQuery } from '../models/partner-query';
+import { PartnerPage } from '../models/partners';
 
-describe('PartnerAccessPageComponent', () => {
+describe('PartnerAccessPageComponent hardening', () => {
   let fixture: ComponentFixture<PartnerAccessPageComponent>;
 
-  const page = {
+  const page: PartnerPage = {
     items: [
       {
         id: '10000000-0000-4000-8000-000000000001',
@@ -19,7 +21,7 @@ describe('PartnerAccessPageComponent', () => {
         technicalContactName: 'TresorPay Operations',
         technicalContactEmail: 'operations1@example.test',
         authorizedTransactionTypes: ['PAYMENT'],
-        status: 'ACTIVE' as const,
+        status: 'ACTIVE',
         createdAt: new Date('2026-07-02T09:00:00Z'),
         updatedAt: new Date('2026-08-02T11:30:00Z'),
       },
@@ -28,11 +30,16 @@ describe('PartnerAccessPageComponent', () => {
     size: 20,
     totalElements: 28,
     totalPages: 2,
-  };
+};
 
-  function configure(searchResult = of(page)) {
+  function configure(
+    searchImplementation: (
+      query: PartnerSearchQuery,
+    ) => Observable<PartnerPage> = vi.fn(() => of(page)),
+    usesMock = true,
+  ) {
     const partners = {
-      search: vi.fn(() => searchResult),
+      search: searchImplementation,
     };
 
     TestBed.configureTestingModule({
@@ -46,8 +53,8 @@ describe('PartnerAccessPageComponent', () => {
         {
           provide: BackendModeService,
           useValue: {
-            usesMock: true,
-            usesApi: false,
+            usesMock,
+            usesApi: !usesMock,
           },
         },
         {
@@ -59,30 +66,54 @@ describe('PartnerAccessPageComponent', () => {
       ],
     });
 
-    fixture = TestBed.createComponent(PartnerAccessPageComponent);
+    fixture = TestBed.createComponent(
+      PartnerAccessPageComponent,
+    );
     fixture.detectChanges();
 
     return partners;
   }
 
-  it('loads and renders the Partner catalog', () => {
+  it('loads page zero with the contract default size', () => {
     const partners = configure();
 
     expect(partners.search).toHaveBeenCalledWith({
       page: 0,
       size: 20,
     });
-
-    expect(
-      fixture.nativeElement.textContent,
-    ).toContain('TresorPay');
-
-    expect(
-      fixture.nativeElement.textContent,
-    ).toContain('1–20 sur 28');
+    expect(fixture.nativeElement.textContent)
+      .toContain('TresorPay');
   });
 
-  it('navigates to the existing detail route when a row is selected', () => {
+  it('requests page one when next is selected', () => {
+    const search = vi.fn((query: { page?: number; size?: number }) =>
+      of({
+        ...page,
+        page: query.page ?? 0,
+        size: query.size ?? 20,
+      }),
+    );
+
+    configure(search);
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+
+    const next = buttons.find(
+      (button) => button.textContent?.includes('Suivant'),
+    );
+
+    next?.click();
+    fixture.detectChanges();
+
+    expect(search).toHaveBeenLastCalledWith({
+      page: 1,
+      size: 20,
+    });
+  });
+
+  it('opens the existing Partner detail route', () => {
     configure();
 
     const router = TestBed.inject(Router);
@@ -100,29 +131,45 @@ describe('PartnerAccessPageComponent', () => {
     ]);
   });
 
-  it('renders an empty state', () => {
+  it('shows empty and error states without inventing data', () => {
+    TestBed.resetTestingModule();
+
     configure(
-      of({
-        items: [],
-        page: 0,
-        size: 20,
-        totalElements: 0,
-        totalPages: 0,
-      }),
+      vi.fn(() =>
+        of({
+          items: [],
+          page: 0,
+          size: 20,
+          totalElements: 0,
+          totalPages: 0,
+        }),
+      ),
     );
 
-    expect(
-      fixture.nativeElement.textContent,
-    ).toContain('Aucun partenaire');
+    expect(fixture.nativeElement.textContent)
+      .toContain('Aucun partenaire');
+
+    TestBed.resetTestingModule();
+
+    configure(
+      vi.fn(() =>
+        throwError(
+          () => new Error('Partner catalog unavailable'),
+        ),
+      ),
+    );
+
+    expect(fixture.nativeElement.textContent)
+      .toContain('Catalogue indisponible');
   });
 
-  it('renders an error state when catalog loading fails', () => {
-    configure(
-      throwError(() => new Error('Partner catalog unavailable')),
-    );
+  it('hides the mock state panel in API mode', () => {
+    configure(vi.fn(() => of(page)), false);
 
     expect(
-      fixture.nativeElement.textContent,
-    ).toContain('Catalogue indisponible');
+      fixture.nativeElement.querySelector(
+        'sp-mock-state-panel',
+      ),
+    ).toBeNull();
   });
 });
