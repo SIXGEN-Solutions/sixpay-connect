@@ -16,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
@@ -117,7 +118,10 @@ public class PaymentApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .header("Retry-After", Integer.toString(exception.retryAfterSeconds()))
-                .header(IntegrationHttpHeaders.CORRELATION_ID, correlationId.toString())
+                .header(
+                        IntegrationHttpHeaders.CORRELATION_ID,
+                        correlationId.toString()
+                )
                 .body(problemBody(
                         HttpStatus.TOO_MANY_REQUESTS,
                         "PAYMENT_QUERY_RATE_LIMITED",
@@ -136,7 +140,10 @@ public class PaymentApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .header("Retry-After", "5")
-                .header(IntegrationHttpHeaders.CORRELATION_ID, correlationId.toString())
+                .header(
+                        IntegrationHttpHeaders.CORRELATION_ID,
+                        correlationId.toString()
+                )
                 .body(problemBody(
                         HttpStatus.SERVICE_UNAVAILABLE,
                         "PAYMENT_QUERY_UNAVAILABLE",
@@ -148,6 +155,7 @@ public class PaymentApiExceptionHandler {
 
     @ExceptionHandler({
             ConstraintViolationException.class,
+            HandlerMethodValidationException.class,
             MethodArgumentNotValidException.class,
             MethodArgumentTypeMismatchException.class,
             MissingRequestHeaderException.class,
