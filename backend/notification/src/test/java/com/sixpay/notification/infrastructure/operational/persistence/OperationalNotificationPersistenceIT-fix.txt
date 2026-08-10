@@ -1,0 +1,33 @@
+Apply the following two changes to OperationalNotificationPersistenceIT.java
+
+1) Add imports:
+
+import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.ObjectMapper;
+
+2) Replace the TestApplication at the bottom with:
+
+@SpringBootConfiguration
+@EnableAutoConfiguration(exclude = {
+        NotificationApplicationAutoConfiguration.class,
+        NotificationEmailAutoConfiguration.class,
+        NotificationMessagingAutoConfiguration.class,
+        NotificationPersistenceAutoConfiguration.class,
+        NotificationRetryPolicyAutoConfiguration.class,
+        NotificationRetryAutoConfiguration.class,
+
+        OperationalNotificationApplicationAutoConfiguration.class,
+        OperationalNotificationEmailAutoConfiguration.class,
+        OperationalNotificationOperationsAutoConfiguration.class,
+        OperationalNotificationRetryAutoConfiguration.class
+})
+@ImportAutoConfiguration(
+        OperationalNotificationPersistenceAutoConfiguration.class
+)
+static class TestApplication {
+
+    @Bean
+    ObjectMapper operationalNotificationTestObjectMapper() {
+        return new ObjectMapper();
+    }
+}

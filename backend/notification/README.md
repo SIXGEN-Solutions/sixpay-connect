@@ -1,6 +1,6 @@
 # Notification
 
-Le module Notification contient actuellement deux périmètres :
+The Notification module contains two functional areas:
 
 ```text
 Partner decision notification
@@ -9,29 +9,60 @@ Operational notification
 
 ## Partner decision notification
 
-Le flux Partner reste découplé du module `partner` et reçoit les événements via
-les adapters messaging du module.
+The Partner-decision flow remains decoupled from the `partner` Java/Maven
+module and consumes integration events through Notification-owned adapters.
 
 ## Operational notification
 
-Le repository contient également un sous-système Operational Notification avec
-une couche domaine, des repositories, des politiques, une persistance, des
-opérations, un retry et un adapter email.
-
-Ce périmètre doit être inclus dans la matrice Phase 8.2.6.
-
-## Phase 8.2.6
-
-`NotificationDeliveryPersistenceIT` est volontairement isolé sur :
+Operational Notification owns:
 
 ```text
-NotificationPersistenceAutoConfiguration
+domain models and policies
+planning/orchestration
+delivery lifecycle and retry
+operations/replay/retention
+PostgreSQL persistence
+SMTP delivery
+metrics/scheduling composition
 ```
 
-afin de ne pas charger les auto-configurations Operational hors de son scope.
+## Phase 8 golden coverage
 
-Le statut détaillé est documenté dans :
+Current classification:
+
+```text
+Partner notification
+  Application     COVERED
+  Infrastructure  COVERED
+
+Operational notification
+  Domain          COVERED
+  Application     COVERED
+  API             N/A
+  Infrastructure  COVERED
+```
+
+The PostgreSQL evidence for the Operational persistence adapter is provided by:
+
+```text
+OperationalNotificationPersistenceIT
+```
+
+Detailed evidence is maintained in:
 
 ```text
 NOTIFICATION-TEST-COVERAGE.md
+```
+
+## Validation
+
+```bash
+mvn -pl notification \
+    -Dtest=OperationalNotificationPersistenceIT \
+    test
+
+mvn -pl notification -am test
+
+mvn -pl notification -am \
+    -Pfull-tests clean verify
 ```
