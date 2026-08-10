@@ -6,11 +6,12 @@
 Phase 8 — Tests et validation du pilote
 Lot 8.2 — Backend Golden Test Coverage
 8.2.3 — Payment
+8.2.9 remediation — Application and Infrastructure closure
 ```
 
-## 1. Reference
+## 1. Golden reference
 
-The `partner` module remains the golden business-module reference.
+`partner` remains the golden business-module reference.
 
 Payment is assessed independently across:
 
@@ -21,150 +22,121 @@ API
 Infrastructure
 ```
 
-The objective is not to increase test count indiscriminately.
+The goal is focused behavioral evidence, not test-count inflation.
 
-The objective is to preserve the strong existing Payment domain validation and
-close only confirmed gaps in newer application/query/API/infrastructure layers.
-
----
-
-## 2. Documentation synchronization
-
-`backend/payment/README.md` previously described the historical
-domain-only increment and listed application handlers, repositories,
-controllers and adapters as deliberately absent.
-
-That description was stale relative to the authoritative branch.
-
-Phase 8.2.3 updates the module README while preserving the valid domain-kernel
-documentation.
-
----
-
-## 3. Domain coverage
-
-The Payment domain kernel is already deliberately comprehensive.
-
-Repository documentation records:
+## 2. Final classification
 
 ```text
-1 Payment aggregate root
-1 immutable PaymentState
-17 named operations
-17 states
-38 legal transitions
-33 explicit Payment domain events
-14 pure policies
-12 immutable policy profiles
-4 pure domain services
+DOMAIN          = COVERED
+APPLICATION     = COVERED
+API             = COVERED
+INFRASTRUCTURE  = COVERED
 ```
 
-Existing validation protects:
+Overall:
 
 ```text
-legal transitions
-illegal transitions
+PAYMENT = COVERED
+```
+
+## 3. Domain
+
+The existing Payment domain suite remains authoritative for:
+
+```text
+invariants
+legal and illegal transitions
 terminal-state behavior
-identical replay
-version/timestamp behavior
-ordered event registration
-PAY-* traceability
-canonical exception package
+replay semantics
+version/timestamp rules
+domain-event ordering
+policy/domain-service behavior
 ```
 
-Status:
+No new domain test is introduced by 8.2.9.
+
+## 4. Application closure
+
+### Existing evidence
+
+Existing focused tests already include:
 
 ```text
-DOMAIN = COVERED
+PaymentMutationCoordinatorTest
+PaymentReconciliationServiceTest
+PaymentAccessPolicyTest
+PaymentApplicationLayerArchitectureTest
 ```
 
-No new monolithic Payment domain test is introduced.
-
----
-
-## 4. Application coverage
-
-The current branch includes:
+`PaymentMutationCoordinatorTest` proves:
 
 ```text
-PaymentProjectionQueryUseCase
-SearchPaymentProjectionsQuery
-PaymentAccessPolicy
-PaymentRolePolicy
-PaymentPartnerIsolationPolicy
-PaymentAuthority
+new aggregate persistence
+mutation persistence
+no-op mutation without side effects
+missing Payment rejection
+changed aggregate requires domain events
+safe outbox staging timestamp
 ```
 
-The application/security layer must be reviewed independently for:
+`PaymentAccessPolicyTest` proves:
 
 ```text
-search happy path
-detail happy path
-projection unavailable
-cursor validation
-search visibility
-object-level access
-role + authority combination
-partner isolation
-edge cases
+Partner subject-bound search visibility
+object-level Partner isolation
+fail-closed ownership
+role/authority rejection for operations
 ```
 
-Status:
+### Added evidence
+
+8.2.9 adds:
 
 ```text
-APPLICATION = PARTIAL
+SecuredPaymentProjectionQueryServiceTest
+SearchPaymentProjectionsQueryTest
 ```
 
-No speculative test is added without proving a specific missing behavior.
-
----
-
-## 5. API coverage
-
-The current Payment Query API exposes:
+The secured query service test proves:
 
 ```text
-GET /internal/api/v1/payments
-GET /internal/api/v1/payments/{paymentId}
+search visibility is resolved before projection search
+detail access descriptor is resolved before detail read
+object access policy is enforced before projection read
+missing access descriptor fails closed
+policy rejection prevents projection read
+authorized missing projection remains Optional.empty
+null Payment identifier is rejected before infrastructure access
 ```
 
-Existing readiness evidence includes:
+The query-value test proves:
 
 ```text
-PaymentQueryContractTest
-PaymentQuerySecurityIT
+default sort
+page-size bounds
+created-at range validation
+non-negative amount bounds
+amountMin <= amountMax
 ```
 
-Those tests validate contract and authority conformance but do not execute the
-HTTP boundary.
-
-Phase 8.2.3 adds:
+Application status:
 
 ```text
-PaymentQueryControllerTest
+APPLICATION = COVERED
 ```
 
-with:
+## 5. API
 
-```text
-@WebMvcTest
-MockMvc
-@EnableMethodSecurity
-MockitoBean boundaries
-```
-
-Covered cases include:
+Existing Payment Query WebMVC evidence covers:
 
 ```text
 search 200
-correlation response header
-missing correlation -> 400
-invalid correlation UUID -> 400
-size > 200 -> 400
-invalid currency -> 400
-access-policy rejection -> 403
 detail 200
-unknown payment -> 404
+correlation header
+request validation
+403 policy rejection
+404 unknown Payment
+Spring Boot 4 method validation error mapping
 ```
 
 Status:
@@ -173,134 +145,162 @@ Status:
 API = COVERED
 ```
 
----
+## 6. Infrastructure — positive verification
 
-## 6. Infrastructure coverage
+8.2.9 does not add a redundant generic `PaymentPersistenceIT`.
 
-The Payment POM already includes:
+The authoritative branch already contains focused behavioral evidence.
 
-```text
-Spring Data JPA
-PostgreSQL runtime
-Flyway test support
-Testcontainers JUnit Jupiter
-Testcontainers PostgreSQL
-```
-
-No Maven dependency change is required.
-
-Infrastructure review must verify focused behavioral coverage for:
+### Projection/query
 
 ```text
-projection persistence
-query mapping
-stable ordering
-cursor pagination
-persistence conflicts
-masked data
-TresorPay mapping
-Core Banking behavior
-timeout/failure classification
-idempotency persistence semantics
+PaymentProjectionAdaptersIT
+PaymentProjectionCursorCodecTest
 ```
 
-A new `PaymentPersistenceIT` must not be generated until equivalent existing
-coverage is positively ruled out.
-
-Status:
+These prove:
 
 ```text
-INFRASTRUCTURE = PARTIAL
+PostgreSQL-backed projection search
+stable created-at ordering
+keyset/cursor pagination
+detail projection mapping
+masked account output
+banking/posting/TFJ mapping
+Partner search fail-closed
+cursor round-trip
+cursor sort mismatch rejection
+malformed cursor rejection
 ```
 
----
-
-## 6.1 Spring Boot 4 method-parameter validation
-
-Spring Boot 4 / Spring MVC raises:
+### Idempotency
 
 ```text
-HandlerMethodValidationException
+PaymentIdempotencyFoundationIT
+PaymentIdempotencyReplayStoreTest
+PaymentIdempotencyHasherTest
 ```
 
-for controller method-parameter constraints such as:
+These prove:
 
 ```text
-@Max
-@Min
-@Pattern
-@Size
-@DecimalMin
+completed-result replay
+same key + different request conflict
+serialized concurrent use of one idempotency key
+hash/replay-store semantics
 ```
 
-The Payment exception handler now maps this exception to the existing:
+### Persistence schema and repository
 
 ```text
-400 INVALID_REQUEST
+PaymentPersistenceMigrationIT
+PaymentRepositoryAdapterTest
+PaymentPersistenceArchitectureTest
 ```
 
-problem response.
-
-This matches the golden `partner` error-handling pattern and preserves the
-published Payment error envelope instead of accepting Spring MVC's empty
-default 400 response.
-
----
-
-## 7. Current status
-
-| Dimension | Status |
-|---|---|
-| Domain | COVERED |
-| Application | PARTIAL |
-| API | COVERED |
-| Infrastructure | PARTIAL |
-
-Overall:
+These prove:
 
 ```text
-PAYMENT = PARTIAL
+Flyway migration execution
+payment table creation
+required unique source/external-reference constraint
+repository mapping boundary
+optimistic-locking design through JPA @Version
 ```
 
----
+The production repository translates optimistic-lock and database constraint
+failures into `PaymentPersistenceException`.
 
-## 8. Validation commands
+### Atomic state/audit/outbox
+
+```text
+PaymentAuditAtomicityIT
+PaymentOutboxAtomicityIT
+PaymentEndToEndIntegrationIT
+```
+
+These prove:
+
+```text
+Payment + audit commit/rollback atomicity
+Payment + outbox commit/rollback atomicity
+PostgreSQL outbox persistence
+integration-envelope ordering
+Amplitude posting boundary
+Accounting/Notification event routing probes
+correlation propagation
+```
+
+### Provider-specific adapters
+
+Payment keeps Amplitude/provider logic in the owning module and provider-neutral
+concerns in `backend/integration`, per repository rules.
+
+Architecture and module-level integration tests already validate that boundary;
+Phase 8.3 remains the owner of broader cross-module scenarios.
+
+Infrastructure status:
+
+```text
+INFRASTRUCTURE = COVERED
+```
+
+## 7. Why no new generic persistence IT is added
+
+The previous `PARTIAL` status was a verification gap, not proof that the
+infrastructure had no behavioral tests.
+
+Adding another all-purpose persistence test would duplicate:
+
+```text
+PaymentProjectionAdaptersIT
+PaymentIdempotencyFoundationIT
+PaymentAuditAtomicityIT
+PaymentOutboxAtomicityIT
+PaymentPersistenceMigrationIT
+PaymentEndToEndIntegrationIT
+```
+
+and violate the golden layered-test rule.
+
+## 8. Validation
 
 From `backend/`:
 
 ```bash
-mvn --batch-mode --no-transfer-progress     -pl payment -am test
+mvn -pl payment \
+    -Dtest=SecuredPaymentProjectionQueryServiceTest,SearchPaymentProjectionsQueryTest \
+    test
 ```
+
+Then:
 
 ```bash
-mvn --batch-mode --no-transfer-progress     -pl payment -am clean verify
+mvn -pl payment -am test
 ```
+
+For PostgreSQL/full integration evidence:
 
 ```bash
-mvn --batch-mode --no-transfer-progress     -pl payment -am -Pfull-tests clean verify
+mvn -pl payment -am \
+    -Pfull-tests clean verify
 ```
 
----
+Finally:
 
-## 9. Golden-module rule
+```bash
+mvn -pl tests \
+    -Dtest=BackendGoldenCoverageGateTest \
+    test
+```
 
-Use:
+## 9. Exit decision
+
+Payment's 8.2.9 blocker is resolved when:
 
 ```text
-domain invariant
-    -> pure domain unit test
-
-application/security policy
-    -> focused unit test
-
-HTTP behavior
-    -> WebMvc test
-
-database semantics
-    -> PostgreSQL integration test
-
-cross-module workflow
-    -> Phase 8.3
+new Application tests = GREEN
+existing Payment module tests = GREEN
+full-tests = GREEN
+PAYMENT-TEST-COVERAGE.md contains no PARTIAL marker
 ```
-
-Do not introduce an all-in-one Payment test suite.
