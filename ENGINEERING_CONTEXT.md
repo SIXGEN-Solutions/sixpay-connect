@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/sixpay-test-validate-pilote'`
+**Primary implementation branch:** `'feat/hybrid-authentification-system'`
 
-**Current delivery focus:** Phase 8 — Tests et validation du pilote.
+**Current delivery focus:** Dual Authentication — Local + OIDC.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `''feat/sixpay-test-validate-pilote'`
+1. `''feat/hybrid-authentification-system'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
