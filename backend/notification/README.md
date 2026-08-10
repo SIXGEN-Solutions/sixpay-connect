@@ -1,46 +1,37 @@
-# Notification — traitement des décisions Partner
+# Notification
 
-Le module reçoit la même `IntegrationEventEnvelope` depuis l’Internal Bus ou
-Kafka. Les deux adaptateurs délèguent à `HandleIntegrationEventUseCase`.
+Le module Notification contient actuellement deux périmètres :
 
-## Flux pris en charge
+```text
+Partner decision notification
+Operational notification
+```
 
-`PartnerDecisionNotificationService` traite exclusivement :
+## Partner decision notification
 
-- `aggregateType = PARTNER` ;
-- `eventType = PartnerStatusChangedIntegrationEvent` ;
-- `schemaVersion = 2` ;
-- `currentStatus = ACTIVE` ou `REJECTED`.
+Le flux Partner reste découplé du module `partner` et reçoit les événements via
+les adapters messaging du module.
 
-Le payload est décodé dans un modèle local au module `notification`. Aucune
-dépendance Maven ou Java vers `partner` n’est introduite.
+## Operational notification
 
-L’adresse du destinataire est fournie par `recipientEmail` dans le contrat
-d’intégration v2. Cela évite un appel synchrone vers `partner` et rend
-l’événement autonome sur l’Internal Bus comme sur Kafka.
+Le repository contient également un sous-système Operational Notification avec
+une couche domaine, des repositories, des politiques, une persistance, des
+opérations, un retry et un adapter email.
 
-## Port d’envoi
+Ce périmètre doit être inclus dans la matrice Phase 8.2.6.
 
-Le traitement construit un `PartnerDecisionNotification` puis appelle
-`PartnerNotificationSender`. L’adaptateur concret doit :
+## Phase 8.2.6
 
-- envoyer le message au canal retenu ;
-- utiliser `eventId` comme clé d’idempotence ;
-- ne pas journaliser l’adresse complète ni le contenu sensible ;
-- propager `correlationId` dans ses logs et métriques ;
-- lever une exception en cas d’échec afin que la stratégie de retry du
-  consommateur puisse s’appliquer.
+`NotificationDeliveryPersistenceIT` est volontairement isolé sur :
 
-L’auto-configuration ne crée le cas d’usage et les listeners que lorsqu’un
-bean `PartnerNotificationSender` est fourni. Elle ne remplace jamais un envoi
-réel par un faux succès.
+```text
+NotificationPersistenceAutoConfiguration
+```
 
-## Tests
+afin de ne pas charger les auto-configurations Operational hors de son scope.
 
-- `PartnerDecisionNotificationServiceTest` couvre approbation, rejet,
-  filtrage et validation de version ;
-- `JacksonPartnerStatusChangedEventDecoderTest` couvre le contrat JSON ;
-- les tests des listeners prouvent que les modes Internal Bus et Kafka
-  conduisent vers le même port ;
-- `NotificationApplicationAutoConfigurationTest` garantit l’absence de faux
-  traitement lorsqu’aucun adaptateur d’envoi n’est installé.
+Le statut détaillé est documenté dans :
+
+```text
+NOTIFICATION-TEST-COVERAGE.md
+```
