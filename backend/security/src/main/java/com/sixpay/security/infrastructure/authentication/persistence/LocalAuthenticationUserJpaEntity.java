@@ -5,6 +5,7 @@ import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAc
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
 
 @Entity
@@ -56,6 +57,26 @@ public class LocalAuthenticationUserJpaEntity {
     protected LocalAuthenticationUserJpaEntity() {
     }
 
+    public static LocalAuthenticationUserJpaEntity provisioned(
+            SecurityUserAccountJpaEntity account,
+            String passwordHash,
+            Instant now
+    ) {
+        LocalAuthenticationUserJpaEntity entity =
+                new LocalAuthenticationUserJpaEntity();
+        entity.id = UUID.randomUUID();
+        entity.userAccount = account;
+        entity.subject = account.getId().toString();
+        entity.username = account.getUsername();
+        entity.normalizedUsername = normalize(account.getUsername());
+        entity.passwordHash = passwordHash;
+        entity.status = LocalAuthenticationAccountStatus.ACTIVE;
+        entity.failedAttempts = 0;
+        entity.createdAt = now;
+        entity.updatedAt = now;
+        return entity;
+    }
+
     public UUID getId() { return id; }
     public SecurityUserAccountJpaEntity getUserAccount() { return userAccount; }
     public String getSubject() { return subject; }
@@ -64,6 +85,12 @@ public class LocalAuthenticationUserJpaEntity {
     public int getFailedAttempts() { return failedAttempts; }
     public Instant getLockedUntil() { return lockedUntil; }
     public Instant getLastAuthenticatedAt() { return lastAuthenticatedAt; }
+
+    public void rename(String username, Instant now) {
+        this.username = username;
+        this.normalizedUsername = normalize(username);
+        this.updatedAt = now;
+    }
 
     public void setEnabled(boolean enabled, Instant now) {
         this.status = enabled
@@ -89,5 +116,9 @@ public class LocalAuthenticationUserJpaEntity {
         this.lockedUntil = lockedUntil;
         this.lastAuthenticatedAt = lastAuthenticatedAt;
         this.updatedAt = updatedAt;
+    }
+
+    private static String normalize(String username) {
+        return username.trim().toLowerCase(Locale.ROOT);
     }
 }

@@ -3,11 +3,15 @@ package com.sixpay.administration.api;
 import com.sixpay.administration.api.dto.*;
 import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.model.SecurityUserSummary;
+import com.sixpay.security.application.port.in.CreateSecurityUserCommand;
 import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +33,72 @@ public class SecurityUserAdministrationController {
         this.currentUserProvider = Objects.requireNonNull(currentUserProvider);
     }
 
+    @PostMapping
+    public ResponseEntity<SecurityUserDetail> createUser(
+            @Valid @RequestBody CreateSecurityUserRequest request
+    ) {
+        UUID userId = UUID.randomUUID();
+
+        SecurityUserDetail created = useCase.createUser(
+                new CreateSecurityUserCommand(
+                        userId,
+                        request.username(),
+                        request.email(),
+                        request.roles(),
+                        request.permissions(),
+                        request.localAuthenticationEnabled(),
+                        request.initialPassword(),
+                        actorSubject()
+                )
+        );
+
+        var location =
+                ServletUriComponentsBuilder
+                        .fromCurrentRequest()
+                        .path("/{userId}")
+                        .buildAndExpand(created.id())
+                        .toUri();
+
+        return ResponseEntity.created(location).body(created);
+    }
+
     @GetMapping
     public List<SecurityUserSummary> listUsers() {
         return useCase.listUsers();
     }
 
     @GetMapping("/{userId}")
-    public SecurityUserDetail getUser(@PathVariable UUID userId) {
+    public SecurityUserDetail getUser(
+            @PathVariable UUID userId
+    ) {
         return useCase.getUser(userId);
+    }
+
+    @PutMapping("/{userId}")
+    public SecurityUserDetail updateUser(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateSecurityUserRequest request
+    ) {
+        return useCase.updateUser(
+                new UpdateSecurityUserCommand(
+                        userId,
+                        request.username(),
+                        request.email(),
+                        request.roles(),
+                        request.permissions(),
+                        actorSubject()
+                )
+        );
+    }
+
+    @PostMapping("/{userId}/enable")
+    public SecurityUserDetail enableUser(
+            @PathVariable UUID userId
+    ) {
+        return useCase.enableUser(
+                userId,
+                actorSubject()
+        );
     }
 
     @PutMapping("/{userId}/authentication-methods/local")
@@ -89,11 +151,29 @@ public class SecurityUserAdministrationController {
     }
 
     @PostMapping("/{userId}/disable")
-    public SecurityUserDetail disableUser(@PathVariable UUID userId) {
-        return useCase.disableUser(userId, actorSubject());
+    public SecurityUserDetail disableUser(
+            @PathVariable UUID userId
+    ) {
+        return useCase.disableUser(
+                userId,
+                actorSubject()
+        );
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable UUID userId
+    ) {
+        useCase.deleteUser(
+                userId,
+                actorSubject()
+        );
+        return ResponseEntity.noContent().build();
     }
 
     private String actorSubject() {
-        return currentUserProvider.requireCurrentUser().subject();
+        return currentUserProvider
+                .requireCurrentUser()
+                .subject();
     }
 }

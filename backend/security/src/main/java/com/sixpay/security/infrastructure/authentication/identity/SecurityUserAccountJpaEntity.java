@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -52,6 +53,27 @@ public class SecurityUserAccountJpaEntity {
     protected SecurityUserAccountJpaEntity() {
     }
 
+    public static SecurityUserAccountJpaEntity create(
+            UUID id,
+            String username,
+            String email,
+            Set<String> roles,
+            Set<String> permissions,
+            Instant now
+    ) {
+        SecurityUserAccountJpaEntity entity = new SecurityUserAccountJpaEntity();
+        entity.id = id;
+        entity.username = username;
+        entity.normalizedUsername = normalize(username);
+        entity.email = email;
+        entity.status = SixpayUserAccountStatus.ACTIVE;
+        entity.roles = new LinkedHashSet<>(roles);
+        entity.permissions = new LinkedHashSet<>(permissions);
+        entity.createdAt = now;
+        entity.updatedAt = now;
+        return entity;
+    }
+
     public UUID getId() { return id; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }
@@ -59,6 +81,28 @@ public class SecurityUserAccountJpaEntity {
     public Set<String> getRoles() { return Set.copyOf(roles); }
     public Set<String> getPermissions() { return Set.copyOf(permissions); }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public void update(
+            String username,
+            String email,
+            Set<String> roles,
+            Set<String> permissions,
+            Instant now
+    ) {
+        this.username = username;
+        this.normalizedUsername = normalize(username);
+        this.email = email;
+        this.roles.clear();
+        this.roles.addAll(roles);
+        this.permissions.clear();
+        this.permissions.addAll(permissions);
+        this.updatedAt = now;
+    }
+
+    public void enable(Instant now) {
+        this.status = SixpayUserAccountStatus.ACTIVE;
+        this.updatedAt = now;
+    }
 
     public void disable(Instant now) {
         this.status = SixpayUserAccountStatus.DISABLED;
@@ -70,6 +114,17 @@ public class SecurityUserAccountJpaEntity {
     }
 
     public SixpayUserAccount toDomain() {
-        return new SixpayUserAccount(id, username, email, status, roles, permissions);
+        return new SixpayUserAccount(
+                id,
+                username,
+                email,
+                status,
+                roles,
+                permissions
+        );
+    }
+
+    private static String normalize(String username) {
+        return username.trim().toLowerCase(Locale.ROOT);
     }
 }

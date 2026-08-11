@@ -8,9 +8,18 @@ import java.util.UUID;
 
 public interface SecurityUserAdministrationUseCase {
 
+    SecurityUserDetail createUser(CreateSecurityUserCommand command);
+
     List<SecurityUserSummary> listUsers();
 
     SecurityUserDetail getUser(UUID userId);
+
+    SecurityUserDetail updateUser(UpdateSecurityUserCommand command);
+
+    SecurityUserDetail enableUser(
+            UUID userId,
+            String actorSubject
+    );
 
     SecurityUserDetail setLocalAuthenticationEnabled(
             UUID userId,
@@ -38,6 +47,11 @@ public interface SecurityUserAdministrationUseCase {
     );
 
     SecurityUserDetail disableUser(
+            UUID userId,
+            String actorSubject
+    );
+
+    void deleteUser(
             UUID userId,
             String actorSubject
     );

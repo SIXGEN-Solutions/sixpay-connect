@@ -36,16 +36,46 @@ public class SecurityUserIdentityJpaEntity {
     protected SecurityUserIdentityJpaEntity() {
     }
 
+    public static SecurityUserIdentityJpaEntity linkedLocal(
+            SecurityUserAccountJpaEntity account,
+            Instant now
+    ) {
+        return linked(
+                account,
+                AuthenticationIdentityType.LOCAL,
+                "SIXPAY",
+                account.getId().toString(),
+                now
+        );
+    }
+
     public static SecurityUserIdentityJpaEntity linkedOidc(
             SecurityUserAccountJpaEntity account,
             String provider,
             String providerSubject,
             Instant now
     ) {
-        SecurityUserIdentityJpaEntity entity = new SecurityUserIdentityJpaEntity();
+        return linked(
+                account,
+                AuthenticationIdentityType.OIDC,
+                provider,
+                providerSubject,
+                now
+        );
+    }
+
+    private static SecurityUserIdentityJpaEntity linked(
+            SecurityUserAccountJpaEntity account,
+            AuthenticationIdentityType type,
+            String provider,
+            String providerSubject,
+            Instant now
+    ) {
+        SecurityUserIdentityJpaEntity entity =
+                new SecurityUserIdentityJpaEntity();
         entity.id = UUID.randomUUID();
         entity.userAccount = account;
-        entity.identityType = AuthenticationIdentityType.OIDC;
+        entity.identityType = type;
         entity.provider = provider;
         entity.providerSubject = providerSubject;
         entity.createdAt = now;
