@@ -14,6 +14,8 @@ import {
   Observable,
   of,
   ReplaySubject,
+  switchMap,
+  take,
   tap,
   throwError,
 } from 'rxjs';
@@ -54,7 +56,7 @@ export class AuthenticationService {
     { optional: true },
   );
 
-  private readonly localClient =
+  private readonly authenticationClient =
     inject(LocalAuthenticationClient);
 
   private readonly errorService =
@@ -72,12 +74,8 @@ export class AuthenticationService {
   private readonly readyState =
     new ReplaySubject<boolean>(1);
 
-  readonly identity =
-    this.identityState.asReadonly();
-
-  readonly username =
-    this.usernameState.asReadonly();
-
+  readonly identity = this.identityState.asReadonly();
+  readonly username = this.usernameState.asReadonly();
   readonly activeAuthenticationMethod =
     this.activeAuthenticationMethodState.asReadonly();
 
@@ -101,8 +99,7 @@ export class AuthenticationService {
       new Set<string>(),
   );
 
-  readonly ready$ =
-    this.readyState.asObservable();
+  readonly ready$ = this.readyState.asObservable();
 
   readonly isStandaloneMode =
     authenticationEnvironment.standalone;
@@ -113,10 +110,6 @@ export class AuthenticationService {
   readonly oidcEnabled =
     authenticationEnvironment.oidc.enabled;
 
-  /**
-   * Transitional aliases kept to avoid breaking callers outside DA-7.
-   * New UI/service code must use localEnabled / oidcEnabled.
-   */
   readonly isLocalEnabled = this.localEnabled;
   readonly isOidcEnabled = this.oidcEnabled;
   readonly isLocalMode = this.localEnabled;
@@ -128,7 +121,7 @@ export class AuthenticationService {
       return;
     }
 
-    this.initializeAvailableSession();
+    this.initializeAuthentication();
   }
 
   hasRole(
@@ -144,20 +137,14 @@ export class AuthenticationService {
   hasAnyRole(
     roles: readonly SixpayRole[],
   ): boolean {
-    return roles.some((role) =>
-      this.hasRole(role),
-    );
+    return roles.some((role) => this.hasRole(role));
   }
 
-  hasPermission(
-    permission: string,
-  ): boolean {
+  hasPermission(permission: string): boolean {
     return this.permissions().has(permission);
   }
 
-  simulateStandaloneRole(
-    role: SixpayRole,
-  ): void {
+  simulateStandaloneRole(role: SixpayRole): void {
     if (!this.isStandaloneMode) {
       return;
     }
@@ -168,8 +155,7 @@ export class AuthenticationService {
     );
 
     this.identityState.set({
-      subject:
-        this.standaloneSubjectForRole(role),
+      subject: this.standaloneSubjectForRole(role),
       roles: new Set<SixpayRole>([role]),
       permissions: new Set<string>(),
     });
@@ -181,10 +167,7 @@ export class AuthenticationService {
   ): Observable<void> {
     if (!this.localEnabled) {
       return throwError(
-        () =>
-          new Error(
-            'Local authentication is not enabled',
-          ),
+        () => new Error('Local authentication is not enabled'),
       );
     }
 
@@ -193,24 +176,19 @@ export class AuthenticationService {
       this.safeReturnUrl(returnUrl),
     );
 
-    return this.localClient
+    return this.authenticationClient
       .login(request)
       .pipe(
         tap((session) => {
           this.errorService.clear();
-          this.activeAuthenticationMethodState.set('local');
           this.setCanonicalSession(session);
         }),
-        tap(() =>
-          this.completeLoginNavigation(),
-        ),
+        tap(() => this.completeLoginNavigation()),
         map(() => undefined),
       );
   }
 
-  loginOidc(
-    returnUrl = '/',
-  ): void {
+  loginOidc(returnUrl = '/'): void {
     if (!this.oidcEnabled) {
       return;
     }
@@ -223,12 +201,7 @@ export class AuthenticationService {
     this.oidc?.authorize();
   }
 
-  /**
-   * Compatibility alias for existing callers.
-   */
-  login(
-    returnUrl = '/',
-  ): void {
+  login(returnUrl = '/'): void {
     this.loginOidc(returnUrl);
   }
 
@@ -238,75 +211,180 @@ export class AuthenticationService {
     }
 
     const returnUrl = this.safeReturnUrl(
-      this.storage?.getItem(
-        RETURN_URL_STORAGE_KEY,
-      ) ?? '/',
+      this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
     );
 
-    this.storage?.removeItem(
-      RETURN_URL_STORAGE_KEY,
-    );
-
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
     void this.router.navigateByUrl(returnUrl);
   }
 
+  /**
+   * DA-8 always terminates the backend SIXPAY session first. If that backend
+   * session originated from OIDC, the IdP/browser session is then revoked.
+   */
   logout(): void {
-    this.storage?.removeItem(
-      RETURN_URL_STORAGE_KEY,
-    );
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
-    switch (this.activeAuthenticationMethodState()) {
-      case 'oidc':
-        this.logoutOidc();
-        return;
+    const authenticationMethod =
+      this.activeAuthenticationMethodState();
 
-      case 'local':
-        this.logoutLocal();
-        return;
-
-      default:
-        this.errorService.clear();
-        this.clearSession();
-        void this.router.navigate(['/login']);
+    if (!this.isAuthenticated()) {
+      this.finishFrontendLogout(authenticationMethod);
+      return;
     }
+
+    this.authenticationClient
+      .logout()
+      .pipe(
+        catchError(() => of(undefined)),
+        finalize(() =>
+          this.finishFrontendLogout(authenticationMethod),
+        ),
+      )
+      .subscribe();
   }
 
   expireSession(): void {
-    const activeMethod =
+    const authenticationMethod =
       this.activeAuthenticationMethodState();
 
     this.errorService.clear();
     this.clearSession();
 
-    if (activeMethod === 'oidc') {
+    if (authenticationMethod === 'oidc') {
       this.oidc?.logoffLocal();
     }
   }
 
-  accessTokenForRequest():
-    Observable<string | null> {
-    if (
-      this.activeAuthenticationMethodState() === 'oidc' &&
-      this.oidc
-    ) {
-      return this.oidc.getAccessToken();
+  /**
+   * Bootstrap priority:
+   * 1. existing unified SIXPAY backend session;
+   * 2. existing/callback OIDC session, exchanged once for a backend session;
+   * 3. anonymous.
+   */
+  private initializeAuthentication(): void {
+    if (!this.localEnabled && !this.oidcEnabled) {
+      this.readyState.next(true);
+      return;
     }
 
-    return of(null);
+    this.tryExistingBackendSession();
   }
 
-  private initializeAvailableSession(): void {
-    if (this.oidcEnabled) {
-      this.initializeOidcSession();
+  private tryExistingBackendSession(): void {
+    this.clearSession();
+
+    this.authenticationClient
+      .currentUser()
+      .subscribe({
+        next: (session) => {
+          this.errorService.clear();
+          this.setCanonicalSession(session);
+          this.readyState.next(true);
+        },
+        error: () => {
+          this.tryExistingOidcSession();
+        },
+      });
+  }
+
+  private tryExistingOidcSession(): void {
+    if (!this.oidcEnabled || !this.oidc) {
+      this.resolveAnonymousState();
       return;
     }
 
-    if (this.localEnabled) {
-      this.restoreCanonicalSession('local');
+    this.oidc
+      .checkAuth()
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          if (!response.isAuthenticated) {
+            this.resolveAnonymousState();
+            return;
+          }
+
+          this.exchangeOidcForBackendSession();
+        },
+        error: () => {
+          this.resolveAnonymousState();
+        },
+      });
+  }
+
+  private exchangeOidcForBackendSession(): void {
+    if (!this.oidc) {
+      this.resolveAnonymousState();
       return;
     }
 
+    this.oidc
+      .getAccessToken()
+      .pipe(
+        take(1),
+        switchMap((accessToken) => {
+          if (!accessToken) {
+            return throwError(
+              () => new Error('OIDC access token is unavailable'),
+            );
+          }
+
+          return this.authenticationClient
+            .establishOidcSession(accessToken);
+        }),
+      )
+      .subscribe({
+        next: (session) => {
+          this.errorService.clear();
+          this.setCanonicalSession(session);
+          this.readyState.next(true);
+        },
+        error: () => {
+          this.oidc?.logoffLocal();
+          this.resolveAnonymousState();
+        },
+      });
+  }
+
+  private resolveAnonymousState(): void {
+    this.clearSession();
     this.readyState.next(true);
+  }
+
+  private setCanonicalSession(
+    session: AuthenticationSessionResponse,
+  ): void {
+    this.identityState.set({
+      subject: session.subject,
+      roles: normalizeSixpayRoles(session.roles),
+      permissions: new Set(session.permissions),
+    });
+
+    this.usernameState.set(session.username);
+    this.activeAuthenticationMethodState.set(
+      session.authenticationMethod.toLowerCase() as Exclude<
+        ActiveAuthenticationMethod,
+        null
+      >,
+    );
+  }
+
+  private finishFrontendLogout(
+    authenticationMethod: ActiveAuthenticationMethod,
+  ): void {
+    this.errorService.clear();
+    this.clearSession();
+
+    if (authenticationMethod === 'oidc' && this.oidc) {
+      this.oidc
+        .logoffAndRevokeTokens()
+        .subscribe({
+          error: () => this.oidc?.logoffLocal(),
+        });
+      return;
+    }
+
+    void this.router.navigate(['/login']);
   }
 
   private initializeStandaloneIdentity(): void {
@@ -320,20 +398,13 @@ export class AuthenticationService {
 
     const roles = storedRole
       ? new Set<SixpayRole>([storedRole])
-      : normalizeSixpayRoles(
-          localUser?.roles ?? [],
-        );
+      : normalizeSixpayRoles(localUser?.roles ?? []);
 
     const effectiveRole =
-      storedRole ??
-      roles.values().next().value ??
-      null;
+      storedRole ?? roles.values().next().value ?? null;
 
     this.identityState.set({
-      subject:
-        this.standaloneSubjectForRole(
-          effectiveRole,
-        ),
+      subject: this.standaloneSubjectForRole(effectiveRole),
       roles,
       permissions: new Set<string>(),
     });
@@ -343,130 +414,18 @@ export class AuthenticationService {
     this.readyState.next(true);
   }
 
-  private initializeOidcSession(): void {
-    if (!this.oidc) {
-      this.fallbackToLocalOrReady();
-      return;
-    }
-
-    this.oidc
-      .checkAuth()
-      .subscribe({
-        next: (response) => {
-          if (response.isAuthenticated) {
-            this.activeAuthenticationMethodState.set('oidc');
-            this.restoreCanonicalSession('oidc');
-            return;
-          }
-
-          this.fallbackToLocalOrReady();
-        },
-        error: () => {
-          this.fallbackToLocalOrReady();
-        },
-      });
-  }
-
-  private fallbackToLocalOrReady(): void {
-    this.clearSession();
-
-    if (this.localEnabled) {
-      this.restoreCanonicalSession('local');
-      return;
-    }
-
-    this.readyState.next(true);
-  }
-
-  private restoreCanonicalSession(
-    method: Exclude<ActiveAuthenticationMethod, null>,
-  ): void {
-    /*
-     * Set the candidate method before /me so the request interceptor knows
-     * whether it should attach an OIDC bearer token.
-     */
-    this.activeAuthenticationMethodState.set(method);
-
-    this.localClient
-      .currentUser()
-      .subscribe({
-        next: (session) => {
-          this.errorService.clear();
-          this.setCanonicalSession(session);
-          this.readyState.next(true);
-        },
-        error: () => {
-          this.clearSession();
-          this.readyState.next(true);
-        },
-      });
-  }
-
-  private setCanonicalSession(
-    session: AuthenticationSessionResponse,
-  ): void {
-    this.identityState.set({
-      subject: session.subject,
-      roles: normalizeSixpayRoles(
-        session.roles,
-      ),
-      permissions: new Set(
-        session.permissions,
-      ),
-    });
-
-    this.usernameState.set(
-      session.username,
-    );
-  }
-
-  private logoutLocal(): void {
-    this.localClient
-      .logout()
-      .pipe(
-        catchError(() => of(undefined)),
-        finalize(() => {
-          this.errorService.clear();
-          this.clearSession();
-          void this.router.navigate(['/login']);
-        }),
-      )
-      .subscribe();
-  }
-
-  private logoutOidc(): void {
-    this.errorService.clear();
-    this.clearSession();
-
-    if (!this.oidc) {
-      void this.router.navigate(['/login']);
-      return;
-    }
-
-    this.oidc
-      .logoffAndRevokeTokens()
-      .subscribe({
-        error: () =>
-          this.oidc?.logoffLocal(),
-      });
-  }
-
   private standaloneSubjectForRole(
     role: SixpayRole | null,
   ): string {
     if (role === 'PARTNER') {
       return (
-        authenticationEnvironment
-          .standalonePartner
-          ?.subject ??
+        authenticationEnvironment.standalonePartner?.subject ??
         FALLBACK_STANDALONE_PARTNER_SUBJECT
       );
     }
 
     return (
-      authenticationEnvironment
-        .standaloneUser
-        ?.subject ??
+      authenticationEnvironment.standaloneUser?.subject ??
       'local-user'
     );
   }
@@ -477,16 +436,11 @@ export class AuthenticationService {
     this.activeAuthenticationMethodState.set(null);
   }
 
-  private get storage():
-    Storage | undefined {
-    return this.document
-      .defaultView
-      ?.sessionStorage;
+  private get storage(): Storage | undefined {
+    return this.document.defaultView?.sessionStorage;
   }
 
-  private safeReturnUrl(
-    returnUrl: string,
-  ): string {
+  private safeReturnUrl(returnUrl: string): string {
     return (
       returnUrl.startsWith('/') &&
       !returnUrl.startsWith('//')

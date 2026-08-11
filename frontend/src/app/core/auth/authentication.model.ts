@@ -4,6 +4,8 @@ export type SixpayRole = (typeof SIXPAY_ROLES)[number];
 
 export type ActiveAuthenticationMethod = 'local' | 'oidc' | null;
 
+export type BackendAuthenticationMethod = 'LOCAL' | 'OIDC';
+
 export interface AuthenticatedIdentity {
   readonly subject: string;
   readonly roles: ReadonlySet<SixpayRole>;
@@ -20,6 +22,7 @@ export interface AuthenticationSessionResponse {
   readonly username: string;
   readonly roles: readonly string[];
   readonly permissions: readonly string[];
+  readonly authenticationMethod: BackendAuthenticationMethod;
 }
 
 export type LocalSessionResponse = AuthenticationSessionResponse;

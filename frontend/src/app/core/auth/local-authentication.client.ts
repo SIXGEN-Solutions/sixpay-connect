@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -10,8 +10,10 @@ import {
 const AUTH_API_PATH = '/api/v1/auth';
 
 /**
- * Existing Local credential client plus mechanism-neutral current-session read.
- * The /me response is authoritative for SIXPAY roles and permissions.
+ * Authentication backend client.
+ *
+ * <p>The class name is retained for source compatibility, but DA-8 makes
+ * `/me`, `/logout`, and OIDC session establishment mechanism-neutral.</p>
  */
 @Injectable({ providedIn: 'root' })
 export class LocalAuthenticationClient {
@@ -31,6 +33,21 @@ export class LocalAuthenticationClient {
     return this.http.get<AuthenticationSessionResponse>(
       `${AUTH_API_PATH}/me`,
       { withCredentials: true },
+    );
+  }
+
+  establishOidcSession(
+    accessToken: string,
+  ): Observable<AuthenticationSessionResponse> {
+    return this.http.post<AuthenticationSessionResponse>(
+      `${AUTH_API_PATH}/session/oidc`,
+      {},
+      {
+        withCredentials: true,
+        headers: new HttpHeaders({
+          Authorization: `Bearer ${accessToken}`,
+        }),
+      },
     );
   }
 

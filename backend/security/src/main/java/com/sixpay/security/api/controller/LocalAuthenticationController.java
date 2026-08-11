@@ -3,48 +3,38 @@ package com.sixpay.security.api.controller;
 import com.sixpay.security.api.dto.AuthenticationSessionResponse;
 import com.sixpay.security.api.dto.LocalLoginRequest;
 import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.in.LocalLoginCommand;
-import com.sixpay.security.application.port.in.LogoutUseCase;
 import com.sixpay.security.authentication.AuthenticatedUser;
-import com.sixpay.security.infrastructure.authentication.session.SpringSecurityLocalSessionManager;
+import com.sixpay.security.domain.authentication.AuthenticationMethod;
+import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
 /**
- * Local-credential and Local-session lifecycle boundary.
- *
- * <p>The mechanism-neutral current-session endpoint lives in
- * {@link AuthenticationSessionController}.</p>
+ * Local credential boundary. Session read/logout are mechanism-neutral and
+ * owned by {@link AuthenticationSessionController}.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public final class LocalAuthenticationController {
 
     private final AuthenticateLocalUserUseCase authenticateLocalUser;
-    private final GetCurrentSessionUseCase getCurrentSession;
-    private final LogoutUseCase logoutUseCase;
-    private final SpringSecurityLocalSessionManager sessionManager;
+    private final SpringSecuritySessionManager sessionManager;
 
     public LocalAuthenticationController(
             AuthenticateLocalUserUseCase authenticateLocalUser,
-            GetCurrentSessionUseCase getCurrentSession,
-            LogoutUseCase logoutUseCase,
-            SpringSecurityLocalSessionManager sessionManager
+            SpringSecuritySessionManager sessionManager
     ) {
-        this.authenticateLocalUser =
-                Objects.requireNonNull(authenticateLocalUser);
-        this.getCurrentSession =
-                Objects.requireNonNull(getCurrentSession);
-        this.logoutUseCase =
-                Objects.requireNonNull(logoutUseCase);
-        this.sessionManager =
-                Objects.requireNonNull(sessionManager);
+        this.authenticateLocalUser = Objects.requireNonNull(authenticateLocalUser);
+        this.sessionManager = Objects.requireNonNull(sessionManager);
     }
 
     @PostMapping("/login")
@@ -63,31 +53,16 @@ public final class LocalAuthenticationController {
 
         sessionManager.startSession(
                 authenticatedUser,
+                AuthenticationMethod.LOCAL,
                 request,
                 response
         );
 
         return ResponseEntity.ok(
                 AuthenticationSessionController.toResponse(
-                        authenticatedUser
+                        authenticatedUser,
+                        AuthenticationMethod.LOCAL
                 )
         );
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
-        AuthenticatedUser currentUser =
-                getCurrentSession.getCurrentSession();
-
-        logoutUseCase.logout(currentUser);
-        sessionManager.terminateSession(
-                request,
-                response
-        );
-
-        return ResponseEntity.noContent().build();
     }
 }

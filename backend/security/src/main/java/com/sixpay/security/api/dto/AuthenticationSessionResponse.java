@@ -1,14 +1,17 @@
 package com.sixpay.security.api.dto;
 
+import com.sixpay.security.domain.authentication.AuthenticationMethod;
+
 import java.util.Set;
 
 /**
- * Mechanism-neutral authenticated SIXPAY session representation.
+ * Canonical backend SIXPAY session representation shared by Local and OIDC.
  */
 public record AuthenticationSessionResponse(
         String subject,
         String username,
         Set<String> roles,
-        Set<String> permissions
+        Set<String> permissions,
+        AuthenticationMethod authenticationMethod
 ) {
 }

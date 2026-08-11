@@ -5,7 +5,6 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.security.api.controller.LocalAuthenticationController;
 import com.sixpay.security.api.error.LocalAuthenticationExceptionHandler;
 import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.in.LogoutUseCase;
 import com.sixpay.security.application.port.out.AuthenticationAuditPort;
 import com.sixpay.security.application.port.out.LoadAuthenticationUserPort;
@@ -18,7 +17,7 @@ import com.sixpay.security.infrastructure.authentication.audit.JpaAuthentication
 import com.sixpay.security.infrastructure.authentication.password.BCryptPasswordVerificationAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.JpaLocalAuthenticationUserAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
-import com.sixpay.security.infrastructure.authentication.session.SpringSecurityLocalSessionManager;
+import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -26,8 +25,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
 
 @Configuration(proxyBeanMethods = false)
 @Import({
@@ -62,9 +59,7 @@ public class LocalAuthenticationConfiguration {
     PasswordVerificationPort passwordVerificationPort(
             PasswordEncoder passwordEncoder
     ) {
-        return new BCryptPasswordVerificationAdapter(
-                passwordEncoder
-        );
+        return new BCryptPasswordVerificationAdapter(passwordEncoder);
     }
 
     @Bean
@@ -135,15 +130,4 @@ public class LocalAuthenticationConfiguration {
         );
     }
 
-    @Bean
-    @ConditionalOnMissingBean(SpringSecurityLocalSessionManager.class)
-    SpringSecurityLocalSessionManager localSessionManager(
-            SecurityContextRepository securityContextRepository,
-            CsrfTokenRepository csrfTokenRepository
-    ) {
-        return new SpringSecurityLocalSessionManager(
-                securityContextRepository,
-                csrfTokenRepository
-        );
-    }
 }
