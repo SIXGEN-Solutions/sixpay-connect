@@ -26,9 +26,9 @@ import { AuthenticationService } from './authentication.service';
   ],
   template: `
     <main class="sp-auth-page">
-      <mat-card appearance="outlined">
+      <mat-card appearance="outlined" class="sp-auth-card">
         <mat-card-header>
-          <mat-card-title>Connexion à SIXPAY CONNECT</mat-card-title>
+          <mat-card-title>SIXPAY CONNECT</mat-card-title>
         </mat-card-header>
 
         <mat-card-content>
@@ -38,19 +38,14 @@ import { AuthenticationService } from './authentication.service';
             </p>
           }
 
-          @if (authentication.isLocalMode) {
-            <p>
-              Utilisez votre compte SIXPAY local pour cet environnement
-              d’intégration.
-            </p>
-
+          @if (authentication.localEnabled) {
             <form
               class="sp-local-login-form"
               [formGroup]="form"
               (ngSubmit)="loginLocal()"
             >
               <mat-form-field appearance="outline">
-                <mat-label>Nom d’utilisateur</mat-label>
+                <mat-label>Email / Nom d’utilisateur</mat-label>
                 <input
                   matInput
                   type="text"
@@ -69,6 +64,10 @@ import { AuthenticationService } from './authentication.service';
                 />
               </mat-form-field>
 
+              <p class="sp-forgot-password-hint">
+                Mot de passe oublié ? Contactez un administrateur SIXPAY.
+              </p>
+
               @if (invalidCredentials()) {
                 <p class="sp-auth-error" role="alert">
                   Nom d’utilisateur ou mot de passe incorrect.
@@ -83,12 +82,33 @@ import { AuthenticationService } from './authentication.service';
                 {{ submitting() ? 'Connexion…' : 'Se connecter' }}
               </sp-button>
             </form>
-          } @else if (authentication.isOidcMode) {
-            <p>Authentifiez-vous auprès du fournisseur d’identité SIXPAY.</p>
-            <sp-button icon="login" (buttonClick)="loginOidc()">
-              Se connecter
-            </sp-button>
-          } @else {
+          }
+
+          @if (authentication.localEnabled && authentication.oidcEnabled) {
+            <div class="sp-auth-divider" aria-hidden="true">
+              <span></span>
+              <strong>OU</strong>
+              <span></span>
+            </div>
+          }
+
+          @if (authentication.oidcEnabled) {
+            <section class="sp-sso-login">
+              <sp-button
+                icon="login"
+                variant="secondary"
+                (buttonClick)="loginOidc()"
+              >
+                Se connecter avec SSO
+              </sp-button>
+            </section>
+          }
+
+          @if (
+            !authentication.localEnabled &&
+            !authentication.oidcEnabled &&
+            authentication.isStandaloneMode
+          ) {
             <p>La session de démonstration SIXPAY est active.</p>
           }
         </mat-card-content>
@@ -102,8 +122,13 @@ import { AuthenticationService } from './authentication.service';
       padding: var(--sp-space-4);
     }
 
+    .sp-auth-card {
+      width: 100%;
+    }
+
     mat-card-content,
-    .sp-local-login-form {
+    .sp-local-login-form,
+    .sp-sso-login {
       display: grid;
       gap: var(--sp-space-4);
       padding-top: var(--sp-space-4);
@@ -114,13 +139,38 @@ import { AuthenticationService } from './authentication.service';
     }
 
     .sp-auth-message,
-    .sp-auth-error {
+    .sp-auth-error,
+    .sp-forgot-password-hint {
       margin: 0;
     }
 
     .sp-auth-error {
       color: var(--mat-sys-error);
       font-weight: 600;
+    }
+
+    .sp-forgot-password-hint {
+      text-align: right;
+      font-size: 0.875rem;
+    }
+
+    .sp-auth-divider {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: var(--sp-space-3);
+      margin-top: var(--sp-space-4);
+    }
+
+    .sp-auth-divider span {
+      height: 1px;
+      background: var(--mat-sys-outline-variant);
+    }
+
+    .sp-auth-divider strong {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface-variant);
     }
   `,
 })
@@ -157,7 +207,7 @@ export class LoginComponent {
   }
 
   protected loginLocal(): void {
-    if (!this.authentication.isLocalMode || this.form.invalid) {
+    if (!this.authentication.localEnabled || this.form.invalid) {
       return;
     }
 
@@ -180,6 +230,10 @@ export class LoginComponent {
   }
 
   protected loginOidc(): void {
-    this.authentication.login(this.returnUrl);
+    if (!this.authentication.oidcEnabled) {
+      return;
+    }
+
+    this.authentication.loginOidc(this.returnUrl);
   }
 }

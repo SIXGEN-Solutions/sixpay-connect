@@ -22,6 +22,7 @@ import { environment } from '../../../environments/environment';
 import { AuthenticationEnvironment } from '../../../environments/environment.model';
 import { ErrorService } from '../errors/error.service';
 import {
+  ActiveAuthenticationMethod,
   AuthenticatedIdentity,
   AuthenticationSessionResponse,
   LocalLoginRequest,
@@ -65,6 +66,9 @@ export class AuthenticationService {
   private readonly usernameState =
     signal<string | null>(null);
 
+  private readonly activeAuthenticationMethodState =
+    signal<ActiveAuthenticationMethod>(null);
+
   private readonly readyState =
     new ReplaySubject<boolean>(1);
 
@@ -73,6 +77,9 @@ export class AuthenticationService {
 
   readonly username =
     this.usernameState.asReadonly();
+
+  readonly activeAuthenticationMethod =
+    this.activeAuthenticationMethodState.asReadonly();
 
   readonly isAuthenticated = computed(
     () => this.identityState() !== null,
@@ -100,17 +107,20 @@ export class AuthenticationService {
   readonly isStandaloneMode =
     authenticationEnvironment.standalone;
 
-  readonly isLocalEnabled =
+  readonly localEnabled =
     authenticationEnvironment.local.enabled;
 
-  readonly isOidcEnabled =
+  readonly oidcEnabled =
     authenticationEnvironment.oidc.enabled;
 
-  readonly isLocalMode =
-    this.isLocalEnabled;
-
-  readonly isOidcMode =
-    this.isOidcEnabled;
+  /**
+   * Transitional aliases kept to avoid breaking callers outside DA-7.
+   * New UI/service code must use localEnabled / oidcEnabled.
+   */
+  readonly isLocalEnabled = this.localEnabled;
+  readonly isOidcEnabled = this.oidcEnabled;
+  readonly isLocalMode = this.localEnabled;
+  readonly isOidcMode = this.oidcEnabled;
 
   constructor() {
     if (this.isStandaloneMode) {
@@ -118,17 +128,7 @@ export class AuthenticationService {
       return;
     }
 
-    if (this.isOidcEnabled) {
-      this.initializeOidcSession();
-      return;
-    }
-
-    if (this.isLocalEnabled) {
-      this.restoreCanonicalSession();
-      return;
-    }
-
-    this.readyState.next(true);
+    this.initializeAvailableSession();
   }
 
   hasRole(
@@ -179,7 +179,7 @@ export class AuthenticationService {
     request: LocalLoginRequest,
     returnUrl = '/',
   ): Observable<void> {
-    if (!this.isLocalEnabled) {
+    if (!this.localEnabled) {
       return throwError(
         () =>
           new Error(
@@ -198,6 +198,7 @@ export class AuthenticationService {
       .pipe(
         tap((session) => {
           this.errorService.clear();
+          this.activeAuthenticationMethodState.set('local');
           this.setCanonicalSession(session);
         }),
         tap(() =>
@@ -207,10 +208,10 @@ export class AuthenticationService {
       );
   }
 
-  login(
+  loginOidc(
     returnUrl = '/',
   ): void {
-    if (!this.isOidcEnabled) {
+    if (!this.oidcEnabled) {
       return;
     }
 
@@ -220,6 +221,15 @@ export class AuthenticationService {
     );
 
     this.oidc?.authorize();
+  }
+
+  /**
+   * Compatibility alias for existing callers.
+   */
+  login(
+    returnUrl = '/',
+  ): void {
+    this.loginOidc(returnUrl);
   }
 
   completeLoginNavigation(): void {
@@ -245,57 +255,58 @@ export class AuthenticationService {
       RETURN_URL_STORAGE_KEY,
     );
 
-    if (this.isOidcEnabled && this.oidc) {
-      this.errorService.clear();
-      this.clearSession();
+    switch (this.activeAuthenticationMethodState()) {
+      case 'oidc':
+        this.logoutOidc();
+        return;
 
-      this.oidc
-        .logoffAndRevokeTokens()
-        .subscribe({
-          error: () =>
-            this.oidc?.logoffLocal(),
-        });
+      case 'local':
+        this.logoutLocal();
+        return;
 
-      return;
+      default:
+        this.errorService.clear();
+        this.clearSession();
+        void this.router.navigate(['/login']);
     }
-
-    if (this.isLocalEnabled) {
-      this.localClient
-        .logout()
-        .pipe(
-          catchError(() => of(undefined)),
-          finalize(() => {
-            this.errorService.clear();
-            this.clearSession();
-            void this.router.navigate(['/login']);
-          }),
-        )
-        .subscribe();
-
-      return;
-    }
-
-    this.errorService.clear();
-    this.clearSession();
-    void this.router.navigate(['/login']);
   }
 
   expireSession(): void {
+    const activeMethod =
+      this.activeAuthenticationMethodState();
+
     this.errorService.clear();
     this.clearSession();
 
-    if (this.isOidcEnabled) {
+    if (activeMethod === 'oidc') {
       this.oidc?.logoffLocal();
     }
   }
 
   accessTokenForRequest():
     Observable<string | null> {
-    if (this.isOidcEnabled && this.oidc) {
+    if (
+      this.activeAuthenticationMethodState() === 'oidc' &&
+      this.oidc
+    ) {
       return this.oidc.getAccessToken();
     }
 
     return of(null);
+  }
+
+  private initializeAvailableSession(): void {
+    if (this.oidcEnabled) {
+      this.initializeOidcSession();
+      return;
+    }
+
+    if (this.localEnabled) {
+      this.restoreCanonicalSession('local');
+      return;
+    }
+
+    this.readyState.next(true);
   }
 
   private initializeStandaloneIdentity(): void {
@@ -328,12 +339,13 @@ export class AuthenticationService {
     });
 
     this.usernameState.set(null);
+    this.activeAuthenticationMethodState.set(null);
     this.readyState.next(true);
   }
 
   private initializeOidcSession(): void {
     if (!this.oidc) {
-      this.readyState.next(true);
+      this.fallbackToLocalOrReady();
       return;
     }
 
@@ -341,27 +353,40 @@ export class AuthenticationService {
       .checkAuth()
       .subscribe({
         next: (response) => {
-          if (!response.isAuthenticated) {
-            this.clearSession();
-            this.readyState.next(true);
+          if (response.isAuthenticated) {
+            this.activeAuthenticationMethodState.set('oidc');
+            this.restoreCanonicalSession('oidc');
             return;
           }
 
-          /*
-           * DA-6 rule:
-           * the IdP proves identity, but SIXPAY returns business roles and
-           * permissions through the authenticated /me endpoint.
-           */
-          this.restoreCanonicalSession();
+          this.fallbackToLocalOrReady();
         },
         error: () => {
-          this.clearSession();
-          this.readyState.next(true);
+          this.fallbackToLocalOrReady();
         },
       });
   }
 
-  private restoreCanonicalSession(): void {
+  private fallbackToLocalOrReady(): void {
+    this.clearSession();
+
+    if (this.localEnabled) {
+      this.restoreCanonicalSession('local');
+      return;
+    }
+
+    this.readyState.next(true);
+  }
+
+  private restoreCanonicalSession(
+    method: Exclude<ActiveAuthenticationMethod, null>,
+  ): void {
+    /*
+     * Set the candidate method before /me so the request interceptor knows
+     * whether it should attach an OIDC bearer token.
+     */
+    this.activeAuthenticationMethodState.set(method);
+
     this.localClient
       .currentUser()
       .subscribe({
@@ -395,6 +420,37 @@ export class AuthenticationService {
     );
   }
 
+  private logoutLocal(): void {
+    this.localClient
+      .logout()
+      .pipe(
+        catchError(() => of(undefined)),
+        finalize(() => {
+          this.errorService.clear();
+          this.clearSession();
+          void this.router.navigate(['/login']);
+        }),
+      )
+      .subscribe();
+  }
+
+  private logoutOidc(): void {
+    this.errorService.clear();
+    this.clearSession();
+
+    if (!this.oidc) {
+      void this.router.navigate(['/login']);
+      return;
+    }
+
+    this.oidc
+      .logoffAndRevokeTokens()
+      .subscribe({
+        error: () =>
+          this.oidc?.logoffLocal(),
+      });
+  }
+
   private standaloneSubjectForRole(
     role: SixpayRole | null,
   ): string {
@@ -418,6 +474,7 @@ export class AuthenticationService {
   private clearSession(): void {
     this.identityState.set(null);
     this.usernameState.set(null);
+    this.activeAuthenticationMethodState.set(null);
   }
 
   private get storage():

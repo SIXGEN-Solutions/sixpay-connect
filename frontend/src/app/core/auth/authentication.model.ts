@@ -2,6 +2,8 @@ export const SIXPAY_ROLES = ['ADMIN', 'MANAGER', 'PARTNER', 'AUDITOR'] as const;
 
 export type SixpayRole = (typeof SIXPAY_ROLES)[number];
 
+export type ActiveAuthenticationMethod = 'local' | 'oidc' | null;
+
 export interface AuthenticatedIdentity {
   readonly subject: string;
   readonly roles: ReadonlySet<SixpayRole>;
@@ -13,11 +15,6 @@ export interface LocalLoginRequest {
   readonly password: string;
 }
 
-/**
- * Mechanism-neutral session returned by SIXPAY.
- *
- * Local and OIDC sessions use exactly this same authorization representation.
- */
 export interface AuthenticationSessionResponse {
   readonly subject: string;
   readonly username: string;
@@ -25,9 +22,6 @@ export interface AuthenticationSessionResponse {
   readonly permissions: readonly string[];
 }
 
-/**
- * Compatibility alias for existing Local client/tests.
- */
 export type LocalSessionResponse = AuthenticationSessionResponse;
 
 export interface JwtClaims {
@@ -53,8 +47,8 @@ export function normalizeSixpayRoles(
 }
 
 /**
- * @deprecated Production OIDC authorization must come from SIXPAY /auth/me,
- * never from JWT claims. Kept only for standalone/backward test compatibility.
+ * @deprecated Production authorization comes from SIXPAY /api/v1/auth/me.
+ * Retained only for standalone/backward compatibility.
  */
 export function extractSixpayRoles(
   claims: JwtClaims | null,
