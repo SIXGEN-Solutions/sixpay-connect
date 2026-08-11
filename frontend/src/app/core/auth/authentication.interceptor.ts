@@ -11,7 +11,7 @@ const authenticationEnvironment: AuthenticationEnvironment =
 
 export const authenticationInterceptor: HttpInterceptorFn = (request, next) => {
   if (
-    authenticationEnvironment.mode !== 'oidc' ||
+    !authenticationEnvironment.oidc.enabled ||
     request.headers.has('Authorization')
   ) {
     return next(request);

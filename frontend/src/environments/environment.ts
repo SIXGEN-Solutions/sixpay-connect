@@ -7,9 +7,15 @@ export const environment = {
     mode: 'api',
   },
   authentication: {
-    mode: 'oidc',
-    authority: 'https://identity.sixpay.example',
-    clientId: 'sixpay-connect-frontend',
-    scope: 'openid profile email roles offline_access',
+    standalone: false,
+    local: {
+      enabled: true,
+    },
+    oidc: {
+      enabled: true,
+      authority: 'https://identity.sixpay.example',
+      clientId: 'sixpay-connect-frontend',
+      scope: 'openid profile email roles offline_access',
+    },
   },
 } satisfies AppEnvironment;

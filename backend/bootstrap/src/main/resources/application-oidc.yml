@@ -1,6 +1,15 @@
 sixpay:
   security:
-    authentication-mode: OIDC
+    # Transitional DA-2 compatibility switch used by the existing
+    # resource-server SecurityFilterChain. DA-4 will compose the chain from
+    # authentication capabilities directly.
+    mode: oauth2
+    authentication:
+      local:
+        enabled: false
+      oidc:
+        enabled: true
+        registration-id: sixpay
 
 spring:
   security:

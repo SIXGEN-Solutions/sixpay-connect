@@ -13,18 +13,24 @@ import { apiErrorInterceptor } from './core/errors/api-error.interceptor';
 import { GlobalErrorHandler } from './core/errors/global-error.handler';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
+import {
+  validateAuthenticationEnvironment,
+} from '../environments/authentication-environment';
 import { AuthenticationEnvironment } from '../environments/environment.model';
 
-const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
+validateAuthenticationEnvironment(environment);
+
+const authenticationEnvironment: AuthenticationEnvironment =
+  environment.authentication;
 
 const oidcProviders =
-  authenticationEnvironment.mode === 'oidc'
+  authenticationEnvironment.oidc.enabled
     ? [
         provideAuth({
           config: {
-            authority: authenticationEnvironment.authority,
-            clientId: authenticationEnvironment.clientId,
-            scope: authenticationEnvironment.scope,
+            authority: authenticationEnvironment.oidc.authority!,
+            clientId: authenticationEnvironment.oidc.clientId!,
+            scope: authenticationEnvironment.oidc.scope!,
             responseType: 'code',
             redirectUrl: window.location.origin,
             postLogoutRedirectUri: window.location.origin,

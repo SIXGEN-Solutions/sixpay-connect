@@ -103,33 +103,49 @@ export class AuthenticationService {
     this.readyState.asObservable();
 
   readonly isStandaloneMode =
-    authenticationEnvironment.mode ===
-    'standalone';
+    authenticationEnvironment.standalone;
 
+  readonly isLocalEnabled =
+    authenticationEnvironment.local.enabled;
+
+  readonly isOidcEnabled =
+    authenticationEnvironment.oidc.enabled;
+
+  /**
+   * Compatibility aliases retained until DA-7 updates the login presentation.
+   * They now represent enabled capabilities rather than mutually exclusive
+   * authentication modes.
+   */
   readonly isLocalMode =
-    authenticationEnvironment.mode ===
-    'local';
+    this.isLocalEnabled;
 
   readonly isOidcMode =
-    authenticationEnvironment.mode ===
-    'oidc';
+    this.isOidcEnabled;
 
   constructor() {
-    switch (
-      authenticationEnvironment.mode
-    ) {
-      case 'standalone':
-        this.initializeStandaloneIdentity();
-        break;
-
-      case 'local':
-        this.restoreLocalSession();
-        break;
-
-      case 'oidc':
-        this.initializeOidcSession();
-        break;
+    if (this.isStandaloneMode) {
+      this.initializeStandaloneIdentity();
+      return;
     }
+
+    /*
+     * DA-2 changes configuration semantics only.
+     *
+     * In hybrid mode OIDC remains the bootstrap strategy so the existing
+     * production OIDC behavior is preserved. DA-8 will replace this temporary
+     * bootstrap precedence with normalized Local/OIDC session discovery.
+     */
+    if (this.isOidcEnabled) {
+      this.initializeOidcSession();
+      return;
+    }
+
+    if (this.isLocalEnabled) {
+      this.restoreLocalSession();
+      return;
+    }
+
+    this.readyState.next(true);
   }
 
   hasRole(
@@ -177,7 +193,7 @@ export class AuthenticationService {
     request: LocalLoginRequest,
     returnUrl = '/',
   ): Observable<void> {
-    if (!this.isLocalMode) {
+    if (!this.isLocalEnabled) {
       return throwError(
         () =>
           new Error(
@@ -195,12 +211,6 @@ export class AuthenticationService {
       .login(request)
       .pipe(
         tap((session) => {
-          /*
-           * A previous anonymous /auth/me restoration attempt may have
-           * produced an obsolete global error. A successful login is a
-           * definitive recovery point, so remove any stale banner before
-           * entering the authenticated shell.
-           */
           this.errorService.clear();
           this.setLocalSession(
             session,
@@ -216,7 +226,7 @@ export class AuthenticationService {
   login(
     returnUrl = '/',
   ): void {
-    if (!this.isOidcMode) {
+    if (!this.isOidcEnabled) {
       return;
     }
 
@@ -254,7 +264,29 @@ export class AuthenticationService {
       RETURN_URL_STORAGE_KEY,
     );
 
-    if (this.isLocalMode) {
+    /*
+     * DA-8 will make logout depend on the active normalized session instead of
+     * configuration precedence. Until then, preserve the previous OIDC-first
+     * production behavior when both capabilities are enabled.
+     */
+    if (
+      this.isOidcEnabled &&
+      this.oidc
+    ) {
+      this.errorService.clear();
+      this.clearLocalSession();
+
+      this.oidc
+        .logoffAndRevokeTokens()
+        .subscribe({
+          error: () =>
+            this.oidc?.logoffLocal(),
+        });
+
+      return;
+    }
+
+    if (this.isLocalEnabled) {
       this.localClient
         .logout()
         .pipe(
@@ -278,20 +310,6 @@ export class AuthenticationService {
     this.errorService.clear();
     this.clearLocalSession();
 
-    if (
-      this.isOidcMode &&
-      this.oidc
-    ) {
-      this.oidc
-        .logoffAndRevokeTokens()
-        .subscribe({
-          error: () =>
-            this.oidc?.logoffLocal(),
-        });
-
-      return;
-    }
-
     void this.router.navigate([
       '/login',
     ]);
@@ -301,7 +319,7 @@ export class AuthenticationService {
     this.errorService.clear();
     this.clearLocalSession();
 
-    if (this.isOidcMode) {
+    if (this.isOidcEnabled) {
       this.oidc?.logoffLocal();
     }
   }
@@ -309,7 +327,7 @@ export class AuthenticationService {
   accessTokenForRequest():
     Observable<string | null> {
     if (
-      this.isOidcMode &&
+      this.isOidcEnabled &&
       this.oidc
     ) {
       return this.oidc.getAccessToken();
@@ -362,10 +380,6 @@ export class AuthenticationService {
       .currentUser()
       .subscribe({
         next: (session) => {
-          /*
-           * If a previous recoverable error existed, a valid restored
-           * session means the application is healthy again.
-           */
           this.errorService.clear();
 
           this.setLocalSession(
@@ -377,12 +391,6 @@ export class AuthenticationService {
           );
         },
         error: () => {
-          /*
-           * No current session is an expected bootstrap state.
-           * The HTTP interceptor deliberately does not publish the
-           * /auth/me 401/403, so there is nothing user-facing to clear
-           * here. We only reset authentication state.
-           */
           this.clearLocalSession();
 
           this.readyState.next(

@@ -1,11 +1,16 @@
-export type AuthenticationMode = 'oidc' | 'standalone' | 'local';
 export type BackendMode = 'mock' | 'api';
 
 export interface AuthenticationEnvironment {
-  readonly mode: AuthenticationMode;
-  readonly authority: string;
-  readonly clientId: string;
-  readonly scope: string;
+  readonly standalone: boolean;
+  readonly local: {
+    readonly enabled: boolean;
+  };
+  readonly oidc: {
+    readonly enabled: boolean;
+    readonly authority?: string;
+    readonly clientId?: string;
+    readonly scope?: string;
+  };
   readonly standaloneUser?: {
     readonly subject: string;
     readonly roles: readonly string[];

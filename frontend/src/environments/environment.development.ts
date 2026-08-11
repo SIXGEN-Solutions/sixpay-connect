@@ -7,10 +7,13 @@ export const environment = {
     mode: 'mock',
   },
   authentication: {
-    mode: 'standalone',
-    authority: '',
-    clientId: '',
-    scope: 'openid profile email roles',
+    standalone: true,
+    local: {
+      enabled: false,
+    },
+    oidc: {
+      enabled: false,
+    },
     standaloneUser: {
       subject: 'local-security-user',
       roles: ['ADMIN'],

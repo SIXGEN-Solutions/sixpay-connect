@@ -1,0 +1,26 @@
+# DA-2 hybrid capability profile.
+#
+# This profile declares Local + OIDC as simultaneously available capabilities.
+# DA-3 and DA-4 own the concrete authentication providers/filter-chain
+# composition. DA-8 owns normalized hybrid session discovery.
+#
+# No client secret belongs in this file.
+
+sixpay:
+  security:
+    # Transitional compatibility with the current resource-server chain.
+    mode: oauth2
+    authentication:
+      local:
+        enabled: true
+      oidc:
+        enabled: true
+        registration-id: sixpay
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SIXPAY_IDP_ISSUER_URI}
+          jwk-set-uri: ${SIXPAY_IDP_JWK_SET_URI}

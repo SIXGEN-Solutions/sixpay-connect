@@ -7,9 +7,12 @@ export const environment = {
     mode: 'api',
   },
   authentication: {
-    mode: 'local',
-    authority: '',
-    clientId: '',
-    scope: '',
+    standalone: false,
+    local: {
+      enabled: true,
+    },
+    oidc: {
+      enabled: false,
+    },
   },
 } satisfies AppEnvironment;

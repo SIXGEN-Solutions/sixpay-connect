@@ -11,6 +11,8 @@ import org.springframework.boot.autoconfigure.condition
         .ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration
         .EnableMethodSecurity;
@@ -24,13 +26,15 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource
         .authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Default Spring Security configuration for SIXPAY CONNECT.
  */
 @AutoConfiguration
 @EnableMethodSecurity
+@EnableConfigurationProperties(
+        AuthenticationCapabilitiesProperties.class
+)
 @ConditionalOnClass({
         HttpSecurity.class,
         Jwt.class
@@ -68,6 +72,14 @@ public class SixpaySecurityAutoConfiguration {
         return new SecurityContextCurrentUserProvider();
     }
 
+    /**
+     * Existing OAuth2 resource-server filter chain.
+     *
+     * <p>DA-2 deliberately keeps the legacy {@code sixpay.security.mode}
+     * switch so this configuration change does not prematurely implement DA-3
+     * Local authentication or DA-4 OIDC composition. The new capability
+     * properties are bound now and become the source for those later lots.</p>
+     */
     @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     @ConditionalOnProperty(
