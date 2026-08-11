@@ -1,0 +1,120 @@
+package com.sixpay.security.infrastructure.authentication.persistence;
+
+import com.sixpay.security.domain.authentication.LocalAuthenticationAccountStatus;
+import jakarta.persistence.*;
+
+import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@Entity
+@Table(name = "security_local_users")
+public class LocalAuthenticationUserJpaEntity {
+
+    @Id
+    private UUID id;
+
+    @Column(nullable = false, unique = true, length = 150)
+    private String subject;
+
+    @Column(nullable = false, length = 150)
+    private String username;
+
+    @Column(
+            name = "normalized_username",
+            nullable = false,
+            unique = true,
+            length = 150
+    )
+    private String normalizedUsername;
+
+    @Column(
+            name = "password_hash",
+            nullable = false,
+            length = 100
+    )
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private LocalAuthenticationAccountStatus status;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "security_local_user_authorities",
+            joinColumns = @JoinColumn(name = "local_user_id")
+    )
+    @Column(name = "authority", nullable = false, length = 150)
+    private Set<String> authorities = new LinkedHashSet<>();
+
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
+
+    @Column(name = "last_authenticated_at")
+    private Instant lastAuthenticatedAt;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
+
+    protected LocalAuthenticationUserJpaEntity() {
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public LocalAuthenticationAccountStatus getStatus() {
+        return status;
+    }
+
+    public Set<String> getAuthorities() {
+        return Set.copyOf(authorities);
+    }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public Instant getLastAuthenticatedAt() {
+        return lastAuthenticatedAt;
+    }
+
+    public void updateAuthenticationState(
+            int failedAttempts,
+            Instant lockedUntil,
+            Instant lastAuthenticatedAt,
+            Instant updatedAt
+    ) {
+        this.failedAttempts = failedAttempts;
+        this.lockedUntil = lockedUntil;
+        this.lastAuthenticatedAt = lastAuthenticatedAt;
+        this.updatedAt = updatedAt;
+    }
+}

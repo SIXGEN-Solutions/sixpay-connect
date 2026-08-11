@@ -1,7 +1,6 @@
 package com.sixpay.security.authentication;
 
-import org.springframework.security.authentication
-        .AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,15 +10,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Reads the authenticated user from Spring Security's context.
- */
 public final class SecurityContextCurrentUserProvider
         implements CurrentUserProvider {
 
     private static final String PREFERRED_USERNAME =
             "preferred_username";
-
     private static final String EMAIL = "email";
 
     @Override
@@ -30,6 +25,11 @@ public final class SecurityContextCurrentUserProvider
 
         if (!isAuthenticated(authentication)) {
             return Optional.empty();
+        }
+
+        if (authentication.getPrincipal()
+                instanceof AuthenticatedUser authenticatedUser) {
+            return Optional.of(authenticatedUser);
         }
 
         String subject = resolveSubject(authentication);

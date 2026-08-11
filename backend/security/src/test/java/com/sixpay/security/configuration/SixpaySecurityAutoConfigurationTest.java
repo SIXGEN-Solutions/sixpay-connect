@@ -31,7 +31,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = SixpaySecurityAutoConfigurationTest.TestApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        properties = "sixpay.security.mode=oauth2"
+        properties = {
+                "sixpay.security.authentication.local.enabled=false",
+                "sixpay.security.authentication.oidc.enabled=true"
+        }
 )
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

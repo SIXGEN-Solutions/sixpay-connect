@@ -1,8 +1,3 @@
-# Hybrid Local + OIDC capability profile.
-# DA-3 provides Local credentials and cookie-backed session handling.
-# DA-4 owns browser/provider OIDC composition.
-# DA-8 owns final active-session arbitration.
-
 sixpay:
   security:
     authentication:
@@ -12,16 +7,7 @@ sixpay:
         lock-duration: ${SIXPAY_LOCAL_LOCK_DURATION:15m}
         bcrypt-strength: ${SIXPAY_LOCAL_BCRYPT_STRENGTH:12}
       oidc:
-        enabled: true
-        registration-id: sixpay
-
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SIXPAY_IDP_ISSUER_URI}
-          jwk-set-uri: ${SIXPAY_IDP_JWK_SET_URI}
+        enabled: false
 
 server:
   servlet:

@@ -2,13 +2,8 @@ package com.sixpay.security.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Provider-neutral authentication capability configuration.
- *
- * <p>DA-2 introduces independent Local and OIDC capabilities. The properties
- * are intentionally configuration-only: Local/OIDC filter-chain composition
- * is implemented by later authentication lots.</p>
- */
+import java.time.Duration;
+
 @ConfigurationProperties("sixpay.security.authentication")
 public record AuthenticationCapabilitiesProperties(
         Local local,
@@ -16,12 +11,8 @@ public record AuthenticationCapabilitiesProperties(
 ) {
 
     public AuthenticationCapabilitiesProperties {
-        local = local == null
-                ? new Local(false)
-                : local;
-        oidc = oidc == null
-                ? new Oidc(false, null)
-                : oidc;
+        local = local == null ? new Local(false) : local;
+        oidc = oidc == null ? new Oidc(false, null) : oidc;
     }
 
     public boolean localEnabled() {
@@ -37,8 +28,43 @@ public record AuthenticationCapabilitiesProperties(
     }
 
     public record Local(
-            boolean enabled
+            boolean enabled,
+            int maximumFailedAttempts,
+            Duration lockDuration,
+            int bcryptStrength
     ) {
+        private static final int DEFAULT_MAXIMUM_FAILED_ATTEMPTS = 5;
+        private static final Duration DEFAULT_LOCK_DURATION =
+                Duration.ofMinutes(15);
+        private static final int DEFAULT_BCRYPT_STRENGTH = 12;
+
+        public Local(boolean enabled) {
+            this(
+                    enabled,
+                    DEFAULT_MAXIMUM_FAILED_ATTEMPTS,
+                    DEFAULT_LOCK_DURATION,
+                    DEFAULT_BCRYPT_STRENGTH
+            );
+        }
+
+        public Local {
+            maximumFailedAttempts =
+                    maximumFailedAttempts > 0
+                            ? maximumFailedAttempts
+                            : DEFAULT_MAXIMUM_FAILED_ATTEMPTS;
+
+            lockDuration =
+                    lockDuration != null
+                            && !lockDuration.isZero()
+                            && !lockDuration.isNegative()
+                            ? lockDuration
+                            : DEFAULT_LOCK_DURATION;
+
+            bcryptStrength =
+                    bcryptStrength >= 10 && bcryptStrength <= 16
+                            ? bcryptStrength
+                            : DEFAULT_BCRYPT_STRENGTH;
+        }
     }
 
     public record Oidc(
