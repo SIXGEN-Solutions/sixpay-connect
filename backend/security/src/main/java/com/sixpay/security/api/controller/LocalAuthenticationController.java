@@ -1,7 +1,7 @@
 package com.sixpay.security.api.controller;
 
+import com.sixpay.security.api.dto.AuthenticationSessionResponse;
 import com.sixpay.security.api.dto.LocalLoginRequest;
-import com.sixpay.security.api.dto.LocalSessionResponse;
 import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.in.LocalLoginCommand;
@@ -16,6 +16,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
 
+/**
+ * Local-credential and Local-session lifecycle boundary.
+ *
+ * <p>The mechanism-neutral current-session endpoint lives in
+ * {@link AuthenticationSessionController}.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public final class LocalAuthenticationController {
@@ -31,14 +37,18 @@ public final class LocalAuthenticationController {
             LogoutUseCase logoutUseCase,
             SpringSecurityLocalSessionManager sessionManager
     ) {
-        this.authenticateLocalUser = Objects.requireNonNull(authenticateLocalUser);
-        this.getCurrentSession = Objects.requireNonNull(getCurrentSession);
-        this.logoutUseCase = Objects.requireNonNull(logoutUseCase);
-        this.sessionManager = Objects.requireNonNull(sessionManager);
+        this.authenticateLocalUser =
+                Objects.requireNonNull(authenticateLocalUser);
+        this.getCurrentSession =
+                Objects.requireNonNull(getCurrentSession);
+        this.logoutUseCase =
+                Objects.requireNonNull(logoutUseCase);
+        this.sessionManager =
+                Objects.requireNonNull(sessionManager);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LocalSessionResponse> login(
+    public ResponseEntity<AuthenticationSessionResponse> login(
             @Valid @RequestBody LocalLoginRequest requestBody,
             HttpServletRequest request,
             HttpServletResponse response
@@ -57,13 +67,10 @@ public final class LocalAuthenticationController {
                 response
         );
 
-        return ResponseEntity.ok(toResponse(authenticatedUser));
-    }
-
-    @GetMapping("/me")
-    public LocalSessionResponse currentSession() {
-        return toResponse(
-                getCurrentSession.getCurrentSession()
+        return ResponseEntity.ok(
+                AuthenticationSessionController.toResponse(
+                        authenticatedUser
+                )
         );
     }
 
@@ -76,18 +83,11 @@ public final class LocalAuthenticationController {
                 getCurrentSession.getCurrentSession();
 
         logoutUseCase.logout(currentUser);
-        sessionManager.terminateSession(request, response);
+        sessionManager.terminateSession(
+                request,
+                response
+        );
 
         return ResponseEntity.noContent().build();
-    }
-
-    private static LocalSessionResponse toResponse(
-            AuthenticatedUser user
-    ) {
-        return new LocalSessionResponse(
-                user.subject(),
-                user.username(),
-                user.roles()
-        );
     }
 }

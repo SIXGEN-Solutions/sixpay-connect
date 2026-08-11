@@ -11,10 +11,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class HybridIdentityConvergenceTest {
+class HybridAuthorizationConvergenceTest {
 
     @Test
-    void localAndOidcRepresentSameCanonicalUser() {
+    void sameCanonicalUserHasSameAuthorizationForLocalAndOidc() {
         UUID userId =
                 UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
 
@@ -24,11 +24,14 @@ class HybridIdentityConvergenceTest {
                         "rodrigue",
                         "rodrigue@sixpay.test",
                         SixpayUserAccountStatus.ACTIVE,
-                        Set.of("ADMIN"),
-                        Set.of("SCOPE_payment.read")
+                        Set.of("ADMIN", "AUDITOR"),
+                        Set.of(
+                                "SCOPE_payment.read",
+                                "payment.export"
+                        )
                 );
 
-        AuthenticatedUser localUser =
+        AuthenticatedUser localPrincipal =
                 new AuthenticatedUser(
                         account.canonicalSubject(),
                         account.username(),
@@ -36,13 +39,14 @@ class HybridIdentityConvergenceTest {
                 );
 
         Instant now = Instant.parse("2026-08-11T02:00:00Z");
+
         UserIdentity oidcIdentity =
                 new UserIdentity(
                         UUID.fromString("dddddddd-dddd-4ddd-8ddd-dddddddddddd"),
                         userId,
                         AuthenticationIdentityType.OIDC,
                         "https://idp.example.test",
-                        "oidc-provider-subject",
+                        "external-subject",
                         now,
                         now
                 );
@@ -58,20 +62,22 @@ class HybridIdentityConvergenceTest {
                                 )
                 );
 
-        AuthenticatedUser oidcUser =
+        AuthenticatedUser oidcPrincipal =
                 resolver.resolve(
                         new ExternalIdentity(
                                 "https://idp.example.test",
-                                "oidc-provider-subject",
-                                "provider-email@sixpay.test"
+                                "external-subject",
+                                "provider-user@example.test"
                         )
                 );
 
-        assertThat(localUser.subject())
-                .isEqualTo(oidcUser.subject());
-        assertThat(localUser.username())
-                .isEqualTo(oidcUser.username());
-        assertThat(localUser.authorities())
-                .isEqualTo(oidcUser.authorities());
+        assertThat(oidcPrincipal.subject())
+                .isEqualTo(localPrincipal.subject());
+        assertThat(oidcPrincipal.roles())
+                .isEqualTo(localPrincipal.roles());
+        assertThat(oidcPrincipal.permissions())
+                .isEqualTo(localPrincipal.permissions());
+        assertThat(oidcPrincipal.authorities())
+                .isEqualTo(localPrincipal.authorities());
     }
 }

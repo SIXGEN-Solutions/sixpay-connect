@@ -1,6 +1,9 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.api.controller.AuthenticationSessionController;
+import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.out.ExternalIdentityResolver;
+import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
@@ -13,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -37,25 +41,39 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @EnableConfigurationProperties(AuthenticationCapabilitiesProperties.class)
 @Import({
         LocalAuthenticationConfiguration.class,
-        IdentityLinkingConfiguration.class
+        IdentityLinkingConfiguration.class,
+        AuthenticationSessionController.class
 })
 @ConditionalOnClass({HttpSecurity.class, Jwt.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SixpaySecurityAutoConfiguration {
 
+    /**
+     * Legacy compatibility bean only. The active OIDC path no longer consumes
+     * provider roles/scopes as business authorities.
+     */
     @Bean
     @ConditionalOnMissingBean
     SixpayJwtAuthoritiesConverter sixpayJwtAuthoritiesConverter() {
         return new SixpayJwtAuthoritiesConverter();
     }
 
+    /**
+     * Legacy compatibility bean for consumers expecting Spring's standard JWT
+     * converter type. It resolves no business authorities after DA-6.
+     */
     @Bean
     @ConditionalOnMissingBean(JwtAuthenticationConverter.class)
     JwtAuthenticationConverter jwtAuthenticationConverter(
             SixpayJwtAuthoritiesConverter authoritiesConverter
     ) {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        JwtAuthenticationConverter converter =
+                new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(
+                authoritiesConverter
+        );
+
         return converter;
     }
 
@@ -67,11 +85,9 @@ public class SixpaySecurityAutoConfiguration {
             havingValue = "true"
     )
     OidcAuthenticationAdapter oidcAuthenticationAdapter(
-            SixpayJwtAuthoritiesConverter authoritiesConverter,
             ExternalIdentityResolver externalIdentityResolver
     ) {
         return new OidcAuthenticationAdapter(
-                authoritiesConverter,
                 externalIdentityResolver
         );
     }
@@ -80,6 +96,16 @@ public class SixpaySecurityAutoConfiguration {
     @ConditionalOnMissingBean(CurrentUserProvider.class)
     CurrentUserProvider currentUserProvider() {
         return new SecurityContextCurrentUserProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(GetCurrentSessionUseCase.class)
+    GetCurrentSessionUseCase getCurrentSessionUseCase(
+            CurrentUserProvider currentUserProvider
+    ) {
+        return new CurrentSessionService(
+                currentUserProvider
+        );
     }
 
     @Bean
@@ -108,43 +134,67 @@ public class SixpaySecurityAutoConfiguration {
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            OidcAuthenticationAdapter oidcAuthenticationAdapter,
+            ObjectProvider<OidcAuthenticationAdapter> oidcAuthenticationAdapterProvider,
             SecurityContextRepository securityContextRepository,
             CsrfTokenRepository csrfTokenRepository,
             AuthenticationCapabilitiesProperties capabilities
     ) throws Exception {
 
         RequestMatcher bearerRequest = request -> {
-            String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
-            return authorization != null && authorization.startsWith("Bearer ");
+            String authorization =
+                    request.getHeader(HttpHeaders.AUTHORIZATION);
+
+            return authorization != null
+                    && authorization.startsWith("Bearer ");
         };
 
         http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                                new HttpStatusEntryPoint(
+                                        HttpStatus.UNAUTHORIZED
+                                )
                         )
                 )
+
                 .securityContext(context ->
-                        context.securityContextRepository(securityContextRepository)
+                        context.securityContextRepository(
+                                securityContextRepository
+                        )
                 )
+
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.IF_REQUIRED
+                        )
                 )
+
                 .csrf(csrf -> {
-                    csrf.csrfTokenRepository(csrfTokenRepository);
-                    csrf.ignoringRequestMatchers(bearerRequest);
+                    csrf.csrfTokenRepository(
+                            csrfTokenRepository
+                    );
+
+                    csrf.ignoringRequestMatchers(
+                            bearerRequest
+                    );
 
                     if (capabilities.localEnabled()) {
                         csrf.ignoringRequestMatchers(
                                 request ->
-                                        HttpMethod.POST.matches(request.getMethod())
-                                                && "/api/v1/auth/login".equals(request.getRequestURI())
+                                        HttpMethod.POST.matches(
+                                                request.getMethod()
+                                        )
+                                                && "/api/v1/auth/login"
+                                                .equals(
+                                                        request.getRequestURI()
+                                                )
                         );
                     }
                 })
+
                 .authorizeHttpRequests(authorize -> {
                     authorize
                             .requestMatchers(
@@ -155,17 +205,24 @@ public class SixpaySecurityAutoConfiguration {
 
                     if (capabilities.localEnabled()) {
                         authorize
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login")
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/v1/auth/login"
+                                )
                                 .permitAll();
                     }
 
-                    authorize.anyRequest().authenticated();
+                    authorize
+                            .anyRequest()
+                            .authenticated();
                 });
 
         if (capabilities.oidcEnabled()) {
             http.oauth2ResourceServer(oauth2 ->
                     oauth2.jwt(jwt ->
-                            jwt.jwtAuthenticationConverter(oidcAuthenticationAdapter)
+                            jwt.jwtAuthenticationConverter(
+                                    oidcAuthenticationAdapterProvider.getObject()
+                            )
                     )
             );
         }

@@ -11,10 +11,8 @@ import com.sixpay.security.application.port.out.AuthenticationAuditPort;
 import com.sixpay.security.application.port.out.LoadAuthenticationUserPort;
 import com.sixpay.security.application.port.out.PasswordVerificationPort;
 import com.sixpay.security.application.port.out.SaveAuthenticationUserStatePort;
-import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.application.service.LocalAuthenticationService;
 import com.sixpay.security.application.service.LocalLogoutService;
-import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.audit.JpaAuthenticationAuditAdapter;
 import com.sixpay.security.infrastructure.authentication.password.BCryptPasswordVerificationAdapter;
@@ -123,14 +121,6 @@ public class LocalAuthenticationConfiguration {
                 properties.local().maximumFailedAttempts(),
                 properties.local().lockDuration()
         );
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(GetCurrentSessionUseCase.class)
-    GetCurrentSessionUseCase getCurrentSessionUseCase(
-            CurrentUserProvider currentUserProvider
-    ) {
-        return new CurrentSessionService(currentUserProvider);
     }
 
     @Bean

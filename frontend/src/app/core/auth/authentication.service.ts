@@ -23,10 +23,9 @@ import { AuthenticationEnvironment } from '../../../environments/environment.mod
 import { ErrorService } from '../errors/error.service';
 import {
   AuthenticatedIdentity,
-  extractSixpayRoles,
-  JwtClaims,
+  AuthenticationSessionResponse,
   LocalLoginRequest,
-  LocalSessionResponse,
+  normalizeSixpayRoles,
   SixpayRole,
 } from './authentication.model';
 import { LocalAuthenticationClient } from './local-authentication.client';
@@ -46,17 +45,13 @@ const authenticationEnvironment:
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
-  private readonly document =
-    inject(DOCUMENT);
+  private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
-  private readonly router =
-    inject(Router);
-
-  private readonly oidc =
-    inject(
-      OidcSecurityService,
-      { optional: true },
-    );
+  private readonly oidc = inject(
+    OidcSecurityService,
+    { optional: true },
+  );
 
   private readonly localClient =
     inject(LocalAuthenticationClient);
@@ -65,9 +60,7 @@ export class AuthenticationService {
     inject(ErrorService);
 
   private readonly identityState =
-    signal<AuthenticatedIdentity | null>(
-      null,
-    );
+    signal<AuthenticatedIdentity | null>(null);
 
   private readonly usernameState =
     signal<string | null>(null);
@@ -81,22 +74,24 @@ export class AuthenticationService {
   readonly username =
     this.usernameState.asReadonly();
 
-  readonly isAuthenticated =
-    computed(
-      () =>
-        this.identityState() !== null,
-    );
+  readonly isAuthenticated = computed(
+    () => this.identityState() !== null,
+  );
 
   readonly subject = computed(
-    () =>
-      this.identityState()?.subject ??
-      null,
+    () => this.identityState()?.subject ?? null,
   );
 
   readonly roles = computed(
     () =>
       this.identityState()?.roles ??
       new Set<SixpayRole>(),
+  );
+
+  readonly permissions = computed(
+    () =>
+      this.identityState()?.permissions ??
+      new Set<string>(),
   );
 
   readonly ready$ =
@@ -111,11 +106,6 @@ export class AuthenticationService {
   readonly isOidcEnabled =
     authenticationEnvironment.oidc.enabled;
 
-  /**
-   * Compatibility aliases retained until DA-7 updates the login presentation.
-   * They now represent enabled capabilities rather than mutually exclusive
-   * authentication modes.
-   */
   readonly isLocalMode =
     this.isLocalEnabled;
 
@@ -128,20 +118,13 @@ export class AuthenticationService {
       return;
     }
 
-    /*
-     * DA-2 changes configuration semantics only.
-     *
-     * In hybrid mode OIDC remains the bootstrap strategy so the existing
-     * production OIDC behavior is preserved. DA-8 will replace this temporary
-     * bootstrap precedence with normalized Local/OIDC session discovery.
-     */
     if (this.isOidcEnabled) {
       this.initializeOidcSession();
       return;
     }
 
     if (this.isLocalEnabled) {
-      this.restoreLocalSession();
+      this.restoreCanonicalSession();
       return;
     }
 
@@ -166,6 +149,12 @@ export class AuthenticationService {
     );
   }
 
+  hasPermission(
+    permission: string,
+  ): boolean {
+    return this.permissions().has(permission);
+  }
+
   simulateStandaloneRole(
     role: SixpayRole,
   ): void {
@@ -180,12 +169,9 @@ export class AuthenticationService {
 
     this.identityState.set({
       subject:
-        this.standaloneSubjectForRole(
-          role,
-        ),
-      roles: new Set<SixpayRole>([
-        role,
-      ]),
+        this.standaloneSubjectForRole(role),
+      roles: new Set<SixpayRole>([role]),
+      permissions: new Set<string>(),
     });
   }
 
@@ -212,9 +198,7 @@ export class AuthenticationService {
       .pipe(
         tap((session) => {
           this.errorService.clear();
-          this.setLocalSession(
-            session,
-          );
+          this.setCanonicalSession(session);
         }),
         tap(() =>
           this.completeLoginNavigation(),
@@ -243,20 +227,17 @@ export class AuthenticationService {
       return;
     }
 
-    const returnUrl =
-      this.safeReturnUrl(
-        this.storage?.getItem(
-          RETURN_URL_STORAGE_KEY,
-        ) ?? '/',
-      );
+    const returnUrl = this.safeReturnUrl(
+      this.storage?.getItem(
+        RETURN_URL_STORAGE_KEY,
+      ) ?? '/',
+    );
 
     this.storage?.removeItem(
       RETURN_URL_STORAGE_KEY,
     );
 
-    void this.router.navigateByUrl(
-      returnUrl,
-    );
+    void this.router.navigateByUrl(returnUrl);
   }
 
   logout(): void {
@@ -264,17 +245,9 @@ export class AuthenticationService {
       RETURN_URL_STORAGE_KEY,
     );
 
-    /*
-     * DA-8 will make logout depend on the active normalized session instead of
-     * configuration precedence. Until then, preserve the previous OIDC-first
-     * production behavior when both capabilities are enabled.
-     */
-    if (
-      this.isOidcEnabled &&
-      this.oidc
-    ) {
+    if (this.isOidcEnabled && this.oidc) {
       this.errorService.clear();
-      this.clearLocalSession();
+      this.clearSession();
 
       this.oidc
         .logoffAndRevokeTokens()
@@ -290,16 +263,11 @@ export class AuthenticationService {
       this.localClient
         .logout()
         .pipe(
-          catchError(() =>
-            of(undefined),
-          ),
+          catchError(() => of(undefined)),
           finalize(() => {
             this.errorService.clear();
-            this.clearLocalSession();
-
-            void this.router.navigate([
-              '/login',
-            ]);
+            this.clearSession();
+            void this.router.navigate(['/login']);
           }),
         )
         .subscribe();
@@ -308,16 +276,13 @@ export class AuthenticationService {
     }
 
     this.errorService.clear();
-    this.clearLocalSession();
-
-    void this.router.navigate([
-      '/login',
-    ]);
+    this.clearSession();
+    void this.router.navigate(['/login']);
   }
 
   expireSession(): void {
     this.errorService.clear();
-    this.clearLocalSession();
+    this.clearSession();
 
     if (this.isOidcEnabled) {
       this.oidc?.logoffLocal();
@@ -326,21 +291,16 @@ export class AuthenticationService {
 
   accessTokenForRequest():
     Observable<string | null> {
-    if (
-      this.isOidcEnabled &&
-      this.oidc
-    ) {
+    if (this.isOidcEnabled && this.oidc) {
       return this.oidc.getAccessToken();
     }
 
     return of(null);
   }
 
-  private initializeStandaloneIdentity():
-    void {
+  private initializeStandaloneIdentity(): void {
     const localUser =
-      authenticationEnvironment
-        .standaloneUser;
+      authenticationEnvironment.standaloneUser;
 
     const storedRole =
       this.storage?.getItem(
@@ -348,19 +308,15 @@ export class AuthenticationService {
       ) as SixpayRole | null;
 
     const roles = storedRole
-      ? new Set<SixpayRole>([
-          storedRole,
-        ])
-      : extractSixpayRoles({
-          roles:
-            localUser?.roles ?? [],
-        });
+      ? new Set<SixpayRole>([storedRole])
+      : normalizeSixpayRoles(
+          localUser?.roles ?? [],
+        );
 
     const effectiveRole =
       storedRole ??
-      this.firstConfiguredStandaloneRole(
-        localUser?.roles ?? [],
-      );
+      roles.values().next().value ??
+      null;
 
     this.identityState.set({
       subject:
@@ -368,40 +324,14 @@ export class AuthenticationService {
           effectiveRole,
         ),
       roles,
+      permissions: new Set<string>(),
     });
 
     this.usernameState.set(null);
-
     this.readyState.next(true);
   }
 
-  private restoreLocalSession(): void {
-    this.localClient
-      .currentUser()
-      .subscribe({
-        next: (session) => {
-          this.errorService.clear();
-
-          this.setLocalSession(
-            session,
-          );
-
-          this.readyState.next(
-            true,
-          );
-        },
-        error: () => {
-          this.clearLocalSession();
-
-          this.readyState.next(
-            true,
-          );
-        },
-      });
-  }
-
-  private initializeOidcSession():
-    void {
+  private initializeOidcSession(): void {
     if (!this.oidc) {
       this.readyState.next(true);
       return;
@@ -411,41 +341,53 @@ export class AuthenticationService {
       .checkAuth()
       .subscribe({
         next: (response) => {
-          if (
-            response.isAuthenticated
-          ) {
-            this.errorService.clear();
-
-            this.setAuthenticatedSession(
-              response.accessToken,
-              response.userData as JwtClaims,
-            );
-          } else {
-            this.clearLocalSession();
+          if (!response.isAuthenticated) {
+            this.clearSession();
+            this.readyState.next(true);
+            return;
           }
 
-          this.readyState.next(
-            true,
-          );
+          /*
+           * DA-6 rule:
+           * the IdP proves identity, but SIXPAY returns business roles and
+           * permissions through the authenticated /me endpoint.
+           */
+          this.restoreCanonicalSession();
         },
         error: () => {
-          this.clearLocalSession();
-
-          this.readyState.next(
-            true,
-          );
+          this.clearSession();
+          this.readyState.next(true);
         },
       });
   }
 
-  private setLocalSession(
-    session: LocalSessionResponse,
+  private restoreCanonicalSession(): void {
+    this.localClient
+      .currentUser()
+      .subscribe({
+        next: (session) => {
+          this.errorService.clear();
+          this.setCanonicalSession(session);
+          this.readyState.next(true);
+        },
+        error: () => {
+          this.clearSession();
+          this.readyState.next(true);
+        },
+      });
+  }
+
+  private setCanonicalSession(
+    session: AuthenticationSessionResponse,
   ): void {
     this.identityState.set({
       subject: session.subject,
-      roles: extractSixpayRoles({
-        roles: session.roles,
-      }),
+      roles: normalizeSixpayRoles(
+        session.roles,
+      ),
+      permissions: new Set(
+        session.permissions,
+      ),
     });
 
     this.usernameState.set(
@@ -473,54 +415,7 @@ export class AuthenticationService {
     );
   }
 
-  private firstConfiguredStandaloneRole(
-    roles: readonly string[],
-  ): SixpayRole | null {
-    return (
-      extractSixpayRoles({
-        roles,
-      })
-        .values()
-        .next()
-        .value ?? null
-    );
-  }
-
-  private setAuthenticatedSession(
-    accessToken: string,
-    userData: JwtClaims | null,
-  ): void {
-    const claims =
-      this.decodePayload(
-        accessToken,
-      ) ??
-      userData ??
-      {};
-
-    const subject =
-      claims.sub ??
-      userData?.sub;
-
-    if (
-      !subject ||
-      this.isExpired(claims)
-    ) {
-      this.clearLocalSession();
-      return;
-    }
-
-    this.identityState.set({
-      subject,
-      roles:
-        extractSixpayRoles(
-          claims,
-        ),
-    });
-
-    this.usernameState.set(null);
-  }
-
-  private clearLocalSession(): void {
+  private clearSession(): void {
     this.identityState.set(null);
     this.usernameState.set(null);
   }
@@ -541,46 +436,5 @@ export class AuthenticationService {
     )
       ? returnUrl
       : '/';
-  }
-
-  private isExpired(
-    claims: JwtClaims,
-  ): boolean {
-    return (
-      claims.exp !== undefined &&
-      claims.exp * 1000 <=
-        Date.now()
-    );
-  }
-
-  private decodePayload(
-    token: string,
-  ): JwtClaims | null {
-    try {
-      const encodedPayload =
-        token.split('.')[1];
-
-      if (!encodedPayload) {
-        return null;
-      }
-
-      const normalizedPayload =
-        encodedPayload
-          .replace(/-/g, '+')
-          .replace(/_/g, '/')
-          .padEnd(
-            Math.ceil(
-              encodedPayload.length /
-                4,
-            ) * 4,
-            '=',
-          );
-
-      return JSON.parse(
-        atob(normalizedPayload),
-      ) as JwtClaims;
-    } catch {
-      return null;
-    }
   }
 }

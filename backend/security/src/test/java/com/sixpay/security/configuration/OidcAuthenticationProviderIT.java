@@ -56,8 +56,11 @@ class OidcAuthenticationProviderIT {
     private ExternalIdentityResolver externalIdentityResolver;
 
     @Test
-    void authenticatesBearerTokenToLinkedSixpayPrincipal() throws Exception {
-        Instant issuedAt = Instant.parse("2026-08-11T01:00:00Z");
+    void authenticatesBearerUsingOnlySixpayOwnedAuthorization()
+            throws Exception {
+
+        Instant issuedAt =
+                Instant.parse("2026-08-11T01:00:00Z");
 
         Jwt jwt = Jwt.withTokenValue("test-provider-token")
                 .header("alg", "RS256")
@@ -66,19 +69,22 @@ class OidcAuthenticationProviderIT {
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(300))
                 .claim("preferred_username", "provider.user@sixpay.test")
-                .claim("roles", List.of("ADMIN"))
-                .claim("scope", "payment.read")
+                .claim("roles", List.of("PROVIDER_SUPER_ADMIN"))
+                .claim("scope", "provider.everything")
                 .build();
 
         when(jwtDecoder.decode("test-provider-token"))
                 .thenReturn(jwt);
 
-        when(externalIdentityResolver.resolve(any(), any()))
-                .thenAnswer(invocation ->
+        when(externalIdentityResolver.resolve(any()))
+                .thenReturn(
                         new AuthenticatedUser(
                                 USER_ID.toString(),
                                 "rodrigue",
-                                invocation.getArgument(1, Set.class)
+                                Set.of(
+                                        "ROLE_ADMIN",
+                                        "SCOPE_payment.read"
+                                )
                         )
                 );
 
@@ -121,13 +127,16 @@ class OidcAuthenticationProviderIT {
 
         private final CurrentUserProvider currentUserProvider;
 
-        IdentityController(CurrentUserProvider currentUserProvider) {
+        IdentityController(
+                CurrentUserProvider currentUserProvider
+        ) {
             this.currentUserProvider = currentUserProvider;
         }
 
         @GetMapping("/identity")
         ResponseEntity<String> identity() {
-            var user = currentUserProvider.requireCurrentUser();
+            var user =
+                    currentUserProvider.requireCurrentUser();
 
             return ResponseEntity.ok(
                     user.subject()

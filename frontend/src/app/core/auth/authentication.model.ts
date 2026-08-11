@@ -5,6 +5,7 @@ export type SixpayRole = (typeof SIXPAY_ROLES)[number];
 export interface AuthenticatedIdentity {
   readonly subject: string;
   readonly roles: ReadonlySet<SixpayRole>;
+  readonly permissions: ReadonlySet<string>;
 }
 
 export interface LocalLoginRequest {
@@ -12,11 +13,22 @@ export interface LocalLoginRequest {
   readonly password: string;
 }
 
-export interface LocalSessionResponse {
+/**
+ * Mechanism-neutral session returned by SIXPAY.
+ *
+ * Local and OIDC sessions use exactly this same authorization representation.
+ */
+export interface AuthenticationSessionResponse {
   readonly subject: string;
   readonly username: string;
   readonly roles: readonly string[];
+  readonly permissions: readonly string[];
 }
+
+/**
+ * Compatibility alias for existing Local client/tests.
+ */
+export type LocalSessionResponse = AuthenticationSessionResponse;
 
 export interface JwtClaims {
   readonly exp?: number;
@@ -28,12 +40,9 @@ export interface JwtClaims {
   };
 }
 
-export function extractSixpayRoles(claims: JwtClaims | null): ReadonlySet<SixpayRole> {
-  const values = [
-    ...(claims?.roles ?? []),
-    ...(claims?.authorities ?? []),
-    ...(claims?.realm_access?.roles ?? []),
-  ];
+export function normalizeSixpayRoles(
+  values: readonly string[],
+): ReadonlySet<SixpayRole> {
   const supported = new Set<string>(SIXPAY_ROLES);
 
   return new Set(
@@ -41,4 +50,20 @@ export function extractSixpayRoles(claims: JwtClaims | null): ReadonlySet<Sixpay
       .map((role) => role.replace(/^ROLE_/, '').toUpperCase())
       .filter((role): role is SixpayRole => supported.has(role)),
   );
+}
+
+/**
+ * @deprecated Production OIDC authorization must come from SIXPAY /auth/me,
+ * never from JWT claims. Kept only for standalone/backward test compatibility.
+ */
+export function extractSixpayRoles(
+  claims: JwtClaims | null,
+): ReadonlySet<SixpayRole> {
+  const values = [
+    ...(claims?.roles ?? []),
+    ...(claims?.authorities ?? []),
+    ...(claims?.realm_access?.roles ?? []),
+  ];
+
+  return normalizeSixpayRoles(values);
 }

@@ -57,15 +57,17 @@ public final class JpaLocalAuthenticationUserAdapter
     private static LocalAuthenticationUser toDomain(
             LocalAuthenticationUserJpaEntity entity
     ) {
+        var account = entity.getUserAccount();
+
         return new LocalAuthenticationUser(
                 entity.getId(),
-                entity.getUserAccount().getId(),
+                account.getId(),
                 entity.getSubject(),
-                entity.getUserAccount().getUsername(),
+                account.getUsername(),
                 entity.getPasswordHash(),
                 entity.getStatus(),
-                entity.getUserAccount().getStatus(),
-                entity.getAuthorities(),
+                account.getStatus(),
+                account.getAuthorities(),
                 entity.getFailedAttempts(),
                 entity.getLockedUntil(),
                 entity.getLastAuthenticatedAt()

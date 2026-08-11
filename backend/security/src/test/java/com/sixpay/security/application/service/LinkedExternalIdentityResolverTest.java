@@ -20,25 +20,30 @@ class LinkedExternalIdentityResolverTest {
             UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
 
     @Test
-    void resolvesPreLinkedOidcIdentityToCanonicalSixpayUser() {
+    void resolvesAuthorizationFromSixpayUserNotProviderClaims() {
         LinkedExternalIdentityResolver resolver =
                 new LinkedExternalIdentityResolver(
                         (type, provider, subject) ->
-                                Optional.of(linkedUser(SixpayUserAccountStatus.ACTIVE))
+                                Optional.of(
+                                        linkedUser(
+                                                SixpayUserAccountStatus.ACTIVE
+                                        )
+                                )
                 );
 
         AuthenticatedUser user = resolver.resolve(
                 new ExternalIdentity(
                         "https://idp.example.test",
                         "provider-subject-123",
-                        "ignored-provider-username"
-                ),
-                Set.of("ROLE_ADMIN", "SCOPE_payment.read")
+                        "provider-user@example.test"
+                )
         );
 
         assertThat(user.subject()).isEqualTo(USER_ID.toString());
         assertThat(user.username()).isEqualTo("rodrigue");
         assertThat(user.roles()).containsExactly("ADMIN");
+        assertThat(user.permissions())
+                .containsExactly("SCOPE_payment.read");
     }
 
     @Test
@@ -54,18 +59,21 @@ class LinkedExternalIdentityResolverTest {
                                 "https://idp.example.test",
                                 "unknown-subject",
                                 "someone@example.test"
-                        ),
-                        Set.of()
+                        )
                 )
         ).isInstanceOf(ExternalIdentityNotLinkedException.class);
     }
 
     @Test
-    void refusesLinkedIdentityWhenCanonicalUserIsDisabled() {
+    void refusesDisabledCanonicalUser() {
         LinkedExternalIdentityResolver resolver =
                 new LinkedExternalIdentityResolver(
                         (type, provider, subject) ->
-                                Optional.of(linkedUser(SixpayUserAccountStatus.DISABLED))
+                                Optional.of(
+                                        linkedUser(
+                                                SixpayUserAccountStatus.DISABLED
+                                        )
+                                )
                 );
 
         assertThatThrownBy(() ->
@@ -74,8 +82,7 @@ class LinkedExternalIdentityResolverTest {
                                 "https://idp.example.test",
                                 "provider-subject-123",
                                 "changed-email@example.test"
-                        ),
-                        Set.of()
+                        )
                 )
         ).isInstanceOf(SixpayUserDisabledException.class);
     }
@@ -90,7 +97,9 @@ class LinkedExternalIdentityResolverTest {
                         USER_ID,
                         "rodrigue",
                         "rodrigue@sixpay.test",
-                        status
+                        status,
+                        Set.of("ADMIN"),
+                        Set.of("SCOPE_payment.read")
                 );
 
         UserIdentity identity =

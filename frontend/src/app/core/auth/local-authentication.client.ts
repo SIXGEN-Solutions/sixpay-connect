@@ -3,34 +3,40 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  AuthenticationSessionResponse,
   LocalLoginRequest,
-  LocalSessionResponse,
 } from './authentication.model';
 
-const LOCAL_AUTH_API_PATH = '/api/v1/auth';
+const AUTH_API_PATH = '/api/v1/auth';
 
+/**
+ * Existing Local credential client plus mechanism-neutral current-session read.
+ * The /me response is authoritative for SIXPAY roles and permissions.
+ */
 @Injectable({ providedIn: 'root' })
 export class LocalAuthenticationClient {
   private readonly http = inject(HttpClient);
 
-  login(request: LocalLoginRequest): Observable<LocalSessionResponse> {
-    return this.http.post<LocalSessionResponse>(
-      `${LOCAL_AUTH_API_PATH}/login`,
+  login(
+    request: LocalLoginRequest,
+  ): Observable<AuthenticationSessionResponse> {
+    return this.http.post<AuthenticationSessionResponse>(
+      `${AUTH_API_PATH}/login`,
       request,
       { withCredentials: true },
     );
   }
 
-  currentUser(): Observable<LocalSessionResponse> {
-    return this.http.get<LocalSessionResponse>(
-      `${LOCAL_AUTH_API_PATH}/me`,
+  currentUser(): Observable<AuthenticationSessionResponse> {
+    return this.http.get<AuthenticationSessionResponse>(
+      `${AUTH_API_PATH}/me`,
       { withCredentials: true },
     );
   }
 
   logout(): Observable<void> {
     return this.http.post<void>(
-      `${LOCAL_AUTH_API_PATH}/logout`,
+      `${AUTH_API_PATH}/logout`,
       {},
       { withCredentials: true },
     );

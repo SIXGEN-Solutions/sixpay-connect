@@ -5,8 +5,6 @@ import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAc
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -45,14 +43,6 @@ public class LocalAuthenticationUserJpaEntity {
     @Column(nullable = false, length = 32)
     private LocalAuthenticationAccountStatus status;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "security_local_user_authorities",
-            joinColumns = @JoinColumn(name = "local_user_id")
-    )
-    @Column(name = "authority", nullable = false, length = 150)
-    private Set<String> authorities = new LinkedHashSet<>();
-
     @Column(name = "failed_attempts", nullable = false)
     private int failedAttempts;
 
@@ -87,20 +77,12 @@ public class LocalAuthenticationUserJpaEntity {
         return subject;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
     public String getPasswordHash() {
         return passwordHash;
     }
 
     public LocalAuthenticationAccountStatus getStatus() {
         return status;
-    }
-
-    public Set<String> getAuthorities() {
-        return Set.copyOf(authorities);
     }
 
     public int getFailedAttempts() {

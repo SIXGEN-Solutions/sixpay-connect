@@ -10,14 +10,10 @@ import com.sixpay.security.domain.authentication.ExternalIdentity;
 import com.sixpay.security.domain.authentication.LinkedUserIdentity;
 
 import java.util.Objects;
-import java.util.Set;
 
 /**
- * Conservative OIDC identity resolver.
- *
- * <p>An externally authenticated subject is accepted only when a pre-existing
- * OIDC identity link exists. Email and username claims are never used to
- * auto-provision or auto-link an account.</p>
+ * Resolves OIDC identity to a canonical SIXPAY user and loads authorization
+ * exclusively from that SIXPAY user account.
  */
 public class LinkedExternalIdentityResolver
         implements ExternalIdentityResolver {
@@ -27,16 +23,18 @@ public class LinkedExternalIdentityResolver
     public LinkedExternalIdentityResolver(
             FindLinkedIdentityPort findLinkedIdentityPort
     ) {
-        this.findLinkedIdentityPort = Objects.requireNonNull(findLinkedIdentityPort);
+        this.findLinkedIdentityPort =
+                Objects.requireNonNull(findLinkedIdentityPort);
     }
 
     @Override
     public AuthenticatedUser resolve(
-            ExternalIdentity externalIdentity,
-            Set<String> authorities
+            ExternalIdentity externalIdentity
     ) {
-        Objects.requireNonNull(externalIdentity, "External identity must not be null");
-        Objects.requireNonNull(authorities, "External authorities must not be null");
+        Objects.requireNonNull(
+                externalIdentity,
+                "External identity must not be null"
+        );
 
         LinkedUserIdentity linkedIdentity =
                 findLinkedIdentityPort.findLinkedIdentity(
@@ -44,7 +42,9 @@ public class LinkedExternalIdentityResolver
                                 externalIdentity.issuer(),
                                 externalIdentity.subject()
                         )
-                        .orElseThrow(ExternalIdentityNotLinkedException::new);
+                        .orElseThrow(
+                                ExternalIdentityNotLinkedException::new
+                        );
 
         if (!linkedIdentity.userAccount().active()) {
             throw new SixpayUserDisabledException();
@@ -53,7 +53,7 @@ public class LinkedExternalIdentityResolver
         return new AuthenticatedUser(
                 linkedIdentity.userAccount().canonicalSubject(),
                 linkedIdentity.userAccount().username(),
-                authorities
+                linkedIdentity.userAccount().authorities()
         );
     }
 }

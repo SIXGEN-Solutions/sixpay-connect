@@ -42,12 +42,7 @@ public final class JpaLinkedIdentityAdapter
                 entity.getUserAccount();
 
         SixpayUserAccount account =
-                new SixpayUserAccount(
-                        accountEntity.getId(),
-                        accountEntity.getUsername(),
-                        accountEntity.getEmail(),
-                        accountEntity.getStatus()
-                );
+                accountEntity.toDomain();
 
         UserIdentity identity =
                 new UserIdentity(
