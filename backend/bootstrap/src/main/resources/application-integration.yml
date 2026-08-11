@@ -6,9 +6,6 @@ spring:
 
 sixpay:
   security:
-    # Legacy selector retained for compatibility with integration assets that
-    # have not yet migrated. DA-2 capability flags are authoritative.
-    authentication-mode: LOCAL
 
     authentication:
       local:

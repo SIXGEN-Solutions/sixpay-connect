@@ -11,8 +11,13 @@ public record AuthenticationCapabilitiesProperties(
 ) {
 
     public AuthenticationCapabilitiesProperties {
-        local = local == null ? new Local(false) : local;
-        oidc = oidc == null ? new Oidc(false, null) : oidc;
+        local = local == null
+                ? new Local(false, 5, Duration.ofMinutes(15), 12)
+                : local;
+
+        oidc = oidc == null
+                ? new Oidc(false, null)
+                : oidc;
     }
 
     public boolean localEnabled() {
@@ -34,18 +39,11 @@ public record AuthenticationCapabilitiesProperties(
             int bcryptStrength
     ) {
         private static final int DEFAULT_MAXIMUM_FAILED_ATTEMPTS = 5;
+
         private static final Duration DEFAULT_LOCK_DURATION =
                 Duration.ofMinutes(15);
-        private static final int DEFAULT_BCRYPT_STRENGTH = 12;
 
-        public Local(boolean enabled) {
-            this(
-                    enabled,
-                    DEFAULT_MAXIMUM_FAILED_ATTEMPTS,
-                    DEFAULT_LOCK_DURATION,
-                    DEFAULT_BCRYPT_STRENGTH
-            );
-        }
+        private static final int DEFAULT_BCRYPT_STRENGTH = 12;
 
         public Local {
             maximumFailedAttempts =
