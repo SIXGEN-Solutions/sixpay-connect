@@ -1,7 +1,10 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.out.ExternalIdentityResolver;
+import com.sixpay.security.application.service.SubjectExternalIdentityResolver;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -43,6 +46,12 @@ public class SixpaySecurityAutoConfiguration {
         return new SixpayJwtAuthoritiesConverter();
     }
 
+    /**
+     * Retained as a compatibility bean for existing consumers/tests.
+     *
+     * <p>The Resource Server itself uses {@link OidcAuthenticationAdapter}
+     * once the OIDC capability is enabled.</p>
+     */
     @Bean
     @ConditionalOnMissingBean(JwtAuthenticationConverter.class)
     JwtAuthenticationConverter jwtAuthenticationConverter(
@@ -56,6 +65,24 @@ public class SixpaySecurityAutoConfiguration {
         );
 
         return converter;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ExternalIdentityResolver.class)
+    ExternalIdentityResolver externalIdentityResolver() {
+        return new SubjectExternalIdentityResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(OidcAuthenticationAdapter.class)
+    OidcAuthenticationAdapter oidcAuthenticationAdapter(
+            SixpayJwtAuthoritiesConverter authoritiesConverter,
+            ExternalIdentityResolver externalIdentityResolver
+    ) {
+        return new OidcAuthenticationAdapter(
+                authoritiesConverter,
+                externalIdentityResolver
+        );
     }
 
     @Bean
@@ -92,7 +119,7 @@ public class SixpaySecurityAutoConfiguration {
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationConverter jwtAuthenticationConverter,
+            OidcAuthenticationAdapter oidcAuthenticationAdapter,
             SecurityContextRepository securityContextRepository,
             CsrfTokenRepository csrfTokenRepository,
             AuthenticationCapabilitiesProperties capabilities
@@ -179,7 +206,7 @@ public class SixpaySecurityAutoConfiguration {
             http.oauth2ResourceServer(oauth2 ->
                     oauth2.jwt(jwt ->
                             jwt.jwtAuthenticationConverter(
-                                    jwtAuthenticationConverter
+                                    oidcAuthenticationAdapter
                             )
                     )
             );
