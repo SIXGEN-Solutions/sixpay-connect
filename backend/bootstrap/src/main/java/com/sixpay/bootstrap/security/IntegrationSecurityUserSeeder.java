@@ -1,7 +1,9 @@
 package com.sixpay.bootstrap.security;
 
+import com.sixpay.security.application.model.SecurityUserSummary;
 import com.sixpay.security.application.port.in.CreateSecurityUserCommand;
 import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase;
+import com.sixpay.security.authorization.SixpayRole;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -10,6 +12,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,7 +27,7 @@ import java.util.UUID;
 public class IntegrationSecurityUserSeeder
         implements ApplicationRunner {
 
-    private static final String ACTOR = "integration-security-seed";
+    static final String ACTOR = "integration-security-seed";
 
     private final SecurityUserAdministrationUseCase useCase;
     private final String adminPassword;
@@ -50,50 +54,62 @@ public class IntegrationSecurityUserSeeder
 
     @Override
     public void run(ApplicationArguments args) {
-        seed(
+        Set<String> existingUsernames = new HashSet<>(
+                useCase.listUsers()
+                        .stream()
+                        .map(SecurityUserSummary::username)
+                        .map(IntegrationSecurityUserSeeder::normalize)
+                        .toList()
+        );
+
+        seedIfMissing(
+                existingUsernames,
                 deterministicId("admin"),
                 "admin",
                 "admin@sixpay.local",
-                Set.of("ADMIN"),
+                SixpayRole.ADMIN,
                 adminPassword
         );
-        seed(
+
+        seedIfMissing(
+                existingUsernames,
                 deterministicId("manager"),
                 "manager",
                 "manager@sixpay.local",
-                Set.of("MANAGER"),
+                SixpayRole.MANAGER,
                 managerPassword
         );
-        seed(
+
+        seedIfMissing(
+                existingUsernames,
                 deterministicId("auditor"),
                 "auditor",
                 "auditor@sixpay.local",
-                Set.of("AUDITOR"),
+                SixpayRole.AUDITOR,
                 auditorPassword
         );
-        seed(
+
+        seedIfMissing(
+                existingUsernames,
                 partnerSubject,
                 "partner",
                 "partner@sixpay.local",
-                Set.of("PARTNER"),
+                SixpayRole.PARTNER,
                 partnerPassword
         );
     }
 
-    private void seed(
+    private void seedIfMissing(
+            Set<String> existingUsernames,
             UUID userId,
             String username,
             String email,
-            Set<String> roles,
+            SixpayRole role,
             String password
     ) {
-        boolean exists = useCase.listUsers()
-                .stream()
-                .anyMatch(user ->
-                        user.username().equalsIgnoreCase(username)
-                );
+        String normalizedUsername = normalize(username);
 
-        if (exists) {
+        if (existingUsernames.contains(normalizedUsername)) {
             return;
         }
 
@@ -101,18 +117,24 @@ public class IntegrationSecurityUserSeeder
                 userId,
                 username,
                 email,
-                roles,
+                Set.of(role.name()),
                 Set.of(),
                 true,
                 password,
                 ACTOR
         ));
+
+        existingUsernames.add(normalizedUsername);
     }
 
-    private static UUID deterministicId(String username) {
+    static UUID deterministicId(String username) {
         return UUID.nameUUIDFromBytes(
-                ("sixpay-integration-user:" + username)
+                ("sixpay-integration-user:" + normalize(username))
                         .getBytes(StandardCharsets.UTF_8)
         );
+    }
+
+    private static String normalize(String username) {
+        return username.trim().toLowerCase(Locale.ROOT);
     }
 }
