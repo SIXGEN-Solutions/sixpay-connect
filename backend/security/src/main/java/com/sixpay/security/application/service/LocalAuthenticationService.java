@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 
-public final class LocalAuthenticationService
+public class LocalAuthenticationService
         implements AuthenticateLocalUserUseCase {
 
     private final LoadAuthenticationUserPort loadUserPort;
@@ -45,9 +45,17 @@ public final class LocalAuthenticationService
         this.passwordVerificationPort = Objects.requireNonNull(passwordVerificationPort);
         this.auditPort = Objects.requireNonNull(auditPort);
         this.timeProvider = Objects.requireNonNull(timeProvider);
-        if (maximumFailedAttempts < 1) throw new IllegalArgumentException("Maximum failed attempts must be positive");
-        if (lockDuration == null || lockDuration.isZero() || lockDuration.isNegative()) {
-            throw new IllegalArgumentException("Lock duration must be positive");
+        if (maximumFailedAttempts < 1) {
+            throw new IllegalArgumentException(
+                    "Maximum failed attempts must be positive"
+            );
+        }
+        if (lockDuration == null
+                || lockDuration.isZero()
+                || lockDuration.isNegative()) {
+            throw new IllegalArgumentException(
+                    "Lock duration must be positive"
+            );
         }
         this.maximumFailedAttempts = maximumFailedAttempts;
         this.lockDuration = lockDuration;
@@ -56,8 +64,12 @@ public final class LocalAuthenticationService
     @Override
     @Transactional(noRollbackFor = LocalAuthenticationFailedException.class)
     public AuthenticatedUser authenticate(LocalLoginCommand command) {
-        Objects.requireNonNull(command, "Local login command must not be null");
-        String normalizedUsername = normalizeUsername(command.username());
+        Objects.requireNonNull(
+                command,
+                "Local login command must not be null"
+        );
+        String normalizedUsername =
+                normalizeUsername(command.username());
         Instant now = timeProvider.now();
 
         LocalAuthenticationUser loadedUser = loadUserPort
@@ -65,29 +77,59 @@ public final class LocalAuthenticationService
                 .orElse(null);
 
         if (loadedUser == null) {
-            passwordVerificationPort.performDummyVerification(command.password());
+            passwordVerificationPort.performDummyVerification(
+                    command.password()
+            );
             recordFailure(null, normalizedUsername, now);
             throw new LocalAuthenticationFailedException();
         }
+
         if (!loadedUser.active()) {
-            passwordVerificationPort.performDummyVerification(command.password());
-            recordFailure(loadedUser.canonicalSubject(), loadedUser.username(), now);
-            throw new LocalAuthenticationFailedException();
-        }
-
-        LocalAuthenticationUser effectiveUser = loadedUser.unlockIfExpired(now);
-        if (effectiveUser.lockedAt(now)) {
-            passwordVerificationPort.performDummyVerification(command.password());
-            recordFailure(effectiveUser.canonicalSubject(), effectiveUser.username(), now);
-            throw new LocalAuthenticationFailedException();
-        }
-
-        if (!passwordVerificationPort.matches(command.password(), effectiveUser.passwordHash())) {
-            LocalAuthenticationUser failedUser = effectiveUser.authenticationFailed(
-                    now, maximumFailedAttempts, lockDuration
+            passwordVerificationPort.performDummyVerification(
+                    command.password()
             );
+            recordFailure(
+                    loadedUser.canonicalSubject(),
+                    loadedUser.username(),
+                    now
+            );
+            throw new LocalAuthenticationFailedException();
+        }
+
+        LocalAuthenticationUser effectiveUser =
+                loadedUser.unlockIfExpired(now);
+
+        if (effectiveUser.lockedAt(now)) {
+            passwordVerificationPort.performDummyVerification(
+                    command.password()
+            );
+            recordFailure(
+                    effectiveUser.canonicalSubject(),
+                    effectiveUser.username(),
+                    now
+            );
+            throw new LocalAuthenticationFailedException();
+        }
+
+        if (!passwordVerificationPort.matches(
+                command.password(),
+                effectiveUser.passwordHash()
+        )) {
+            LocalAuthenticationUser failedUser =
+                    effectiveUser.authenticationFailed(
+                            now,
+                            maximumFailedAttempts,
+                            lockDuration
+                    );
+
             saveUserStatePort.saveAuthenticationState(failedUser);
-            recordFailure(failedUser.canonicalSubject(), failedUser.username(), now);
+
+            recordFailure(
+                    failedUser.canonicalSubject(),
+                    failedUser.username(),
+                    now
+            );
+
             if (failedUser.lockedAt(now)) {
                 auditPort.recordAccountLocked(
                         failedUser.canonicalSubject(),
@@ -95,11 +137,17 @@ public final class LocalAuthenticationService
                         now
                 );
             }
+
             throw new LocalAuthenticationFailedException();
         }
 
-        LocalAuthenticationUser authenticatedUser = effectiveUser.authenticationSucceeded(now);
-        saveUserStatePort.saveAuthenticationState(authenticatedUser);
+        LocalAuthenticationUser authenticatedUser =
+                effectiveUser.authenticationSucceeded(now);
+
+        saveUserStatePort.saveAuthenticationState(
+                authenticatedUser
+        );
+
         auditPort.record(new LocalAuthenticationAuditEvent(
                 LocalAuthenticationAuditType.LOGIN,
                 authenticatedUser.canonicalSubject(),
@@ -119,7 +167,11 @@ public final class LocalAuthenticationService
         return username.trim().toLowerCase(Locale.ROOT);
     }
 
-    private void recordFailure(String subject, String username, Instant occurredAt) {
+    private void recordFailure(
+            String subject,
+            String username,
+            Instant occurredAt
+    ) {
         auditPort.record(new LocalAuthenticationAuditEvent(
                 LocalAuthenticationAuditType.LOGIN,
                 subject,

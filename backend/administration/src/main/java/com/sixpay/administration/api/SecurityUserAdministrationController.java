@@ -16,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/internal/api/v1/administration/users")
 @PreAuthorize("hasRole('ADMIN')")
-public final class SecurityUserAdministrationController {
+public class SecurityUserAdministrationController {
 
     private final SecurityUserAdministrationUseCase useCase;
     private final CurrentUserProvider currentUserProvider;

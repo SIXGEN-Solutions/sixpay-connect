@@ -6,18 +6,40 @@ import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
 import com.sixpay.security.infrastructure.administration.JpaSecurityAuditAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityUserAdministrationAdapter;
+import com.sixpay.security.infrastructure.administration.SecurityAuditJpaEntity;
 import com.sixpay.security.infrastructure.administration.SecurityAuditSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditJpaEntity;
+import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountJpaEntity;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.identity.SecurityUserIdentityJpaEntity;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserIdentitySpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserJpaEntity;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration(proxyBeanMethods = false)
+@EntityScan(basePackageClasses = {
+        SecurityUserAccountJpaEntity.class,
+        SecurityUserIdentityJpaEntity.class,
+        LocalAuthenticationUserJpaEntity.class,
+        AuthenticationAuditJpaEntity.class,
+        SecurityAuditJpaEntity.class
+})
+@EnableJpaRepositories(basePackageClasses = {
+        SecurityUserAccountSpringDataRepository.class,
+        SecurityUserIdentitySpringDataRepository.class,
+        LocalAuthenticationUserSpringDataRepository.class,
+        AuthenticationAuditSpringDataRepository.class,
+        SecurityAuditSpringDataRepository.class
+})
 public class SecurityAdministrationConfiguration {
 
     @Bean

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public final class SecurityUserAdministrationService
+public class SecurityUserAdministrationService
         implements SecurityUserAdministrationUseCase {
 
     private final SecurityUserAdministrationPort administrationPort;
