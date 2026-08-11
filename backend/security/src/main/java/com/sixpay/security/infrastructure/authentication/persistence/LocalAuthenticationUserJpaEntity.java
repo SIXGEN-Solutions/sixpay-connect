@@ -1,6 +1,7 @@
 package com.sixpay.security.infrastructure.authentication.persistence;
 
 import com.sixpay.security.domain.authentication.LocalAuthenticationAccountStatus;
+import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountJpaEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -14,6 +15,10 @@ public class LocalAuthenticationUserJpaEntity {
 
     @Id
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private SecurityUserAccountJpaEntity userAccount;
 
     @Column(nullable = false, unique = true, length = 150)
     private String subject;
@@ -72,6 +77,10 @@ public class LocalAuthenticationUserJpaEntity {
 
     public UUID getId() {
         return id;
+    }
+
+    public SecurityUserAccountJpaEntity getUserAccount() {
+        return userAccount;
     }
 
     public String getSubject() {

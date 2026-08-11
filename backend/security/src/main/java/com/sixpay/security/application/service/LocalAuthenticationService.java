@@ -77,7 +77,7 @@ public final class LocalAuthenticationService
 
         if (!loadedUser.active()) {
             passwordVerificationPort.performDummyVerification(command.password());
-            recordFailure(loadedUser.subject(), loadedUser.username(), now);
+            recordFailure(loadedUser.canonicalSubject(), loadedUser.username(), now);
             throw new LocalAuthenticationFailedException();
         }
 
@@ -86,7 +86,7 @@ public final class LocalAuthenticationService
 
         if (effectiveUser.lockedAt(now)) {
             passwordVerificationPort.performDummyVerification(command.password());
-            recordFailure(effectiveUser.subject(), effectiveUser.username(), now);
+            recordFailure(effectiveUser.canonicalSubject(), effectiveUser.username(), now);
             throw new LocalAuthenticationFailedException();
         }
 
@@ -101,7 +101,7 @@ public final class LocalAuthenticationService
                             lockDuration
                     );
             saveUserStatePort.saveAuthenticationState(failedUser);
-            recordFailure(failedUser.subject(), failedUser.username(), now);
+            recordFailure(failedUser.canonicalSubject(), failedUser.username(), now);
             throw new LocalAuthenticationFailedException();
         }
 
@@ -113,7 +113,7 @@ public final class LocalAuthenticationService
         auditPort.record(
                 new LocalAuthenticationAuditEvent(
                         LocalAuthenticationAuditType.LOGIN,
-                        authenticatedUser.subject(),
+                        authenticatedUser.canonicalSubject(),
                         authenticatedUser.username(),
                         LocalAuthenticationAuditOutcome.SUCCESS,
                         now
@@ -121,7 +121,7 @@ public final class LocalAuthenticationService
         );
 
         return new AuthenticatedUser(
-                authenticatedUser.subject(),
+                authenticatedUser.canonicalSubject(),
                 authenticatedUser.username(),
                 authenticatedUser.authorities()
         );

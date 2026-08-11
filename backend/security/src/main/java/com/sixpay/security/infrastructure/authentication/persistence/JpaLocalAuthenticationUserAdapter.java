@@ -59,10 +59,12 @@ public final class JpaLocalAuthenticationUserAdapter
     ) {
         return new LocalAuthenticationUser(
                 entity.getId(),
+                entity.getUserAccount().getId(),
                 entity.getSubject(),
-                entity.getUsername(),
+                entity.getUserAccount().getUsername(),
                 entity.getPasswordHash(),
                 entity.getStatus(),
+                entity.getUserAccount().getStatus(),
                 entity.getAuthorities(),
                 entity.getFailedAttempts(),
                 entity.getLockedUntil(),

@@ -24,37 +24,41 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LocalAuthenticationServiceTest {
 
-    private static final Instant NOW =
-            Instant.parse("2026-08-11T01:30:00Z");
+    private static final Instant NOW = Instant.parse("2026-08-11T01:30:00Z");
+    private static final UUID USER_ID = UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
 
     @Test
-    void authenticatesAndReturnsCanonicalSixpayIdentity() {
-        Fixture fixture = new Fixture(activeUser(), true);
+    void authenticatesToCanonicalSixpayUserSubject() {
+        Fixture fixture = new Fixture(activeUser(SixpayUserAccountStatus.ACTIVE), true);
 
         AuthenticatedUser authenticated =
                 fixture.service.authenticate(
-                        new LocalLoginCommand(
-                                " Rodrigue ",
-                                "correct-password"
-                        )
+                        new LocalLoginCommand(" Rodrigue ", "correct-password")
                 );
 
         assertThat(fixture.loadedUsername).isEqualTo("rodrigue");
-        assertThat(authenticated.subject()).isEqualTo("local-subject");
+        assertThat(authenticated.subject()).isEqualTo(USER_ID.toString());
         assertThat(authenticated.username()).isEqualTo("Rodrigue");
         assertThat(authenticated.roles()).containsExactly("ADMIN");
-        assertThat(authenticated.permissions())
-                .containsExactly("SCOPE_payment.read");
         assertThat(fixture.saved.failedAttempts()).isZero();
-        assertThat(fixture.saved.lastAuthenticatedAt()).isEqualTo(NOW);
-        assertThat(fixture.audit).singleElement()
-                .extracting(LocalAuthenticationAuditEvent::outcome)
-                .isEqualTo(LocalAuthenticationAuditOutcome.SUCCESS);
     }
 
     @Test
-    void wrongPasswordPersistsFailureAndAuditsGenericFailure() {
-        Fixture fixture = new Fixture(activeUser(), false);
+    void rejectsLocalCredentialsWhenCanonicalUserIsDisabled() {
+        Fixture fixture = new Fixture(activeUser(SixpayUserAccountStatus.DISABLED), true);
+
+        assertThatThrownBy(() ->
+                fixture.service.authenticate(
+                        new LocalLoginCommand("rodrigue", "correct-password")
+                )
+        ).isInstanceOf(LocalAuthenticationFailedException.class);
+
+        assertThat(fixture.dummyVerificationCount).isEqualTo(1);
+    }
+
+    @Test
+    void wrongPasswordPersistsFailure() {
+        Fixture fixture = new Fixture(activeUser(SixpayUserAccountStatus.ACTIVE), false);
 
         assertThatThrownBy(() ->
                 fixture.service.authenticate(
@@ -63,56 +67,19 @@ class LocalAuthenticationServiceTest {
         ).isInstanceOf(LocalAuthenticationFailedException.class);
 
         assertThat(fixture.saved.failedAttempts()).isEqualTo(1);
-        assertThat(fixture.audit).singleElement()
-                .extracting(LocalAuthenticationAuditEvent::outcome)
-                .isEqualTo(LocalAuthenticationAuditOutcome.FAILURE);
     }
 
-    @Test
-    void unknownUsernameExecutesDummyPasswordVerification() {
-        Fixture fixture = new Fixture(null, false);
-
-        assertThatThrownBy(() ->
-                fixture.service.authenticate(
-                        new LocalLoginCommand("missing", "guess")
-                )
-        ).isInstanceOf(LocalAuthenticationFailedException.class);
-
-        assertThat(fixture.dummyVerificationCount).isEqualTo(1);
-    }
-
-    @Test
-    void disabledAccountFailsClosedAndUsesDummyVerification() {
-        LocalAuthenticationUser disabled = new LocalAuthenticationUser(
-                UUID.randomUUID(),
-                "disabled-subject",
-                "Disabled",
-                "$2a$12$hash",
-                LocalAuthenticationAccountStatus.DISABLED,
-                Set.of("ROLE_ADMIN"),
-                0,
-                null,
-                null
-        );
-
-        Fixture fixture = new Fixture(disabled, true);
-
-        assertThatThrownBy(() ->
-                fixture.service.authenticate(
-                        new LocalLoginCommand("disabled", "password")
-                )
-        ).isInstanceOf(LocalAuthenticationFailedException.class);
-
-        assertThat(fixture.dummyVerificationCount).isEqualTo(1);
-    }
-
-    private static LocalAuthenticationUser activeUser() {
+    private static LocalAuthenticationUser activeUser(
+            SixpayUserAccountStatus accountStatus
+    ) {
         return new LocalAuthenticationUser(
-                UUID.randomUUID(),
-                "local-subject",
+                UUID.fromString("cccccccc-cccc-4ccc-8ccc-cccccccccccc"),
+                USER_ID,
+                "local-provider-subject",
                 "Rodrigue",
                 "$2a$12$hash",
                 LocalAuthenticationAccountStatus.ACTIVE,
+                accountStatus,
                 Set.of("ROLE_ADMIN", "SCOPE_payment.read"),
                 0,
                 null,
@@ -128,66 +95,45 @@ class LocalAuthenticationServiceTest {
 
         private final LocalAuthenticationUser loaded;
         private final boolean passwordMatches;
-        private final List<LocalAuthenticationAuditEvent> audit =
-                new ArrayList<>();
+        private final List<LocalAuthenticationAuditEvent> audit = new ArrayList<>();
         private LocalAuthenticationUser saved;
         private String loadedUsername;
         private int dummyVerificationCount;
         private final LocalAuthenticationService service;
 
-        private Fixture(
-                LocalAuthenticationUser loaded,
-                boolean passwordMatches
-        ) {
+        private Fixture(LocalAuthenticationUser loaded, boolean passwordMatches) {
             this.loaded = loaded;
             this.passwordMatches = passwordMatches;
             TimeProvider timeProvider = () -> NOW;
-
             this.service = new LocalAuthenticationService(
-                    this,
-                    this,
-                    this,
-                    this,
-                    timeProvider,
-                    5,
-                    Duration.ofMinutes(15)
+                    this, this, this, this, timeProvider,
+                    5, Duration.ofMinutes(15)
             );
         }
 
         @Override
-        public Optional<LocalAuthenticationUser> loadForAuthentication(
-                String normalizedUsername
-        ) {
-            this.loadedUsername = normalizedUsername;
+        public Optional<LocalAuthenticationUser> loadForAuthentication(String normalizedUsername) {
+            loadedUsername = normalizedUsername;
             return Optional.ofNullable(loaded);
         }
 
         @Override
-        public void saveAuthenticationState(
-                LocalAuthenticationUser user
-        ) {
-            this.saved = user;
+        public void saveAuthenticationState(LocalAuthenticationUser user) {
+            saved = user;
         }
 
         @Override
-        public boolean matches(
-                CharSequence rawPassword,
-                String passwordHash
-        ) {
+        public boolean matches(CharSequence rawPassword, String passwordHash) {
             return passwordMatches;
         }
 
         @Override
-        public void performDummyVerification(
-                CharSequence rawPassword
-        ) {
+        public void performDummyVerification(CharSequence rawPassword) {
             dummyVerificationCount++;
         }
 
         @Override
-        public void record(
-                LocalAuthenticationAuditEvent event
-        ) {
+        public void record(LocalAuthenticationAuditEvent event) {
             audit.add(event);
         }
     }

@@ -9,10 +9,12 @@ import java.util.UUID;
 
 public record LocalAuthenticationUser(
         UUID id,
+        UUID userId,
         String subject,
         String username,
         String passwordHash,
         LocalAuthenticationAccountStatus status,
+        SixpayUserAccountStatus userAccountStatus,
         Set<String> authorities,
         int failedAttempts,
         Instant lockedUntil,
@@ -21,10 +23,12 @@ public record LocalAuthenticationUser(
 
     public LocalAuthenticationUser {
         id = Preconditions.requireNonNull(id, "Local authentication user id must not be null");
+        userId = Preconditions.requireNonNull(userId, "SIXPAY user id must not be null");
         subject = Preconditions.requireNonBlank(subject, "Local authentication subject must not be blank");
         username = Preconditions.requireNonBlank(username, "Local authentication username must not be blank");
         passwordHash = Preconditions.requireNonBlank(passwordHash, "Local authentication password hash must not be blank");
         status = Preconditions.requireNonNull(status, "Local authentication status must not be null");
+        userAccountStatus = Preconditions.requireNonNull(userAccountStatus, "SIXPAY user account status must not be null");
         authorities = Set.copyOf(
                 Preconditions.requireNonNull(authorities, "Local authentication authorities must not be null")
         );
@@ -35,7 +39,8 @@ public record LocalAuthenticationUser(
     }
 
     public boolean active() {
-        return status == LocalAuthenticationAccountStatus.ACTIVE;
+        return status == LocalAuthenticationAccountStatus.ACTIVE
+                && userAccountStatus == SixpayUserAccountStatus.ACTIVE;
     }
 
     public boolean lockedAt(Instant now) {
@@ -86,6 +91,10 @@ public record LocalAuthenticationUser(
         );
     }
 
+    public String canonicalSubject() {
+        return userId.toString();
+    }
+
     private LocalAuthenticationUser withAuthenticationState(
             int nextFailedAttempts,
             Instant nextLockedUntil,
@@ -93,10 +102,12 @@ public record LocalAuthenticationUser(
     ) {
         return new LocalAuthenticationUser(
                 id,
+                userId,
                 subject,
                 username,
                 passwordHash,
                 status,
+                userAccountStatus,
                 authorities,
                 nextFailedAttempts,
                 nextLockedUntil,

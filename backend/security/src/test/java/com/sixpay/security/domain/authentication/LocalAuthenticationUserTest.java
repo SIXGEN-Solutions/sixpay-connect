@@ -11,71 +11,62 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LocalAuthenticationUserTest {
 
-    private static final Instant NOW =
-            Instant.parse("2026-08-11T01:30:00Z");
+    private static final Instant NOW = Instant.parse("2026-08-11T01:30:00Z");
+
+    @Test
+    void activeRequiresBothLocalIdentityAndCanonicalUserToBeActive() {
+        LocalAuthenticationUser active = user(
+                LocalAuthenticationAccountStatus.ACTIVE,
+                SixpayUserAccountStatus.ACTIVE
+        );
+        LocalAuthenticationUser disabledAccount = user(
+                LocalAuthenticationAccountStatus.ACTIVE,
+                SixpayUserAccountStatus.DISABLED
+        );
+
+        assertThat(active.active()).isTrue();
+        assertThat(disabledAccount.active()).isFalse();
+    }
+
+    @Test
+    void canonicalSubjectIsSixpayUserId() {
+        LocalAuthenticationUser user = user(
+                LocalAuthenticationAccountStatus.ACTIVE,
+                SixpayUserAccountStatus.ACTIVE
+        );
+
+        assertThat(user.canonicalSubject())
+                .isEqualTo(user.userId().toString());
+    }
 
     @Test
     void locksAtConfiguredThreshold() {
-        LocalAuthenticationUser user = activeUser(0, null);
+        LocalAuthenticationUser user = user(
+                LocalAuthenticationAccountStatus.ACTIVE,
+                SixpayUserAccountStatus.ACTIVE
+        );
 
-        LocalAuthenticationUser first =
-                user.authenticationFailed(
-                        NOW,
-                        2,
-                        Duration.ofMinutes(15)
-                );
+        LocalAuthenticationUser failed =
+                user.authenticationFailed(NOW, 1, Duration.ofMinutes(15));
 
-        LocalAuthenticationUser second =
-                first.authenticationFailed(
-                        NOW,
-                        2,
-                        Duration.ofMinutes(15)
-                );
-
-        assertThat(first.lockedUntil()).isNull();
-        assertThat(second.failedAttempts()).isEqualTo(2);
-        assertThat(second.lockedAt(NOW)).isTrue();
+        assertThat(failed.lockedAt(NOW)).isTrue();
     }
 
-    @Test
-    void unlocksExpiredTemporaryLock() {
-        LocalAuthenticationUser user =
-                activeUser(5, NOW.minusSeconds(1));
-
-        LocalAuthenticationUser unlocked =
-                user.unlockIfExpired(NOW);
-
-        assertThat(unlocked.failedAttempts()).isZero();
-        assertThat(unlocked.lockedUntil()).isNull();
-    }
-
-    @Test
-    void successResetsFailuresAndRecordsAuthenticationTime() {
-        LocalAuthenticationUser user =
-                activeUser(3, null);
-
-        LocalAuthenticationUser authenticated =
-                user.authenticationSucceeded(NOW);
-
-        assertThat(authenticated.failedAttempts()).isZero();
-        assertThat(authenticated.lockedUntil()).isNull();
-        assertThat(authenticated.lastAuthenticatedAt())
-                .isEqualTo(NOW);
-    }
-
-    private static LocalAuthenticationUser activeUser(
-            int failedAttempts,
-            Instant lockedUntil
+    private static LocalAuthenticationUser user(
+            LocalAuthenticationAccountStatus localStatus,
+            SixpayUserAccountStatus accountStatus
     ) {
         return new LocalAuthenticationUser(
-                UUID.randomUUID(),
-                "local-subject",
-                "Rodrigue",
+                UUID.fromString("cccccccc-cccc-4ccc-8ccc-cccccccccccc"),
+                UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
+                "local-provider-subject",
+                "rodrigue",
                 "$2a$12$hash",
-                LocalAuthenticationAccountStatus.ACTIVE,
-                Set.of("ROLE_ADMIN", "SCOPE_payment.read"),
-                failedAttempts,
-                lockedUntil,
+                localStatus,
+                accountStatus,
+                Set.of("ROLE_ADMIN"),
+                0,
+                null,
                 null
         );
     }

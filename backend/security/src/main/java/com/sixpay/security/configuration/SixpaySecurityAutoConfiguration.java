@@ -1,7 +1,6 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.service.SubjectExternalIdentityResolver;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
@@ -9,6 +8,7 @@ import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +35,10 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @AutoConfiguration
 @EnableMethodSecurity
 @EnableConfigurationProperties(AuthenticationCapabilitiesProperties.class)
-@Import(LocalAuthenticationConfiguration.class)
+@Import({
+        LocalAuthenticationConfiguration.class,
+        IdentityLinkingConfiguration.class
+})
 @ConditionalOnClass({HttpSecurity.class, Jwt.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SixpaySecurityAutoConfiguration {
@@ -46,35 +49,23 @@ public class SixpaySecurityAutoConfiguration {
         return new SixpayJwtAuthoritiesConverter();
     }
 
-    /**
-     * Retained as a compatibility bean for existing consumers/tests.
-     *
-     * <p>The Resource Server itself uses {@link OidcAuthenticationAdapter}
-     * once the OIDC capability is enabled.</p>
-     */
     @Bean
     @ConditionalOnMissingBean(JwtAuthenticationConverter.class)
     JwtAuthenticationConverter jwtAuthenticationConverter(
             SixpayJwtAuthoritiesConverter authoritiesConverter
     ) {
-        JwtAuthenticationConverter converter =
-                new JwtAuthenticationConverter();
-
-        converter.setJwtGrantedAuthoritiesConverter(
-                authoritiesConverter
-        );
-
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
         return converter;
     }
 
     @Bean
-    @ConditionalOnMissingBean(ExternalIdentityResolver.class)
-    ExternalIdentityResolver externalIdentityResolver() {
-        return new SubjectExternalIdentityResolver();
-    }
-
-    @Bean
     @ConditionalOnMissingBean(OidcAuthenticationAdapter.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.oidc",
+            name = "enabled",
+            havingValue = "true"
+    )
     OidcAuthenticationAdapter oidcAuthenticationAdapter(
             SixpayJwtAuthoritiesConverter authoritiesConverter,
             ExternalIdentityResolver externalIdentityResolver
@@ -107,9 +98,7 @@ public class SixpaySecurityAutoConfiguration {
                 CookieCsrfTokenRepository.withHttpOnlyFalse();
 
         repository.setCookieCustomizer(cookie ->
-                cookie
-                        .path("/")
-                        .sameSite("Strict")
+                cookie.path("/").sameSite("Strict")
         );
 
         return repository;
@@ -126,60 +115,36 @@ public class SixpaySecurityAutoConfiguration {
     ) throws Exception {
 
         RequestMatcher bearerRequest = request -> {
-            String authorization =
-                    request.getHeader(HttpHeaders.AUTHORIZATION);
-
-            return authorization != null
-                    && authorization.startsWith("Bearer ");
+            String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+            return authorization != null && authorization.startsWith("Bearer ");
         };
 
         http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(
-                                new HttpStatusEntryPoint(
-                                        HttpStatus.UNAUTHORIZED
-                                )
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
                         )
                 )
-
                 .securityContext(context ->
-                        context.securityContextRepository(
-                                securityContextRepository
-                        )
+                        context.securityContextRepository(securityContextRepository)
                 )
-
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.IF_REQUIRED
-                        )
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
-
                 .csrf(csrf -> {
-                    csrf.csrfTokenRepository(
-                            csrfTokenRepository
-                    );
-
-                    csrf.ignoringRequestMatchers(
-                            bearerRequest
-                    );
+                    csrf.csrfTokenRepository(csrfTokenRepository);
+                    csrf.ignoringRequestMatchers(bearerRequest);
 
                     if (capabilities.localEnabled()) {
                         csrf.ignoringRequestMatchers(
                                 request ->
-                                        HttpMethod.POST.matches(
-                                                request.getMethod()
-                                        )
-                                                && "/api/v1/auth/login"
-                                                .equals(
-                                                        request.getRequestURI()
-                                                )
+                                        HttpMethod.POST.matches(request.getMethod())
+                                                && "/api/v1/auth/login".equals(request.getRequestURI())
                         );
                     }
                 })
-
                 .authorizeHttpRequests(authorize -> {
                     authorize
                             .requestMatchers(
@@ -190,24 +155,17 @@ public class SixpaySecurityAutoConfiguration {
 
                     if (capabilities.localEnabled()) {
                         authorize
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/v1/auth/login"
-                                )
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login")
                                 .permitAll();
                     }
 
-                    authorize
-                            .anyRequest()
-                            .authenticated();
+                    authorize.anyRequest().authenticated();
                 });
 
         if (capabilities.oidcEnabled()) {
             http.oauth2ResourceServer(oauth2 ->
                     oauth2.jwt(jwt ->
-                            jwt.jwtAuthenticationConverter(
-                                    oidcAuthenticationAdapter
-                            )
+                            jwt.jwtAuthenticationConverter(oidcAuthenticationAdapter)
                     )
             );
         }

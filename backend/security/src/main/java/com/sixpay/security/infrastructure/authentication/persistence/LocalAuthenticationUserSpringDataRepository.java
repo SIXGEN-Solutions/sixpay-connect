@@ -14,9 +14,10 @@ public interface LocalAuthenticationUserSpringDataRepository
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            select user
-            from LocalAuthenticationUserJpaEntity user
-            where user.normalizedUsername = :normalizedUsername
+            select localUser
+            from LocalAuthenticationUserJpaEntity localUser
+            join fetch localUser.userAccount account
+            where localUser.normalizedUsername = :normalizedUsername
             """)
     Optional<LocalAuthenticationUserJpaEntity> findForAuthentication(
             @Param("normalizedUsername")

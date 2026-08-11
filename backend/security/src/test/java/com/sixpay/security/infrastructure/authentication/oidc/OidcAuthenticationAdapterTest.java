@@ -1,23 +1,25 @@
 package com.sixpay.security.infrastructure.authentication.oidc;
 
-import com.sixpay.security.application.service.SubjectExternalIdentityResolver;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OidcAuthenticationAdapterTest {
 
     @Test
-    void convertsTrustedOidcJwtToCanonicalSixpayPrincipal() {
-        Instant issuedAt =
-                Instant.parse("2026-08-11T01:00:00Z");
+    void convertsTrustedOidcJwtToLinkedCanonicalPrincipal() {
+        UUID userId = UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+        Instant issuedAt = Instant.parse("2026-08-11T01:00:00Z");
 
         Jwt jwt = Jwt.withTokenValue("test-token")
                 .header("alg", "RS256")
@@ -25,86 +27,57 @@ class OidcAuthenticationAdapterTest {
                 .subject("external-subject-123")
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(300))
-                .claim(
-                        "preferred_username",
-                        "oidc.user@sixpay.test"
-                )
-                .claim(
-                        "roles",
-                        List.of("ADMIN")
-                )
-                .claim(
-                        "scope",
-                        "payment.read"
-                )
+                .claim("preferred_username", "oidc.user@sixpay.test")
+                .claim("roles", List.of("ADMIN"))
+                .claim("scope", "payment.read")
                 .build();
 
         OidcAuthenticationAdapter adapter =
                 new OidcAuthenticationAdapter(
                         new SixpayJwtAuthoritiesConverter(),
-                        new SubjectExternalIdentityResolver()
+                        (identity, authorities) ->
+                                new AuthenticatedUser(
+                                        userId.toString(),
+                                        "rodrigue",
+                                        authorities
+                                )
                 );
 
         OidcAuthenticationToken authentication =
-                (OidcAuthenticationToken)
-                        adapter.convert(jwt);
+                (OidcAuthenticationToken) adapter.convert(jwt);
 
-        assertThat(authentication.isAuthenticated())
-                .isTrue();
-
-        assertThat(authentication.getPrincipal())
-                .isInstanceOf(AuthenticatedUser.class);
-
-        AuthenticatedUser principal =
-                authentication.getPrincipal();
-
-        assertThat(principal.subject())
-                .isEqualTo("external-subject-123");
-
-        assertThat(principal.username())
-                .isEqualTo("oidc.user@sixpay.test");
-
-        assertThat(principal.roles())
+        assertThat(authentication.isAuthenticated()).isTrue();
+        assertThat(authentication.getPrincipal().subject())
+                .isEqualTo(userId.toString());
+        assertThat(authentication.getPrincipal().username())
+                .isEqualTo("rodrigue");
+        assertThat(authentication.getPrincipal().roles())
                 .containsExactly("ADMIN");
-
-        assertThat(principal.permissions())
+        assertThat(authentication.getPrincipal().permissions())
                 .containsExactly("SCOPE_payment.read");
-
-        assertThat(authentication.getCredentials())
-                .isEqualTo("");
     }
 
     @Test
-    void fallsBackToEmailWhenPreferredUsernameIsAbsent() {
-        Instant issuedAt =
-                Instant.parse("2026-08-11T01:00:00Z");
+    void convertsUnlinkedIdentityFailureToOauthAuthenticationFailure() {
+        Instant issuedAt = Instant.parse("2026-08-11T01:00:00Z");
 
         Jwt jwt = Jwt.withTokenValue("test-token")
                 .header("alg", "RS256")
                 .issuer("https://test-idp.sixpay.local")
-                .subject("external-subject-456")
+                .subject("unknown-subject")
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(300))
-                .claim(
-                        "email",
-                        "fallback@sixpay.test"
-                )
                 .build();
 
         OidcAuthenticationAdapter adapter =
                 new OidcAuthenticationAdapter(
                         new SixpayJwtAuthoritiesConverter(),
-                        new SubjectExternalIdentityResolver()
+                        (identity, authorities) -> {
+                            throw new com.sixpay.security.application.exception.ExternalIdentityNotLinkedException();
+                        }
                 );
 
-        OidcAuthenticationToken authentication =
-                (OidcAuthenticationToken)
-                        adapter.convert(jwt);
-
-        assertThat(
-                authentication
-                        .getPrincipal()
-                        .username()
-        ).isEqualTo("fallback@sixpay.test");
+        assertThatThrownBy(() -> adapter.convert(jwt))
+                .isInstanceOf(OAuth2AuthenticationException.class);
     }
 }

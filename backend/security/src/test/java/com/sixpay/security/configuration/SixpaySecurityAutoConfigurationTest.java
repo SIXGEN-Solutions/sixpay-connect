@@ -1,5 +1,6 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.out.ExternalIdentityResolver;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
@@ -55,40 +56,38 @@ class SixpaySecurityAutoConfigurationTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    /*
+     * This focused filter-chain test intentionally excludes JPA. DA-5 therefore
+     * supplies the resolver boundary as a test double rather than enabling a
+     * subject-only fallback in production.
+     */
+    @MockitoBean
+    private ExternalIdentityResolver externalIdentityResolver;
+
     @Test
     void createsDefaultSecurityBeans() {
         assertThat(currentUserProvider)
                 .isInstanceOf(SecurityContextCurrentUserProvider.class);
-
         assertThat(authoritiesConverter).isNotNull();
         assertThat(jwtAuthenticationConverter).isNotNull();
     }
 
     @Test
-    void permitsHealthEndpointWithoutAuthentication()
-            throws Exception {
-
+    void permitsHealthEndpointWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("UP"));
     }
 
     @Test
-    void rejectsProtectedEndpointWithoutAuthentication()
-            throws Exception {
-
+    void rejectsProtectedEndpointWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/secured"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void acceptsProtectedEndpointWithJwtAuthentication()
-            throws Exception {
-
-        mockMvc.perform(
-                        get("/secured")
-                                .with(jwt())
-                )
+    void acceptsProtectedEndpointWithJwtAuthentication() throws Exception {
+        mockMvc.perform(get("/secured").with(jwt()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("SECURED"));
     }
