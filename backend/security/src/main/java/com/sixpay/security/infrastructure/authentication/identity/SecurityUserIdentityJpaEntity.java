@@ -36,31 +36,28 @@ public class SecurityUserIdentityJpaEntity {
     protected SecurityUserIdentityJpaEntity() {
     }
 
-    public UUID getId() {
-        return id;
+    public static SecurityUserIdentityJpaEntity linkedOidc(
+            SecurityUserAccountJpaEntity account,
+            String provider,
+            String providerSubject,
+            Instant now
+    ) {
+        SecurityUserIdentityJpaEntity entity = new SecurityUserIdentityJpaEntity();
+        entity.id = UUID.randomUUID();
+        entity.userAccount = account;
+        entity.identityType = AuthenticationIdentityType.OIDC;
+        entity.provider = provider;
+        entity.providerSubject = providerSubject;
+        entity.createdAt = now;
+        entity.updatedAt = now;
+        return entity;
     }
 
-    public SecurityUserAccountJpaEntity getUserAccount() {
-        return userAccount;
-    }
-
-    public AuthenticationIdentityType getIdentityType() {
-        return identityType;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public String getProviderSubject() {
-        return providerSubject;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public UUID getId() { return id; }
+    public SecurityUserAccountJpaEntity getUserAccount() { return userAccount; }
+    public AuthenticationIdentityType getIdentityType() { return identityType; }
+    public String getProvider() { return provider; }
+    public String getProviderSubject() { return providerSubject; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

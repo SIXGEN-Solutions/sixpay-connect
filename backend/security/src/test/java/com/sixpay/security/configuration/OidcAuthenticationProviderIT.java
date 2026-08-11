@@ -1,6 +1,7 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.port.out.ExternalIdentityResolver;
+import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,15 @@ class OidcAuthenticationProviderIT {
 
     @MockitoBean
     private ExternalIdentityResolver externalIdentityResolver;
+
+    /*
+     * DA-9 makes SecurityAuditPort a mandatory dependency of the OIDC
+     * authentication boundary. This integration test intentionally excludes
+     * DataSource/JPA, so the persistence-backed audit adapter cannot exist.
+     * Supply the audit boundary as a test double instead.
+     */
+    @MockitoBean
+    private SecurityAuditPort securityAuditPort;
 
     @Test
     void authenticatesBearerUsingOnlySixpayOwnedAuthorization()

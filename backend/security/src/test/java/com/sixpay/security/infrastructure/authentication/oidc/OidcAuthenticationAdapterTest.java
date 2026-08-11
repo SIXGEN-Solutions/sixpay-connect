@@ -41,7 +41,11 @@ class OidcAuthenticationAdapterTest {
                                                 "ROLE_AUDITOR",
                                                 "SCOPE_payment.read"
                                         )
-                                )
+                                ),
+                        event -> {
+                            // DA-9 audit dependency intentionally ignored
+                            // in this authorization-focused unit test.
+                        }
                 );
 
         OidcAuthenticationToken authentication =

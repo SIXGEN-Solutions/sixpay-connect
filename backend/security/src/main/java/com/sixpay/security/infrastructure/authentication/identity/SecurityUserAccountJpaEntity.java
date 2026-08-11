@@ -19,12 +19,7 @@ public class SecurityUserAccountJpaEntity {
     @Column(nullable = false, unique = true, length = 150)
     private String username;
 
-    @Column(
-            name = "normalized_username",
-            nullable = false,
-            unique = true,
-            length = 150
-    )
+    @Column(name = "normalized_username", nullable = false, unique = true, length = 150)
     private String normalizedUsername;
 
     @Column(length = 320)
@@ -35,18 +30,12 @@ public class SecurityUserAccountJpaEntity {
     private SixpayUserAccountStatus status;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "security_user_roles",
-            joinColumns = @JoinColumn(name = "user_id")
-    )
+    @CollectionTable(name = "security_user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role", nullable = false, length = 100)
     private Set<String> roles = new LinkedHashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "security_user_permissions",
-            joinColumns = @JoinColumn(name = "user_id")
-    )
+    @CollectionTable(name = "security_user_permissions", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "permission", nullable = false, length = 150)
     private Set<String> permissions = new LinkedHashSet<>();
 
@@ -63,28 +52,17 @@ public class SecurityUserAccountJpaEntity {
     protected SecurityUserAccountJpaEntity() {
     }
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public String getUsername() { return username; }
+    public String getEmail() { return email; }
+    public SixpayUserAccountStatus getStatus() { return status; }
+    public Set<String> getRoles() { return Set.copyOf(roles); }
+    public Set<String> getPermissions() { return Set.copyOf(permissions); }
+    public Instant getUpdatedAt() { return updatedAt; }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public SixpayUserAccountStatus getStatus() {
-        return status;
-    }
-
-    public Set<String> getRoles() {
-        return Set.copyOf(roles);
-    }
-
-    public Set<String> getPermissions() {
-        return Set.copyOf(permissions);
+    public void disable(Instant now) {
+        this.status = SixpayUserAccountStatus.DISABLED;
+        this.updatedAt = now;
     }
 
     public Set<String> getAuthorities() {
@@ -92,13 +70,6 @@ public class SecurityUserAccountJpaEntity {
     }
 
     public SixpayUserAccount toDomain() {
-        return new SixpayUserAccount(
-                id,
-                username,
-                email,
-                status,
-                roles,
-                permissions
-        );
+        return new SixpayUserAccount(id, username, email, status, roles, permissions);
     }
 }

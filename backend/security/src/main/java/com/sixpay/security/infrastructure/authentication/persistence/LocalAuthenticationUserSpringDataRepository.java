@@ -20,7 +20,8 @@ public interface LocalAuthenticationUserSpringDataRepository
             where localUser.normalizedUsername = :normalizedUsername
             """)
     Optional<LocalAuthenticationUserJpaEntity> findForAuthentication(
-            @Param("normalizedUsername")
-            String normalizedUsername
+            @Param("normalizedUsername") String normalizedUsername
     );
+
+    Optional<LocalAuthenticationUserJpaEntity> findByUserAccount_Id(UUID userId);
 }

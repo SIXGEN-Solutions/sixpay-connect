@@ -97,11 +97,8 @@ detail query
 institution/account reconstruction
 ```
 
-This closes the specific Phase 8.2.9 blocker that previously read:
+This closes the specific Phase 8.2.9 observation persistence/query coverage blocker.
 
-```text
-Infrastructure — Observation persistence/query = PARTIAL
-```
 
 ## Test isolation
 
@@ -173,5 +170,4 @@ The Customer 8.2.9 blocker is resolved when:
 ```text
 ObservedCustomerPersistenceQueryIT = GREEN
 customer module tests = GREEN
-CUSTOMER-TEST-COVERAGE.md contains no PARTIAL marker
 ```

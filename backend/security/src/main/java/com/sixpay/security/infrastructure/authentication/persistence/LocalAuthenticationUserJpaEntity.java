@@ -24,19 +24,10 @@ public class LocalAuthenticationUserJpaEntity {
     @Column(nullable = false, length = 150)
     private String username;
 
-    @Column(
-            name = "normalized_username",
-            nullable = false,
-            unique = true,
-            length = 150
-    )
+    @Column(name = "normalized_username", nullable = false, unique = true, length = 150)
     private String normalizedUsername;
 
-    @Column(
-            name = "password_hash",
-            nullable = false,
-            length = 100
-    )
+    @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
@@ -65,36 +56,27 @@ public class LocalAuthenticationUserJpaEntity {
     protected LocalAuthenticationUserJpaEntity() {
     }
 
-    public UUID getId() {
-        return id;
+    public UUID getId() { return id; }
+    public SecurityUserAccountJpaEntity getUserAccount() { return userAccount; }
+    public String getSubject() { return subject; }
+    public String getPasswordHash() { return passwordHash; }
+    public LocalAuthenticationAccountStatus getStatus() { return status; }
+    public int getFailedAttempts() { return failedAttempts; }
+    public Instant getLockedUntil() { return lockedUntil; }
+    public Instant getLastAuthenticatedAt() { return lastAuthenticatedAt; }
+
+    public void setEnabled(boolean enabled, Instant now) {
+        this.status = enabled
+                ? LocalAuthenticationAccountStatus.ACTIVE
+                : LocalAuthenticationAccountStatus.DISABLED;
+        this.updatedAt = now;
     }
 
-    public SecurityUserAccountJpaEntity getUserAccount() {
-        return userAccount;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public LocalAuthenticationAccountStatus getStatus() {
-        return status;
-    }
-
-    public int getFailedAttempts() {
-        return failedAttempts;
-    }
-
-    public Instant getLockedUntil() {
-        return lockedUntil;
-    }
-
-    public Instant getLastAuthenticatedAt() {
-        return lastAuthenticatedAt;
+    public void resetPassword(String bcryptHash, Instant now) {
+        this.passwordHash = bcryptHash;
+        this.failedAttempts = 0;
+        this.lockedUntil = null;
+        this.updatedAt = now;
     }
 
     public void updateAuthenticationState(

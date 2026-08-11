@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,5 +24,13 @@ public interface SecurityUserIdentitySpringDataRepository
             @Param("identityType") AuthenticationIdentityType identityType,
             @Param("provider") String provider,
             @Param("providerSubject") String providerSubject
+    );
+
+    List<SecurityUserIdentityJpaEntity> findByUserAccount_IdOrderByCreatedAtAsc(UUID userId);
+
+    boolean existsByIdentityTypeAndProviderAndProviderSubject(
+            AuthenticationIdentityType identityType,
+            String provider,
+            String providerSubject
     );
 }

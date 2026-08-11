@@ -1,6 +1,7 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.port.out.ExternalIdentityResolver;
+import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
@@ -57,12 +58,20 @@ class SixpaySecurityAutoConfigurationTest {
     private JwtDecoder jwtDecoder;
 
     /*
-     * This focused filter-chain test intentionally excludes JPA. DA-5 therefore
-     * supplies the resolver boundary as a test double rather than enabling a
-     * subject-only fallback in production.
+     * This focused filter-chain test intentionally excludes JPA. DA-5
+     * therefore supplies the identity resolver boundary as a test double.
      */
     @MockitoBean
     private ExternalIdentityResolver externalIdentityResolver;
+
+    /*
+     * DA-9 makes operational audit mandatory for OIDC authentication.
+     * Because this focused test deliberately excludes DataSource/JPA, it
+     * supplies the audit boundary as a mock instead of creating the
+     * persistence-backed SecurityAuditPort.
+     */
+    @MockitoBean
+    private SecurityAuditPort securityAuditPort;
 
     @Test
     void createsDefaultSecurityBeans() {
@@ -73,21 +82,30 @@ class SixpaySecurityAutoConfigurationTest {
     }
 
     @Test
-    void permitsHealthEndpointWithoutAuthentication() throws Exception {
+    void permitsHealthEndpointWithoutAuthentication()
+            throws Exception {
+
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("UP"));
     }
 
     @Test
-    void rejectsProtectedEndpointWithoutAuthentication() throws Exception {
+    void rejectsProtectedEndpointWithoutAuthentication()
+            throws Exception {
+
         mockMvc.perform(get("/secured"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void acceptsProtectedEndpointWithJwtAuthentication() throws Exception {
-        mockMvc.perform(get("/secured").with(jwt()))
+    void acceptsProtectedEndpointWithJwtAuthentication()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/secured")
+                                .with(jwt())
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().string("SECURED"));
     }

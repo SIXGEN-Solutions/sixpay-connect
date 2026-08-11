@@ -13,33 +13,29 @@ import { AdministrationService } from '../services/administration.service';
     <section class="sp-page">
       <sp-toolbar
         title="Administration"
-        description="Configuration et supervision mockées de SIXPAY."
+        description="Configuration, utilisateurs et sécurité opérationnelle SIXPAY."
       />
 
       @if (overview(); as data) {
         <div class="sp-kpis">
-          <sp-card title="Taille lot comptable">
-            <strong>{{ data.settings.accountingBatchSize }}</strong>
-          </sp-card>
-          <sp-card title="Timeout paiement">
-            <strong>{{ data.settings.paymentTimeoutMs }} ms</strong>
-          </sp-card>
-          <sp-card title="Rétention opérationnelle">
-            <strong>{{ data.settings.operationalRetentionDays }} jours</strong>
-          </sp-card>
+          <sp-card title="Taille lot comptable"><strong>{{ data.settings.accountingBatchSize }}</strong></sp-card>
+          <sp-card title="Timeout paiement"><strong>{{ data.settings.paymentTimeoutMs }} ms</strong></sp-card>
+          <sp-card title="Rétention opérationnelle"><strong>{{ data.settings.operationalRetentionDays }} jours</strong></sp-card>
         </div>
 
         <div class="sp-grid">
+          <sp-card title="Utilisateurs & sécurité" subtitle="Identités, méthodes et autorisations">
+            <p>Administrer Local, SSO, linking OIDC, statut utilisateur et audit.</p>
+            <a spCardActions routerLink="users">Ouvrir</a>
+          </sp-card>
+
           <sp-card title="Paramètres généraux" subtitle="Configuration applicative">
-            <p>Valeurs de démonstration en lecture seule pour la Phase 7.6.</p>
+            <p>Configuration applicative SIXPAY.</p>
             <a spCardActions routerLink="settings">Ouvrir</a>
           </sp-card>
 
           <sp-card title="Intégrations" subtitle="État des dépendances">
-            <p>
-              {{ degradedCount() }} intégration(s) dégradée(s) sur
-              {{ data.integrations.length }}.
-            </p>
+            <p>{{ degradedCount() }} intégration(s) dégradée(s) sur {{ data.integrations.length }}.</p>
             <a spCardActions routerLink="integrations">Ouvrir</a>
           </sp-card>
         </div>
@@ -50,13 +46,12 @@ import { AdministrationService } from '../services/administration.service';
     :host,.sp-page{display:grid;gap:var(--sp-space-4)}
     .sp-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
     .sp-kpis strong{font-size:2rem}
-    .sp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3)}
-    @media(max-width:800px){.sp-kpis,.sp-grid{grid-template-columns:1fr}}
+    .sp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
+    @media(max-width:900px){.sp-kpis,.sp-grid{grid-template-columns:1fr}}
   `,
 })
 export class AdministrationPageComponent {
   private readonly service = inject(AdministrationService);
-
   protected readonly overview = signal<AdministrationOverview | null>(null);
 
   constructor() {

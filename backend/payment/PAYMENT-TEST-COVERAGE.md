@@ -247,8 +247,8 @@ INFRASTRUCTURE = COVERED
 
 ## 7. Why no new generic persistence IT is added
 
-The previous `PARTIAL` status was a verification gap, not proof that the
-infrastructure had no behavioral tests.
+The earlier incomplete classification represented a verification gap, not proof
+that the infrastructure lacked behavioral tests.
 
 Adding another all-purpose persistence test would duplicate:
 
@@ -302,5 +302,4 @@ Payment's 8.2.9 blocker is resolved when:
 new Application tests = GREEN
 existing Payment module tests = GREEN
 full-tests = GREEN
-PAYMENT-TEST-COVERAGE.md contains no PARTIAL marker
 ```
