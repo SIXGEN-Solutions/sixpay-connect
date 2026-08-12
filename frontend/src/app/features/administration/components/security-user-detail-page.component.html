@@ -1,0 +1,189 @@
+<section class="sp-page">
+  @if (user(); as data) {
+    <sp-toolbar
+      [title]="data.username"
+      description="Administration du compte, des identités et des autorisations SIXPAY."
+    />
+
+    <sp-card title="Compte SIXPAY">
+      <form
+        class="sp-security-user-form"
+        [formGroup]="accountForm"
+        (ngSubmit)="saveAccount()"
+        novalidate
+      >
+        <div class="sp-security-user-form__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nom utilisateur</mat-label>
+            <input matInput formControlName="username" maxlength="150" />
+            <sp-form-error
+              errorId="username-error"
+              [message]="accountFieldError('username')"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Courriel</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              maxlength="320"
+            />
+            <sp-form-error
+              errorId="email-error"
+              [message]="accountFieldError('email')"
+            />
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="outline"
+            class="sp-security-user-form__wide"
+          >
+            <mat-label>Rôles SIXPAY</mat-label>
+            <input matInput formControlName="roles" />
+            <mat-hint>Séparez les rôles par une virgule.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="outline"
+            class="sp-security-user-form__wide"
+          >
+            <mat-label>Permissions</mat-label>
+            <input matInput formControlName="permissions" />
+            <mat-hint>Séparez les permissions par une virgule.</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <p>Statut: <strong>{{ data.status }}</strong></p>
+
+        <div class="sp-security-user-form__actions">
+          <sp-button type="submit" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </sp-button>
+
+          @if (data.status === 'DISABLED') {
+            <button type="button" (click)="enableUser()">
+              Réactiver l’utilisateur
+            </button>
+          } @else {
+            <button type="button" (click)="disableUser()">
+              Désactiver l’utilisateur
+            </button>
+          }
+
+          <button
+            type="button"
+            [disabled]="deleting()"
+            (click)="deleteUser()"
+          >
+            {{ deleting() ? 'Suppression…' : 'Supprimer définitivement' }}
+          </button>
+
+          <a routerLink="/administration/users">Retour à la liste</a>
+        </div>
+      </form>
+    </sp-card>
+
+    <sp-card title="Méthodes d’authentification">
+      <p>
+        Local:
+        <strong>{{ data.localEnabled ? 'Activé' : 'Désactivé' }}</strong>
+      </p>
+      <button type="button" (click)="toggleLocal()">
+        {{ data.localEnabled ? 'Désactiver Local' : 'Activer Local' }}
+      </button>
+
+      <p>
+        SSO/OIDC:
+        <strong>{{ data.oidcLinked ? 'Lié' : 'Non lié' }}</strong>
+      </p>
+    </sp-card>
+
+    <sp-card title="Réinitialiser le mot de passe Local">
+      <form
+        [formGroup]="passwordForm"
+        (ngSubmit)="resetPassword()"
+        class="sp-security-user-form"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Nouveau mot de passe temporaire</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="newPassword"
+            autocomplete="new-password"
+            maxlength="200"
+          />
+          <mat-hint>12 caractères minimum.</mat-hint>
+        </mat-form-field>
+
+        <div class="sp-security-user-form__actions">
+          <button type="submit" [disabled]="passwordForm.invalid">
+            Réinitialiser
+          </button>
+        </div>
+      </form>
+    </sp-card>
+
+    <sp-card title="Lier une identité OIDC">
+      <form
+        [formGroup]="oidcForm"
+        (ngSubmit)="linkOidc()"
+        class="sp-security-user-form"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>Provider / issuer</mat-label>
+          <input matInput formControlName="provider" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Subject</mat-label>
+          <input matInput formControlName="providerSubject" />
+        </mat-form-field>
+
+        <div class="sp-security-user-form__actions">
+          <button type="submit" [disabled]="oidcForm.invalid">
+            Lier l’identité
+          </button>
+        </div>
+      </form>
+
+      @for (identity of data.identities; track identity.id) {
+        <p>
+          {{ identity.identityType }} — {{ identity.provider }}<br />
+          Subject: {{ identity.providerSubject }} — {{ identity.status }}
+
+          @if (identity.identityType === 'OIDC') {
+            <button
+              type="button"
+              (click)="unlinkIdentity(identity.id)"
+            >
+              Délier
+            </button>
+          }
+        </p>
+      }
+    </sp-card>
+
+    <sp-card title="Autorisation SIXPAY">
+      <p>Rôles: {{ data.roles.join(', ') || '—' }}</p>
+      <p>Permissions: {{ data.permissions.join(', ') || '—' }}</p>
+    </sp-card>
+
+    <sp-card title="Derniers événements de sécurité">
+      @for (
+        event of data.recentAuthenticationEvents;
+        track event.occurredAt + event.eventType
+      ) {
+        <p>
+          <strong>{{ event.eventType }}</strong>
+          — {{ event.occurredAt | date: 'medium' }}
+          @if (event.provider) {
+            — {{ event.provider }}
+          }
+        </p>
+      }
+    </sp-card>
+  }
+</section>

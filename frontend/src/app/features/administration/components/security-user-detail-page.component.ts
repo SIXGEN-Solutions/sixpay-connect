@@ -1,153 +1,250 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, EMPTY, finalize } from 'rxjs';
 
+import { ErrorService } from '../../../core/errors/error.service';
+import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
+import { SpFormErrorComponent } from '../../../shared/components/sp-form-error.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { SecurityUserDetail } from '../models/security-user-administration';
 import { SecurityUserAdministrationService } from '../services/security-user-administration.service';
 
 @Component({
   selector: 'sp-security-user-detail-page',
-  imports: [DatePipe, ReactiveFormsModule, SpCardComponent, SpToolbarComponent],
-  template: `
-    <section class="sp-page">
-      @if (user(); as data) {
-        <sp-toolbar
-          [title]="data.username"
-          description="Administration de l’identité et de la sécurité utilisateur"
-        />
-
-        <sp-card title="Compte">
-          <p>
-            Username: <strong>{{ data.username }}</strong><br />
-            Email: <strong>{{ data.email ?? '—' }}</strong><br />
-            Statut: <strong>{{ data.status }}</strong>
-          </p>
-          @if (data.status !== 'DISABLED') {
-            <button type="button" (click)="disableUser()">Désactiver l’utilisateur</button>
-          }
-        </sp-card>
-
-        <sp-card title="Méthodes d’authentification">
-          <p>Local: <strong>{{ data.localEnabled ? 'Activé' : 'Désactivé' }}</strong></p>
-          <button type="button" (click)="toggleLocal()">
-            {{ data.localEnabled ? 'Désactiver Local' : 'Activer Local' }}
-          </button>
-          <p>SSO/OIDC: <strong>{{ data.oidcLinked ? 'Lié' : 'Non lié' }}</strong></p>
-        </sp-card>
-
-        <sp-card title="Réinitialiser le mot de passe Local">
-          <form [formGroup]="passwordForm" (ngSubmit)="resetPassword()" class="sp-form">
-            <label>
-              Nouveau mot de passe temporaire
-              <input type="password" formControlName="newPassword" autocomplete="new-password" />
-            </label>
-            <button type="submit" [disabled]="passwordForm.invalid">Réinitialiser</button>
-          </form>
-        </sp-card>
-
-        <sp-card title="Lier une identité OIDC">
-          <form [formGroup]="oidcForm" (ngSubmit)="linkOidc()" class="sp-form">
-            <label>Provider / issuer <input formControlName="provider" /></label>
-            <label>Subject <input formControlName="providerSubject" /></label>
-            <button type="submit" [disabled]="oidcForm.invalid">Lier l’identité</button>
-          </form>
-
-          @for (identity of data.identities; track identity.id) {
-            <p>
-              {{ identity.identityType }} — {{ identity.provider }}<br />
-              Subject: {{ identity.providerSubject }} — {{ identity.status }}
-              @if (identity.identityType === 'OIDC') {
-                <button type="button" (click)="unlinkIdentity(identity.id)">Délier</button>
-              }
-            </p>
-          }
-        </sp-card>
-
-        <sp-card title="Autorisation SIXPAY">
-          <p>Rôles: {{ data.roles.join(', ') || '—' }}</p>
-          <p>Permissions: {{ data.permissions.join(', ') || '—' }}</p>
-        </sp-card>
-
-        <sp-card title="Derniers événements de sécurité">
-          @for (event of data.recentAuthenticationEvents; track event.occurredAt + event.eventType) {
-            <p>
-              <strong>{{ event.eventType }}</strong>
-              — {{ event.occurredAt | date:'medium' }}
-              @if (event.provider) { — {{ event.provider }} }
-            </p>
-          }
-        </sp-card>
-      }
-    </section>
-  `,
-  styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-form{display:grid;gap:var(--sp-space-3)}
-    label{display:grid;gap:var(--sp-space-2)}
-  `,
+  imports: [
+    DatePipe,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule,
+    RouterLink,
+    SpButtonComponent,
+    SpCardComponent,
+    SpFormErrorComponent,
+    SpToolbarComponent,
+  ],
+  templateUrl: './security-user-detail-page.component.html',
+  styleUrl: './security-user-form.scss',
 })
 export class SecurityUserDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly service = inject(SecurityUserAdministrationService);
   private readonly userId = this.route.snapshot.paramMap.get('userId')!;
 
+  protected readonly errorService = inject(ErrorService);
   protected readonly user = signal<SecurityUserDetail | null>(null);
+  protected readonly saving = signal(false);
+  protected readonly deleting = signal(false);
+
+  protected readonly accountForm = this.formBuilder.nonNullable.group({
+    username: ['', [Validators.required, Validators.maxLength(150)]],
+    email: ['', [Validators.email, Validators.maxLength(320)]],
+    roles: [''],
+    permissions: [''],
+  });
 
   protected readonly passwordForm = new FormGroup({
     newPassword: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(12)],
+      validators: [
+        Validators.required,
+        Validators.minLength(12),
+        Validators.maxLength(200),
+      ],
     }),
   });
 
   protected readonly oidcForm = new FormGroup({
-    provider: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    providerSubject: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    provider: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    providerSubject: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
   });
 
-  constructor() { this.reload(); }
+  constructor() {
+    this.reload();
+  }
+
+  protected saveAccount(): void {
+    if (this.accountForm.invalid || this.saving()) {
+      this.accountForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.accountForm.getRawValue();
+
+    this.errorService.clear();
+    this.saving.set(true);
+
+    this.service
+      .updateUser(this.userId, {
+        username: value.username.trim(),
+        email: value.email.trim() || null,
+        roles: this.parseCsv(value.roles),
+        permissions: this.parseCsv(value.permissions),
+      })
+      .pipe(
+        catchError(() => EMPTY),
+        finalize(() => this.saving.set(false)),
+      )
+      .subscribe((user) => this.applyUser(user));
+  }
+
+  protected enableUser(): void {
+    this.service
+      .enableUser(this.userId)
+      .subscribe((user) => this.applyUser(user));
+  }
 
   protected toggleLocal(): void {
     const current = this.user();
-    if (!current) return;
-    this.service.setLocalEnabled(this.userId, !current.localEnabled)
-      .subscribe((user) => this.user.set(user));
+    if (!current) {
+      return;
+    }
+
+    this.service
+      .setLocalEnabled(this.userId, !current.localEnabled)
+      .subscribe((user) => this.applyUser(user));
   }
 
   protected resetPassword(): void {
-    if (this.passwordForm.invalid) return;
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+
     const { newPassword } = this.passwordForm.getRawValue();
-    this.service.resetLocalPassword(this.userId, newPassword)
+
+    this.service
+      .resetLocalPassword(this.userId, newPassword)
       .subscribe((user) => {
         this.passwordForm.reset();
-        this.user.set(user);
+        this.applyUser(user);
       });
   }
 
   protected linkOidc(): void {
-    if (this.oidcForm.invalid) return;
+    if (this.oidcForm.invalid) {
+      this.oidcForm.markAllAsTouched();
+      return;
+    }
+
     const value = this.oidcForm.getRawValue();
-    this.service.linkOidcIdentity(this.userId, value.provider, value.providerSubject)
+
+    this.service
+      .linkOidcIdentity(
+        this.userId,
+        value.provider.trim(),
+        value.providerSubject.trim(),
+      )
       .subscribe((user) => {
         this.oidcForm.reset();
-        this.user.set(user);
+        this.applyUser(user);
       });
   }
 
   protected unlinkIdentity(identityId: string): void {
-    this.service.unlinkIdentity(this.userId, identityId)
-      .subscribe((user) => this.user.set(user));
+    this.service
+      .unlinkIdentity(this.userId, identityId)
+      .subscribe((user) => this.applyUser(user));
   }
 
   protected disableUser(): void {
-    this.service.disableUser(this.userId)
-      .subscribe((user) => this.user.set(user));
+    this.service
+      .disableUser(this.userId)
+      .subscribe((user) => this.applyUser(user));
+  }
+
+  protected deleteUser(): void {
+    const current = this.user();
+    if (!current || this.deleting()) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Supprimer définitivement l’utilisateur "${current.username}" ?`,
+      )
+    ) {
+      return;
+    }
+
+    this.deleting.set(true);
+
+    this.service
+      .deleteUser(this.userId)
+      .pipe(
+        catchError(() => EMPTY),
+        finalize(() => this.deleting.set(false)),
+      )
+      .subscribe(() => {
+        void this.router.navigate(['/administration/users']);
+      });
+  }
+
+  protected accountFieldError(
+    name: keyof typeof this.accountForm.controls,
+  ): string | undefined {
+    const backendError = this.errorService.currentError()?.fieldErrors[name];
+    if (backendError) {
+      return backendError;
+    }
+
+    const control = this.accountForm.controls[name];
+
+    if (!control.touched || !control.errors) {
+      return undefined;
+    }
+
+    if (control.hasError('required')) {
+      return 'Ce champ est obligatoire.';
+    }
+
+    if (control.hasError('email')) {
+      return 'Saisissez une adresse courriel valide.';
+    }
+
+    return 'La valeur saisie dépasse la longueur autorisée.';
   }
 
   private reload(): void {
-    this.service.getUser(this.userId).subscribe((user) => this.user.set(user));
+    this.service.getUser(this.userId).subscribe((user) => this.applyUser(user));
+  }
+
+  private applyUser(user: SecurityUserDetail): void {
+    this.user.set(user);
+    this.accountForm.reset({
+      username: user.username,
+      email: user.email ?? '',
+      roles: user.roles.join(', '),
+      permissions: user.permissions.join(', '),
+    });
+  }
+
+  private parseCsv(value: string): readonly string[] {
+    return [
+      ...new Set(
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    ];
   }
 }

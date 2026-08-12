@@ -3,8 +3,10 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  CreateSecurityUserRequest,
   SecurityUserDetail,
   SecurityUserSummary,
+  UpdateSecurityUserRequest,
 } from '../models/security-user-administration';
 
 const API = '/internal/api/v1/administration/users';
@@ -12,6 +14,10 @@ const API = '/internal/api/v1/administration/users';
 @Injectable({ providedIn: 'root' })
 export class SecurityUserAdministrationService {
   private readonly http = inject(HttpClient);
+
+  createUser(request: CreateSecurityUserRequest): Observable<SecurityUserDetail> {
+    return this.http.post<SecurityUserDetail>(API, request);
+  }
 
   listUsers(): Observable<readonly SecurityUserSummary[]> {
     return this.http.get<readonly SecurityUserSummary[]>(API);
@@ -21,14 +27,31 @@ export class SecurityUserAdministrationService {
     return this.http.get<SecurityUserDetail>(`${API}/${userId}`);
   }
 
-  setLocalEnabled(userId: string, enabled: boolean): Observable<SecurityUserDetail> {
+  updateUser(
+    userId: string,
+    request: UpdateSecurityUserRequest,
+  ): Observable<SecurityUserDetail> {
+    return this.http.put<SecurityUserDetail>(`${API}/${userId}`, request);
+  }
+
+  enableUser(userId: string): Observable<SecurityUserDetail> {
+    return this.http.post<SecurityUserDetail>(`${API}/${userId}/enable`, {});
+  }
+
+  setLocalEnabled(
+    userId: string,
+    enabled: boolean,
+  ): Observable<SecurityUserDetail> {
     return this.http.put<SecurityUserDetail>(
       `${API}/${userId}/authentication-methods/local`,
       { enabled },
     );
   }
 
-  resetLocalPassword(userId: string, newPassword: string): Observable<SecurityUserDetail> {
+  resetLocalPassword(
+    userId: string,
+    newPassword: string,
+  ): Observable<SecurityUserDetail> {
     return this.http.post<SecurityUserDetail>(
       `${API}/${userId}/local-password-reset`,
       { newPassword },
@@ -46,7 +69,10 @@ export class SecurityUserAdministrationService {
     );
   }
 
-  unlinkIdentity(userId: string, identityId: string): Observable<SecurityUserDetail> {
+  unlinkIdentity(
+    userId: string,
+    identityId: string,
+  ): Observable<SecurityUserDetail> {
     return this.http.delete<SecurityUserDetail>(
       `${API}/${userId}/identities/${identityId}`,
     );
@@ -54,5 +80,9 @@ export class SecurityUserAdministrationService {
 
   disableUser(userId: string): Observable<SecurityUserDetail> {
     return this.http.post<SecurityUserDetail>(`${API}/${userId}/disable`, {});
+  }
+
+  deleteUser(userId: string): Observable<void> {
+    return this.http.delete<void>(`${API}/${userId}`);
   }
 }

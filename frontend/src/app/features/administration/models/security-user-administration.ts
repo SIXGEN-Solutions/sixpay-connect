@@ -41,3 +41,19 @@ export interface SecurityUserDetail {
   readonly identities: readonly SecurityIdentityView[];
   readonly recentAuthenticationEvents: readonly SecurityAuditView[];
 }
+
+export interface CreateSecurityUserRequest {
+  readonly username: string;
+  readonly email: string | null;
+  readonly roles: readonly string[];
+  readonly permissions: readonly string[];
+  readonly localAuthenticationEnabled: boolean;
+  readonly initialPassword: string | null;
+}
+
+export interface UpdateSecurityUserRequest {
+  readonly username: string;
+  readonly email: string | null;
+  readonly roles: readonly string[];
+  readonly permissions: readonly string[];
+}

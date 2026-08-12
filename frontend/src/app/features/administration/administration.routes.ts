@@ -24,6 +24,15 @@ export const ADMINISTRATION_ROUTES: Routes = [
       ),
   },
   {
+    path: 'users/new',
+    canActivate: [roleGuard],
+    data: { roles: ADMIN_ONLY },
+    loadComponent: () =>
+      import('./components/security-user-create-page.component').then(
+        (component) => component.SecurityUserCreatePageComponent,
+      ),
+  },
+  {
     path: 'users/:userId',
     canActivate: [roleGuard],
     data: { roles: ADMIN_ONLY },

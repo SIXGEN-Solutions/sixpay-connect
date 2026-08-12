@@ -1,0 +1,104 @@
+<sp-toolbar
+  title="Créer un utilisateur SIXPAY"
+  description="Créez le compte canonique puis choisissez ses autorisations et son accès Local initial."
+/>
+
+<sp-card title="Compte et autorisations">
+  <form
+    class="sp-security-user-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    novalidate
+  >
+    <div class="sp-security-user-form__grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Nom utilisateur</mat-label>
+        <input
+          matInput
+          formControlName="username"
+          maxlength="150"
+          autocomplete="username"
+        />
+        <sp-form-error
+          errorId="username-error"
+          [message]="fieldError('username')"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Courriel</mat-label>
+        <input
+          matInput
+          type="email"
+          formControlName="email"
+          maxlength="320"
+          autocomplete="email"
+        />
+        <sp-form-error
+          errorId="email-error"
+          [message]="fieldError('email')"
+        />
+      </mat-form-field>
+
+      <mat-form-field
+        appearance="outline"
+        class="sp-security-user-form__wide"
+      >
+        <mat-label>Rôles SIXPAY</mat-label>
+        <input
+          matInput
+          formControlName="roles"
+          placeholder="Ex. ADMIN, AUDITOR"
+        />
+        <mat-hint>Séparez les rôles par une virgule.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field
+        appearance="outline"
+        class="sp-security-user-form__wide"
+      >
+        <mat-label>Permissions</mat-label>
+        <input
+          matInput
+          formControlName="permissions"
+          placeholder="Ex. payment.read, reporting.export"
+        />
+        <mat-hint>Séparez les permissions par une virgule.</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <mat-checkbox formControlName="localAuthenticationEnabled">
+      Activer l’authentification Local à la création
+    </mat-checkbox>
+
+    @if (form.controls.localAuthenticationEnabled.value) {
+      <mat-form-field appearance="outline">
+        <mat-label>Mot de passe initial</mat-label>
+        <input
+          matInput
+          type="password"
+          formControlName="initialPassword"
+          autocomplete="new-password"
+          maxlength="200"
+        />
+        <mat-hint>12 caractères minimum.</mat-hint>
+        <sp-form-error
+          errorId="initialPassword-error"
+          [message]="fieldError('initialPassword')"
+        />
+      </mat-form-field>
+    }
+
+    <div class="sp-security-user-form__actions">
+      <sp-button
+        type="submit"
+        icon="add"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Création…' : 'Créer l’utilisateur' }}
+      </sp-button>
+
+      <a routerLink="/administration/users">Annuler</a>
+    </div>
+  </form>
+</sp-card>
