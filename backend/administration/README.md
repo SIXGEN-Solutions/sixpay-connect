@@ -1,83 +1,57 @@
 # Administration
 
-## Current repository status
+The `administration` module is the ADMIN-only HTTP administration boundary for SIXPAY CONNECT. The golden structural reference remains `backend/partner`. Administration does not duplicate Security business logic or persistence.
 
-`administration` is declared as a SIXPAY CONNECT business-domain Maven module,
-but the authoritative Phase 8 branch does not currently expose a materialized
-Administration implementation comparable to the golden `partner` module.
-
-The current module POM declares only:
+## Ownership
 
 ```text
-com.sixpay:common
+administration/
+    ADMIN-only HTTP endpoints
+    request validation
+    mapping to Security administration use cases
+
+security/
+    canonical SIXPAY user
+    Local credentials
+    OIDC identities
+    roles and permissions
+    security operational audit
+    user-administration application service
+    security persistence
 ```
 
-No Administration-owned Spring MVC, validation, persistence, security,
-OpenAPI or test infrastructure is currently declared.
+The central rule is: `IdP proves identity. SIXPAY owns business authorization.`
 
-## Phase 8 — Backend Golden Test Coverage
+## User Administration API
 
-Golden reference:
+Base path: `/internal/api/v1/administration/users`
 
 ```text
-backend/partner
+POST   /users
+GET    /users
+GET    /users/{userId}
+PUT    /users/{userId}
+POST   /users/{userId}/enable
+POST   /users/{userId}/disable
+DELETE /users/{userId}
+PUT    /users/{userId}/authentication-methods/local
+POST   /users/{userId}/local-password-reset
+POST   /users/{userId}/identities/oidc
+DELETE /users/{userId}/identities/{identityId}
 ```
 
-Current Administration classification:
+All endpoints require the SIXPAY `ADMIN` role.
+
+## Model
+
+A canonical account is distinct from authentication identities. A user may have both Local and OIDC identities without duplicating the account or authorization assignments.
+
+## Tests
 
 ```text
-Domain          NOT_IMPLEMENTED
-Application     NOT_IMPLEMENTED
-API             NOT_IMPLEMENTED
-Infrastructure  NOT_IMPLEMENTED
+SecurityUserAdministrationControllerTest
+SecurityUserAdministrationServiceTest
+IntegrationSecurityUserSeederTest
 ```
 
-This is not a test failure. It is an implementation-state classification.
-
-Phase 8.2.7 MUST NOT invent placeholder production classes or synthetic tests
-solely to make the module look structurally identical to `partner`.
-
-## Test policy
-
-When Administration implementation is introduced, it must follow the same
-layered testing discipline as the golden module:
-
-```text
-src/test/java/com/sixpay/administration/
-├── api/
-├── application/
-│   └── service/
-├── domain/
-└── infrastructure/
-    └── persistence/
-```
-
-Only layers that actually exist shall have tests.
-
-Cross-module Administration scenarios belong in:
-
-```text
-backend/tests/
-```
-
-and not in this module.
-
-## Validation
-
-The current Maven shell can still be validated from `backend/`:
-
-```bash
-mvn --batch-mode --no-transfer-progress     -pl administration -am test
-```
-
-and:
-
-```bash
-mvn --batch-mode --no-transfer-progress     -pl administration -am clean verify
-```
-
-Detailed Phase 8.2.7 evidence is maintained in:
-
-```text
-ADMINISTRATION-TEST-COVERAGE.md
-```
+Detailed evidence is maintained in `ADMINISTRATION-TEST-COVERAGE.md`.
