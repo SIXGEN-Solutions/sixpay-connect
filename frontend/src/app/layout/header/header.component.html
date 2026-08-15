@@ -1,10 +1,22 @@
 <mat-toolbar class="sp-header">
   <mat-icon aria-hidden="true">account_balance</mat-icon>
-  <span class="sp-header__title">SIXPAY CONNECT</span>
+
+  <span class="sp-header__title">
+    SIXPAY CONNECT
+  </span>
+
   <span class="sp-header__spacer"></span>
-  @if (authentication.subject(); as subject) {
-    <span class="sp-header__subject">{{ subject }}</span>
-    <button type="button" class="sp-header__logout" (click)="authentication.logout()">
+
+  @if (authentication.username(); as username) {
+    <span class="sp-header__subject">
+      {{ username }}
+    </span>
+
+    <button
+      type="button"
+      class="sp-header__logout"
+      (click)="authentication.logout()"
+    >
       Déconnexion
     </button>
   }

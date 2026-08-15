@@ -23,6 +23,7 @@ public record SixpayUserAccount(
 ) {
 
     private static final String ROLE_PREFIX = "ROLE_";
+    private static final String SCOPE_PREFIX = "SCOPE_";
 
     public SixpayUserAccount {
         id = Preconditions.requireNonNull(
@@ -82,6 +83,11 @@ public record SixpayUserAccount(
         permissions.stream()
                 .map(String::trim)
                 .filter(permission -> !permission.isBlank())
+                .map(permission ->
+                        permission.startsWith(SCOPE_PREFIX)
+                                ? permission
+                                : SCOPE_PREFIX + permission
+                )
                 .forEach(authorities::add);
 
         return Set.copyOf(authorities);
