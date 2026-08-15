@@ -7,6 +7,8 @@ import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase
 import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
 import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
+import com.sixpay.security.authorization.SixpayPermission;
+import com.sixpay.security.authorization.SixpayRole;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +44,10 @@ public class SecurityUserAdministrationService
     @Override
     @Transactional
     public SecurityUserDetail createUser(CreateSecurityUserCommand command) {
-        Objects.requireNonNull(command, "Create security user command must not be null");
+        Objects.requireNonNull(
+                command,
+                "Create security user command must not be null"
+        );
 
         UUID userId = Objects.requireNonNull(
                 command.userId(),
@@ -51,23 +56,26 @@ public class SecurityUserAdministrationService
         String username = normalizeUsername(command.username());
         String email = normalizeEmail(command.email());
         Set<String> roles = normalizeRoles(command.roles());
-        Set<String> permissions = normalizePermissions(command.permissions());
+        Set<String> permissions =
+                normalizePermissions(command.permissions());
 
         String passwordHash = null;
         if (command.localAuthenticationEnabled()) {
             validatePassword(command.initialPassword());
-            passwordHash = passwordEncoder.encode(command.initialPassword());
+            passwordHash =
+                    passwordEncoder.encode(command.initialPassword());
         }
 
-        SecurityUserDetail created = administrationPort.createUser(
-                userId,
-                username,
-                email,
-                roles,
-                permissions,
-                command.localAuthenticationEnabled(),
-                passwordHash
-        );
+        SecurityUserDetail created =
+                administrationPort.createUser(
+                        userId,
+                        username,
+                        email,
+                        roles,
+                        permissions,
+                        command.localAuthenticationEnabled(),
+                        passwordHash
+                );
 
         auditPort.record(new SecurityAuditEvent(
                 SecurityAuditEventType.USER_CREATED,
@@ -99,7 +107,10 @@ public class SecurityUserAdministrationService
     @Override
     @Transactional
     public SecurityUserDetail updateUser(UpdateSecurityUserCommand command) {
-        Objects.requireNonNull(command, "Update security user command must not be null");
+        Objects.requireNonNull(
+                command,
+                "Update security user command must not be null"
+        );
 
         UUID userId = Objects.requireNonNull(
                 command.userId(),
@@ -157,7 +168,11 @@ public class SecurityUserAdministrationService
             boolean enabled,
             String actorSubject
     ) {
-        administrationPort.setLocalAuthenticationEnabled(userId, enabled);
+        administrationPort.setLocalAuthenticationEnabled(
+                userId,
+                enabled
+        );
+
         auditPort.record(new SecurityAuditEvent(
                 enabled
                         ? SecurityAuditEventType.AUTH_METHOD_ENABLED
@@ -169,6 +184,7 @@ public class SecurityUserAdministrationService
                 "LOCAL",
                 Instant.now()
         ));
+
         return administrationPort.getUser(userId);
     }
 
@@ -207,7 +223,12 @@ public class SecurityUserAdministrationService
             String providerSubject,
             String actorSubject
     ) {
-        administrationPort.linkOidcIdentity(userId, provider, providerSubject);
+        administrationPort.linkOidcIdentity(
+                userId,
+                provider,
+                providerSubject
+        );
+
         auditPort.record(new SecurityAuditEvent(
                 SecurityAuditEventType.IDENTITY_LINKED,
                 actorSubject,
@@ -217,6 +238,7 @@ public class SecurityUserAdministrationService
                 null,
                 Instant.now()
         ));
+
         return administrationPort.getUser(userId);
     }
 
@@ -227,7 +249,11 @@ public class SecurityUserAdministrationService
             UUID identityId,
             String actorSubject
     ) {
-        administrationPort.unlinkOidcIdentity(userId, identityId);
+        administrationPort.unlinkOidcIdentity(
+                userId,
+                identityId
+        );
+
         auditPort.record(new SecurityAuditEvent(
                 SecurityAuditEventType.IDENTITY_UNLINKED,
                 actorSubject,
@@ -237,6 +263,7 @@ public class SecurityUserAdministrationService
                 null,
                 Instant.now()
         ));
+
         return administrationPort.getUser(userId);
     }
 
@@ -247,6 +274,7 @@ public class SecurityUserAdministrationService
             String actorSubject
     ) {
         administrationPort.disableUser(userId);
+
         auditPort.record(new SecurityAuditEvent(
                 SecurityAuditEventType.USER_DISABLED,
                 actorSubject,
@@ -256,6 +284,7 @@ public class SecurityUserAdministrationService
                 null,
                 Instant.now()
         ));
+
         return administrationPort.getUser(userId);
     }
 
@@ -265,12 +294,9 @@ public class SecurityUserAdministrationService
             UUID userId,
             String actorSubject
     ) {
-        SecurityUserDetail existing = administrationPort.getUser(userId);
+        SecurityUserDetail existing =
+                administrationPort.getUser(userId);
 
-        /*
-         * Audit before deletion. The DB FK is ON DELETE SET NULL, therefore the
-         * append-only record survives removal of the canonical account.
-         */
         auditPort.record(new SecurityAuditEvent(
                 SecurityAuditEventType.USER_DELETED,
                 actorSubject,
@@ -285,7 +311,8 @@ public class SecurityUserAdministrationService
     }
 
     private static void validatePassword(String password) {
-        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
+        if (password == null
+                || password.length() < MIN_PASSWORD_LENGTH) {
             throw new IllegalArgumentException(
                     "Password must contain at least 12 characters"
             );
@@ -294,14 +321,20 @@ public class SecurityUserAdministrationService
 
     private static String normalizeUsername(String username) {
         if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("Username must not be blank");
+            throw new IllegalArgumentException(
+                    "Username must not be blank"
+            );
         }
-        String normalized = username.trim().toLowerCase(Locale.ROOT);
+
+        String normalized =
+                username.trim().toLowerCase(Locale.ROOT);
+
         if (normalized.length() > 150) {
             throw new IllegalArgumentException(
                     "Username must contain at most 150 characters"
             );
         }
+
         return normalized;
     }
 
@@ -309,47 +342,84 @@ public class SecurityUserAdministrationService
         if (email == null || email.isBlank()) {
             return null;
         }
-        String normalized = email.trim().toLowerCase(Locale.ROOT);
+
+        String normalized =
+                email.trim().toLowerCase(Locale.ROOT);
+
         if (normalized.length() > 320) {
             throw new IllegalArgumentException(
                     "Email must contain at most 320 characters"
             );
         }
+
         return normalized;
     }
 
-    private static Set<String> normalizeRoles(Set<String> roles) {
+    private static Set<String> normalizeRoles(
+            Set<String> roles
+    ) {
         if (roles == null) {
             return Set.of();
         }
 
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        LinkedHashSet<String> normalized =
+                new LinkedHashSet<>();
+
         for (String role : roles) {
             if (role == null || role.isBlank()) {
                 continue;
             }
-            String value = role.trim().toUpperCase(Locale.ROOT);
+
+            String value =
+                    role.trim().toUpperCase(Locale.ROOT);
+
             if (value.startsWith("ROLE_")) {
-                value = value.substring("ROLE_".length());
+                value =
+                        value.substring("ROLE_".length());
             }
-            if (!value.isBlank()) {
-                normalized.add(value);
+
+            if (value.isBlank()) {
+                continue;
+            }
+
+            try {
+                normalized.add(
+                        SixpayRole.valueOf(value).name()
+                );
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalArgumentException(
+                        "Unknown SIXPAY role: " + role,
+                        exception
+                );
             }
         }
+
         return Set.copyOf(normalized);
     }
 
-    private static Set<String> normalizePermissions(Set<String> permissions) {
+    private static Set<String> normalizePermissions(
+            Set<String> permissions
+    ) {
         if (permissions == null) {
             return Set.of();
         }
 
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        LinkedHashSet<String> normalized =
+                new LinkedHashSet<>();
+
         for (String permission : permissions) {
-            if (permission != null && !permission.isBlank()) {
-                normalized.add(permission.trim());
+            if (permission == null
+                    || permission.isBlank()) {
+                continue;
             }
+
+            normalized.add(
+                    SixpayPermission
+                            .fromValue(permission)
+                            .value()
+            );
         }
+
         return Set.copyOf(normalized);
     }
 }

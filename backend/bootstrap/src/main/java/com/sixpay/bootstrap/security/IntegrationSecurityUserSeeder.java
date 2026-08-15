@@ -1,8 +1,11 @@
 package com.sixpay.bootstrap.security;
 
+import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.model.SecurityUserSummary;
 import com.sixpay.security.application.port.in.CreateSecurityUserCommand;
 import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
+import com.sixpay.security.authorization.SixpayPermission;
 import com.sixpay.security.authorization.SixpayRole;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -12,8 +15,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,7 +31,81 @@ import java.util.UUID;
 public class IntegrationSecurityUserSeeder
         implements ApplicationRunner {
 
-    static final String ACTOR = "integration-security-seed";
+    static final String ACTOR =
+            "integration-security-seed";
+
+    private static final Set<String> ADMIN_PERMISSIONS =
+            Set.of(
+                    SixpayPermission
+                            .OBSERVED_CUSTOMER_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_WRITE
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_RECONCILE
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_REVERSE
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT_EXPORT
+                            .value()
+            );
+
+    private static final Set<String> MANAGER_PERMISSIONS =
+            Set.of(
+                    SixpayPermission
+                            .OBSERVED_CUSTOMER_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_WRITE
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_REVERSE
+                            .value()
+            );
+
+    private static final Set<String> AUDITOR_PERMISSIONS =
+            Set.of(
+                    SixpayPermission
+                            .OBSERVED_CUSTOMER_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT_READ
+                            .value(),
+                    SixpayPermission
+                            .PAYMENT_AUDIT_EXPORT
+                            .value()
+            );
+
+    private static final Set<String> PARTNER_PERMISSIONS =
+            Set.of(
+                    SixpayPermission
+                            .PAYMENT_READ
+                            .value()
+            );
 
     private final SecurityUserAdministrationUseCase useCase;
     private final String adminPassword;
@@ -38,11 +116,16 @@ public class IntegrationSecurityUserSeeder
 
     public IntegrationSecurityUserSeeder(
             SecurityUserAdministrationUseCase useCase,
-            @Value("${sixpay.security.local.seed.admin-password}") String adminPassword,
-            @Value("${sixpay.security.local.seed.manager-password}") String managerPassword,
-            @Value("${sixpay.security.local.seed.auditor-password}") String auditorPassword,
-            @Value("${sixpay.security.local.seed.partner-password}") String partnerPassword,
-            @Value("${sixpay.security.local.seed.partner-subject}") UUID partnerSubject
+            @Value("${sixpay.security.local.seed.admin-password}")
+            String adminPassword,
+            @Value("${sixpay.security.local.seed.manager-password}")
+            String managerPassword,
+            @Value("${sixpay.security.local.seed.auditor-password}")
+            String auditorPassword,
+            @Value("${sixpay.security.local.seed.partner-password}")
+            String partnerPassword,
+            @Value("${sixpay.security.local.seed.partner-subject}")
+            UUID partnerSubject
     ) {
         this.useCase = useCase;
         this.adminPassword = adminPassword;
@@ -54,87 +137,160 @@ public class IntegrationSecurityUserSeeder
 
     @Override
     public void run(ApplicationArguments args) {
-        Set<String> existingUsernames = new HashSet<>(
-                useCase.listUsers()
-                        .stream()
-                        .map(SecurityUserSummary::username)
-                        .map(IntegrationSecurityUserSeeder::normalize)
-                        .toList()
+        Map<String, SecurityUserSummary> existingUsers =
+                new LinkedHashMap<>();
+
+        useCase.listUsers()
+                .forEach(user ->
+                        existingUsers.put(
+                                normalize(user.username()),
+                                user
+                        )
+                );
+
+        reconcile(
+                existingUsers,
+                new SeedProfile(
+                        deterministicId("admin"),
+                        "admin",
+                        "admin@sixpay.local",
+                        SixpayRole.ADMIN,
+                        ADMIN_PERMISSIONS,
+                        adminPassword
+                )
         );
 
-        seedIfMissing(
-                existingUsernames,
-                deterministicId("admin"),
-                "admin",
-                "admin@sixpay.local",
-                SixpayRole.ADMIN,
-                adminPassword
+        reconcile(
+                existingUsers,
+                new SeedProfile(
+                        deterministicId("manager"),
+                        "manager",
+                        "manager@sixpay.local",
+                        SixpayRole.MANAGER,
+                        MANAGER_PERMISSIONS,
+                        managerPassword
+                )
         );
 
-        seedIfMissing(
-                existingUsernames,
-                deterministicId("manager"),
-                "manager",
-                "manager@sixpay.local",
-                SixpayRole.MANAGER,
-                managerPassword
+        reconcile(
+                existingUsers,
+                new SeedProfile(
+                        deterministicId("auditor"),
+                        "auditor",
+                        "auditor@sixpay.local",
+                        SixpayRole.AUDITOR,
+                        AUDITOR_PERMISSIONS,
+                        auditorPassword
+                )
         );
 
-        seedIfMissing(
-                existingUsernames,
-                deterministicId("auditor"),
-                "auditor",
-                "auditor@sixpay.local",
-                SixpayRole.AUDITOR,
-                auditorPassword
-        );
-
-        seedIfMissing(
-                existingUsernames,
-                partnerSubject,
-                "partner",
-                "partner@sixpay.local",
-                SixpayRole.PARTNER,
-                partnerPassword
+        reconcile(
+                existingUsers,
+                new SeedProfile(
+                        partnerSubject,
+                        "partner",
+                        "partner@sixpay.local",
+                        SixpayRole.PARTNER,
+                        PARTNER_PERMISSIONS,
+                        partnerPassword
+                )
         );
     }
 
-    private void seedIfMissing(
-            Set<String> existingUsernames,
-            UUID userId,
-            String username,
-            String email,
-            SixpayRole role,
-            String password
+    private void reconcile(
+            Map<String, SecurityUserSummary> existingUsers,
+            SeedProfile profile
     ) {
-        String normalizedUsername = normalize(username);
+        String normalizedUsername =
+                normalize(profile.username());
 
-        if (existingUsernames.contains(normalizedUsername)) {
+        SecurityUserSummary existing =
+                existingUsers.get(normalizedUsername);
+
+        if (existing == null) {
+            create(profile);
             return;
         }
 
-        useCase.createUser(new CreateSecurityUserCommand(
-                userId,
-                username,
-                email,
-                Set.of(role.name()),
-                Set.of(),
-                true,
-                password,
-                ACTOR
-        ));
+        if (!profile.userId().equals(existing.id())) {
+            throw new IllegalStateException(
+                    "Integration seed user "
+                            + profile.username()
+                            + " exists with unexpected canonical id "
+                            + existing.id()
+                            + "; expected "
+                            + profile.userId()
+            );
+        }
 
-        existingUsernames.add(normalizedUsername);
+        SecurityUserDetail current =
+                useCase.getUser(existing.id());
+
+        Set<String> expectedRoles =
+                Set.of(profile.role().name());
+
+        boolean requiresReconciliation =
+                !profile.username()
+                        .equals(current.username())
+                        || !profile.email()
+                        .equals(current.email())
+                        || !expectedRoles
+                        .equals(current.roles())
+                        || !profile.permissions()
+                        .equals(current.permissions());
+
+        if (!requiresReconciliation) {
+            return;
+        }
+
+        useCase.updateUser(
+                new UpdateSecurityUserCommand(
+                        profile.userId(),
+                        profile.username(),
+                        profile.email(),
+                        expectedRoles,
+                        profile.permissions(),
+                        ACTOR
+                )
+        );
+    }
+
+    private void create(SeedProfile profile) {
+        useCase.createUser(
+                new CreateSecurityUserCommand(
+                        profile.userId(),
+                        profile.username(),
+                        profile.email(),
+                        Set.of(profile.role().name()),
+                        profile.permissions(),
+                        true,
+                        profile.password(),
+                        ACTOR
+                )
+        );
     }
 
     static UUID deterministicId(String username) {
         return UUID.nameUUIDFromBytes(
-                ("sixpay-integration-user:" + normalize(username))
+                ("sixpay-integration-user:"
+                        + normalize(username))
                         .getBytes(StandardCharsets.UTF_8)
         );
     }
 
     private static String normalize(String username) {
-        return username.trim().toLowerCase(Locale.ROOT);
+        return username
+                .trim()
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private record SeedProfile(
+            UUID userId,
+            String username,
+            String email,
+            SixpayRole role,
+            Set<String> permissions,
+            String password
+    ) {
     }
 }

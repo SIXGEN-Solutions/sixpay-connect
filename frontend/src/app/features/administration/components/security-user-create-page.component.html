@@ -1,6 +1,6 @@
 <sp-toolbar
   title="Créer un utilisateur SIXPAY"
-  description="Créez le compte canonique puis choisissez ses autorisations et son accès Local initial."
+  description="Créez le compte canonique puis choisissez ses rôles, ses permissions et son accès Local initial."
 />
 
 <sp-card title="Compte et autorisations">
@@ -45,12 +45,16 @@
         class="sp-security-user-form__wide"
       >
         <mat-label>Rôles SIXPAY</mat-label>
-        <input
-          matInput
-          formControlName="roles"
-          placeholder="Ex. ADMIN, AUDITOR"
-        />
-        <mat-hint>Séparez les rôles par une virgule.</mat-hint>
+        <mat-select formControlName="roles" multiple>
+          @for (role of availableRoles; track role) {
+            <mat-option [value]="role">
+              {{ role }}
+            </mat-option>
+          }
+        </mat-select>
+        <mat-hint>
+          Sélectionnez un ou plusieurs rôles reconnus par SIXPAY.
+        </mat-hint>
       </mat-form-field>
 
       <mat-form-field
@@ -58,20 +62,34 @@
         class="sp-security-user-form__wide"
       >
         <mat-label>Permissions</mat-label>
-        <input
-          matInput
+        <mat-select
           formControlName="permissions"
-          placeholder="Ex. payment.read, reporting.export"
-        />
-        <mat-hint>Séparez les permissions par une virgule.</mat-hint>
+          multiple
+        >
+          @for (
+            permission of availablePermissions;
+            track permission
+          ) {
+            <mat-option [value]="permission">
+              {{ permission }}
+            </mat-option>
+          }
+        </mat-select>
+        <mat-hint>
+          Les permissions sont stockées sans le préfixe Spring SCOPE_.
+        </mat-hint>
       </mat-form-field>
     </div>
 
-    <mat-checkbox formControlName="localAuthenticationEnabled">
+    <mat-checkbox
+      formControlName="localAuthenticationEnabled"
+    >
       Activer l’authentification Local à la création
     </mat-checkbox>
 
-    @if (form.controls.localAuthenticationEnabled.value) {
+    @if (
+      form.controls.localAuthenticationEnabled.value
+    ) {
       <mat-form-field appearance="outline">
         <mat-label>Mot de passe initial</mat-label>
         <input
@@ -95,10 +113,16 @@
         icon="add"
         [disabled]="submitting()"
       >
-        {{ submitting() ? 'Création…' : 'Créer l’utilisateur' }}
+        {{
+          submitting()
+            ? 'Création…'
+            : 'Créer l’utilisateur'
+        }}
       </sp-button>
 
-      <a routerLink="/administration/users">Annuler</a>
+      <a routerLink="/administration/users">
+        Annuler
+      </a>
     </div>
   </form>
 </sp-card>

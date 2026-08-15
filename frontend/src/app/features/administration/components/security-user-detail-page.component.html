@@ -14,8 +14,14 @@
       >
         <div class="sp-security-user-form__grid">
           <mat-form-field appearance="outline">
-            <mat-label>Nom utilisateur</mat-label>
-            <input matInput formControlName="username" maxlength="150" />
+            <mat-label>
+              Nom utilisateur
+            </mat-label>
+            <input
+              matInput
+              formControlName="username"
+              maxlength="150"
+            />
             <sp-form-error
               errorId="username-error"
               [message]="accountFieldError('username')"
@@ -23,7 +29,9 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Courriel</mat-label>
+            <mat-label>
+              Courriel
+            </mat-label>
             <input
               matInput
               type="email"
@@ -40,34 +48,86 @@
             appearance="outline"
             class="sp-security-user-form__wide"
           >
-            <mat-label>Rôles SIXPAY</mat-label>
-            <input matInput formControlName="roles" />
-            <mat-hint>Séparez les rôles par une virgule.</mat-hint>
+            <mat-label>
+              Rôles SIXPAY
+            </mat-label>
+            <mat-select
+              formControlName="roles"
+              multiple
+            >
+              @for (
+                role of availableRoles;
+                track role
+              ) {
+                <mat-option [value]="role">
+                  {{ role }}
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint>
+              Sélectionnez les rôles à affecter au compte.
+            </mat-hint>
           </mat-form-field>
 
           <mat-form-field
             appearance="outline"
             class="sp-security-user-form__wide"
           >
-            <mat-label>Permissions</mat-label>
-            <input matInput formControlName="permissions" />
-            <mat-hint>Séparez les permissions par une virgule.</mat-hint>
+            <mat-label>
+              Permissions
+            </mat-label>
+            <mat-select
+              formControlName="permissions"
+              multiple
+            >
+              @for (
+                permission of availablePermissions;
+                track permission
+              ) {
+                <mat-option [value]="permission">
+                  {{ permission }}
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint>
+              Les permissions persistées sont canoniques, sans préfixe SCOPE_.
+            </mat-hint>
           </mat-form-field>
         </div>
 
-        <p>Statut: <strong>{{ data.status }}</strong></p>
+        <p>
+          Statut:
+          <strong>
+            {{ data.status }}
+          </strong>
+        </p>
 
         <div class="sp-security-user-form__actions">
-          <sp-button type="submit" [disabled]="saving()">
-            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          <sp-button
+            type="submit"
+            [disabled]="saving()"
+          >
+            {{
+              saving()
+                ? 'Enregistrement…'
+                : 'Enregistrer'
+            }}
           </sp-button>
 
-          @if (data.status === 'DISABLED') {
-            <button type="button" (click)="enableUser()">
+          @if (
+            data.status === 'DISABLED'
+          ) {
+            <button
+              type="button"
+              (click)="enableUser()"
+            >
               Réactiver l’utilisateur
             </button>
           } @else {
-            <button type="button" (click)="disableUser()">
+            <button
+              type="button"
+              (click)="disableUser()"
+            >
               Désactiver l’utilisateur
             </button>
           }
@@ -77,10 +137,16 @@
             [disabled]="deleting()"
             (click)="deleteUser()"
           >
-            {{ deleting() ? 'Suppression…' : 'Supprimer définitivement' }}
+            {{
+              deleting()
+                ? 'Suppression…'
+                : 'Supprimer définitivement'
+            }}
           </button>
 
-          <a routerLink="/administration/users">Retour à la liste</a>
+          <a routerLink="/administration/users">
+            Retour à la liste
+          </a>
         </div>
       </form>
     </sp-card>
@@ -88,15 +154,35 @@
     <sp-card title="Méthodes d’authentification">
       <p>
         Local:
-        <strong>{{ data.localEnabled ? 'Activé' : 'Désactivé' }}</strong>
+        <strong>
+          {{
+            data.localEnabled
+              ? 'Activé'
+              : 'Désactivé'
+          }}
+        </strong>
       </p>
-      <button type="button" (click)="toggleLocal()">
-        {{ data.localEnabled ? 'Désactiver Local' : 'Activer Local' }}
+
+      <button
+        type="button"
+        (click)="toggleLocal()"
+      >
+        {{
+          data.localEnabled
+            ? 'Désactiver Local'
+            : 'Activer Local'
+        }}
       </button>
 
       <p>
         SSO/OIDC:
-        <strong>{{ data.oidcLinked ? 'Lié' : 'Non lié' }}</strong>
+        <strong>
+          {{
+            data.oidcLinked
+              ? 'Lié'
+              : 'Non lié'
+          }}
+        </strong>
       </p>
     </sp-card>
 
@@ -107,7 +193,9 @@
         class="sp-security-user-form"
       >
         <mat-form-field appearance="outline">
-          <mat-label>Nouveau mot de passe temporaire</mat-label>
+          <mat-label>
+            Nouveau mot de passe temporaire
+          </mat-label>
           <input
             matInput
             type="password"
@@ -115,11 +203,16 @@
             autocomplete="new-password"
             maxlength="200"
           />
-          <mat-hint>12 caractères minimum.</mat-hint>
+          <mat-hint>
+            12 caractères minimum.
+          </mat-hint>
         </mat-form-field>
 
         <div class="sp-security-user-form__actions">
-          <button type="submit" [disabled]="passwordForm.invalid">
+          <button
+            type="submit"
+            [disabled]="passwordForm.invalid"
+          >
             Réinitialiser
           </button>
         </div>
@@ -133,28 +226,54 @@
         class="sp-security-user-form"
       >
         <mat-form-field appearance="outline">
-          <mat-label>Provider / issuer</mat-label>
-          <input matInput formControlName="provider" />
+          <mat-label>
+            Provider / issuer
+          </mat-label>
+          <input
+            matInput
+            formControlName="provider"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Subject</mat-label>
-          <input matInput formControlName="providerSubject" />
+          <mat-label>
+            Subject
+          </mat-label>
+          <input
+            matInput
+            formControlName="providerSubject"
+          />
         </mat-form-field>
 
         <div class="sp-security-user-form__actions">
-          <button type="submit" [disabled]="oidcForm.invalid">
+          <button
+            type="submit"
+            [disabled]="oidcForm.invalid"
+          >
             Lier l’identité
           </button>
         </div>
       </form>
 
-      @for (identity of data.identities; track identity.id) {
+      @for (
+        identity of data.identities;
+        track identity.id
+      ) {
         <p>
-          {{ identity.identityType }} — {{ identity.provider }}<br />
-          Subject: {{ identity.providerSubject }} — {{ identity.status }}
+          {{
+            identity.identityType
+          }}
+          —
+          {{ identity.provider }}
+          <br />
+          Subject:
+          {{ identity.providerSubject }}
+          —
+          {{ identity.status }}
 
-          @if (identity.identityType === 'OIDC') {
+          @if (
+            identity.identityType === 'OIDC'
+          ) {
             <button
               type="button"
               (click)="unlinkIdentity(identity.id)"
@@ -167,8 +286,18 @@
     </sp-card>
 
     <sp-card title="Autorisation SIXPAY">
-      <p>Rôles: {{ data.roles.join(', ') || '—' }}</p>
-      <p>Permissions: {{ data.permissions.join(', ') || '—' }}</p>
+      <p>
+        Rôles:
+        {{
+          data.roles.join(', ') || '—'
+        }}
+      </p>
+      <p>
+        Permissions:
+        {{
+          data.permissions.join(', ') || '—'
+        }}
+      </p>
     </sp-card>
 
     <sp-card title="Derniers événements de sécurité">
@@ -177,10 +306,17 @@
         track event.occurredAt + event.eventType
       ) {
         <p>
-          <strong>{{ event.eventType }}</strong>
-          — {{ event.occurredAt | date: 'medium' }}
+          <strong>
+            {{ event.eventType }}
+          </strong>
+          —
+          {{
+            event.occurredAt
+              | date: 'medium'
+          }}
           @if (event.provider) {
-            — {{ event.provider }}
+            —
+            {{ event.provider }}
           }
         </p>
       }

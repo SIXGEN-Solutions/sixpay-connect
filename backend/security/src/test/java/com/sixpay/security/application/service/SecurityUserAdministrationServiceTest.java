@@ -30,62 +30,82 @@ class SecurityUserAdministrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        administrationPort = mock(SecurityUserAdministrationPort.class);
-        auditPort = mock(SecurityAuditPort.class);
-        passwordEncoder = mock(PasswordEncoder.class);
+        administrationPort =
+                mock(SecurityUserAdministrationPort.class);
 
-        service = new SecurityUserAdministrationService(
-                administrationPort,
-                auditPort,
-                passwordEncoder
-        );
+        auditPort =
+                mock(SecurityAuditPort.class);
+
+        passwordEncoder =
+                mock(PasswordEncoder.class);
+
+        service =
+                new SecurityUserAdministrationService(
+                        administrationPort,
+                        auditPort,
+                        passwordEncoder
+                );
     }
 
     @Test
-    void createsCanonicalUserWithLocalCredentialsAndAuditsCreation() {
+    void createsCanonicalUserWithNormalizedRoleAndPermission() {
         UUID userId = UUID.randomUUID();
 
         when(passwordEncoder.encode("Admin-dev-2026"))
                 .thenReturn("$2a$12$hash");
 
-        SecurityUserDetail expected = detail(
-                userId,
-                "admin",
-                Set.of("ADMIN")
-        );
+        SecurityUserDetail expected =
+                detail(
+                        userId,
+                        "admin",
+                        Set.of("ADMIN"),
+                        Set.of("payment.read")
+                );
 
         when(administrationPort.createUser(
                 eq(userId),
                 eq("admin"),
                 eq("admin@sixpay.local"),
                 eq(Set.of("ADMIN")),
-                eq(Set.of()),
+                eq(Set.of("payment.read")),
                 eq(true),
                 eq("$2a$12$hash")
         )).thenReturn(expected);
 
-        SecurityUserDetail actual = service.createUser(
-                new CreateSecurityUserCommand(
-                        userId,
-                        " ADMIN ",
-                        " ADMIN@SIXPAY.LOCAL ",
-                        Set.of("ROLE_ADMIN"),
-                        Set.of(),
-                        true,
-                        "Admin-dev-2026",
-                        "seed"
-                )
-        );
+        SecurityUserDetail actual =
+                service.createUser(
+                        new CreateSecurityUserCommand(
+                                userId,
+                                " ADMIN ",
+                                " ADMIN@SIXPAY.LOCAL ",
+                                Set.of("ROLE_ADMIN"),
+                                Set.of(
+                                        "SCOPE_payment.read"
+                                ),
+                                true,
+                                "Admin-dev-2026",
+                                "seed"
+                        )
+                );
 
-        assertThat(actual).isSameAs(expected);
+        assertThat(actual)
+                .isSameAs(expected);
 
-        var audit = ArgumentCaptor.forClass(
-                com.sixpay.security.domain.administration.SecurityAuditEvent.class
-        );
-        verify(auditPort).record(audit.capture());
+        var audit =
+                ArgumentCaptor.forClass(
+                        com.sixpay.security.domain.administration
+                                .SecurityAuditEvent.class
+                );
+
+        verify(auditPort)
+                .record(audit.capture());
 
         assertThat(audit.getValue().eventType())
-                .isEqualTo(SecurityAuditEventType.USER_CREATED);
+                .isEqualTo(
+                        SecurityAuditEventType
+                                .USER_CREATED
+                );
+
         assertThat(audit.getValue().targetUserId())
                 .isEqualTo(userId);
     }
@@ -105,9 +125,14 @@ class SecurityUserAdministrationServiceTest {
                                 "seed"
                         )
                 )
-        ).isInstanceOf(IllegalArgumentException.class);
+        )
+                .isInstanceOf(
+                        IllegalArgumentException.class
+                );
 
-        verifyNoInteractions(administrationPort);
+        verifyNoInteractions(
+                administrationPort
+        );
     }
 
     @Test
@@ -115,32 +140,113 @@ class SecurityUserAdministrationServiceTest {
         UUID userId = UUID.randomUUID();
 
         when(administrationPort.getUser(userId))
-                .thenReturn(detail(
+                .thenReturn(
+                        detail(
+                                userId,
+                                "ops-admin",
+                                Set.of(
+                                        "ADMIN",
+                                        "AUDITOR"
+                                ),
+                                Set.of(
+                                        "payment.read"
+                                )
+                        )
+                );
+
+        SecurityUserDetail actual =
+                service.updateUser(
+                        new UpdateSecurityUserCommand(
+                                userId,
+                                " Ops-Admin ",
+                                "OPS@SIXPAY.LOCAL",
+                                Set.of(
+                                        "ROLE_ADMIN",
+                                        "AUDITOR"
+                                ),
+                                Set.of(
+                                        "SCOPE_payment.read"
+                                ),
+                                "admin"
+                        )
+                );
+
+        verify(administrationPort)
+                .updateUser(
                         userId,
                         "ops-admin",
-                        Set.of("ADMIN", "AUDITOR")
-                ));
+                        "ops@sixpay.local",
+                        Set.of(
+                                "ADMIN",
+                                "AUDITOR"
+                        ),
+                        Set.of(
+                                "payment.read"
+                        )
+                );
 
-        SecurityUserDetail actual = service.updateUser(
-                new UpdateSecurityUserCommand(
-                        userId,
-                        " Ops-Admin ",
-                        "OPS@SIXPAY.LOCAL",
-                        Set.of("ROLE_ADMIN", "AUDITOR"),
-                        Set.of("payment.read"),
-                        "admin"
+        assertThat(actual.username())
+                .isEqualTo("ops-admin");
+    }
+
+    @Test
+    void rejectsUnknownRoleBeforePersistence() {
+        assertThatThrownBy(() ->
+                service.createUser(
+                        new CreateSecurityUserCommand(
+                                UUID.randomUUID(),
+                                "invalid-role-user",
+                                null,
+                                Set.of("ROOT"),
+                                Set.of(
+                                        "payment.read"
+                                ),
+                                false,
+                                null,
+                                "admin"
+                        )
                 )
-        );
+        )
+                .isInstanceOf(
+                        IllegalArgumentException.class
+                )
+                .hasMessageContaining(
+                        "Unknown SIXPAY role"
+                );
 
-        verify(administrationPort).updateUser(
-                userId,
-                "ops-admin",
-                "ops@sixpay.local",
-                Set.of("ADMIN", "AUDITOR"),
-                Set.of("payment.read")
+        verifyNoInteractions(
+                administrationPort
         );
+    }
 
-        assertThat(actual.username()).isEqualTo("ops-admin");
+    @Test
+    void rejectsUnknownPermissionBeforePersistence() {
+        assertThatThrownBy(() ->
+                service.createUser(
+                        new CreateSecurityUserCommand(
+                                UUID.randomUUID(),
+                                "invalid-permission-user",
+                                null,
+                                Set.of("AUDITOR"),
+                                Set.of(
+                                        "everything.write"
+                                ),
+                                false,
+                                null,
+                                "admin"
+                        )
+                )
+        )
+                .isInstanceOf(
+                        IllegalArgumentException.class
+                )
+                .hasMessageContaining(
+                        "Unknown SIXPAY permission"
+                );
+
+        verifyNoInteractions(
+                administrationPort
+        );
     }
 
     @Test
@@ -148,27 +254,43 @@ class SecurityUserAdministrationServiceTest {
         UUID userId = UUID.randomUUID();
 
         when(administrationPort.getUser(userId))
-                .thenReturn(detail(
-                        userId,
-                        "auditor",
-                        Set.of("AUDITOR")
-                ));
+                .thenReturn(
+                        detail(
+                                userId,
+                                "auditor",
+                                Set.of("AUDITOR"),
+                                Set.of(
+                                        "payment.audit.read"
+                                )
+                        )
+                );
 
-        service.deleteUser(userId, "admin");
-
-        var inOrder = inOrder(
-                administrationPort,
-                auditPort
+        service.deleteUser(
+                userId,
+                "admin"
         );
-        inOrder.verify(administrationPort).getUser(userId);
-        inOrder.verify(auditPort).record(any());
-        inOrder.verify(administrationPort).deleteUser(userId);
+
+        var inOrder =
+                inOrder(
+                        administrationPort,
+                        auditPort
+                );
+
+        inOrder.verify(administrationPort)
+                .getUser(userId);
+
+        inOrder.verify(auditPort)
+                .record(any());
+
+        inOrder.verify(administrationPort)
+                .deleteUser(userId);
     }
 
     private static SecurityUserDetail detail(
             UUID id,
             String username,
-            Set<String> roles
+            Set<String> roles,
+            Set<String> permissions
     ) {
         return new SecurityUserDetail(
                 id,
@@ -178,7 +300,7 @@ class SecurityUserAdministrationServiceTest {
                 true,
                 false,
                 roles,
-                Set.of(),
+                permissions,
                 List.of(),
                 List.of()
         );
