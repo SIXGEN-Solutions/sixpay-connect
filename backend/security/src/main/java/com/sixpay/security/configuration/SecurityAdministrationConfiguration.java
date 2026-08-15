@@ -4,6 +4,7 @@ import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase
 import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
+import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.administration.JpaSecurityAuditAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityUserAdministrationAdapter;
 import com.sixpay.security.infrastructure.administration.SecurityAuditJpaEntity;
@@ -18,6 +19,7 @@ import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthen
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +28,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(PasswordPolicyProperties.class)
 @EntityScan(basePackageClasses = {
         SecurityUserAccountJpaEntity.class,
         SecurityUserIdentityJpaEntity.class,
@@ -48,6 +51,14 @@ public class SecurityAdministrationConfiguration {
             SecurityAuditSpringDataRepository repository
     ) {
         return new JpaSecurityAuditAdapter(repository);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(PasswordPolicy.class)
+    PasswordPolicy passwordPolicy(
+            PasswordPolicyProperties properties
+    ) {
+        return properties.toDomain();
     }
 
     @Bean
@@ -79,7 +90,8 @@ public class SecurityAdministrationConfiguration {
     SecurityUserAdministrationUseCase securityUserAdministrationUseCase(
             SecurityUserAdministrationPort administrationPort,
             SecurityAuditPort auditPort,
-            ObjectProvider<PasswordEncoder> encoderProvider
+            ObjectProvider<PasswordEncoder> encoderProvider,
+            PasswordPolicy passwordPolicy
     ) {
         PasswordEncoder encoder =
                 encoderProvider.getIfAvailable(
@@ -89,7 +101,8 @@ public class SecurityAdministrationConfiguration {
         return new SecurityUserAdministrationService(
                 administrationPort,
                 auditPort,
-                encoder
+                encoder,
+                passwordPolicy
         );
     }
 }

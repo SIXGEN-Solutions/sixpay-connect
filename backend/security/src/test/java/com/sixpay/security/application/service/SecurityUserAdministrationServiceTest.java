@@ -6,6 +6,7 @@ import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
 import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
+import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.domain.authentication.SixpayUserAccountStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,25 +27,22 @@ class SecurityUserAdministrationServiceTest {
     private SecurityUserAdministrationPort administrationPort;
     private SecurityAuditPort auditPort;
     private PasswordEncoder passwordEncoder;
+    private PasswordPolicy passwordPolicy;
     private SecurityUserAdministrationService service;
 
     @BeforeEach
     void setUp() {
-        administrationPort =
-                mock(SecurityUserAdministrationPort.class);
+        administrationPort = mock(SecurityUserAdministrationPort.class);
+        auditPort = mock(SecurityAuditPort.class);
+        passwordEncoder = mock(PasswordEncoder.class);
+        passwordPolicy = new PasswordPolicy(12, 200, 5, 90);
 
-        auditPort =
-                mock(SecurityAuditPort.class);
-
-        passwordEncoder =
-                mock(PasswordEncoder.class);
-
-        service =
-                new SecurityUserAdministrationService(
-                        administrationPort,
-                        auditPort,
-                        passwordEncoder
-                );
+        service = new SecurityUserAdministrationService(
+                administrationPort,
+                auditPort,
+                passwordEncoder,
+                passwordPolicy
+        );
     }
 
     @Test
@@ -54,13 +52,12 @@ class SecurityUserAdministrationServiceTest {
         when(passwordEncoder.encode("Admin-dev-2026"))
                 .thenReturn("$2a$12$hash");
 
-        SecurityUserDetail expected =
-                detail(
-                        userId,
-                        "admin",
-                        Set.of("ADMIN"),
-                        Set.of("payment.read")
-                );
+        SecurityUserDetail expected = detail(
+                userId,
+                "admin",
+                Set.of("ADMIN"),
+                Set.of("payment.read")
+        );
 
         when(administrationPort.createUser(
                 eq(userId),
@@ -72,67 +69,69 @@ class SecurityUserAdministrationServiceTest {
                 eq("$2a$12$hash")
         )).thenReturn(expected);
 
-        SecurityUserDetail actual =
-                service.createUser(
-                        new CreateSecurityUserCommand(
-                                userId,
-                                " ADMIN ",
-                                " ADMIN@SIXPAY.LOCAL ",
-                                Set.of("ROLE_ADMIN"),
-                                Set.of(
-                                        "SCOPE_payment.read"
-                                ),
-                                true,
-                                "Admin-dev-2026",
-                                "seed"
-                        )
-                );
+        SecurityUserDetail actual = service.createUser(
+                new CreateSecurityUserCommand(
+                        userId,
+                        " ADMIN ",
+                        " ADMIN@SIXPAY.LOCAL ",
+                        Set.of("ROLE_ADMIN"),
+                        Set.of("SCOPE_payment.read"),
+                        true,
+                        "Admin-dev-2026",
+                        "seed"
+                )
+        );
 
-        assertThat(actual)
-                .isSameAs(expected);
+        assertThat(actual).isSameAs(expected);
 
-        var audit =
-                ArgumentCaptor.forClass(
-                        com.sixpay.security.domain.administration
-                                .SecurityAuditEvent.class
-                );
+        var audit = ArgumentCaptor.forClass(
+                com.sixpay.security.domain.administration.SecurityAuditEvent.class
+        );
 
-        verify(auditPort)
-                .record(audit.capture());
-
+        verify(auditPort).record(audit.capture());
         assertThat(audit.getValue().eventType())
-                .isEqualTo(
-                        SecurityAuditEventType
-                                .USER_CREATED
-                );
-
-        assertThat(audit.getValue().targetUserId())
-                .isEqualTo(userId);
+                .isEqualTo(SecurityAuditEventType.USER_CREATED);
+        assertThat(audit.getValue().targetUserId()).isEqualTo(userId);
     }
 
     @Test
-    void refusesLocalCreationWithoutStrongEnoughPassword() {
+    void refusesLocalCreationWhenPasswordViolatesCentralPolicy() {
+        assertThatThrownBy(() -> service.createUser(
+                new CreateSecurityUserCommand(
+                        UUID.randomUUID(),
+                        "admin",
+                        null,
+                        Set.of("ADMIN"),
+                        Set.of(),
+                        true,
+                        "short",
+                        "seed"
+                )
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password must contain at least 12 characters");
+
+        verifyNoInteractions(administrationPort);
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void refusesLocalPasswordResetWhenPasswordViolatesCentralPolicy() {
+        UUID userId = UUID.randomUUID();
+
         assertThatThrownBy(() ->
-                service.createUser(
-                        new CreateSecurityUserCommand(
-                                UUID.randomUUID(),
-                                "admin",
-                                null,
-                                Set.of("ADMIN"),
-                                Set.of(),
-                                true,
-                                "short",
-                                "seed"
-                        )
+                service.resetLocalPassword(
+                        userId,
+                        "short",
+                        "admin"
                 )
         )
-                .isInstanceOf(
-                        IllegalArgumentException.class
-                );
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password must contain at least 12 characters");
 
-        verifyNoInteractions(
-                administrationPort
-        );
+        verify(administrationPort, never())
+                .resetLocalPassword(any(), any());
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
@@ -140,113 +139,73 @@ class SecurityUserAdministrationServiceTest {
         UUID userId = UUID.randomUUID();
 
         when(administrationPort.getUser(userId))
-                .thenReturn(
-                        detail(
-                                userId,
-                                "ops-admin",
-                                Set.of(
-                                        "ADMIN",
-                                        "AUDITOR"
-                                ),
-                                Set.of(
-                                        "payment.read"
-                                )
-                        )
-                );
-
-        SecurityUserDetail actual =
-                service.updateUser(
-                        new UpdateSecurityUserCommand(
-                                userId,
-                                " Ops-Admin ",
-                                "OPS@SIXPAY.LOCAL",
-                                Set.of(
-                                        "ROLE_ADMIN",
-                                        "AUDITOR"
-                                ),
-                                Set.of(
-                                        "SCOPE_payment.read"
-                                ),
-                                "admin"
-                        )
-                );
-
-        verify(administrationPort)
-                .updateUser(
+                .thenReturn(detail(
                         userId,
                         "ops-admin",
-                        "ops@sixpay.local",
-                        Set.of(
-                                "ADMIN",
-                                "AUDITOR"
-                        ),
-                        Set.of(
-                                "payment.read"
-                        )
-                );
+                        Set.of("ADMIN", "AUDITOR"),
+                        Set.of("payment.read")
+                ));
 
-        assertThat(actual.username())
-                .isEqualTo("ops-admin");
+        SecurityUserDetail actual = service.updateUser(
+                new UpdateSecurityUserCommand(
+                        userId,
+                        " Ops-Admin ",
+                        "OPS@SIXPAY.LOCAL",
+                        Set.of("ROLE_ADMIN", "AUDITOR"),
+                        Set.of("SCOPE_payment.read"),
+                        "admin"
+                )
+        );
+
+        verify(administrationPort).updateUser(
+                userId,
+                "ops-admin",
+                "ops@sixpay.local",
+                Set.of("ADMIN", "AUDITOR"),
+                Set.of("payment.read")
+        );
+
+        assertThat(actual.username()).isEqualTo("ops-admin");
     }
 
     @Test
     void rejectsUnknownRoleBeforePersistence() {
-        assertThatThrownBy(() ->
-                service.createUser(
-                        new CreateSecurityUserCommand(
-                                UUID.randomUUID(),
-                                "invalid-role-user",
-                                null,
-                                Set.of("ROOT"),
-                                Set.of(
-                                        "payment.read"
-                                ),
-                                false,
-                                null,
-                                "admin"
-                        )
+        assertThatThrownBy(() -> service.createUser(
+                new CreateSecurityUserCommand(
+                        UUID.randomUUID(),
+                        "invalid-role-user",
+                        null,
+                        Set.of("ROOT"),
+                        Set.of("payment.read"),
+                        false,
+                        null,
+                        "admin"
                 )
-        )
-                .isInstanceOf(
-                        IllegalArgumentException.class
-                )
-                .hasMessageContaining(
-                        "Unknown SIXPAY role"
-                );
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unknown SIXPAY role");
 
-        verifyNoInteractions(
-                administrationPort
-        );
+        verifyNoInteractions(administrationPort);
     }
 
     @Test
     void rejectsUnknownPermissionBeforePersistence() {
-        assertThatThrownBy(() ->
-                service.createUser(
-                        new CreateSecurityUserCommand(
-                                UUID.randomUUID(),
-                                "invalid-permission-user",
-                                null,
-                                Set.of("AUDITOR"),
-                                Set.of(
-                                        "everything.write"
-                                ),
-                                false,
-                                null,
-                                "admin"
-                        )
+        assertThatThrownBy(() -> service.createUser(
+                new CreateSecurityUserCommand(
+                        UUID.randomUUID(),
+                        "invalid-permission-user",
+                        null,
+                        Set.of("AUDITOR"),
+                        Set.of("everything.write"),
+                        false,
+                        null,
+                        "admin"
                 )
-        )
-                .isInstanceOf(
-                        IllegalArgumentException.class
-                )
-                .hasMessageContaining(
-                        "Unknown SIXPAY permission"
-                );
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unknown SIXPAY permission");
 
-        verifyNoInteractions(
-                administrationPort
-        );
+        verifyNoInteractions(administrationPort);
     }
 
     @Test
@@ -254,36 +213,19 @@ class SecurityUserAdministrationServiceTest {
         UUID userId = UUID.randomUUID();
 
         when(administrationPort.getUser(userId))
-                .thenReturn(
-                        detail(
-                                userId,
-                                "auditor",
-                                Set.of("AUDITOR"),
-                                Set.of(
-                                        "payment.audit.read"
-                                )
-                        )
-                );
+                .thenReturn(detail(
+                        userId,
+                        "auditor",
+                        Set.of("AUDITOR"),
+                        Set.of("payment.audit.read")
+                ));
 
-        service.deleteUser(
-                userId,
-                "admin"
-        );
+        service.deleteUser(userId, "admin");
 
-        var inOrder =
-                inOrder(
-                        administrationPort,
-                        auditPort
-                );
-
-        inOrder.verify(administrationPort)
-                .getUser(userId);
-
-        inOrder.verify(auditPort)
-                .record(any());
-
-        inOrder.verify(administrationPort)
-                .deleteUser(userId);
+        var inOrder = inOrder(administrationPort, auditPort);
+        inOrder.verify(administrationPort).getUser(userId);
+        inOrder.verify(auditPort).record(any());
+        inOrder.verify(administrationPort).deleteUser(userId);
     }
 
     private static SecurityUserDetail detail(

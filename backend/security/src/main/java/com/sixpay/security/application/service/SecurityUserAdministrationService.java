@@ -11,6 +11,7 @@ import com.sixpay.security.authorization.SixpayPermission;
 import com.sixpay.security.authorization.SixpayRole;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
+import com.sixpay.security.domain.authentication.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,20 +26,21 @@ import java.util.UUID;
 public class SecurityUserAdministrationService
         implements SecurityUserAdministrationUseCase {
 
-    private static final int MIN_PASSWORD_LENGTH = 12;
-
     private final SecurityUserAdministrationPort administrationPort;
     private final SecurityAuditPort auditPort;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordPolicy passwordPolicy;
 
     public SecurityUserAdministrationService(
             SecurityUserAdministrationPort administrationPort,
             SecurityAuditPort auditPort,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            PasswordPolicy passwordPolicy
     ) {
         this.administrationPort = Objects.requireNonNull(administrationPort);
         this.auditPort = Objects.requireNonNull(auditPort);
         this.passwordEncoder = Objects.requireNonNull(passwordEncoder);
+        this.passwordPolicy = Objects.requireNonNull(passwordPolicy);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class SecurityUserAdministrationService
 
         String passwordHash = null;
         if (command.localAuthenticationEnabled()) {
-            validatePassword(command.initialPassword());
+            passwordPolicy.validate(command.initialPassword());
             passwordHash =
                     passwordEncoder.encode(command.initialPassword());
         }
@@ -195,7 +197,7 @@ public class SecurityUserAdministrationService
             String newPassword,
             String actorSubject
     ) {
-        validatePassword(newPassword);
+        passwordPolicy.validate(newPassword);
 
         administrationPort.resetLocalPassword(
                 userId,
@@ -308,15 +310,6 @@ public class SecurityUserAdministrationService
         ));
 
         administrationPort.deleteUser(userId);
-    }
-
-    private static void validatePassword(String password) {
-        if (password == null
-                || password.length() < MIN_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException(
-                    "Password must contain at least 12 characters"
-            );
-        }
     }
 
     private static String normalizeUsername(String username) {
