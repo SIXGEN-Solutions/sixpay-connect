@@ -12,7 +12,7 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/hybrid-authentification-system'`
+**Primary implementation branch:** `'feat/sixpay-pilot-hybrid-consolidated'`
 
 **Current delivery focus:** Dual Authentication — Local + OIDC.
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `''feat/hybrid-authentification-system'`
+1. `''feat/sixpay-pilot-hybrid-consolidated'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
