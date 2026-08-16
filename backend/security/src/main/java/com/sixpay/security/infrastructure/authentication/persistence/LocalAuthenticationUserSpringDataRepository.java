@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,4 +23,15 @@ public interface LocalAuthenticationUserSpringDataRepository
     );
 
     Optional<LocalAuthenticationUserJpaEntity> findByUserAccount_Id(UUID userId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select localUser
+            from LocalAuthenticationUserJpaEntity localUser
+            join fetch localUser.userAccount account
+            where account.id = :userId
+            """)
+    Optional<LocalAuthenticationUserJpaEntity> findForCredentialUpdate(
+            @Param("userId") UUID userId
+    );
 }

@@ -1,8 +1,11 @@
 package com.sixpay.security.application.service;
 
+import com.sixpay.security.application.exception.PasswordReuseException;
+import com.sixpay.security.application.model.PasswordHistorySnapshot;
 import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.port.in.CreateSecurityUserCommand;
 import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
+import com.sixpay.security.application.port.out.PasswordHistoryPort;
 import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
@@ -28,6 +31,7 @@ class SecurityUserAdministrationServiceTest {
     private SecurityAuditPort auditPort;
     private PasswordEncoder passwordEncoder;
     private PasswordPolicy passwordPolicy;
+    private PasswordHistoryPort passwordHistoryPort;
     private SecurityUserAdministrationService service;
 
     @BeforeEach
@@ -36,12 +40,14 @@ class SecurityUserAdministrationServiceTest {
         auditPort = mock(SecurityAuditPort.class);
         passwordEncoder = mock(PasswordEncoder.class);
         passwordPolicy = new PasswordPolicy(12, 200, 5, 90);
+        passwordHistoryPort = mock(PasswordHistoryPort.class);
 
         service = new SecurityUserAdministrationService(
                 administrationPort,
                 auditPort,
                 passwordEncoder,
-                passwordPolicy
+                passwordPolicy,
+                passwordHistoryPort
         );
     }
 
@@ -92,6 +98,7 @@ class SecurityUserAdministrationServiceTest {
         assertThat(audit.getValue().eventType())
                 .isEqualTo(SecurityAuditEventType.USER_CREATED);
         assertThat(audit.getValue().targetUserId()).isEqualTo(userId);
+        verifyNoInteractions(passwordHistoryPort);
     }
 
     @Test
@@ -113,6 +120,7 @@ class SecurityUserAdministrationServiceTest {
 
         verifyNoInteractions(administrationPort);
         verifyNoInteractions(passwordEncoder);
+        verifyNoInteractions(passwordHistoryPort);
     }
 
     @Test
@@ -132,6 +140,101 @@ class SecurityUserAdministrationServiceTest {
         verify(administrationPort, never())
                 .resetLocalPassword(any(), any());
         verifyNoInteractions(passwordEncoder);
+        verifyNoInteractions(passwordHistoryPort);
+    }
+
+    @Test
+    void refusesPasswordResetWhenCandidateMatchesCurrentPassword() {
+        UUID userId = UUID.randomUUID();
+        when(passwordHistoryPort.loadForPasswordReplacement(userId, 5))
+                .thenReturn(new PasswordHistorySnapshot(
+                        "current-hash",
+                        List.of("old-1", "old-2")
+                ));
+        when(passwordEncoder.matches("Admin-dev-2026", "current-hash"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.resetLocalPassword(
+                userId,
+                "Admin-dev-2026",
+                "admin"
+        ))
+                .isInstanceOf(PasswordReuseException.class)
+                .hasMessageContaining("must not reuse");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(passwordHistoryPort, never()).archiveReplacedPassword(
+                any(), any(), any(), anyInt()
+        );
+        verify(administrationPort, never()).resetLocalPassword(any(), any());
+    }
+
+    @Test
+    void refusesPasswordResetWhenCandidateMatchesRecentHistory() {
+        UUID userId = UUID.randomUUID();
+        when(passwordHistoryPort.loadForPasswordReplacement(userId, 5))
+                .thenReturn(new PasswordHistorySnapshot(
+                        "current-hash",
+                        List.of("old-1", "old-2")
+                ));
+        when(passwordEncoder.matches("Admin-dev-2026", "current-hash"))
+                .thenReturn(false);
+        when(passwordEncoder.matches("Admin-dev-2026", "old-1"))
+                .thenReturn(false);
+        when(passwordEncoder.matches("Admin-dev-2026", "old-2"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.resetLocalPassword(
+                userId,
+                "Admin-dev-2026",
+                "admin"
+        ))
+                .isInstanceOf(PasswordReuseException.class);
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(administrationPort, never()).resetLocalPassword(any(), any());
+    }
+
+    @Test
+    void archivesCurrentHashBeforeSuccessfulPasswordReplacement() {
+        UUID userId = UUID.randomUUID();
+        when(passwordHistoryPort.loadForPasswordReplacement(userId, 5))
+                .thenReturn(new PasswordHistorySnapshot(
+                        "current-hash",
+                        List.of("old-1", "old-2")
+                ));
+        when(passwordEncoder.matches(eq("New-admin-dev-2026"), anyString()))
+                .thenReturn(false);
+        when(passwordEncoder.encode("New-admin-dev-2026"))
+                .thenReturn("new-hash");
+        when(administrationPort.getUser(userId))
+                .thenReturn(detail(
+                        userId,
+                        "admin",
+                        Set.of("ADMIN"),
+                        Set.of("payment.read")
+                ));
+
+        service.resetLocalPassword(
+                userId,
+                "New-admin-dev-2026",
+                "admin"
+        );
+
+        var inOrder = inOrder(passwordHistoryPort, administrationPort, auditPort);
+        inOrder.verify(passwordHistoryPort)
+                .loadForPasswordReplacement(userId, 5);
+        inOrder.verify(passwordHistoryPort)
+                .archiveReplacedPassword(
+                        eq(userId),
+                        eq("current-hash"),
+                        any(),
+                        eq(5)
+                );
+        inOrder.verify(administrationPort)
+                .resetLocalPassword(userId, "new-hash");
+        inOrder.verify(auditPort).record(any());
+        inOrder.verify(administrationPort).getUser(userId);
     }
 
     @Test
