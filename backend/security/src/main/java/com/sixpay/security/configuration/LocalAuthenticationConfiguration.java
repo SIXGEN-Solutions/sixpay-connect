@@ -3,12 +3,23 @@ package com.sixpay.security.configuration;
 import com.sixpay.common.time.SystemTimeProvider;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.security.api.controller.LocalAuthenticationController;
+import com.sixpay.security.api.controller.LocalPasswordController;
 import com.sixpay.security.api.error.LocalAuthenticationExceptionHandler;
+import com.sixpay.security.api.error.LocalPasswordChangeExceptionHandler;
 import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
 import com.sixpay.security.application.port.in.LogoutUseCase;
-import com.sixpay.security.application.port.out.*;
+import com.sixpay.security.application.port.out.AuthenticationAuditPort;
+import com.sixpay.security.application.port.out.ChangeLocalCredentialPort;
+import com.sixpay.security.application.port.out.LoadAuthenticationUserPort;
+import com.sixpay.security.application.port.out.PasswordHistoryPort;
+import com.sixpay.security.application.port.out.PasswordVerificationPort;
+import com.sixpay.security.application.port.out.SaveAuthenticationUserStatePort;
+import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.application.service.LocalAuthenticationService;
 import com.sixpay.security.application.service.LocalLogoutService;
+import com.sixpay.security.application.service.LocalPasswordChangeService;
+import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.audit.JpaAuthenticationAuditAdapter;
 import com.sixpay.security.infrastructure.authentication.password.BCryptPasswordVerificationAdapter;
@@ -23,7 +34,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration(proxyBeanMethods = false)
-@Import({LocalAuthenticationController.class, LocalAuthenticationExceptionHandler.class})
+@Import({
+        LocalAuthenticationController.class,
+        LocalPasswordController.class,
+        LocalAuthenticationExceptionHandler.class,
+        LocalPasswordChangeExceptionHandler.class
+})
 @ConditionalOnProperty(
         prefix = "sixpay.security.authentication.local",
         name = "enabled",
@@ -39,48 +55,92 @@ public class LocalAuthenticationConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(PasswordEncoder.class)
-    PasswordEncoder localPasswordEncoder(AuthenticationCapabilitiesProperties properties) {
-        return new BCryptPasswordEncoder(properties.local().bcryptStrength());
+    PasswordEncoder localPasswordEncoder(
+            AuthenticationCapabilitiesProperties properties
+    ) {
+        return new BCryptPasswordEncoder(
+                properties.local()
+                        .bcryptStrength()
+        );
     }
 
     @Bean
-    @ConditionalOnMissingBean(PasswordVerificationPort.class)
-    PasswordVerificationPort passwordVerificationPort(PasswordEncoder passwordEncoder) {
-        return new BCryptPasswordVerificationAdapter(passwordEncoder);
+    @ConditionalOnMissingBean(
+            PasswordVerificationPort.class
+    )
+    PasswordVerificationPort passwordVerificationPort(
+            PasswordEncoder passwordEncoder
+    ) {
+        return new BCryptPasswordVerificationAdapter(
+                passwordEncoder
+        );
     }
 
     @Bean
-    @ConditionalOnMissingBean(AuthenticationAuditPort.class)
+    @ConditionalOnMissingBean(
+            AuthenticationAuditPort.class
+    )
     AuthenticationAuditPort authenticationAuditPort(
             AuthenticationAuditSpringDataRepository repository,
             SecurityAuditPort securityAuditPort
     ) {
-        return new JpaAuthenticationAuditAdapter(repository, securityAuditPort);
+        return new JpaAuthenticationAuditAdapter(
+                repository,
+                securityAuditPort
+        );
     }
 
     @Bean
-    JpaLocalAuthenticationUserAdapter localAuthenticationUserAdapter(
+    JpaLocalAuthenticationUserAdapter
+    localAuthenticationUserAdapter(
             LocalAuthenticationUserSpringDataRepository repository,
             TimeProvider timeProvider
     ) {
-        return new JpaLocalAuthenticationUserAdapter(repository, timeProvider);
+        return new JpaLocalAuthenticationUserAdapter(
+                repository,
+                timeProvider
+        );
     }
 
     @Bean
-    @ConditionalOnMissingBean(LoadAuthenticationUserPort.class)
-    LoadAuthenticationUserPort loadAuthenticationUserPort(JpaLocalAuthenticationUserAdapter adapter) {
+    @ConditionalOnMissingBean(
+            LoadAuthenticationUserPort.class
+    )
+    LoadAuthenticationUserPort
+    loadAuthenticationUserPort(
+            JpaLocalAuthenticationUserAdapter adapter
+    ) {
         return adapter;
     }
 
     @Bean
-    @ConditionalOnMissingBean(SaveAuthenticationUserStatePort.class)
-    SaveAuthenticationUserStatePort saveAuthenticationUserStatePort(JpaLocalAuthenticationUserAdapter adapter) {
+    @ConditionalOnMissingBean(
+            SaveAuthenticationUserStatePort.class
+    )
+    SaveAuthenticationUserStatePort
+    saveAuthenticationUserStatePort(
+            JpaLocalAuthenticationUserAdapter adapter
+    ) {
         return adapter;
     }
 
     @Bean
-    @ConditionalOnMissingBean(AuthenticateLocalUserUseCase.class)
-    AuthenticateLocalUserUseCase authenticateLocalUserUseCase(
+    @ConditionalOnMissingBean(
+            ChangeLocalCredentialPort.class
+    )
+    ChangeLocalCredentialPort
+    changeLocalCredentialPort(
+            JpaLocalAuthenticationUserAdapter adapter
+    ) {
+        return adapter;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(
+            AuthenticateLocalUserUseCase.class
+    )
+    AuthenticateLocalUserUseCase
+    authenticateLocalUserUseCase(
             LoadAuthenticationUserPort loadAuthenticationUserPort,
             SaveAuthenticationUserStatePort saveAuthenticationUserStatePort,
             PasswordVerificationPort passwordVerificationPort,
@@ -94,17 +154,47 @@ public class LocalAuthenticationConfiguration {
                 passwordVerificationPort,
                 authenticationAuditPort,
                 timeProvider,
-                properties.local().maximumFailedAttempts(),
-                properties.local().lockDuration()
+                properties.local()
+                        .maximumFailedAttempts(),
+                properties.local()
+                        .lockDuration()
         );
     }
 
     @Bean
-    @ConditionalOnMissingBean(LogoutUseCase.class)
+    @ConditionalOnMissingBean(
+            ChangeLocalPasswordUseCase.class
+    )
+    ChangeLocalPasswordUseCase
+    changeLocalPasswordUseCase(
+            PasswordHistoryPort passwordHistoryPort,
+            ChangeLocalCredentialPort credentialPort,
+            PasswordEncoder passwordEncoder,
+            PasswordPolicy passwordPolicy,
+            SecurityAuditPort securityAuditPort,
+            TimeProvider timeProvider
+    ) {
+        return new LocalPasswordChangeService(
+                passwordHistoryPort,
+                credentialPort,
+                passwordEncoder,
+                passwordPolicy,
+                securityAuditPort,
+                timeProvider
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(
+            LogoutUseCase.class
+    )
     LogoutUseCase logoutUseCase(
             AuthenticationAuditPort authenticationAuditPort,
             TimeProvider timeProvider
     ) {
-        return new LocalLogoutService(authenticationAuditPort, timeProvider);
+        return new LocalLogoutService(
+                authenticationAuditPort,
+                timeProvider
+        );
     }
 }

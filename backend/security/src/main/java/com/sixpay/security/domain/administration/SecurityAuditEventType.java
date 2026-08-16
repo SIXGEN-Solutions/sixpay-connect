@@ -4,6 +4,7 @@ public enum SecurityAuditEventType {
     LOGIN_SUCCESS,
     LOGIN_FAILURE,
     LOGOUT,
+    PASSWORD_CHANGED,
     PASSWORD_RESET,
     ACCOUNT_LOCKED,
     OIDC_LOGIN_SUCCESS,
