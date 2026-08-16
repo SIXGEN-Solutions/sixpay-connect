@@ -6,88 +6,220 @@
 Phase 8 — Tests et validation du pilote
 Lot 8.2 — Backend Golden Test Coverage
 8.2.8 — Security
-8.2.9 remediation — Security structural relocation and test isolation
+Dual Authentication — Local + OIDC
+DA-10.7 — Password lifecycle tests and audit closure
 ```
 
-## Current classification
+## Golden reference
 
-```text
-Core model / policies        COVERED
-Authentication boundary      COVERED
-JWT conversion               COVERED
-HTTP security infrastructure COVERED
-Business API                 N/A
-Persistence                  N/A
-```
+`partner` remains the golden business-module reference.
 
-## Canonical location
-
-Security assets belong under:
+Security is a sibling platform module and keeps its own focused evidence under:
 
 ```text
 backend/security/
 ```
 
-and never under:
-
-```text
-backend/partner/security/
-```
-
-`partner` is the golden reference, not the parent of sibling modules.
-
-## Spring test isolation correction
-
-`SixpaySecurityAutoConfigurationTest` validates only the shared HTTP security
-boundary.
-
-The module POM contains JPA classes, so a broad `@EnableAutoConfiguration`
-caused Spring Boot to start:
-
-```text
-DataSourceAutoConfiguration
-HibernateJpaAutoConfiguration
-DataJpaRepositoriesAutoConfiguration
-```
-
-The test has no persistence responsibility and no datasource configuration.
-
-The focused test application therefore excludes exactly those DB/JPA
-auto-configurations:
-
-```java
-@EnableAutoConfiguration(exclude = {
-    DataSourceAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class,
-    DataJpaRepositoriesAutoConfiguration.class
-})
-```
-
-No H2 database, PostgreSQL container, fake datasource, or persistence fixture
-is introduced.
-
-This preserves the golden testing rule:
+The golden rule remains:
 
 ```text
 one test = one responsibility
+behavioral evidence > test-count inflation
+```
+
+## Final classification
+
+```text
+Core model / policies         COVERED
+LOCAL authentication          COVERED
+OIDC authentication boundary  COVERED
+Authorization                 COVERED
+HTTP security infrastructure  COVERED
+Identity linking              COVERED
+Administration security       COVERED
+Password lifecycle            COVERED
+Security audit                COVERED
+```
+
+Overall:
+
+```text
+SECURITY = COVERED
+```
+
+## DA-10 Password lifecycle evidence
+
+### Domain / policy
+
+```text
+PasswordPolicyTest
+LocalCredentialTest
+```
+
+Evidence:
+
+```text
+configured min/max length
+valid/invalid policy definition
+temporary credential state
+administrative reset state
+user-owned change state
+expiration timestamp
+expiration boundary
+```
+
+### Application
+
+```text
+LocalAuthenticationServiceTest
+LocalPasswordChangeServiceTest
+SecurityUserAdministrationPasswordResetTest
+```
+
+Evidence:
+
+```text
+temporary/expired password authenticates into restricted session
+normal password authenticates into normal session
+current-password proof
+central password policy
+anti-reuse against current credential
+anti-reuse against recent history
+archive-before-replace ordering
+separation of user change and ADMIN reset
+PASSWORD_CHANGED audit
+PASSWORD_RESET audit
+```
+
+### Password history infrastructure
+
+```text
+PasswordHistoryTest
+```
+
+Evidence:
+
+```text
+current credential replacement boundary
+configured history window
+history retention/pruning
+missing LOCAL credential fails closed
+```
+
+### Integration
+
+```text
+LocalAuthenticationPasswordLifecycleIT
+PasswordChangeControllerIT
+```
+
+Evidence:
+
+```text
+temporary login -> restricted principal
+user password change -> lifecycle promotion
+history archival
+new credential login -> unrestricted principal
+LOCAL-only password change boundary
+same-session promotion after successful change
+OIDC exclusion
+request validation
+```
+
+### Frontend
+
+```text
+password-change.component.spec.ts
+authentication.service.spec.ts
+authentication.guard.spec.ts
+```
+
+Evidence:
+
+```text
+password form validation
+backend error rendering
+mandatory lifecycle submission
+canonical session refresh
+dashboard navigation after remediation
+anonymous return URL
+restricted LOCAL route enforcement
+OIDC exclusion
+```
+
+## Audit
+
+DA-10 extends the existing security operational audit rather than creating a
+parallel audit model.
+
+Required operational events:
+
+```text
+PASSWORD_RESET
+PASSWORD_CHANGED
+```
+
+Passwords and password hashes are never audit payloads.
+
+## Canonical closure document
+
+See:
+
+```text
+backend/security/DA-10-PASSWORD-LIFECYCLE-CLOSURE.md
 ```
 
 ## Validation
 
-From `backend/`:
+Focused:
 
 ```bash
-mvn -pl security     -Dtest=SixpaySecurityAutoConfigurationTest     test
+mvn -pl security \
+  -Dtest=PasswordPolicyTest,LocalCredentialTest,LocalAuthenticationServiceTest,LocalPasswordChangeServiceTest,PasswordHistoryTest,SecurityUserAdministrationPasswordResetTest,LocalPasswordControllerTest \
+  test
 ```
 
-Then:
+Integration:
+
+```bash
+mvn -pl security \
+  -Pfull-tests \
+  -Dit.test=LocalAuthenticationPasswordLifecycleIT,PasswordChangeControllerIT \
+  verify
+```
+
+Module:
 
 ```bash
 mvn -pl security -am test
 ```
 
-Finally:
+Full backend:
 
 ```bash
-mvn -pl tests     -Dtest=BackendGoldenCoverageGateTest     test
+mvn -Pfull-tests clean verify
+```
+
+Frontend:
+
+```bash
+cd ../frontend
+npm test
+npm run build
+```
+
+Golden gate:
+
+```bash
+cd ../backend
+mvn -pl tests \
+  -Dtest=BackendGoldenCoverageGateTest \
+  test
+```
+
+## Exit decision
+
+```text
+DA-10 PASSWORD LIFECYCLE = COVERED
+SECURITY                 = COVERED
 ```

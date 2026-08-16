@@ -11,6 +11,13 @@ import {
 import {
   provideRouter,
 } from '@angular/router';
+import {
+  of,
+  throwError,
+} from 'rxjs';
+import {
+  HttpErrorResponse,
+} from '@angular/common/http';
 
 import {
   AuthenticationService,
@@ -22,6 +29,7 @@ import {
 describe('PasswordChangeComponent', () => {
   let fixture:
     ComponentFixture<PasswordChangeComponent>;
+
   let authentication:
     AuthenticationService;
 
@@ -91,5 +99,86 @@ describe('PasswordChangeComponent', () => {
         .newPassword
         .hasError('minlength'),
     ).toBe(true);
+  });
+
+  it('submits current and new password through authentication service', () => {
+    const component =
+      fixture.componentInstance as any;
+
+    const changePassword =
+      vi.spyOn(
+        authentication,
+        'changeLocalPassword',
+      )
+        .mockReturnValue(
+          of(undefined),
+        );
+
+    component.form.setValue({
+      currentPassword:
+        'Temporary-password-2026',
+      newPassword:
+        'Permanent-password-2027',
+      confirmation:
+        'Permanent-password-2027',
+    });
+
+    component.submit();
+
+    expect(
+      changePassword,
+    ).toHaveBeenCalledOnce();
+
+    expect(
+      changePassword,
+    ).toHaveBeenCalledWith({
+      currentPassword:
+        'Temporary-password-2026',
+      newPassword:
+        'Permanent-password-2027',
+    });
+
+    expect(
+      component.serverError(),
+    ).toBeNull();
+  });
+
+  it('surfaces backend lifecycle rejection detail to the user', () => {
+    const component =
+      fixture.componentInstance as any;
+
+    vi.spyOn(
+      authentication,
+      'changeLocalPassword',
+    )
+      .mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: {
+                detail:
+                  'Password must not reuse a recent password',
+              },
+            }),
+        ),
+      );
+
+    component.form.setValue({
+      currentPassword:
+        'Temporary-password-2026',
+      newPassword:
+        'Historical-password-2026',
+      confirmation:
+        'Historical-password-2026',
+    });
+
+    component.submit();
+
+    expect(
+      component.serverError(),
+    ).toBe(
+      'Password must not reuse a recent password',
+    );
   });
 });
