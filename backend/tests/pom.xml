@@ -3,42 +3,147 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>com.sixpay</groupId>
     <artifactId>sixpay-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
   <artifactId>tests</artifactId>
   <packaging>jar</packaging>
+
   <name>SIXPAY CONNECT - Tests</name>
   <description>Cross-module and assembled-application tests for SIXPAY CONNECT.</description>
+
   <dependencies>
-    <dependency><groupId>com.sixpay</groupId><artifactId>common</artifactId></dependency>
-    <!--<dependency><groupId>com.sixpay</groupId><artifactId>bootstrap</artifactId><version>${project.version}</version></dependency>-->
-    <dependency><groupId>com.sixpay</groupId><artifactId>partner</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>com.sixpay</groupId><artifactId>integration</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>com.sixpay</groupId><artifactId>notification</artifactId><version>${project.version}</version></dependency>
+    <!--
+      Baseline dependencies intentionally stay limited to the historical
+      focused cross-module harness.
+      DO NOT add bootstrap here: doing so broadens every test classpath.
+    -->
+    <dependency>
+      <groupId>com.sixpay</groupId>
+      <artifactId>common</artifactId>
+    </dependency>
 
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId></dependency>
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId></dependency>
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security-test</artifactId></dependency>
-    <dependency><groupId>org.mockito</groupId><artifactId>mockito-junit-jupiter</artifactId></dependency>
-    <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId></dependency>
+    <dependency>
+      <groupId>com.sixpay</groupId>
+      <artifactId>partner</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-flyway</artifactId><scope>test</scope></dependency>
-    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId><scope>test</scope></dependency>
-    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <dependency>
+      <groupId>com.sixpay</groupId>
+      <artifactId>integration</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
-    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-junit-jupiter</artifactId><scope>test</scope></dependency>
-    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency>
+      <groupId>com.sixpay</groupId>
+      <artifactId>notification</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-test</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <!--
+      Full assembled application classpath.
+      Activated only for 8.3.1+ assembled tests so existing focused tests
+      (GoldenModuleE2EIT, etc.) keep their original module boundaries.
+    -->
+    <profile>
+      <id>assembled-tests</id>
+
+      <dependencies>
+        <dependency>
+          <groupId>com.sixpay</groupId>
+          <artifactId>bootstrap</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <sixpay.assembled.tests>true</sixpay.assembled.tests>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <build>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration><skip>true</skip></configuration>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>
