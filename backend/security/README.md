@@ -5,29 +5,34 @@ Security infrastructure for SIXPAY CONNECT.
 
 `partner` remains the golden reference for testing discipline.
 
-## Golden security coverage
+## Dual Authentication — Local + OIDC
 
-Canonical evidence:
+Canonical closure evidence:
 
 ```text
 SECURITY-TEST-COVERAGE.md
 DA-10-PASSWORD-LIFECYCLE-CLOSURE.md
 DA-11-INTEGRATION-SECURITY-CLOSURE.md
+DA-12-DUAL-AUTHENTICATION-CLOSURE.md
 ```
 
-DA-11 locks the integrated Dual Authentication — Local + OIDC boundaries:
+Final covered boundaries:
 
 ```text
-Capability matrix         COVERED
-LOCAL session             COVERED
-OIDC integration          COVERED
-Hybrid coexistence        COVERED
-Authorization             COVERED
-CSRF boundary             COVERED
-OIDC security audit       COVERED
+LOCAL authentication        COVERED
+OIDC authentication         COVERED
+Hybrid coexistence          COVERED
+Canonical principal         COVERED
+SIXPAY authorization        COVERED
+Password lifecycle          COVERED
+Session security            COVERED
+CSRF                        COVERED
+Security audit              COVERED
+Integration/security tests  COVERED
+Documentation gate          COVERED
 ```
 
-## DA-11 golden gate
+## Final golden gate
 
 From `backend`:
 
@@ -37,7 +42,15 @@ mvn -pl security \
   test
 ```
 
-Focused DA-11 integration/security suite:
+Critical regression gate:
+
+```bash
+mvn -pl security \
+  -Dtest=SixpaySecurityAutoConfigurationTest,AuditingAuthenticationEntryPointTest,DualAuthenticationGoldenGateTest \
+  test
+```
+
+Focused integration/security suite:
 
 ```bash
 mvn -pl security \
@@ -56,4 +69,18 @@ Full backend gate:
 
 ```bash
 mvn -Pfull-tests clean verify
+```
+
+Frontend:
+
+```bash
+cd ../frontend
+npm test
+npm run build
+```
+
+Final classification is valid only when all gates are green:
+
+```text
+DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED
 ```

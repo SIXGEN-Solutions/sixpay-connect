@@ -10,14 +10,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DA-11.6 — Golden closure gate for Dual Authentication — Local + OIDC.
+ * DA-11.6 / DA-12 — Golden closure and documentation validation gate for
+ * Dual Authentication — Local + OIDC.
  *
- * <p>This gate does not duplicate the behavioral assertions of DA-11.1 to
- * DA-11.5. It verifies that the canonical integration/security evidence and
- * closure documentation remain present in the security module.</p>
- *
- * <p>The behavioral tests themselves are executed by Maven Failsafe through
- * the repository's existing {@code full-tests} profile.</p>
+ * <p>The gate does not duplicate behavioral assertions. Focused unit and
+ * integration tests remain the source of behavioral evidence; this class
+ * verifies that the canonical evidence and final closure documentation remain
+ * present and synchronized.</p>
  */
 class DualAuthenticationGoldenGateTest {
 
@@ -36,9 +35,19 @@ class DualAuthenticationGoldenGateTest {
                     "com.sixpay.security.configuration.AuditingAuthenticationEntryPointTest"
             );
 
-    private static final Path CLOSURE_DOCUMENT =
+    private static final Path DA11_CLOSURE_DOCUMENT =
             Path.of(
                     "DA-11-INTEGRATION-SECURITY-CLOSURE.md"
+            );
+
+    private static final Path DA12_CLOSURE_DOCUMENT =
+            Path.of(
+                    "DA-12-DUAL-AUTHENTICATION-CLOSURE.md"
+            );
+
+    private static final Path SECURITY_COVERAGE_DOCUMENT =
+            Path.of(
+                    "SECURITY-TEST-COVERAGE.md"
             );
 
     @Test
@@ -59,19 +68,10 @@ class DualAuthenticationGoldenGateTest {
     void requiresCanonicalDa11ClosureDocument()
             throws IOException {
 
-        assertThat(
-                Files.exists(
-                        CLOSURE_DOCUMENT
-                )
-        )
-                .as(
-                        "DA-11 closure documentation must remain in backend/security"
-                )
-                .isTrue();
-
         String documentation =
-                Files.readString(
-                        CLOSURE_DOCUMENT
+                readRequiredDocument(
+                        DA11_CLOSURE_DOCUMENT,
+                        "DA-11 closure documentation"
                 );
 
         assertThat(documentation)
@@ -83,6 +83,66 @@ class DualAuthenticationGoldenGateTest {
                         "DA-11.5 — Authorization + CSRF",
                         "DA-11 DUAL AUTHENTICATION INTEGRATION/SECURITY = COVERED"
                 );
+    }
+
+    @Test
+    void requiresCanonicalDa12FinalClosureDocument()
+            throws IOException {
+
+        String documentation =
+                readRequiredDocument(
+                        DA12_CLOSURE_DOCUMENT,
+                        "DA-12 final Dual Authentication closure documentation"
+                );
+
+        assertThat(documentation)
+                .contains(
+                        "DA-12 — Documentation + validation gate",
+                        "LOCAL + OIDC",
+                        "SIXPAY owns authorization",
+                        "LOCAL password lifecycle",
+                        "OIDC password lifecycle is owned by the IdP",
+                        "DualAuthenticationGoldenGateTest",
+                        "DA-12 DOCUMENTATION + VALIDATION GATE = COVERED",
+                        "DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED"
+                );
+    }
+
+    @Test
+    void requiresSecurityCoverageToReferenceFinalDualAuthenticationClosure()
+            throws IOException {
+
+        String documentation =
+                readRequiredDocument(
+                        SECURITY_COVERAGE_DOCUMENT,
+                        "security golden test coverage documentation"
+                );
+
+        assertThat(documentation)
+                .contains(
+                        "DA-11 Integration/security evidence",
+                        "DA-12 Documentation + validation gate",
+                        "DA-12-DUAL-AUTHENTICATION-CLOSURE.md",
+                        "DualAuthenticationGoldenGateTest",
+                        "DUAL AUTHENTICATION = COVERED"
+                );
+    }
+
+    private static String readRequiredDocument(
+            Path path,
+            String description
+    ) throws IOException {
+
+        assertThat(
+                Files.exists(path)
+        )
+                .as(
+                        description
+                                + " must remain in backend/security"
+                )
+                .isTrue();
+
+        return Files.readString(path);
     }
 
     private static void assertLoadableTestClasses(
