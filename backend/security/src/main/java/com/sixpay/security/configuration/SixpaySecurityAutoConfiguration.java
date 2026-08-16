@@ -228,6 +228,12 @@ public class SixpaySecurityAutoConfiguration {
                             );
                 };
 
+        AuditingAuthenticationEntryPoint
+                auditingAuthenticationEntryPoint =
+                new AuditingAuthenticationEntryPoint(
+                        securityAuditPort
+                );
+
         http
                 .httpBasic(
                         AbstractHttpConfigurer::disable
@@ -239,9 +245,7 @@ public class SixpaySecurityAutoConfiguration {
                         exceptions ->
                                 exceptions
                                         .authenticationEntryPoint(
-                                                new AuditingAuthenticationEntryPoint(
-                                                        securityAuditPort
-                                                )
+                                                auditingAuthenticationEntryPoint
                                         )
                 )
                 .securityContext(
@@ -338,13 +342,26 @@ public class SixpaySecurityAutoConfiguration {
                 .oidcEnabled()) {
             http.oauth2ResourceServer(
                     oauth2 ->
-                            oauth2.jwt(
-                                    jwt ->
-                                            jwt.jwtAuthenticationConverter(
-                                                    oidcAuthenticationAdapterProvider
-                                                            .getObject()
-                                            )
-                            )
+                            oauth2
+                                    /*
+                                     * Resource Server authentication failures
+                                     * happen inside BearerTokenAuthenticationFilter
+                                     * and use the resource-server entry point,
+                                     * not only exceptionHandling().
+                                     *
+                                     * Explicitly route them through SIXPAY's
+                                     * auditing entry point.
+                                     */
+                                    .authenticationEntryPoint(
+                                            auditingAuthenticationEntryPoint
+                                    )
+                                    .jwt(
+                                            jwt ->
+                                                    jwt.jwtAuthenticationConverter(
+                                                            oidcAuthenticationAdapterProvider
+                                                                    .getObject()
+                                                    )
+                                    )
             );
         }
 
