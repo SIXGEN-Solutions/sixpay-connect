@@ -4,13 +4,13 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.security.application.port.out.LoadAuthenticationUserPort;
 import com.sixpay.security.application.port.out.SaveAuthenticationUserStatePort;
 import com.sixpay.security.domain.authentication.LocalAuthenticationUser;
+import com.sixpay.security.domain.authentication.LocalCredential;
 
 import java.util.Objects;
 import java.util.Optional;
 
 public final class JpaLocalAuthenticationUserAdapter
-        implements LoadAuthenticationUserPort,
-        SaveAuthenticationUserStatePort {
+        implements LoadAuthenticationUserPort, SaveAuthenticationUserStatePort {
 
     private final LocalAuthenticationUserSpringDataRepository repository;
     private final TimeProvider timeProvider;
@@ -24,25 +24,15 @@ public final class JpaLocalAuthenticationUserAdapter
     }
 
     @Override
-    public Optional<LocalAuthenticationUser> loadForAuthentication(
-            String normalizedUsername
-    ) {
-        return repository
-                .findForAuthentication(normalizedUsername)
+    public Optional<LocalAuthenticationUser> loadForAuthentication(String normalizedUsername) {
+        return repository.findForAuthentication(normalizedUsername)
                 .map(JpaLocalAuthenticationUserAdapter::toDomain);
     }
 
     @Override
-    public void saveAuthenticationState(
-            LocalAuthenticationUser user
-    ) {
-        LocalAuthenticationUserJpaEntity entity =
-                repository.findById(user.id())
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Local authentication user disappeared"
-                                )
-                        );
+    public void saveAuthenticationState(LocalAuthenticationUser user) {
+        LocalAuthenticationUserJpaEntity entity = repository.findById(user.id())
+                .orElseThrow(() -> new IllegalStateException("Local authentication user disappeared"));
 
         entity.updateAuthenticationState(
                 user.failedAttempts(),
@@ -50,21 +40,26 @@ public final class JpaLocalAuthenticationUserAdapter
                 user.lastAuthenticatedAt(),
                 timeProvider.now()
         );
-
         repository.save(entity);
     }
 
-    private static LocalAuthenticationUser toDomain(
-            LocalAuthenticationUserJpaEntity entity
-    ) {
+    private static LocalAuthenticationUser toDomain(LocalAuthenticationUserJpaEntity entity) {
         var account = entity.getUserAccount();
+        LocalCredential credential = new LocalCredential(
+                account.getId(),
+                entity.getPasswordHash(),
+                entity.isMustChangePassword(),
+                entity.getPasswordChangedAt(),
+                entity.getExpiresAt(),
+                entity.getCredentialUpdatedAt()
+        );
 
         return new LocalAuthenticationUser(
                 entity.getId(),
                 account.getId(),
                 entity.getSubject(),
                 account.getUsername(),
-                entity.getPasswordHash(),
+                credential,
                 entity.getStatus(),
                 account.getStatus(),
                 account.getAuthorities(),
