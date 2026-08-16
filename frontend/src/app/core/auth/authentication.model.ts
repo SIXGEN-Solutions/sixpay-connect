@@ -1,10 +1,18 @@
-export const SIXPAY_ROLES = ['ADMIN', 'MANAGER', 'PARTNER', 'AUDITOR'] as const;
+export const SIXPAY_ROLES = [
+  'ADMIN',
+  'MANAGER',
+  'PARTNER',
+  'AUDITOR',
+] as const;
 
-export type SixpayRole = (typeof SIXPAY_ROLES)[number];
+export type SixpayRole =
+  (typeof SIXPAY_ROLES)[number];
 
-export type ActiveAuthenticationMethod = 'local' | 'oidc' | null;
+export type ActiveAuthenticationMethod =
+  'local' | 'oidc' | null;
 
-export type BackendAuthenticationMethod = 'LOCAL' | 'OIDC';
+export type BackendAuthenticationMethod =
+  'LOCAL' | 'OIDC';
 
 export interface AuthenticatedIdentity {
   readonly subject: string;
@@ -18,14 +26,27 @@ export interface LocalLoginRequest {
 }
 
 export interface AuthenticationSessionResponse {
+  /**
+   * Added by DA-10.5. Optional during frontend/back-end rolling upgrades.
+   * Authenticated session endpoints normally return true.
+   */
+  readonly authenticated?: boolean;
+
   readonly subject: string;
   readonly username: string;
   readonly roles: readonly string[];
   readonly permissions: readonly string[];
-  readonly authenticationMethod: BackendAuthenticationMethod;
+  readonly authenticationMethod:
+    BackendAuthenticationMethod;
+
+  /**
+   * LOCAL only. OIDC lifecycle remains owned by the IdP.
+   */
+  readonly passwordChangeRequired?: boolean;
 }
 
-export type LocalSessionResponse = AuthenticationSessionResponse;
+export type LocalSessionResponse =
+  AuthenticationSessionResponse;
 
 export interface JwtClaims {
   readonly exp?: number;
@@ -40,12 +61,20 @@ export interface JwtClaims {
 export function normalizeSixpayRoles(
   values: readonly string[],
 ): ReadonlySet<SixpayRole> {
-  const supported = new Set<string>(SIXPAY_ROLES);
+  const supported =
+    new Set<string>(SIXPAY_ROLES);
 
   return new Set(
     values
-      .map((role) => role.replace(/^ROLE_/, '').toUpperCase())
-      .filter((role): role is SixpayRole => supported.has(role)),
+      .map((role) =>
+        role
+          .replace(/^ROLE_/, '')
+          .toUpperCase(),
+      )
+      .filter(
+        (role): role is SixpayRole =>
+          supported.has(role),
+      ),
   );
 }
 

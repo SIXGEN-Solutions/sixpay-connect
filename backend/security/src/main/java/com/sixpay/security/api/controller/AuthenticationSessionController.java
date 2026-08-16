@@ -15,7 +15,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -35,17 +38,42 @@ public final class AuthenticationSessionController {
             SpringSecuritySessionManager sessionManager,
             SecurityAuditPort auditPort
     ) {
-        this.getCurrentSession = Objects.requireNonNull(getCurrentSession);
-        this.sessionManager = Objects.requireNonNull(sessionManager);
-        this.auditPort = Objects.requireNonNull(auditPort);
+        this.getCurrentSession =
+                Objects.requireNonNull(
+                        getCurrentSession
+                );
+        this.sessionManager =
+                Objects.requireNonNull(
+                        sessionManager
+                );
+        this.auditPort =
+                Objects.requireNonNull(
+                        auditPort
+                );
     }
 
     @GetMapping("/me")
-    public AuthenticationSessionResponse currentSession(HttpServletRequest request) {
-        AuthenticatedUser user = getCurrentSession.getCurrentSession();
-        AuthenticationMethod method = sessionManager.currentAuthenticationMethod(request)
-                .orElseGet(AuthenticationSessionController::inferCurrentMethod);
-        return toResponse(user, method);
+    public AuthenticationSessionResponse currentSession(
+            HttpServletRequest request
+    ) {
+        AuthenticatedUser user =
+                getCurrentSession
+                        .getCurrentSession();
+
+        AuthenticationMethod method =
+                sessionManager
+                        .currentAuthenticationMethod(
+                                request
+                        )
+                        .orElseGet(
+                                AuthenticationSessionController
+                                        ::inferCurrentMethod
+                        );
+
+        return toResponse(
+                user,
+                method
+        );
     }
 
     @PostMapping("/session/oidc")
@@ -53,14 +81,34 @@ public final class AuthenticationSessionController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!(authentication instanceof OidcAuthenticationToken)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "OIDC bearer authentication is required");
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (!(authentication
+                instanceof OidcAuthenticationToken)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "OIDC bearer authentication is required"
+            );
         }
 
-        AuthenticatedUser user = getCurrentSession.getCurrentSession();
-        sessionManager.startSession(user, AuthenticationMethod.OIDC, request, response);
-        return toResponse(user, AuthenticationMethod.OIDC);
+        AuthenticatedUser user =
+                getCurrentSession
+                        .getCurrentSession();
+
+        sessionManager.startSession(
+                user,
+                AuthenticationMethod.OIDC,
+                request,
+                response
+        );
+
+        return toResponse(
+                user,
+                AuthenticationMethod.OIDC
+        );
     }
 
     @PostMapping("/logout")
@@ -68,38 +116,74 @@ public final class AuthenticationSessionController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        AuthenticatedUser currentUser = getCurrentSession.getCurrentSession();
-        auditPort.record(new SecurityAuditEvent(
-                SecurityAuditEventType.LOGOUT,
-                currentUser.subject(),
-                parseUserId(currentUser.subject()),
-                currentUser.username(),
-                null,
-                null,
-                Instant.now()
-        ));
-        sessionManager.terminateSession(request, response);
-        return ResponseEntity.noContent().build();
+        AuthenticatedUser currentUser =
+                getCurrentSession
+                        .getCurrentSession();
+
+        auditPort.record(
+                new SecurityAuditEvent(
+                        SecurityAuditEventType.LOGOUT,
+                        currentUser.subject(),
+                        parseUserId(
+                                currentUser.subject()
+                        ),
+                        currentUser.username(),
+                        null,
+                        null,
+                        Instant.now()
+                )
+        );
+
+        sessionManager.terminateSession(
+                request,
+                response
+        );
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
     static AuthenticationSessionResponse toResponse(
             AuthenticatedUser user,
             AuthenticationMethod method
     ) {
+        boolean passwordChangeRequired =
+                method == AuthenticationMethod.LOCAL
+                        && user.passwordChangeRequired();
+
         return new AuthenticationSessionResponse(
-                user.subject(), user.username(), user.roles(), user.permissions(), method
+                true,
+                user.subject(),
+                user.username(),
+                user.roles(),
+                user.permissions(),
+                method,
+                passwordChangeRequired
         );
     }
 
     private static AuthenticationMethod inferCurrentMethod() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication instanceof OidcAuthenticationToken
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        return authentication
+                instanceof OidcAuthenticationToken
                 ? AuthenticationMethod.OIDC
                 : AuthenticationMethod.LOCAL;
     }
 
-    private static UUID parseUserId(String subject) {
-        try { return UUID.fromString(subject); }
-        catch (RuntimeException ignored) { return null; }
+    private static UUID parseUserId(
+            String subject
+    ) {
+        try {
+            return UUID.fromString(
+                    subject
+            );
+        } catch (RuntimeException ignored) {
+            return null;
+        }
     }
 }

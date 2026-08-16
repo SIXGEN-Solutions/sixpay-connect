@@ -5,17 +5,19 @@ import com.sixpay.security.application.port.in.ChangeLocalPasswordCommand;
 import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.security.domain.authentication.AuthenticationMethod;
+import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class LocalPasswordControllerTest {
 
@@ -25,7 +27,7 @@ class LocalPasswordControllerTest {
             );
 
     @Test
-    void changesPasswordForAuthenticatedCanonicalUser() {
+    void changesPasswordForAuthenticatedLocalUserAndPromotesSession() {
 
         ChangeLocalPasswordUseCase useCase =
                 mock(
@@ -37,34 +39,52 @@ class LocalPasswordControllerTest {
                         CurrentUserProvider.class
                 );
 
+        SpringSecuritySessionManager sessionManager =
+                mock(
+                        SpringSecuritySessionManager.class
+                );
+
+        MockHttpServletRequest servletRequest =
+                new MockHttpServletRequest();
+
+        MockHttpServletResponse servletResponse =
+                new MockHttpServletResponse();
+
         AuthenticatedUser authenticatedUser =
                 new AuthenticatedUser(
                         USER_ID.toString(),
                         "admin",
                         Set.of(
                                 "ROLE_ADMIN"
-                        )
+                        ),
+                        true
                 );
 
-        /*
-         * LocalPasswordController calls requireCurrentUser(),
-         * not currentUser().
-         *
-         * Because CurrentUserProvider is a Mockito mock,
-         * explicitly stub the method actually invoked by
-         * the controller.
-         */
         when(
-                currentUserProvider.requireCurrentUser()
+                currentUserProvider
+                        .requireCurrentUser()
         )
                 .thenReturn(
                         authenticatedUser
                 );
 
+        when(
+                sessionManager
+                        .currentAuthenticationMethod(
+                                servletRequest
+                        )
+        )
+                .thenReturn(
+                        java.util.Optional.of(
+                                AuthenticationMethod.LOCAL
+                        )
+                );
+
         LocalPasswordController controller =
                 new LocalPasswordController(
                         useCase,
-                        currentUserProvider
+                        currentUserProvider,
+                        sessionManager
                 );
 
         var response =
@@ -72,7 +92,9 @@ class LocalPasswordControllerTest {
                         new LocalPasswordChangeRequest(
                                 "Current-password-2026",
                                 "Brand-new-password-2026"
-                        )
+                        ),
+                        servletRequest,
+                        servletResponse
                 );
 
         assertThat(
@@ -87,47 +109,95 @@ class LocalPasswordControllerTest {
                         ChangeLocalPasswordCommand.class
                 );
 
-        verify(
-                useCase
-        )
+        verify(useCase)
                 .changePassword(
                         command.capture()
                 );
 
-        ChangeLocalPasswordCommand captured =
-                command.getValue();
-
         assertThat(
-                captured.userId()
+                command.getValue()
+                        .userId()
         )
                 .isEqualTo(
                         USER_ID
                 );
 
         assertThat(
-                captured.actorSubject()
+                command.getValue()
+                        .actorSubject()
         )
                 .isEqualTo(
                         USER_ID.toString()
                 );
 
-        assertThat(
-                captured.currentPassword()
-        )
-                .isEqualTo(
-                        "Current-password-2026"
+        verify(sessionManager)
+                .completeLocalPasswordChange(
+                        servletRequest,
+                        servletResponse
+                );
+    }
+
+    @Test
+    void doesNotApplyLocalPasswordLifecycleToOidcSession() {
+
+        ChangeLocalPasswordUseCase useCase =
+                mock(
+                        ChangeLocalPasswordUseCase.class
                 );
 
-        assertThat(
-                captured.newPassword()
-        )
-                .isEqualTo(
-                        "Brand-new-password-2026"
+        CurrentUserProvider currentUserProvider =
+                mock(
+                        CurrentUserProvider.class
                 );
 
-        verify(
+        SpringSecuritySessionManager sessionManager =
+                mock(
+                        SpringSecuritySessionManager.class
+                );
+
+        MockHttpServletRequest servletRequest =
+                new MockHttpServletRequest();
+
+        when(
+                sessionManager
+                        .currentAuthenticationMethod(
+                                servletRequest
+                        )
+        )
+                .thenReturn(
+                        java.util.Optional.of(
+                                AuthenticationMethod.OIDC
+                        )
+                );
+
+        LocalPasswordController controller =
+                new LocalPasswordController(
+                        useCase,
+                        currentUserProvider,
+                        sessionManager
+                );
+
+        org.assertj.core.api.Assertions
+                .assertThatThrownBy(() ->
+                        controller.changePassword(
+                                new LocalPasswordChangeRequest(
+                                        "idp-password",
+                                        "new-password-2026"
+                                ),
+                                servletRequest,
+                                new MockHttpServletResponse()
+                        )
+                )
+                .isInstanceOf(
+                        org.springframework.web.server.ResponseStatusException.class
+                );
+
+        verifyNoInteractions(
+                useCase
+        );
+
+        verifyNoInteractions(
                 currentUserProvider
-        )
-                .requireCurrentUser();
+        );
     }
 }
