@@ -27,6 +27,18 @@ export const sessionErrorInterceptor: HttpInterceptorFn = (request, next) => {
         });
       } else if (
         error instanceof HttpErrorResponse &&
+        error.status === 403 &&
+        authentication.activeAuthenticationMethod() === 'local' &&
+        authentication.passwordChangeRequired()
+      ) {
+        /*
+         * Defense in depth for requests already in flight when a restricted
+         * session is bootstrapped. Credential restriction is not a generic
+         * business authorization failure.
+         */
+        void router.navigate(['/change-password']);
+      } else if (
+        error instanceof HttpErrorResponse &&
         error.status === 403
       ) {
         void router.navigate(['/forbidden']);

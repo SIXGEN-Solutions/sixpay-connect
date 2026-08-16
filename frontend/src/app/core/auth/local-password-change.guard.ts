@@ -5,12 +5,12 @@ import { map } from 'rxjs';
 import { AuthenticationService } from './authentication.service';
 
 /**
- * Protects the application shell.
+ * The LOCAL password endpoint requires a backend-authenticated LOCAL session.
  *
- * DA-10.6 treats a restricted LOCAL session as authenticated but prevents it
- * from entering business routes until the password lifecycle is remediated.
+ * A normal LOCAL user may also open the page voluntarily; DA-10.6 only makes
+ * the route mandatory when passwordChangeRequired=true.
  */
-export const authenticationGuard: CanActivateFn = (_route, state) => {
+export const localPasswordChangeGuard: CanActivateFn = () => {
   const authentication = inject(AuthenticationService);
   const router = inject(Router);
 
@@ -21,19 +21,16 @@ export const authenticationGuard: CanActivateFn = (_route, state) => {
           ['/login'],
           {
             queryParams: {
-              returnUrl: state.url,
+              returnUrl: '/change-password',
             },
           },
         );
       }
 
       if (
-        authentication.activeAuthenticationMethod() === 'local' &&
-        authentication.passwordChangeRequired()
+        authentication.activeAuthenticationMethod() !== 'local'
       ) {
-        return router.createUrlTree(
-          ['/change-password'],
-        );
+        return router.createUrlTree(['/']);
       }
 
       return true;

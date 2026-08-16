@@ -1,8 +1,17 @@
 import { Routes } from '@angular/router';
 
 import { authenticationGuard } from './core/auth/authentication.guard';
+import { localPasswordChangeGuard } from './core/auth/local-password-change.guard';
 
 export const routes: Routes = [
+  {
+    path: 'change-password',
+    canActivate: [localPasswordChangeGuard],
+    loadComponent: () =>
+      import('./core/auth/password-change.component').then(
+        (component) => component.PasswordChangeComponent,
+      ),
+  },
   {
     path: '',
     canActivate: [authenticationGuard],

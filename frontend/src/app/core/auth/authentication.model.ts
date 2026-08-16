@@ -25,9 +25,14 @@ export interface LocalLoginRequest {
   readonly password: string;
 }
 
+export interface LocalPasswordChangeRequest {
+  readonly currentPassword: string;
+  readonly newPassword: string;
+}
+
 export interface AuthenticationSessionResponse {
   /**
-   * Added by DA-10.5. Optional during frontend/back-end rolling upgrades.
+   * Added by DA-10.5. Optional during frontend/backend rolling upgrades.
    * Authenticated session endpoints normally return true.
    */
   readonly authenticated?: boolean;

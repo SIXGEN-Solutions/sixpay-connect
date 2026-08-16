@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import {
   AuthenticationSessionResponse,
   LocalLoginRequest,
+  LocalPasswordChangeRequest,
 } from './authentication.model';
 
 const AUTH_API_PATH = '/api/v1/auth';
@@ -32,6 +33,16 @@ export class LocalAuthenticationClient {
   currentUser(): Observable<AuthenticationSessionResponse> {
     return this.http.get<AuthenticationSessionResponse>(
       `${AUTH_API_PATH}/me`,
+      { withCredentials: true },
+    );
+  }
+
+  changePassword(
+    request: LocalPasswordChangeRequest,
+  ): Observable<void> {
+    return this.http.post<void>(
+      `${AUTH_API_PATH}/password/change`,
+      request,
       { withCredentials: true },
     );
   }

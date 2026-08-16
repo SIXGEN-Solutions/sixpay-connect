@@ -28,6 +28,7 @@ import {
   AuthenticatedIdentity,
   AuthenticationSessionResponse,
   LocalLoginRequest,
+  LocalPasswordChangeRequest,
   normalizeSixpayRoles,
   SixpayRole,
 } from './authentication.model';
@@ -71,6 +72,9 @@ export class AuthenticationService {
   private readonly activeAuthenticationMethodState =
     signal<ActiveAuthenticationMethod>(null);
 
+  private readonly passwordChangeRequiredState =
+    signal(false);
+
   private readonly readyState =
     new ReplaySubject<boolean>(1);
 
@@ -78,6 +82,8 @@ export class AuthenticationService {
   readonly username = this.usernameState.asReadonly();
   readonly activeAuthenticationMethod =
     this.activeAuthenticationMethodState.asReadonly();
+  readonly passwordChangeRequired =
+    this.passwordChangeRequiredState.asReadonly();
 
   readonly isAuthenticated = computed(
     () => this.identityState() !== null,
@@ -188,6 +194,42 @@ export class AuthenticationService {
       );
   }
 
+  /**
+   * DA-10.6 user-owned LOCAL password change.
+   *
+   * The backend promotes the restricted session after the change. SIXPAY then
+   * reloads /auth/me so the frontend state remains backend-authoritative before
+   * leaving the mandatory password-change route.
+   */
+  changeLocalPassword(
+    request: LocalPasswordChangeRequest,
+  ): Observable<void> {
+    if (
+      this.activeAuthenticationMethodState() !== 'local'
+    ) {
+      return throwError(
+        () =>
+          new Error(
+            'LOCAL authentication is required to change a LOCAL password',
+          ),
+      );
+    }
+
+    return this.authenticationClient
+      .changePassword(request)
+      .pipe(
+        switchMap(() =>
+          this.authenticationClient.currentUser(),
+        ),
+        tap((session) => {
+          this.errorService.clear();
+          this.setCanonicalSession(session);
+        }),
+        tap(() => this.completePasswordChangeNavigation()),
+        map(() => undefined),
+      );
+  }
+
   loginOidc(returnUrl = '/'): void {
     if (!this.oidcEnabled) {
       return;
@@ -210,12 +252,19 @@ export class AuthenticationService {
       return;
     }
 
-    const returnUrl = this.safeReturnUrl(
-      this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
-    );
+    /*
+     * Do not consume the requested business return URL yet. The user must
+     * complete the LOCAL lifecycle first, then DA-10.6 returns there.
+     */
+    if (
+      this.activeAuthenticationMethodState() === 'local' &&
+      this.passwordChangeRequiredState()
+    ) {
+      void this.router.navigate(['/change-password']);
+      return;
+    }
 
-    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
-    void this.router.navigateByUrl(returnUrl);
+    this.navigateToStoredReturnUrl();
   }
 
   /**
@@ -361,12 +410,38 @@ export class AuthenticationService {
     });
 
     this.usernameState.set(session.username);
-    this.activeAuthenticationMethodState.set(
+
+    const authenticationMethod =
       session.authenticationMethod.toLowerCase() as Exclude<
         ActiveAuthenticationMethod,
         null
-      >,
+      >;
+
+    this.activeAuthenticationMethodState.set(
+      authenticationMethod,
     );
+
+    this.passwordChangeRequiredState.set(
+      authenticationMethod === 'local' &&
+        (session.passwordChangeRequired ?? false),
+    );
+  }
+
+  private completePasswordChangeNavigation(): void {
+    if (this.passwordChangeRequiredState()) {
+      return;
+    }
+
+    this.navigateToStoredReturnUrl();
+  }
+
+  private navigateToStoredReturnUrl(): void {
+    const returnUrl = this.safeReturnUrl(
+      this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
+    );
+
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
+    void this.router.navigateByUrl(returnUrl);
   }
 
   private finishFrontendLogout(
@@ -411,6 +486,7 @@ export class AuthenticationService {
 
     this.usernameState.set(null);
     this.activeAuthenticationMethodState.set(null);
+    this.passwordChangeRequiredState.set(false);
     this.readyState.next(true);
   }
 
@@ -434,6 +510,7 @@ export class AuthenticationService {
     this.identityState.set(null);
     this.usernameState.set(null);
     this.activeAuthenticationMethodState.set(null);
+    this.passwordChangeRequiredState.set(false);
   }
 
   private get storage(): Storage | undefined {

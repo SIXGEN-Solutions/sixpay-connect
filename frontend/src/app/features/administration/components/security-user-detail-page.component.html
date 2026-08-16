@@ -187,6 +187,12 @@
     </sp-card>
 
     <sp-card title="Réinitialiser le mot de passe Local">
+      <p>
+        Le mot de passe défini ici est temporaire. À sa prochaine
+        authentification Local, l’utilisateur devra obligatoirement le
+        remplacer avant d’accéder à l’application.
+      </p>
+
       <form
         [formGroup]="passwordForm"
         (ngSubmit)="resetPassword()"
@@ -204,7 +210,8 @@
             maxlength="200"
           />
           <mat-hint>
-            12 caractères minimum.
+            12 caractères minimum. Les règles d’historique sont contrôlées
+            par le backend.
           </mat-hint>
         </mat-form-field>
 

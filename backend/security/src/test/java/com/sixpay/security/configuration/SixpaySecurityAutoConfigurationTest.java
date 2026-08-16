@@ -5,6 +5,7 @@ import com.sixpay.security.application.port.out.SecurityAuditPort;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -22,11 +23,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,6 +45,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SixpaySecurityAutoConfigurationTest {
+
+    private static final String RAW_XSRF_TOKEN =
+            "a4d48244-3a22-405c-8e90-85af19ee5fc7";
 
     @Autowired
     private MockMvc mockMvc;
@@ -110,6 +117,55 @@ class SixpaySecurityAutoConfigurationTest {
                 .andExpect(content().string("SECURED"));
     }
 
+    @Test
+    void acceptsAngularRawXsrfCookieAndHeaderForMutatingSessionRequest()
+            throws Exception {
+
+        mockMvc.perform(
+                        post("/secured")
+                                .with(
+                                        user("admin")
+                                                .roles("ADMIN")
+                                )
+                                .cookie(
+                                        new Cookie(
+                                                "XSRF-TOKEN",
+                                                RAW_XSRF_TOKEN
+                                        )
+                                )
+                                .header(
+                                        "X-XSRF-TOKEN",
+                                        RAW_XSRF_TOKEN
+                                )
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().string("SECURED"));
+    }
+
+    @Test
+    void rejectsMutatingSessionRequestWhenXsrfHeaderDoesNotMatchCookie()
+            throws Exception {
+
+        mockMvc.perform(
+                        post("/secured")
+                                .with(
+                                        user("admin")
+                                                .roles("ADMIN")
+                                )
+                                .cookie(
+                                        new Cookie(
+                                                "XSRF-TOKEN",
+                                                RAW_XSRF_TOKEN
+                                        )
+                                )
+                                .header(
+                                        "X-XSRF-TOKEN",
+                                        "different-token"
+                                )
+                )
+                .andExpect(status().isForbidden());
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration(exclude = {
             DataSourceAutoConfiguration.class,
@@ -134,6 +190,11 @@ class SixpaySecurityAutoConfigurationTest {
 
         @GetMapping("/secured")
         ResponseEntity<String> secured() {
+            return ResponseEntity.ok("SECURED");
+        }
+
+        @PostMapping("/secured")
+        ResponseEntity<String> mutateSecuredResource() {
             return ResponseEntity.ok("SECURED");
         }
     }

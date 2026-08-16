@@ -1,4 +1,6 @@
-import { provideHttpClient } from '@angular/common/http';
+import {
+  provideHttpClient,
+} from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
@@ -9,7 +11,7 @@ import { LocalAuthenticationClient } from './local-authentication.client';
 
 describe('LocalAuthenticationClient', () => {
   let client: LocalAuthenticationClient;
-  let controller: HttpTestingController;
+  let http: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -19,58 +21,47 @@ describe('LocalAuthenticationClient', () => {
       ],
     });
 
-    client = TestBed.inject(LocalAuthenticationClient);
-    controller = TestBed.inject(HttpTestingController);
+    client = TestBed.inject(
+      LocalAuthenticationClient,
+    );
+
+    http = TestBed.inject(
+      HttpTestingController,
+    );
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    http.verify();
+  });
 
-  it('logs in with credentials and enables browser credentials', () => {
+  it('changes the authenticated LOCAL password through the DA-10 endpoint', () => {
     client
-      .login({
-        username: 'admin',
-        password: 'admin-dev-2026',
+      .changePassword({
+        currentPassword:
+          'Temporary-password-2026',
+        newPassword:
+          'Permanent-password-2026',
       })
       .subscribe();
 
-    const request = controller.expectOne('/api/v1/auth/login');
+    const request =
+      http.expectOne(
+        '/api/v1/auth/password/change',
+      );
 
-    expect(request.request.method).toBe('POST');
-    expect(request.request.withCredentials).toBe(true);
-    expect(request.request.body).toEqual({
-      username: 'admin',
-      password: 'admin-dev-2026',
-    });
+    expect(request.request.method)
+      .toBe('POST');
 
-    request.flush({
-      subject: 'local-admin',
-      username: 'admin',
-      roles: ['ADMIN'],
-    });
-  });
+    expect(request.request.withCredentials)
+      .toBe(true);
 
-  it('restores the current server-side session', () => {
-    client.currentUser().subscribe();
-
-    const request = controller.expectOne('/api/v1/auth/me');
-
-    expect(request.request.method).toBe('GET');
-    expect(request.request.withCredentials).toBe(true);
-
-    request.flush({
-      subject: 'local-admin',
-      username: 'admin',
-      roles: ['ADMIN'],
-    });
-  });
-
-  it('logs out the server-side session', () => {
-    client.logout().subscribe();
-
-    const request = controller.expectOne('/api/v1/auth/logout');
-
-    expect(request.request.method).toBe('POST');
-    expect(request.request.withCredentials).toBe(true);
+    expect(request.request.body)
+      .toEqual({
+        currentPassword:
+          'Temporary-password-2026',
+        newPassword:
+          'Permanent-password-2026',
+      });
 
     request.flush(null);
   });

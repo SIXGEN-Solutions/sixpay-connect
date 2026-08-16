@@ -36,6 +36,7 @@ import org.springframework.security.web.context.RequestAttributeSecurityContextR
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @AutoConfiguration
@@ -261,6 +262,22 @@ public class SixpaySecurityAutoConfiguration {
                         csrf -> {
                             csrf.csrfTokenRepository(
                                     csrfTokenRepository
+                            );
+
+                            /*
+                             * SIXPAY is an Angular SPA. Angular sends the raw
+                             * XSRF-TOKEN cookie value in X-XSRF-TOKEN.
+                             *
+                             * Spring Security's default XOR request handler
+                             * expects a BREACH-encoded request token and
+                             * therefore rejects the otherwise identical raw
+                             * cookie/header pair as an invalid CSRF token.
+                             *
+                             * Use the plain request-attribute handler for the
+                             * SPA contract while retaining CookieCsrfTokenRepository.
+                             */
+                            csrf.csrfTokenRequestHandler(
+                                    new CsrfTokenRequestAttributeHandler()
                             );
 
                             csrf.ignoringRequestMatchers(
