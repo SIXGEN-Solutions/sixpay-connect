@@ -215,6 +215,13 @@ export class AuthenticationService {
       );
     }
 
+    /*
+     * Preserve whether the lifecycle remediation was mandatory before /auth/me
+     * refresh changes passwordChangeRequired to false.
+     */
+    const mandatoryChange =
+      this.passwordChangeRequiredState();
+
     return this.authenticationClient
       .changePassword(request)
       .pipe(
@@ -225,7 +232,11 @@ export class AuthenticationService {
           this.errorService.clear();
           this.setCanonicalSession(session);
         }),
-        tap(() => this.completePasswordChangeNavigation()),
+        tap(() =>
+          this.completePasswordChangeNavigation(
+            mandatoryChange,
+          ),
+        ),
         map(() => undefined),
       );
   }
@@ -252,10 +263,6 @@ export class AuthenticationService {
       return;
     }
 
-    /*
-     * Do not consume the requested business return URL yet. The user must
-     * complete the LOCAL lifecycle first, then DA-10.6 returns there.
-     */
     if (
       this.activeAuthenticationMethodState() === 'local' &&
       this.passwordChangeRequiredState()
@@ -267,10 +274,6 @@ export class AuthenticationService {
     this.navigateToStoredReturnUrl();
   }
 
-  /**
-   * DA-8 always terminates the backend SIXPAY session first. If that backend
-   * session originated from OIDC, the IdP/browser session is then revoked.
-   */
   logout(): void {
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
@@ -305,12 +308,6 @@ export class AuthenticationService {
     }
   }
 
-  /**
-   * Bootstrap priority:
-   * 1. existing unified SIXPAY backend session;
-   * 2. existing/callback OIDC session, exchanged once for a backend session;
-   * 3. anonymous.
-   */
   private initializeAuthentication(): void {
     if (!this.localEnabled && !this.oidcEnabled) {
       this.readyState.next(true);
@@ -427,8 +424,19 @@ export class AuthenticationService {
     );
   }
 
-  private completePasswordChangeNavigation(): void {
+  private completePasswordChangeNavigation(
+    mandatoryChange: boolean,
+  ): void {
     if (this.passwordChangeRequiredState()) {
+      return;
+    }
+
+    if (mandatoryChange) {
+      this.storage?.removeItem(
+        RETURN_URL_STORAGE_KEY,
+      );
+
+      void this.router.navigateByUrl('/');
       return;
     }
 
@@ -436,12 +444,40 @@ export class AuthenticationService {
   }
 
   private navigateToStoredReturnUrl(): void {
-    const returnUrl = this.safeReturnUrl(
-      this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/',
+    const storedReturnUrl =
+      this.storage?.getItem(
+        RETURN_URL_STORAGE_KEY,
+      ) ?? '/';
+
+    this.storage?.removeItem(
+      RETURN_URL_STORAGE_KEY,
     );
 
-    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
-    void this.router.navigateByUrl(returnUrl);
+    void this.router.navigateByUrl(
+      this.applicationReturnUrl(
+        storedReturnUrl,
+      ),
+    );
+  }
+
+  private applicationReturnUrl(
+    returnUrl: string,
+  ): string {
+    const safeReturnUrl =
+      this.safeReturnUrl(returnUrl);
+
+    if (
+      safeReturnUrl === '/login' ||
+      safeReturnUrl.startsWith('/login?') ||
+      safeReturnUrl === '/change-password' ||
+      safeReturnUrl.startsWith('/change-password?') ||
+      safeReturnUrl === '/forbidden' ||
+      safeReturnUrl === '/unauthorized'
+    ) {
+      return '/';
+    }
+
+    return safeReturnUrl;
   }
 
   private finishFrontendLogout(
