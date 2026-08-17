@@ -88,6 +88,18 @@ public class OpenApiConfiguration {
     }
 
     @Bean
+    GroupedOpenApi administrationOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("administration")
+                .displayName("User Administration API")
+                .pathsToMatch(
+                        "/internal/api/v1/administration/users",
+                        "/internal/api/v1/administration/users/**"
+                )
+                .build();
+    }
+
+    @Bean
     GroupedOpenApi reportingOpenApi() {
         return GroupedOpenApi.builder()
                 .group("reporting")

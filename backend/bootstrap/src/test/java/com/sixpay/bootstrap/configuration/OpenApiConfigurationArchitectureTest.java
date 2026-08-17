@@ -22,7 +22,7 @@ class OpenApiConfigurationArchitectureTest {
             );
 
     @Test
-    void swaggerExposesPartnerPaymentAndCustomerGroups()
+    void swaggerExposesPublishedApiGroups()
             throws Exception {
 
         String source =
@@ -32,10 +32,12 @@ class OpenApiConfigurationArchitectureTest {
                 ".group(\"partner\")",
                 ".group(\"payment\")",
                 ".group(\"customer\")",
+                ".group(\"administration\")",
                 "/api/v1/partners/**",
                 "/v1/payments/**",
                 "/internal/api/v1/payments/**",
-                "/internal/api/v1/observed-customers/**"
+                "/internal/api/v1/observed-customers/**",
+                "/internal/api/v1/administration/users/**"
         )) {
             assertTrue(
                     source.contains(required),
