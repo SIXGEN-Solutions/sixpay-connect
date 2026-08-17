@@ -313,6 +313,25 @@ public class SixpaySecurityAutoConfiguration {
                                     )
                                     .permitAll();
 
+                            /*
+                             * Springdoc is disabled by default in bootstrap
+                             * application.yml. When a development/sandbox
+                             * profile explicitly enables it, its static UI
+                             * resources and OpenAPI descriptor must remain
+                             * reachable without an application session.
+                             *
+                             * This does not expose business APIs: the final
+                             * anyRequest().authenticated() rule is preserved.
+                             */
+                            authorize
+                                    .requestMatchers(
+                                            "/swagger-ui.html",
+                                            "/swagger-ui/**",
+                                            "/v3/api-docs",
+                                            "/v3/api-docs/**"
+                                    )
+                                    .permitAll();
+
                             if (capabilities
                                     .localEnabled()) {
                                 authorize
