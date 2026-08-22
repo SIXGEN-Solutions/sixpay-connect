@@ -184,21 +184,26 @@ public class CustomerController {
 
     @PostMapping("/{customerId}/accounts")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Link a verified bank account to a customer")
+    @Operation(
+            summary = "Lookup, freshly verify and link a bank account to a customer"
+    )
     public CustomerResponse addAccount(
             @PathVariable UUID customerId,
-            @Valid @RequestBody AddCustomerBankAccountRequest request
+            @Valid @RequestBody AddCustomerBankAccountRequest request,
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId
     ) {
+        String effectiveCorrelationId =
+                correlationId == null || correlationId.isBlank()
+                        ? UUID.randomUUID().toString()
+                        : correlationId.strip();
+
         return CustomerResponse.from(
                 management.addBankAccount(
                         new CustomerId(customerId),
                         new AddBankAccountCommand(
-                                request.bankingAccountReference(),
-                                request.accountBindingFingerprint(),
-                                request.maskedAccountIdentifier(),
-                                request.currency(),
-                                request.accountType(),
-                                request.verifiedAt()
+                                request.accountReference(),
+                                effectiveCorrelationId
                         ),
                         Instant.now()
                 )
