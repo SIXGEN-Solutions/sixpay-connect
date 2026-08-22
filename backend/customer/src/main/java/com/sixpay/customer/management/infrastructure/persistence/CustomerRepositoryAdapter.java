@@ -1,0 +1,135 @@
+package com.sixpay.customer.management.infrastructure.persistence;
+
+import com.sixpay.customer.management.domain.model.Customer;
+import com.sixpay.customer.management.domain.model.CustomerBankAccount;
+import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
+import com.sixpay.customer.management.domain.model.CustomerId;
+import com.sixpay.customer.management.domain.repository.CustomerRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+@Repository
+public class CustomerRepositoryAdapter implements CustomerRepository {
+
+    private final CustomerSpringDataRepository repository;
+
+    public CustomerRepositoryAdapter(
+            CustomerSpringDataRepository repository
+    ) {
+        this.repository = repository;
+    }
+
+    @Override
+    @Transactional
+    public Customer save(Customer customer) {
+        CustomerJpaEntity entity =
+                repository.findAggregateById(
+                                customer.id().value()
+                        )
+                        .orElse(null);
+
+        if (entity == null) {
+            repository.save(
+                    CustomerJpaEntity.create(
+                            customer
+                    )
+            );
+
+            return customer;
+        }
+
+        /*
+         * Important:
+         *
+         * PostgreSQL enforces exactly one default account
+         * through a partial unique index.
+         *
+         * Hibernate normally executes INSERTs before UPDATEs
+         * during flush. When a newly-added account becomes
+         * the default account, inserting it before demoting
+         * the existing default would temporarily violate
+         * the unique index.
+         *
+         * Therefore the switch is intentionally persisted
+         * in two phases.
+         */
+        boolean defaultAccountChanged =
+                entity.prepareDefaultAccountSwitch(
+                        customer
+                );
+
+        if (defaultAccountChanged) {
+            repository.saveAndFlush(entity);
+        }
+
+        entity.synchronize(customer);
+
+        repository.save(entity);
+
+        return customer;
+    }
+
+    @Override
+    public Optional<Customer> findById(CustomerId customerId) {
+        return repository.findAggregateById(
+                        customerId.value()
+                )
+                .map(this::toDomain);
+    }
+
+    @Override
+    public boolean existsById(CustomerId customerId) {
+        return repository.existsById(customerId.value());
+    }
+
+    @Override
+    public boolean existsByFinancialInstitutionCodeAndBankingCustomerReference(
+            String financialInstitutionCode,
+            String bankingCustomerReference
+    ) {
+        return repository
+                .existsByFinancialInstitutionCodeAndBankingCustomerReference(
+                        financialInstitutionCode,
+                        bankingCustomerReference
+                );
+    }
+
+    private Customer toDomain(CustomerJpaEntity entity) {
+        CustomerId customerId = new CustomerId(entity.id());
+
+        return Customer.reconstitute(
+                customerId,
+                entity.financialInstitutionCode(),
+                entity.bankingCustomerReference(),
+                entity.customerNumber(),
+                entity.niu(),
+                entity.legalName(),
+                entity.email(),
+                entity.phoneNumber(),
+                entity.status(),
+                entity.statusReason(),
+                entity.createdAt(),
+                entity.updatedAt(),
+                entity.bankAccounts()
+                        .stream()
+                        .map(account ->
+                                CustomerBankAccount.reconstitute(
+                                        new CustomerBankAccountId(
+                                                account.id()
+                                        ),
+                                        customerId,
+                                        account.bankingAccountReference(),
+                                        account.accountBindingFingerprint(),
+                                        account.maskedAccountIdentifier(),
+                                        account.currency(),
+                                        account.accountType(),
+                                        account.defaultAccount(),
+                                        account.verifiedAt()
+                                )
+                        )
+                        .toList()
+        );
+    }
+}

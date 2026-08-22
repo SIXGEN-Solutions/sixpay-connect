@@ -4,6 +4,7 @@ import com.sixpay.customer.management.application.port.input.EnrollCustomerComma
 import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
 import com.sixpay.customer.management.application.port.output.CustomerEnrollmentIdGenerator;
 import com.sixpay.customer.management.application.port.output.CustomerEnrollmentTimeProvider;
+import com.sixpay.customer.management.domain.repository.CustomerRepository;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
 import com.sixpay.customer.verification.domain.model.*;
@@ -25,6 +26,7 @@ class CustomerEnrollmentServiceTest {
         VerifyCustomerUseCase verification = mock(VerifyCustomerUseCase.class);
         CustomerEnrollmentIdGenerator ids = mock(CustomerEnrollmentIdGenerator.class);
         CustomerEnrollmentTimeProvider time = mock(CustomerEnrollmentTimeProvider.class);
+        CustomerRepository repository = mock(CustomerRepository.class);
 
         Instant now = Instant.parse("2026-08-22T20:00:00Z");
         when(time.now()).thenReturn(now);
@@ -64,13 +66,17 @@ class CustomerEnrollmentServiceTest {
         when(verified.completedAt()).thenReturn(now);
         when(verified.validUntil()).thenReturn(now.plusSeconds(60));
         when(verification.verify(any())).thenReturn(verified);
+        when(repository.save(any())).thenAnswer(
+                invocation -> invocation.getArgument(0)
+        );
 
         CustomerEnrollmentService service =
                 new CustomerEnrollmentService(
                         lookup,
                         verification,
                         ids,
-                        time
+                        time,
+                        repository
                 );
 
         var result = service.enroll(
@@ -91,5 +97,6 @@ class CustomerEnrollmentServiceTest {
         var order = inOrder(lookup, verification);
         order.verify(lookup).lookup(any());
         order.verify(verification).verify(any());
+        verify(repository).save(result.customer());
     }
 }

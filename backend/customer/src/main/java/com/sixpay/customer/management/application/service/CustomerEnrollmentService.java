@@ -12,6 +12,7 @@ import com.sixpay.customer.management.domain.model.Customer;
 import com.sixpay.customer.management.domain.model.CustomerBankAccount;
 import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
 import com.sixpay.customer.management.domain.model.CustomerId;
+import com.sixpay.customer.management.domain.repository.CustomerRepository;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
@@ -25,12 +26,14 @@ import com.sixpay.customer.verification.domain.model.CustomerVerificationSubject
 import com.sixpay.customer.verification.domain.model.FinancialInstitutionCode;
 import com.sixpay.customer.verification.domain.model.VerificationOutcome;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@Transactional
 public final class CustomerEnrollmentService
         implements EnrollCustomerUseCase {
 
@@ -38,17 +41,20 @@ public final class CustomerEnrollmentService
     private final VerifyCustomerUseCase verifyCustomerUseCase;
     private final CustomerEnrollmentIdGenerator idGenerator;
     private final CustomerEnrollmentTimeProvider timeProvider;
+    private final CustomerRepository customerRepository;
 
     public CustomerEnrollmentService(
             BankingCustomerLookupPort lookupPort,
             VerifyCustomerUseCase verifyCustomerUseCase,
             CustomerEnrollmentIdGenerator idGenerator,
-            CustomerEnrollmentTimeProvider timeProvider
+            CustomerEnrollmentTimeProvider timeProvider,
+            CustomerRepository customerRepository
     ) {
         this.lookupPort = Objects.requireNonNull(lookupPort);
         this.verifyCustomerUseCase = Objects.requireNonNull(verifyCustomerUseCase);
         this.idGenerator = Objects.requireNonNull(idGenerator);
         this.timeProvider = Objects.requireNonNull(timeProvider);
+        this.customerRepository = Objects.requireNonNull(customerRepository);
     }
 
     @Override
@@ -100,6 +106,16 @@ public final class CustomerEnrollmentService
 
         requireFreshVerifiedEvidence(verification, requestedAt);
 
+        if (customerRepository
+                .existsByFinancialInstitutionCodeAndBankingCustomerReference(
+                        profile.financialInstitutionCode(),
+                        profile.customerReference()
+                )) {
+            throw new CustomerDomainException(
+                    "customer is already enrolled in SIXPAY"
+            );
+        }
+
         CustomerId customerId =
                 new CustomerId(idGenerator.nextId());
 
@@ -128,7 +144,8 @@ public final class CustomerEnrollmentService
                 requestedAt
         );
 
-        return new EnrollCustomerResult(customer);
+        Customer persisted = customerRepository.save(customer);
+        return new EnrollCustomerResult(persisted);
     }
 
     private static void requireFreshVerifiedEvidence(
