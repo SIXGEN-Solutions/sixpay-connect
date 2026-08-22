@@ -1,0 +1,8 @@
+sixpay:
+  security:
+    authentication:
+      local:
+        enabled: true
+      oidc:
+        enabled: true
+        registration-id: sixpay

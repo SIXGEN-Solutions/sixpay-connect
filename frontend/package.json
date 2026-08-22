@@ -23,6 +23,7 @@
     "test:e2e:install": "playwright install chromium",
     "test:e2e": "playwright test",
     "test:e2e:integration": "playwright test --config playwright.integration.config.ts",
+    "test:e2e:fullstack": "node scripts/run-fullstack-e2e.mjs",
     "test:e2e:a11y": "playwright test --grep @a11y",
     "dependencies:audit": "npm audit --omit=dev --audit-level=high",
     "contract:partner": "node verify-partner-openapi.mjs",
