@@ -27,9 +27,9 @@ public final class Customer extends AggregateRoot<CustomerId> {
     private final String bankingCustomerReference;
     private final String customerNumber;
     private final String niu;
-    private final String legalName;
-    private final String email;
-    private final String phoneNumber;
+    private String legalName;
+    private String email;
+    private String phoneNumber;
     private final Instant createdAt;
     private final Map<CustomerBankAccountId, CustomerBankAccount> bankAccounts;
 
@@ -152,6 +152,29 @@ public final class Customer extends AggregateRoot<CustomerId> {
                 updatedAt,
                 bankAccounts
         );
+    }
+
+    public void updateProfile(
+            String legalName,
+            String email,
+            String phoneNumber,
+            Instant now
+    ) {
+        requireMutable("update customer profile");
+        requireTime(now);
+
+        this.legalName = requireText(
+                legalName,
+                "legalName",
+                MAX_LEGAL_NAME_LENGTH
+        );
+        this.email = normalizeEmail(email);
+        this.phoneNumber = optionalText(
+                phoneNumber,
+                "phoneNumber",
+                MAX_PHONE_LENGTH
+        );
+        this.updatedAt = now;
     }
 
     public void suspend(String reason, Instant now) {
