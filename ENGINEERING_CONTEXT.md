@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/sixpay-pilot-hybrid-consolidated'`
+**Primary implementation branch:** `'feat/sixpay-customer-management-baseline'`
 
-**Current delivery focus:** Dual Authentication — Local + OIDC.
+**Current delivery focus:** Customer management.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `''feat/sixpay-pilot-hybrid-consolidated'`
+1. `''feat/sixpay-customer-management-baseline'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
