@@ -76,21 +76,52 @@ class PaymentBankingAdaptersArchitectureTest {
     }
 
     @Test
-    void historicalAdaptersRemainConditionalOnGenericClient()
+    void accountAndFundsAdaptersUseNarrowClient()
             throws IOException {
 
         for (String adapterName : List.of(
                 "AmplitudeVerificationAdapter.java",
-                "AmplitudeFundsAdapter.java",
+                "AmplitudeFundsAdapter.java"
+        )) {
+            Path adapter = AMPLITUDE_ROOT.resolve(adapterName);
+            String source = normalizeSource(
+                    readRequiredSource(adapter)
+            );
+
+            assertTrue(
+                    source.contains(
+                            "@ConditionalOnBean("
+                                    + "AmplitudeAccountFundsClient.class)"
+                    )
+            );
+            assertTrue(
+                    source.contains("AmplitudeAccountFundsClient")
+            );
+        }
+
+        for (String removedAdapter : List.of(
                 "AmplitudePostingAdapter.java",
                 "AmplitudeLookupAdapter.java",
                 "AmplitudeReversalAdapter.java"
         )) {
-            assertHistoricalAdapter(
-                    adapterName,
-                    "AmplitudeBankingClient"
+            assertFalse(
+                    Files.exists(
+                            AMPLITUDE_ROOT.resolve(removedAdapter)
+                    ),
+                    () -> removedAdapter
+                            + " must be removed after CB-2 consolidation"
             );
         }
+
+        assertFalse(
+                Files.exists(
+                        AMPLITUDE_ROOT.resolve(
+                                "Amplitude"
+                                        + "BankingClient.java"
+                        )
+                ),
+                "Generic Amplitude banking facade must not exist"
+        );
     }
 
     @Test
@@ -293,39 +324,6 @@ class PaymentBankingAdaptersArchitectureTest {
                         "EvidenceObservationChannel."
                                 + "BANK_REFERENCE_LOOKUP"
                 )
-        );
-    }
-
-    private static void assertHistoricalAdapter(
-            String fileName,
-            String expectedClient
-    ) throws IOException {
-
-        Path adapter = AMPLITUDE_ROOT.resolve(
-                fileName
-        );
-
-        if (!Files.isRegularFile(adapter)) {
-            return;
-        }
-
-        String source = normalizeSource(
-                Files.readString(adapter)
-        );
-
-        assertTrue(
-                source.contains(
-                        "@ConditionalOnBean("
-                                + expectedClient
-                                + ".class)"
-                ),
-                () -> fileName
-                        + " must be conditional on "
-                        + expectedClient
-        );
-
-        assertTrue(
-                source.contains(expectedClient)
         );
     }
 

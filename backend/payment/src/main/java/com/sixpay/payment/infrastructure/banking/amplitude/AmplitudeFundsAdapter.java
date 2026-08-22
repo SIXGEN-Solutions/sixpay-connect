@@ -8,20 +8,18 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 @Component
-@ConditionalOnBean(
-        AmplitudeBankingClient.class
-)
+@ConditionalOnBean(AmplitudeAccountFundsClient.class)
 public final class AmplitudeFundsAdapter
         implements FundsGateway {
 
-    private final AmplitudeBankingClient client;
+    private final AmplitudeAccountFundsClient client;
 
     public AmplitudeFundsAdapter(
-            AmplitudeBankingClient client
+            AmplitudeAccountFundsClient client
     ) {
         this.client = Objects.requireNonNull(
                 client,
-                "Amplitude banking client"
+                "Amplitude account/funds client"
         );
     }
 

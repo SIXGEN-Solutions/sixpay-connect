@@ -16,26 +16,16 @@ class PaymentPostingArchitectureTest {
     );
 
     @Test
-    void genericAdapterRemainsAvailableForExistingTestAndStubClients()
-            throws Exception {
+    void genericPostingAdapterIsRemoved() {
 
-        String source = Files.readString(
-                Path.of(
-                        "src/main/java/com/sixpay/payment/"
-                                + "infrastructure/banking/amplitude/"
-                                + "AmplitudePostingAdapter.java"
-                )
+        Path genericAdapter = Path.of(
+                "src/main/java/com/sixpay/payment/"
+                        + "infrastructure/banking/amplitude/"
+                        + "AmplitudePostingAdapter.java"
         );
 
-        assertTrue(
-                source.contains(
-                        "AmplitudeBankingClient.class"
-                )
-        );
-        assertTrue(
-                source.contains(
-                        "client.postPayment(request)"
-                )
+        assertFalse(
+                Files.exists(genericAdapter)
         );
     }
 
@@ -58,7 +48,9 @@ class PaymentPostingArchitectureTest {
                 )
         );
         assertFalse(
-                source.contains("AmplitudeBankingClient")
+                source.contains(
+                        "Amplitude" + "BankingClient"
+                )
         );
     }
 

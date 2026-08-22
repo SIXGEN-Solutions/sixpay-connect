@@ -4,7 +4,8 @@ import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.payment.application.port.output.banking.PostingGateway;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
-import com.sixpay.payment.infrastructure.banking.amplitude.AmplitudeBankingClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePostingClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.DedicatedAmplitudePostingAdapter;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.Test;
@@ -95,7 +96,7 @@ class PaymentEndToEndIntegrationIT {
     private PostingGateway postingGateway;
 
     @Autowired
-    private AmplitudeBankingClient amplitudeClient;
+    private AmplitudePostingClient amplitudeClient;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -121,7 +122,7 @@ class PaymentEndToEndIntegrationIT {
                         PostingOutcomeSnapshot.class
                 );
 
-        when(amplitudeClient.postPayment(postingRequest))
+        when(amplitudeClient.post(postingRequest))
                 .thenReturn(postingOutcome);
 
         TransactionTemplate transaction =
@@ -153,7 +154,7 @@ class PaymentEndToEndIntegrationIT {
         assertThat(actualOutcome)
                 .isSameAs(postingOutcome);
         verify(amplitudeClient)
-                .postPayment(postingRequest);
+                .post(postingRequest);
 
         transaction.executeWithoutResult(status -> {
             saveEvent(
@@ -401,9 +402,18 @@ class PaymentEndToEndIntegrationIT {
         }
 
         @Bean
-        AmplitudeBankingClient amplitudeBankingClient() {
+        AmplitudePostingClient amplitudePostingClient() {
             return Mockito.mock(
-                    AmplitudeBankingClient.class
+                    AmplitudePostingClient.class
+            );
+        }
+
+        @Bean
+        PostingGateway postingGateway(
+                AmplitudePostingClient amplitudePostingClient
+        ) {
+            return new DedicatedAmplitudePostingAdapter(
+                    amplitudePostingClient
             );
         }
 

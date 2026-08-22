@@ -226,6 +226,7 @@ paths:
 
   /api/v1/customer-verifications:
     post:
+      x-sixpay-bank-approval: APPROVED
       tags: [Verifications]
       operationId: verifyAmplitudeCustomer
       summary: Verify customer identity, KYC and account facts

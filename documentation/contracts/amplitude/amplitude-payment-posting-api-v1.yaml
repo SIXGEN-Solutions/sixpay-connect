@@ -67,6 +67,7 @@ tags:
 paths:
   /api/v1/payment-checks:
     post:
+      x-sixpay-bank-approval: APPROVED
       tags: [Payment checks]
       operationId: checkAmplitudePaymentExecution
       summary: Check whether the account can execute the payment
@@ -277,6 +278,7 @@ paths:
 
   /api/v1/payment-postings:
     post:
+      x-sixpay-bank-approval: APPROVED
       tags: [Payment postings]
       operationId: postAmplitudePayment
       summary: Debit the customer and credit the configured CUT
@@ -347,6 +349,7 @@ paths:
 
   /api/v1/payment-posting-lookups/{idempotencyKey}:
     get:
+      x-sixpay-bank-approval: APPROVED
       tags: [Payment postings]
       operationId: getAmplitudePostingByIdempotencyKey
       summary: Recover posting status by the original idempotency key
@@ -383,6 +386,7 @@ paths:
 
   /api/v1/payment-postings/{bankPostingReference}:
     get:
+      x-sixpay-bank-approval: APPROVED
       tags: [Payment postings]
       operationId: getAmplitudePostingByReference
       summary: Get the current posting status by bank reference
@@ -419,6 +423,7 @@ paths:
 
   /api/v1/payment-postings/{bankPostingReference}/reversals:
     post:
+      x-sixpay-bank-approval: APPROVED
       tags: [Reversals]
       operationId: reverseAmplitudePosting
       summary: Request an explicit bank-authorized reversal

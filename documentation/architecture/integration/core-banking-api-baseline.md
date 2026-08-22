@@ -28,13 +28,13 @@ exists. External approval is a separate gate.
 | Capability | Contract | Owner | Bank approval | MVP |
 |---|---|---|---|---|
 | Customer discovery | `amplitude-customer-verification-api-v1.yaml` | Customer | `PENDING_BANK_APPROVAL` | `REQUIRED` |
-| Customer/KYC/account verification | `amplitude-customer-verification-api-v1.yaml` | Customer | `PENDING_BANK_APPROVAL` | `REQUIRED` |
-| Payment execution/funds check | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_BANK_APPROVAL` | `REQUIRED` |
+| Customer/KYC/account verification | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
+| Payment execution/funds check | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Fund reservation/lookup/release | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_BANK_APPROVAL` | `OPTIONAL` |
-| Atomic debit + CUT credit posting | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_BANK_APPROVAL` | `REQUIRED` |
-| Posting lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_BANK_APPROVAL` | `REQUIRED` |
-| Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_BANK_APPROVAL` | `OPTIONAL` |
-| TFJ/EOD callback + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `PENDING_BANK_APPROVAL` | `REQUIRED` |
+| Atomic debit + CUT credit posting | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
+| Posting lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
+| Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `OPTIONAL` |
+| TFJ/EOD callback + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `APPROVED` | `REQUIRED` |
 
 ## Signatures to confirm with the bank
 

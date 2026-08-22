@@ -15,22 +15,21 @@ class PaymentCompensationArchitectureTest {
     );
 
     @Test
-    void genericReversalAdapterRemainsAvailable()
-            throws Exception {
-        String source = Files.readString(
-                AMPLITUDE.resolve(
-                        "AmplitudeReversalAdapter.java"
+    void genericReversalAdapterIsRemoved() {
+        assertFalse(
+                Files.exists(
+                        AMPLITUDE.resolve(
+                                "AmplitudeReversalAdapter.java"
+                        )
                 )
         );
 
-        assertTrue(
-                source.contains(
-                        "AmplitudeBankingClient.class"
-                )
-        );
-        assertTrue(
-                source.contains(
-                        "client.reversePayment(request)"
+        assertFalse(
+                Files.exists(
+                        AMPLITUDE.resolve(
+                                "Amplitude"
+                                        + "BankingClient.java"
+                        )
                 )
         );
     }
