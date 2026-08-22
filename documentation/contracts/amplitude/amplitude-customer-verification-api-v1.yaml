@@ -8,7 +8,7 @@ info:
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "PENDING_BANK_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     domain: "integration"
     capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
@@ -23,7 +23,7 @@ info:
         - "customer"
         - "payment"
       decisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
-      fundsControlContract: "amplitude-payment-verification-api-v1"
+      fundsControlContract: "amplitude-payment-posting-api-v1"
     limitations:
       - "NO_SUBSCRIPTION_AUTHORIZATION"
       - "NO_FUNDS_AVAILABILITY_CONTROL"
@@ -37,10 +37,11 @@ info:
     Canonical contract consumed by SIXPAY to query customer, KYC and account
     facts from the Amplitude Core Banking system.
 
-    Amplitude remains the system of record. The contract exposes normalized
-    facts and verification evidence used by the Payment workflow. It does not
-    authorize or manage a TRESOR PAY subscription: TRESOR PAY remains the
-    subscription system of record for the MVP.
+    Amplitude remains the system of record for banking customer/account facts.
+    The contract exposes normalized facts and verification evidence used by
+    Customer Management and Payment. It does not authorize or manage a SIXPAY
+    subscription. SIXPAY owns its enrolled Customer and partner-subscription
+    lifecycle.
 
     This reference contract does not cover funds-availability controls, debit
     posting, CUT credit or end-of-day Treasury confirmation. Those capabilities

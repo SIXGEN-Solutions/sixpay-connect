@@ -3,7 +3,7 @@ registry:
   id: "sixpay-contract-registry"
   gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
   step: "1.7"
-  branch: "feat/payment-contract-pack"
+  branch: "feat/sixpay-customer-management-baseline"
   classificationDate: "2026-07-31"
 
 classificationModel:
@@ -19,6 +19,7 @@ classificationModel:
   approvalStatuses:
     DRAFT: "Not approved for implementation."
     PENDING_APPROVAL: "Technically prepared and awaiting formal approval."
+    PENDING_BANK_APPROVAL: "SIXPAY baseline prepared; authoritative bank/provider approval is still required."
     APPROVED: "Approved by the required authorities."
   generationPolicy:
     ACTIVE: "May be used for generation when approved and when all dependencies are available."
@@ -74,7 +75,7 @@ contracts:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "PENDING_BANK_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
@@ -89,7 +90,7 @@ contracts:
         - "Find accounts and verify account ownership and status"
         - "Detect blocks or oppositions"
       limitations:
-        - "Does not authorize or manage a TRESOR PAY subscription"
+        - "Does not authorize or manage a SIXPAY Customer subscription"
         - "Does not define funds-availability controls"
         - "Does not define debit or CUT-credit posting"
         - "Does not define end-of-day Treasury confirmation"
@@ -107,7 +108,7 @@ contracts:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "PENDING_BANK_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
@@ -128,10 +129,10 @@ contracts:
         - "Unknown outcomes permit lookup only, never blind resubmission"
         - "Reversal requires a bank instruction or approved runbook"
         - "Posting success does not establish TFJ finality"
-      relationshipToVerificationContract: >
+      relationshipToCustomerVerificationContract: >
         Execution-time checks are defense in depth and do not replace the
-        dedicated pre-posting amplitude-payment-verification-api-v1 contract
-        identified by PAY-CONTRACT-02.
+        dedicated customer/account/KYC verification defined by
+        amplitude-customer-verification-api-v1.
     approvalPrerequisite:
       - "Amplitude approves atomic posting and partial-outcome semantics"
       - "Amplitude approves bank idempotency and authoritative lookup"
@@ -189,7 +190,7 @@ contracts:
     fallbackDirection: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "PENDING_BANK_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"

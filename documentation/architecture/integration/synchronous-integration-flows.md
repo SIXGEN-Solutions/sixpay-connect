@@ -130,13 +130,16 @@ Configuration already exposes base URL, endpoint path, connection/read timeouts,
 Payment
   -> VerificationGateway
   -> AmplitudeVerificationAdapter
-  -> AmplitudeBankingClient
+  -> capability-specific Amplitude account/funds client
   -> Core Banking
 ```
 
 ### Current state
 
-The port and adapter exist. The real `AmplitudeBankingClient` implementation does not.
+The legacy `AmplitudeBankingClient` interface remains as foundation debt but is
+not the target design. Current integration work uses narrow capability-specific
+clients/adapters. Customer/KYC/account verification remains owned by Customer;
+execution-time account/funds checks remain owned by Payment.
 
 ### Contract data required
 
@@ -153,7 +156,7 @@ The port and adapter exist. The real `AmplitudeBankingClient` implementation doe
 Payment
   -> FundsGateway
   -> AmplitudeFundsAdapter
-  -> AmplitudeBankingClient
+  -> AmplitudeAccountFundsClient
   -> Core Banking
 ```
 
@@ -172,8 +175,9 @@ Payment
 ```text
 Payment
   -> PostingGateway
-  -> AmplitudePostingAdapter
-  -> AmplitudeBankingClient.postPayment
+  -> DedicatedAmplitudePostingAdapter
+  -> AmplitudePostingClient
+  -> RestAmplitudePostingClient
   -> Core Banking
 ```
 
@@ -189,8 +193,8 @@ Payment
 
 ```text
 Payment reconciliation
-  -> AmplitudeLookupAdapter
-  -> find by idempotency key or bank reference
+  -> capability-specific posting lookup adapter/client
+  -> lookup by original idempotency key or bank reference
   -> resolve success / rejection / still unknown
 ```
 
@@ -208,7 +212,7 @@ Payment reconciliation
 ```text
 Authorized compensation
   -> ReversalGateway
-  -> AmplitudeReversalAdapter
+  -> capability-specific Amplitude reversal adapter/client
   -> Core Banking reversal
 ```
 
@@ -222,7 +226,17 @@ Authorized compensation
 - unknown reversal outcome resolved before another attempt;
 - complete audit.
 
-## 10. Internal query flows
+Reversal is an optional capability until the bank explicitly confirms support,
+semantics and operational controls.
+
+## 10. Core Banking contract status
+
+The authoritative CB-1 status matrix and bank-confirmation gate are maintained
+in:
+
+`documentation/architecture/integration/core-banking-api-baseline.md`
+
+## 11. Internal query flows
 
 Payment, Observed Customer and Payment Audit query APIs are synchronous read-only integrations. They must enforce:
 
