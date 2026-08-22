@@ -134,6 +134,49 @@
         </plugins>
       </build>
     </profile>
+
+    <!--
+      Phase 8.3.7 — Final Cross-module Gate.
+      Keeps bootstrap profile-scoped and executes only assembled ITs.
+    -->
+    <profile>
+      <id>cross-module-gate</id>
+
+      <properties>
+        <skipITs>false</skipITs>
+      </properties>
+
+      <dependencies>
+        <dependency>
+          <groupId>com.sixpay</groupId>
+          <artifactId>bootstrap</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <skipITs>false</skipITs>
+              <failIfNoTests>true</failIfNoTests>
+
+              <includes>
+                <include>**/assembled/**/*IT.java</include>
+              </includes>
+
+              <systemPropertyVariables>
+                <spring.profiles.active>test</spring.profiles.active>
+                <sixpay.assembled.tests>true</sixpay.assembled.tests>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
   <build>
