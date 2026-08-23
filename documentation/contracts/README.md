@@ -1,11 +1,86 @@
 # SIXPAY CONNECT — Registre des contrats
 
-Ce dossier contient les contrats d’intégration versionnés de SIXPAY CONNECT.
-Leur présence dans le dépôt ne signifie pas qu’ils appartiennent tous au MVP.
+Ce dossier contient les contrats d’intégration et d’API versionnés de
+SIXPAY CONNECT.
 
-La classification normative et exploitable par l’IA se trouve dans
-[`CONTRACT_REGISTRY.yaml`](./CONTRACT_REGISTRY.yaml). Chaque fichier OpenAPI
-répète sa classification dans l’extension `info.x-sixpay-contract`.
+La présence physique d’un contrat dans le dépôt ne détermine pas à elle seule
+son usage courant. La classification normative et l’index cross-domain sont
+portés par [`CONTRACT_REGISTRY.yaml`](./CONTRACT_REGISTRY.yaml).
+
+## Canonical contract index
+
+`CONTRACT_REGISTRY.yaml` is the **canonical contractual table of contents** for
+the current SIXPAY CONNECT repository baseline.
+
+It answers the repository-level governance questions:
+
+- which contracts exist;
+- which domain and capability they belong to;
+- who owns the capability and security boundary;
+- the interaction direction;
+- source system and system of record;
+- lifecycle and approval state;
+- generation policy;
+- security classification;
+- current MVP usage;
+- the canonical physical contract path.
+
+The registry is therefore authoritative for **contract classification,
+ownership, lifecycle, approval, generation policy and usage metadata**.
+
+Physical contract files remain authoritative for the **interface itself**:
+
+- paths/endpoints;
+- operations;
+- request and response payloads;
+- schemas;
+- parameters;
+- protocol-level security declarations;
+- error responses;
+- event/message structure for asynchronous contracts.
+
+The intended relationship is:
+
+```text
+CONTRACT_REGISTRY.yaml
+        |
+        +-- contract identity / capability
+        +-- ownership / direction
+        +-- lifecycle / approval
+        +-- generation policy
+        +-- security classification
+        +-- MVP usage
+        +-- canonical physical path
+                    |
+                    v
+          physical contract file
+                    |
+                    +-- interface/protocol truth
+```
+
+A physical contract must not become a second independent registry.
+Conversely, the registry must not duplicate full interface definitions.
+
+When a physical contract repeats governance metadata through
+`info.x-sixpay-contract`, that metadata is a contract-local mirror used for
+traceability and validation. It must remain consistent with
+`CONTRACT_REGISTRY.yaml`; the registry remains the canonical cross-contract
+index.
+
+### Source-of-truth rule
+
+For the current repository baseline:
+
+1. `CONTRACT_REGISTRY.yaml` is authoritative for registry-level governance
+   metadata.
+2. The physical contract referenced by `path` is authoritative for the
+   interface/protocol definition.
+3. Git history is authoritative for historical changes.
+4. Transitional patch artifacts are not valid current-state sources of truth.
+
+This separation allows the future Master AI Context to discover the complete
+contract landscape from a single registry without flattening bounded API and
+integration contracts into one monolithic specification.
 
 ## Classement au Gate IA-0R
 
