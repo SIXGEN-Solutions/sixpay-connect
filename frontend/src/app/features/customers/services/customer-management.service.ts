@@ -5,11 +5,14 @@ import { CustomerManagementApiClient } from '../api/customer-management-api.clie
 import {
   mapBankingPreview,
   mapCustomerMaster,
+  mapCustomerPage,
   mapCustomerSubscription,
 } from '../api/customer-management-api.mapper';
 import {
   BankingCustomerPreview,
   CustomerMaster,
+  CustomerPage,
+  CustomerSearchCriteria,
   CustomerSubscription,
 } from '../models/customer-management';
 import {
@@ -21,48 +24,104 @@ import {
   UpdateCustomerRequest,
 } from '../models/customer-management.requests';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root',
+})
 export class CustomerManagementService {
-  private readonly api = inject(CustomerManagementApiClient);
 
-  list(): Observable<CustomerMaster[]> {
-    return this.api.list().pipe(map((items) => items.map(mapCustomerMaster)));
+  private readonly api =
+    inject(CustomerManagementApiClient);
+
+  search(
+    criteria: CustomerSearchCriteria,
+  ): Observable<CustomerPage> {
+    return this.api
+      .search(criteria)
+      .pipe(
+        map(mapCustomerPage),
+      );
   }
 
-  get(customerId: string): Observable<CustomerMaster> {
-    return this.api.get(customerId).pipe(map(mapCustomerMaster));
+  get(
+    customerId: string,
+  ): Observable<CustomerMaster> {
+    return this.api
+      .get(customerId)
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
   bankingPreview(
     request: BankingCustomerPreviewRequest,
   ): Observable<BankingCustomerPreview> {
-    return this.api.bankingPreview(request).pipe(map(mapBankingPreview));
+    return this.api
+      .bankingPreview(request)
+      .pipe(
+        map(mapBankingPreview),
+      );
   }
 
-  enroll(request: EnrollCustomerRequest): Observable<CustomerMaster> {
-    return this.api.enroll(request).pipe(map(mapCustomerMaster));
+  enroll(
+    request: EnrollCustomerRequest,
+  ): Observable<CustomerMaster> {
+    return this.api
+      .enroll(request)
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
   update(
     customerId: string,
     request: UpdateCustomerRequest,
   ): Observable<CustomerMaster> {
-    return this.api.update(customerId, request).pipe(map(mapCustomerMaster));
+    return this.api
+      .update(
+        customerId,
+        request,
+      )
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
-  suspend(customerId: string, request: ReasonRequest): Observable<CustomerMaster> {
-    return this.api.suspend(customerId, request).pipe(map(mapCustomerMaster));
+  suspend(
+    customerId: string,
+    request: ReasonRequest,
+  ): Observable<CustomerMaster> {
+    return this.api
+      .suspend(
+        customerId,
+        request,
+      )
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
-  reactivate(customerId: string): Observable<CustomerMaster> {
-    return this.api.reactivate(customerId).pipe(map(mapCustomerMaster));
+  reactivate(
+    customerId: string,
+  ): Observable<CustomerMaster> {
+    return this.api
+      .reactivate(customerId)
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
   addAccount(
     customerId: string,
     request: AddBankAccountRequest,
   ): Observable<CustomerMaster> {
-    return this.api.addAccount(customerId, request).pipe(map(mapCustomerMaster));
+    return this.api
+      .addAccount(
+        customerId,
+        request,
+      )
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
   makeDefaultAccount(
@@ -70,8 +129,13 @@ export class CustomerManagementService {
     accountId: string,
   ): Observable<CustomerMaster> {
     return this.api
-      .makeDefaultAccount(customerId, accountId)
-      .pipe(map(mapCustomerMaster));
+      .makeDefaultAccount(
+        customerId,
+        accountId,
+      )
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
   removeAccount(
@@ -79,14 +143,28 @@ export class CustomerManagementService {
     accountId: string,
   ): Observable<CustomerMaster> {
     return this.api
-      .removeAccount(customerId, accountId)
-      .pipe(map(mapCustomerMaster));
+      .removeAccount(
+        customerId,
+        accountId,
+      )
+      .pipe(
+        map(mapCustomerMaster),
+      );
   }
 
-  subscriptions(customerId: string): Observable<CustomerSubscription[]> {
+  subscriptions(
+    customerId: string,
+  ): Observable<CustomerSubscription[]> {
     return this.api
       .subscriptions(customerId)
-      .pipe(map((items) => items.map(mapCustomerSubscription)));
+      .pipe(
+        map(
+          (items) =>
+            items.map(
+              mapCustomerSubscription,
+            ),
+        ),
+      );
   }
 
   createSubscription(
@@ -94,13 +172,21 @@ export class CustomerManagementService {
   ): Observable<CustomerSubscription> {
     return this.api
       .createSubscription(request)
-      .pipe(map(mapCustomerSubscription));
+      .pipe(
+        map(mapCustomerSubscription),
+      );
   }
 
-  activateSubscription(subscriptionId: string): Observable<CustomerSubscription> {
+  activateSubscription(
+    subscriptionId: string,
+  ): Observable<CustomerSubscription> {
     return this.api
-      .activateSubscription(subscriptionId)
-      .pipe(map(mapCustomerSubscription));
+      .activateSubscription(
+        subscriptionId,
+      )
+      .pipe(
+        map(mapCustomerSubscription),
+      );
   }
 
   suspendSubscription(
@@ -108,7 +194,22 @@ export class CustomerManagementService {
     request: ReasonRequest,
   ): Observable<CustomerSubscription> {
     return this.api
-      .suspendSubscription(subscriptionId, request)
-      .pipe(map(mapCustomerSubscription));
+      .suspendSubscription(
+        subscriptionId,
+        request,
+      )
+      .pipe(
+        map(mapCustomerSubscription),
+      );
+  }
+
+  closeSubscription(
+    subscriptionId: string,
+    request: ReasonRequest,
+  ): Observable<void> {
+    return this.api.closeSubscription(
+      subscriptionId,
+      request,
+    );
   }
 }

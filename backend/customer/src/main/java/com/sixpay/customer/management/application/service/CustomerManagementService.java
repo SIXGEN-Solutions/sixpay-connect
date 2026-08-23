@@ -12,6 +12,8 @@ import com.sixpay.customer.management.domain.model.CustomerBankAccount;
 import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
 import com.sixpay.customer.management.domain.model.CustomerId;
 import com.sixpay.customer.management.domain.repository.CustomerRepository;
+import com.sixpay.customer.management.domain.repository.CustomerSearchCriteria;
+import com.sixpay.customer.management.domain.repository.CustomerSearchPage;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
@@ -28,7 +30,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -65,8 +66,10 @@ public final class CustomerManagementService
 
     @Override
     @Transactional(readOnly = true)
-    public List<Customer> findAll() {
-        return repository.findAll();
+    public CustomerSearchPage search(
+            CustomerSearchCriteria criteria
+    ) {
+        return repository.search(criteria);
     }
 
     @Override

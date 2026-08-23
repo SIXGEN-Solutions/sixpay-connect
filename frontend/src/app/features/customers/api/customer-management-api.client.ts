@@ -10,9 +10,11 @@ import {
   ReasonRequest,
   UpdateCustomerRequest,
 } from '../models/customer-management.requests';
+import { CustomerSearchCriteria } from '../models/customer-management';
 import {
   BankingCustomerPreviewResponse,
   CustomerMasterResponse,
+  CustomerPageResponse,
   CustomerSubscriptionResponse,
 } from '../models/customer-management.response';
 
@@ -23,8 +25,32 @@ const SUBSCRIPTIONS = '/internal/api/v1/subscriptions';
 export class CustomerManagementApiClient {
   private readonly http = inject(HttpClient);
 
-  list(): Observable<CustomerMasterResponse[]> {
-    return this.http.get<CustomerMasterResponse[]>(CUSTOMERS);
+  search(
+    criteria: CustomerSearchCriteria,
+  ): Observable<CustomerPageResponse> {
+    let params = new HttpParams()
+      .set('page', criteria.page)
+      .set('size', criteria.size);
+
+    if (criteria.niu) {
+      params = params.set('niu', criteria.niu);
+    }
+    if (criteria.legalName) {
+      params = params.set('legalName', criteria.legalName);
+    }
+    if (criteria.status) {
+      params = params.set('status', criteria.status);
+    }
+    if (criteria.financialInstitutionCode) {
+      params = params.set(
+        'financialInstitutionCode',
+        criteria.financialInstitutionCode,
+      );
+    }
+
+    return this.http.get<CustomerPageResponse>(CUSTOMERS, {
+      params,
+    });
   }
 
   get(customerId: string): Observable<CustomerMasterResponse> {

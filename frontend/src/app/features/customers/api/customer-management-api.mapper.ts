@@ -1,11 +1,13 @@
 import {
   BankingCustomerPreview,
   CustomerMaster,
+  CustomerPage,
   CustomerSubscription,
 } from '../models/customer-management';
 import {
   BankingCustomerPreviewResponse,
   CustomerMasterResponse,
+  CustomerPageResponse,
   CustomerSubscriptionResponse,
 } from '../models/customer-management.response';
 
@@ -41,5 +43,15 @@ export function mapCustomerSubscription(
     activatedAt: response.activatedAt ? new Date(response.activatedAt) : null,
     updatedAt: new Date(response.updatedAt),
     closedAt: response.closedAt ? new Date(response.closedAt) : null,
+  };
+}
+
+
+export function mapCustomerPage(
+  response: CustomerPageResponse,
+): CustomerPage {
+  return {
+    ...response,
+    content: response.content.map(mapCustomerMaster),
   };
 }

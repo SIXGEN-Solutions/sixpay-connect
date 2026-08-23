@@ -5,6 +5,10 @@ import com.sixpay.customer.management.domain.model.CustomerBankAccount;
 import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
 import com.sixpay.customer.management.domain.model.CustomerId;
 import com.sixpay.customer.management.domain.repository.CustomerRepository;
+import com.sixpay.customer.management.domain.repository.CustomerSearchCriteria;
+import com.sixpay.customer.management.domain.repository.CustomerSearchPage;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,11 +86,40 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Customer> findAll() {
-        return repository.findAllByOrderByCreatedAtDesc()
+    public CustomerSearchPage search(
+            CustomerSearchCriteria criteria
+    ) {
+        var pageable = PageRequest.of(
+                criteria.page(),
+                criteria.size(),
+                Sort.by(
+                        Sort.Direction.DESC,
+                        "createdAt"
+                )
+        );
+
+        var result = repository.search(
+                criteria.niu(),
+                criteria.legalName(),
+                criteria.status(),
+                criteria.financialInstitutionCode(),
+                pageable
+        );
+
+        var content = result.getContent()
                 .stream()
                 .map(this::toDomain)
                 .toList();
+
+        return new CustomerSearchPage(
+                content,
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.getNumber(),
+                result.getSize(),
+                result.isFirst(),
+                result.isLast()
+        );
     }
 
     @Override

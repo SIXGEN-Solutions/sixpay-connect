@@ -52,3 +52,14 @@ export interface CustomerSubscriptionResponse {
   updatedAt: string;
   closedAt: string | null;
 }
+
+
+export interface CustomerPageResponse {
+  content: CustomerMasterResponse[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}

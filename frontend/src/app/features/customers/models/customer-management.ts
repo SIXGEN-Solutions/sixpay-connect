@@ -60,3 +60,23 @@ export interface CustomerSubscription {
   updatedAt: Date;
   closedAt: Date | null;
 }
+
+
+export interface CustomerSearchCriteria {
+  niu?: string;
+  legalName?: string;
+  status?: CustomerStatus;
+  financialInstitutionCode?: string;
+  page: number;
+  size: number;
+}
+
+export interface CustomerPage {
+  content: CustomerMaster[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}

@@ -5,6 +5,7 @@ import com.sixpay.customer.management.api.request.BankingCustomerPreviewRequest;
 import com.sixpay.customer.management.api.request.CustomerStatusReasonRequest;
 import com.sixpay.customer.management.api.request.UpdateCustomerRequest;
 import com.sixpay.customer.management.api.response.CustomerResponse;
+import com.sixpay.customer.management.api.response.CustomerPageResponse;
 import com.sixpay.customer.management.api.response.BankingCustomerPreviewResponse;
 import com.sixpay.customer.management.api.response.CustomerBankAccountResponse;
 import com.sixpay.customer.management.application.audit.CustomerAuditRecorder;
@@ -16,10 +17,14 @@ import com.sixpay.customer.management.application.port.input.EnrollCustomerComma
 import com.sixpay.customer.management.application.port.input.EnrollCustomerUseCase;
 import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
 import com.sixpay.customer.management.domain.model.CustomerId;
+import com.sixpay.customer.management.domain.model.CustomerStatus;
+import com.sixpay.customer.management.domain.repository.CustomerSearchCriteria;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -110,12 +115,36 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('SCOPE_customer.read')")
-    @Operation(summary = "List enrolled SIXPAY customers")
-    public java.util.List<CustomerResponse> list() {
-        return query.findAll()
-                .stream()
-                .map(CustomerResponse::from)
-                .toList();
+    @Operation(
+            summary = "Search enrolled SIXPAY customers",
+            description = "Optional filters are combined with AND semantics."
+    )
+    public CustomerPageResponse search(
+            @RequestParam(required = false)
+            @Size(max = 100) String niu,
+            @RequestParam(required = false)
+            @Size(max = 200) String legalName,
+            @RequestParam(required = false)
+            CustomerStatus status,
+            @RequestParam(required = false)
+            @Size(max = 32) String financialInstitutionCode,
+            @RequestParam(defaultValue = "0")
+            @Min(0) int page,
+            @RequestParam(defaultValue = "20")
+            @Min(1) @Max(100) int size
+    ) {
+        return CustomerPageResponse.from(
+                query.search(
+                        new CustomerSearchCriteria(
+                                niu,
+                                legalName,
+                                status,
+                                financialInstitutionCode,
+                                page,
+                                size
+                        )
+                )
+        );
     }
 
     @PostMapping("/banking-preview")
