@@ -1,0 +1,448 @@
+diff --git a/backend/customer/src/test/java/com/sixpay/customer/management/infrastructure/persistence/CustomerRepositoryPostgreSqlIT.java b/backend/customer/src/test/java/com/sixpay/customer/management/infrastructure/persistence/CustomerRepositoryPostgreSqlIT.java
+index 780d93e..5bede2b 100644
+--- a/backend/customer/src/test/java/com/sixpay/customer/management/infrastructure/persistence/CustomerRepositoryPostgreSqlIT.java
++++ b/backend/customer/src/test/java/com/sixpay/customer/management/infrastructure/persistence/CustomerRepositoryPostgreSqlIT.java
+@@ -17,9 +17,9 @@ import org.springframework.context.annotation.Import;
+ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.time.Instant;
+@@ -40,8 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class CustomerRepositoryPostgreSqlIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse(
+                             "postgres:15-alpine"
+                     )
+diff --git a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/audit/ObservedCustomerAuditJpaIntegrationTest.java b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/audit/ObservedCustomerAuditJpaIntegrationTest.java
+index 3595d44..c0832a3 100644
+--- a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/audit/ObservedCustomerAuditJpaIntegrationTest.java
++++ b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/audit/ObservedCustomerAuditJpaIntegrationTest.java
+@@ -27,9 +27,9 @@ import org.springframework.dao.DataAccessException;
+ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ 
+ import java.time.Instant;
+ import java.util.UUID;
+@@ -53,8 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
+ class ObservedCustomerAuditJpaIntegrationTest {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>("postgres:17-alpine")
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer("postgres:17-alpine")
+                     .withDatabaseName("sixpay_customer")
+                     .withUsername("sixpay")
+                     .withPassword("sixpay");
+diff --git a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerJpaIntegrationTest.java b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerJpaIntegrationTest.java
+index 399c467..2f69cea 100644
+--- a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerJpaIntegrationTest.java
++++ b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerJpaIntegrationTest.java
+@@ -46,9 +46,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.transaction.PlatformTransactionManager;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ 
+ import java.math.BigDecimal;
+ import java.sql.Timestamp;
+@@ -124,8 +124,8 @@ class ObservedCustomerJpaIntegrationTest {
+             );
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     "postgres:17-alpine"
+             )
+                     .withDatabaseName(
+diff --git a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerPersistenceQueryIT.java b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerPersistenceQueryIT.java
+index 107d837..2803418 100644
+--- a/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerPersistenceQueryIT.java
++++ b/backend/customer/src/test/java/com/sixpay/customer/observation/infrastructure/persistence/ObservedCustomerPersistenceQueryIT.java
+@@ -43,9 +43,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.math.BigDecimal;
+@@ -64,8 +64,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class ObservedCustomerPersistenceQueryIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             );
+ 
+diff --git a/backend/notification/src/test/java/com/sixpay/notification/infrastructure/operational/persistence/OperationalNotificationPersistenceIT.java b/backend/notification/src/test/java/com/sixpay/notification/infrastructure/operational/persistence/OperationalNotificationPersistenceIT.java
+index db2012f..9d6313c 100644
+--- a/backend/notification/src/test/java/com/sixpay/notification/infrastructure/operational/persistence/OperationalNotificationPersistenceIT.java
++++ b/backend/notification/src/test/java/com/sixpay/notification/infrastructure/operational/persistence/OperationalNotificationPersistenceIT.java
+@@ -38,9 +38,9 @@ import org.springframework.boot.test.context.SpringBootTest;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import org.springframework.context.annotation.Bean;
+@@ -63,8 +63,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class OperationalNotificationPersistenceIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             );
+ 
+diff --git a/backend/partner/src/test/java/com/sixpay/partner/infrastructure/outbox/PartnerOutboxConcurrencyIT.java b/backend/partner/src/test/java/com/sixpay/partner/infrastructure/outbox/PartnerOutboxConcurrencyIT.java
+index 433f5fc..8a37fe5 100644
+--- a/backend/partner/src/test/java/com/sixpay/partner/infrastructure/outbox/PartnerOutboxConcurrencyIT.java
++++ b/backend/partner/src/test/java/com/sixpay/partner/infrastructure/outbox/PartnerOutboxConcurrencyIT.java
+@@ -17,9 +17,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.transaction.PlatformTransactionManager;
+ import org.springframework.transaction.support.TransactionTemplate;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.time.Duration;
+@@ -38,12 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
+ @SpringBootTest(
+         classes = PartnerOutboxConcurrencyIT.TestApplication.class,
+         webEnvironment = SpringBootTest.WebEnvironment.NONE
+-     /*   properties = {
+-                "spring.datasource.hikari.schema=sixpay",
+-                "spring.jpa.properties.hibernate.default_schema=sixpay",
+-                "spring.jpa.hibernate.ddl-auto=validate",
+-                "spring.jpa.open-in-view=false"
+-        }*/
+ )
+ @ActiveProfiles("test")
+ @Testcontainers
+@@ -53,8 +47,8 @@ class PartnerOutboxConcurrencyIT {
+             Instant.parse("2026-07-27T10:00:00Z");
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             );
+ 
+diff --git a/backend/partner/src/test/java/com/sixpay/partner/infrastructure/persistence/PartnerPersistenceIT.java b/backend/partner/src/test/java/com/sixpay/partner/infrastructure/persistence/PartnerPersistenceIT.java
+index 20305bc..dbd92a1 100644
+--- a/backend/partner/src/test/java/com/sixpay/partner/infrastructure/persistence/PartnerPersistenceIT.java
++++ b/backend/partner/src/test/java/com/sixpay/partner/infrastructure/persistence/PartnerPersistenceIT.java
+@@ -20,9 +20,9 @@ import org.springframework.context.annotation.Bean;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.util.Set;
+@@ -39,8 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class PartnerPersistenceIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"));
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(DockerImageName.parse("postgres:15-alpine"));
+ 
+     @DynamicPropertySource
+     static void databaseProperties(DynamicPropertyRegistry registry) {
+diff --git a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/audit/PaymentAuditAtomicityIT.java b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/audit/PaymentAuditAtomicityIT.java
+index ea046ea..98f7ed3 100644
+--- a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/audit/PaymentAuditAtomicityIT.java
++++ b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/audit/PaymentAuditAtomicityIT.java
+@@ -17,9 +17,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.transaction.PlatformTransactionManager;
+ import org.springframework.transaction.support.TransactionTemplate;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.time.Instant;
+@@ -40,8 +40,8 @@ class PaymentAuditAtomicityIT {
+             Instant.parse("2026-08-01T12:00:00Z");
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse(
+                             "postgres:15-alpine"
+                     )
+diff --git a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/outbox/PaymentOutboxRecoveryIntegrationTest.java b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/outbox/PaymentOutboxRecoveryIntegrationTest.java
+index c62db74..8682db5 100644
+--- a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/outbox/PaymentOutboxRecoveryIntegrationTest.java
++++ b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/outbox/PaymentOutboxRecoveryIntegrationTest.java
+@@ -18,9 +18,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.transaction.PlatformTransactionManager;
+ import org.springframework.transaction.support.TransactionTemplate;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ 
+ import java.sql.Timestamp;
+ import java.time.Instant;
+@@ -47,8 +47,8 @@ class PaymentOutboxRecoveryIntegrationTest {
+             Instant.parse("2026-08-04T18:00:00Z");
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>("postgres:17-alpine")
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer("postgres:17-alpine")
+                     .withDatabaseName("sixpay_payment")
+                     .withUsername("sixpay")
+                     .withPassword("sixpay");
+diff --git a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceMigrationIT.java b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceMigrationIT.java
+index ff4096d..0f9303d 100644
+--- a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceMigrationIT.java
++++ b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceMigrationIT.java
+@@ -2,9 +2,9 @@ package com.sixpay.payment.infrastructure.persistence;
+ 
+ import org.flywaydb.core.Flyway;
+ import org.junit.jupiter.api.Test;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.sql.Connection;
+@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
+ class PaymentPersistenceMigrationIT {
+ 
+     @Container
+-    private static final PostgreSQLContainer<?> POSTGRESQL =
+-            new PostgreSQLContainer<>(
++    private static final PostgreSQLContainer POSTGRESQL =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             );
+ 
+diff --git a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/query/PaymentProjectionAdaptersIT.java b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/query/PaymentProjectionAdaptersIT.java
+index 88e6087..a15d99a 100644
+--- a/backend/payment/src/test/java/com/sixpay/payment/infrastructure/query/PaymentProjectionAdaptersIT.java
++++ b/backend/payment/src/test/java/com/sixpay/payment/infrastructure/query/PaymentProjectionAdaptersIT.java
+@@ -18,9 +18,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.time.Instant;
+@@ -38,8 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class PaymentProjectionAdaptersIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse(
+                             "postgres:15-alpine"
+                     )
+diff --git a/backend/payment/src/test/java/com/sixpay/payment/performance/PaymentConcurrencyPerformanceIT.java b/backend/payment/src/test/java/com/sixpay/payment/performance/PaymentConcurrencyPerformanceIT.java
+index d310bf6..ca24522 100644
+--- a/backend/payment/src/test/java/com/sixpay/payment/performance/PaymentConcurrencyPerformanceIT.java
++++ b/backend/payment/src/test/java/com/sixpay/payment/performance/PaymentConcurrencyPerformanceIT.java
+@@ -26,9 +26,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.transaction.PlatformTransactionManager;
+ import org.springframework.transaction.support.TransactionTemplate;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.lang.reflect.Field;
+@@ -75,8 +75,8 @@ class PaymentConcurrencyPerformanceIT {
+             );
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse(
+                             "postgres:15-alpine"
+                     )
+diff --git a/backend/tests/src/payment-customer-test/java/com/sixpay/tests/paymentcustomer/PaymentCustomerObservationIT.java b/backend/tests/src/payment-customer-test/java/com/sixpay/tests/paymentcustomer/PaymentCustomerObservationIT.java
+index 6fbf0f5..76ac1e3 100644
+--- a/backend/tests/src/payment-customer-test/java/com/sixpay/tests/paymentcustomer/PaymentCustomerObservationIT.java
++++ b/backend/tests/src/payment-customer-test/java/com/sixpay/tests/paymentcustomer/PaymentCustomerObservationIT.java
+@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Import;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
+ import org.testcontainers.utility.DockerImageName;
+@@ -62,8 +61,8 @@ class PaymentCustomerObservationIT {
+             "NIU-00000001";
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             )
+                     .withDatabaseName("sixpay_payment_customer")
+diff --git a/backend/tests/src/test/java/com/sixpay/tests/assembled/AssembledApplicationContextIT.java b/backend/tests/src/test/java/com/sixpay/tests/assembled/AssembledApplicationContextIT.java
+index ec553fa..8ea8d78 100644
+--- a/backend/tests/src/test/java/com/sixpay/tests/assembled/AssembledApplicationContextIT.java
++++ b/backend/tests/src/test/java/com/sixpay/tests/assembled/AssembledApplicationContextIT.java
+@@ -14,9 +14,9 @@ import org.springframework.security.web.SecurityFilterChain;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.util.List;
+@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
+ class AssembledApplicationContextIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             )
+                     .withDatabaseName("sixpay_assembled")
+diff --git a/backend/tests/src/test/java/com/sixpay/tests/assembled/HybridSecurityAssemblyIT.java b/backend/tests/src/test/java/com/sixpay/tests/assembled/HybridSecurityAssemblyIT.java
+index 24762d4..b8482a0 100644
+--- a/backend/tests/src/test/java/com/sixpay/tests/assembled/HybridSecurityAssemblyIT.java
++++ b/backend/tests/src/test/java/com/sixpay/tests/assembled/HybridSecurityAssemblyIT.java
+@@ -24,7 +24,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+ import org.springframework.web.bind.annotation.RequestMethod;
+ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
+ import org.testcontainers.utility.DockerImageName;
+@@ -51,8 +50,8 @@ import static org.mockito.Mockito.mock;
+ class HybridSecurityAssemblyIT {
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             )
+                     .withDatabaseName("sixpay_hybrid_security")
+diff --git a/backend/tests/src/test/java/com/sixpay/tests/e2e/GoldenModuleE2EIT.java b/backend/tests/src/test/java/com/sixpay/tests/e2e/GoldenModuleE2EIT.java
+index ecfd56d..27ddefa 100644
+--- a/backend/tests/src/test/java/com/sixpay/tests/e2e/GoldenModuleE2EIT.java
++++ b/backend/tests/src/test/java/com/sixpay/tests/e2e/GoldenModuleE2EIT.java
+@@ -36,9 +36,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ import java.time.Clock;
+@@ -63,8 +63,8 @@ class GoldenModuleE2EIT {
+     private static final String CORRELATION_ID = "corr-golden-e2e";
+ 
+     @Container
+-    static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             );
+ 
+diff --git a/backend/tests/src/test/java/com/sixpay/tests/support/CrossModulePostgreSqlTestSupport.java b/backend/tests/src/test/java/com/sixpay/tests/support/CrossModulePostgreSqlTestSupport.java
+index 21a8cb1..0f7583a 100644
+--- a/backend/tests/src/test/java/com/sixpay/tests/support/CrossModulePostgreSqlTestSupport.java
++++ b/backend/tests/src/test/java/com/sixpay/tests/support/CrossModulePostgreSqlTestSupport.java
+@@ -2,17 +2,17 @@ package com.sixpay.tests.support;
+ 
+ import org.springframework.test.context.DynamicPropertyRegistry;
+ import org.springframework.test.context.DynamicPropertySource;
+-import org.testcontainers.containers.PostgreSQLContainer;
+ import org.testcontainers.junit.jupiter.Container;
+ import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.postgresql.PostgreSQLContainer;
+ import org.testcontainers.utility.DockerImageName;
+ 
+ @Testcontainers
+ public abstract class CrossModulePostgreSqlTestSupport {
+ 
+     @Container
+-    protected static final PostgreSQLContainer<?> POSTGRES =
+-            new PostgreSQLContainer<>(
++    protected static final PostgreSQLContainer POSTGRES =
++            new PostgreSQLContainer(
+                     DockerImageName.parse("postgres:15-alpine")
+             )
+                     .withDatabaseName("sixpay_cross_module")

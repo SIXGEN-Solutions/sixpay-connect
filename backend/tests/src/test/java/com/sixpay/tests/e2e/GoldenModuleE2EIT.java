@@ -36,9 +36,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Clock;
@@ -63,8 +63,8 @@ class GoldenModuleE2EIT {
     private static final String CORRELATION_ID = "corr-golden-e2e";
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(
                     DockerImageName.parse("postgres:15-alpine")
             );
 

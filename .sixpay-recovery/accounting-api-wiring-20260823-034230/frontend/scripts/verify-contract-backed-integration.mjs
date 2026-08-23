@@ -138,15 +138,6 @@ const switchedDomains = [
     mockType: 'ReportingMockService',
   },
   {
-    name: 'Accounting',
-    service:
-      'src/app/features/accounting/services/accounting.service.ts',
-    apiClient:
-      'src/app/features/accounting/api/accounting-api.client.ts',
-    apiClientType: 'AccountingApiClient',
-    mockType: 'AccountingMockService',
-  },
-  {
     name: 'Observed Customer',
     service:
       'src/app/features/customers/services/customers.service.ts',
@@ -257,7 +248,6 @@ const uiRoots = [
   'src/app/features/reporting',
   'src/app/features/customers',
   'src/app/features/administration',
-  'src/app/features/accounting',
 ];
 
 const serviceDirectories = new Set([
@@ -266,7 +256,6 @@ const serviceDirectories = new Set([
   'src/app/features/reporting/services',
   'src/app/features/customers/services',
   'src/app/features/administration/services',
-  'src/app/features/accounting/services',
 ]);
 
 for (const root of uiRoots) {
@@ -359,5 +348,5 @@ console.log(
 );
 console.log(
   'Integration mode is API-backed for Partner, Payment, Reporting, '
-    + 'Customer Management, Observed Customer, Accounting and Security User Administration.',
+    + 'Customer Management, Observed Customer and Security User Administration.',
 );

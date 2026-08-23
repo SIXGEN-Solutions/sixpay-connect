@@ -46,9 +46,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -124,8 +124,8 @@ class ObservedCustomerJpaIntegrationTest {
             );
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(
                     "postgres:17-alpine"
             )
                     .withDatabaseName(

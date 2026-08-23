@@ -8,27 +8,46 @@ describe('AccountingMockService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(AccountingMockService);
+    service =
+      TestBed.inject(
+        AccountingMockService,
+      );
   });
 
-  it('filters by reconciliation status', async () => {
-    const batches = await firstValueFrom(
-      service.search({ reconciliationStatus: 'PARTIAL_MATCH' }),
-    );
+  it('filters by contract-backed status', async () => {
+    const batches =
+      await firstValueFrom(
+        service.search({
+          status: 'NOT_COMPLETED',
+        }),
+      );
 
     expect(batches).toHaveLength(1);
-    expect(batches[0]?.batchId).toBe('ACC-20260808-03');
+    expect(
+      batches[0]?.status,
+    ).toBe('NOT_COMPLETED');
   });
 
   it('returns a batch detail', async () => {
-    const batch = await firstValueFrom(service.get('ACC-20260808-03'));
+    const batch =
+      await firstValueFrom(
+        service.get(
+          '11111111-1111-4111-8111-111111111111',
+        ),
+      );
 
-    expect(batch?.discrepancies).toHaveLength(2);
-    expect(batch?.status).toBe('RECONCILING');
+    expect(batch?.items)
+      .toHaveLength(1);
+
+    expect(batch?.status)
+      .toBe('NOT_COMPLETED');
   });
 
   it('returns null for an unknown batch', async () => {
-    const batch = await firstValueFrom(service.get('ACC-UNKNOWN'));
+    const batch =
+      await firstValueFrom(
+        service.get('ACC-UNKNOWN'),
+      );
 
     expect(batch).toBeNull();
   });

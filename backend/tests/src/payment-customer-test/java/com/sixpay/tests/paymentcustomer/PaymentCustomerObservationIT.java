@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -62,8 +61,8 @@ class PaymentCustomerObservationIT {
             "NIU-00000001";
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(
                     DockerImageName.parse("postgres:15-alpine")
             )
                     .withDatabaseName("sixpay_payment_customer")

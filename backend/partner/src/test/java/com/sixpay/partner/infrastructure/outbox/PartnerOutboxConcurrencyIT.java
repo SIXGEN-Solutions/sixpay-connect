@@ -17,9 +17,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
@@ -38,12 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         classes = PartnerOutboxConcurrencyIT.TestApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE
-     /*   properties = {
-                "spring.datasource.hikari.schema=sixpay",
-                "spring.jpa.properties.hibernate.default_schema=sixpay",
-                "spring.jpa.hibernate.ddl-auto=validate",
-                "spring.jpa.open-in-view=false"
-        }*/
 )
 @ActiveProfiles("test")
 @Testcontainers
@@ -53,8 +47,8 @@ class PartnerOutboxConcurrencyIT {
             Instant.parse("2026-07-27T10:00:00Z");
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(
                     DockerImageName.parse("postgres:15-alpine")
             );
 

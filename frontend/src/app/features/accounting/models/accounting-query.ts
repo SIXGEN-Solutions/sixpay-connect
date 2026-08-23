@@ -1,7 +1,8 @@
-import { AccountingBatchStatus, ReconciliationStatus } from './accounting';
+import { AccountingBatchStatus } from './accounting';
 
 export interface AccountingBatchQuery {
   readonly businessDate?: string;
   readonly status?: AccountingBatchStatus;
-  readonly reconciliationStatus?: ReconciliationStatus;
+  readonly page?: number;
+  readonly size?: number;
 }

@@ -2,9 +2,9 @@ package com.sixpay.payment.infrastructure.persistence;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaymentPersistenceMigrationIT {
 
     @Container
-    private static final PostgreSQLContainer<?> POSTGRESQL =
-            new PostgreSQLContainer<>(
+    private static final PostgreSQLContainer POSTGRESQL =
+            new PostgreSQLContainer(
                     DockerImageName.parse("postgres:15-alpine")
             );
 

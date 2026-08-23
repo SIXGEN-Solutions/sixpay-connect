@@ -1,48 +1,29 @@
-export type AccountingBatchStatus =
-  | 'READY'
-  | 'SUBMITTED'
-  | 'ACCEPTED'
-  | 'RECONCILING'
-  | 'COMPLETED'
-  | 'FAILED';
-
-export type ReconciliationStatus = 'MATCHED' | 'PARTIAL_MATCH' | 'UNMATCHED';
-
-export type AccountingDiscrepancyType =
-  | 'MISSING_PROVIDER_ITEM'
-  | 'AMOUNT_MISMATCH'
-  | 'STATUS_MISMATCH'
-  | 'DUPLICATE_PROVIDER_ITEM'
-  | 'UNKNOWN_PROVIDER_ITEM';
+export type AccountingBatchStatus = 'COMPLETED' | 'NOT_COMPLETED';
 
 export interface AccountingBatchSummary {
   readonly batchId: string;
   readonly businessDate: string;
-  readonly windowLabel: string;
-  readonly itemCount: number;
-  readonly reconciledCount: number;
-  readonly discrepancyCount: number;
+  readonly financialInstitutionCode: string;
   readonly status: AccountingBatchStatus;
-  readonly reconciliationStatus: ReconciliationStatus;
-  readonly submittedAt: Date | null;
-  readonly updatedAt: Date;
+  readonly itemCount: number;
+  readonly createdAt: Date;
 }
 
-export interface AccountingDiscrepancy {
-  readonly discrepancyId: string;
+export interface AccountingBatchItem {
   readonly paymentId: string;
-  readonly paymentReference: string;
-  readonly type: AccountingDiscrepancyType;
-  readonly expectedAmount: number | null;
-  readonly observedAmount: number | null;
+  readonly publicPaymentReference: string;
+  readonly partnerId: string;
+  readonly amount: number;
   readonly currency: string;
-  readonly reasonCode: string;
-  readonly detectedAt: Date;
+  readonly paymentOccurredAt: Date;
+  readonly paymentBusinessDate: string;
+  readonly bankPostingReference: string | null;
+  readonly tresorPayStatus: string;
+  readonly tresorPayStatusCheckedAt: Date;
+  readonly status: string;
 }
 
 export interface AccountingBatchDetail extends AccountingBatchSummary {
-  readonly submissionStatus: 'NOT_SUBMITTED' | 'ACCEPTED' | 'REJECTED';
-  readonly providerReference: string | null;
-  readonly lastReconciledAt: Date | null;
-  readonly discrepancies: readonly AccountingDiscrepancy[];
+  readonly idempotencyKey: string;
+  readonly items: readonly AccountingBatchItem[];
 }
