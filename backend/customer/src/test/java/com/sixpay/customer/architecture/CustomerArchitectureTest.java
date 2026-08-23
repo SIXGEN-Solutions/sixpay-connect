@@ -18,16 +18,53 @@ class CustomerArchitectureTest {
     private static final Path JAVA_ROOT =
             Path.of("src/main/java/com/sixpay/customer");
 
+    private static final Path VERIFICATION_ROOT =
+            JAVA_ROOT.resolve("verification");
+
+    private static final Path OBSERVATION_ROOT =
+            JAVA_ROOT.resolve("observation");
+
+    private static final Path MANAGEMENT_ROOT =
+            JAVA_ROOT.resolve("management");
+
     private static final Path VERIFICATION_DOMAIN =
-            JAVA_ROOT.resolve("verification/domain");
+            VERIFICATION_ROOT.resolve("domain");
 
     private static final Path OBSERVATION_DOMAIN =
-            JAVA_ROOT.resolve("observation/domain");
+            OBSERVATION_ROOT.resolve("domain");
 
-    private static final List<String> CAPABILITIES =
-            List.of("verification", "observation");
+    private static final Path MANAGEMENT_DOMAIN =
+            MANAGEMENT_ROOT.resolve("domain");
 
-    private static final Set<String> REQUIRED_CAPABILITY_PACKAGES =
+    /*
+     * Verification and Observation are the original Customer
+     * capabilities and follow the complete golden capability
+     * structure.
+     */
+    private static final List<String> LEGACY_CAPABILITIES =
+            List.of(
+                    "verification",
+                    "observation"
+            );
+
+    /*
+     * Customer Management was introduced later as a dedicated
+     * capability.
+     *
+     * It intentionally does not manufacture empty configuration
+     * or events packages merely to satisfy a structural test.
+     */
+    private static final Set<String>
+            REQUIRED_MANAGEMENT_PACKAGES =
+            Set.of(
+                    "api",
+                    "application",
+                    "domain",
+                    "infrastructure"
+            );
+
+    private static final Set<String>
+            REQUIRED_LEGACY_CAPABILITY_PACKAGES =
             Set.of(
                     "api",
                     "application",
@@ -37,7 +74,8 @@ class CustomerArchitectureTest {
                     "infrastructure"
             );
 
-    private static final Set<String> ALLOWED_VERIFICATION_DOMAIN_PACKAGES =
+    private static final Set<String>
+            ALLOWED_VERIFICATION_DOMAIN_PACKAGES =
             Set.of(
                     "model",
                     "event",
@@ -47,14 +85,24 @@ class CustomerArchitectureTest {
                     "repository"
             );
 
-    private static final Set<String> ALLOWED_OBSERVATION_DOMAIN_PACKAGES =
+    private static final Set<String>
+            ALLOWED_OBSERVATION_DOMAIN_PACKAGES =
             Set.of(
                     "model",
                     "exception",
                     "policy"
             );
 
-    private static final List<String> FORBIDDEN_DOMAIN_TOKENS =
+    private static final Set<String>
+            ALLOWED_MANAGEMENT_DOMAIN_PACKAGES =
+            Set.of(
+                    "model",
+                    "exception",
+                    "repository"
+            );
+
+    private static final List<String>
+            FORBIDDEN_DOMAIN_TOKENS =
             List.of(
                     "import org.springframework.",
                     "import jakarta.persistence.",
@@ -64,19 +112,33 @@ class CustomerArchitectureTest {
                     "import java.net.",
                     "import java.sql.",
 
-                    // Verification domain must not depend on outer layers.
+                    /*
+                     * Verification domain must not depend on
+                     * outer layers.
+                     */
                     "import com.sixpay.customer.verification.api.",
                     "import com.sixpay.customer.verification.application.",
                     "import com.sixpay.customer.verification.configuration.",
                     "import com.sixpay.customer.verification.infrastructure.",
                     "import com.sixpay.customer.verification.events.",
 
-                    // Observation domain must not depend on outer layers.
+                    /*
+                     * Observation domain must not depend on
+                     * outer layers.
+                     */
                     "import com.sixpay.customer.observation.api.",
                     "import com.sixpay.customer.observation.application.",
                     "import com.sixpay.customer.observation.configuration.",
                     "import com.sixpay.customer.observation.infrastructure.",
                     "import com.sixpay.customer.observation.events.",
+
+                    /*
+                     * Management domain must not depend on
+                     * outer layers.
+                     */
+                    "import com.sixpay.customer.management.api.",
+                    "import com.sixpay.customer.management.application.",
+                    "import com.sixpay.customer.management.infrastructure.",
 
                     "import com.sixpay.payment.",
 
@@ -95,7 +157,8 @@ class CustomerArchitectureTest {
                     "@Component"
             );
 
-    private static final List<String> FORBIDDEN_CURRENT_TIME_TOKENS =
+    private static final List<String>
+            FORBIDDEN_CURRENT_TIME_TOKENS =
             List.of(
                     "Instant.now(",
                     "LocalDate.now(",
@@ -106,7 +169,8 @@ class CustomerArchitectureTest {
                     "System.nanoTime("
             );
 
-    private static final List<String> FORBIDDEN_BUSINESS_DOMAIN_IMPORTS =
+    private static final List<String>
+            FORBIDDEN_BUSINESS_DOMAIN_IMPORTS =
             List.of(
                     "import com.sixpay.partner.",
                     "import com.sixpay.subscription.",
@@ -121,11 +185,18 @@ class CustomerArchitectureTest {
     void moduleMarkerIsPresentAndNonExecutable()
             throws IOException {
 
-        Path marker = JAVA_ROOT.resolve("CustomerModule.java");
+        Path marker =
+                JAVA_ROOT.resolve(
+                        "CustomerModule.java"
+                );
 
-        assertTrue(Files.isRegularFile(marker));
+        assertTrue(
+                Files.isRegularFile(marker),
+                "CustomerModule marker must exist"
+        );
 
-        String source = Files.readString(marker);
+        String source =
+                Files.readString(marker);
 
         assertTrue(
                 source.contains(
@@ -134,11 +205,15 @@ class CustomerArchitectureTest {
         );
 
         assertFalse(
-                source.contains("@SpringBootApplication")
+                source.contains(
+                        "@SpringBootApplication"
+                )
         );
 
         assertFalse(
-                source.contains("public static void main(")
+                source.contains(
+                        "public static void main("
+                )
         );
     }
 
@@ -146,18 +221,29 @@ class CustomerArchitectureTest {
     void moduleAutoConfigurationIsDeclaredAndRegistered()
             throws IOException {
 
-        Path configuration = JAVA_ROOT.resolve(
-                "configuration/CustomerModuleConfiguration.java"
+        Path configuration =
+                JAVA_ROOT.resolve(
+                        "configuration/"
+                                + "CustomerModuleConfiguration.java"
+                );
+
+        Path imports =
+                Path.of(
+                        "src/main/resources/META-INF/spring/"
+                                + "org.springframework.boot."
+                                + "autoconfigure."
+                                + "AutoConfiguration.imports"
+                );
+
+        assertTrue(
+                Files.isRegularFile(configuration),
+                "CustomerModuleConfiguration must exist"
         );
 
-        Path imports = Path.of(
-                "src/main/resources/META-INF/spring/"
-                        + "org.springframework.boot.autoconfigure."
-                        + "AutoConfiguration.imports"
+        assertTrue(
+                Files.isRegularFile(imports),
+                "AutoConfiguration.imports must exist"
         );
-
-        assertTrue(Files.isRegularFile(configuration));
-        assertTrue(Files.isRegularFile(imports));
 
         String configurationSource =
                 Files.readString(configuration);
@@ -168,43 +254,132 @@ class CustomerArchitectureTest {
         assertTrue(
                 configurationSource.contains(
                         "@AutoConfiguration"
-                )
+                ),
+                "Customer module must declare "
+                        + "@AutoConfiguration"
+        );
+
+        /*
+         * Do not assert the exact formatting of the
+         * annotation.
+         *
+         * The golden module uses a multi-line
+         * @ComponentScan with exclusion filters.
+         */
+        assertTrue(
+                configurationSource.contains(
+                        "@ComponentScan("
+                ),
+                "Customer module must declare "
+                        + "@ComponentScan"
         );
 
         assertTrue(
                 configurationSource.contains(
-                        "@ComponentScan(basePackageClasses = "
-                                + "CustomerModule.class)"
-                )
+                        "basePackageClasses = "
+                                + "CustomerModule.class"
+                ),
+                "Customer component scan must be "
+                        + "anchored on CustomerModule"
+        );
+
+        /*
+         * JPA configuration must be explicit.
+         *
+         * @ComponentScan alone does not register Spring
+         * Data repository interfaces.
+         */
+        assertTrue(
+                configurationSource.contains(
+                        "@EntityScan("
+                ),
+                "Customer module must explicitly "
+                        + "scan JPA entities"
+        );
+
+        assertTrue(
+                configurationSource.contains(
+                        "@EnableJpaRepositories("
+                ),
+                "Customer module must explicitly "
+                        + "scan Spring Data repositories"
+        );
+
+        /*
+         * Customer Management persistence package anchor.
+         */
+        assertTrue(
+                configurationSource.contains(
+                        "CustomerJpaEntity.class"
+                ),
+                "Customer Management entities "
+                        + "must be registered"
+        );
+
+        assertTrue(
+                configurationSource.contains(
+                        "CustomerSpringDataRepository.class"
+                ),
+                "Customer Management repositories "
+                        + "must be registered"
+        );
+
+        /*
+         * Audit lives in a sibling infrastructure package
+         * and therefore requires its own package anchor.
+         */
+        assertTrue(
+                configurationSource.contains(
+                        "CustomerAuditJpaEntity.class"
+                ),
+                "Customer audit entities "
+                        + "must be registered"
+        );
+
+        assertTrue(
+                configurationSource.contains(
+                        "CustomerAuditSpringDataRepository.class"
+                ),
+                "Customer audit repositories "
+                        + "must be registered"
         );
 
         assertTrue(
                 importsSource.contains(
                         "com.sixpay.customer.configuration."
                                 + "CustomerModuleConfiguration"
-                )
+                ),
+                "CustomerModuleConfiguration must be "
+                        + "registered in "
+                        + "AutoConfiguration.imports"
         );
     }
 
     @Test
-    void moduleContainsTheTwoApprovedCapabilities() {
+    void moduleContainsTheApprovedCapabilities() {
 
-        for (String capability : CAPABILITIES) {
+        for (String capability : List.of(
+                "verification",
+                "observation",
+                "management"
+        )) {
             assertTrue(
                     Files.isDirectory(
                             JAVA_ROOT.resolve(capability)
                     ),
-                    () -> "Missing Customer capability: "
-                            + capability
+                    () ->
+                            "Missing Customer capability: "
+                                    + capability
             );
         }
     }
 
     @Test
-    void capabilitiesFollowGoldenModuleTopLevelPackages()
+    void legacyCapabilitiesFollowGoldenModuleTopLevelPackages()
             throws IOException {
 
-        for (String capability : CAPABILITIES) {
+        for (String capability : LEGACY_CAPABILITIES) {
+
             Path capabilityRoot =
                     JAVA_ROOT.resolve(capability);
 
@@ -215,25 +390,27 @@ class CustomerArchitectureTest {
 
             assertTrue(
                     actual.containsAll(
-                            REQUIRED_CAPABILITY_PACKAGES
+                            REQUIRED_LEGACY_CAPABILITY_PACKAGES
                     ),
-                    () -> capability
-                            + " is missing packages: "
-                            + difference(
-                            REQUIRED_CAPABILITY_PACKAGES,
-                            actual
-                    )
+                    () ->
+                            capability
+                                    + " is missing packages: "
+                                    + difference(
+                                    REQUIRED_LEGACY_CAPABILITY_PACKAGES,
+                                    actual
+                            )
             );
 
             assertTrue(
-                    REQUIRED_CAPABILITY_PACKAGES
+                    REQUIRED_LEGACY_CAPABILITY_PACKAGES
                             .containsAll(actual),
-                    () -> capability
-                            + " contains unexpected packages: "
-                            + difference(
-                            actual,
-                            REQUIRED_CAPABILITY_PACKAGES
-                    )
+                    () ->
+                            capability
+                                    + " contains unexpected packages: "
+                                    + difference(
+                                    actual,
+                                    REQUIRED_LEGACY_CAPABILITY_PACKAGES
+                            )
             );
 
             assertTrue(
@@ -242,11 +419,70 @@ class CustomerArchitectureTest {
                                     "infrastructure/persistence"
                             )
                     ),
-                    () -> capability
-                            + " must expose "
-                            + "infrastructure/persistence"
+                    () ->
+                            capability
+                                    + " must expose "
+                                    + "infrastructure/persistence"
             );
         }
+    }
+
+    @Test
+    void managementCapabilityUsesItsApprovedTopLevelPackages()
+            throws IOException {
+
+        Set<String> actual =
+                directDirectoriesContainingJavaSources(
+                        MANAGEMENT_ROOT
+                );
+
+        assertTrue(
+                actual.containsAll(
+                        REQUIRED_MANAGEMENT_PACKAGES
+                ),
+                () ->
+                        "management is missing packages: "
+                                + difference(
+                                REQUIRED_MANAGEMENT_PACKAGES,
+                                actual
+                        )
+        );
+
+        assertTrue(
+                REQUIRED_MANAGEMENT_PACKAGES
+                        .containsAll(actual),
+                () ->
+                        "management contains unexpected packages: "
+                                + difference(
+                                actual,
+                                REQUIRED_MANAGEMENT_PACKAGES
+                        )
+        );
+
+        assertTrue(
+                Files.isDirectory(
+                        MANAGEMENT_ROOT.resolve(
+                                "infrastructure/persistence"
+                        )
+                ),
+                "management must expose "
+                        + "infrastructure/persistence"
+        );
+
+        /*
+         * CM-7 deliberately isolates audit persistence
+         * from aggregate persistence, following the golden
+         * Partner module style.
+         */
+        assertTrue(
+                Files.isDirectory(
+                        MANAGEMENT_ROOT.resolve(
+                                "infrastructure/audit"
+                        )
+                ),
+                "management must expose "
+                        + "infrastructure/audit"
+        );
     }
 
     @Test
@@ -261,11 +497,13 @@ class CustomerArchitectureTest {
         assertTrue(
                 ALLOWED_VERIFICATION_DOMAIN_PACKAGES
                         .containsAll(actual),
-                () -> "Unexpected verification domain packages: "
-                        + difference(
-                        actual,
-                        ALLOWED_VERIFICATION_DOMAIN_PACKAGES
-                )
+                () ->
+                        "Unexpected verification domain "
+                                + "packages: "
+                                + difference(
+                                actual,
+                                ALLOWED_VERIFICATION_DOMAIN_PACKAGES
+                        )
         );
 
         for (String required : List.of(
@@ -277,8 +515,10 @@ class CustomerArchitectureTest {
         )) {
             assertTrue(
                     actual.contains(required),
-                    () -> "Missing verification domain package: "
-                            + required
+                    () ->
+                            "Missing verification domain "
+                                    + "package: "
+                                    + required
             );
         }
     }
@@ -295,11 +535,13 @@ class CustomerArchitectureTest {
         assertTrue(
                 ALLOWED_OBSERVATION_DOMAIN_PACKAGES
                         .containsAll(actual),
-                () -> "Unexpected observation domain packages: "
-                        + difference(
-                        actual,
-                        ALLOWED_OBSERVATION_DOMAIN_PACKAGES
-                )
+                () ->
+                        "Unexpected observation domain "
+                                + "packages: "
+                                + difference(
+                                actual,
+                                ALLOWED_OBSERVATION_DOMAIN_PACKAGES
+                        )
         );
 
         for (String required : List.of(
@@ -309,8 +551,46 @@ class CustomerArchitectureTest {
         )) {
             assertTrue(
                     actual.contains(required),
-                    () -> "Missing observation domain package: "
-                            + required
+                    () ->
+                            "Missing observation domain "
+                                    + "package: "
+                                    + required
+            );
+        }
+    }
+
+    @Test
+    void managementDomainUsesOnlyApprovedSubpackages()
+            throws IOException {
+
+        Set<String> actual =
+                directDirectoriesContainingJavaSources(
+                        MANAGEMENT_DOMAIN
+                );
+
+        assertTrue(
+                ALLOWED_MANAGEMENT_DOMAIN_PACKAGES
+                        .containsAll(actual),
+                () ->
+                        "Unexpected management domain "
+                                + "packages: "
+                                + difference(
+                                actual,
+                                ALLOWED_MANAGEMENT_DOMAIN_PACKAGES
+                        )
+        );
+
+        for (String required : List.of(
+                "model",
+                "exception",
+                "repository"
+        )) {
+            assertTrue(
+                    actual.contains(required),
+                    () ->
+                            "Missing management domain "
+                                    + "package: "
+                                    + required
             );
         }
     }
@@ -319,11 +599,13 @@ class CustomerArchitectureTest {
     void capabilityDomainsRemainFrameworkAgnostic()
             throws IOException {
 
-        for (String capability : CAPABILITIES) {
+        for (Path domain : List.of(
+                VERIFICATION_DOMAIN,
+                OBSERVATION_DOMAIN,
+                MANAGEMENT_DOMAIN
+        )) {
             assertSourcesDoNotContain(
-                    JAVA_ROOT
-                            .resolve(capability)
-                            .resolve("domain"),
+                    domain,
                     FORBIDDEN_DOMAIN_TOKENS
             );
         }
@@ -333,11 +615,13 @@ class CustomerArchitectureTest {
     void capabilityDomainsNeverObtainCurrentTime()
             throws IOException {
 
-        for (String capability : CAPABILITIES) {
+        for (Path domain : List.of(
+                VERIFICATION_DOMAIN,
+                OBSERVATION_DOMAIN,
+                MANAGEMENT_DOMAIN
+        )) {
             assertSourcesDoNotContain(
-                    JAVA_ROOT
-                            .resolve(capability)
-                            .resolve("domain"),
+                    domain,
                     FORBIDDEN_CURRENT_TIME_TOKENS
             );
         }
@@ -365,6 +649,24 @@ class CustomerArchitectureTest {
                 List.of(
                         "import com.sixpay.payment.",
                         "import com.sixpay.customer.verification."
+                )
+        );
+    }
+
+    @Test
+    void managementDomainDoesNotDependOnOtherCustomerCapabilities()
+            throws IOException {
+
+        /*
+         * Management may orchestrate Verification from the
+         * application layer, but the Management DOMAIN must
+         * remain independent from Verification and Observation.
+         */
+        assertSourcesDoNotContain(
+                MANAGEMENT_DOMAIN,
+                List.of(
+                        "import com.sixpay.customer.verification.",
+                        "import com.sixpay.customer.observation."
                 )
         );
     }
@@ -410,16 +712,41 @@ class CustomerArchitectureTest {
     }
 
     @Test
+    void managementDomainContainsNoHttpClientOrJpaConcept()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                MANAGEMENT_DOMAIN,
+                List.of(
+                        "RestClient",
+                        "WebClient",
+                        "HttpClient",
+                        "java.net.http",
+                        "jakarta.persistence",
+                        "EntityManager",
+                        "JdbcTemplate",
+                        "@Entity",
+                        "@Repository"
+                )
+        );
+    }
+
+    @Test
     void verificationEventPayloadRemainsSafe()
             throws IOException {
 
-        Path event = VERIFICATION_DOMAIN.resolve(
-                "event/CustomerVerificationCompleted.java"
+        Path event =
+                VERIFICATION_DOMAIN.resolve(
+                        "event/"
+                                + "CustomerVerificationCompleted.java"
+                );
+
+        assertTrue(
+                Files.isRegularFile(event)
         );
 
-        assertTrue(Files.isRegularFile(event));
-
-        String source = Files.readString(event);
+        String source =
+                Files.readString(event);
 
         for (String forbidden : List.of(
                 "CustomerNiu ",
@@ -436,8 +763,10 @@ class CustomerArchitectureTest {
         )) {
             assertFalse(
                     source.contains(forbidden),
-                    () -> "Sensitive event payload concept found: "
-                            + forbidden
+                    () ->
+                            "Sensitive event payload "
+                                    + "concept found: "
+                                    + forbidden
             );
         }
 
@@ -451,8 +780,10 @@ class CustomerArchitectureTest {
         )) {
             assertTrue(
                     source.contains(required),
-                    () -> "Missing safe event payload concept: "
-                            + required
+                    () ->
+                            "Missing safe event payload "
+                                    + "concept: "
+                                    + required
             );
         }
     }
@@ -463,10 +794,13 @@ class CustomerArchitectureTest {
 
         Path accountReference =
                 OBSERVATION_DOMAIN.resolve(
-                        "model/ObservedAccountReference.java"
+                        "model/"
+                                + "ObservedAccountReference.java"
                 );
 
-        assertTrue(Files.isRegularFile(accountReference));
+        assertTrue(
+                Files.isRegularFile(accountReference)
+        );
 
         String source =
                 Files.readString(accountReference);
@@ -481,8 +815,9 @@ class CustomerArchitectureTest {
         )) {
             assertFalse(
                     source.contains(forbidden),
-                    () -> "Raw account concept found: "
-                            + forbidden
+                    () ->
+                            "Raw account concept found: "
+                                    + forbidden
             );
         }
 
@@ -493,15 +828,18 @@ class CustomerArchitectureTest {
         );
 
         assertTrue(
-                source.contains("maskedValue")
+                source.contains(
+                        "maskedValue"
+                )
         );
     }
 
     @Test
-    void applicationsDoNotDependOnApiInfrastructureOrConfiguration()
+    void legacyApplicationsDoNotDependOnApiInfrastructureOrConfiguration()
             throws IOException {
 
-        for (String capability : CAPABILITIES) {
+        for (String capability : LEGACY_CAPABILITIES) {
+
             String prefix =
                     "import com.sixpay.customer."
                             + capability
@@ -521,10 +859,26 @@ class CustomerArchitectureTest {
     }
 
     @Test
-    void infrastructureDoesNotDependOnApiOrConfiguration()
+    void managementApplicationDoesNotDependOnApiOrInfrastructure()
             throws IOException {
 
-        for (String capability : CAPABILITIES) {
+        assertSourcesDoNotContain(
+                MANAGEMENT_ROOT.resolve(
+                        "application"
+                ),
+                List.of(
+                        "import com.sixpay.customer.management.api.",
+                        "import com.sixpay.customer.management.infrastructure."
+                )
+        );
+    }
+
+    @Test
+    void legacyInfrastructureDoesNotDependOnApiOrConfiguration()
+            throws IOException {
+
+        for (String capability : LEGACY_CAPABILITIES) {
+
             String prefix =
                     "import com.sixpay.customer."
                             + capability
@@ -543,6 +897,20 @@ class CustomerArchitectureTest {
     }
 
     @Test
+    void managementInfrastructureDoesNotDependOnApi()
+            throws IOException {
+
+        assertSourcesDoNotContain(
+                MANAGEMENT_ROOT.resolve(
+                        "infrastructure"
+                ),
+                List.of(
+                        "import com.sixpay.customer.management.api."
+                )
+        );
+    }
+
+    @Test
     void customerDoesNotDependOnAnotherBusinessDomain()
             throws IOException {
 
@@ -556,9 +924,10 @@ class CustomerArchitectureTest {
     void customerDoesNotDeclareAnotherBusinessDomainAsMavenDependency()
             throws IOException {
 
-        String pom = Files.readString(
-                Path.of("pom.xml")
-        );
+        String pom =
+                Files.readString(
+                        Path.of("pom.xml")
+                );
 
         for (String forbiddenArtifactId : List.of(
                 "payment",
@@ -575,8 +944,10 @@ class CustomerArchitectureTest {
                                     + forbiddenArtifactId
                                     + "</artifactId>"
                     ),
-                    () -> "Customer must not depend on business module: "
-                            + forbiddenArtifactId
+                    () ->
+                            "Customer must not depend "
+                                    + "on business module: "
+                                    + forbiddenArtifactId
             );
         }
     }
@@ -585,9 +956,10 @@ class CustomerArchitectureTest {
     void moduleDeclaresTheGoldenPlatformAndTestFoundation()
             throws IOException {
 
-        String pom = Files.readString(
-                Path.of("pom.xml")
-        );
+        String pom =
+                Files.readString(
+                        Path.of("pom.xml")
+                );
 
         for (String artifactId : List.of(
                 "common",
@@ -617,8 +989,9 @@ class CustomerArchitectureTest {
                                     + artifactId
                                     + "</artifactId>"
                     ),
-                    () -> "Missing Customer dependency: "
-                            + artifactId
+                    () ->
+                            "Missing Customer dependency: "
+                                    + artifactId
             );
         }
     }
@@ -629,11 +1002,14 @@ class CustomerArchitectureTest {
 
         assertSourcesDoNotContain(
                 JAVA_ROOT,
-                List.of("@SpringBootApplication")
+                List.of(
+                        "@SpringBootApplication"
+                )
         );
     }
 
-    private static Set<String> directDirectoriesContainingJavaSources(
+    private static Set<String>
+    directDirectoriesContainingJavaSources(
             Path root
     ) throws IOException {
 
@@ -641,36 +1017,52 @@ class CustomerArchitectureTest {
             return Set.of();
         }
 
-        try (Stream<Path> paths = Files.list(root)) {
+        try (Stream<Path> paths =
+                     Files.list(root)) {
+
             return paths
-                    .filter(Files::isDirectory)
+                    .filter(
+                            Files::isDirectory
+                    )
                     .filter(
                             CustomerArchitectureTest
                                     ::containsJavaSources
                     )
                     .map(
                             path ->
-                                    path.getFileName().toString()
+                                    path
+                                            .getFileName()
+                                            .toString()
                     )
-                    .collect(Collectors.toSet());
+                    .collect(
+                            Collectors.toSet()
+                    );
         }
     }
 
     private static boolean containsJavaSources(
             Path root
     ) {
+
         if (!Files.isDirectory(root)) {
             return false;
         }
 
-        try (Stream<Path> paths = Files.walk(root)) {
+        try (Stream<Path> paths =
+                     Files.walk(root)) {
+
             return paths.anyMatch(
                     path ->
                             Files.isRegularFile(path)
-                                    && path.toString()
-                                    .endsWith(".java")
+                                    && path
+                                    .toString()
+                                    .endsWith(
+                                            ".java"
+                                    )
             );
+
         } catch (IOException exception) {
+
             throw new IllegalStateException(
                     exception
             );
@@ -688,28 +1080,38 @@ class CustomerArchitectureTest {
 
         List<String> violations;
 
-        try (Stream<Path> paths = Files.walk(root)) {
-            violations = paths
-                    .filter(Files::isRegularFile)
-                    .filter(
-                            path ->
-                                    path.toString()
-                                            .endsWith(".java")
-                    )
-                    .flatMap(
-                            path ->
-                                    violations(
-                                            path,
-                                            forbiddenTokens
-                                    ).stream()
-                    )
-                    .toList();
+        try (Stream<Path> paths =
+                     Files.walk(root)) {
+
+            violations =
+                    paths
+                            .filter(
+                                    Files::isRegularFile
+                            )
+                            .filter(
+                                    path ->
+                                            path
+                                                    .toString()
+                                                    .endsWith(
+                                                            ".java"
+                                                    )
+                            )
+                            .flatMap(
+                                    path ->
+                                            violations(
+                                                    path,
+                                                    forbiddenTokens
+                                            )
+                                                    .stream()
+                            )
+                            .toList();
         }
 
         assertTrue(
                 violations.isEmpty(),
-                () -> "Architecture violations: "
-                        + violations
+                () ->
+                        "Architecture violations: "
+                                + violations
         );
     }
 
@@ -717,11 +1119,17 @@ class CustomerArchitectureTest {
             Path path,
             List<String> forbiddenTokens
     ) {
-        try {
-            String source = Files.readString(path);
 
-            return forbiddenTokens.stream()
-                    .filter(source::contains)
+        try {
+
+            String source =
+                    Files.readString(path);
+
+            return forbiddenTokens
+                    .stream()
+                    .filter(
+                            source::contains
+                    )
                     .map(
                             token ->
                                     path
@@ -729,9 +1137,12 @@ class CustomerArchitectureTest {
                                             + token
                     )
                     .toList();
+
         } catch (IOException exception) {
+
             throw new IllegalStateException(
-                    "Cannot inspect " + path,
+                    "Cannot inspect "
+                            + path,
                     exception
             );
         }
@@ -741,11 +1152,15 @@ class CustomerArchitectureTest {
             Set<String> left,
             Set<String> right
     ) {
-        return left.stream()
+
+        return left
+                .stream()
                 .filter(
                         value ->
                                 !right.contains(value)
                 )
-                .collect(Collectors.toSet());
+                .collect(
+                        Collectors.toSet()
+                );
     }
 }
