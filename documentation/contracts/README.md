@@ -82,6 +82,29 @@ This separation allows the future Master AI Context to discover the complete
 contract landscape from a single registry without flattening bounded API and
 integration contracts into one monolithic specification.
 
+## Registry semantic vocabulary
+
+`classificationModel` defines the controlled vocabulary used by registry
+entries.
+
+The registry normalizes domains, ownership values, known systems, direction
+endpoints, data classifications, pagination modes, lifecycle statuses,
+approval statuses and generation policies.
+
+Capabilities use `UPPER_SNAKE_CASE`.
+
+Direction supports either `direction: SOURCE_TO_TARGET` or the explicit
+`primaryDirection` + `fallbackDirection` pair used by a true bidirectional
+operational contract. A registry entry must not mix both shapes.
+
+`mvpUsage.included` is mandatory and must agree with lifecycle semantics:
+`ACTIVE_MVP` and `REFERENCE_MVP` are included; `DEFERRED_FUTURE` is excluded.
+
+Security mechanisms remain contract-specific because external APIs, internal
+JWT APIs, in-process semantic contracts and SMTP delivery do not share one
+authentication model. When `security.dataClassification` is present, its value
+must come from the controlled vocabulary.
+
 ## Registry ↔ filesystem integrity
 
 The canonical registry and the physical contract tree must remain consistent in
@@ -106,12 +129,20 @@ ADMINISTRATION_OPERATIONAL_QUERY ─┐
 OPERATIONAL_INCIDENT_QUERY ───────┘
 ```
 
-The integrity gate treats the following files as canonical contracts in the
-current repository layout:
+The integrity gate treats the following roots as the current canonical
+physical-contract baseline:
 
-- YAML/YML/JSON specifications below `documentation/contracts/`, excluding the
-  registry itself;
-- Markdown contracts directly below `documentation/contracts/internal/`.
+- `documentation/contracts/amplitude/`;
+- `documentation/contracts/tresorpay/`;
+- `documentation/contracts/internal/`.
+
+Within those roots, YAML/YML/JSON specifications are physical contracts.
+Markdown contracts are canonical only when directly under
+`documentation/contracts/internal/`.
+
+Other trees such as `external/`, `integration/` and `events/` remain repository
+inventory until an explicit consolidation decision promotes, supersedes or
+removes them. Their physical presence alone does not make them canonical.
 
 Governance documents such as this `README.md` are not physical contracts and
 must not be registered as capabilities.

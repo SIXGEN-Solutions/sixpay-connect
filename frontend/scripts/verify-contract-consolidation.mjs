@@ -231,12 +231,26 @@ if (registry) {
         .filter((contractPath) => typeof contractPath === 'string'),
     );
 
+    const canonicalContractRoots = [
+      'documentation/contracts/amplitude/',
+      'documentation/contracts/tresorpay/',
+      'documentation/contracts/internal/',
+    ];
+
     function isCanonicalPhysicalContract(file) {
       const relative = path
         .relative(repoRoot, file)
         .replaceAll('\\', '/');
 
       if (relative === registryRelative) {
+        return false;
+      }
+
+      if (
+        !canonicalContractRoots.some(
+          (root) => relative.startsWith(root),
+        )
+      ) {
         return false;
       }
 
@@ -302,6 +316,274 @@ if (registry) {
           `${relative}: canonical physical contract is not registered in `
             + 'CONTRACT_REGISTRY.yaml',
         );
+      }
+    }
+
+
+    /*
+     * FS-2.2.3 - Registry semantic normalization
+     */
+    const semanticModel = registry.classificationModel ?? {};
+
+    const allowedDomains = new Set(Object.keys(semanticModel.domains ?? {}));
+    const allowedOwners = new Set(Object.keys(semanticModel.ownershipValues ?? {}));
+    const allowedSystems = new Set(Object.keys(semanticModel.systems ?? {}));
+    const allowedDirectionEndpoints = new Set(
+      Object.keys(semanticModel.directionEndpoints ?? {}),
+    );
+    const allowedDataClassifications = new Set(
+      Object.keys(semanticModel.dataClassifications ?? {}),
+    );
+    const allowedPaginationModes = new Set(
+      Object.keys(semanticModel.paginationModes ?? {}),
+    );
+    const allowedLifecycleStatuses = new Set(
+      Object.keys(semanticModel.lifecycleStatuses ?? {}),
+    );
+    const allowedApprovalStatuses = new Set(
+      Object.keys(semanticModel.approvalStatuses ?? {}),
+    );
+    const allowedGenerationPolicies = new Set(
+      Object.keys(semanticModel.generationPolicy ?? {}),
+    );
+
+    function checkControlledValue(contractId, field, value, allowedValues) {
+      if (typeof value !== 'string' || !allowedValues.has(value)) {
+        fail(
+          `${registryRelative}: ${contractId}.${field} has uncontrolled value `
+            + `${JSON.stringify(value)}`,
+        );
+      }
+    }
+
+    function checkOwner(contractId, field, value) {
+      if (value === undefined) {
+        return;
+      }
+
+      const values = Array.isArray(value) ? value : [value];
+
+      if (values.length === 0) {
+        fail(`${registryRelative}: ${contractId}.${field} must not be empty`);
+        return;
+      }
+
+      for (const owner of values) {
+        checkControlledValue(contractId, field, owner, allowedOwners);
+      }
+    }
+
+    function checkDirection(contractId, field, value) {
+      if (typeof value !== 'string') {
+        fail(`${registryRelative}: ${contractId}.${field} must be a string`);
+        return;
+      }
+
+      const separator = '_TO_';
+      const separatorIndex = value.indexOf(separator);
+
+      if (separatorIndex <= 0) {
+        fail(
+          `${registryRelative}: ${contractId}.${field} must use `
+            + 'SOURCE_TO_TARGET semantics',
+        );
+        return;
+      }
+
+      const source = value.slice(0, separatorIndex);
+      const target = value.slice(separatorIndex + separator.length);
+
+      if (
+        !allowedDirectionEndpoints.has(source)
+        || !allowedDirectionEndpoints.has(target)
+      ) {
+        fail(
+          `${registryRelative}: ${contractId}.${field} uses uncontrolled `
+            + `direction endpoint(s): ${value}`,
+        );
+      }
+    }
+
+    for (const contract of registry.contracts) {
+      const contractId = contract.id ?? '<missing-id>';
+
+      checkControlledValue(
+        contractId,
+        'domain',
+        contract.domain,
+        allowedDomains,
+      );
+
+      if (
+        typeof contract.capability !== 'string'
+        || !/^[A-Z][A-Z0-9_]*$/.test(contract.capability)
+      ) {
+        fail(
+          `${registryRelative}: ${contractId}.capability must use `
+            + 'UPPER_SNAKE_CASE',
+        );
+      }
+
+      for (const field of [
+        'businessOwner',
+        'deliveryOwner',
+        'securityOwner',
+        'transportOwner',
+        'lifecycleConsumer',
+        'evidenceOwners',
+        'sourceFactOwners',
+        'deliveryBoundary',
+      ]) {
+        checkOwner(contractId, field, contract[field]);
+      }
+
+      const hasDirection = typeof contract.direction === 'string';
+      const hasPrimaryDirection =
+        typeof contract.primaryDirection === 'string';
+      const hasFallbackDirection =
+        typeof contract.fallbackDirection === 'string';
+
+      if (hasDirection) {
+        checkDirection(contractId, 'direction', contract.direction);
+
+        if (hasPrimaryDirection || hasFallbackDirection) {
+          fail(
+            `${registryRelative}: ${contractId} must not mix direction `
+              + 'with primaryDirection/fallbackDirection',
+          );
+        }
+      } else if (hasPrimaryDirection && hasFallbackDirection) {
+        checkDirection(
+          contractId,
+          'primaryDirection',
+          contract.primaryDirection,
+        );
+        checkDirection(
+          contractId,
+          'fallbackDirection',
+          contract.fallbackDirection,
+        );
+      } else {
+        fail(
+          `${registryRelative}: ${contractId} must define either direction `
+            + 'or both primaryDirection and fallbackDirection',
+        );
+      }
+
+      if (contract.sourceSystem !== undefined) {
+        checkControlledValue(
+          contractId,
+          'sourceSystem',
+          contract.sourceSystem,
+          allowedSystems,
+        );
+      }
+
+      if (contract.systemOfRecord !== undefined) {
+        checkControlledValue(
+          contractId,
+          'systemOfRecord',
+          contract.systemOfRecord,
+          allowedSystems,
+        );
+      } else {
+        fail(`${registryRelative}: ${contractId}.systemOfRecord is required`);
+      }
+
+      checkControlledValue(
+        contractId,
+        'lifecycleStatus',
+        contract.lifecycleStatus,
+        allowedLifecycleStatuses,
+      );
+      checkControlledValue(
+        contractId,
+        'approvalStatus',
+        contract.approvalStatus,
+        allowedApprovalStatuses,
+      );
+      checkControlledValue(
+        contractId,
+        'generationPolicy',
+        contract.generationPolicy,
+        allowedGenerationPolicies,
+      );
+
+      if (typeof contract.codeGenerationAllowed !== 'boolean') {
+        fail(
+          `${registryRelative}: ${contractId}.codeGenerationAllowed must be boolean`,
+        );
+      }
+
+      if (
+        contract.generationPolicy === 'EXCLUDED'
+        && contract.codeGenerationAllowed !== false
+      ) {
+        fail(
+          `${registryRelative}: ${contractId} EXCLUDED contracts cannot `
+            + 'allow code generation',
+        );
+      }
+
+      const usage = contract.mvpUsage;
+
+      if (!usage || typeof usage !== 'object') {
+        fail(`${registryRelative}: ${contractId}.mvpUsage is required`);
+      } else {
+        if (typeof usage.included !== 'boolean') {
+          fail(
+            `${registryRelative}: ${contractId}.mvpUsage.included must be boolean`,
+          );
+        }
+
+        if (
+          contract.lifecycleStatus === 'DEFERRED_FUTURE'
+          && usage.included !== false
+        ) {
+          fail(
+            `${registryRelative}: ${contractId} DEFERRED_FUTURE must have `
+              + 'mvpUsage.included=false',
+          );
+        }
+
+        if (
+          (
+            contract.lifecycleStatus === 'ACTIVE_MVP'
+            || contract.lifecycleStatus === 'REFERENCE_MVP'
+          )
+          && usage.included !== true
+        ) {
+          fail(
+            `${registryRelative}: ${contractId} ${contract.lifecycleStatus} `
+              + 'must have mvpUsage.included=true',
+          );
+        }
+
+        if (usage.pagination !== undefined) {
+          checkControlledValue(
+            contractId,
+            'mvpUsage.pagination',
+            usage.pagination,
+            allowedPaginationModes,
+          );
+        }
+      }
+
+      if (contract.security !== undefined) {
+        if (
+          !contract.security
+          || typeof contract.security !== 'object'
+          || Array.isArray(contract.security)
+        ) {
+          fail(`${registryRelative}: ${contractId}.security must be an object`);
+        } else if (contract.security.dataClassification !== undefined) {
+          checkControlledValue(
+            contractId,
+            'security.dataClassification',
+            contract.security.dataClassification,
+            allowedDataClassifications,
+          );
+        }
       }
     }
 
