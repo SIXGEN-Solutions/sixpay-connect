@@ -82,6 +82,38 @@ This separation allows the future Master AI Context to discover the complete
 contract landscape from a single registry without flattening bounded API and
 integration contracts into one monolithic specification.
 
+## Historical artifact policy
+
+`documentation/contracts/` describes the **current contractual baseline**.
+It must not contain files whose purpose is to preserve an intermediate change,
+patch or local correction.
+
+The following artifact families are forbidden from the canonical contract tree:
+
+- `*.patch`;
+- `*.diff`;
+- `*.rej`;
+- `*.orig`;
+- `*.bak`;
+- `*.tmp`;
+- Markdown patch documents such as `*_PATCH.md`, `*-PATCH.md`,
+  `PATCH_*.md` or equivalent patch-named files.
+
+Historical contract evolution belongs to **Git history**.
+
+A contract change must therefore finish by updating the canonical physical
+contract and, when applicable, `CONTRACT_REGISTRY.yaml`. The temporary change
+artifact must not survive in the repository baseline.
+
+The former files:
+
+- `CONTRACT_REGISTRY_LOT0_PATCH.md`;
+- `internal/payment-query-api-v1-status-alignment.patch`;
+
+are considered fully absorbed and permanently removed from the canonical
+baseline. Reintroducing either file, or another artifact matching the forbidden
+families above, must fail `verify:contract-consolidation`.
+
 ## Classement au Gate IA-0R
 
 | Contrat | Classement | Usage MVP | Génération |

@@ -7,9 +7,9 @@ const repoRoot = path.resolve(frontendRoot, '..');
 const failures = [];
 
 const oldContractNames = [
-  'administration-query-api-v1.yaml',
-  'incident-query-api-v1.yaml',
-];
+  'administration-query-api-v1',
+  'incident-query-api-v1',
+].map((name) => `${name}.yaml`);
 
 const mergedContractRelative =
   'documentation/contracts/internal/administration-operational-api-v1.yaml';
@@ -98,6 +98,52 @@ const contractsRoot = path.join(
   'documentation',
   'contracts',
 );
+
+/*
+ * FS-2.2.1 — Historical artifacts cleanup
+ *
+ * documentation/contracts describes the current contractual baseline.
+ * Change-history artifacts belong to Git history, not to this tree.
+ */
+function isForbiddenHistoricalContractArtifact(file) {
+  const basename = path.basename(file);
+  const lower = basename.toLowerCase();
+
+  if (
+    lower.endsWith('.patch')
+    || lower.endsWith('.diff')
+    || lower.endsWith('.rej')
+    || lower.endsWith('.orig')
+    || lower.endsWith('.bak')
+    || lower.endsWith('.tmp')
+  ) {
+    return true;
+  }
+
+  if (
+    lower.endsWith('.md')
+    && /(^|[_-])patch([_-]|\.md$)/i.test(basename)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+for (const file of walk(contractsRoot)) {
+  if (!isForbiddenHistoricalContractArtifact(file)) {
+    continue;
+  }
+
+  const relative = path
+    .relative(repoRoot, file)
+    .replaceAll('\\', '/');
+
+  fail(
+    `${relative}: historical/transitional contract artifact is forbidden `
+      + 'from the canonical contractual baseline',
+  );
+}
 
 for (const file of walk(contractsRoot)) {
   if (!file.endsWith('.yaml') && !file.endsWith('.yml')) {
