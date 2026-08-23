@@ -7,6 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { catchError, EMPTY, finalize, forkJoin } from 'rxjs';
 
 import { AuthenticationService } from '../../../core/auth/authentication.service';
+import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
@@ -23,6 +24,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
+    SpButtonComponent,
     SpCardComponent,
     SpLoadingComponent,
     SpToolbarComponent,
@@ -31,106 +33,309 @@ import { CustomerManagementService } from '../services/customer-management.servi
     @if (loading()) {
       <sp-loading label="Chargement du Customer" />
     } @else if (customer(); as item) {
-      <sp-toolbar [title]="item.legalName" />
+      <sp-toolbar
+        [title]="item.legalName"
+        description="Consultez et administrez le Customer, ses comptes et ses subscriptions."
+      />
 
       <sp-card title="Identité">
-        <p>Statut : <strong>{{ item.status }}</strong></p>
-        <p>NIU : {{ item.niu || '—' }}</p>
-        <p>Référence bancaire : {{ item.bankingCustomerReference }}</p>
+        <div class="customer-summary">
+          <div>
+            <span class="customer-summary__label">Statut</span>
+            <strong>{{ item.status }}</strong>
+          </div>
+          <div>
+            <span class="customer-summary__label">NIU</span>
+            <span>{{ item.niu || '—' }}</span>
+          </div>
+          <div>
+            <span class="customer-summary__label">Référence bancaire</span>
+            <span>{{ item.bankingCustomerReference }}</span>
+          </div>
+        </div>
 
         @if (canUpdate()) {
-          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-            <mat-form-field>
+          <form
+            class="customer-form"
+            [formGroup]="profileForm"
+            (ngSubmit)="saveProfile()"
+            novalidate
+          >
+            <mat-form-field appearance="outline">
               <mat-label>Nom légal</mat-label>
               <input matInput formControlName="legalName" />
             </mat-form-field>
-            <mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Courriel</mat-label>
-              <input matInput formControlName="email" />
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+              />
             </mat-form-field>
-            <mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Téléphone</mat-label>
-              <input matInput formControlName="phoneNumber" />
+              <input
+                matInput
+                formControlName="phoneNumber"
+              />
             </mat-form-field>
-            <button sp-button type="submit">Enregistrer</button>
+
+            <div class="customer-form__actions">
+              <sp-button
+                type="submit"
+                icon="save"
+              >
+                Enregistrer
+              </sp-button>
+            </div>
           </form>
         }
 
-        @if (item.status === 'ACTIVE' && canSuspend()) {
-          <button sp-button type="button" (click)="suspendCustomer()">Suspendre</button>
-        }
-        @if (item.status === 'SUSPENDED' && canUpdate()) {
-          <button sp-button type="button" (click)="reactivate()">Réactiver</button>
-        }
+        <div class="customer-section-actions">
+          @if (item.status === 'ACTIVE' && canSuspend()) {
+            <sp-button
+              type="button"
+              variant="danger"
+              icon="pause_circle"
+              (buttonClick)="suspendCustomer()"
+            >
+              Suspendre
+            </sp-button>
+          }
+
+          @if (item.status === 'SUSPENDED' && canUpdate()) {
+            <sp-button
+              type="button"
+              icon="play_circle"
+              (buttonClick)="reactivate()"
+            >
+              Réactiver
+            </sp-button>
+          }
+        </div>
       </sp-card>
 
       <sp-card title="Comptes">
-        @for (account of item.bankAccounts; track account.id) {
-          <div class="row">
-            <span>{{ account.maskedAccountIdentifier }}</span>
-            <span>{{ account.currency }}</span>
-            <span>{{ account.accountType || '—' }}</span>
-            <span>{{ account.defaultAccount ? 'Défaut' : '' }}</span>
-            @if (!account.defaultAccount && canUpdate()) {
-              <button sp-button type="button" (click)="makeDefault(account.id)">
-                Définir par défaut
-              </button>
-              <button sp-button type="button" (click)="removeAccount(account.id)">
-                Retirer
-              </button>
-            }
-          </div>
-        }
+        <div class="customer-rows">
+          @for (account of item.bankAccounts; track account.id) {
+            <div class="customer-row">
+              <span>{{ account.maskedAccountIdentifier }}</span>
+              <span>{{ account.currency }}</span>
+              <span>{{ account.accountType || '—' }}</span>
+              <span>{{ account.defaultAccount ? 'Défaut' : '' }}</span>
+
+              @if (!account.defaultAccount && canUpdate()) {
+                <div class="customer-row__actions">
+                  <sp-button
+                    type="button"
+                    variant="secondary"
+                    icon="star"
+                    (buttonClick)="makeDefault(account.id)"
+                  >
+                    Définir par défaut
+                  </sp-button>
+
+                  <sp-button
+                    type="button"
+                    variant="danger"
+                    icon="delete"
+                    (buttonClick)="removeAccount(account.id)"
+                  >
+                    Retirer
+                  </sp-button>
+                </div>
+              }
+            </div>
+          }
+        </div>
 
         @if (canUpdate()) {
-          <form [formGroup]="accountForm" (ngSubmit)="addAccount()">
-            <mat-form-field>
+          <form
+            class="customer-form customer-form--compact"
+            [formGroup]="accountForm"
+            (ngSubmit)="addAccount()"
+            novalidate
+          >
+            <mat-form-field appearance="outline">
               <mat-label>Référence du nouveau compte</mat-label>
-              <input matInput formControlName="accountReference" />
+              <input
+                matInput
+                formControlName="accountReference"
+              />
             </mat-form-field>
-            <button sp-button type="submit">Vérifier et ajouter</button>
+
+            <div class="customer-form__actions">
+              <sp-button
+                type="submit"
+                icon="add_card"
+              >
+                Vérifier et ajouter
+              </sp-button>
+            </div>
           </form>
         }
       </sp-card>
 
       <sp-card title="Subscriptions">
-        @for (subscription of subscriptions(); track subscription.id) {
-          <div class="row">
-            <span>{{ subscription.partnerId }}</span>
-            <span>{{ subscription.status }}</span>
-            <span>{{ subscription.updatedAt | date: 'short' }}</span>
-            @if (subscription.status === 'PENDING_ACTIVATION' && canSubscriptionUpdate()) {
-              <button sp-button type="button" (click)="activate(subscription.id)">
-                Activer
-              </button>
-            }
-            @if (subscription.status === 'ACTIVE' && canSubscriptionSuspend()) {
-              <button sp-button type="button" (click)="suspendSubscription(subscription.id)">
-                Suspendre
-              </button>
-            }
-          </div>
-        }
+        <div class="customer-rows">
+          @for (subscription of subscriptions(); track subscription.id) {
+            <div class="customer-row">
+              <span>{{ subscription.partnerId }}</span>
+              <span>{{ subscription.status }}</span>
+              <span>{{ subscription.updatedAt | date: 'short' }}</span>
+
+              <div class="customer-row__actions">
+                @if (
+                  subscription.status === 'PENDING_ACTIVATION'
+                  && canSubscriptionUpdate()
+                ) {
+                  <sp-button
+                    type="button"
+                    icon="check_circle"
+                    (buttonClick)="activate(subscription.id)"
+                  >
+                    Activer
+                  </sp-button>
+                }
+
+                @if (
+                  subscription.status === 'ACTIVE'
+                  && canSubscriptionSuspend()
+                ) {
+                  <sp-button
+                    type="button"
+                    variant="danger"
+                    icon="pause_circle"
+                    (buttonClick)="suspendSubscription(subscription.id)"
+                  >
+                    Suspendre
+                  </sp-button>
+                }
+              </div>
+            </div>
+          }
+        </div>
 
         @if (canSubscriptionCreate()) {
-          <form [formGroup]="subscriptionForm" (ngSubmit)="createSubscription()">
-            <mat-form-field>
+          <form
+            class="customer-form"
+            [formGroup]="subscriptionForm"
+            (ngSubmit)="createSubscription()"
+            novalidate
+          >
+            <mat-form-field appearance="outline">
               <mat-label>Partner ID</mat-label>
-              <input matInput formControlName="partnerId" />
+              <input
+                matInput
+                formControlName="partnerId"
+              />
             </mat-form-field>
-            <mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Bank account ID</mat-label>
-              <input matInput formControlName="bankAccountId" />
+              <input
+                matInput
+                formControlName="bankAccountId"
+              />
             </mat-form-field>
-            <button sp-button type="submit">Créer</button>
+
+            <div class="customer-form__actions">
+              <sp-button
+                type="submit"
+                icon="add"
+              >
+                Créer
+              </sp-button>
+            </div>
           </form>
         }
       </sp-card>
     }
   `,
   styles: [`
-    form, .row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-    .row { padding: .75rem 0; }
+    .customer-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .customer-summary > div {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .customer-summary__label {
+      font-size: 0.875rem;
+      opacity: 0.75;
+    }
+
+    .customer-form {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+      margin-top: 1rem;
+    }
+
+    .customer-form--compact {
+      grid-template-columns: minmax(0, 2fr) auto;
+    }
+
+    .customer-form__actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .customer-section-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .customer-rows {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .customer-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--mat-sys-outline-variant, #ddd);
+    }
+
+    .customer-row:last-child {
+      border-bottom: 0;
+    }
+
+    .customer-row__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+
+    @media (max-width: 900px) {
+      .customer-summary,
+      .customer-form,
+      .customer-form--compact {
+        grid-template-columns: 1fr;
+      }
+
+      .customer-row__actions {
+        width: 100%;
+        margin-left: 0;
+      }
+    }
   `],
 })
 export class CustomerMasterDetailPageComponent {
@@ -207,14 +412,20 @@ export class CustomerMasterDetailPageComponent {
           (account) => account.defaultAccount,
         );
         if (defaultAccount) {
-          this.subscriptionForm.controls.bankAccountId.setValue(defaultAccount.id);
+          this.subscriptionForm.controls.bankAccountId.setValue(
+            defaultAccount.id,
+          );
         }
       });
   }
 
   protected saveProfile(): void {
-    if (this.profileForm.invalid) return;
+    if (this.profileForm.invalid) {
+      return;
+    }
+
     const value = this.profileForm.getRawValue();
+
     this.service
       .update(this.customerId, {
         legalName: value.legalName.trim(),
@@ -226,7 +437,10 @@ export class CustomerMasterDetailPageComponent {
 
   protected suspendCustomer(): void {
     const reason = window.prompt('Motif de suspension');
-    if (!reason?.trim()) return;
+    if (!reason?.trim()) {
+      return;
+    }
+
     this.service
       .suspend(this.customerId, { reason: reason.trim() })
       .subscribe((customer) => this.customer.set(customer));
@@ -239,9 +453,13 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected addAccount(): void {
-    if (this.accountForm.invalid) return;
+    if (this.accountForm.invalid) {
+      return;
+    }
+
     const accountReference =
       this.accountForm.getRawValue().accountReference.trim();
+
     this.service
       .addAccount(this.customerId, { accountReference })
       .subscribe((customer) => {
@@ -263,8 +481,12 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected createSubscription(): void {
-    if (this.subscriptionForm.invalid) return;
+    if (this.subscriptionForm.invalid) {
+      return;
+    }
+
     const value = this.subscriptionForm.getRawValue();
+
     this.service
       .createSubscription({
         customerId: this.customerId,
@@ -281,10 +503,19 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected suspendSubscription(subscriptionId: string): void {
-    const reason = window.prompt('Motif de suspension de la subscription');
-    if (!reason?.trim()) return;
+    const reason = window.prompt(
+      'Motif de suspension de la subscription',
+    );
+
+    if (!reason?.trim()) {
+      return;
+    }
+
     this.service
-      .suspendSubscription(subscriptionId, { reason: reason.trim() })
+      .suspendSubscription(
+        subscriptionId,
+        { reason: reason.trim() },
+      )
       .subscribe(() => this.reload());
   }
 }

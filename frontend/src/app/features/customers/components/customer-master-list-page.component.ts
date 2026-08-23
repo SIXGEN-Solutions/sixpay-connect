@@ -1,12 +1,15 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { AuthenticationService } from '../../../core/auth/authentication.service';
+import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
@@ -22,53 +25,99 @@ import { CustomerManagementService } from '../services/customer-management.servi
   selector: 'sp-customer-master-list-page',
   imports: [
     DatePipe,
+    MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     ReactiveFormsModule,
     RouterLink,
+    SpButtonComponent,
     SpCardComponent,
     SpLoadingComponent,
     SpToolbarComponent,
   ],
   template: `
-    <sp-toolbar title="Customers SIXPAY" />
+    <sp-toolbar
+      title="Customers SIXPAY"
+      description="Recherchez et administrez les Customers enrôlés dans SIXPAY."
+    />
 
-    <div class="actions">
+    <div class="customer-actions">
       @if (canCreate()) {
-        <a routerLink="/customers/enroll">Enrôler un Customer</a>
+        <a mat-flat-button routerLink="/customers/enroll">
+          Enrôler un Customer
+        </a>
       }
-      <a routerLink="/customers/observed">Observed Customers</a>
+
+      <a mat-stroked-button routerLink="/customers/observed">
+        Clients observés
+      </a>
     </div>
 
+<div class="customer-content">
     <sp-card title="Recherche Customer">
-      <form [formGroup]="searchForm" (ngSubmit)="search()">
-        <mat-form-field>
+      <form
+        class="customer-search-form"
+        [formGroup]="searchForm"
+        (ngSubmit)="search()"
+        novalidate
+      >
+        <mat-form-field appearance="outline">
           <mat-label>NIU</mat-label>
-          <input matInput formControlName="niu" />
+          <input
+            matInput
+            formControlName="niu"
+            autocomplete="off"
+          />
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>Nom</mat-label>
-          <input matInput formControlName="legalName" />
+          <input
+            matInput
+            formControlName="legalName"
+            autocomplete="off"
+          />
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <mat-label>Institution</mat-label>
-          <input matInput formControlName="financialInstitutionCode" />
+          <input
+            matInput
+            formControlName="financialInstitutionCode"
+            autocomplete="off"
+          />
         </mat-form-field>
 
-        <label>
-          Statut
-          <select formControlName="status">
-            <option value="">Tous</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="SUSPENDED">SUSPENDED</option>
-            <option value="CLOSED">CLOSED</option>
-          </select>
-        </label>
+        <mat-form-field appearance="outline">
+          <mat-label>Statut</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">Tous</mat-option>
+            <mat-option value="ACTIVE">ACTIVE</mat-option>
+            <mat-option value="SUSPENDED">SUSPENDED</mat-option>
+            <mat-option value="CLOSED">CLOSED</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-        <button type="submit">Rechercher</button>
-        <button type="button" (click)="reset()">Réinitialiser</button>
+        <div class="customer-search-form__actions">
+          <sp-button
+            type="submit"
+            icon="search"
+            [disabled]="loading()"
+          >
+            Rechercher
+          </sp-button>
+
+          <sp-button
+            type="button"
+            variant="secondary"
+            icon="restart_alt"
+            [disabled]="loading()"
+            (buttonClick)="reset()"
+          >
+            Réinitialiser
+          </sp-button>
+        </div>
       </form>
     </sp-card>
 
@@ -80,7 +129,10 @@ import { CustomerManagementService } from '../services/customer-management.servi
       } @else {
         <div class="customer-grid">
           @for (customer of customers(); track customer.id) {
-            <a class="customer-row" [routerLink]="['/customers', customer.id]">
+            <a
+              class="customer-row"
+              [routerLink]="['/customers', customer.id]"
+            >
               <strong>{{ customer.legalName }}</strong>
               <span>{{ customer.niu || 'NIU non renseigné' }}</span>
               <span>{{ customer.financialInstitutionCode }}</span>
@@ -91,77 +143,133 @@ import { CustomerManagementService } from '../services/customer-management.servi
         </div>
 
         <div class="pagination">
-          <button
+          <sp-button
             type="button"
+            variant="secondary"
+            icon="chevron_left"
             [disabled]="page()?.first || loading()"
-            (click)="previousPage()"
+            (buttonClick)="previousPage()"
           >
             Précédent
-          </button>
+          </sp-button>
 
-          <span>
+          <span class="pagination__summary">
             Page {{ currentPage() + 1 }} / {{ displayTotalPages() }}
             — {{ page()?.totalElements ?? 0 }} résultat(s)
           </span>
 
-          <button
+          <sp-button
             type="button"
+            variant="secondary"
+            icon="chevron_right"
             [disabled]="page()?.last || loading()"
-            (click)="nextPage()"
+            (buttonClick)="nextPage()"
           >
             Suivant
-          </button>
+          </sp-button>
 
-          <label>
-            Taille
-            <select [value]="pageSize()" (change)="changePageSize($event)">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </label>
+          <mat-form-field
+            appearance="outline"
+            class="pagination__size"
+          >
+            <mat-label>Taille</mat-label>
+            <mat-select
+              [value]="pageSize()"
+              (selectionChange)="changePageSize($event.value)"
+            >
+              <mat-option [value]="10">10</mat-option>
+              <mat-option [value]="20">20</mat-option>
+              <mat-option [value]="50">50</mat-option>
+              <mat-option [value]="100">100</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
       }
     </sp-card>
+  </div>
   `,
   styles: [`
-    .actions,
+    .customer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .customer-search-form {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .customer-search-form__actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .customer-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .customer-row {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1fr 0.8fr 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--mat-sys-outline-variant, #ddd);
+      border-radius: 0.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .customer-row:hover {
+      background: var(--mat-sys-surface-container-low, #f7f7f7);
+    }
+
     .pagination {
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
       align-items: center;
-      margin: 1rem 0;
+      margin-top: 1rem;
     }
 
-    form {
+    .pagination__summary {
+      min-width: 14rem;
+    }
+
+    .pagination__size {
+      width: 8rem;
+      margin-left: auto;
+    }
+
+    .customer-content {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem;
-      align-items: center;
+      gap: 1.5rem;
     }
 
-    .customer-grid {
-      display: grid;
-      gap: .75rem;
+    @media (max-width: 1000px) {
+      .customer-search-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .customer-row {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
-    .customer-row {
-      display: grid;
-      grid-template-columns: 2fr 1.2fr 1fr .8fr 1fr;
-      gap: 1rem;
-      padding: 1rem;
-      border: 1px solid #ddd;
-      border-radius: .5rem;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    @media (max-width: 900px) {
-      form,
+    @media (max-width: 700px) {
+      .customer-search-form,
       .customer-row {
         grid-template-columns: 1fr;
+      }
+
+      .pagination__size {
+        margin-left: 0;
       }
     }
   `],
@@ -227,9 +335,8 @@ export class CustomerMasterListPageComponent {
     this.load();
   }
 
-  protected changePageSize(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.pageSize.set(Number(target.value));
+  protected changePageSize(size: number): void {
+    this.pageSize.set(size);
     this.currentPage.set(0);
     this.load();
   }

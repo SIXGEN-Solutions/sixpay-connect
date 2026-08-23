@@ -9,13 +9,10 @@ import com.sixpay.customer.management.domain.repository.CustomerSearchCriteria;
 import com.sixpay.customer.management.domain.repository.CustomerSearchPage;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 @Repository
@@ -101,10 +98,11 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
                 )
         );
 
-        var result = repository.findAll(
-                buildSearchSpecification(
-                        criteria
-                ),
+        var result = repository.search(
+                criteria.niu(),
+                criteria.legalName(),
+                criteria.status(),
+                criteria.financialInstitutionCode(),
                 pageable
         );
 
@@ -139,79 +137,6 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
                         financialInstitutionCode,
                         bankingCustomerReference
                 );
-    }
-
-    private static Specification<CustomerJpaEntity>
-    buildSearchSpecification(
-            CustomerSearchCriteria criteria
-    ) {
-        return (root, query, criteriaBuilder) -> {
-            var predicates =
-                    new ArrayList<jakarta.persistence.criteria.Predicate>();
-
-            if (criteria.niu() != null) {
-                predicates.add(
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(
-                                        root.get("niu")
-                                ),
-                                "%"
-                                        + criteria.niu()
-                                        .toLowerCase(
-                                                Locale.ROOT
-                                        )
-                                        + "%"
-                        )
-                );
-            }
-
-            if (criteria.legalName() != null) {
-                predicates.add(
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(
-                                        root.get("legalName")
-                                ),
-                                "%"
-                                        + criteria.legalName()
-                                        .toLowerCase(
-                                                Locale.ROOT
-                                        )
-                                        + "%"
-                        )
-                );
-            }
-
-            if (criteria.status() != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                root.get("status"),
-                                criteria.status()
-                        )
-                );
-            }
-
-            if (criteria.financialInstitutionCode() != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                criteriaBuilder.lower(
-                                        root.get(
-                                                "financialInstitutionCode"
-                                        )
-                                ),
-                                criteria.financialInstitutionCode()
-                                        .toLowerCase(
-                                                Locale.ROOT
-                                        )
-                        )
-                );
-            }
-
-            return criteriaBuilder.and(
-                    predicates.toArray(
-                            jakarta.persistence.criteria.Predicate[]::new
-                    )
-            );
-        };
     }
 
     private Customer toDomain(CustomerJpaEntity entity) {

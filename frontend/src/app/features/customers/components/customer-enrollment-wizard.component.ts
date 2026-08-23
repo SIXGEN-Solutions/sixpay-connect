@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { ErrorService } from '../../../core/errors/error.service';
+import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
@@ -18,34 +19,69 @@ import { CustomerManagementService } from '../services/customer-management.servi
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
+    SpButtonComponent,
     SpCardComponent,
     SpLoadingComponent,
     SpToolbarComponent,
   ],
   template: `
-    <sp-toolbar title="Enrôlement Customer" />
+    <sp-toolbar
+      title="Enrôlement Customer"
+      description="Recherchez le client dans Amplitude puis confirmez son enrôlement dans SIXPAY."
+    />
 
     <sp-card title="1. Recherche bancaire">
-      <form [formGroup]="form" (ngSubmit)="search()">
-        <mat-form-field>
+      <form
+        class="customer-enrollment-form"
+        [formGroup]="form"
+        (ngSubmit)="search()"
+        novalidate
+      >
+        <mat-form-field appearance="outline">
           <mat-label>Institution financière</mat-label>
-          <input matInput formControlName="financialInstitutionCode" />
+          <input
+            matInput
+            formControlName="financialInstitutionCode"
+            autocomplete="off"
+          />
         </mat-form-field>
-        <mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>NIU</mat-label>
-          <input matInput formControlName="niu" />
+          <input
+            matInput
+            formControlName="niu"
+            autocomplete="off"
+          />
         </mat-form-field>
-        <mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Numéro client</mat-label>
-          <input matInput formControlName="customerNumber" />
+          <input
+            matInput
+            formControlName="customerNumber"
+            autocomplete="off"
+          />
         </mat-form-field>
-        <mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Référence compte</mat-label>
-          <input matInput formControlName="accountReference" />
+          <input
+            matInput
+            formControlName="accountReference"
+            autocomplete="off"
+          />
         </mat-form-field>
-        <button sp-button type="submit" [disabled]="searching()">
-          Rechercher dans Amplitude
-        </button>
+
+        <div class="customer-enrollment-form__actions">
+          <sp-button
+            type="submit"
+            icon="search"
+            [disabled]="searching()"
+          >
+            {{ searching() ? 'Recherche…' : 'Rechercher dans Amplitude' }}
+          </sp-button>
+        </div>
       </form>
     </sp-card>
 
@@ -55,24 +91,89 @@ import { CustomerManagementService } from '../services/customer-management.servi
 
     @if (preview(); as customer) {
       <sp-card title="2. Vérifier les données retournées">
-        <p><strong>{{ customer.legalName }}</strong></p>
-        <p>NIU : {{ customer.niu }}</p>
-        <p>Référence banque : {{ customer.bankingCustomerReference }}</p>
-        <p>Compte : {{ customer.maskedAccountIdentifier }}</p>
-        <p>Devise : {{ customer.currency }}</p>
-        <p>
+        <div class="customer-preview">
+          <div>
+            <span class="customer-preview__label">Nom légal</span>
+            <strong>{{ customer.legalName }}</strong>
+          </div>
+          <div>
+            <span class="customer-preview__label">NIU</span>
+            <span>{{ customer.niu }}</span>
+          </div>
+          <div>
+            <span class="customer-preview__label">Référence banque</span>
+            <span>{{ customer.bankingCustomerReference }}</span>
+          </div>
+          <div>
+            <span class="customer-preview__label">Compte</span>
+            <span>{{ customer.maskedAccountIdentifier }}</span>
+          </div>
+          <div>
+            <span class="customer-preview__label">Devise</span>
+            <span>{{ customer.currency }}</span>
+          </div>
+        </div>
+
+        <p class="customer-preview__notice">
           Le preview ne constitue pas une preuve. La confirmation déclenche
           une vérification bancaire fraîche côté backend avant création.
         </p>
-        <button sp-button type="button" (click)="enroll()" [disabled]="enrolling()">
-          Confirmer l’enrôlement
-        </button>
+
+        <div class="customer-enrollment-form__actions">
+          <sp-button
+            type="button"
+            icon="person_add"
+            [disabled]="enrolling()"
+            (buttonClick)="enroll()"
+          >
+            {{ enrolling() ? 'Enrôlement…' : 'Confirmer l’enrôlement' }}
+          </sp-button>
+        </div>
       </sp-card>
     }
   `,
   styles: [`
-    form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
-    @media (max-width: 700px) { form { grid-template-columns: 1fr; } }
+    .customer-enrollment-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .customer-enrollment-form__actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .customer-preview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .customer-preview > div {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .customer-preview__label {
+      font-size: 0.875rem;
+      opacity: 0.75;
+    }
+
+    .customer-preview__notice {
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 700px) {
+      .customer-enrollment-form,
+      .customer-preview {
+        grid-template-columns: 1fr;
+      }
+    }
   `],
 })
 export class CustomerEnrollmentWizardComponent {
@@ -86,10 +187,16 @@ export class CustomerEnrollmentWizardComponent {
   protected readonly preview = signal<BankingCustomerPreview | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
-    financialInstitutionCode: ['', [Validators.required, Validators.maxLength(50)]],
+    financialInstitutionCode: [
+      '',
+      [Validators.required, Validators.maxLength(50)],
+    ],
     niu: [''],
     customerNumber: [''],
-    accountReference: ['', [Validators.required, Validators.maxLength(100)]],
+    accountReference: [
+      '',
+      [Validators.required, Validators.maxLength(100)],
+    ],
   });
 
   protected search(): void {
