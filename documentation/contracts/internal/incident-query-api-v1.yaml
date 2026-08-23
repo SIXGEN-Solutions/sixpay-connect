@@ -1,0 +1,507 @@
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - Internal Incident Query API
+  version: 1.0.0
+  description: |
+    Read-only internal API for querying operational incidents owned by the
+    Administration module.
+
+    The API exposes incident summaries, incident detail and the incident
+    operational timeline required by SIXPAY administration screens.
+
+    This contract is intentionally query-only. It does not define incident
+    creation, acknowledgement, assignment, status transition, remediation or
+    deletion commands.
+
+    Operational incidents are distinct from immutable Payment audit evidence
+    owned by Reporting.
+
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+
+  x-sixpay-contract:
+    registryId: incident-query-api-v1
+    gate: FS-1.4
+    phaseStep: FS-1.4.2
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: administration
+    businessOwner: administration
+    securityOwner: security
+    capability: OPERATIONAL_INCIDENT_QUERY
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: INTERNAL
+    readOnly: true
+    limitations:
+      - NO_INCIDENT_CREATION
+      - NO_INCIDENT_MUTATION
+      - NO_INCIDENT_STATUS_TRANSITION
+      - NO_INCIDENT_ASSIGNMENT
+      - NO_INCIDENT_DELETION
+      - NO_PAYMENT_AUDIT_PAYLOAD
+      - NO_RAW_PROVIDER_PAYLOAD
+      - NO_SECRETS_OR_CREDENTIALS
+
+servers:
+  - url: https://sixpay-api.example
+    description: Environment-specific internal SIXPAY endpoint
+
+security:
+  - oauth2:
+      - incident.read
+
+tags:
+  - name: Incidents
+    description: Read-only operational Incident projections.
+
+paths:
+  /internal/api/v1/incidents:
+    get:
+      tags: [Incidents]
+      operationId: searchIncidents
+      summary: Search operational incidents
+      description: |
+        Returns a stable page of operational Incident summaries.
+
+        Search can be filtered by severity, status and component.
+        Pagination is mandatory at the contract level because Incident history
+        is naturally unbounded.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+
+        - name: severity
+          in: query
+          required: false
+          description: Filter by Incident severity.
+          schema:
+            $ref: '#/components/schemas/IncidentSeverity'
+
+        - name: status
+          in: query
+          required: false
+          description: Filter by Incident lifecycle status.
+          schema:
+            $ref: '#/components/schemas/IncidentStatus'
+
+        - name: component
+          in: query
+          required: false
+          description: |
+            Case-insensitive filter on the SIXPAY component or integration
+            associated with the Incident.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+
+      responses:
+        '200':
+          description: Page of matching operational incidents
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentPageResponse'
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/incidents/{incidentId}:
+    get:
+      tags: [Incidents]
+      operationId: getIncident
+      summary: Get operational Incident detail
+      description: |
+        Returns the operational Incident detail including its safe operational
+        timeline and optional references to correlated SIXPAY objects.
+
+        Optional Payment, Accounting and correlation references are identifiers
+        only. This API does not embed Payment audit evidence, financial account
+        data or provider payloads.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/IncidentId'
+
+      responses:
+        '200':
+          description: Operational Incident detail
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentDetailResponse'
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://identity.example/oauth2/authorize
+          tokenUrl: https://identity.example/oauth2/token
+          scopes:
+            incident.read: Read operational Incident projections
+
+  parameters:
+
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    IncidentId:
+      name: incidentId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    PageSize:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  headers:
+
+    CorrelationId:
+      description: Echo of the request correlation identifier
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+
+    BadRequest:
+      description: Invalid filter, pagination value or malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Unauthorized:
+      description: Authentication is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Forbidden:
+      description: |
+        Access to operational Incident projections is denied.
+        The caller must hold SIXPAY Incident read authorization.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    NotFound:
+      description: Incident does not exist or is not visible to the caller
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    InternalServerError:
+      description: Internal Incident query failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    ServiceUnavailable:
+      description: Incident query projection is temporarily unavailable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+
+    IncidentSeverity:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+
+    IncidentStatus:
+      type: string
+      enum:
+        - OPEN
+        - INVESTIGATING
+        - MONITORING
+        - RESOLVED
+        - CLOSED
+
+    IncidentSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - incidentId
+        - severity
+        - component
+        - summary
+        - status
+        - openedAt
+        - updatedAt
+      properties:
+
+        incidentId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Stable SIXPAY operational Incident identifier.
+
+        severity:
+          $ref: '#/components/schemas/IncidentSeverity'
+
+        component:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: |
+            SIXPAY capability, internal component or external integration
+            associated with the Incident.
+
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Short operator-facing summary.
+
+        status:
+          $ref: '#/components/schemas/IncidentStatus'
+
+        openedAt:
+          type: string
+          format: date-time
+
+        updatedAt:
+          type: string
+          format: date-time
+
+    IncidentTimelineEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - eventId
+        - occurredAt
+        - message
+        - actor
+      properties:
+
+        eventId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Stable Incident timeline event identifier.
+
+        occurredAt:
+          type: string
+          format: date-time
+
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: |
+            Safe operational timeline message. It must not expose credentials,
+            secrets, raw banking data or raw provider payloads.
+
+        actor:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: |
+            SIXPAY subject, subsystem or operational actor recorded for the
+            timeline event.
+
+    IncidentDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/IncidentSummary'
+        - type: object
+          additionalProperties: false
+          required:
+            - description
+            - impact
+            - timeline
+          properties:
+
+            description:
+              type: string
+              minLength: 1
+              maxLength: 4096
+              description: Detailed operational description of the Incident.
+
+            impact:
+              type: string
+              minLength: 1
+              maxLength: 2048
+              description: Operator-facing impact assessment.
+
+            accountingBatchId:
+              type:
+                - string
+                - 'null'
+              format: uuid
+              description: |
+                Optional Accounting batch identifier correlated with the
+                Incident.
+
+            paymentId:
+              type:
+                - string
+                - 'null'
+              format: uuid
+              description: Optional Payment identifier correlated with the Incident.
+
+            paymentReference:
+              type:
+                - string
+                - 'null'
+              maxLength: 64
+              description: |
+                Optional public Payment reference. No Payment aggregate or audit
+                evidence is embedded.
+
+            correlationId:
+              type:
+                - string
+                - 'null'
+              format: uuid
+              description: |
+                Optional historical SIXPAY correlation identifier associated
+                with the Incident.
+
+            timeline:
+              type: array
+              items:
+                $ref: '#/components/schemas/IncidentTimelineEntry'
+
+    IncidentPageResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncidentSummary'
+
+        page:
+          type: integer
+          minimum: 0
+
+        size:
+          type: integer
+          minimum: 1
+
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+
+        totalPages:
+          type: integer
+          minimum: 0
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+
+        type:
+          type: string
+          format: uri
+
+        title:
+          type: string
+
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+
+        code:
+          type: string
+
+        correlationId:
+          type: string
+          format: uuid
+
+        detail:
+          type: string
