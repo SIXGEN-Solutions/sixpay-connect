@@ -5,6 +5,7 @@ import com.sixpay.customer.management.api.request.CustomerStatusReasonRequest;
 import com.sixpay.customer.management.api.request.UpdateCustomerRequest;
 import com.sixpay.customer.management.api.response.CustomerResponse;
 import com.sixpay.customer.management.api.response.CustomerBankAccountResponse;
+import com.sixpay.customer.management.application.audit.CustomerAuditRecorder;
 import com.sixpay.customer.management.application.port.input.AddBankAccountCommand;
 import com.sixpay.customer.management.application.port.input.CustomerManagementUseCase;
 import com.sixpay.customer.management.application.port.input.CustomerQueryUseCase;
@@ -42,19 +43,22 @@ public class CustomerController {
     private final EnrollCustomerUseCase enrollment;
     private final CustomerManagementUseCase management;
     private final CustomerQueryUseCase query;
+    private final CustomerAuditRecorder audit;
 
     public CustomerController(
             EnrollCustomerUseCase enrollment,
             CustomerManagementUseCase management,
-            CustomerQueryUseCase query
+            CustomerQueryUseCase query,
+            CustomerAuditRecorder audit
     ) {
         this.enrollment = enrollment;
         this.management = management;
         this.query = query;
+        this.audit = audit;
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.create')")
     @Operation(summary = "Enroll a verified banking customer into SIXPAY")
     public ResponseEntity<CustomerResponse> create(
             @RequestParam String financialInstitutionCode,
@@ -87,11 +91,19 @@ public class CustomerController {
                 .buildAndExpand(response.id())
                 .toUri();
 
+        audit.success(
+                "CUSTOMER",
+                response.id(),
+                "CUSTOMER_CREATED",
+                effectiveCorrelationId,
+                "Customer enrolled after fresh banking verification"
+        );
+
         return ResponseEntity.created(location).body(response);
     }
 
     @GetMapping("/{customerId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.read')")
     @Operation(summary = "Get a SIXPAY customer")
     public CustomerResponse findById(
             @PathVariable UUID customerId
@@ -104,13 +116,13 @@ public class CustomerController {
     }
 
     @PutMapping("/{customerId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(summary = "Update editable SIXPAY customer profile fields")
     public CustomerResponse update(
             @PathVariable UUID customerId,
             @Valid @RequestBody UpdateCustomerRequest request
     ) {
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.updateProfile(
                         new CustomerId(customerId),
                         request.legalName(),
@@ -119,40 +131,49 @@ public class CustomerController {
                         Instant.now()
                 )
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_UPDATED", null,
+                "Editable Customer profile fields updated");
+        return response;
     }
 
     @PostMapping("/{customerId}/suspension")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.suspend')")
     @Operation(summary = "Suspend a SIXPAY customer")
     public CustomerResponse suspend(
             @PathVariable UUID customerId,
             @Valid @RequestBody CustomerStatusReasonRequest request
     ) {
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.suspend(
                         new CustomerId(customerId),
                         request.reason(),
                         Instant.now()
                 )
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_SUSPENDED", null,
+                "Customer suspended; reason=" + request.reason());
+        return response;
     }
 
     @PostMapping("/{customerId}/reactivation")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(summary = "Reactivate a suspended SIXPAY customer")
     public CustomerResponse reactivate(
             @PathVariable UUID customerId
     ) {
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.reactivate(
                         new CustomerId(customerId),
                         Instant.now()
                 )
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_REACTIVATED", null,
+                "Customer reactivated");
+        return response;
     }
 
     @DeleteMapping("/{customerId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(
             summary = "Close a SIXPAY customer",
             description = "Logical delete only; customer data is not physically deleted"
@@ -166,11 +187,13 @@ public class CustomerController {
                 request.reason(),
                 Instant.now()
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_CLOSED", null,
+                "Customer logically closed; reason=" + request.reason());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{customerId}/accounts")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.read')")
     @Operation(summary = "List customer bank accounts")
     public java.util.List<CustomerBankAccountResponse> accounts(
             @PathVariable UUID customerId
@@ -183,7 +206,7 @@ public class CustomerController {
     }
 
     @PostMapping("/{customerId}/accounts")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(
             summary = "Lookup, freshly verify and link a bank account to a customer"
     )
@@ -198,7 +221,7 @@ public class CustomerController {
                         ? UUID.randomUUID().toString()
                         : correlationId.strip();
 
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.addBankAccount(
                         new CustomerId(customerId),
                         new AddBankAccountCommand(
@@ -208,37 +231,53 @@ public class CustomerController {
                         Instant.now()
                 )
         );
+
+        audit.success(
+                "CUSTOMER",
+                customerId,
+                "CUSTOMER_BANK_ACCOUNT_LINKED",
+                effectiveCorrelationId,
+                "Verified bank account linked to Customer"
+        );
+
+        return response;
     }
 
     @PutMapping("/{customerId}/accounts/{accountId}/default")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(summary = "Set the default customer bank account")
     public CustomerResponse makeDefaultAccount(
             @PathVariable UUID customerId,
             @PathVariable UUID accountId
     ) {
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.makeDefaultBankAccount(
                         new CustomerId(customerId),
                         new CustomerBankAccountId(accountId),
                         Instant.now()
                 )
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_DEFAULT_ACCOUNT_CHANGED", null,
+                "Default bank account changed to " + accountId);
+        return response;
     }
 
     @DeleteMapping("/{customerId}/accounts/{accountId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(summary = "Unlink a bank account from a customer")
     public CustomerResponse removeAccount(
             @PathVariable UUID customerId,
             @PathVariable UUID accountId
     ) {
-        return CustomerResponse.from(
+        CustomerResponse response = CustomerResponse.from(
                 management.removeBankAccount(
                         new CustomerId(customerId),
                         new CustomerBankAccountId(accountId),
                         Instant.now()
                 )
         );
+        audit.success("CUSTOMER", customerId, "CUSTOMER_BANK_ACCOUNT_UNLINKED", null,
+                "Bank account unlinked: " + accountId);
+        return response;
     }
 }

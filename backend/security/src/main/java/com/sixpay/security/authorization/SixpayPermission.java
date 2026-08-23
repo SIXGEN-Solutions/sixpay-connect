@@ -16,6 +16,18 @@ public enum SixpayPermission {
 
     OBSERVED_CUSTOMER_READ("observed-customer.read"),
 
+    CUSTOMER_READ("customer.read"),
+    CUSTOMER_CREATE("customer.create"),
+    CUSTOMER_UPDATE("customer.update"),
+    CUSTOMER_SUSPEND("customer.suspend"),
+    CUSTOMER_AUDIT_READ("customer.audit.read"),
+
+    SUBSCRIPTION_READ("subscription.read"),
+    SUBSCRIPTION_CREATE("subscription.create"),
+    SUBSCRIPTION_UPDATE("subscription.update"),
+    SUBSCRIPTION_SUSPEND("subscription.suspend"),
+    SUBSCRIPTION_CLOSE("subscription.close"),
+
     PAYMENT_READ("payment.read"),
     PAYMENT_WRITE("payment.write"),
     PAYMENT_AUDIT("payment.audit"),

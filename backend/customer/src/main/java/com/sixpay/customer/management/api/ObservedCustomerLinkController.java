@@ -4,6 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.customer.management.api.request.LinkObservedCustomerRequest;
 import com.sixpay.customer.management.api.request.UnlinkObservedCustomerRequest;
 import com.sixpay.customer.management.api.response.ObservedCustomerLinkResponse;
+import com.sixpay.customer.management.application.audit.CustomerAuditRecorder;
 import com.sixpay.customer.management.application.port.input.ObservedCustomerLinkUseCase;
 import com.sixpay.customer.management.domain.model.CustomerId;
 import com.sixpay.security.authentication.CurrentUserProvider;
@@ -35,17 +36,20 @@ public class ObservedCustomerLinkController {
 
     private final ObservedCustomerLinkUseCase links;
     private final CurrentUserProvider currentUserProvider;
+    private final CustomerAuditRecorder audit;
 
     public ObservedCustomerLinkController(
             ObservedCustomerLinkUseCase links,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            CustomerAuditRecorder audit
     ) {
         this.links = links;
         this.currentUserProvider = currentUserProvider;
+        this.audit = audit;
     }
 
     @PutMapping("/{observedCustomerId}/customer-link")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(
             summary = "Explicitly link an ObservedCustomer to an enrolled Customer",
             description = "Does not create or update Customer master data"
@@ -60,20 +64,25 @@ public class ObservedCustomerLinkController {
             @Size(max = HEADER_MAX_LENGTH)
             String correlationId
     ) {
-        return ObservedCustomerLinkResponse.from(
+        String effectiveCorrelationId = correlation(correlationId);
+        ObservedCustomerLinkResponse response = ObservedCustomerLinkResponse.from(
                 links.link(
                         observedCustomerId,
                         new CustomerId(request.customerId()),
                         actor(),
-                        correlation(correlationId),
+                        effectiveCorrelationId,
                         request.reason(),
                         Instant.now()
                 )
         );
+        audit.success("OBSERVED_CUSTOMER_LINK", observedCustomerId,
+                "OBSERVED_CUSTOMER_LINKED", effectiveCorrelationId,
+                "ObservedCustomer linked to Customer " + request.customerId());
+        return response;
     }
 
     @DeleteMapping("/{observedCustomerId}/customer-link")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_customer.update')")
     @Operation(
             summary = "Remove the active Customer correlation",
             description = "The ObservedCustomer projection remains unchanged"
@@ -88,21 +97,22 @@ public class ObservedCustomerLinkController {
             @Size(max = HEADER_MAX_LENGTH)
             String correlationId
     ) {
+        String effectiveCorrelationId = correlation(correlationId);
         links.unlink(
                 observedCustomerId,
                 actor(),
-                correlation(correlationId),
+                effectiveCorrelationId,
                 request.reason(),
                 Instant.now()
         );
-
+        audit.success("OBSERVED_CUSTOMER_LINK", observedCustomerId,
+                "OBSERVED_CUSTOMER_UNLINKED", effectiveCorrelationId,
+                "ObservedCustomer link removed; reason=" + request.reason());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{observedCustomerId}/customer-link")
-    @PreAuthorize(
-            "hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR')"
-    )
+    @PreAuthorize("hasAuthority('SCOPE_customer.read')")
     @Operation(summary = "Get the active Customer correlation")
     public ResponseEntity<ObservedCustomerLinkResponse> find(
             @PathVariable UUID observedCustomerId
@@ -116,9 +126,7 @@ public class ObservedCustomerLinkController {
     }
 
     @GetMapping("/customer-links")
-    @PreAuthorize(
-            "hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR')"
-    )
+    @PreAuthorize("hasAuthority('SCOPE_customer.read')")
     @Operation(
             summary = "List observed projections explicitly linked to one Customer"
     )
