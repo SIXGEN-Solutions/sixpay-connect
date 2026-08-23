@@ -512,6 +512,75 @@ contracts:
         - "No raw provider payload"
         - "No secret or credential exposure"
 
+  - id: "customer-management-query-api-v1"
+    path: "documentation/contracts/internal/customer-management-query-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "customer"
+    securityOwner: "security"
+    capability: "CUSTOMER_MANAGEMENT"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.3"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      scopes: ["customer.read", "customer.create", "customer.update", "customer.suspend"]
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      pagination: "OFFSET_PAGE"
+      purpose:
+        - "Search and read authoritative SIXPAY Customer master data"
+        - "Preview banking Customer data before enrollment"
+        - "Enroll and update SIXPAY Customers"
+        - "Suspend, reactivate and logically close Customers"
+        - "List, link, unlink and select the default verified bank account"
+      constraints:
+        - "ObservedCustomer projection remains outside this capability"
+        - "Subscription endpoints remain outside this physical contract"
+        - "Customer close is logical, not physical deletion"
+
+  - id: "security-user-administration-api-v1"
+    path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
+    domain: "security"
+    businessOwner: "security"
+    deliveryBoundary: "administration"
+    securityOwner: "security"
+    capability: "SECURITY_USER_ADMINISTRATION"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.3"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      authorization: "ROLE_BASED"
+      roles: ["ADMIN"]
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: false
+      purpose:
+        - "Create, list, read, update and delete SIXPAY security users"
+        - "Enable and disable user accounts"
+        - "Manage local authentication availability and local password resets"
+        - "Link and unlink OIDC identities"
+        - "Manage roles and permissions through the existing update boundary"
+      constraints:
+        - "ROLE_ADMIN is required for every endpoint"
+        - "Authentication runtime endpoints are outside this contract"
+        - "Passwords are request-only and never returned"
+        - "Security remains owner of users, identities, roles, permissions and authentication"
 missingMvpContracts:
   status: "PARTIALLY_CLOSED"
   contracts:

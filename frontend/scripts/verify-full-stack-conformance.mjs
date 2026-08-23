@@ -74,11 +74,12 @@ function assertPublishedContract(capability, contractPath, endpointToken) {
  *
  * - We require a published OpenAPI contract only when the repository
  *   actually declares one for that capability.
- * - We MUST NOT invent a Partner, Customer Management or Security User
- *   Administration contract merely to satisfy this gate.
- * - Payment, Observed Customer and Payment Audit have explicit internal
- *   contracts registered by the repository and are checked against those
- *   exact files.
+ * - Partner still has no published internal contract in this registry and
+ *   therefore remains contract:null in this static gate.
+ * - Customer Management and Security User Administration now have normalized
+ *   contracts derived from their existing implemented boundaries.
+ * - Every published internal contract declared here is checked against its
+ *   exact physical file.
  */
 const capabilities = [
   {
@@ -121,7 +122,11 @@ const capabilities = [
       'src/app/features/customers/api/customer-management-api.client.ts',
     endpointTokens: ['/internal/api/v1/customers'],
     backendOwnership: ['CustomerController'],
-    contract: null,
+    contract: {
+      path:
+        'documentation/contracts/internal/customer-management-query-api-v1.yaml',
+      endpointToken: '/internal/api/v1/customers',
+    },
   },
   {
     name: 'Observed Customer',
@@ -202,7 +207,11 @@ const capabilities = [
       'src/app/features/administration/services/security-user-administration.service.ts',
     endpointTokens: ['/internal/api/v1/administration/users'],
     backendOwnership: ['SecurityUserAdministration'],
-    contract: null,
+    contract: {
+      path:
+        'documentation/contracts/internal/security-user-administration-api-v1.yaml',
+      endpointToken: '/internal/api/v1/administration/users',
+    },
   },
 ];
 
