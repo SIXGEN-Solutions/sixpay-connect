@@ -135,6 +135,52 @@ const capabilities = [
     },
   },
   {
+    name: 'Operational Administration',
+    frontend:
+      'src/app/features/administration/api/administration-api.client.ts',
+
+    endpointTokens: [
+      '/internal/api/v1/administration',
+    ],
+
+    frontendTokens: [
+      '/internal/api/v1/administration',
+      '/overview',
+      '/settings',
+      '/integrations',
+    ],
+
+    backendOwnership: [
+      'AdministrationQueryController',
+      'AdministrationQueryUseCase',
+      'AdministrationQueryService',
+    ],
+
+    contract: {
+      path:
+        'documentation/contracts/internal/administration-query-api-v1.yaml',
+      endpointToken:
+        '/internal/api/v1/administration/overview',
+    },
+  },
+  {
+    name: 'Incidents',
+    frontend:
+      'src/app/features/incidents/api/incidents-api.client.ts',
+    endpointTokens: ['/internal/api/v1/incidents'],
+    backendOwnership: [
+      'IncidentQueryController',
+      'IncidentQueryUseCase',
+      'IncidentQueryService',
+      'OperationalIncidentRepositoryAdapter',
+      'OperationalIncidentSpringDataRepository',
+    ],
+    contract: {
+      path: 'documentation/contracts/internal/incident-query-api-v1.yaml',
+      endpointToken: '/internal/api/v1/incidents',
+    },
+  },
+  {
     name: 'Security User Administration',
     frontend:
       'src/app/features/administration/services/security-user-administration.service.ts',
@@ -147,6 +193,19 @@ const capabilities = [
 for (const capability of capabilities) {
   const frontendFile = path.join(frontendRoot, capability.frontend);
   const source = read(frontendFile);
+
+  for (
+    const frontendToken
+    of capability.frontendTokens ?? []
+  ) {
+    if (!source.includes(frontendToken)) {
+      fail(
+        `${capability.name}: Angular client `
+          + `does not declare required token `
+          + `${frontendToken}`,
+      );
+    }
+  }
 
   if (!source.includes('HttpClient')) {
     fail(`${capability.name}: Angular API boundary does not use HttpClient`);
