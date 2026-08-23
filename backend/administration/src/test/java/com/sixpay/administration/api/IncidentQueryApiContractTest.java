@@ -17,7 +17,7 @@ class IncidentQueryApiContractTest {
                     "documentation",
                     "contracts",
                     "internal",
-                    "incident-query-api-v1.yaml"
+                    "administration-operational-api-v1.yaml"
             );
 
     @Test

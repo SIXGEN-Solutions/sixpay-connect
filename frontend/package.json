@@ -11,7 +11,7 @@
     "start:integration": "npm run verify:integration-contract-backed && ng serve --configuration integration --proxy-config proxy.conf.json",
     "start:netlify": "ng serve --configuration netlify",
     "build": "ng build",
-    "build:integration": "npm run verify:runtime-datasource-policy && npm run verify:full-stack-conformance && npm run verify:integration-contract-backed && ng build --configuration integration",
+    "build:integration": "npm run verify:contract-consolidation && npm run verify:runtime-datasource-policy && npm run verify:full-stack-conformance && npm run verify:integration-contract-backed && ng build --configuration integration",
     "build:netlify": "ng build --configuration netlify",
     "build:all": "npm run build:integration && npm run build:netlify && npm run build",
     "watch": "ng build --watch --configuration development",
@@ -36,6 +36,7 @@
     "gate:8": "npm run contract:partner && npm run lint && npm run test:coverage && npm run dependencies:audit && npm run build:all && npm run test:e2e && npm run test:e2e:integration && npm run format:check",
     "verify:integration-contract-backed": "node scripts/verify-contract-backed-integration.mjs",
     "verify:full-stack-conformance": "node scripts/verify-full-stack-conformance.mjs",
+    "verify:contract-consolidation": "node scripts/verify-contract-consolidation.mjs",
     "verify:runtime-datasource-policy": "node scripts/verify-runtime-datasource-policy.mjs"
   },
   "private": true,
