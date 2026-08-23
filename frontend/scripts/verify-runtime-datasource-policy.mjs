@@ -10,12 +10,10 @@ function fail(message) {
 
 function read(relativePath) {
   const absolute = path.join(frontendRoot, relativePath);
-
   if (!fs.existsSync(absolute)) {
     fail(`Missing required file: ${relativePath}`);
     return '';
   }
-
   return fs.readFileSync(absolute, 'utf8');
 }
 
@@ -25,9 +23,14 @@ function assertContains(source, token, context) {
   }
 }
 
+function assertNotContains(source, token, context) {
+  if (source.includes(token)) {
+    fail(`${context}: forbidden token "${token}"`);
+  }
+}
+
 function walk(root) {
   const absoluteRoot = path.join(frontendRoot, root);
-
   if (!fs.existsSync(absoluteRoot)) {
     return [];
   }
@@ -67,27 +70,26 @@ function relative(file) {
 }
 
 /*
- * FS-1.4.11 runtime datasource policy
+ * FS-1.5 — Remove mock dependency from integration/prod path
  *
- * production  => NEVER mock
- * integration => NEVER mock
- * development => mock allowed
- * demo        => mock allowed
- * tests       => mock allowed
+ * development/mock => mocks allowed
+ * demo             => mocks allowed
+ * tests            => mocks allowed
+ * integration      => API only
+ * production       => API only
+ *
+ * API failure -> silent mock fallback is forbidden.
  */
 
 const productionEnvironment = read(
   'src/environments/environment.ts',
 );
-
 const integrationEnvironment = read(
   'src/environments/environment.integration.ts',
 );
-
 const developmentEnvironment = read(
   'src/environments/environment.development.ts',
 );
-
 const demoEnvironment = read(
   'src/environments/environment.netlify.ts',
 );
@@ -97,10 +99,14 @@ assertContains(
   'production: true',
   'production environment',
 );
-
 assertContains(
   productionEnvironment,
   "mode: 'api'",
+  'production environment',
+);
+assertNotContains(
+  productionEnvironment,
+  "mode: 'mock'",
   'production environment',
 );
 
@@ -109,22 +115,23 @@ assertContains(
   "mode: 'api'",
   'integration environment',
 );
+assertNotContains(
+  integrationEnvironment,
+  "mode: 'mock'",
+  'integration environment',
+);
 
 assertContains(
   developmentEnvironment,
   "mode: 'mock'",
   'development environment',
 );
-
 assertContains(
   demoEnvironment,
   "mode: 'mock'",
   'demo environment',
 );
 
-/*
- * The shared backend mode abstraction must remain binary and explicit.
- */
 const backendModeService = read(
   'src/app/core/backend/backend-mode.service.ts',
 );
@@ -140,126 +147,201 @@ for (const token of [
   );
 }
 
-/*
- * Accounting is the reference policy already adopted:
- * service-level datasource selection is allowed,
- * silent HTTP-to-mock fallback is not.
- *
- * Administration and Incidents must follow the same rule.
- */
-const policyServices = [
+const switchedDomains = [
+  {
+    name: 'Partner',
+    service:
+      'src/app/features/partners/services/partners.service.ts',
+    apiType: 'PartnerApiClient',
+    mockType: 'PartnersMockService',
+  },
+  {
+    name: 'Payment',
+    service:
+      'src/app/features/payments/services/payments.service.ts',
+    apiType: 'PaymentsApiClient',
+    mockType: 'PaymentsMockService',
+  },
+  {
+    name: 'Reporting',
+    service:
+      'src/app/features/reporting/services/reporting.service.ts',
+    apiType: 'ReportingApiClient',
+    mockType: 'ReportingMockService',
+  },
+  {
+    name: 'Observed Customer',
+    service:
+      'src/app/features/customers/services/customers.service.ts',
+    apiType: 'CustomersApiClient',
+    mockType: 'CustomersMockService',
+  },
   {
     name: 'Accounting',
-    path:
+    service:
       'src/app/features/accounting/services/accounting.service.ts',
     apiType: 'AccountingApiClient',
     mockType: 'AccountingMockService',
   },
   {
     name: 'Operational Administration',
-    path:
+    service:
       'src/app/features/administration/services/administration.service.ts',
     apiType: 'AdministrationApiClient',
     mockType: 'AdministrationMockService',
   },
   {
     name: 'Incidents',
-    path:
+    service:
       'src/app/features/incidents/services/incidents.service.ts',
     apiType: 'IncidentsApiClient',
     mockType: 'IncidentsMockService',
   },
 ];
 
-for (const service of policyServices) {
-  const source = read(service.path);
+for (const domain of switchedDomains) {
+  const source = read(domain.service);
 
   for (const token of [
     'BackendModeService',
-    'backendMode.usesApi',
-    service.apiType,
-    service.mockType,
+    domain.apiType,
+    domain.mockType,
   ]) {
     assertContains(
       source,
       token,
-      `${service.name} service`,
+      `${domain.name} service`,
+    );
+  }
+
+  if (
+    !source.includes('backendMode.usesApi')
+    && !source.includes('backendMode.usesMock')
+  ) {
+    fail(
+      `${domain.name}: explicit API/mock runtime boundary is missing`,
     );
   }
 
   const catchErrorBlocks = source.match(
-    /catchError\s*\([\s\S]{0,700}?\)/g,
+    /catchError\s*\([\s\S]{0,1000}?\)\s*[,)]/g,
   ) ?? [];
 
   for (const block of catchErrorBlocks) {
     if (
-      block.includes('this.mock.')
-      || block.includes('mock.')
-      || block.includes(service.mockType)
+      block.includes('this.mock')
+      || block.includes(domain.mockType)
     ) {
       fail(
-        `${service.name}: silent API-to-mock fallback is forbidden`,
+        `${domain.name}: silent API-to-mock fallback is forbidden`,
       );
     }
   }
 }
 
-/*
- * Physical mock datasource files are allowed.
- * UI code must never depend directly on them.
- */
-const forbiddenUiMocks = [
+const apiOnlyDomains = [
   {
-    root: 'src/app/features/administration',
-    serviceDirectory:
-      'src/app/features/administration/services',
-    mockType: 'AdministrationMockService',
+    name: 'Customer Management',
+    service:
+      'src/app/features/customers/services/customer-management.service.ts',
+    apiType: 'CustomerManagementApiClient',
   },
   {
-    root: 'src/app/features/incidents',
-    serviceDirectory:
-      'src/app/features/incidents/services',
-    mockType: 'IncidentsMockService',
+    name: 'Security User Administration',
+    service:
+      'src/app/features/administration/services/security-user-administration.service.ts',
+    apiType: 'HttpClient',
   },
 ];
 
-for (const policy of forbiddenUiMocks) {
-  for (const file of walk(policy.root)) {
+for (const domain of apiOnlyDomains) {
+  const source = read(domain.service);
+
+  assertContains(
+    source,
+    domain.apiType,
+    `${domain.name} service`,
+  );
+
+  for (const forbidden of [
+    'MockService',
+    'backendMode.usesMock',
+    'backendMode.usesApi',
+  ]) {
+    assertNotContains(
+      source,
+      forbidden,
+      `${domain.name} service`,
+    );
+  }
+}
+
+const expectedDomains = [
+  'Partner',
+  'Payment',
+  'Reporting',
+  'Customer Management',
+  'Observed Customer',
+  'Security User Administration',
+  'Accounting',
+  'Operational Administration',
+  'Incidents',
+];
+
+const declaredDomains = new Set([
+  ...switchedDomains.map((domain) => domain.name),
+  ...apiOnlyDomains.map((domain) => domain.name),
+]);
+
+for (const domain of expectedDomains) {
+  if (!declaredDomains.has(domain)) {
+    fail(
+      `FS-1.5 required domain is missing from runtime datasource policy: ${domain}`,
+    );
+  }
+}
+
+const uiPolicies = [
+  ['src/app/features/partners', 'src/app/features/partners/services'],
+  ['src/app/features/payments', 'src/app/features/payments/services'],
+  ['src/app/features/reporting', 'src/app/features/reporting/services'],
+  ['src/app/features/customers', 'src/app/features/customers/services'],
+  ['src/app/features/accounting', 'src/app/features/accounting/services'],
+  ['src/app/features/administration', 'src/app/features/administration/services'],
+  ['src/app/features/incidents', 'src/app/features/incidents/services'],
+];
+
+for (const [root, serviceDirectory] of uiPolicies) {
+  for (const file of walk(root)) {
     const rel = relative(file);
 
-    if (
-      rel.startsWith(
-        `${policy.serviceDirectory}/`,
-      )
-    ) {
+    if (rel.startsWith(`${serviceDirectory}/`)) {
       continue;
     }
 
-    const source = fs.readFileSync(
-      file,
-      'utf8',
-    );
+    const source = fs.readFileSync(file, 'utf8');
 
-    const importsDatasourceMock =
+    const importsMockDatasource =
       /from\s+['"][^'"]*-mock\.service['"]/.test(
         source,
       );
 
+    const referencesMockService =
+      /\b[A-Za-z0-9]+MockService\b/.test(
+        source,
+      );
+
     if (
-      source.includes(policy.mockType)
-      || importsDatasourceMock
+      importsMockDatasource
+      || referencesMockService
     ) {
       fail(
-        `${rel}: UI must not depend directly on ${policy.mockType}`,
+        `${rel}: application UI must not depend directly on a mock datasource service`,
       );
     }
   }
 }
 
-/*
- * Production and integration Angular configurations must resolve
- * to their API environments. Development/demo may select mock.
- */
 const angularJson = read('angular.json');
 
 for (const token of [
@@ -280,7 +362,7 @@ for (const token of [
 
 if (failures.length > 0) {
   console.error(
-    '\nFS-1.4.11 runtime datasource policy FAILED:\n',
+    '\nFS-1.5 runtime datasource policy FAILED:\n',
   );
 
   for (const failure of failures) {
@@ -292,9 +374,10 @@ if (failures.length > 0) {
 }
 
 console.log(
-  'FS-1.4.11 runtime datasource policy PASSED.',
+  'FS-1.5 runtime datasource policy PASSED.',
 );
-
 console.log(
-  'production/integration are API-only; development/demo/tests may use mocks.',
+  'Production and integration are API-only. '
+    + 'Development/demo/tests may use mocks. '
+    + 'Silent API-to-mock fallback is forbidden for all contract-backed domains.',
 );
