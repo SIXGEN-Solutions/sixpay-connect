@@ -440,7 +440,7 @@ contracts:
         - "No payment replay"
 
   - id: "administration-query-api-v1"
-    path: "documentation/contracts/internal/administration-query-api-v1.yaml"
+    path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
     domain: "administration"
     businessOwner: "administration"
     securityOwner: "security"
@@ -475,7 +475,7 @@ contracts:
         - "No mock or demo value may be treated as system-of-record data"
 
   - id: "incident-query-api-v1"
-    path: "documentation/contracts/internal/incident-query-api-v1.yaml"
+    path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
     domain: "administration"
     businessOwner: "administration"
     securityOwner: "security"

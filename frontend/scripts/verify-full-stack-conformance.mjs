@@ -174,7 +174,7 @@ const capabilities = [
 
     contract: {
       path:
-        'documentation/contracts/internal/administration-query-api-v1.yaml',
+        'documentation/contracts/internal/administration-operational-api-v1.yaml',
       endpointToken:
         '/internal/api/v1/administration/overview',
     },
@@ -192,7 +192,7 @@ const capabilities = [
       'OperationalIncidentSpringDataRepository',
     ],
     contract: {
-      path: 'documentation/contracts/internal/incident-query-api-v1.yaml',
+      path: 'documentation/contracts/internal/administration-operational-api-v1.yaml',
       endpointToken: '/internal/api/v1/incidents',
     },
   },
