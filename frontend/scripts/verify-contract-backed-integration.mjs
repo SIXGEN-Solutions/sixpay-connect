@@ -147,6 +147,15 @@ const switchedDomains = [
     mockType: 'AccountingMockService',
   },
   {
+    name: 'Operational Administration',
+    service:
+      'src/app/features/administration/services/administration.service.ts',
+    apiClient:
+      'src/app/features/administration/api/administration-api.client.ts',
+    apiClientType: 'AdministrationApiClient',
+    mockType: 'AdministrationMockService',
+  },
+  {
     name: 'Observed Customer',
     service:
       'src/app/features/customers/services/customers.service.ts',

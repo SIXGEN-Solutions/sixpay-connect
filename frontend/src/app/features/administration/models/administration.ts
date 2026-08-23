@@ -1,13 +1,12 @@
-export type IntegrationHealth = 'AVAILABLE' | 'DEGRADED' | 'UNAVAILABLE' | 'UNKNOWN';
+export type IntegrationHealth =
+  | 'AVAILABLE'
+  | 'DEGRADED'
+  | 'UNAVAILABLE'
+  | 'UNKNOWN';
 
 export interface GeneralSettings {
-  readonly accountingBatchSize: number;
-  readonly paymentTimeoutMs: number;
-  readonly operationalRetentionDays: number;
-  readonly maxPaymentAmountXaf: number;
-  readonly maintenanceMode: boolean;
-  readonly updatedAt: Date;
-  readonly updatedBy: string;
+  readonly accountingCutoffZone: string;
+  readonly accountingCutoffTime: string;
 }
 
 export interface IntegrationStatus {
@@ -23,4 +22,5 @@ export interface IntegrationStatus {
 export interface AdministrationOverview {
   readonly settings: GeneralSettings;
   readonly integrations: readonly IntegrationStatus[];
+  readonly observedAt: Date;
 }
