@@ -119,4 +119,16 @@ public class OpenApiConfiguration {
                 )
                 .build();
     }
+
+    @Bean
+    GroupedOpenApi accountingOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("accounting")
+                .displayName("Accounting API")
+                .pathsToMatch(
+                        "/internal/api/v1/accounting-batches",
+                        "/internal/api/v1/accounting-batches/**"
+                )
+                .build();
+    }
 }

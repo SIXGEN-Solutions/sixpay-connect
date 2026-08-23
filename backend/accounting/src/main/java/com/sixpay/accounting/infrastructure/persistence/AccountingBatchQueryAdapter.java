@@ -6,7 +6,9 @@ import com.sixpay.accounting.domain.model.AccountingBatchId;
 import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 import com.sixpay.accounting.domain.model.AccountingBatchItem;
 import com.sixpay.accounting.domain.model.AccountingBatchStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,18 +36,51 @@ public class AccountingBatchQueryAdapter
             int page,
             int size
     ) {
-        var result = repository.search(
-                businessDate,
-                status,
+        Pageable pageable =
                 PageRequest.of(
                         page,
                         size,
-                        Sort.by(Sort.Direction.DESC, "createdAt")
-                )
-        );
+                        Sort.by(
+                                Sort.Direction.DESC,
+                                "createdAt"
+                        )
+                );
+
+        Page<AccountingBatchJpaEntity> result;
+
+        if (businessDate != null && status != null) {
+            result =
+                    repository
+                            .findAllByBusinessDateAndStatus(
+                                    businessDate,
+                                    status,
+                                    pageable
+                            );
+
+        } else if (businessDate != null) {
+            result =
+                    repository.findAllByBusinessDate(
+                            businessDate,
+                            pageable
+                    );
+
+        } else if (status != null) {
+            result =
+                    repository.findAllByStatus(
+                            status,
+                            pageable
+                    );
+
+        } else {
+            result =
+                    repository.findAll(
+                            pageable
+                    );
+        }
 
         return new AccountingBatchPage(
-                result.getContent().stream()
+                result.getContent()
+                        .stream()
                         .map(this::toDomain)
                         .toList(),
                 result.getTotalElements()
@@ -54,33 +89,48 @@ public class AccountingBatchQueryAdapter
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<AccountingBatch> findById(AccountingBatchId batchId) {
-        return repository.findAggregateById(batchId.value())
+    public Optional<AccountingBatch> findById(
+            AccountingBatchId batchId
+    ) {
+        return repository
+                .findAggregateById(
+                        batchId.value()
+                )
                 .map(this::toDomain);
     }
 
-    private AccountingBatch toDomain(AccountingBatchJpaEntity entity) {
+    private AccountingBatch toDomain(
+            AccountingBatchJpaEntity entity
+    ) {
         return new AccountingBatch(
-                new AccountingBatchId(entity.id()),
-                new AccountingBatchIdempotencyKey(entity.idempotencyKey()),
+                new AccountingBatchId(
+                        entity.id()
+                ),
+                new AccountingBatchIdempotencyKey(
+                        entity.idempotencyKey()
+                ),
                 entity.businessDate(),
                 entity.financialInstitutionCode(),
                 entity.createdAt(),
                 entity.status(),
-                entity.items().stream()
-                        .map(item -> new AccountingBatchItem(
-                                item.paymentId(),
-                                item.publicPaymentReference(),
-                                item.partnerId(),
-                                item.amount(),
-                                item.currency(),
-                                item.paymentOccurredAt(),
-                                item.paymentBusinessDate(),
-                                item.bankPostingReference(),
-                                item.tresorPayStatus(),
-                                item.tresorPayStatusCheckedAt(),
-                                item.status()
-                        ))
+                entity.items()
+                        .stream()
+                        .map(
+                                item ->
+                                        new AccountingBatchItem(
+                                                item.paymentId(),
+                                                item.publicPaymentReference(),
+                                                item.partnerId(),
+                                                item.amount(),
+                                                item.currency(),
+                                                item.paymentOccurredAt(),
+                                                item.paymentBusinessDate(),
+                                                item.bankPostingReference(),
+                                                item.tresorPayStatus(),
+                                                item.tresorPayStatusCheckedAt(),
+                                                item.status()
+                                        )
+                        )
                         .toList()
         );
     }

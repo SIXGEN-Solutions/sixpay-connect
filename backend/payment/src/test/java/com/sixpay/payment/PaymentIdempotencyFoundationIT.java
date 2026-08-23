@@ -23,9 +23,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
@@ -50,8 +50,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PaymentIdempotencyFoundationIT {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer(
                     DockerImageName.parse(
                             "postgres:15-alpine"
                     )

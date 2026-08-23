@@ -18,9 +18,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -49,8 +49,8 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
             Instant.parse("2026-08-04T18:00:00Z");
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
+    static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer("postgres:17-alpine")
                     .withDatabaseName("sixpay_payment")
                     .withUsername("sixpay")
                     .withPassword("sixpay");
