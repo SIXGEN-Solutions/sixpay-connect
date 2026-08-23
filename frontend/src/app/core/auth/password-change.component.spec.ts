@@ -26,6 +26,21 @@ import {
   PasswordChangeComponent,
 } from './password-change.component';
 
+import { FormControl, FormGroup } from '@angular/forms';
+import { WritableSignal } from '@angular/core';
+
+type PasswordChangeForm = FormGroup<{
+  currentPassword: FormControl<string>;
+  newPassword: FormControl<string>;
+  confirmation: FormControl<string>;
+}>;
+
+interface PasswordChangeComponentTestApi {
+  form: PasswordChangeForm;
+  serverError: WritableSignal<string | null>;
+  submit(): void;
+}
+
 describe('PasswordChangeComponent', () => {
   let fixture:
     ComponentFixture<PasswordChangeComponent>;
@@ -60,7 +75,7 @@ describe('PasswordChangeComponent', () => {
 
   it('requires matching new-password confirmation', () => {
     const component =
-      fixture.componentInstance as any;
+      fixture.componentInstance as unknown as PasswordChangeComponentTestApi;
 
     component.form.setValue({
       currentPassword:
@@ -83,7 +98,7 @@ describe('PasswordChangeComponent', () => {
 
   it('requires at least 12 characters for the new password', () => {
     const component =
-      fixture.componentInstance as any;
+      fixture.componentInstance as unknown as PasswordChangeComponentTestApi;
 
     component.form.setValue({
       currentPassword:
@@ -103,7 +118,7 @@ describe('PasswordChangeComponent', () => {
 
   it('submits current and new password through authentication service', () => {
     const component =
-      fixture.componentInstance as any;
+      fixture.componentInstance as unknown as PasswordChangeComponentTestApi;
 
     const changePassword =
       vi.spyOn(
@@ -145,7 +160,7 @@ describe('PasswordChangeComponent', () => {
 
   it('surfaces backend lifecycle rejection detail to the user', () => {
     const component =
-      fixture.componentInstance as any;
+      fixture.componentInstance as unknown as PasswordChangeComponentTestApi;
 
     vi.spyOn(
       authentication,

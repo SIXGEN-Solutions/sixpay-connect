@@ -8,6 +8,7 @@ import {
 } from '@angular/router';
 import {
   firstValueFrom,
+  Observable,
   of,
 } from 'rxjs';
 
@@ -149,7 +150,7 @@ describe('authenticationGuard', () => {
 
   function executeGuard(
     url: string,
-  ) {
+  ): Promise<boolean | UrlTree> {
     return TestBed.runInInjectionContext(
       () =>
         firstValueFrom(
@@ -158,7 +159,7 @@ describe('authenticationGuard', () => {
             {
               url,
             } as RouterStateSnapshot,
-          ) as any,
+          ) as Observable<boolean | UrlTree>,
         ),
     );
   }

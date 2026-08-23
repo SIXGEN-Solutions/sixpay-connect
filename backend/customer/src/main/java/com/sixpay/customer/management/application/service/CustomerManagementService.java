@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -60,6 +61,12 @@ public final class CustomerManagementService
                 .orElseThrow(() -> new CustomerDomainException(
                         "customer not found: " + customerId
                 ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Customer> findAll() {
+        return repository.findAll();
     }
 
     @Override

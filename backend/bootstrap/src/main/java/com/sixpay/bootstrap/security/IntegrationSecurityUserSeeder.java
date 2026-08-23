@@ -35,32 +35,7 @@ public class IntegrationSecurityUserSeeder
             "integration-security-seed";
 
     private static final Set<String> ADMIN_PERMISSIONS =
-            Set.of(
-                    SixpayPermission
-                            .OBSERVED_CUSTOMER_READ
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_READ
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_WRITE
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_AUDIT
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_RECONCILE
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_REVERSE
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_AUDIT_READ
-                            .value(),
-                    SixpayPermission
-                            .PAYMENT_AUDIT_EXPORT
-                            .value()
-            );
+            SixpayPermission.valuesAsSet();
 
     private static final Set<String> MANAGER_PERMISSIONS =
             Set.of(

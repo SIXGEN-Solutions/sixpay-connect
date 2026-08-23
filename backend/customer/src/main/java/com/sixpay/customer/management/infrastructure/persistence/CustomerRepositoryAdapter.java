@@ -8,6 +8,7 @@ import com.sixpay.customer.management.domain.repository.CustomerRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -77,6 +78,15 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
                         customerId.value()
                 )
                 .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Customer> findAll() {
+        return repository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override

@@ -1,12 +1,15 @@
 package com.sixpay.customer.management.api;
 
 import com.sixpay.customer.management.api.request.AddCustomerBankAccountRequest;
+import com.sixpay.customer.management.api.request.BankingCustomerPreviewRequest;
 import com.sixpay.customer.management.api.request.CustomerStatusReasonRequest;
 import com.sixpay.customer.management.api.request.UpdateCustomerRequest;
 import com.sixpay.customer.management.api.response.CustomerResponse;
+import com.sixpay.customer.management.api.response.BankingCustomerPreviewResponse;
 import com.sixpay.customer.management.api.response.CustomerBankAccountResponse;
 import com.sixpay.customer.management.application.audit.CustomerAuditRecorder;
 import com.sixpay.customer.management.application.port.input.AddBankAccountCommand;
+import com.sixpay.customer.management.application.port.input.BankingCustomerPreviewUseCase;
 import com.sixpay.customer.management.application.port.input.CustomerManagementUseCase;
 import com.sixpay.customer.management.application.port.input.CustomerQueryUseCase;
 import com.sixpay.customer.management.application.port.input.EnrollCustomerCommand;
@@ -43,17 +46,20 @@ public class CustomerController {
     private final EnrollCustomerUseCase enrollment;
     private final CustomerManagementUseCase management;
     private final CustomerQueryUseCase query;
+    private final BankingCustomerPreviewUseCase bankingPreview;
     private final CustomerAuditRecorder audit;
 
     public CustomerController(
             EnrollCustomerUseCase enrollment,
             CustomerManagementUseCase management,
             CustomerQueryUseCase query,
+            BankingCustomerPreviewUseCase bankingPreview,
             CustomerAuditRecorder audit
     ) {
         this.enrollment = enrollment;
         this.management = management;
         this.query = query;
+        this.bankingPreview = bankingPreview;
         this.audit = audit;
     }
 
@@ -100,6 +106,45 @@ public class CustomerController {
         );
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAuthority('SCOPE_customer.read')")
+    @Operation(summary = "List enrolled SIXPAY customers")
+    public java.util.List<CustomerResponse> list() {
+        return query.findAll()
+                .stream()
+                .map(CustomerResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/banking-preview")
+    @PreAuthorize("hasAuthority('SCOPE_customer.create')")
+    @Operation(
+            summary = "Preview a banking customer before enrollment",
+            description = "Lookup only. Does not create Customer master data and is not verification evidence."
+    )
+    public BankingCustomerPreviewResponse bankingPreview(
+            @Valid @RequestBody BankingCustomerPreviewRequest request,
+            @RequestHeader(name = CORRELATION_HEADER, required = false)
+            @Size(max = HEADER_MAX_LENGTH) String correlationId
+    ) {
+        String effectiveCorrelationId =
+                correlationId == null || correlationId.isBlank()
+                        ? UUID.randomUUID().toString()
+                        : correlationId.strip();
+
+        return BankingCustomerPreviewResponse.from(
+                bankingPreview.preview(
+                        new BankingCustomerPreviewUseCase.BankingCustomerPreviewQuery(
+                                request.financialInstitutionCode(),
+                                request.niu(),
+                                request.customerNumber(),
+                                request.accountReference(),
+                                effectiveCorrelationId
+                        )
+                )
+        );
     }
 
     @GetMapping("/{customerId}")
