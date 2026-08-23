@@ -42,22 +42,6 @@ public class OpenApiConfiguration {
                 .build();
     }
 
-    /*
-    @Bean
-    GroupedOpenApi paymentOpenApi() {
-        return GroupedOpenApi.builder()
-                .group("payment")
-                .displayName("Payment API")
-                .pathsToMatch(
-                        "/v1/payments",
-                        "/v1/payments/**",
-                        "/internal/api/v1/payments",
-                        "/internal/api/v1/payments/**"
-                )
-                .build();
-    }
-    */
-
     @Bean
     GroupedOpenApi customerOpenApi() {
         return GroupedOpenApi.builder()
@@ -97,10 +81,22 @@ public class OpenApiConfiguration {
     GroupedOpenApi administrationOpenApi() {
         return GroupedOpenApi.builder()
                 .group("administration")
-                .displayName("User Administration API")
+                .displayName("Administration API")
                 .pathsToMatch(
+                        /*
+                         * Existing Security User Administration
+                         * boundary.
+                         */
                         "/internal/api/v1/administration/users",
-                        "/internal/api/v1/administration/users/**"
+                        "/internal/api/v1/administration/users/**",
+
+                        /*
+                         * FS-1.4 Operational Administration Query
+                         * boundary.
+                         */
+                        "/internal/api/v1/administration/overview",
+                        "/internal/api/v1/administration/settings",
+                        "/internal/api/v1/administration/integrations"
                 )
                 .build();
     }
