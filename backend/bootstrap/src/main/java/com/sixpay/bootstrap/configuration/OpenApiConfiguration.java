@@ -62,10 +62,16 @@ public class OpenApiConfiguration {
     GroupedOpenApi customerOpenApi() {
         return GroupedOpenApi.builder()
                 .group("customer")
-                .displayName("Observed Customer API")
+                .displayName("Customer API")
                 .pathsToMatch(
+                        "/internal/api/v1/customers",
+                        "/internal/api/v1/customers/**",
+                        "/internal/api/v1/subscriptions",
+                        "/internal/api/v1/subscriptions/**",
                         "/internal/api/v1/observed-customers",
-                        "/internal/api/v1/observed-customers/**"
+                        "/internal/api/v1/observed-customers/**",
+                        "/internal/api/v1/customer-audit-records",
+                        "/internal/api/v1/customer-audit-records/**"
                 )
                 .build();
     }

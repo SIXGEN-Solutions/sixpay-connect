@@ -2,6 +2,9 @@ package com.sixpay.customer.management.api;
 
 import com.sixpay.customer.management.api.response.CustomerAuditRecordResponse;
 import com.sixpay.customer.management.application.port.output.CustomerAuditTrail;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +14,11 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@Tag(
+        name = "Customer Audit",
+        description = "Internal SIXPAY Customer Management audit trail"
+)
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/internal/api/v1/customer-audit-records")
 public class CustomerAuditController {
 
@@ -23,6 +31,9 @@ public class CustomerAuditController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "Search Customer Management audit records"
+    )
     @PreAuthorize("hasAuthority('SCOPE_customer.audit.read')")
     public List<CustomerAuditRecordResponse> find(
             @RequestParam String aggregateType,
