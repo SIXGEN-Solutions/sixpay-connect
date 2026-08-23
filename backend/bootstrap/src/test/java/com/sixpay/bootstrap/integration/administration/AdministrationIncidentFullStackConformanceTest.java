@@ -7,23 +7,34 @@ import com.sixpay.administration.application.port.input.IncidentQueryUseCase;
 import com.sixpay.administration.application.port.output.IntegrationHealthQueryPort;
 import com.sixpay.administration.application.service.AdministrationQueryService;
 import com.sixpay.administration.application.service.IncidentQueryService;
-import com.sixpay.administration.configuration.AdministrationModuleConfiguration;
 import com.sixpay.administration.domain.repository.OperationalIncidentRepository;
 import com.sixpay.administration.infrastructure.configuration.SpringConfigurationAdministrationSettingsAdapter;
+import com.sixpay.administration.infrastructure.persistence.IncidentTimelineJpaEntity;
+import com.sixpay.administration.infrastructure.persistence.OperationalIncidentJpaEntity;
 import com.sixpay.administration.infrastructure.persistence.OperationalIncidentRepositoryAdapter;
 import com.sixpay.administration.infrastructure.persistence.OperationalIncidentSpringDataRepository;
+import com.sixpay.common.time.SystemTimeProvider;
+import com.sixpay.common.time.TimeProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
+import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.JdbcTemplateAutoConfiguration;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.transaction.autoconfigure.TransactionAutoConfiguration;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
+import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,6 +42,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -53,26 +66,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.jpa.hibernate.ddl-auto=none",
                 "spring.flyway.enabled=true",
                 "spring.flyway.locations=classpath:db/migration",
-
-                /*
-                 * FS-1.4.9 validates only Administration/Incidents.
-                 *
-                 * Keep Spring Boot technical infrastructure while preventing
-                 * unrelated SIXPAY business auto-configurations from joining
-                 * this bounded integration context.
-                 */
-                "spring.autoconfigure.exclude="
-                        + "com.sixpay.customer.configuration.CustomerModuleConfiguration,"
-                        + "com.sixpay.partner.configuration.PartnerModuleConfiguration,"
-                        + "com.sixpay.payment.configuration.PaymentModuleConfiguration,"
-                        + "com.sixpay.accounting.configuration.AccountingModuleConfiguration,"
-                        + "com.sixpay.security.configuration.SixpaySecurityAutoConfiguration",
-
                 "sixpay.accounting.batch.cutoff-zone=Africa/Douala",
                 "sixpay.accounting.batch.cutoff-time=23:59"
         }
 )
-@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Testcontainers
 class AdministrationIncidentFullStackConformanceTest {
@@ -91,8 +88,12 @@ class AdministrationIncidentFullStackConformanceTest {
 
     @Container
     static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer("postgres:16-alpine")
-                    .withDatabaseName("sixpay_fs_1_4_9")
+            new PostgreSQLContainer(
+                    "postgres:16-alpine"
+            )
+                    .withDatabaseName(
+                            "sixpay_fs_1_4_9"
+                    )
                     .withUsername("sixpay")
                     .withPassword("sixpay-test");
 
@@ -117,7 +118,7 @@ class AdministrationIncidentFullStackConformanceTest {
     }
 
     @Autowired
-    private MockMvc mvc;
+    private WebApplicationContext webApplicationContext;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -125,9 +126,21 @@ class AdministrationIncidentFullStackConformanceTest {
     @Autowired
     private ApplicationContext context;
 
-    @BeforeEach
-    void seedRealIncident() {
+    private MockMvc mvc;
 
+    @BeforeEach
+    void setUp() {
+        mvc =
+                MockMvcBuilders
+                        .webAppContextSetup(
+                                webApplicationContext
+                        )
+                        .build();
+
+        seedRealIncident();
+    }
+
+    private void seedRealIncident() {
         jdbc.update(
                 "DELETE FROM operational_incident_timeline"
         );
@@ -137,7 +150,9 @@ class AdministrationIncidentFullStackConformanceTest {
         );
 
         Instant openedAt =
-                Instant.parse("2026-08-23T15:00:00Z");
+                Instant.parse(
+                        "2026-08-23T15:00:00Z"
+                );
 
         Instant updatedAt =
                 openedAt.plusSeconds(300);
@@ -178,7 +193,6 @@ class AdministrationIncidentFullStackConformanceTest {
 
     @Test
     void realAdministrationUseCasesAndPersistenceAdaptersAreRegistered() {
-
         assertThat(
                 context.getBeansOfType(
                         AdministrationQueryUseCase.class
@@ -304,8 +318,7 @@ class AdministrationIncidentFullStackConformanceTest {
 
         mvc.perform(
                         get(
-                                "/internal/api/v1/"
-                                        + "administration/overview"
+                                "/internal/api/v1/administration/overview"
                         )
                                 .header(
                                         CORRELATION,
@@ -317,16 +330,48 @@ class AdministrationIncidentFullStackConformanceTest {
                 )
                 .andExpect(
                         jsonPath(
+                                "$.settings.accountingCutoffZone"
+                        ).value("Africa/Douala")
+                )
+                .andExpect(
+                        jsonPath(
+                                "$.settings.accountingCutoffTime"
+                        ).value("23:59")
+                )
+                .andExpect(
+                        jsonPath(
                                 "$.integrations"
                         ).isArray()
+                )
+                .andExpect(
+                        jsonPath(
+                                "$.observedAt"
+                        ).exists()
                 );
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration
     @EnableMethodSecurity
-    @ImportAutoConfiguration(
-            AdministrationModuleConfiguration.class
+    @ImportAutoConfiguration({
+            DataSourceAutoConfiguration.class,
+            JdbcTemplateAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            TransactionAutoConfiguration.class,
+            FlywayAutoConfiguration.class,
+            JacksonAutoConfiguration.class,
+            DispatcherServletAutoConfiguration.class,
+            WebMvcAutoConfiguration.class
+    })
+    @EntityScan(
+            basePackageClasses = {
+                    OperationalIncidentJpaEntity.class,
+                    IncidentTimelineJpaEntity.class
+            }
+    )
+    @EnableJpaRepositories(
+            basePackageClasses = {
+                    OperationalIncidentSpringDataRepository.class
+            }
     )
     @Import({
             AdministrationQueryController.class,
@@ -340,12 +385,19 @@ class AdministrationIncidentFullStackConformanceTest {
     static class TestApplication {
     }
 
-    @TestConfiguration(proxyBeanMethods = false)
+    @TestConfiguration(
+            proxyBeanMethods = false
+    )
     static class TestPortsConfiguration {
 
         @Bean
         IntegrationHealthQueryPort integrationHealthQueryPort() {
             return List::of;
+        }
+
+        @Bean
+        TimeProvider timeProvider() {
+            return new SystemTimeProvider();
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.sixpay.administration.infrastructure.persistence;
 
-import com.sixpay.administration.configuration.AdministrationModuleConfiguration;
 import com.sixpay.administration.domain.model.IncidentId;
 import com.sixpay.administration.domain.model.IncidentSeverity;
 import com.sixpay.administration.domain.model.IncidentStatus;
@@ -11,8 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -56,22 +57,15 @@ class OperationalIncidentPersistenceIT {
                 "spring.datasource.url",
                 POSTGRES::getJdbcUrl
         );
+
         registry.add(
                 "spring.datasource.username",
                 POSTGRES::getUsername
         );
+
         registry.add(
                 "spring.datasource.password",
                 POSTGRES::getPassword
-        );
-
-        registry.add(
-                "spring.flyway.locations",
-                () ->
-                        "filesystem:"
-                                + "../bootstrap/"
-                                + "src/main/resources/"
-                                + "db/migration"
         );
     }
 
@@ -86,6 +80,7 @@ class OperationalIncidentPersistenceIT {
         jdbc.update(
                 "DELETE FROM operational_incident_timeline"
         );
+
         jdbc.update(
                 "DELETE FROM operational_incident"
         );
@@ -102,7 +97,8 @@ class OperationalIncidentPersistenceIT {
 
         jdbc.update(
                 "INSERT INTO operational_incident_timeline "
-                        + "(event_id, incident_id, occurred_at, message, actor, sequence_no) "
+                        + "(event_id, incident_id, occurred_at, "
+                        + "message, actor, sequence_no) "
                         + "VALUES (?, ?, ?, ?, ?, ?)",
                 "EVT-001",
                 "INC-POSTGRES-001",
@@ -124,16 +120,26 @@ class OperationalIncidentPersistenceIT {
                         )
                         .orElseThrow();
 
-        assertThat(incident.component())
-                .isEqualTo("Accounting");
+        assertThat(
+                incident.component()
+        ).isEqualTo(
+                "Accounting"
+        );
 
-        assertThat(incident.timeline())
+        assertThat(
+                incident.timeline()
+        )
                 .singleElement()
                 .satisfies(entry -> {
-                    assertThat(entry.eventId())
-                            .isEqualTo("EVT-001");
-                    assertThat(entry.sequenceNo())
-                            .isZero();
+                    assertThat(
+                            entry.eventId()
+                    ).isEqualTo(
+                            "EVT-001"
+                    );
+
+                    assertThat(
+                            entry.sequenceNo()
+                    ).isZero();
                 });
     }
 
@@ -164,10 +170,15 @@ class OperationalIncidentPersistenceIT {
                         )
                 );
 
-        assertThat(page.totalElements())
-                .isEqualTo(1);
+        assertThat(
+                page.totalElements()
+        ).isEqualTo(
+                1
+        );
 
-        assertThat(page.content())
+        assertThat(
+                page.content()
+        )
                 .singleElement()
                 .satisfies(
                         incident ->
@@ -201,8 +212,26 @@ class OperationalIncidentPersistenceIT {
                         )
                 );
 
-        assertThat(page.totalElements())
-                .isEqualTo(1);
+        assertThat(
+                page.totalElements()
+        ).isEqualTo(
+                1
+        );
+
+        assertThat(
+                page.content()
+        )
+                .singleElement()
+                .satisfies(
+                        incident ->
+                                assertThat(
+                                        incident
+                                                .incidentId()
+                                                .value()
+                                ).isEqualTo(
+                                        "INC-POSTGRES-004"
+                                )
+                );
     }
 
     private void insertIncident(
@@ -218,8 +247,9 @@ class OperationalIncidentPersistenceIT {
 
         jdbc.update(
                 "INSERT INTO operational_incident "
-                        + "(incident_id, severity, component, summary, status, "
-                        + "description, impact, opened_at, updated_at) "
+                        + "(incident_id, severity, component, "
+                        + "summary, status, description, impact, "
+                        + "opened_at, updated_at) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 id,
                 severity,
@@ -235,8 +265,19 @@ class OperationalIncidentPersistenceIT {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @ImportAutoConfiguration(
-            AdministrationModuleConfiguration.class
+    @EntityScan(
+            basePackageClasses = {
+                    OperationalIncidentJpaEntity.class,
+                    IncidentTimelineJpaEntity.class
+            }
+    )
+    @EnableJpaRepositories(
+            basePackageClasses = {
+                    OperationalIncidentSpringDataRepository.class
+            }
+    )
+    @Import(
+            OperationalIncidentRepositoryAdapter.class
     )
     static class TestApplication {
     }
