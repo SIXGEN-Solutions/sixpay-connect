@@ -147,6 +147,15 @@ const switchedDomains = [
     mockType: 'AccountingMockService',
   },
   {
+    name: 'Incidents',
+    service:
+      'src/app/features/incidents/services/incidents.service.ts',
+    apiClient:
+      'src/app/features/incidents/api/incidents-api.client.ts',
+    apiClientType: 'IncidentsApiClient',
+    mockType: 'IncidentsMockService',
+  },
+  {
     name: 'Operational Administration',
     service:
       'src/app/features/administration/services/administration.service.ts',
