@@ -262,6 +262,31 @@ for (const domain of apiOnlyDomains) {
   );
 }
 
+const expectedContractBackedDomains = [
+  'Partner',
+  'Payment',
+  'Reporting',
+  'Customer Management',
+  'Observed Customer',
+  'Security User Administration',
+  'Accounting',
+  'Operational Administration',
+  'Incidents',
+];
+
+const declaredContractBackedDomains = new Set([
+  ...switchedDomains.map((domain) => domain.name),
+  ...apiOnlyDomains.map((domain) => domain.name),
+]);
+
+for (const expectedDomain of expectedContractBackedDomains) {
+  if (!declaredContractBackedDomains.has(expectedDomain)) {
+    fail(
+      `FS-1.1 required contract-backed domain is missing: ${expectedDomain}`,
+    );
+  }
+}
+
 /*
  * 3. Screens must never depend directly on mock services.
  *
@@ -276,6 +301,7 @@ const uiRoots = [
   'src/app/features/customers',
   'src/app/features/administration',
   'src/app/features/accounting',
+  'src/app/features/incidents',
 ];
 
 const serviceDirectories = new Set([
@@ -285,7 +311,13 @@ const serviceDirectories = new Set([
   'src/app/features/customers/services',
   'src/app/features/administration/services',
   'src/app/features/accounting/services',
+  'src/app/features/incidents/services',
 ]);
+
+const explicitlyForbiddenIntegrationMocks = [
+  'AdministrationMockService',
+  'IncidentsMockService',
+];
 
 for (const root of uiRoots) {
   for (const file of walkFiles(root)) {
@@ -318,9 +350,15 @@ for (const root of uiRoots) {
     const referencesMockService =
       /\b[A-Za-z0-9]+MockService\b/.test(source);
 
+    const referencesExplicitlyForbiddenIntegrationMock =
+      explicitlyForbiddenIntegrationMocks.some(
+        (mockType) => source.includes(mockType),
+      );
+
     if (
       importsMockDatasource
       || referencesMockService
+      || referencesExplicitlyForbiddenIntegrationMock
     ) {
       fail(
         `${rel}: UI layer must not depend directly on a mock datasource service`,
@@ -377,5 +415,6 @@ console.log(
 );
 console.log(
   'Integration mode is API-backed for Partner, Payment, Reporting, '
-    + 'Customer Management, Observed Customer, Accounting and Security User Administration.',
+    + 'Customer Management, Observed Customer, Security User Administration, '
+    + 'Accounting, Operational Administration and Incidents.',
 );

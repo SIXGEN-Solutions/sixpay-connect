@@ -135,6 +135,22 @@ const capabilities = [
     },
   },
   {
+    name: 'Accounting',
+    frontend:
+      'src/app/features/accounting/api/accounting-api.client.ts',
+    endpointTokens: ['/internal/api/v1/accounting-batches'],
+    backendOwnership: [
+      'AccountingBatchQueryController',
+      'AccountingBatchQueryUseCase',
+    ],
+    contract: {
+      path:
+        'documentation/contracts/internal/accounting-query-api-v1.yaml',
+      endpointToken:
+        '/internal/api/v1/accounting-batches',
+    },
+  },
+  {
     name: 'Operational Administration',
     frontend:
       'src/app/features/administration/api/administration-api.client.ts',
@@ -189,6 +205,30 @@ const capabilities = [
     contract: null,
   },
 ];
+
+const expectedFullStackCapabilities = [
+  'Partner',
+  'Payment',
+  'Reporting',
+  'Customer Management',
+  'Observed Customer',
+  'Security User Administration',
+  'Accounting',
+  'Operational Administration',
+  'Incidents',
+];
+
+const declaredFullStackCapabilities = new Set(
+  capabilities.map((capability) => capability.name),
+);
+
+for (const expectedCapability of expectedFullStackCapabilities) {
+  if (!declaredFullStackCapabilities.has(expectedCapability)) {
+    fail(
+      `FS-1.2 required full-stack capability is missing: ${expectedCapability}`,
+    );
+  }
+}
 
 for (const capability of capabilities) {
   const frontendFile = path.join(frontendRoot, capability.frontend);
@@ -253,6 +293,60 @@ for (const capability of capabilities) {
     /catchError\s*\([\s\S]{0,500}?(?:MockService|this\.mock|mock\.)/.test(source)
   ) {
     fail(`${capability.name}: API boundary contains a silent mock fallback`);
+  }
+}
+
+/*
+ * FS-1.4 direct mock regression checks.
+ *
+ * Mock datasource services may remain under /services for dev/demo/tests,
+ * but Angular components, routes, guards and resolvers must never inject
+ * AdministrationMockService or IncidentsMockService directly.
+ */
+for (const check of [
+  {
+    root: 'src/app/features/administration',
+    serviceDirectory: 'src/app/features/administration/services',
+    forbiddenType: 'AdministrationMockService',
+  },
+  {
+    root: 'src/app/features/incidents',
+    serviceDirectory: 'src/app/features/incidents/services',
+    forbiddenType: 'IncidentsMockService',
+  },
+]) {
+  const absoluteRoot = path.join(frontendRoot, check.root);
+
+  for (const file of walk(
+    absoluteRoot,
+    (candidate) =>
+      candidate.endsWith('.ts')
+      || candidate.endsWith('.html'),
+  )) {
+    const relativeFile = path
+      .relative(frontendRoot, file)
+      .replaceAll('\\', '/');
+
+    if (
+      relativeFile.startsWith(
+        `${check.serviceDirectory}/`,
+      )
+    ) {
+      continue;
+    }
+
+    const uiSource = fs.readFileSync(file, 'utf8');
+
+    if (
+      uiSource.includes(check.forbiddenType)
+      || new RegExp(
+        `from\\s+['"][^'"]*-mock\\.service['"]`,
+      ).test(uiSource)
+    ) {
+      fail(
+        `${relativeFile}: integration UI must not depend directly on ${check.forbiddenType}`,
+      );
+    }
   }
 }
 
