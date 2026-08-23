@@ -35,18 +35,21 @@ Windows:
 
 ## OpenAPI gate
 
-`PaymentOpenApiContractValidationTest` requires the OpenAPI Payment lifecycle
-to match `PaymentStatus` exactly.
+`PaymentOpenApiContractValidationTest` requires the canonical Payment Query
+OpenAPI lifecycle to match `PaymentStatus` exactly.
 
-Apply and review:
+The contractual source of truth is:
 
 ```text
-documentation/contracts/internal/
-payment-query-api-v1-status-alignment.patch
+documentation/contracts/internal/payment-query-api-v1.yaml
 ```
 
-Do not approve the release while the contract still exposes obsolete lifecycle
-values.
+No patch or alignment artifact is part of the release baseline. Any lifecycle
+change must be applied directly to the canonical contract and validated by the
+OpenAPI contract test.
+
+Do not approve the release while the canonical contract exposes obsolete or
+missing lifecycle values.
 
 ## Contract governance gate
 

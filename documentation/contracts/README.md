@@ -220,17 +220,13 @@ The following artifact families are forbidden from the canonical contract tree:
 Historical contract evolution belongs to **Git history**.
 
 A contract change must therefore finish by updating the canonical physical
-contract and, when applicable, `CONTRACT_REGISTRY.yaml`. The temporary change
-artifact must not survive in the repository baseline.
+contract and, when applicable, `CONTRACT_REGISTRY.yaml`. Temporary change
+artifacts must not survive in the repository baseline.
 
-The former files:
-
-- `CONTRACT_REGISTRY_LOT0_PATCH.md`;
-- `internal/payment-query-api-v1-status-alignment.patch`;
-
-are considered fully absorbed and permanently removed from the canonical
-baseline. Reintroducing either file, or another artifact matching the forbidden
-families above, must fail `verify:contract-consolidation`.
+The historical-artifact gate is intentionally pattern-based rather than tied
+to specific retired filenames. This keeps the baseline independent from
+development-history artifacts while preventing equivalent patch, backup or
+temporary files from being reintroduced.
 
 ## Classement au Gate IA-0R
 

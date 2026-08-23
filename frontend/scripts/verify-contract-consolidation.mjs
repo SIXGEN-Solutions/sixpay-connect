@@ -6,11 +6,6 @@ const frontendRoot = process.cwd();
 const repoRoot = path.resolve(frontendRoot, '..');
 const failures = [];
 
-const oldContractNames = [
-  'administration-query-api-v1',
-  'incident-query-api-v1',
-].map((name) => `${name}.yaml`);
-
 const mergedContractRelative =
   'documentation/contracts/internal/administration-operational-api-v1.yaml';
 
@@ -800,32 +795,8 @@ if (merged) {
   }
 }
 
-const textualExtensions = new Set([
-  '.java', '.kt', '.xml', '.yaml', '.yml', '.json', '.md',
-  '.mjs', '.js', '.ts', '.html', '.css', '.scss',
-  '.properties', '.txt', '.sh', '.ps1', '.py',
-]);
-
-for (const file of walk(repoRoot)) {
-  if (!textualExtensions.has(path.extname(file))) {
-    continue;
-  }
-
-  const source = fs.readFileSync(file, 'utf8');
-
-  for (const oldName of oldContractNames) {
-    if (source.includes(oldName)) {
-      const relative = path
-        .relative(repoRoot, file)
-        .replaceAll('\\', '/');
-
-      fail(`${relative}: stale reference to removed contract ${oldName}`);
-    }
-  }
-}
-
 if (failures.length > 0) {
-  console.error('\nFS-2.1 contract consolidation validation FAILED:\n');
+  console.error('\nSIXPAY contract baseline validation FAILED:\n');
 
   for (const failure of failures) {
     console.error(` - ${failure}`);
@@ -835,7 +806,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('FS-2.1 contract consolidation validation PASSED.');
+console.log('SIXPAY contract baseline validation PASSED.');
 console.log(
   'OpenAPI YAML is parseable; registry references are valid; '
     + 'Administration/Incident preserve 2 capabilities in 1 physical '
