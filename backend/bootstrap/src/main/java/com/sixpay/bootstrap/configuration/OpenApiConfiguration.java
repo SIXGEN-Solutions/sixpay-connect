@@ -66,10 +66,8 @@ public class OpenApiConfiguration {
                 .group("payment")
                 .displayName("Payment API")
                 .pathsToMatch(
-                        "/v1/payments",
                         "/v1/payments/**",
-                        "/internal/api/v1/payments",
-                        "/internal/api/v1/payments/{paymentId}"
+                        "/internal/api/v1/payments/**"
                 )
                 .pathsToExclude(
                         "/internal/api/v1/payments/*/timeline"
@@ -83,20 +81,13 @@ public class OpenApiConfiguration {
                 .group("administration")
                 .displayName("Administration API")
                 .pathsToMatch(
-                        /*
-                         * Existing Security User Administration
-                         * boundary.
-                         */
                         "/internal/api/v1/administration/users",
                         "/internal/api/v1/administration/users/**",
-
-                        /*
-                         * FS-1.4 Operational Administration Query
-                         * boundary.
-                         */
                         "/internal/api/v1/administration/overview",
                         "/internal/api/v1/administration/settings",
-                        "/internal/api/v1/administration/integrations"
+                        "/internal/api/v1/administration/integrations",
+                        "/internal/api/v1/incidents",
+                        "/internal/api/v1/incidents/**"
                 )
                 .build();
     }
