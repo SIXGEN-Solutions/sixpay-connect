@@ -88,6 +88,26 @@ classificationModel:
     ACTIVE: "May be used for generation when approved and when all dependencies are available."
     REFERENCE_ONLY: "May inform another contract but cannot independently trigger code generation."
     EXCLUDED: "Must not be used to generate the current MVP."
+
+  physicalContractCardinality:
+    ONE_CAPABILITY_TO_ONE_PHYSICAL_CONTRACT:
+      description: >-
+        Default mapping. One registry capability references one physical
+        contract and the physical contract identifies that capability.
+    MANY_CAPABILITIES_TO_ONE_PHYSICAL_CONTRACT:
+      description: >-
+        Explicit consolidation mapping. Multiple registry capabilities may
+        reference the same physical contract when they share a coherent API
+        ownership boundary. Registry IDs and capability IDs remain unique.
+      requirements:
+        - "Registry contract ids remain globally unique"
+        - "Registry capability values remain globally unique"
+        - "Shared physical path is allowed"
+        - "All registry entries sharing a path use the same domain"
+        - "All registry entries sharing a path use the same businessOwner"
+        - "The physical contract declares info.x-sixpay-contract.registryIds"
+        - "The physical contract declares info.x-sixpay-contract.capabilities"
+        - "Physical metadata exactly matches registry entries sharing the path"
 contracts:
   - id: "tresorpay-payment-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"

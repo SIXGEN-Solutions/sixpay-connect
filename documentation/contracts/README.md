@@ -105,6 +105,59 @@ JWT APIs, in-process semantic contracts and SMTP delivery do not share one
 authentication model. When `security.dataClassification` is present, its value
 must come from the controlled vocabulary.
 
+## Consolidated-contract cardinality
+
+Registry identity and physical-file identity are intentionally different
+concepts.
+
+The default model is:
+
+```text
+1 registry capability
+        ↓
+1 physical contract
+```
+
+A bounded API ownership may intentionally consolidate several logical
+capabilities into one physical contract:
+
+```text
+N registry capabilities
+        ↓
+1 physical contract
+```
+
+For such a consolidation:
+
+- every registry `id` remains globally unique;
+- every registry `capability` remains globally unique;
+- `path` is allowed to be non-unique;
+- entries sharing a path must remain within one coherent `domain`;
+- entries sharing a path must have the same `businessOwner`;
+- the physical OpenAPI contract must declare
+  `info.x-sixpay-contract.registryIds`;
+- it must also declare `info.x-sixpay-contract.capabilities`;
+- those two arrays must exactly match the registry entries sharing the path.
+
+The current canonical example is:
+
+```text
+administration-query-api-v1
+  capability: ADMINISTRATION_OPERATIONAL_QUERY ─┐
+                                                │
+                                                ├─>
+                                                │  administration-operational-api-v1.yaml
+                                                │
+incident-query-api-v1                           │
+  capability: OPERATIONAL_INCIDENT_QUERY ───────┘
+```
+
+The two capabilities remain independently classifiable in the registry while
+sharing one coherent Administration-owned OpenAPI boundary.
+
+Physical consolidation must never be used to hide ownership differences or to
+collapse unrelated capabilities merely to reduce file count.
+
 ## Registry ↔ filesystem integrity
 
 The canonical registry and the physical contract tree must remain consistent in

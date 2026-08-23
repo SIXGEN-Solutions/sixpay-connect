@@ -587,6 +587,143 @@ if (registry) {
       }
     }
 
+
+    /*
+     * FS-2.2.4 — Consolidated-contract cardinality
+     *
+     * Registry ids and capabilities identify logical capabilities and are
+     * globally unique. A physical path is NOT a logical identifier and may be
+     * shared by multiple capabilities when the consolidation is intentional.
+     */
+    const capabilityOwners = new Map();
+    const contractsByPhysicalPath = new Map();
+
+    for (const contract of registry.contracts) {
+      if (typeof contract.capability === 'string') {
+        const previous = capabilityOwners.get(contract.capability);
+
+        if (previous) {
+          fail(
+            `${registryRelative}: duplicate capability `
+              + `${contract.capability} used by ${previous} and ${contract.id}`,
+          );
+        } else {
+          capabilityOwners.set(contract.capability, contract.id);
+        }
+      }
+
+      if (typeof contract.path === 'string') {
+        const group = contractsByPhysicalPath.get(contract.path) ?? [];
+        group.push(contract);
+        contractsByPhysicalPath.set(contract.path, group);
+      }
+    }
+
+    function sameValue(entries, field) {
+      const values = new Set(
+        entries.map((entry) => entry?.[field] ?? null),
+      );
+      return values.size === 1;
+    }
+
+    function sameStringSet(left, right) {
+      if (!Array.isArray(left) || !Array.isArray(right)) {
+        return false;
+      }
+
+      const leftSet = new Set(left);
+      const rightSet = new Set(right);
+
+      if (
+        leftSet.size !== left.length
+        || rightSet.size !== right.length
+        || leftSet.size !== rightSet.size
+      ) {
+        return false;
+      }
+
+      for (const value of leftSet) {
+        if (!rightSet.has(value)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    for (const [physicalPath, entries] of contractsByPhysicalPath) {
+      if (entries.length <= 1) {
+        continue;
+      }
+
+      if (!sameValue(entries, 'domain')) {
+        fail(
+          `${registryRelative}: consolidated physical contract `
+            + `${physicalPath} mixes domains`,
+        );
+      }
+
+      if (!sameValue(entries, 'businessOwner')) {
+        fail(
+          `${registryRelative}: consolidated physical contract `
+            + `${physicalPath} mixes businessOwner values`,
+        );
+      }
+
+      const physical = parseYaml(physicalPath);
+
+      if (!physical) {
+        continue;
+      }
+
+      if (!physical.openapi) {
+        fail(
+          `${physicalPath}: shared physical contracts must expose `
+            + 'machine-readable OpenAPI metadata',
+        );
+        continue;
+      }
+
+      const metadata = physical.info?.['x-sixpay-contract'];
+
+      if (!metadata || typeof metadata !== 'object') {
+        fail(
+          `${physicalPath}: consolidated contract requires `
+            + 'info.x-sixpay-contract metadata',
+        );
+        continue;
+      }
+
+      const expectedRegistryIds = entries.map((entry) => entry.id);
+      const expectedCapabilities = entries.map(
+        (entry) => entry.capability,
+      );
+
+      if (
+        !sameStringSet(
+          metadata.registryIds,
+          expectedRegistryIds,
+        )
+      ) {
+        fail(
+          `${physicalPath}: x-sixpay-contract.registryIds must exactly `
+            + 'match registry entries sharing this path',
+        );
+      }
+
+      if (
+        !sameStringSet(
+          metadata.capabilities,
+          expectedCapabilities,
+        )
+      ) {
+        fail(
+          `${physicalPath}: x-sixpay-contract.capabilities must exactly `
+            + 'match registry capabilities sharing this path',
+        );
+      }
+    }
+
     const admin = registry.contracts.find(
       (contract) => contract.id === 'administration-query-api-v1',
     );
