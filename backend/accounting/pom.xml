@@ -6,12 +6,20 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- ========================================================= -->
+    <!-- PARENT                                                    -->
+    <!-- ========================================================= -->
+
     <parent>
         <groupId>com.sixpay</groupId>
         <artifactId>sixpay-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <!-- ========================================================= -->
+    <!-- MODULE IDENTIFICATION                                     -->
+    <!-- ========================================================= -->
 
     <artifactId>accounting</artifactId>
     <packaging>jar</packaging>
@@ -22,7 +30,15 @@
         Accounting domain module for SIXPAY CONNECT.
     </description>
 
+    <!-- ========================================================= -->
+    <!-- DEPENDENCIES                                              -->
+    <!-- ========================================================= -->
+
     <dependencies>
+
+        <!-- ===================================================== -->
+        <!-- SIXPAY platform                                      -->
+        <!-- ===================================================== -->
 
         <dependency>
             <groupId>com.sixpay</groupId>
@@ -34,10 +50,47 @@
             <artifactId>integration</artifactId>
         </dependency>
 
+        <!-- ===================================================== -->
+        <!-- Inbound HTTP API                                      -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- Persistence                                          -->
+        <!-- ===================================================== -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- Security                                             -->
+        <!-- ===================================================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- ===================================================== -->
+        <!-- Accounting provider integration                      -->
+        <!-- ===================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -49,16 +102,32 @@
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
+        <!-- ===================================================== -->
+        <!-- Observability                                        -->
+        <!-- ===================================================== -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- ===================================================== -->
+        <!-- OpenAPI                                              -->
+        <!-- ===================================================== -->
+
+        <!--
+            Same convention as golden Partner module:
+            annotations + OpenAPI model generation,
+            Swagger UI remains owned by bootstrap.
+        -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
         </dependency>
+
+        <!-- ===================================================== -->
+        <!-- Flyway - integration tests only                      -->
+        <!-- ===================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -72,9 +141,25 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- ===================================================== -->
+        <!-- Tests                                                -->
+        <!-- ===================================================== -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
             <scope>test</scope>
         </dependency>
 

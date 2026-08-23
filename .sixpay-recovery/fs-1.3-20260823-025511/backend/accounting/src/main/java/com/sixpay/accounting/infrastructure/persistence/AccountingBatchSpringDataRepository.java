@@ -1,14 +1,9 @@
 package com.sixpay.accounting.infrastructure.persistence;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.sixpay.accounting.domain.model.AccountingBatchStatus;
-
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -37,22 +32,6 @@ public interface AccountingBatchSpringDataRepository
     findAggregateByIdempotencyKey(
             @Param("idempotencyKey")
             String idempotencyKey
-    );
-
-    @Query(
-            """
-            select batch
-              from AccountingBatchJpaEntity batch
-             where (:businessDate is null
-                    or batch.businessDate = :businessDate)
-               and (:status is null
-                    or batch.status = :status)
-            """
-    )
-    Page<AccountingBatchJpaEntity> search(
-            @Param("businessDate") LocalDate businessDate,
-            @Param("status") AccountingBatchStatus status,
-            Pageable pageable
     );
 
     @Query(

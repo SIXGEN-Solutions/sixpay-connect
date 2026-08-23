@@ -37,14 +37,15 @@ Infrastructure
   provider DTO mapping and validation
 ```
 
-FS-1.3 introduces the module-owned internal read-only Accounting Query API:
+No module-owned inbound HTTP controller is currently implemented.
+
+Therefore:
 
 ```text
-GET /internal/api/v1/accounting-batches
-GET /internal/api/v1/accounting-batches/{batchId}
+Accounting API coverage = N/A
 ```
 
-The contract is published as `documentation/contracts/internal/accounting-query-api-v1.yaml`.
+for the current implementation.
 
 ---
 
@@ -152,7 +153,7 @@ Application
     -> focused service tests
 
 API
-    -> focused Accounting Query controller tests
+    -> N/A until an Accounting inbound API exists
 
 Infrastructure
     -> focused adapter tests and PostgreSQL integration tests
@@ -220,7 +221,7 @@ After Phase 8.2.4:
 ```text
 Domain          COVERED
 Application     COVERED
-API             COVERED
+API             N/A
 Infrastructure  COVERED
 ```
 

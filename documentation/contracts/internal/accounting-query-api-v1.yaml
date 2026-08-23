@@ -1,0 +1,172 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Accounting Query API
+  version: 1.0.0
+  description: Internal read-only Accounting batch query API.
+
+paths:
+  /internal/api/v1/accounting-batches:
+    get:
+      operationId: searchAccountingBatches
+      summary: Search accounting batches
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: businessDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AccountingBatchStatus'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: Accounting batch page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingBatchPageResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+
+  /internal/api/v1/accounting-batches/{batchId}:
+    get:
+      operationId: getAccountingBatch
+      summary: Get accounting batch detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Accounting batch detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingBatchDetailResponse'
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+        '404':
+          description: Accounting batch not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AccountingBatchStatus:
+      type: string
+      enum: [COMPLETED, NOT_COMPLETED]
+
+    AccountingBatchSummaryResponse:
+      type: object
+      required: [batchId, businessDate, financialInstitutionCode, status, itemCount, createdAt]
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        businessDate:
+          type: string
+          format: date
+        financialInstitutionCode:
+          type: string
+        status:
+          $ref: '#/components/schemas/AccountingBatchStatus'
+        itemCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AccountingBatchItemResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        publicPaymentReference:
+          type: string
+        partnerId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        paymentOccurredAt:
+          type: string
+          format: date-time
+        paymentBusinessDate:
+          type: string
+          format: date
+        bankPostingReference:
+          type: [string, 'null']
+        tresorPayStatus:
+          type: string
+        tresorPayStatusCheckedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    AccountingBatchDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/AccountingBatchSummaryResponse'
+        - type: object
+          properties:
+            idempotencyKey:
+              type: string
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountingBatchItemResponse'
+
+    AccountingBatchPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountingBatchSummaryResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
