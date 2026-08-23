@@ -229,9 +229,7 @@ export class AccountingOverviewPageComponent {
 
   protected readonly statuses: readonly AccountingBatchStatus[] = [
     'NOT_COMPLETED',
-    'SUBMITTED',
-    'COMPLETED',
-    'FAILED',
+    'COMPLETED'
   ];
 
   protected readonly form =

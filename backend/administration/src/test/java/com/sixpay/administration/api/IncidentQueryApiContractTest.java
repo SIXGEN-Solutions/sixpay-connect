@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AdministrationQueryApiContractTest {
+class IncidentQueryApiContractTest {
 
     private static final Path CONTRACT =
             Path.of(
@@ -17,11 +17,11 @@ class AdministrationQueryApiContractTest {
                     "documentation",
                     "contracts",
                     "internal",
-                    "administration-query-api-v1.yaml"
+                    "incident-query-api-v1.yaml"
             );
 
     @Test
-    void publishedContractContainsImplementedReadOnlyEndpoints()
+    void publishedContractUsesExistingRoleBasedSecurityModel()
             throws IOException {
 
         assertThat(CONTRACT).isRegularFile();
@@ -29,22 +29,23 @@ class AdministrationQueryApiContractTest {
         String source = Files.readString(CONTRACT);
 
         assertThat(source)
-                .contains("/internal/api/v1/administration/overview:")
-                .contains("/internal/api/v1/administration/settings:")
-                .contains("/internal/api/v1/administration/integrations:")
+                .contains("/internal/api/v1/incidents:")
+                .contains("/internal/api/v1/incidents/{incidentId}:")
                 .contains("model: ROLE_BASED")
                 .contains("- ADMIN")
+                .contains("- MANAGER")
+                .contains("- AUDITOR")
                 .contains("bearerAuth:")
                 .contains("readOnly: true");
 
         assertThat(source)
                 .doesNotContain(
-                        "administration.read",
-                        "SCOPE_administration.read",
-                        "put:",
+                        "incident.read",
+                        "SCOPE_incident.read",
                         "post:",
-                        "delete:",
-                        "patch:"
+                        "put:",
+                        "patch:",
+                        "delete:"
                 );
     }
 }

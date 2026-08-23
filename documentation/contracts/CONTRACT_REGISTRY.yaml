@@ -447,8 +447,7 @@ contracts:
     phaseStep: "FS-1.4.1"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
-      scopes:
-        - "administration.read"
+      authorization: "ROLE_BASED"
       roles:
         - "ADMIN"
       dataClassification: "INTERNAL"
@@ -483,8 +482,7 @@ contracts:
     phaseStep: "FS-1.4.2"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
-      scopes:
-        - "incident.read"
+      authorization: "ROLE_BASED"
       roles:
         - "ADMIN"
         - "MANAGER"

@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
 import { ErrorService } from '../../../core/errors/error.service';
-import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { SecurityUserSummary } from '../models/security-user-administration';
@@ -15,7 +14,6 @@ import { SecurityUserAdministrationService } from '../services/security-user-adm
   imports: [
     RouterLink,
     DatePipe,
-    SpButtonComponent,
     SpCardComponent,
     SpToolbarComponent,
   ],

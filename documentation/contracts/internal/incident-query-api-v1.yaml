@@ -36,6 +36,12 @@ info:
     direction: INTERNAL_CLIENT_TO_SIXPAY
     dataClassification: INTERNAL
     readOnly: true
+    authorization:
+      model: ROLE_BASED
+      requiredRoles:
+        - ADMIN
+        - MANAGER
+        - AUDITOR
     limitations:
       - NO_INCIDENT_CREATION
       - NO_INCIDENT_MUTATION
@@ -51,8 +57,7 @@ servers:
     description: Environment-specific internal SIXPAY endpoint
 
 security:
-  - oauth2:
-      - incident.read
+  - bearerAuth: []
 
 tags:
   - name: Incidents
@@ -175,14 +180,14 @@ paths:
 components:
 
   securitySchemes:
-    oauth2:
-      type: oauth2
-      flows:
-        authorizationCode:
-          authorizationUrl: https://identity.example/oauth2/authorize
-          tokenUrl: https://identity.example/oauth2/token
-          scopes:
-            incident.read: Read operational Incident projections
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        SIXPAY authenticated principal. Authorization for this boundary is
+        role-based and requires one of ROLE_ADMIN, ROLE_MANAGER or
+        ROLE_AUDITOR.
 
   parameters:
 
@@ -249,7 +254,7 @@ components:
     Forbidden:
       description: |
         Access to operational Incident projections is denied.
-        The caller must hold SIXPAY Incident read authorization.
+        The caller must hold ROLE_ADMIN, ROLE_MANAGER or ROLE_AUDITOR.
       content:
         application/problem+json:
           schema:

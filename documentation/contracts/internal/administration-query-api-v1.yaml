@@ -36,6 +36,10 @@ info:
     direction: INTERNAL_CLIENT_TO_SIXPAY
     dataClassification: INTERNAL
     readOnly: true
+    authorization:
+      model: ROLE_BASED
+      requiredRoles:
+        - ADMIN
     limitations:
       - NO_SETTINGS_MUTATION
       - NO_INTEGRATION_MUTATION
@@ -49,8 +53,7 @@ servers:
     description: Environment-specific internal SIXPAY endpoint
 
 security:
-  - oauth2:
-      - administration.read
+  - bearerAuth: []
 
 tags:
   - name: Administration
@@ -164,14 +167,13 @@ paths:
 
 components:
   securitySchemes:
-    oauth2:
-      type: oauth2
-      flows:
-        authorizationCode:
-          authorizationUrl: https://identity.example/oauth2/authorize
-          tokenUrl: https://identity.example/oauth2/token
-          scopes:
-            administration.read: Read operational Administration projections
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        SIXPAY authenticated principal. Authorization for this boundary is
+        role-based and requires ROLE_ADMIN.
 
   parameters:
     CorrelationId:
@@ -207,7 +209,7 @@ components:
     Forbidden:
       description: |
         Access is denied. The operational Administration query boundary is
-        restricted to authorized SIXPAY administrators.
+        restricted to a SIXPAY principal holding ROLE_ADMIN.
       content:
         application/problem+json:
           schema:
