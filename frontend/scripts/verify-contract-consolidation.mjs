@@ -221,6 +221,90 @@ if (registry) {
       }
     }
 
+
+    /*
+     * FS-2.2.2 — Registry <-> filesystem integrity
+     */
+    const registeredPhysicalPaths = new Set(
+      registry.contracts
+        .map((contract) => contract?.path)
+        .filter((contractPath) => typeof contractPath === 'string'),
+    );
+
+    function isCanonicalPhysicalContract(file) {
+      const relative = path
+        .relative(repoRoot, file)
+        .replaceAll('\\', '/');
+
+      if (relative === registryRelative) {
+        return false;
+      }
+
+      const extension = path.extname(file).toLowerCase();
+
+      if (
+        extension === '.yaml'
+        || extension === '.yml'
+        || extension === '.json'
+      ) {
+        return true;
+      }
+
+      if (
+        extension === '.md'
+        && path.dirname(relative)
+          === 'documentation/contracts/internal'
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    for (const contract of registry.contracts) {
+      if (!contract?.path) {
+        continue;
+      }
+
+      const absolute = path.join(repoRoot, contract.path);
+
+      if (!fs.existsSync(absolute)) {
+        fail(
+          `${registryRelative}: ${contract.id} points to missing file `
+            + `${contract.path}`,
+        );
+        continue;
+      }
+
+      if (isForbiddenHistoricalContractArtifact(absolute)) {
+        fail(
+          `${registryRelative}: ${contract.id} points to forbidden `
+            + `historical artifact ${contract.path}`,
+        );
+      }
+    }
+
+    for (const file of walk(contractsRoot)) {
+      if (!isCanonicalPhysicalContract(file)) {
+        continue;
+      }
+
+      if (isForbiddenHistoricalContractArtifact(file)) {
+        continue;
+      }
+
+      const relative = path
+        .relative(repoRoot, file)
+        .replaceAll('\\', '/');
+
+      if (!registeredPhysicalPaths.has(relative)) {
+        fail(
+          `${relative}: canonical physical contract is not registered in `
+            + 'CONTRACT_REGISTRY.yaml',
+        );
+      }
+    }
+
     const admin = registry.contracts.find(
       (contract) => contract.id === 'administration-query-api-v1',
     );

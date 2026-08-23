@@ -82,6 +82,40 @@ This separation allows the future Master AI Context to discover the complete
 contract landscape from a single registry without flattening bounded API and
 integration contracts into one monolithic specification.
 
+## Registry ↔ filesystem integrity
+
+The canonical registry and the physical contract tree must remain consistent in
+both directions.
+
+The following invariants are mandatory:
+
+1. every `contracts[*].path` declared by `CONTRACT_REGISTRY.yaml` must resolve
+   to an existing file;
+2. a registry path must never reference a historical/transitional artifact;
+3. every canonical physical contract must be referenced by at least one
+   registry entry;
+4. multiple capabilities may reference the same physical contract when the
+   consolidation is intentional and ownership remains explicit.
+
+The Administration Operational contract is the current canonical example of
+rule 4:
+
+```text
+ADMINISTRATION_OPERATIONAL_QUERY ─┐
+                                  ├─> administration-operational-api-v1.yaml
+OPERATIONAL_INCIDENT_QUERY ───────┘
+```
+
+The integrity gate treats the following files as canonical contracts in the
+current repository layout:
+
+- YAML/YML/JSON specifications below `documentation/contracts/`, excluding the
+  registry itself;
+- Markdown contracts directly below `documentation/contracts/internal/`.
+
+Governance documents such as this `README.md` are not physical contracts and
+must not be registered as capabilities.
+
 ## Historical artifact policy
 
 `documentation/contracts/` describes the **current contractual baseline**.

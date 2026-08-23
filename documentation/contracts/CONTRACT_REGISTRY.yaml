@@ -581,6 +581,70 @@ contracts:
         - "Authentication runtime endpoints are outside this contract"
         - "Passwords are request-only and never returned"
         - "Security remains owner of users, identities, roles, permissions and authentication"
+  - id: "notification-operational-trigger-v1"
+    path: "documentation/contracts/internal/notification-operational-trigger-v1.md"
+    domain: "notification"
+    businessOwner: "notification"
+    sourceFactOwners:
+      - "payment"
+      - "accounting"
+    capability: "OPERATIONAL_NOTIFICATION_TRIGGER"
+    direction: "INTERNAL_DOMAIN_TO_NOTIFICATION"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.2.2"
+    security:
+      authentication: "IN_PROCESS_TRUST_BOUNDARY"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      transport: "IN_PROCESS_MODULAR_MONOLITH"
+      purpose:
+        - "Consume the Payment posted semantic fact"
+        - "Consume the Accounting batch completed semantic fact"
+        - "Drive Notification routing and template selection"
+      constraints:
+        - "The contract does not mandate Kafka"
+        - "Payment remains owner of payment.posted.v1"
+        - "Accounting remains owner of accounting.batch.completed.v1"
+        - "Notification owns trigger-consumption semantics"
+        - "Raw account, NIU, full Customer identity and credentials are excluded"
+
+  - id: "notification-operational-email-v1"
+    path: "documentation/contracts/internal/notification-operational-email-v1.md"
+    domain: "notification"
+    businessOwner: "notification"
+    capability: "OPERATIONAL_EMAIL_DISPATCH"
+    direction: "NOTIFICATION_TO_EMAIL_PROVIDER"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.2.2"
+    security:
+      authentication: "DEPLOYMENT_SECRET_BACKED_PROVIDER_AUTHENTICATION"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      providerMode: "SMTP"
+      purpose:
+        - "Dispatch an EMAIL NotificationIntent through the SMTP adapter"
+        - "Return the normalized NotificationDispatchResult"
+        - "Classify retryable and permanent delivery errors"
+      constraints:
+        - "ACCEPTED does not claim final mailbox delivery"
+        - "SMTP credentials come from deployment configuration or secret store"
+        - "Provider error messages are not part of the contract and are not persisted"
 missingMvpContracts:
   status: "PARTIALLY_CLOSED"
   contracts:
