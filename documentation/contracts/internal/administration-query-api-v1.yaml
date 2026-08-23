@@ -1,0 +1,366 @@
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - Internal Administration Query API
+  version: 1.0.0
+  description: |
+    Read-only internal API for operational Administration consultation.
+
+    This contract exposes only Administration-owned query projections.
+    It does not mutate application settings, integration configuration,
+    Security users, identities, roles, permissions or authentication state.
+
+    Security User Administration remains exposed through its existing
+    dedicated endpoints under /internal/api/v1/administration/users.
+
+    Operational settings returned by this API must be backed by real SIXPAY
+    runtime/configuration sources. Values that currently exist only in Angular
+    mock/demo fixtures are deliberately excluded from this contract.
+
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+
+  x-sixpay-contract:
+    registryId: administration-query-api-v1
+    gate: FS-1.4
+    phaseStep: FS-1.4.1
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: administration
+    businessOwner: administration
+    securityOwner: security
+    capability: ADMINISTRATION_OPERATIONAL_QUERY
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: INTERNAL
+    readOnly: true
+    limitations:
+      - NO_SETTINGS_MUTATION
+      - NO_INTEGRATION_MUTATION
+      - NO_SECURITY_USER_MUTATION
+      - NO_IDENTITY_MUTATION
+      - NO_ROLE_OR_PERMISSION_MUTATION
+      - NO_MOCK_OR_DEMO_VALUES_AS_SYSTEM_OF_RECORD
+
+servers:
+  - url: https://sixpay-api.example
+    description: Environment-specific internal SIXPAY endpoint
+
+security:
+  - oauth2:
+      - administration.read
+
+tags:
+  - name: Administration
+    description: Read-only operational Administration projections.
+
+paths:
+  /internal/api/v1/administration/overview:
+    get:
+      tags: [Administration]
+      operationId: getAdministrationOverview
+      summary: Get the operational Administration overview
+      description: |
+        Returns the current settings projection together with the currently
+        observable integration-health projections.
+
+        No pagination is used because the response is a bounded operational
+        snapshot rather than a historical collection.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Administration overview
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdministrationOverviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/administration/settings:
+    get:
+      tags: [Administration]
+      operationId: getAdministrationSettings
+      summary: Get the effective operational settings projection
+      description: |
+        Returns only settings whose values are backed by real SIXPAY
+        configuration/runtime sources.
+
+        This endpoint is read-only. It does not imply a writable settings
+        repository and must not expose values that exist only in frontend
+        mocks or demo fixtures.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Effective operational settings
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdministrationSettingsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /internal/api/v1/administration/integrations:
+    get:
+      tags: [Administration]
+      operationId: getAdministrationIntegrations
+      summary: Get observable integration-health projections
+      description: |
+        Returns the bounded set of integration-health states that SIXPAY can
+        actually observe at runtime.
+
+        No pagination is required because this is a bounded registry-derived
+        operational snapshot, not an unbounded historical collection.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Observable integration-health projections
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IntegrationStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://identity.example/oauth2/authorize
+          tokenUrl: https://identity.example/oauth2/token
+          scopes:
+            administration.read: Read operational Administration projections
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    CorrelationId:
+      description: Echo of the request correlation identifier
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Malformed request or invalid correlation identifier
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Unauthorized:
+      description: Authentication is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Forbidden:
+      description: |
+        Access is denied. The operational Administration query boundary is
+        restricted to authorized SIXPAY administrators.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    InternalServerError:
+      description: Internal Administration query failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    ServiceUnavailable:
+      description: |
+        One or more runtime configuration or integration-health projection
+        sources are temporarily unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    AdministrationOverviewResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - settings
+        - integrations
+        - observedAt
+      properties:
+        settings:
+          $ref: '#/components/schemas/AdministrationSettingsResponse'
+        integrations:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntegrationStatusResponse'
+        observedAt:
+          type: string
+          format: date-time
+          description: Time at which the overview projection was assembled.
+
+    AdministrationSettingsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - accountingCutoffZone
+        - accountingCutoffTime
+      properties:
+        accountingCutoffZone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: |
+            Effective accounting cutoff timezone backed by
+            sixpay.accounting.batch.cutoff-zone.
+          examples:
+            - Africa/Douala
+
+        accountingCutoffTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: |
+            Effective accounting cutoff local time backed by
+            sixpay.accounting.batch.cutoff-time.
+          examples:
+            - "23:00"
+
+    IntegrationHealth:
+      type: string
+      enum:
+        - AVAILABLE
+        - DEGRADED
+        - UNAVAILABLE
+        - UNKNOWN
+
+    IntegrationStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - integrationId
+        - name
+        - type
+        - health
+        - lastCheckedAt
+      properties:
+        integrationId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Stable SIXPAY integration identifier.
+
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Human-readable integration name.
+
+        type:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Provider-neutral integration category.
+
+        health:
+          $ref: '#/components/schemas/IntegrationHealth'
+
+        detail:
+          type:
+            - string
+            - 'null'
+          maxLength: 512
+          description: |
+            Non-sensitive operational detail derived from an observable
+            runtime source. It must not contain credentials, tokens, secrets
+            or raw provider payloads.
+
+        lastSuccessfulAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: |
+            Last successful interaction time when such evidence is actually
+            available from the owning integration adapter.
+
+        lastCheckedAt:
+          type: string
+          format: date-time
+          description: Time at which this integration-health state was observed.
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        detail:
+          type: string
