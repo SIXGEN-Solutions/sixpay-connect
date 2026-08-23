@@ -12,9 +12,9 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/sixpay-customer-management-baseline'`
+**Primary implementation branch:** `'feat/repository-baseline-consolidation'`
 
-**Current delivery focus:** Customer management.
+**Current delivery focus:** Repository Baseline Consolidation.
 
 ---
 
@@ -27,7 +27,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `''feat/sixpay-customer-management-baseline'`
+1. `''feat/repository-baseline-consolidation'`
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
