@@ -34,7 +34,7 @@ import java.util.Objects;
 
 @Service
 @Transactional
-public final class CustomerManagementService
+public class CustomerManagementService
         implements CustomerManagementUseCase, CustomerQueryUseCase {
 
     private final CustomerRepository repository;

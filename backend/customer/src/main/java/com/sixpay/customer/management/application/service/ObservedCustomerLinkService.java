@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public final class ObservedCustomerLinkService
+public class ObservedCustomerLinkService
         implements ObservedCustomerLinkUseCase {
 
     private final GetObservedCustomerUseCase observedCustomerQuery;

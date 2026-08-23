@@ -5,6 +5,7 @@ import com.sixpay.customer.management.infrastructure.audit.CustomerAuditJpaEntit
 import com.sixpay.customer.management.infrastructure.audit.CustomerAuditSpringDataRepository;
 import com.sixpay.customer.management.infrastructure.persistence.CustomerJpaEntity;
 import com.sixpay.customer.management.infrastructure.persistence.CustomerSpringDataRepository;
+import com.sixpay.customer.verification.configuration.CustomerVerificationApplicationConfiguration;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
@@ -13,6 +14,7 @@ import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
@@ -43,6 +45,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
                 )
         }
 )
+@Import(CustomerVerificationApplicationConfiguration.class)
 @EntityScan(
         basePackageClasses = {
                 CustomerJpaEntity.class,

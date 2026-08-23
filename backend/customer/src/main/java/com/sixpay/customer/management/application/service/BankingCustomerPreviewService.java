@@ -9,7 +9,7 @@ import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
-public final class BankingCustomerPreviewService
+public class BankingCustomerPreviewService
         implements BankingCustomerPreviewUseCase {
 
     private final BankingCustomerLookupPort lookupPort;

@@ -34,7 +34,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public final class CustomerEnrollmentService
+public class CustomerEnrollmentService
         implements EnrollCustomerUseCase {
 
     private final BankingCustomerLookupPort lookupPort;

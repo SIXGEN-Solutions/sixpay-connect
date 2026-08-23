@@ -51,14 +51,19 @@ class CustomerArchitectureTest {
      * Customer Management was introduced later as a dedicated
      * capability.
      *
-     * It intentionally does not manufacture empty configuration
-     * or events packages merely to satisfy a structural test.
+     * It exposes an explicit configuration package because its
+     * framework-free application ports require environment-neutral
+     * runtime wiring.
+     *
+     * An events package is not required until the capability owns
+     * domain/integration events that justify it.
      */
     private static final Set<String>
             REQUIRED_MANAGEMENT_PACKAGES =
             Set.of(
                     "api",
                     "application",
+                    "configuration",
                     "domain",
                     "infrastructure"
             );
@@ -139,6 +144,7 @@ class CustomerArchitectureTest {
                     "import com.sixpay.customer.management.api.",
                     "import com.sixpay.customer.management.application.",
                     "import com.sixpay.customer.management.infrastructure.",
+                    "import com.sixpay.customer.management.configuration.",
 
                     "import com.sixpay.payment.",
 
@@ -482,6 +488,28 @@ class CustomerArchitectureTest {
                 ),
                 "management must expose "
                         + "infrastructure/audit"
+        );
+
+        assertTrue(
+                Files.isRegularFile(
+                        MANAGEMENT_ROOT.resolve(
+                                "configuration/"
+                                        + "CustomerManagementApplicationConfiguration.java"
+                        )
+                ),
+                "management must expose its environment-neutral "
+                        + "application runtime configuration"
+        );
+
+        assertTrue(
+                Files.isRegularFile(
+                        MANAGEMENT_ROOT.resolve(
+                                "configuration/"
+                                        + "CustomerManagementApplicationConfiguration.java"
+                        )
+                ),
+                "management must expose its environment-neutral "
+                        + "application runtime configuration"
         );
     }
 
@@ -859,7 +887,7 @@ class CustomerArchitectureTest {
     }
 
     @Test
-    void managementApplicationDoesNotDependOnApiOrInfrastructure()
+    void managementApplicationDoesNotDependOnOuterLayers()
             throws IOException {
 
         assertSourcesDoNotContain(
@@ -868,6 +896,7 @@ class CustomerArchitectureTest {
                 ),
                 List.of(
                         "import com.sixpay.customer.management.api.",
+                        "import com.sixpay.customer.management.configuration.",
                         "import com.sixpay.customer.management.infrastructure."
                 )
         );

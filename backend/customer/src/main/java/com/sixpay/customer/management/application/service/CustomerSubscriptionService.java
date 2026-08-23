@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public final class CustomerSubscriptionService
+public class CustomerSubscriptionService
         implements CustomerSubscriptionUseCase {
 
     private final CustomerRepository customerRepository;
