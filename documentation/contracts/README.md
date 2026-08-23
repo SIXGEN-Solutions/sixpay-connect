@@ -46,3 +46,43 @@ Toute évolution de classement doit mettre à jour dans le même changement :
 3. le manifeste IA du domaine concerné, notamment
    `documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml` pour le Payment Contract Pack;
 4. le document de Gate concerné.
+
+## FS-2.1 — Repository baseline consolidation decisions
+
+During `FS-2.1 — Contract consolidation`, the following internal contracts are
+explicitly classified as **KEEP**.
+
+`KEEP` is a repository-consolidation decision. It does not replace the
+normative lifecycle, approval, generation, security or ownership metadata in
+`CONTRACT_REGISTRY.yaml`.
+
+| Physical contract | Decision | Preserved boundary |
+| --- | --- | --- |
+| `internal/payment-query-api-v1.yaml` | `KEEP` | Operational masked Payment query capability |
+| `internal/payment-audit-query-api-v1.yaml` | `KEEP` | Privileged immutable Payment audit, timeline and controlled export boundary |
+| `internal/observed-customer-query-api-v1.yaml` | `KEEP` | Customer-owned non-authoritative ObservedCustomer query projection |
+| `internal/accounting-query-api-v1.yaml` | `KEEP` | Accounting batch query capability |
+| `internal/notification-operational-trigger-v1.md` | `KEEP` | Inbound semantic trigger contract consumed by Notification |
+| `internal/notification-operational-email-v1.md` | `KEEP` | Outbound operational email dispatch/provider boundary |
+
+### Preservation rationale
+
+These contracts must remain physically independent because they represent
+different ownership, security, data-classification, direction or operational
+semantics.
+
+In particular:
+
+- Payment Query and Payment Audit remain separate. Audit has stronger
+  confidentiality, traceability and export semantics and must not be folded
+  into the ordinary Payment query API.
+- ObservedCustomer remains separate from authoritative Customer Management.
+  It is a non-authoritative projection created from observed Payment facts.
+- Accounting Batch Query remains an Accounting-owned bounded query capability.
+- Notification Trigger and Notification Email remain separate because the
+  trigger contract describes semantic facts entering Notification, while the
+  email contract describes the provider-facing dispatch boundary leaving
+  Notification.
+
+No endpoint, schema, capability, authorization rule or registry identity is
+changed by this preservation decision.
