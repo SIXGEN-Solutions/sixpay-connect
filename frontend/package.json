@@ -13,7 +13,7 @@
     "build": "ng build",
     "build:integration": "npm run verify:contract-consolidation && npm run verify:runtime-datasource-policy && npm run verify:full-stack-conformance && npm run verify:integration-contract-backed && ng build --configuration integration",
     "build:netlify": "ng build --configuration netlify",
-    "build:all": "npm run build:integration && npm run build:netlify && npm run build",
+    "build:all": "npm run verify:angular-environments && npm run build:integration && npm run build:netlify && npm run build",
     "watch": "ng build --watch --configuration development",
     "lint": "ng lint",
     "format": "prettier --write .",
@@ -37,7 +37,8 @@
     "verify:integration-contract-backed": "node scripts/verify-contract-backed-integration.mjs",
     "verify:full-stack-conformance": "node scripts/verify-full-stack-conformance.mjs",
     "verify:contract-consolidation": "node scripts/verify-contract-consolidation.mjs",
-    "verify:runtime-datasource-policy": "node scripts/verify-runtime-datasource-policy.mjs"
+    "verify:runtime-datasource-policy": "node scripts/verify-runtime-datasource-policy.mjs",
+    "verify:angular-environments": "node scripts/verify-angular-environment-policy.mjs"
   },
   "private": true,
   "dependencies": {
