@@ -196,7 +196,7 @@ V300__payment_baseline.sql
 7. outbox indexes
 8. `payment_idempotency`
 9. idempotency indexes
-10. `payment_observed_customer_link` **only after ownership review is closed**
+10. `payment_observed_customer_link`
 
 ## FK graph
 
@@ -205,7 +205,7 @@ payments
 ├── payment_audit
 ├── payment_outbox_events
 ├── payment_idempotency
-└── payment_observed_customer_link  [provisional]
+└── payment_observed_customer_link
 ```
 
 ## Cross-domain logical reference
@@ -222,10 +222,9 @@ must remain a UUID/reference with **no FK to Customer**.
 `payments` constraint. V300 must create the final accepted state-schema version
 set from the start.
 
-## Blocking decision
+## Ownership decision
 
-`payment_observed_customer_link` remains the only item that may not be finalized
-until its ownership review confirms Payment as owner.
+`payment_observed_customer_link` is Payment-owned. Its lifecycle and only SQL FK are anchored to `payments`; `observed_customer_id` remains a logical Customer reference without a cross-domain FK.
 
 ---
 
@@ -508,7 +507,7 @@ This is the required Flyway ordering invariant.
 |---|---|---|---|---|
 | V100 | Partner | partner aggregate, perimeter, thresholds/history, audit, idempotency, outbox | None | READY |
 | V200 | Customer | observed-customer projection/audit + customer management/account/subscription/link/audit | None | READY |
-| V300 | Payment | payments, audit, outbox, idempotency, observed-customer link | None to Customer; link ownership pending | BLOCKED_BY_OWNERSHIP_REVIEW |
+| V300 | Payment | payments, audit, outbox, idempotency, observed-customer link | None to Customer | READY |
 | V400 | Accounting | batches, items, batch/item tracking | None | READY |
 | V500 | Reporting | audit evidence, audit export job | None | READY |
 | V600 | Notification | delivery + operational delivery/attempt/replay | None | READY |
@@ -543,8 +542,7 @@ FS-2.3.2 is complete when:
 - historical ALTER/fix/index-only effects are assigned to final table
   definitions;
 - temporary Security migration structures are excluded from the final schema;
-- `payment_observed_customer_link` remains explicitly blocked pending ownership
-  confirmation;
+- `payment_observed_customer_link` is classified as Payment-owned and keeps `observed_customer_id` as a logical reference only;
 - no SQL migration has yet been deleted.
 
 # Decision
@@ -553,6 +551,4 @@ The target baseline design is structurally valid for one Flyway runtime because
 each Vx00 baseline is internally self-contained and no module baseline requires
 a later module's tables.
 
-FS-2.3.3 may perform the squash only after the
-`payment_observed_customer_link` ownership decision is closed or explicitly
-excluded from V300 until FS-2.3.5.
+FS-2.3.3 may perform the squash with `payment_observed_customer_link` included in V300 as Payment-owned persistence.

@@ -1,3 +1,12 @@
+-- SIXPAY CONNECT canonical pre-production Flyway baseline
+-- FS-2.3 Database baseline consolidation
+-- This file represents current schema state; Git preserves prior migration history.
+
+
+-- ---------------------------------------------------------------------------
+-- Source folded into baseline: V202608231130__create_operational_incident_tables.sql
+-- ---------------------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS operational_incident (
     incident_id VARCHAR(64) PRIMARY KEY,
     severity VARCHAR(16) NOT NULL,

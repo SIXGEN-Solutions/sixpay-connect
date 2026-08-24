@@ -17,6 +17,17 @@ class ObservedCustomerPersistenceArchitectureTest {
                     + "infrastructure/persistence"
     );
 
+    private static final Path CUSTOMER_BASELINE = Path.of(
+            "src/main/resources/db/migration/"
+                    + "V200__customer_baseline.sql"
+    );
+
+    private static final String OBSERVED_CUSTOMER_START =
+            "CREATE TABLE customer_observed_customer";
+
+    private static final String CUSTOMER_MANAGEMENT_START =
+            "CREATE TABLE customer_management_customer";
+
     @Test
     void jpaRemainsInsidePersistenceInfrastructure()
             throws Exception {
@@ -197,60 +208,103 @@ class ObservedCustomerPersistenceArchitectureTest {
     void persistenceNeverStoresRawAccountOrPlainNiuColumns()
             throws Exception {
 
-        String migration = Files.readString(
-                Path.of(
-                        "src/main/resources/db/migration/"
-                                + "V20260803_01__create_"
-                                + "customer_observed_projection.sql"
-                )
+        assertTrue(
+                Files.isRegularFile(CUSTOMER_BASELINE),
+                () -> "Customer baseline migration not found: "
+                        + CUSTOMER_BASELINE
         );
 
+        String baseline =
+                Files.readString(CUSTOMER_BASELINE);
+
+        String observedCustomerMigration =
+                observedCustomerSection(baseline);
+
         for (String forbidden : List.of(
-                " account_number ",
-                " rib_debiteur ",
-                " raw_account ",
-                " niu VARCHAR",
-                " legal_name VARCHAR"
+                "account_number",
+                "rib_debiteur",
+                "raw_account",
+                "niu VARCHAR",
+                "legal_name VARCHAR"
         )) {
             assertFalse(
-                    migration.toLowerCase()
+                    observedCustomerMigration
+                            .toLowerCase()
                             .contains(
-                                    forbidden.strip()
-                                            .toLowerCase()
+                                    forbidden.toLowerCase()
                             ),
-                    () -> "Unsafe column found: "
+                    () -> "Unsafe Observed Customer column found: "
                             + forbidden
             );
         }
 
         assertTrue(
-                migration.contains("niu_protected")
+                observedCustomerMigration.contains(
+                        "niu_protected"
+                )
         );
 
         assertTrue(
-                migration.contains("niu_search_hash")
+                observedCustomerMigration.contains(
+                        "niu_search_hash"
+                )
         );
 
         assertTrue(
-                migration.contains(
+                observedCustomerMigration.contains(
                         "account_binding_fingerprint"
                 )
         );
 
         assertTrue(
-                migration.contains("masked_value")
+                observedCustomerMigration.contains(
+                        "masked_value"
+                )
         );
 
         assertTrue(
-                migration.contains(
+                observedCustomerMigration.contains(
                         "UNIQUE (niu_search_hash)"
                 )
         );
 
         assertTrue(
-                migration.contains(
+                observedCustomerMigration.contains(
                         "source_event_id UUID PRIMARY KEY"
                 )
+        );
+    }
+
+    private String observedCustomerSection(
+            String baseline
+    ) {
+
+        int start =
+                baseline.indexOf(
+                        OBSERVED_CUSTOMER_START
+                );
+
+        assertTrue(
+                start >= 0,
+                "Observed Customer section not found "
+                        + "in canonical Customer baseline"
+        );
+
+        int customerManagementStart =
+                baseline.indexOf(
+                        CUSTOMER_MANAGEMENT_START,
+                        start
+                );
+
+        assertTrue(
+                customerManagementStart > start,
+                "Customer Management section must appear "
+                        + "after Observed Customer in V200"
+        );
+
+        return baseline.substring(
+                start,
+                customerManagementStart
         );
     }
 }

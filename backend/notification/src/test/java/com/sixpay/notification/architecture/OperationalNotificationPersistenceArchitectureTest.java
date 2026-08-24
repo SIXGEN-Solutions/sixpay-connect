@@ -20,8 +20,8 @@ class OperationalNotificationPersistenceArchitectureTest {
             throws Exception {
         String migration = Files.readString(
                 Path.of(
-                        "../bootstrap/src/main/resources/db/migration/"
-                                + "V202608071300__operational_notifications.sql"
+                        "src/main/resources/db/migration/"
+                                + "V600__notification_baseline.sql"
                 )
         );
 

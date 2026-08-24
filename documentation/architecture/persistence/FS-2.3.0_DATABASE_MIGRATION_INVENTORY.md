@@ -150,7 +150,7 @@ Bootstrap currently contains:
 
 | Migration | Current owner | Tables / objects | References / FKs | Target owner | Decision | Target baseline |
 |---|---|---|---|---|---|---|
-| `V202608071900__payment_observed_customer_query_link.sql` | **Bootstrap** | `payment_observed_customer_link` | **SQL FK payment_id → Payment.payments**; `observed_customer_id` has deliberately no FK to Customer | **Payment (provisional)** | `REVIEW_CROSS_DOMAIN` | V300 (provisional) |
+| `V202608071900__payment_observed_customer_query_link.sql` | **Bootstrap** | `payment_observed_customer_link` | **SQL FK payment_id → Payment.payments**; `observed_customer_id` has deliberately no FK to Customer | **Payment** | `MERGE_IN_BASELINE` | V300 |
 
 Current evidence favors Payment ownership because:
 
@@ -159,7 +159,7 @@ Current evidence favors Payment ownership because:
 - deletion cascades from Payment;
 - `observed_customer_id` is a logical UUID only.
 
-FS-2.3.5 must formally confirm this before the final baseline is generated.
+FS-2.3.3 confirms Payment ownership from the table lifecycle and FK structure.
 
 ## Cross-domain SQL dependency findings
 
@@ -210,7 +210,7 @@ FS-2.3.0 is complete when:
 - every migration has a target owner;
 - every migration has one decision from the controlled vocabulary;
 - every migration maps to a target baseline;
-- `payment_observed_customer_link` remains explicitly flagged for cross-domain ownership review;
+- `payment_observed_customer_link` is explicitly classified as Payment-owned;
 - no SQL migration has yet been changed or deleted.
 
 ## Decision

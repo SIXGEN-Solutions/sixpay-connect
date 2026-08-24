@@ -17,9 +17,8 @@ class PaymentAuditMaskingIT {
 
         String migration = Files.readString(
                 Path.of(
-                        "src/test/resources/db/migration/"
-                                + "V202608072058__create_"
-                                + "reporting_payment_audit_projection.sql"
+                        "src/main/resources/db/migration/"
+                                + "V500__reporting_baseline.sql"
                 )
         );
 

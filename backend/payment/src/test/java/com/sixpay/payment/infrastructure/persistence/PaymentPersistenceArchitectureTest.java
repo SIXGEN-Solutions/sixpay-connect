@@ -29,7 +29,7 @@ class PaymentPersistenceArchitectureTest {
     private static final Path MIGRATION =
             Path.of(
                     "src/main/resources/db/migration/"
-                            + "V2026080101__create_payment_persistence.sql"
+                            + "V300__payment_baseline.sql"
             );
 
     @Test

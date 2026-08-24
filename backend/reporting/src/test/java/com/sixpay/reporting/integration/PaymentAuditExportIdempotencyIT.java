@@ -39,14 +39,7 @@ class PaymentAuditExportIdempotencyIT {
 
             executeMigration(
                     connection,
-                    "V202608072058__create_"
-                            + "reporting_payment_audit_projection.sql"
-            );
-
-            executeMigration(
-                    connection,
-                    "V202608072120__create_"
-                            + "reporting_audit_export.sql"
+                    "V500__reporting_baseline.sql"
             );
 
             JdbcAuditExportJobStore store =

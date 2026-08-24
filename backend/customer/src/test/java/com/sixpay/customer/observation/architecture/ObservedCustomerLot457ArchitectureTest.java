@@ -15,6 +15,11 @@ class ObservedCustomerLot457ArchitectureTest {
             "src/main/java/com/sixpay/customer"
     );
 
+    private static final Path CUSTOMER_BASELINE = Path.of(
+            "src/main/resources/db/migration/"
+                    + "V200__customer_baseline.sql"
+    );
+
     @Test
     void customerNeverDependsOnPayment() throws Exception {
         try (var paths = Files.walk(CUSTOMER_ROOT)) {
@@ -24,12 +29,13 @@ class ObservedCustomerLot457ArchitectureTest {
                     .flatMap(path -> {
                         try {
                             String source = Files.readString(path);
+
                             return source.contains(
                                     "import com.sixpay.payment."
                             )
                                     ? java.util.stream.Stream.of(
-                                            path + " imports Payment"
-                                    )
+                                    path + " imports Payment"
+                            )
                                     : java.util.stream.Stream.empty();
                         } catch (Exception exception) {
                             throw new IllegalStateException(exception);
@@ -60,6 +66,7 @@ class ObservedCustomerLot457ArchitectureTest {
                     .flatMap(path -> {
                         try {
                             String source = Files.readString(path);
+
                             return List.of(
                                             "import org.springframework.",
                                             "import jakarta.persistence.",
@@ -96,40 +103,59 @@ class ObservedCustomerLot457ArchitectureTest {
                         + "application/port/output/"
                         + "ObservedCustomerProjectionPort.java"
         );
+
         Path bootstrapAdapter = Path.of(
                 "../bootstrap/src/main/java/com/sixpay/bootstrap/"
                         + "integration/customer/"
                         + "ObservedCustomerProjectionModuleAdapter.java"
         );
 
-        assertTrue(Files.isRegularFile(paymentPort));
-        assertTrue(Files.isRegularFile(bootstrapAdapter));
+        assertTrue(
+                Files.isRegularFile(paymentPort),
+                () -> "Payment projection port not found: "
+                        + paymentPort
+        );
+
+        assertTrue(
+                Files.isRegularFile(bootstrapAdapter),
+                () -> "Bootstrap projection adapter not found: "
+                        + bootstrapAdapter
+        );
 
         String port = Files.readString(paymentPort);
         String adapter = Files.readString(bootstrapAdapter);
 
-        assertFalse(port.contains(
-                "import com.sixpay.customer."
-        ));
-        assertTrue(adapter.contains(
-                "implements ObservedCustomerProjectionPort"
-        ));
-        assertTrue(adapter.contains(
-                "ObserveCustomerUseCase"
-        ));
+        assertFalse(
+                port.contains(
+                        "import com.sixpay.customer."
+                )
+        );
+
+        assertTrue(
+                adapter.contains(
+                        "implements ObservedCustomerProjectionPort"
+                )
+        );
+
+        assertTrue(
+                adapter.contains(
+                        "ObserveCustomerUseCase"
+                )
+        );
     }
 
     @Test
     void migrationDefinesProjectionAndIdempotenceConstraints()
             throws Exception {
 
-        String migration = Files.readString(
-                Path.of(
-                        "src/main/resources/db/migration/"
-                                + "V20260803_01__create_"
-                                + "customer_observed_projection.sql"
-                )
+        assertTrue(
+                Files.isRegularFile(CUSTOMER_BASELINE),
+                () -> "Canonical Customer baseline not found: "
+                        + CUSTOMER_BASELINE
         );
+
+        String migration =
+                Files.readString(CUSTOMER_BASELINE);
 
         for (String required : List.of(
                 "CREATE TABLE customer_observed_customer",
@@ -143,7 +169,8 @@ class ObservedCustomerLot457ArchitectureTest {
         )) {
             assertTrue(
                     migration.contains(required),
-                    () -> "Missing migration rule: " + required
+                    () -> "Missing Customer baseline rule: "
+                            + required
             );
         }
     }

@@ -38,8 +38,7 @@ class PaymentAuditPersistenceIT {
                     connection,
                     new ClassPathResource(
                             "db/migration/"
-                                    + "V202608072058__create_"
-                                    + "reporting_payment_audit_projection.sql"
+                                    + "V500__reporting_baseline.sql"
                     )
             );
 

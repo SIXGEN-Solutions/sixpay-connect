@@ -10,8 +10,9 @@ import org.testcontainers.utility.DockerImageName;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -26,6 +27,7 @@ class PaymentPersistenceMigrationIT {
     @Test
     void createsPaymentTableAndRequiredConstraints()
             throws Exception {
+
         Flyway flyway = Flyway.configure()
                 .dataSource(
                         POSTGRESQL.getJdbcUrl(),
@@ -35,54 +37,162 @@ class PaymentPersistenceMigrationIT {
                 .locations("classpath:db/migration")
                 .load();
 
-        assertEquals(6, flyway.migrate().migrationsExecuted);
+        flyway.migrate();
 
-        try (Connection connection = DriverManager.getConnection(
-                    POSTGRESQL.getJdbcUrl(),
-                    POSTGRESQL.getUsername(),
-                    POSTGRESQL.getPassword()
-             );
-             ResultSet columns = connection.getMetaData()
-                     .getColumns(
-                             null,
-                             null,
-                             "payments",
-                             null
-                     )) {
+        assertPaymentBaselineWasApplied(flyway);
+        assertHistoricalPaymentMigrationsAreAbsent(flyway);
+
+        assertPaymentsTableExistsWithRequiredColumns();
+        assertSourceExternalReferenceUniqueIndexExists();
+    }
+
+    private void assertPaymentBaselineWasApplied(
+            Flyway flyway
+    ) {
+
+        boolean paymentBaselineApplied =
+                Arrays.stream(
+                                flyway.info()
+                                        .applied()
+                        )
+                        .anyMatch(
+                                migration ->
+                                        "300".equals(
+                                                migration
+                                                        .getVersion()
+                                                        .getVersion()
+                                        )
+                                                && "payment baseline"
+                                                .equals(
+                                                        migration
+                                                                .getDescription()
+                                                )
+                        );
+
+        assertTrue(
+                paymentBaselineApplied,
+                "Canonical Payment baseline V300 "
+                        + "must be applied"
+        );
+    }
+
+    private void assertHistoricalPaymentMigrationsAreAbsent(
+            Flyway flyway
+    ) {
+
+        boolean historicalPaymentMigrationApplied =
+                Arrays.stream(
+                                flyway.info()
+                                        .applied()
+                        )
+                        .anyMatch(
+                                migration -> {
+                                    if (migration.getVersion() == null) {
+                                        return false;
+                                    }
+
+                                    String version =
+                                            migration
+                                                    .getVersion()
+                                                    .getVersion();
+
+                                    return version.startsWith(
+                                            "20260801"
+                                    )
+                                            || version.equals(
+                                            "202608071900"
+                                    );
+                                }
+                        );
+
+        assertFalse(
+                historicalPaymentMigrationApplied,
+                "Historical Payment migrations "
+                        + "must not survive FS-2.3 squash"
+        );
+    }
+
+    private void assertPaymentsTableExistsWithRequiredColumns()
+            throws Exception {
+
+        try (
+                Connection connection =
+                        DriverManager.getConnection(
+                                POSTGRESQL.getJdbcUrl(),
+                                POSTGRESQL.getUsername(),
+                                POSTGRESQL.getPassword()
+                        );
+
+                ResultSet columns =
+                        connection
+                                .getMetaData()
+                                .getColumns(
+                                        null,
+                                        null,
+                                        "payments",
+                                        null
+                                )
+        ) {
 
             int count = 0;
+
             while (columns.next()) {
                 count++;
             }
 
-            assertTrue(count >= 15);
+            assertTrue(
+                    count >= 15,
+                    "payments table must expose "
+                            + "the canonical Payment columns"
+            );
         }
+    }
 
-        try (Connection connection = DriverManager.getConnection(
-                    POSTGRESQL.getJdbcUrl(),
-                    POSTGRESQL.getUsername(),
-                    POSTGRESQL.getPassword()
-             );
-             ResultSet indexes = connection.getMetaData()
-                     .getIndexInfo(
-                             null,
-                             null,
-                             "payments",
-                             false,
-                             false
-                     )) {
+    private void assertSourceExternalReferenceUniqueIndexExists()
+            throws Exception {
+
+        try (
+                Connection connection =
+                        DriverManager.getConnection(
+                                POSTGRESQL.getJdbcUrl(),
+                                POSTGRESQL.getUsername(),
+                                POSTGRESQL.getPassword()
+                        );
+
+                ResultSet indexes =
+                        connection
+                                .getMetaData()
+                                .getIndexInfo(
+                                        null,
+                                        null,
+                                        "payments",
+                                        false,
+                                        false
+                                )
+        ) {
 
             boolean sourceExternalUnique = false;
 
             while (indexes.next()) {
-                String name = indexes.getString("INDEX_NAME");
-                if ("uk_payments_source_external_reference"
-                        .equalsIgnoreCase(name)) {
+                String name =
+                        indexes.getString(
+                                "INDEX_NAME"
+                        );
+
+                if (
+                        "uk_payments_source_external_reference"
+                                .equalsIgnoreCase(name)
+                ) {
                     sourceExternalUnique = true;
                 }
             }
 
-            assertTrue(sourceExternalUnique);
+            assertTrue(
+                    sourceExternalUnique,
+                    "Canonical Payment baseline "
+                            + "must create "
+                            + "uk_payments_source_external_reference"
+            );
         }
     }
 }
