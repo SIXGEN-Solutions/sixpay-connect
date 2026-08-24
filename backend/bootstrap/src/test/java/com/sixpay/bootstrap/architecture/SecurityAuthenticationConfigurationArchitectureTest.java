@@ -30,9 +30,24 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                     "administration"
             );
 
-    private static final Pattern SECURITY_PROPERTY_REFERENCE =
+    private static final Pattern VALUE_PROPERTY =
             Pattern.compile(
-                    "sixpay\\.security\\.[A-Za-z0-9_.-]+"
+                    "@Value\\s*\\(\\s*\"\\$\\{"
+                            + "(sixpay\\.security\\.[^}:]+)"
+            );
+
+    private static final Pattern CONFIGURATION_PROPERTIES =
+            Pattern.compile(
+                    "@ConfigurationProperties\\s*\\("
+                            + "\\s*(?:prefix\\s*=\\s*)?"
+                            + "\"(sixpay\\.security\\.[^\"]+)\"",
+                    Pattern.DOTALL
+            );
+
+    private static final Pattern CONDITIONAL_ON_PROPERTY =
+            Pattern.compile(
+                    "@ConditionalOnProperty\\s*\\((.*?)\\)",
+                    Pattern.DOTALL
             );
 
     @Test
@@ -59,9 +74,23 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                 "Security must own authentication capability binding"
         );
 
-        assertTrue(text.contains("DEFAULT_MAXIMUM_FAILED_ATTEMPTS = 5"));
-        assertTrue(text.contains("Duration.ofMinutes(15)"));
-        assertTrue(text.contains("DEFAULT_BCRYPT_STRENGTH = 12"));
+        assertTrue(
+                text.contains(
+                        "DEFAULT_MAXIMUM_FAILED_ATTEMPTS = 5"
+                )
+        );
+
+        assertTrue(
+                text.contains(
+                        "Duration.ofMinutes(15)"
+                )
+        );
+
+        assertTrue(
+                text.contains(
+                        "DEFAULT_BCRYPT_STRENGTH = 12"
+                )
+        );
     }
 
     @Test
@@ -88,13 +117,34 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                 "Security must own password-policy binding"
         );
 
-        assertTrue(text.contains("DEFAULT_MIN_LENGTH = 12"));
-        assertTrue(text.contains("DEFAULT_MAX_LENGTH = 200"));
-        assertTrue(text.contains("DEFAULT_HISTORY_SIZE = 5"));
-        assertTrue(text.contains("DEFAULT_EXPIRATION_DAYS = 90"));
+        assertTrue(
+                text.contains(
+                        "DEFAULT_MIN_LENGTH = 12"
+                )
+        );
 
         assertTrue(
-                text.contains("new PasswordPolicy("),
+                text.contains(
+                        "DEFAULT_MAX_LENGTH = 200"
+                )
+        );
+
+        assertTrue(
+                text.contains(
+                        "DEFAULT_HISTORY_SIZE = 5"
+                )
+        );
+
+        assertTrue(
+                text.contains(
+                        "DEFAULT_EXPIRATION_DAYS = 90"
+                )
+        );
+
+        assertTrue(
+                text.contains(
+                        "new PasswordPolicy("
+                ),
                 "External password configuration must be validated "
                         + "through Security domain invariants"
         );
@@ -118,8 +168,19 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                         )
                 );
 
-        assertLocalAndOidc(local, true, false, "local-auth");
-        assertLocalAndOidc(hybrid, true, true, "hybrid-auth");
+        assertLocalAndOidc(
+                local,
+                true,
+                false,
+                "local-auth"
+        );
+
+        assertLocalAndOidc(
+                hybrid,
+                true,
+                true,
+                "hybrid-auth"
+        );
     }
 
     @Test
@@ -168,6 +229,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
             }
 
             try (var files = Files.walk(javaRoot)) {
+
                 for (Path javaFile :
                         files.filter(Files::isRegularFile)
                                 .filter(path ->
@@ -179,18 +241,26 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                     String source =
                             Files.readString(javaFile);
 
-                    Matcher matcher =
-                            SECURITY_PROPERTY_REFERENCE.matcher(source);
+                    findValueViolations(
+                            module,
+                            javaFile,
+                            source,
+                            violations
+                    );
 
-                    while (matcher.find()) {
-                        violations.add(
-                                module
-                                        + " directly consumes "
-                                        + matcher.group()
-                                        + " in "
-                                        + javaFile
-                        );
-                    }
+                    findConfigurationPropertiesViolations(
+                            module,
+                            javaFile,
+                            source,
+                            violations
+                    );
+
+                    findConditionalPropertyViolations(
+                            module,
+                            javaFile,
+                            source,
+                            violations
+                    );
                 }
             }
         }
@@ -201,6 +271,88 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                         + "business modules: "
                         + violations
         );
+    }
+
+    private void findValueViolations(
+            String module,
+            Path javaFile,
+            String source,
+            List<String> violations
+    ) {
+
+        Matcher matcher =
+                VALUE_PROPERTY.matcher(source);
+
+        while (matcher.find()) {
+
+            violations.add(
+                    module
+                            + " consumes Security configuration "
+                            + matcher.group(1)
+                            + " through @Value in "
+                            + javaFile
+            );
+        }
+    }
+
+    private void findConfigurationPropertiesViolations(
+            String module,
+            Path javaFile,
+            String source,
+            List<String> violations
+    ) {
+
+        Matcher matcher =
+                CONFIGURATION_PROPERTIES.matcher(
+                        source
+                );
+
+        while (matcher.find()) {
+
+            violations.add(
+                    module
+                            + " consumes Security configuration "
+                            + matcher.group(1)
+                            + " through @ConfigurationProperties in "
+                            + javaFile
+            );
+        }
+    }
+
+    private void findConditionalPropertyViolations(
+            String module,
+            Path javaFile,
+            String source,
+            List<String> violations
+    ) {
+
+        Matcher annotation =
+                CONDITIONAL_ON_PROPERTY.matcher(
+                        source
+                );
+
+        while (annotation.find()) {
+
+            String body =
+                    annotation.group(1);
+
+            Matcher prefixMatcher =
+                    Pattern.compile(
+                            "prefix\\s*=\\s*"
+                                    + "\"(sixpay\\.security\\.[^\"]+)\""
+                    ).matcher(body);
+
+            if (prefixMatcher.find()) {
+
+                violations.add(
+                        module
+                                + " consumes Security configuration "
+                                + prefixMatcher.group(1)
+                                + " through @ConditionalOnProperty in "
+                                + javaFile
+                );
+            }
+        }
     }
 
     private void assertLocalAndOidc(
@@ -216,8 +368,15 @@ class SecurityAuthenticationConfigurationArchitectureTest {
         int oidcIndex =
                 source.indexOf("oidc:");
 
-        assertTrue(localIndex >= 0, profile + " missing local section");
-        assertTrue(oidcIndex > localIndex, profile + " missing OIDC section");
+        assertTrue(
+                localIndex >= 0,
+                profile + " missing local section"
+        );
+
+        assertTrue(
+                oidcIndex > localIndex,
+                profile + " missing OIDC section"
+        );
 
         String localSection =
                 source.substring(
@@ -226,7 +385,9 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                 );
 
         String oidcSection =
-                source.substring(oidcIndex);
+                source.substring(
+                        oidcIndex
+                );
 
         assertTrue(
                 localSection.contains(
