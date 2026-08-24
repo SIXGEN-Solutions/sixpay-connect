@@ -35,11 +35,6 @@
             <artifactId>shared-kernel</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.sixpay</groupId>
-            <artifactId>security</artifactId>
-        </dependency>
-
         <!-- Business-module runtime foundation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
