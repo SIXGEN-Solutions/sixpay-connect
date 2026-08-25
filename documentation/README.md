@@ -39,7 +39,7 @@ The documentation map is a navigation layer, not a competing authority.
 | Implementation guidance | `documentation/implementation/` | Implementation-oriented documentation |
 | Runbooks | `documentation/runbooks/README.md` | Canonical operational navigation and contract-reference policy |
 | Onboarding | `documentation/onboarding/` | Engineer onboarding documentation |
-| AI engineering assets | `documentation/ai/` | AI briefs, prompts and AI-specific engineering context |
+| AI engineering assets | `documentation/ai/README.md` | AI navigation, precedence and historical-working-asset policy |
 | Stubs/reference fixtures | `documentation/stubs/` | Non-canonical reference/stub material |
 
 ## Contractual special rule
