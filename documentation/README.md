@@ -37,7 +37,7 @@ The documentation map is a navigation layer, not a competing authority.
 | Contract navigation and policy | `documentation/contracts/README.md` | Contract structure and registry semantics |
 | Domain-focused documentation | `documentation/domains/README.md` | Canonical domain-documentation policy and current-state navigation |
 | Implementation guidance | `documentation/implementation/` | Implementation-oriented documentation |
-| Runbooks | `documentation/runbooks/` | Operational and release procedures |
+| Runbooks | `documentation/runbooks/README.md` | Canonical operational navigation and contract-reference policy |
 | Onboarding | `documentation/onboarding/` | Engineer onboarding documentation |
 | AI engineering assets | `documentation/ai/` | AI briefs, prompts and AI-specific engineering context |
 | Stubs/reference fixtures | `documentation/stubs/` | Non-canonical reference/stub material |
