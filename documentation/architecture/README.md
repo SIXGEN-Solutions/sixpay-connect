@@ -30,20 +30,16 @@ backend/partner
 
 remains the structural and implementation reference for business modules.
 
-## Transitional evidence
+## Historical consolidation evidence
 
-The following families are considered consolidation evidence, not preferred
-current-state entry points:
+Phase-oriented FS-2.4, FS-2.5 and FS-2.6 architecture documents have been
+removed after their durable conclusions were absorbed into the canonical
+current-state documents and permanent verification gates.
 
-```text
-documentation/architecture/module-boundaries/FS-2.4.*
-documentation/architecture/configuration/FS-2.5.*
-documentation/architecture/FS-2.6_*
-documentation/architecture/FS-2.7.*
-```
+FS-2.7 phase reports are likewise removed once their policies are represented
+by the canonical documentation indexes.
 
-Their conclusions must be absorbed into canonical documents before any later
-archive/delete decision.
+Git history remains the source for reconstructing those consolidation steps.
 
 ## Binary architecture documents
 

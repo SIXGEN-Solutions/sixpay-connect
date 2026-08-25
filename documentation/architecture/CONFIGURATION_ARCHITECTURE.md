@@ -4,8 +4,9 @@
 
 Canonical current-state configuration architecture.
 
-This document absorbs the stable conclusions of FS-2.5.1 through FS-2.5.8.
-Detailed FS-2.5 documents remain temporary consolidation evidence.
+This document contains the stable configuration baseline established during
+FS-2.5. Phase-specific consolidation documents were removed after their
+durable rules were absorbed here and into permanent verification gates.
 
 ## Ownership model
 

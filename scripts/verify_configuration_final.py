@@ -9,16 +9,8 @@ EXPECTED_BRANCH = "feat/repository-baseline-consolidation"
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
 REQUIRED_PHASE_DOCS = [
-    "documentation/architecture/configuration/FS-2.5.0_CONFIGURATION_INVENTORY.md",
-    "documentation/architecture/configuration/FS-2.5.1_BOOTSTRAP_GLOBAL_CONFIGURATION_NORMALIZATION.md",
-    "documentation/architecture/configuration/FS-2.5.2_DOMAIN_CONFIGURATION_OWNERSHIP.md",
-    "documentation/architecture/configuration/FS-2.5.3_PROFILES_CONSOLIDATION.md",
-    "documentation/architecture/configuration/FS-2.5.4_SECURITY_AUTHENTICATION_CONFIGURATION.md",
-    "documentation/architecture/configuration/FS-2.5.5_OPENAPI_SPRINGDOC_CONFIGURATION.md",
-    "documentation/architecture/configuration/FS-2.5.6_ANGULAR_ENVIRONMENTS.md",
-    "documentation/architecture/configuration/FS-2.5.7_FEATURE_FLAG_REGISTRY.md",
-    "documentation/architecture/configuration/FS-2.5.8_CONFIGURATION_NON_REGRESSION_GATE.md",
-    "documentation/architecture/configuration/FS-2.5.9_CONFIGURATION_FINAL_VALIDATION.md",
+    "documentation/architecture/CONFIGURATION_ARCHITECTURE.md",
+    "documentation/architecture/TESTS_AND_GATES.md",
     "documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml",
 ]
 

@@ -4,9 +4,9 @@
 
 Canonical current-state architecture document.
 
-This document absorbs the stable conclusions of FS-2.4.0, FS-2.4.1 and
-FS-2.4.2. The detailed FS-2.4 documents remain temporary audit evidence until
-the documentation cleanup phase.
+This document contains the stable conclusions previously established during
+the FS-2.4 module-boundary audit. The phase-specific audit documents were
+removed after their durable rules were absorbed here and into permanent gates.
 
 ## Architectural rule
 

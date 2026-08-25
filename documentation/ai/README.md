@@ -182,9 +182,9 @@ Before generating or modifying code from AI documentation:
 
 ## Historical cleanup
 
-FS-2.7.5 does not delete AI assets.
-
-FS-2.7.6 may later classify and remove/archival candidates such as:
+Historical AI working assets are reviewed conservatively. They are retained
+until reference and semantic-absorption evidence supports deletion. Typical
+review candidates include:
 
 ```text
 *_LOT_*.md
