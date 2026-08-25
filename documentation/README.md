@@ -29,13 +29,13 @@ The documentation map is a navigation layer, not a competing authority.
 | Internal architecture | `documentation/architecture/internal/` | Internal application/runtime architecture |
 | Module boundaries | `documentation/architecture/module-boundaries/` | Cross-module dependency audits and boundary policy |
 | Configuration architecture | `documentation/architecture/configuration/` | Runtime configuration ownership, profiles, auth, Springdoc, Angular environments and feature flags |
-| Business requirements | `documentation/requirements/` | Requirements source tree |
+| Business requirements | `documentation/requirements/README.md` | Canonical requirements navigation and source policy |
 | CDC / source requirement documents | `documentation/requirements/cdc/` | Source business requirement material |
 | User stories | `documentation/requirements/user-stories/` | User-story level requirements |
 | API/event/integration contracts | `documentation/contracts/` | Physical contractual interfaces |
 | Contract classification and lifecycle | `documentation/contracts/CONTRACT_REGISTRY.yaml` | Canonical contractual table of contents |
 | Contract navigation and policy | `documentation/contracts/README.md` | Contract structure and registry semantics |
-| Domain-focused documentation | `documentation/domains/` | Domain-specific explanatory material |
+| Domain-focused documentation | `documentation/domains/README.md` | Canonical domain-documentation policy and current-state navigation |
 | Implementation guidance | `documentation/implementation/` | Implementation-oriented documentation |
 | Runbooks | `documentation/runbooks/` | Operational and release procedures |
 | Onboarding | `documentation/onboarding/` | Engineer onboarding documentation |
