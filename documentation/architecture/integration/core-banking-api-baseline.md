@@ -3,7 +3,7 @@
 ## Purpose
 
 This document is the authoritative architecture baseline for Core Banking APIs
-consumed by SIXPAY CONNECT on `feat/sixpay-customer-management-baseline`.
+consumed by SIXPAY CONNECT on `feat/repository-baseline-consolidation`.
 
 No API is bank-approved solely because an OpenAPI contract or Java adapter
 exists. External approval is a separate gate.

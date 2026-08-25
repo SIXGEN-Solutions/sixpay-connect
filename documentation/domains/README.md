@@ -4,14 +4,9 @@ This directory is reserved for **validated current-state domain documentation**.
 
 ## Current state
 
-At FS-2.7.3, the directory does not yet contain substantial canonical domain
-documentation.
-
-The existing `documentation/domains/customer/` directory contains only a
-`.gitkeep` placeholder.
-
-Therefore FS-2.7.3 does **not** infer or generate business-domain documentation
-from implementation classes, requirements or AI briefs.
+The directory does not yet contain substantial canonical domain documentation.
+FS-2.9 removes the former empty `customer/` placeholder so the tracked tree
+describes only implemented or documented repository content.
 
 ## Domain documentation rule
 
@@ -67,20 +62,20 @@ domain tree look complete.
 A domain document should exist only when there is validated, durable domain
 knowledge worth maintaining as an independent current-state artifact.
 
-## FS-2.7.3 decision
+## FS-2.9 hygiene decision
 
-Current domain tree:
+Current tracked domain tree:
 
 ```text
 documentation/domains/
-└── customer/
-    └── .gitkeep
+└── README.md
 ```
 
 Decision:
 
 ```text
-KEEP_PLACEHOLDER
+NO_EMPTY_PLACEHOLDER
 ```
 
-until validated domain documentation is explicitly produced.
+The `customer/` directory will be recreated only when validated current-state
+domain documentation is explicitly produced.

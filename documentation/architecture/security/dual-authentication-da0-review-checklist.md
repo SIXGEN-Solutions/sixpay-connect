@@ -5,7 +5,7 @@ Use this checklist during architecture review before starting DA-1.
 ## Repository
 
 - [ ] `ENGINEERING_CONTEXT.md` reviewed first.
-- [ ] Authoritative branch is `feat/hybrid-authentification-system`.
+- [ ] Authoritative branch is `feat/repository-baseline-consolidation`.
 - [ ] `partner` remains the golden business-module reference.
 - [ ] Security ownership remains under `backend/security`.
 

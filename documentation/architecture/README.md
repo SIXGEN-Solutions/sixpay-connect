@@ -15,6 +15,7 @@ are not the preferred navigation surface once their conclusions are absorbed.
 | Module boundaries | `documentation/architecture/MODULE_BOUNDARIES.md` |
 | Runtime/configuration architecture | `documentation/architecture/CONFIGURATION_ARCHITECTURE.md` |
 | Tests and verification architecture | `documentation/architecture/TESTS_AND_GATES.md` |
+| Repository hygiene | `documentation/architecture/REPOSITORY_HYGIENE.md` |
 | Integration landscape | `documentation/architecture/integration/integration-landscape.md` |
 | Async integration flows | `documentation/architecture/integration/asynchronous-integration-flows.md` |
 | Integration error taxonomy | `documentation/architecture/integration/integration-error-taxonomy.md` |

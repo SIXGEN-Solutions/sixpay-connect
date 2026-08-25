@@ -3,7 +3,7 @@
 The authoritative implementation branch is:
 
 ```text
-feat/sixpay-test-validate-pilote
+feat/repository-baseline-consolidation
 ```
 
 `partner` remains the golden reference for implementation and layered test

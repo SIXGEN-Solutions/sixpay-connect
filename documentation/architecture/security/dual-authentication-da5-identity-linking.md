@@ -8,7 +8,7 @@ used to prove that user's identity.
 Authoritative implementation branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 The `partner` module remains the golden implementation/structure reference.

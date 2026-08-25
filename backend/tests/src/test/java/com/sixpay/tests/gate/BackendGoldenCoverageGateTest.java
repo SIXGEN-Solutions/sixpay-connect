@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BackendGoldenCoverageGateTest {
     private static final List<CoverageDocument> REQUIRED_DOCUMENTS = List.of(
             new CoverageDocument("customer", "CUSTOMER-TEST-COVERAGE.md"),
-            new CoverageDocument("subscription", "SUBSCRIPTION-TEST-COVERAGE.md"),
             new CoverageDocument("payment", "PAYMENT-TEST-COVERAGE.md"),
             new CoverageDocument("accounting", "ACCOUNTING-TEST-COVERAGE.md"),
             new CoverageDocument("reporting", "REPORTING-TEST-COVERAGE.md"),
@@ -52,23 +51,11 @@ class BackendGoldenCoverageGateTest {
     }
 
     @Test
-    void acceptedDeferredModulesUseExplicitNonImplementedClassification() throws IOException {
-        assertDeferredOrNotImplemented(backendRoot().resolve("subscription/SUBSCRIPTION-TEST-COVERAGE.md"));
-    }
-
-    @Test
     void administrationIsNoLongerClassifiedAsNotImplemented() throws IOException {
         Path document = backendRoot().resolve("administration/ADMINISTRATION-TEST-COVERAGE.md");
         assertThat(document).isRegularFile();
         String content = Files.readString(document);
         assertThat(content).contains("ADMINISTRATION = COVERED").doesNotContain("NOT_IMPLEMENTED").doesNotContain("NOT IMPLEMENTED");
-    }
-
-    private static void assertDeferredOrNotImplemented(Path document) throws IOException {
-        assertThat(document).isRegularFile();
-        String content = Files.readString(document);
-        boolean explicitlyDeferred = content.contains("DEFERRED") || content.contains("NOT_IMPLEMENTED") || content.contains("NOT IMPLEMENTED");
-        assertThat(explicitlyDeferred).as("%s must explicitly classify the absent implementation instead of pretending golden coverage exists", document).isTrue();
     }
 
     private static Path backendRoot() {

@@ -27,8 +27,9 @@ The documentation map is a navigation layer, not a competing authority.
 | System and application architecture | `documentation/architecture/README.md` | Canonical architecture map and current-state navigation |
 | Integration landscape | `documentation/architecture/integration/` | Producer/consumer landscape and integration ownership |
 | Internal architecture | `documentation/architecture/internal/` | Internal application/runtime architecture |
-| Module boundaries | `documentation/architecture/module-boundaries/` | Cross-module dependency audits and boundary policy |
+| Module boundaries | `documentation/architecture/MODULE_BOUNDARIES.md` | Canonical cross-module boundary policy |
 | Configuration architecture | `documentation/architecture/configuration/` | Runtime configuration ownership, profiles, auth, Springdoc, Angular environments and feature flags |
+| Repository hygiene | `documentation/architecture/REPOSITORY_HYGIENE.md` | Tracked-artifact retention and cleanup policy |
 | Business requirements | `documentation/requirements/README.md` | Canonical requirements navigation and source policy |
 | CDC / source requirement documents | `documentation/requirements/cdc/` | Source business requirement material |
 | User stories | `documentation/requirements/user-stories/` | User-story level requirements |

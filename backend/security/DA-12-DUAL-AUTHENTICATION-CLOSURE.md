@@ -16,7 +16,7 @@ DA-1 through DA-11.
 
 ```text
 ENGINEERING_CONTEXT.md
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 The `partner` module remains the golden business-module reference. The

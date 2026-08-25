@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented on `feat/sixpay-customer-management-baseline`.
+Implemented on `feat/repository-baseline-consolidation`.
 
 ## Purpose
 

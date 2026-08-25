@@ -51,7 +51,6 @@ When sources conflict, the higher-priority source prevails.
 | Backend | `backend/` |
 | Shared integration foundation | `backend/integration/` |
 | Infrastructure | `infrastructure/` |
-| Deployment | `deployment/` |
 | Scripts | `scripts/` |
 
 ---

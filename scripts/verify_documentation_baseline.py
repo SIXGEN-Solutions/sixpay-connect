@@ -13,6 +13,7 @@ CANONICAL_DOCS = [
     "documentation/architecture/MODULE_BOUNDARIES.md",
     "documentation/architecture/CONFIGURATION_ARCHITECTURE.md",
     "documentation/architecture/TESTS_AND_GATES.md",
+    "documentation/architecture/REPOSITORY_HYGIENE.md",
     "documentation/requirements/README.md",
     "documentation/domains/README.md",
     "documentation/contracts/README.md",
@@ -59,6 +60,7 @@ INDEX_REFERENCES = {
         "documentation/architecture/MODULE_BOUNDARIES.md",
         "documentation/architecture/CONFIGURATION_ARCHITECTURE.md",
         "documentation/architecture/TESTS_AND_GATES.md",
+        "documentation/architecture/REPOSITORY_HYGIENE.md",
     ],
 }
 
@@ -78,6 +80,11 @@ REQUIRED_ARCHITECTURE_WORDING = {
         "mvn verify",
         "npm run verify:sixpay",
         "scripts/verify_baseline.py",
+    ],
+    "documentation/architecture/REPOSITORY_HYGIENE.md": [
+        "backend/partner",
+        "scripts/verify_repository_hygiene.py",
+        "backend/customer",
     ],
 }
 

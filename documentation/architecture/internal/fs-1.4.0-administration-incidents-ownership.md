@@ -7,7 +7,7 @@ Scope: documentation and ownership only.
 Implementation branch:
 
 ```text
-feat/sixpay-customer-management-baseline
+feat/repository-baseline-consolidation
 ```
 
 Golden business-module reference:

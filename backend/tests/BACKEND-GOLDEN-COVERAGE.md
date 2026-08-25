@@ -16,7 +16,7 @@ SIXPAY CONNECT against the `partner` golden-module reference.
 Authoritative implementation branch:
 
 ```text
-feat/sixpay-test-validate-pilote
+feat/repository-baseline-consolidation
 ```
 
 The goal of 8.2.0 is classification and gap identification.
@@ -159,7 +159,6 @@ Tests SHALL be implemented at the lowest useful layer.
 |---|---|---|---|---|---|
 | `partner` | COVERED | COVERED | COVERED | COVERED | GOLDEN |
 | `customer` | UNVERIFIED | PARTIAL | PARTIAL | PARTIAL | Review gaps only; significant test estate already exists |
-| `subscription` | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | Requires dedicated 8.2.2 inventory before generating tests |
 | `payment` | COVERED | PARTIAL | PARTIAL | PARTIAL | Preserve domain tests; focus on post-domain layers |
 | `accounting` | PARTIAL | COVERED | N/A | PARTIAL | Main visible gap: behavioral persistence coverage |
 | `reporting` | UNVERIFIED | PARTIAL | PARTIAL | PARTIAL | Query/security evidence exists; module-local completeness must be checked |
@@ -238,42 +237,12 @@ Infrastructure:
 
 ---
 
-## 7. Subscription inventory gate
+## 7. Customer-owned subscription capability
 
-No test shall be generated for Subscription from 8.2.0 assumptions alone.
-
-8.2.2 must first map implemented production responsibilities to existing
-focused tests.
-
-Expected review dimensions, when implemented, are:
-
-```text
-Domain
-  subscription lifecycle
-  activation/suspension/rejection transitions
-  invalid transitions
-  value objects
-
-Application
-  creation
-  validation/approval
-  activation
-  suspension
-  replay/duplicate handling
-
-API
-  HTTP contract
-  Bean Validation
-  roles/scopes
-  error mapping
-  correlation
-
-Infrastructure
-  persistence
-  uniqueness
-  deterministic queries
-  optimistic locking/conflicts
-```
+The former `backend/subscription` entry was an empty reactor placeholder, not
+an implemented bounded context. FS-2.9 removes it. Customer enrollment and the
+implemented partner-subscription lifecycle remain owned and covered by
+`backend/customer`.
 
 ---
 
@@ -570,7 +539,7 @@ The remaining `UNVERIFIED` entries are intentionally resolved by:
 
 ```text
 8.2.1 Customer
-8.2.2 Subscription
+8.2.2 Historical standalone Subscription assessment (absorbed by FS-2.9)
 8.2.3 Payment
 8.2.4 Accounting
 8.2.5 Reporting

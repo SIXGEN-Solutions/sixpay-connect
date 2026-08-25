@@ -19,7 +19,7 @@ DA-11.6 — Golden closure
 The authoritative implementation branch is:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 `ENGINEERING_CONTEXT.md` remains the mandatory repository entry point.

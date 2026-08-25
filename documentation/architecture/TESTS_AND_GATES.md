@@ -28,6 +28,12 @@ Whole repository:
 py scripts/verify_baseline.py
 ```
 
+Repository hygiene only:
+
+```bash
+py scripts/verify_repository_hygiene.py
+```
+
 ## Specialized gates
 
 Specialized gates remain available for focused feedback and are not replaced by
@@ -41,6 +47,7 @@ verify:runtime-datasource-policy
 verify:full-stack-conformance
 verify:integration-contract-backed
 verify:angular-environments
+verify_repository_hygiene.py
 architecture tests
 contract tests
 Testcontainers integration tests

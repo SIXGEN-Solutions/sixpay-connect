@@ -34,7 +34,7 @@ reference.
 Authoritative branch:
 
 ```text
-feat/sixpay-test-validate-pilote
+feat/repository-baseline-consolidation
 ```
 
 Mandatory entry point:
@@ -84,7 +84,6 @@ The final gate expects coverage evidence in the owning module:
 
 ```text
 backend/customer/CUSTOMER-TEST-COVERAGE.md
-backend/subscription/SUBSCRIPTION-TEST-COVERAGE.md
 backend/payment/PAYMENT-TEST-COVERAGE.md
 backend/accounting/ACCOUNTING-TEST-COVERAGE.md
 backend/reporting/REPORTING-TEST-COVERAGE.md
@@ -126,23 +125,9 @@ TODO
 TBD
 ```
 
-A module with no production implementation is allowed only when its status is
-explicit and honest, for example:
-
-```text
-DEFERRED
-NOT_IMPLEMENTED
-```
-
-This distinction is important:
-
-```text
-implemented but incompletely verified
-    -> BLOCKING
-
-not implemented and explicitly classified
-    -> ACCEPTED AS DEFERRED
-```
+Only implemented canonical modules participate in the final coverage matrix.
+Empty or deferred module skeletons are repository artifacts and are forbidden
+by the FS-2.9 hygiene gate.
 
 ---
 
@@ -173,21 +158,12 @@ or add the smallest missing focused persistence/query IT
 then update CUSTOMER-TEST-COVERAGE.md
 ```
 
-### Subscription
+### Customer-owned subscription capability
 
-The implementation is explicitly a placeholder and the coverage document says:
-
-```text
-DEFERRED — NO IMPLEMENTED CAPABILITY TO TEST
-```
-
-Gate:
-
-```text
-ACCEPTED AS DEFERRED
-```
-
-No fictional Subscription tests are required.
+Customer enrollment and partner-subscription lifecycle behavior is implemented
+and tested inside `backend/customer`. The former empty
+`backend/subscription` reactor module was not a bounded-context implementation
+and was removed by FS-2.9.
 
 ### Payment
 

@@ -7,7 +7,7 @@ DA-7 turns the existing mutually-exclusive login presentation into a capability-
 Authoritative branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 ## Existing implementation reviewed

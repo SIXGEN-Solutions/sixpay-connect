@@ -10,6 +10,7 @@ ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
 REQUIRED = [
     "frontend/package.json",
+    "scripts/verify_repository_hygiene.py",
     "scripts/verify_feature_flag_registry.py",
     "frontend/scripts/verify-angular-environment-policy.mjs",
     "frontend/scripts/verify-runtime-datasource-policy.mjs",
@@ -80,7 +81,16 @@ def main():
     python = sys.executable
 
     run(
-        "1/4 — Configuration / feature-flag registry",
+        "1/5 — Repository hygiene",
+        [
+            python,
+            "scripts/verify_repository_hygiene.py",
+        ],
+        ROOT,
+    )
+
+    run(
+        "2/5 — Configuration / feature-flag registry",
         [
             python,
             "scripts/verify_feature_flag_registry.py",
@@ -89,7 +99,7 @@ def main():
     )
 
     run(
-        "2/4 — Backend canonical verification",
+        "3/5 — Backend canonical verification",
         [
             mvn,
             "verify",
@@ -98,7 +108,7 @@ def main():
     )
 
     run(
-        "3/4 — Frontend canonical verification",
+        "4/5 — Frontend canonical verification",
         [
             npm,
             "run",
@@ -108,7 +118,7 @@ def main():
     )
 
     run(
-        "4/4 — Fresh PostgreSQL canonical bootstrap",
+        "5/5 — Fresh PostgreSQL canonical bootstrap",
         [
             mvn,
             "-pl",
@@ -129,6 +139,7 @@ def main():
     print("=" * 78)
     print()
     print("Validated:")
+    print(" - tracked repository hygiene and artifact classification")
     print(" - configuration/feature-flag registry")
     print(" - full backend unit/architecture reactor verify")
     print(" - frontend lint/tests/build and conformance gates")

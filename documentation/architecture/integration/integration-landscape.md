@@ -11,7 +11,7 @@ It records the current state before any Phase 5 integration code is changed. It 
 - `asynchronous-integration-flows.md`;
 - `integration-error-taxonomy.md`.
 
-The implementation branch used for this baseline is `feat/integration-contracts`.
+The implementation branch used for this baseline is `feat/repository-baseline-consolidation`.
 
 ## 2. Architectural rules
 

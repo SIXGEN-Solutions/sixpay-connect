@@ -7,7 +7,7 @@ DA-6 makes SIXPAY the sole owner of business roles and permissions.
 Authoritative branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 `partner` remains the golden business-module reference. Authentication and

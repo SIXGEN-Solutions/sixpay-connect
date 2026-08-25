@@ -240,6 +240,10 @@ crash.*.log
 
 test-results/
 **/test-results/
+playwright-report/
+**/playwright-report/
+playwright-report-*/
+**/playwright-report-*/
 
 surefire-reports/
 failsafe-reports/
@@ -252,3 +256,7 @@ failsafe-reports/
 tmp/
 temp/
 *.cache.sixpay-recovery/
+
+# Python validation caches
+__pycache__/
+*.py[cod]

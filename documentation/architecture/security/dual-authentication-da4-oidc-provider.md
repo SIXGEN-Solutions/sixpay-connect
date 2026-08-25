@@ -8,7 +8,7 @@ Local authentication from DA-3.
 Authoritative branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 The `partner` module remains the golden business-module reference. OIDC remains

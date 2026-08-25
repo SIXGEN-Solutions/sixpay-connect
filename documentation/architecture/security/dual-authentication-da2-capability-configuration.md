@@ -8,7 +8,7 @@ independent authentication capabilities.
 Authoritative branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 DA-2 changes configuration semantics. It does not implement Local credential

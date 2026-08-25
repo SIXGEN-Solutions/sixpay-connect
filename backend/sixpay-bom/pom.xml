@@ -167,12 +167,6 @@
 
             <dependency>
                 <groupId>com.sixpay</groupId>
-                <artifactId>subscription</artifactId>
-                <version>${sixpay.modules.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sixpay</groupId>
                 <artifactId>payment</artifactId>
                 <version>${sixpay.modules.version}</version>
             </dependency>

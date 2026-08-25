@@ -14,6 +14,7 @@ REQUIRED = [
     "documentation/architecture/MODULE_BOUNDARIES.md",
     "documentation/architecture/CONFIGURATION_ARCHITECTURE.md",
     "documentation/architecture/TESTS_AND_GATES.md",
+    "documentation/architecture/REPOSITORY_HYGIENE.md",
     "documentation/requirements/README.md",
     "documentation/domains/README.md",
     "documentation/contracts/README.md",

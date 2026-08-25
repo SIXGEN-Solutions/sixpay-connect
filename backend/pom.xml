@@ -133,7 +133,6 @@
 
         <module>customer</module>
         <module>partner</module>
-        <module>subscription</module>
         <module>payment</module>
         <module>accounting</module>
         <module>reporting</module>

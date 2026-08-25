@@ -13,8 +13,6 @@
 /frontend/ @toukam-rodrigue
 
 # Architecture, exploitation et outillage
-/deployment/ @toukam-rodrigue
 /documentation/ @toukam-rodrigue
 /infrastructure/ @toukam-rodrigue
 /scripts/ @toukam-rodrigue
-/tools/ @toukam-rodrigue

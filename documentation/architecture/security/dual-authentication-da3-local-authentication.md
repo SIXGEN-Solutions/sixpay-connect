@@ -17,7 +17,7 @@ The frontend continues to use `withCredentials: true`.
 Authoritative branch:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 The `partner` module remains the golden implementation and folder-structure reference.

@@ -9,7 +9,7 @@ DA-0 is intentionally documentation-only. It defines architecture, ownership, in
 The authoritative implementation branch for this phase is:
 
 ```text
-feat/hybrid-authentification-system
+feat/repository-baseline-consolidation
 ```
 
 The repository entry point remains:
