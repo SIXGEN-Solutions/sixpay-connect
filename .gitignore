@@ -251,4 +251,4 @@ failsafe-reports/
 
 tmp/
 temp/
-*.cache
+*.cache.sixpay-recovery/

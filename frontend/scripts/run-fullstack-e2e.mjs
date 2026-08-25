@@ -18,10 +18,29 @@ const postgresContainer = `sixpay-fullstack-postgres-${process.pid}`;
 let backendProcess;
 
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, { stdio: 'inherit', ...options });
+  const isWindowsCmd =
+    process.platform === 'win32' &&
+    command.toLowerCase().endsWith('.cmd');
+
+  const executable = isWindowsCmd
+    ? process.env.ComSpec || 'cmd.exe'
+    : command;
+
+  const executableArgs = isWindowsCmd
+    ? ['/d', '/s', '/c', command, ...args]
+    : args;
+
+  const result = spawnSync(executable, executableArgs, {
+    stdio: 'inherit',
+    ...options,
+  });
+
   if (result.error) throw result.error;
+
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed with exit code ${result.status}`);
+    throw new Error(
+      `${command} ${args.join(' ')} failed with exit code ${result.status}`,
+    );
   }
 }
 

@@ -88,3 +88,34 @@ They do not reimplement those rules.
 
 A failure should be fixed at the owning specialized test/gate, then the
 canonical baseline verifier should be rerun.
+
+## Clean-room reproducibility proof
+
+Canonical clean-room command:
+
+```bash
+py scripts/verify_clean_room.py
+```
+
+The clean-room validation deliberately uses disposable PostgreSQL instances
+rather than dropping a developer database.
+
+It composes:
+
+```text
+repository baseline verification
+    -> backend + frontend + canonical gates
+    -> FreshPostgreSqlApplicationIT
+    -> empty PostgreSQL + V100..V800 + application context
+
+full-stack functional smoke
+    -> new PostgreSQL container
+    -> executable Bootstrap JAR
+    -> integration profile
+    -> actuator health UP
+    -> Angular integration frontend
+    -> Playwright Partner persistence journey
+    -> Playwright Customer persistence journey
+```
+
+A pre-existing local SIXPAY database is neither read nor required.
