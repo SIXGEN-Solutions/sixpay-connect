@@ -24,7 +24,7 @@ The documentation map is a navigation layer, not a competing authority.
 
 | Need | Canonical location | Role |
 |---|---|---|
-| System and application architecture | `documentation/architecture/` | Architecture decisions, topology, configuration, persistence, module boundaries, integration architecture |
+| System and application architecture | `documentation/architecture/README.md` | Canonical architecture map and current-state navigation |
 | Integration landscape | `documentation/architecture/integration/` | Producer/consumer landscape and integration ownership |
 | Internal architecture | `documentation/architecture/internal/` | Internal application/runtime architecture |
 | Module boundaries | `documentation/architecture/module-boundaries/` | Cross-module dependency audits and boundary policy |
