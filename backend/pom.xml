@@ -245,6 +245,11 @@
                     <version>${maven.failsafe.plugin.version}</version>
 
                     <configuration>
+
+                        <classesDirectory>
+                            ${project.build.outputDirectory}
+                        </classesDirectory>
+
                         <skipITs>${skipITs}</skipITs>
                         <failIfNoTests>false</failIfNoTests>
                         <useModulePath>false</useModulePath>

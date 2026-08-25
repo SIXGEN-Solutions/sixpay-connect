@@ -38,7 +38,8 @@
     "verify:full-stack-conformance": "node scripts/verify-full-stack-conformance.mjs",
     "verify:contract-consolidation": "node scripts/verify-contract-consolidation.mjs",
     "verify:runtime-datasource-policy": "node scripts/verify-runtime-datasource-policy.mjs",
-    "verify:angular-environments": "node scripts/verify-angular-environment-policy.mjs"
+    "verify:angular-environments": "node scripts/verify-angular-environment-policy.mjs",
+    "verify:sixpay": "npm run lint && npm run test && npm run build:all"
   },
   "private": true,
   "dependencies": {
