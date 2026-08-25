@@ -43,6 +43,7 @@ When sources conflict, the higher-priority source prevails.
 
 | Looking for | Location |
 |---|---|
+| Documentation map | `documentation/README.md` |
 | Business requirements | `documentation/requirements/` |
 | Architecture | `documentation/architecture/` |
 | Integration landscape | `documentation/architecture/integration/` |

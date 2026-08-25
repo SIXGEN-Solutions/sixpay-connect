@@ -12,3 +12,9 @@ This repository contains the official reference implementation of SIXPAY CONNECT
 - [Domain Generation Brief template](DOMAIN_GENERATION_BRIEF_TEMPLATE.md)
 - [AI context manifest template](AI_CONTEXT_MANIFEST_TEMPLATE.yaml)
 - [AI generation report template](AI_GENERATION_REPORT_TEMPLATE.md)
+
+## Repository navigation
+
+- [Engineering context](ENGINEERING_CONTEXT.md)
+- [Canonical documentation map](documentation/README.md)
+- [Contract documentation](documentation/contracts/README.md)
