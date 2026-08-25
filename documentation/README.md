@@ -160,3 +160,14 @@ FS-2.7.1 — Canonical documentation map/index
 
 Subsequent FS-2.7 work may merge, archive or delete documents, but this file
 remains the stable navigation entry point for `documentation/`.
+
+## Documentation verification
+
+Canonical documentation non-regression gate:
+
+```bash
+py scripts/verify_documentation_baseline.py
+```
+
+This gate protects the canonical documentation topology, absorbed historical
+cleanup, contracts/runbooks references and AI documentation precedence.
