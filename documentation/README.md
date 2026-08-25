@@ -171,3 +171,15 @@ py scripts/verify_documentation_baseline.py
 
 This gate protects the canonical documentation topology, absorbed historical
 cleanup, contracts/runbooks references and AI documentation precedence.
+
+## Final documentation validation
+
+To validate the complete consolidated documentation baseline:
+
+```bash
+py scripts/verify_documentation_final.py
+```
+
+This is the canonical FS-2.7 closure command. It composes the documentation
+non-regression gate, contract-registry integrity and configuration-documentation
+alignment without reimplementing their specialized rules.
