@@ -41,6 +41,7 @@ The documentation map is a navigation layer, not a competing authority.
 | Runbooks | `documentation/runbooks/README.md` | Canonical operational navigation and contract-reference policy |
 | Onboarding | `documentation/onboarding/` | Engineer onboarding documentation |
 | AI engineering assets | `documentation/ai/README.md` | AI navigation, precedence and historical-working-asset policy |
+| Active Master Prompt input | `MASTER_PROMPT_INPUT_MANIFEST.yaml` | Deterministic active-source selection, exclusions and readiness evidence |
 | Stubs/reference fixtures | `documentation/stubs/` | Non-canonical reference/stub material |
 
 

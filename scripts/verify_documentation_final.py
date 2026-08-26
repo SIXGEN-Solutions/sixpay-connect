@@ -21,7 +21,9 @@ REQUIRED = [
     "documentation/contracts/CONTRACT_REGISTRY.yaml",
     "documentation/runbooks/README.md",
     "documentation/ai/README.md",
+    "MASTER_PROMPT_INPUT_MANIFEST.yaml",
     "scripts/verify_documentation_baseline.py",
+    "scripts/verify_master_prompt_input_manifest.py",
     "scripts/verify_configuration_consolidation.py",
     "frontend/scripts/verify-contract-consolidation.mjs",
 ]
@@ -96,7 +98,7 @@ def main():
     print(f"Required canonical assets: {len(REQUIRED)}.")
 
     run(
-        "1/3 — Documentation non-regression baseline",
+        "1/4 — Documentation non-regression baseline",
         [
             python,
             "scripts/verify_documentation_baseline.py",
@@ -104,7 +106,7 @@ def main():
     )
 
     run(
-        "2/3 — Canonical contract registry / consolidation integrity",
+        "2/4 — Canonical contract registry / consolidation integrity",
         [
             npm,
             "run",
@@ -114,10 +116,18 @@ def main():
     )
 
     run(
-        "3/3 — Configuration documentation / gate alignment",
+        "3/4 — Configuration documentation / gate alignment",
         [
             python,
             "scripts/verify_configuration_consolidation.py",
+        ],
+    )
+
+    run(
+        "4/4 — Active Master Prompt input manifest",
+        [
+            python,
+            "scripts/verify_master_prompt_input_manifest.py",
         ],
     )
 
@@ -135,6 +145,7 @@ def main():
     print(" - absorbed historical FS documentation remains absent")
     print(" - contract registry remains structurally valid")
     print(" - configuration gates no longer depend on deleted phase documents")
+    print(" - active Master Prompt sources and exclusions remain synchronized")
     print()
     print("FS-2.7 — Documentation consolidation may be CLOSED.")
 

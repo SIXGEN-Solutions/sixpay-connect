@@ -1,0 +1,288 @@
+schemaVersion: "1.0"
+kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"
+
+metadata:
+  project: "SIXPAY CONNECT"
+  repository: "SIXGEN-Solutions/sixpay-connect"
+  authoritativeBranch: "feat/repository-baseline-consolidation-cleanup"
+  baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
+  generatedOn: "2026-08-26"
+  status: "ACTIVE"
+  purpose: >-
+    Deterministic input selection for Master Prompt generation. This manifest
+    selects current-state sources; it does not replace their authority.
+
+authority:
+  conflictRule: "FIRST_MATCH_WINS"
+  precedence:
+    - "authoritative implementation branch"
+    - "documentation/architecture/"
+    - "documentation/requirements/"
+    - "documentation/contracts/"
+    - "documentation/ai/"
+    - "engineering assets"
+    - "ENGINEERING_CONTEXT.md"
+  entryPoint: "ENGINEERING_CONTEXT.md"
+  navigationIndex: "documentation/README.md"
+  classificationIndex: "documentation/DOCUMENTATION_CLASSIFICATION.yaml"
+  contractRegistry: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+
+contextSelection:
+  alwaysLoad:
+    - "ENGINEERING_CONTEXT.md"
+    - "documentation/README.md"
+    - "documentation/DOCUMENTATION_CLASSIFICATION.yaml"
+    - "documentation/architecture/README.md"
+    - "documentation/architecture/MODULE_BOUNDARIES.md"
+    - "documentation/architecture/CONFIGURATION_ARCHITECTURE.md"
+    - "documentation/architecture/TESTS_AND_GATES.md"
+    - "documentation/architecture/REPOSITORY_HYGIENE.md"
+    - "documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml"
+    - "documentation/requirements/README.md"
+    - "documentation/contracts/README.md"
+    - "documentation/contracts/CONTRACT_REGISTRY.yaml"
+    - "documentation/domains/README.md"
+    - "documentation/ai/README.md"
+    - "backend/SIXPAY_BACKEND_TECHNOLOGY_MATRIX.md"
+    - "backend/SIXPAY_BACKEND_ENGINEERING_GENERATION_CONTRACT.md"
+    - "backend/partner/README.md"
+    - "backend/partner/ARCHITECTURE.md"
+  loadOnDemand:
+    architecture:
+      roots:
+        - "documentation/architecture/"
+      rule: "Load only the current-state documents applicable to the requested capability."
+    requirements:
+      roots:
+        - "documentation/requirements/"
+      rule: "Load the approved requirement sources applicable to the requested capability."
+    physicalContracts:
+      registrySelector: "contracts[*] where lifecycleStatus is ACTIVE_MVP or REFERENCE_MVP"
+      rule: >-
+        Resolve paths through CONTRACT_REGISTRY.yaml. Approval and generation
+        policy remain binding; active context does not imply code-generation approval.
+    implementation:
+      roots:
+        - "backend/"
+        - "frontend/"
+        - "infrastructure/"
+      rule: "Inspect only the owning module, consumers, tests and composition paths required by the task."
+    aiReferences:
+      roots:
+        - "documentation/ai/customer/"
+        - "documentation/ai/payment/"
+      rule: >-
+        Load only a specifically required, non-historical reference after
+        higher-priority sources have been inspected.
+    externalReferenceSources:
+      selectors:
+        - "documentation/requirements/cdc/*.pdf"
+        - "documentation/requirements/cdc/*.docx"
+        - "documentation/requirements/user-stories/*.docx"
+        - "documentation/architecture/tresorpay/*.pdf"
+        - "documentation/architecture/tresorpay/*.docx"
+        - "documentation/architecture/*.docx"
+      rule: >-
+        Use for traceability or unresolved details only. A REFERENCE_SOURCE
+        never overrides canonical Markdown/YAML or an active physical contract.
+  templates:
+    loadPolicy: "GENERATION_WORKFLOW_ONLY"
+    paths:
+      - "AI_CONTEXT_MANIFEST_TEMPLATE.yaml"
+      - "AI_GENERATION_REPORT_TEMPLATE.md"
+      - "DOMAIN_GENERATION_BRIEF_TEMPLATE.md"
+
+moduleModel:
+  architectureStyle: "MODULAR_MONOLITH"
+  goldenBusinessModule: "backend/partner"
+  businessModules:
+    - "partner"
+    - "customer"
+    - "payment"
+    - "accounting"
+    - "reporting"
+    - "notification"
+    - "security"
+    - "administration"
+  platformModules:
+    - "common"
+    - "shared-kernel"
+    - "integration"
+  compositionModule: "bootstrap"
+  dependencyGovernanceModule: "sixpay-bom"
+  verificationModule: "tests"
+  boundaries:
+    - "Business modules communicate only through reviewed public surfaces."
+    - "Direct access to another module's infrastructure, JPA entities or repositories is forbidden."
+    - "bootstrap composes modules and contains no business logic."
+    - "integration contains provider-neutral technical capabilities only."
+    - "Provider payloads and mappings remain in the owning domain."
+    - "partner is the structural and implementation reference, not a source of copied business rules."
+    - "No standalone subscription module may be introduced."
+
+subscriptionModel:
+  localCustomerSubscription:
+    owner: "customer"
+    implementationRoot: "backend/customer"
+    contractId: "customer-subscription-management-api-v1"
+    lifecycle: "ACTIVE_MVP"
+    rule: "CustomerSubscription is a local customer-management capability owned by customer."
+  externalTresorPaySubscription:
+    systemOfRecord: "TRESOR_PAY"
+    lifecycle: "DEFERRED_FUTURE"
+    mvpIncluded: false
+    excludedContractIds:
+      - "tresorpay-authorization-request-api-v1"
+      - "tresorpay-authorization-decision-webhook-v1"
+    rule: "The external TRESOR PAY subscription lifecycle is outside the MVP."
+  paymentBoundary: "Payment neither owns nor manages the CustomerSubscription lifecycle."
+
+activeContractCapabilities:
+  source: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+  selection: "lifecycleStatus in [ACTIVE_MVP, REFERENCE_MVP]"
+  generationGuard: >-
+    Preserve approvalStatus, generationPolicy and codeGenerationAllowed from
+    the registry. Inclusion here is contextual authority, not generation permission.
+  entries:
+    - id: "tresorpay-payment-request-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    - id: "amplitude-customer-verification-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    - id: "amplitude-payment-posting-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    - id: "tresorpay-payment-status-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    - id: "amplitude-end-of-day-confirmation-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+    - id: "tresorpay-treasury-integration-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+    - id: "payment-query-api-v1"
+      path: "documentation/contracts/internal/payment-query-api-v1.yaml"
+    - id: "observed-customer-query-api-v1"
+      path: "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
+    - id: "payment-audit-query-api-v1"
+      path: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+    - id: "accounting-query-api-v1"
+      path: "documentation/contracts/internal/accounting-query-api-v1.yaml"
+    - id: "administration-query-api-v1"
+      path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
+    - id: "incident-query-api-v1"
+      path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
+    - id: "customer-management-query-api-v1"
+      path: "documentation/contracts/internal/customer-management-query-api-v1.yaml"
+    - id: "security-user-administration-api-v1"
+      path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
+    - id: "notification-operational-trigger-v1"
+      path: "documentation/contracts/internal/notification-operational-trigger-v1.md"
+    - id: "notification-operational-email-v1"
+      path: "documentation/contracts/internal/notification-operational-email-v1.md"
+    - id: "customer-subscription-management-api-v1"
+      path: "documentation/contracts/internal/customer-subscription-management-api-v1.yaml"
+
+excludedContracts:
+  reason: "DEFERRED_FUTURE contracts are retained for traceability and excluded from active MVP generation context."
+  entries:
+    - id: "tresorpay-authorization-request-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+    - id: "tresorpay-authorization-decision-webhook-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+
+excludedHistoricalDocuments:
+  source: "documentation/DOCUMENTATION_CLASSIFICATION.yaml#masterPrompt.excludedHistoricalDocuments"
+  expectedCount: 38
+  loadPolicy: "NEVER_LOAD_IN_ACTIVE_MASTER_PROMPT"
+  paths:
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_9_RECONCILIATION_TFJ.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_12_OBSERVABILITY.md"
+    - "documentation/ai/payment/LOT_3_16_PAYMENT_COMMAND_CONTRACT_GAP_ANALYSIS.md"
+    - "documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_6_APPLICATION_LAYER.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_8_BANKING_ADAPTERS_FOUNDATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_2_PERSISTENCE_FOUNDATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_7_PAYMENT_ORCHESTRATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_IMPLEMENTATION_PLAN.md"
+    - "documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_14_PERFORMANCE_CONCURRENCY.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_13_END_TO_END_INTEGRATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_4_OUTBOX_FOUNDATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_5_IDEMPOTENCY_FOUNDATION.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_10_REST_API.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_3_AUDIT_FOUNDATION.md"
+    - "documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml"
+    - "documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md"
+    - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_11_SECURITY.md"
+    - "documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md"
+    - "documentation/ai/integration/ACCOUNTING_LOT_5_6_4.md"
+    - "documentation/ai/integration/PHASE5_LOT_5_8.md"
+    - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_1.md"
+    - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_5.md"
+    - "documentation/ai/integration/NOTIFICATION_LOT_5_7_1.md"
+    - "documentation/ai/integration/TRESORPAY_CONSOLIDATION_LOT_5_2.md"
+    - "documentation/ai/integration/ACCOUNTING_LOT_5_6_2.md"
+    - "documentation/ai/integration/NOTIFICATION_LOT_5_7_4.md"
+    - "documentation/ai/integration/AMPLITUDE_CUSTOMER_VERIFICATION_LOT_5_3.md"
+    - "documentation/ai/integration/NOTIFICATION_LOT_5_7_3.md"
+    - "documentation/ai/integration/PAYMENT_KAFKA_LOT_5_5.md"
+    - "documentation/ai/integration/ACCOUNTING_LOT_5_6_3.md"
+    - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_4.md"
+    - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_2.md"
+    - "documentation/ai/integration/ACCOUNTING_LOT_5_6_1.md"
+    - "documentation/ai/integration/INTEGRATION_FOUNDATION_LOT_5_1.md"
+    - "documentation/ai/integration/NOTIFICATION_LOT_5_7_2.md"
+    - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_3.md"
+
+generationSafety:
+  productionDataAllowed: false
+  secretsAllowed: false
+  autonomousMergeAllowed: false
+  autonomousPushAllowed: false
+  architectureDeviationAllowed: false
+  publicContractChangeRequiresApproval: true
+  schemaChangeRequiresApproval: true
+  securityChangeRequiresApproval: true
+  unresolvedDecisionPolicy: "STOP_AND_REQUEST_HUMAN_DECISION"
+  evidenceRule: "A gate may be declared passed only after its command has completed successfully."
+
+readinessEvidence:
+  baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
+  status: "PASSED"
+  recordedOn: "2026-08-26"
+  commands:
+    - command: "py scripts/verify_repository_hygiene.py"
+      status: "PASSED"
+    - command: "py scripts/verify_documentation_contract_references.py"
+      status: "PASSED"
+    - command: "py scripts/verify_documentation_classification.py"
+      status: "PASSED"
+    - command: "py scripts/verify_ai_documentation.py"
+      status: "PASSED"
+    - command: "py scripts/verify_feature_flag_registry.py"
+      status: "PASSED"
+    - command: "py scripts/verify_configuration_consolidation.py"
+      status: "PASSED"
+    - command: "py scripts/verify_configuration_final.py"
+      status: "PASSED"
+    - command: "py scripts/verify_documentation_final.py"
+      status: "PASSED"
+    - command: "npm run verify:contract-consolidation"
+      workingDirectory: "frontend"
+      status: "PASSED"
+    - command: "npm run verify:sixpay"
+      workingDirectory: "frontend"
+      status: "PASSED"
+    - command: "mvn verify"
+      workingDirectory: "backend"
+      status: "PASSED"
+    - command: "mvn -Pfull-tests clean verify"
+      workingDirectory: "backend"
+      status: "PASSED"
+
+masterPromptGeneration:
+  prerequisites:
+    - "Run py scripts/verify_master_prompt_input_manifest.py."
+    - "Confirm the manifest baselineCommit is an ancestor of the generation branch."
+    - "Confirm the worktree contains no unrelated changes."
+    - "Resolve any contract whose approval or generation policy blocks the requested work."
+  outputRule: >-
+    Generate the Master Prompt from this manifest and the selected sources only.
+    Do not copy historical phase/lot content into the active prompt.

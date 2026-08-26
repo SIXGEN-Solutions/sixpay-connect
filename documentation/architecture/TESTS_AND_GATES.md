@@ -40,6 +40,16 @@ Spring runtime-configuration hygiene only:
 py scripts/verify_spring_configuration_hygiene.py
 ```
 
+Master Prompt input selection:
+
+```bash
+py scripts/verify_master_prompt_input_manifest.py
+```
+
+This gate verifies active source selection, module classification, contract
+lifecycle selection, historical AI exclusions and the CustomerSubscription
+ownership boundary before Master Prompt generation.
+
 ## Specialized gates
 
 Specialized gates remain available for focused feedback and are not replaced by

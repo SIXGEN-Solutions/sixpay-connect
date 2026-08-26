@@ -197,6 +197,32 @@ Exactly 38 AI historical documents are retained for traceability. They are
 explicitly listed under masterPrompt.excludedHistoricalDocuments and must
 not be bulk-loaded into the active Master Prompt.
 
+## Active Master Prompt input
+
+The repository-root manifest
+[`MASTER_PROMPT_INPUT_MANIFEST.yaml`](../../MASTER_PROMPT_INPUT_MANIFEST.yaml)
+is the deterministic input selector for Master Prompt generation.
+
+It defines:
+
+- the minimal sources loaded for every generation;
+- domain and implementation sources loaded only when required;
+- active/reference contract capabilities resolved through the contract registry;
+- deferred contracts and historical AI documents that must remain excluded;
+- module boundaries and the Partner golden-module rule;
+- the distinction between local `CustomerSubscription` ownership and the
+  deferred external TRESOR PAY subscription lifecycle;
+- readiness evidence and generation safety constraints.
+
+Validate it before generating a Master Prompt:
+
+```bash
+py scripts/verify_master_prompt_input_manifest.py
+```
+
+The manifest selects sources but never replaces their source-of-truth authority,
+approval status or generation policy.
+
 ## Historical cleanup
 
 Historical AI working assets are reviewed conservatively. They are retained

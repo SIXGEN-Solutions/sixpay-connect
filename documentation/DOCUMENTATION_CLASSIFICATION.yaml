@@ -92,6 +92,7 @@ categories:
       - DOMAIN_GENERATION_BRIEF_TEMPLATE.md
 
 masterPrompt:
+  activeManifest: MASTER_PROMPT_INPUT_MANIFEST.yaml
   activeSelectionRule: >-
     Start from ENGINEERING_CONTEXT.md, canonical documentation and active
     contracts. Add AI assets only by domain and explicit need. Never bulk
