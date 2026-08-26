@@ -40,9 +40,9 @@ L’analyse couvre :
 - les artefacts IA Payment ;
 - l’état du module `backend/payment`.
 
-Les scénarios SFTP, Sandbox, applications mobiles et gestion locale de
-Subscription restent hors MVP. Ils ne peuvent pas introduire de contraintes
-dans le modèle Payment IA-1.
+Les scénarios SFTP, Sandbox, applications mobiles et souscription externe
+TRESOR PAY restent hors MVP. La capacité locale CustomerSubscription est
+portée par customer, mais reste hors du modèle et du flux Payment IA-1.
 
 ## 4. Modèle d’autorité
 
@@ -91,7 +91,9 @@ Chemin :
 Apports :
 
 - Payment devient le domaine pilote ;
-- TRESOR PAY reste maître des abonnements ;
+- TRESOR PAY reste maître de la souscription externe TRESOR PAY ;
+- CustomerSubscription est une capacité locale portée par customer, hors du
+  bounded context Payment ;
 - SIXPAY persiste la demande, contrôle, exécute, notifie et suit TFJ ;
 - `ObservedCustomer` est un modèle de lecture et d’audit ;
 - la génération de code reste interdite avant les Gates prévus.
@@ -178,7 +180,7 @@ Apports applicables :
 
 Éléments supplantés :
 
-- gestion locale de l’abonnement ;
+- gestion locale de la souscription dans le flux Payment IA-1 ;
 - génération locale d’une clé ;
 - réservation comme résultat final.
 
@@ -198,7 +200,7 @@ Apports :
 
 Éléments supplantés :
 
-- Subscription Domain local dans le flux ;
+- CustomerSubscription local dans le flux Payment IA-1 ;
 - Customer local comme référentiel maître ;
 - SLA historiques non approuvés.
 
@@ -265,7 +267,8 @@ Chemins :
 Usage :
 
 - référence de style uniquement ;
-- aucune capacité Subscription MVP ;
+- aucune capacité de souscription externe TRESOR PAY dans le MVP ;
+- la capacité locale CustomerSubscription relève de customer, pas de Payment ;
 - aucune génération à partir de ces fichiers.
 
 #### `SRC-A3-04` — Contrat TRESOR PAY Payment Request
@@ -399,7 +402,8 @@ Restrictions :
 
 - délais historiques non contractuels ;
 - Celery interprété comme worker asynchrone fiable, pas choix technologique ;
-- vérification locale de Subscription supprimée ;
+- vérification locale de souscription dans Payment supprimée ; la capacité
+  CustomerSubscription reste hors du périmètre Payment ;
 - Customer local remplacé par vérifications fraîches et `ObservedCustomer`.
 
 #### `SRC-A7-01` — Module Payment existant

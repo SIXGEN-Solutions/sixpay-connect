@@ -74,7 +74,8 @@ SIXPAY.
 
 | Information ou opération | Système maître | Copie ou représentation SIXPAY | Module SIXPAY responsable | Règle d’autorité |
 | --- | --- | --- | --- | --- |
-| Abonnement | TRESOR PAY | Aucune copie autoritative ; référence externe seulement si nécessaire à la trace | Aucun module Subscription dans le flux MVP | SIXPAY ne crée, ne valide et ne modifie aucun abonnement |
+| Souscription externe TRESOR PAY (hors MVP) | TRESOR PAY | Aucune copie autoritative ; référence externe seulement si nécessaire à la trace | Aucun module de souscription externe dans le flux Payment MVP | SIXPAY ne crée, ne valide et ne modifie pas la souscription TRESOR PAY |
+| CustomerSubscription local | SIXPAY / customer | Ressource locale conforme au contrat Customer Subscription | customer, hors du bounded context Payment | Payment ne possède ni ne commande ce cycle de vie |
 | Ordre de paiement demandé | TRESOR PAY | Snapshot immuable du message reçu | Integration pour la réception ; Payment pour l’enregistrement métier | TRESOR PAY définit l’intention ; SIXPAY définit son résultat de traitement |
 | Client bancaire | Amplitude | Snapshot de vérification et projection ObservedCustomer | Customer | Toute donnée courante doit être relue depuis Amplitude |
 | Compte bancaire | Amplitude | Référence protégée, résultat de contrôle et snapshot | Customer | SIXPAY ne modifie ni ne tient le compte |
@@ -123,7 +124,7 @@ Sources : `PAY-SRC-011` à `PAY-SRC-019`, `PAY-SRC-020` à `PAY-SRC-036`,
 ```text
 ┌──────────────────────┐
 │     TRESOR PAY       │
-│ Abonnement           │
+│ Souscription externe │
 │ Ordre de paiement    │
 │ Quittance            │
 └──────────┬───────────┘
@@ -449,10 +450,16 @@ Reporting ne doit pas :
 
 ## 13. Modules explicitement sans responsabilité Payment MVP
 
-### Subscription
+### Souscription externe TRESOR PAY (hors MVP)
 
-Le module peut exister dans le repository, mais il n’est ni appelé, ni
-consulté, ni alimenté par le parcours Payment MVP.
+La souscription externe TRESOR PAY peut être référencée pour la traçabilité,
+mais elle n’est ni appelée, ni consultée, ni alimentée par le parcours
+Payment MVP.
+
+La capacité locale CustomerSubscription est portée par customer et exposée
+par documentation/contracts/internal/customer-subscription-management-api-v1.yaml.
+Elle est hors du bounded context Payment : Payment ne la possède pas et ne
+dépend pas de son cycle de vie.
 
 ### Merchant
 
@@ -537,7 +544,9 @@ Ces noms seront confirmés lors des étapes modèle, événements et Contract Pa
 9. Les décisions de retry métier restent dans Payment/Accounting.
 10. Les événements ne contiennent ni token, ni clé de souscription, ni numéro
     de compte complet.
-11. Subscription ne figure dans aucune dépendance du parcours Payment MVP.
+11. La souscription externe TRESOR PAY ne figure dans aucune dépendance du
+parcours Payment MVP ; CustomerSubscription est une capacité customer hors du
+bounded context Payment.
 12. Reporting et Notification ne peuvent pas commander une transition
     financière.
 
@@ -597,12 +606,12 @@ Amplitude
 ```text
 Payment       -X→ Amplitude HTTP direct
 Payment       -X→ TRESOR PAY HTTP direct
-Customer      -X→ Subscription
+Payment       -X→ CustomerSubscription lifecycle
 Accounting    -X→ tables Payment
 Reporting     -X→ commande de posting
 Notification  -X→ transition financière
 Integration   -X→ décision d’acceptation Payment
-Subscription  -X→ parcours Payment MVP
+Souscription TRESOR PAY -X→ parcours Payment MVP
 Merchant      -X→ modèle Payment MVP
 ```
 
@@ -615,7 +624,8 @@ action au propriétaire défini ici.
 
 ### 0P.5 — Modèle Payment
 
-Le modèle ne devra contenir ni entité Customer maître, ni Subscription, ni DTO
+Le modèle Payment ne devra contenir ni entité Customer maître, ni
+CustomerSubscription, ni entité de souscription externe TRESOR PAY, ni DTO
 externe, ni logique de livraison.
 
 ### 0P.8 — Événements
@@ -635,7 +645,9 @@ seront imposées par Payment, Customer et Accounting.
   formalisée.
 - [x] Les responsabilités des six modules demandés sont définies.
 - [x] Les responsabilités de TRESOR PAY et Amplitude sont explicites.
-- [x] Subscription est absent du parcours Payment MVP.
+- [x] La souscription externe TRESOR PAY est absente du parcours Payment MVP.
+- [x] CustomerSubscription est explicitement attribuée à customer et exclue
+  du modèle Payment.
 - [x] Merchant ne possède aucun modèle SIXPAY dans le MVP.
 - [x] ObservedCustomer est une projection possédée par Customer.
 - [x] Payment reste l’unique propriétaire du cycle de vie métier.
