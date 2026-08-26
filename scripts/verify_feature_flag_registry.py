@@ -27,6 +27,19 @@ FORBIDDEN_UNQUALIFIED = {
     "retention-enabled",
 }
 
+FORBIDDEN_SYNTHETIC_ACCESSOR_KEYS = {
+    "sixpay.notification.retry.is-enabled",
+    "sixpay.payment.callback.is-enabled",
+    "sixpay.payment.tresorpay.api-key-enabled",
+    "sixpay.payment.tresorpay.mtls-required",
+    "sixpay.payment.tresorpay.oauth2-required",
+    "sixpay.payment.tresorpay.signature-enabled",
+    "sixpay.security.authentication.enabled",
+    "sixpay.security.authentication.hybrid-enabled",
+    "sixpay.security.authentication.local-enabled",
+    "sixpay.security.authentication.oidc-enabled",
+}
+
 SPECIAL_EXPECTED_OWNERS = {
     "spring.flyway.enabled": "BOOTSTRAP_RUNTIME",
     "sixpay.integration.kafka.enabled": "INTEGRATION_SHARED",
@@ -71,11 +84,22 @@ def registry_entries():
             re.MULTILINE,
         )
 
+        sources_block = re.search(
+            r"^    sources:\n((?:      - \"[^\"]+\"\n)*)",
+            block,
+            re.MULTILINE,
+        )
+
         entries.append({
             "id": id_match.group(1).strip(),
             "key": field("key"),
             "owner": field("owner"),
             "category": field("category"),
+            "sources": re.findall(
+                r'^      - "([^"]+)"$',
+                sources_block.group(1) if sources_block else "",
+                re.MULTILINE,
+            ),
         })
 
     return entries
@@ -87,7 +111,12 @@ def main():
         fail(["FEATURE_FLAG_REGISTRY.yaml is missing"])
 
     entries = registry_entries()
+    ids = [entry["id"] for entry in entries]
     keys = [entry["key"] for entry in entries if entry["key"]]
+
+    for identifier in sorted(set(ids)):
+        if ids.count(identifier) > 1:
+            errors.append(f"duplicate registry id: {identifier}")
 
     for key in sorted(set(keys)):
         if keys.count(key) > 1:
@@ -106,6 +135,17 @@ def main():
             errors.append(
                 f"unqualified parser artifact is forbidden: {key}"
             )
+
+        if key in FORBIDDEN_SYNTHETIC_ACCESSOR_KEYS:
+            errors.append(
+                f"synthetic Java accessor is not a runtime flag: {key}"
+            )
+
+        for source in entry["sources"]:
+            if not (ROOT / source).is_file():
+                errors.append(
+                    f"{entry['id']}: source does not exist: {source}"
+                )
 
         for module in BUSINESS:
             prefix = f"sixpay.{module}."

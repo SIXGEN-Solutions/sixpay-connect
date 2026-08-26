@@ -34,6 +34,12 @@ Repository hygiene only:
 py scripts/verify_repository_hygiene.py
 ```
 
+Spring runtime-configuration hygiene only:
+
+```bash
+py scripts/verify_spring_configuration_hygiene.py
+```
+
 ## Specialized gates
 
 Specialized gates remain available for focused feedback and are not replaced by
@@ -48,6 +54,7 @@ verify:full-stack-conformance
 verify:integration-contract-backed
 verify:angular-environments
 verify_repository_hygiene.py
+verify_spring_configuration_hygiene.py
 architecture tests
 contract tests
 Testcontainers integration tests

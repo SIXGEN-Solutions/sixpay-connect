@@ -1,0 +1,24 @@
+sixpay:
+  payment:
+    tresorpay:
+      enabled: ${TRESORPAY_ENABLED:true}
+      security:
+        api-key-enabled: ${TRESORPAY_API_KEY_ENABLED:false}
+        api-key-header: ${TRESORPAY_API_KEY_HEADER:X-API-Key}
+        api-key-value: ${TRESORPAY_API_KEY_VALUE:}
+        audience: ${TRESORPAY_JWT_AUDIENCE:sixpay-payment-api}
+        partner-claim: ${TRESORPAY_PARTNER_CLAIM:client_id}
+        required-scope: ${TRESORPAY_REQUIRED_SCOPE:payment.initiate}
+      anti-replay:
+        enabled: ${TRESORPAY_ANTI_REPLAY_ENABLED:true}
+        allowed-clock-skew: ${TRESORPAY_ALLOWED_CLOCK_SKEW:5m}
+        nonce-ttl: ${TRESORPAY_NONCE_TTL:10m}
+      rate-limit:
+        enabled: ${TRESORPAY_RATE_LIMIT_ENABLED:true}
+        requests-per-minute: ${TRESORPAY_REQUESTS_PER_MINUTE:120}
+      callback:
+        signature-enabled: ${TRESORPAY_CALLBACK_SIGNATURE_ENABLED:true}
+        algorithm: ${TRESORPAY_CALLBACK_SIGNATURE_ALGORITHM:RS256}
+        delivery-expiration: ${TRESORPAY_CALLBACK_DELIVERY_EXPIRATION:24h}
+      allowed-callback-hosts:
+        - ${TRESORPAY_CALLBACK_HOST:tresorpay.cm}

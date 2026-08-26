@@ -1,9 +1,0 @@
-sixpay:
-  customer:
-    observation:
-      resilience:
-        max-attempts: 3
-        initial-backoff: 10ms
-        max-backoff: 250ms
-        multiplier: 2
-        jitter: 0.20

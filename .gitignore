@@ -58,6 +58,8 @@ nbdist/
 *.swp
 *.swo
 *.bak
+*.diff
+*.patch
 *.tmp
 
 

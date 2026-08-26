@@ -1,4 +1,9 @@
 spring:
+  config:
+    import:
+      - classpath:application-notification-operational.yml
+      - classpath:config/payment/tresorpay-common.yml
+
   datasource:
     url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb?currentSchema=sixpay}
     username: ${SIXPAY_DB_USERNAME:sixpay_user}
@@ -12,7 +17,6 @@ spring:
       max-lifetime: 1200000
 
   jpa:
-    open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
@@ -22,7 +26,6 @@ spring:
         format_sql: true
         default_schema: sixpay
         jdbc:
-          time_zone: UTC
           lob:
             non_contextual_creation: true
 
@@ -59,11 +62,6 @@ management:
         include: health,info,flyway,mappings,metrics
 
 sixpay:
-  messaging:
-    transport: internal
-    outbox:
-      enabled: true
-
   notification:
     email:
       mode: logging
@@ -81,14 +79,6 @@ sixpay:
             locale: fr
             enabled: ${SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_ENABLED:true}
 
-      retry:
-        enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_RETRY_ENABLED:true}
-        max-attempts: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_ATTEMPTS:5}
-        initial-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_INITIAL_BACKOFF:30s}
-        max-backoff: ${SIXPAY_NOTIFICATION_OPERATIONAL_MAX_BACKOFF:15m}
-        batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_BATCH_SIZE:50}
-        poll-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_POLL_INTERVAL_MS:30000}
-
       operations:
         metrics-enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_ENABLED:true}
         metrics-refresh-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_REFRESH_MS:30000}
@@ -100,29 +90,9 @@ sixpay:
 
   payment:
     tresorpay:
-      enabled: ${TRESORPAY_ENABLED:true}
       security:
         mtls-required: ${TRESORPAY_MTLS_REQUIRED:false}
         oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:false}
-        api-key-enabled: ${TRESORPAY_API_KEY_ENABLED:false}
-        api-key-header: ${TRESORPAY_API_KEY_HEADER:X-API-Key}
-        api-key-value: ${TRESORPAY_API_KEY_VALUE:}
-        audience: ${TRESORPAY_JWT_AUDIENCE:sixpay-payment-api}
-        partner-claim: ${TRESORPAY_PARTNER_CLAIM:client_id}
-        required-scope: ${TRESORPAY_REQUIRED_SCOPE:payment.initiate}
-      anti-replay:
-        enabled: ${TRESORPAY_ANTI_REPLAY_ENABLED:true}
-        allowed-clock-skew: ${TRESORPAY_ALLOWED_CLOCK_SKEW:PT5M}
-        nonce-ttl: ${TRESORPAY_NONCE_TTL:PT10M}
-      rate-limit:
-        enabled: ${TRESORPAY_RATE_LIMIT_ENABLED:true}
-        requests-per-minute: ${TRESORPAY_REQUESTS_PER_MINUTE:120}
-      callback:
-        signature-enabled: ${TRESORPAY_CALLBACK_SIGNATURE_ENABLED:true}
-        algorithm: ${TRESORPAY_CALLBACK_SIGNATURE_ALGORITHM:RS256}
-        delivery-expiration: ${TRESORPAY_CALLBACK_DELIVERY_EXPIRATION:PT24H}
-      allowed-callback-hosts:
-        - ${TRESORPAY_CALLBACK_HOST:tresorpay.cm}
 
     callback:
       enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}
@@ -137,10 +107,6 @@ sixpay:
       signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
 
   customer:
-    verification:
-      banking:
-        enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:false}
-
     observation:
       persistence:
         enabled: true

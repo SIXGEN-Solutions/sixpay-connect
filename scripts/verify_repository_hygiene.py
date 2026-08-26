@@ -44,6 +44,7 @@ GENERATED_SEGMENTS = {
 FORBIDDEN_SUFFIXES = (
     ".bak",
     ".class",
+    ".diff",
     ".jar",
     ".log",
     ".orig",

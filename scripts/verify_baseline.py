@@ -11,6 +11,7 @@ ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 REQUIRED = [
     "frontend/package.json",
     "scripts/verify_repository_hygiene.py",
+    "scripts/verify_spring_configuration_hygiene.py",
     "scripts/verify_feature_flag_registry.py",
     "frontend/scripts/verify-angular-environment-policy.mjs",
     "frontend/scripts/verify-runtime-datasource-policy.mjs",
@@ -81,7 +82,7 @@ def main():
     python = sys.executable
 
     run(
-        "1/5 — Repository hygiene",
+        "1/6 — Repository hygiene",
         [
             python,
             "scripts/verify_repository_hygiene.py",
@@ -90,7 +91,16 @@ def main():
     )
 
     run(
-        "2/5 — Configuration / feature-flag registry",
+        "2/6 — Spring runtime-configuration hygiene",
+        [
+            python,
+            "scripts/verify_spring_configuration_hygiene.py",
+        ],
+        ROOT,
+    )
+
+    run(
+        "3/6 — Configuration / feature-flag registry",
         [
             python,
             "scripts/verify_feature_flag_registry.py",
@@ -99,7 +109,7 @@ def main():
     )
 
     run(
-        "3/5 — Backend canonical verification",
+        "4/6 — Backend canonical verification",
         [
             mvn,
             "verify",
@@ -108,7 +118,7 @@ def main():
     )
 
     run(
-        "4/5 — Frontend canonical verification",
+        "5/6 — Frontend canonical verification",
         [
             npm,
             "run",
@@ -118,7 +128,7 @@ def main():
     )
 
     run(
-        "5/5 — Fresh PostgreSQL canonical bootstrap",
+        "6/6 — Fresh PostgreSQL canonical bootstrap",
         [
             mvn,
             "-pl",
@@ -140,6 +150,7 @@ def main():
     print()
     print("Validated:")
     print(" - tracked repository hygiene and artifact classification")
+    print(" - Spring runtime-configuration ownership and deduplication")
     print(" - configuration/feature-flag registry")
     print(" - full backend unit/architecture reactor verify")
     print(" - frontend lint/tests/build and conformance gates")

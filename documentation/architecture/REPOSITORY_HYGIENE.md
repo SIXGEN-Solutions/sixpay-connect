@@ -39,6 +39,8 @@ The canonical tree must not contain:
   authoritative.
 
 Git history is the preservation mechanism for removed delivery evidence.
+Generated delivery patches must be stored outside the repository and must not
+be committed back into the tree they modify.
 
 ## Explicit duplicate exceptions
 

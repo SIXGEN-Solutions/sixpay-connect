@@ -29,6 +29,7 @@ BACKEND_TEST_FILES = [
 ]
 
 REQUIRED_VERIFIERS = [
+    "scripts/verify_spring_configuration_hygiene.py",
     "frontend/scripts/verify-angular-environment-policy.mjs",
     "frontend/scripts/verify-runtime-datasource-policy.mjs",
     "scripts/verify_feature_flag_registry.py",
@@ -103,6 +104,15 @@ def main():
         f"Documents: {len(REQUIRED_DOCS)}; "
         f"backend architecture tests: {len(BACKEND_TESTS)}; "
         f"standalone verifiers: {len(REQUIRED_VERIFIERS)}."
+    )
+
+    run(
+        "Spring runtime-configuration hygiene",
+        [
+            python,
+            "scripts/verify_spring_configuration_hygiene.py",
+        ],
+        ROOT,
     )
 
     run(

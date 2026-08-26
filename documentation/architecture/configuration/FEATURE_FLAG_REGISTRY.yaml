@@ -192,13 +192,10 @@ flags:
     sources:
       - "backend/bootstrap/src/main/resources/application-amplitude-sandbox.yml"
       - "backend/bootstrap/src/main/resources/application-customer-banking.yml"
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application.yml"
+      - "backend/customer/src/main/java/com/sixpay/customer/verification/infrastructure/banking/configuration/AmplitudeCustomerVerificationConfiguration.java"
     observedProfiles:
       - "amplitude-sandbox"
-      - "base"
       - "customer-banking"
-      - "standalone"
     observedValues:
       - "false"
       - "true"
@@ -392,7 +389,6 @@ flags:
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
       - "backend/bootstrap/src/main/resources/application-notification-operational.yml"
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
     observedProfiles:
       - "notification-operational"
       - "standalone"
@@ -421,23 +417,6 @@ flags:
       []
     detection:
       - "CONDITIONAL_ON_PROPERTY"
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
-  - id: SIXPAY_NOTIFICATION_RETRY_IS_ENABLED
-    key: "sixpay.notification.retry.is-enabled"
-    owner: NOTIFICATION
-    category: RESILIENCE
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/notification/src/main/java/com/sixpay/notification/configuration/NotificationRetryProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
       - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_PAYMENT_BANKING_AMPLITUDE_COMPENSATION_ENABLED
     key: "sixpay.payment.banking.amplitude.compensation.enabled"
@@ -535,23 +514,6 @@ flags:
       - "CONDITIONAL_ON_PROPERTY"
       - "CONFIGURATION_PROPERTIES_BOOLEAN"
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_CALLBACK_IS_ENABLED
-    key: "sixpay.payment.callback.is-enabled"
-    owner: PAYMENT
-    category: INTEGRATION_CALLBACK
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_PAYMENT_OUTBOX_CUSTOMER_PROJECTION_ENABLED
     key: "sixpay.payment.outbox.customer-projection.enabled"
     owner: PAYMENT
@@ -581,8 +543,7 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
     observedProfiles:
       - "standalone"
       - "tresorpay"
@@ -592,23 +553,6 @@ flags:
       - "TRESORPAY_ANTI_REPLAY_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_API_KEY_ENABLED
-    key: "sixpay.payment.tresorpay.api-key-enabled"
-    owner: PAYMENT
-    category: DOMAIN_OR_RUNTIME_FEATURE
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_PAYMENT_TRESORPAY_CALLBACK_SIGNATURE_ENABLED
     key: "sixpay.payment.tresorpay.callback.signature-enabled"
     owner: PAYMENT
@@ -617,8 +561,7 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
     observedProfiles:
       - "standalone"
       - "tresorpay"
@@ -636,11 +579,12 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationConfiguration.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
     observedProfiles:
       - "standalone"
+      - "tresorpay"
     observedValues:
       - "true"
     environmentVariables:
@@ -649,40 +593,6 @@ flags:
       - "CONDITIONAL_ON_PROPERTY"
       - "CONFIGURATION_PROPERTIES_BOOLEAN"
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_MTLS_REQUIRED
-    key: "sixpay.payment.tresorpay.mtls-required"
-    owner: PAYMENT
-    category: DOMAIN_OR_RUNTIME_FEATURE
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
-  - id: SIXPAY_PAYMENT_TRESORPAY_OAUTH2_REQUIRED
-    key: "sixpay.payment.tresorpay.oauth2-required"
-    owner: PAYMENT
-    category: DOMAIN_OR_RUNTIME_FEATURE
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_PAYMENT_TRESORPAY_RATE_LIMIT_ENABLED
     key: "sixpay.payment.tresorpay.rate-limit.enabled"
     owner: PAYMENT
@@ -691,8 +601,7 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
     observedProfiles:
       - "standalone"
       - "tresorpay"
@@ -710,8 +619,7 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
     observedProfiles:
       - "standalone"
       - "tresorpay"
@@ -761,23 +669,6 @@ flags:
       - "TRESORPAY_OAUTH2_REQUIRED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_SIGNATURE_ENABLED
-    key: "sixpay.payment.tresorpay.signature-enabled"
-    owner: PAYMENT
-    category: DOMAIN_OR_RUNTIME_FEATURE
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_SECURITY_AUTHENTICATION_MODE
     key: "sixpay.security.authentication-mode"
     owner: SECURITY
@@ -795,57 +686,6 @@ flags:
       []
     detection:
       - "CONDITIONAL_ON_PROPERTY"
-  - id: SIXPAY_SECURITY_AUTHENTICATION_ENABLED
-    key: "sixpay.security.authentication.enabled"
-    owner: SECURITY
-    category: AUTHENTICATION_OR_SECURITY
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/security/src/main/java/com/sixpay/security/configuration/AuthenticationCapabilitiesProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
-  - id: SIXPAY_SECURITY_AUTHENTICATION_HYBRID_ENABLED
-    key: "sixpay.security.authentication.hybrid-enabled"
-    owner: SECURITY
-    category: AUTHENTICATION_OR_SECURITY
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/security/src/main/java/com/sixpay/security/configuration/AuthenticationCapabilitiesProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
-  - id: SIXPAY_SECURITY_AUTHENTICATION_LOCAL_ENABLED
-    key: "sixpay.security.authentication.local-enabled"
-    owner: SECURITY
-    category: AUTHENTICATION_OR_SECURITY
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/security/src/main/java/com/sixpay/security/configuration/AuthenticationCapabilitiesProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_SECURITY_AUTHENTICATION_LOCAL_ENABLED
     key: "sixpay.security.authentication.local.enabled"
     owner: SECURITY
@@ -876,23 +716,6 @@ flags:
     detection:
       - "CONDITIONAL_ON_PROPERTY"
       - "YAML_TOGGLE"
-  - id: SIXPAY_SECURITY_AUTHENTICATION_OIDC_ENABLED
-    key: "sixpay.security.authentication.oidc-enabled"
-    owner: SECURITY
-    category: AUTHENTICATION_OR_SECURITY
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/security/src/main/java/com/sixpay/security/configuration/AuthenticationCapabilitiesProperties.java"
-    observedProfiles:
-      []
-    observedValues:
-      []
-    environmentVariables:
-      []
-    detection:
-      - "CONFIGURATION_PROPERTIES_BOOLEAN"
   - id: SIXPAY_SECURITY_AUTHENTICATION_OIDC_ENABLED
     key: "sixpay.security.authentication.oidc.enabled"
     owner: SECURITY
@@ -948,7 +771,6 @@ flags:
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-oidc.yml"
       - "backend/bootstrap/src/main/resources/application-secured.yml"
     observedProfiles:
       - "oidc"

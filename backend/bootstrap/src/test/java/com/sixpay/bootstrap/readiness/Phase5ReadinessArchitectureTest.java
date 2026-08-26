@@ -47,7 +47,7 @@ class Phase5ReadinessArchitectureTest {
         String source = Files.readString(
                 Path.of(
                         "src/main/resources/"
-                                + "application-standalone.yml"
+                                + "application.yml"
                 )
         );
 

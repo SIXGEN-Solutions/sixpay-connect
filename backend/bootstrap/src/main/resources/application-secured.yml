@@ -1,10 +1,7 @@
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SIXPAY_IDP_ISSUER_URI}
-          jwk-set-uri: ${SIXPAY_IDP_JWK_SET_URI}
+  config:
+    import:
+      - classpath:config/security/oidc-common.yml
 
 sixpay:
   security:
@@ -14,9 +11,3 @@ sixpay:
         enabled: false
       oidc:
         enabled: true
-        registration-id: sixpay
-
-  messaging:
-    transport: internal
-    outbox:
-      enabled: true

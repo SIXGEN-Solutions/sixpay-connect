@@ -3,31 +3,18 @@
 # DA-4 owns browser/provider OIDC composition.
 # DA-8 owns final active-session arbitration.
 
+spring:
+  config:
+    activate:
+      on-profile: hybrid-auth
+    import:
+      - classpath:config/security/local-auth-common.yml
+      - classpath:config/security/oidc-common.yml
+
 sixpay:
   security:
     authentication:
       local:
         enabled: true
-        maximum-failed-attempts: ${SIXPAY_LOCAL_MAX_FAILED_ATTEMPTS:5}
-        lock-duration: ${SIXPAY_LOCAL_LOCK_DURATION:15m}
-        bcrypt-strength: ${SIXPAY_LOCAL_BCRYPT_STRENGTH:12}
       oidc:
         enabled: true
-        registration-id: sixpay
-
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SIXPAY_IDP_ISSUER_URI}
-          jwk-set-uri: ${SIXPAY_IDP_JWK_SET_URI}
-
-server:
-  servlet:
-    session:
-      timeout: ${SIXPAY_LOCAL_SESSION_TIMEOUT:30m}
-      cookie:
-        http-only: true
-        secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}
-        same-site: strict

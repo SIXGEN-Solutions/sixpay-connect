@@ -194,18 +194,42 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                         )
                 );
 
+        String localRuntime =
+                Files.readString(
+                        BOOTSTRAP_RESOURCES.resolve(
+                                "config/security/local-auth-common.yml"
+                        )
+                );
+
+        String oidcRuntime =
+                Files.readString(
+                        BOOTSTRAP_RESOURCES.resolve(
+                                "config/security/oidc-common.yml"
+                        )
+                );
+
         assertTrue(
-                hybrid.contains("spring:")
-                        && hybrid.contains("security:")
-                        && hybrid.contains("oauth2:")
-                        && hybrid.contains("resourceserver:"),
+                hybrid.contains(
+                        "classpath:config/security/oidc-common.yml"
+                )
+                        && oidcRuntime.contains("spring:")
+                        && oidcRuntime.contains("security:")
+                        && oidcRuntime.contains("oauth2:")
+                        && oidcRuntime.contains("resourceserver:"),
                 "OAuth2 runtime assembly must remain in Bootstrap profile"
         );
 
         assertTrue(
-                hybrid.contains("server:")
-                        && hybrid.contains("servlet:")
-                        && hybrid.contains("session:"),
+                hybrid.contains(
+                        "classpath:config/security/local-auth-common.yml"
+                ),
+                "Hybrid profile must import the canonical local runtime"
+        );
+
+        assertTrue(
+                localRuntime.contains("server:")
+                        && localRuntime.contains("servlet:")
+                        && localRuntime.contains("session:"),
                 "HTTP session runtime assembly must remain in Bootstrap"
         );
     }

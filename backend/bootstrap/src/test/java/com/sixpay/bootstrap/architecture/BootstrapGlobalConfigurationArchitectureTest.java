@@ -35,7 +35,6 @@ class BootstrapGlobalConfigurationArchitectureTest {
             ALLOWED_BASE_SIXPAY_PREFIXES =
             Set.of(
                     "sixpay.messaging.",
-                    "sixpay.customer.verification.banking.",
                     "sixpay.security.local.password."
             );
 
@@ -136,10 +135,11 @@ class BootstrapGlobalConfigurationArchitectureTest {
         assertTrue(
                 violations.isEmpty(),
                 () -> "New domain-owned configuration "
-                        + "was added to base application.yml: "
-                        + violations
-                        + ". FS-2.5.1 freezes the current "
-                        + "transition debt until FS-2.5.2."
+                                + "was added to base application.yml: "
+                                + violations
+                                + ". Domain runtime values belong in "
+                                + "an explicit Bootstrap profile or "
+                                + "reusable configuration fragment."
         );
     }
 

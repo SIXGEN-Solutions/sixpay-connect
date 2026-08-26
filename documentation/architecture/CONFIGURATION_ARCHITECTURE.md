@@ -56,6 +56,50 @@ sixpay.administration.* -> Administration
 
 A module must not consume another domain's configuration namespace directly.
 
+## Physical runtime configuration layout
+
+`backend/bootstrap` is the sole physical owner of runtime
+`application*.properties`, `application*.yaml` and `application*.yml` files.
+This prevents classpath-order-dependent configuration when the modular
+monolith assembles its business-module JARs.
+
+The canonical layout is:
+
+```text
+backend/bootstrap/src/main/resources/
+├── application.yml                 # global runtime baseline
+├── application-<profile>.yml       # profile activation/composition
+└── config/
+    ├── payment/                    # reusable Payment runtime fragments
+    └── security/                   # reusable Security runtime fragments
+```
+
+Business modules own their `@ConfigurationProperties` classes, validation and
+semantic defaults. They do not package runtime `application*` files under
+`src/main/resources`.
+
+Module-local `src/test/resources/application-test.yml` files are retained as
+test fixtures. They configure isolated test application contexts and are not
+runtime competitors.
+
+Shared values used by more than one profile must be declared once under
+`bootstrap/config/` and imported explicitly. A repeated property is permitted
+only when its value intentionally changes profile semantics, for example Local
+versus OIDC activation.
+
+Current reusable composition fragments are:
+
+| Fragment | Purpose | Consumers |
+|---|---|---|
+| `config/payment/tresorpay-common.yml` | Shared TRESOR PAY protocol/security settings | `standalone`, `tresorpay` |
+| `config/security/local-auth-common.yml` | Local-authentication limits and HTTP session assembly | `local-auth`, `hybrid-auth` |
+| `config/security/oidc-common.yml` | Resource-server JWT and OIDC registration assembly | `hybrid-auth`, `secured`; `oidc` aliases `secured` |
+
+`application-payment-banking.yml` owns the common OAuth2 client and SSL bundle
+required by the Amplitude Payment sandbox profile. Capability-specific
+reservation, posting, compensation and status properties remain in their
+dedicated files.
+
 ## Authentication
 
 Bootstrap owns OAuth2/session runtime assembly.
@@ -154,3 +198,9 @@ no duplicate competing defaults
 
 Permanent enforcement is implemented through the FS-2.5 architecture tests and
 verification scripts.
+
+Static Spring configuration hygiene can be checked without Maven:
+
+```bash
+python scripts/verify_spring_configuration_hygiene.py
+```

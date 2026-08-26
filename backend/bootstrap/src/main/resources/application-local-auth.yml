@@ -1,19 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: local-auth
+    import:
+      - classpath:config/security/local-auth-common.yml
+
 sixpay:
   security:
     authentication:
       local:
         enabled: true
-        maximum-failed-attempts: ${SIXPAY_LOCAL_MAX_FAILED_ATTEMPTS:5}
-        lock-duration: ${SIXPAY_LOCAL_LOCK_DURATION:15m}
-        bcrypt-strength: ${SIXPAY_LOCAL_BCRYPT_STRENGTH:12}
       oidc:
         enabled: false
-
-server:
-  servlet:
-    session:
-      timeout: ${SIXPAY_LOCAL_SESSION_TIMEOUT:30m}
-      cookie:
-        http-only: true
-        secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}
-        same-site: strict
