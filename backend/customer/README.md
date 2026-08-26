@@ -1,53 +1,69 @@
-# Customer
+# Customer Module
 
-The Customer module contains two principal capability families:
+## Purpose
 
-```text
-verification
-observation
-```
+The Customer module owns customer enrollment and management, local customer
+subscription management, current customer verification and ObservedCustomer
+read projections.
 
-`partner` remains the golden module for structure and testing discipline.
+## Responsibilities
 
-## Phase 8 golden coverage
+- create, list, retrieve, update, suspend, reactivate and delete customers;
+- manage customer bank accounts and the default account;
+- create, activate, suspend, retrieve, list and close CustomerSubscription;
+- verify customer and account information through the owning banking adapter;
+- link and unlink ObservedCustomer records to local customers;
+- expose customer observation and customer audit queries.
 
-Current classification after the 8.2.9 Observation persistence/query
-remediation:
+The external TRESOR PAY subscription remains outside the Payment MVP. It must
+not be confused with the local CustomerSubscription capability owned by this
+module.
 
-```text
-Domain                                  COVERED
-Application                             COVERED
-API                                     COVERED
-Infrastructure — Banking                COVERED
-Infrastructure — Observation persistence/query
-                                        COVERED
-```
+## APIs
 
-Overall:
+Customer management:
 
-```text
-CUSTOMER = COVERED
-```
+    /internal/api/v1/customers
 
-The PostgreSQL evidence closing the Observation persistence/query gap is:
+Customer subscriptions:
 
-```text
-src/test/java/com/sixpay/customer/observation/infrastructure/persistence/
-    ObservedCustomerPersistenceQueryIT.java
-```
+    /internal/api/v1/subscriptions
 
-Detailed evidence is maintained in:
+Customer observation:
 
-```text
-CUSTOMER-TEST-COVERAGE.md
-```
+    /internal/api/v1/observed-customers
 
-## Customer-owned subscription management
+Customer audit:
 
-The Customer module owns the implemented subscription capability linking an
-enrolled Customer, a Partner and a verified bank account. Canonical contract:
-documentation/contracts/internal/customer-subscription-management-api-v1.yaml
+    /internal/api/v1/customer-audit-records
 
-Authorities: subscription.read, subscription.create, subscription.update,
-subscription.suspend and subscription.close. This capability is distinct from
-the deferred TRESOR PAY subscription authorization contracts.
+Active contracts include:
+
+- documentation/contracts/internal/customer-management-query-api-v1.yaml;
+- documentation/contracts/internal/customer-subscription-management-api-v1.yaml;
+- documentation/contracts/internal/observed-customer-query-api-v1.yaml.
+
+## Boundaries
+
+- Amplitude-specific verification clients and mappings remain in Customer.
+- ObservedCustomer is a read projection, not the canonical banking identity.
+- CustomerSubscription is local to Customer and is not a Payment aggregate.
+- Security owns authentication and authorization.
+- Cross-module collaboration uses application ports and published contracts.
+
+## Structure
+
+Customer follows the Partner reference layering. Its main capability areas
+are management, verification and observation, each with explicit api,
+application, domain, infrastructure and configuration boundaries.
+
+## Validation
+
+From backend:
+
+    mvn -pl customer -am test
+    mvn -pl customer -am clean verify
+    mvn -pl customer -am -Pfull-tests clean verify
+
+The full-tests command requires Docker when PostgreSQL integration tests are
+selected.

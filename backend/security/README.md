@@ -1,86 +1,49 @@
-# Security
+# Security Module
 
-The `security` module provides shared authentication, authorization and Spring
-Security infrastructure for SIXPAY CONNECT.
+## Purpose
 
-`partner` remains the golden reference for testing discipline.
+The Security module provides shared authentication, authorization, identity
+linking, password lifecycle and security-audit capabilities.
 
-## Dual Authentication — Local + OIDC
+## Capabilities
 
-Canonical closure evidence:
+- local authentication and session management;
+- OIDC session integration;
+- JWT resource-server authority conversion;
+- SIXPAY-owned roles and permissions;
+- local password change and reset support;
+- user-account and external-identity linking;
+- authentication and security operational audit.
 
-```text
-SECURITY-TEST-COVERAGE.md
-DA-10-PASSWORD-LIFECYCLE-CLOSURE.md
-DA-11-INTEGRATION-SECURITY-CLOSURE.md
-DA-12-DUAL-AUTHENTICATION-CLOSURE.md
-```
+The identity provider proves identity. SIXPAY owns authorization and maps the
+authenticated identity to SIXPAY roles and permissions.
 
-Final covered boundaries:
+## API
 
-```text
-LOCAL authentication        COVERED
-OIDC authentication         COVERED
-Hybrid coexistence          COVERED
-Canonical principal         COVERED
-SIXPAY authorization        COVERED
-Password lifecycle          COVERED
-Session security            COVERED
-CSRF                        COVERED
-Security audit              COVERED
-Integration/security tests  COVERED
-Documentation gate          COVERED
-```
+Authentication and session endpoints:
 
-## Final golden gate
+    /api/v1/auth/login
+    /api/v1/auth/me
+    /api/v1/auth/session/oidc
+    /api/v1/auth/logout
+    /api/v1/auth/password/change
 
-From `backend`:
+Administration exposes user-management HTTP boundaries while Security owns the
+underlying users, identities, credentials and authorization data.
 
-```bash
-mvn -pl security \
-  -Dtest=DualAuthenticationGoldenGateTest \
-  test
-```
+## Boundaries
 
-Critical regression gate:
+- Security does not own business-domain aggregates.
+- Administration calls Security application capabilities through ports.
+- Business modules consume the authenticated principal and authorities.
+- Secrets and provider credentials are supplied by runtime configuration.
 
-```bash
-mvn -pl security \
-  -Dtest=SixpaySecurityAutoConfigurationTest,AuditingAuthenticationEntryPointTest,DualAuthenticationGoldenGateTest \
-  test
-```
+## Validation
 
-Focused integration/security suite:
+From backend:
 
-```bash
-mvn -pl security \
-  -Pfull-tests \
-  -Dit.test=AuthenticationCapabilityMatrixIT,LocalAuthenticationSessionIT,OidcAuthenticationProviderIT,HybridAuthenticationIT,SecurityAuthorizationBoundaryIT \
-  verify
-```
+    mvn -pl security -am test
+    mvn -pl security -am clean verify
+    mvn -pl security -am -Pfull-tests clean verify
 
-Security module full gate:
-
-```bash
-mvn -pl security -Pfull-tests clean verify
-```
-
-Full backend gate:
-
-```bash
-mvn -Pfull-tests clean verify
-```
-
-Frontend:
-
-```bash
-cd ../frontend
-npm test
-npm run build
-```
-
-Final classification is valid only when all gates are green:
-
-```text
-DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED
-```
+The full-tests command requires Docker when integration tests are selected.

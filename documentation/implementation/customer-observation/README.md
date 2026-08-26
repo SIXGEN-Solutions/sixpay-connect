@@ -1,68 +1,31 @@
-# Customer Observation — Implementation Closure
+# Customer Observation
+
+## Purpose
+
+This directory contains implementation notes and operational evidence for the
+Customer observation capability. The current implementation is owned by the
+Customer module.
 
 ## Scope
 
-This package closes the Customer Observation implementation phase delivered
-through Lots 4.6, 4.7 and 4.8.
+Customer observation provides read-oriented ObservedCustomer projections,
+search, detail, payment history and controlled links between an observed
+banking identity and a local Customer.
 
-The capability now covers:
-
-- durable Payment-owned projection events;
-- stable Outbox serialization and dispatch;
-- Customer-owned observed-customer projection;
-- idempotent replay and stale-event handling;
-- internal read-only query API;
-- signed cursor pagination;
-- append-only audit;
-- bounded metrics and safe logs;
-- explicit retry classification and bounded backoff;
-- Actuator health indicators;
-- end-to-end acceptance and operational documentation.
+ObservedCustomer is not the canonical banking identity and does not replace
+fresh verification against the banking provider.
 
 ## Ownership boundaries
 
-Customer owns:
+- Customer owns observation queries, projections and links.
+- Customer verification owns provider interaction and mapping.
+- Payment consumes the defined customer verification result but does not own
+  the observation projection.
+- Security owns authentication and authorization.
 
-- the observed-customer projection;
-- the internal query language and views;
-- the query API;
-- projection/query audit records;
-- Customer persistence and query adapters;
-- Customer metrics, health and resilience components.
+## Validation
 
-Customer does not import Payment, Payment JPA entities, Amplitude adapters or
-banking response payloads.
+Run the Customer module tests from backend:
 
-Bootstrap remains the only inter-module composition point between Payment and
-Customer.
-
-## Acceptance command
-
-From `backend/`:
-
-```bash
-mvn -pl customer,bootstrap -am clean verify
-```
-
-Repository-level validation:
-
-```bash
-./scripts/validation/validate-customer-observation-phase.sh
-```
-
-On Windows PowerShell:
-
-```powershell
-.\scripts\validation\validate-customer-observation-phase.ps1
-```
-
-## Evidence
-
-The complete acceptance evidence is defined in:
-
-- `E2E-ACCEPTANCE-MATRIX.md`;
-- `PHASE-CLOSURE-CHECKLIST.md`;
-- Maven Surefire/Failsafe reports;
-- Flyway validation output;
-- OpenAPI lint output;
-- architecture-test reports.
+    mvn -pl customer -am test
+    mvn -pl customer -am clean verify

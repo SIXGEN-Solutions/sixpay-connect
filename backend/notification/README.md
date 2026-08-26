@@ -1,68 +1,39 @@
-# Notification
+# Notification Module
 
-The Notification module contains two functional areas:
+## Purpose
 
-```text
-Partner decision notification
-Operational notification
-```
+The Notification module owns delivery of Partner decision notifications and
+operational notifications.
 
-## Partner decision notification
+## Responsibilities
 
-The Partner-decision flow remains decoupled from the `partner` Java/Maven
-module and consumes integration events through Notification-owned adapters.
+Partner decision notifications:
 
-## Operational notification
+- consume integration events through Notification-owned adapters;
+- select the supported notification template;
+- deliver the notification without calling Partner directly.
 
-Operational Notification owns:
+Operational notifications:
 
-```text
-domain models and policies
-planning/orchestration
-delivery lifecycle and retry
-operations/replay/retention
-PostgreSQL persistence
-SMTP delivery
-metrics/scheduling composition
-```
+- model notification requests and delivery state;
+- schedule, retry, replay and retain operational deliveries;
+- persist delivery state and operational metrics;
+- deliver through configured SMTP or other supported channels.
 
-## Phase 8 golden coverage
+## Boundaries
 
-Current classification:
-
-```text
-Partner notification
-  Application     COVERED
-  Infrastructure  COVERED
-
-Operational notification
-  Domain          COVERED
-  Application     COVERED
-  API             N/A
-  Infrastructure  COVERED
-```
-
-The PostgreSQL evidence for the Operational persistence adapter is provided by:
-
-```text
-OperationalNotificationPersistenceIT
-```
-
-Detailed evidence is maintained in:
-
-```text
-NOTIFICATION-TEST-COVERAGE.md
-```
+- Notification does not decide Partner, Payment or Accounting business state.
+- Integration provides transport and event delivery support.
+- Notification owns templates, routing and delivery lifecycle.
+- Delivery is at least once and must be handled idempotently.
 
 ## Validation
 
-```bash
-mvn -pl notification \
-    -Dtest=OperationalNotificationPersistenceIT \
-    test
+From backend:
 
-mvn -pl notification -am test
+    mvn -pl notification -am test
+    mvn -pl notification -am clean verify
+    mvn -pl notification -am -Pfull-tests clean verify
 
-mvn -pl notification -am \
-    -Pfull-tests clean verify
-```
+The full-tests command requires Docker when PostgreSQL integration tests are
+selected.

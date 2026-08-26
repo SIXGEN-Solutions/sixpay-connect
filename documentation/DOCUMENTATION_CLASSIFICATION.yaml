@@ -1,0 +1,146 @@
+schemaVersion: "1.0"
+project: SIXPAY CONNECT
+owner: repository-baseline-consolidation-cleanup
+purpose: >-
+  Single classification index for documentation retention and active
+  Master Prompt context selection.
+
+categories:
+  CANONICAL:
+    definition: >-
+      Current-state architecture, approved requirements, active contracts
+      and stable navigation/gates. These may drive the Master Prompt,
+      subject to ENGINEERING_CONTEXT.md precedence.
+    roots:
+      - documentation/architecture/
+      - documentation/contracts/
+      - documentation/domains/
+    explicit:
+      - documentation/README.md
+      - documentation/requirements/README.md
+      - documentation/ai/README.md
+      - ENGINEERING_CONTEXT.md
+
+  REFERENCE_SOURCE:
+    definition: >-
+      External PDF/DOCX source material and supporting implementation
+      evidence. It is retained for traceability and must not override
+      canonical Markdown/YAML architecture or active contracts.
+    paths:
+      - documentation/requirements/cdc/*.pdf
+      - documentation/requirements/cdc/*.docx
+      - documentation/requirements/user-stories/*.docx
+      - documentation/architecture/tresorpay/*.pdf
+      - documentation/architecture/tresorpay/*.docx
+      - documentation/architecture/*.docx
+    aiRule: >-
+      Non-historical AI briefs and manifests are reference material and
+      are selected only when the active domain manifest or canonical
+      documentation requires them.
+
+  HISTORICAL:
+    definition: >-
+      Phase, lot, preflight, implementation-plan and gap-analysis assets
+      retained for traceability. They are not active Master Prompt input.
+    explicitDocuments:
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_9_RECONCILIATION_TFJ.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_12_OBSERVABILITY.md
+      - documentation/ai/payment/LOT_3_16_PAYMENT_COMMAND_CONTRACT_GAP_ANALYSIS.md
+      - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_6_APPLICATION_LAYER.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_8_BANKING_ADAPTERS_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_2_PERSISTENCE_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_7_PAYMENT_ORCHESTRATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_IMPLEMENTATION_PLAN.md
+      - documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_14_PERFORMANCE_CONCURRENCY.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_13_END_TO_END_INTEGRATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_4_OUTBOX_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_5_IDEMPOTENCY_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_10_REST_API.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_3_AUDIT_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
+      - documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_11_SECURITY.md
+      - documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_4.md
+      - documentation/ai/integration/PHASE5_LOT_5_8.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_1.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_5.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_1.md
+      - documentation/ai/integration/TRESORPAY_CONSOLIDATION_LOT_5_2.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_2.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_4.md
+      - documentation/ai/integration/AMPLITUDE_CUSTOMER_VERIFICATION_LOT_5_3.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_3.md
+      - documentation/ai/integration/PAYMENT_KAFKA_LOT_5_5.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_3.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_4.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_2.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_1.md
+      - documentation/ai/integration/INTEGRATION_FOUNDATION_LOT_5_1.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_2.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_3.md
+
+  TEMPLATE:
+    definition: >-
+      Reusable models for future AI generation campaigns; templates are
+      instructions, not project-state evidence.
+    explicitDocuments:
+      - AI_CONTEXT_MANIFEST_TEMPLATE.yaml
+      - AI_GENERATION_REPORT_TEMPLATE.md
+      - DOMAIN_GENERATION_BRIEF_TEMPLATE.md
+
+masterPrompt:
+  activeSelectionRule: >-
+    Start from ENGINEERING_CONTEXT.md, canonical documentation and active
+    contracts. Add AI assets only by domain and explicit need. Never bulk
+    load the HISTORICAL list below.
+  excludedHistoricalDocuments:
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_9_RECONCILIATION_TFJ.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_12_OBSERVABILITY.md
+      - documentation/ai/payment/LOT_3_16_PAYMENT_COMMAND_CONTRACT_GAP_ANALYSIS.md
+      - documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_6_APPLICATION_LAYER.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_8_BANKING_ADAPTERS_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_2_PERSISTENCE_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_7_PAYMENT_ORCHESTRATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_IMPLEMENTATION_PLAN.md
+      - documentation/ai/payment/GATE_IA_0P_PAYMENT_PREFLIGHT.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_14_PERFORMANCE_CONCURRENCY.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_13_END_TO_END_INTEGRATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_4_OUTBOX_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_5_IDEMPOTENCY_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_10_REST_API.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_3_AUDIT_FOUNDATION.md
+      - documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
+      - documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+      - documentation/ai/payment/PAYMENT_BACKEND_LOT_3_11_SECURITY.md
+      - documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_4.md
+      - documentation/ai/integration/PHASE5_LOT_5_8.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_1.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_5.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_1.md
+      - documentation/ai/integration/TRESORPAY_CONSOLIDATION_LOT_5_2.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_2.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_4.md
+      - documentation/ai/integration/AMPLITUDE_CUSTOMER_VERIFICATION_LOT_5_3.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_3.md
+      - documentation/ai/integration/PAYMENT_KAFKA_LOT_5_5.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_3.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_4.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_2.md
+      - documentation/ai/integration/ACCOUNTING_LOT_5_6_1.md
+      - documentation/ai/integration/INTEGRATION_FOUNDATION_LOT_5_1.md
+      - documentation/ai/integration/NOTIFICATION_LOT_5_7_2.md
+      - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_3.md
+
+precedence:
+  - implementation_branch
+  - documentation/architecture/
+  - documentation/requirements/
+  - documentation/contracts/
+      - documentation/ai/
+  - engineering_assets
+  - ENGINEERING_CONTEXT.md

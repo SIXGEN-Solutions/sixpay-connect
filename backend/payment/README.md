@@ -1,64 +1,54 @@
-# SIXPAY CONNECT — Payment Module
+# Payment Module
 
-The authoritative implementation branch is:
+## Purpose
 
-```text
-feat/repository-baseline-consolidation-cleanup
-```
+The Payment module owns payment business behavior, state transitions,
+idempotency, audit and Outbox boundaries.
 
-`partner` remains the golden reference for implementation and layered test
-structure.
+## Responsibilities
 
-## Phase 8 golden coverage
+- accept and validate payment commands;
+- coordinate customer, account and banking verification results;
+- enforce Payment invariants and legal state transitions;
+- persist payment state, audit records and Outbox records atomically;
+- expose Payment query and timeline capabilities;
+- reconcile external outcomes without blind financial replay.
 
-After the 8.2.9 Application/Infrastructure closure:
+## API
 
-```text
-Domain          COVERED
-Application     COVERED
-API             COVERED
-Infrastructure  COVERED
-```
+The module exposes the Payment query endpoints under:
 
-Overall:
+    /internal/api/v1/payments
 
-```text
-PAYMENT = COVERED
-```
+Payment audit timeline and audit export endpoints are owned by Reporting and
+are documented by the corresponding internal contracts.
 
-Application closure is completed with focused tests for:
+## Boundaries
 
-```text
-SecuredPaymentProjectionQueryService
-SearchPaymentProjectionsQuery
-```
+- Integration owns provider-neutral transport only.
+- Customer owns customer verification and CustomerSubscription.
+- Accounting owns accounting batches and reconciliation.
+- Reporting owns immutable Payment audit queries and exports.
+- Payment does not manage external TRESOR PAY subscriptions.
 
-Infrastructure required no additional generic IT because the branch already
-contains focused PostgreSQL/behavioral evidence for:
+## Structure
 
-```text
-projection/query + cursor
-idempotency + concurrency
-schema/migrations
-audit atomicity
-outbox atomicity
-end-to-end module integration
-```
+The module follows the Partner reference layering:
 
-Detailed evidence is maintained in:
-
-```text
-PAYMENT-TEST-COVERAGE.md
-```
+- api;
+- application;
+- domain;
+- infrastructure;
+- configuration;
+- events.
 
 ## Validation
 
-```bash
-mvn -pl payment \
-  -Dtest=SecuredPaymentProjectionQueryServiceTest,SearchPaymentProjectionsQueryTest \
-  test
+From backend:
 
-mvn -pl payment -am test
+    mvn -pl payment -am test
+    mvn -pl payment -am clean verify
+    mvn -pl payment -am -Pfull-tests clean verify
 
-mvn -pl payment -am -Pfull-tests clean verify
-```
+The full-tests command requires Docker when PostgreSQL integration tests are
+selected.

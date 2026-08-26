@@ -1,92 +1,44 @@
-# SIXPAY CONNECT — Reporting Module
+# Reporting Module
 
 ## Purpose
 
-The Reporting module owns immutable Payment audit querying and controlled audit export.
+The Reporting module owns immutable Payment audit queries and controlled audit
+exports. It is a read-oriented module and does not own Payment state
+transitions.
 
-The `partner` module remains the golden business-module reference for implementation
-structure and testing discipline.
+## APIs
 
-## Current responsibilities
+    GET /internal/api/v1/payments/{paymentId}/timeline
+    GET /internal/api/v1/payment-audit-records
+    GET /internal/api/v1/payment-audit-records/{auditId}
+    POST /internal/api/v1/payment-audit-exports
+    GET /internal/api/v1/payment-audit-exports/{exportId}
 
-```text
-Domain
-  audit classifications and policies
+Read operations require payment audit read authority. Export operations also
+require payment audit export authority.
 
-Application
-  Payment timeline query
-  Payment audit search/detail
-  controlled audit export
-  export idempotency/fingerprinting
+## Responsibilities
 
-API
-  GET /internal/api/v1/payments/{paymentId}/timeline
-  GET /internal/api/v1/payment-audit-records
-  GET /internal/api/v1/payment-audit-records/{auditId}
-  POST /internal/api/v1/payment-audit-exports
-  GET /internal/api/v1/payment-audit-exports/{exportId}
+- query masked Payment audit records and timelines;
+- apply authenticated cursors and access checks;
+- record audit-access activity;
+- create idempotent export jobs;
+- generate and store controlled export artifacts.
 
-Infrastructure
-  audit projection reads
-  authenticated cursors
-  audit-access recording
-  JDBC export job store
-  export generation
-  export artifact storage
-```
+## Boundaries
 
-## Security
-
-Read operations require:
-
-```text
-SCOPE_payment.audit.read
-```
-
-Audit export operations require both:
-
-```text
-SCOPE_payment.audit.read
-SCOPE_payment.audit.export
-```
-
-## Test strategy
-
-Reporting follows the golden layered model:
-
-```text
-Domain          -> focused policy/value tests where behavior exists
-Application     -> service tests without Spring
-API             -> @WebMvcTest + MockMvc + method security
-Infrastructure  -> focused adapters and PostgreSQL integration tests
-```
-
-Existing integration coverage includes persistence, masking and export idempotency.
-
-Phase 8.2.5 adds focused application-query and HTTP-boundary tests rather than
-duplicating the existing integration suite.
+- Payment remains the owner of Payment state and financial transitions.
+- Reporting never initiates posting, reversal or other financial commands.
+- Operational incident querying belongs to Administration.
+- Persistence adapters and export stores remain inside Reporting infrastructure.
 
 ## Validation
 
-From `backend/`:
+From backend:
 
-```bash
-mvn --batch-mode --no-transfer-progress -pl reporting -am test
-mvn --batch-mode --no-transfer-progress -pl reporting -am clean verify
-mvn --batch-mode --no-transfer-progress -pl reporting -am -Pfull-tests clean verify
-```
+    mvn -pl reporting -am test
+    mvn -pl reporting -am clean verify
+    mvn -pl reporting -am -Pfull-tests clean verify
 
-## Phase 8 status
-
-```text
-Domain          COVERED
-Application     COVERED
-API             COVERED
-Infrastructure  COVERED
-```
-
-Detailed evidence is maintained in:
-
-```text
-REPORTING-TEST-COVERAGE.md
-```
+The full-tests command requires Docker when PostgreSQL integration tests are
+selected.

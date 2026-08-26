@@ -180,6 +180,23 @@ Before generating or modifying code from AI documentation:
 6. use AI documents only as supporting context.
 ```
 
+
+## Formal documentation classification
+
+The repository-wide classification is maintained in
+documentation/DOCUMENTATION_CLASSIFICATION.yaml.
+
+| Classification | Meaning | Master Prompt policy |
+|---|---|---|
+| CANONICAL | Current architecture, approved requirements, active contracts and stable gates | Active source, subject to source-of-truth precedence |
+| REFERENCE_SOURCE | External PDF/DOCX material and supporting evidence | Retained for traceability; selected only when needed |
+| HISTORICAL | Phase, lot, preflight, plan and gap-analysis documents | Retained, but excluded from the active Master Prompt context |
+| TEMPLATE | Reusable models for future AI campaigns | Used as generation templates, never as project-state evidence |
+
+Exactly 38 AI historical documents are retained for traceability. They are
+explicitly listed under masterPrompt.excludedHistoricalDocuments and must
+not be bulk-loaded into the active Master Prompt.
+
 ## Historical cleanup
 
 Historical AI working assets are reviewed conservatively. They are retained

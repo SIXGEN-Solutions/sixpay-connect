@@ -43,6 +43,24 @@ The documentation map is a navigation layer, not a competing authority.
 | AI engineering assets | `documentation/ai/README.md` | AI navigation, precedence and historical-working-asset policy |
 | Stubs/reference fixtures | `documentation/stubs/` | Non-canonical reference/stub material |
 
+
+## Formal documentation classification
+
+The complete classification is maintained in
+documentation/DOCUMENTATION_CLASSIFICATION.yaml.
+
+The four repository categories are:
+
+- CANONICAL: current architecture, approved requirements, active contracts
+  and stable navigation/gates;
+- REFERENCE_SOURCE: external PDF/DOCX source material retained for
+  traceability;
+- HISTORICAL: phase and lot documents retained without active authority;
+- TEMPLATE: reusable models for future AI generation campaigns.
+
+The 38 historical AI documents are not deleted at this stage. They are
+explicitly excluded from the active Master Prompt by the classification index.
+
 ## Contractual special rule
 
 `documentation/contracts/CONTRACT_REGISTRY.yaml` is the canonical contractual
