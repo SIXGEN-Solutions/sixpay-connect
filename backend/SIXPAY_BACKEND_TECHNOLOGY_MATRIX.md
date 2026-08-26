@@ -17,7 +17,8 @@ Cette matrice constitue le contrat technologique officiel du backend SIXPAY CONN
 Elle s'applique :
 
 - aux modules de plateforme `common`, `shared-kernel`, `security` et `integration` ;
-- aux modules métier `customer`, `partner`, `subscription`, `payment`, `accounting`, `reporting`, `notification` et `administration` ;
+- aux modules métier `customer`, `partner`, `payment`, `accounting`, `reporting`, `notification` et `administration` ;
+- la capacité de souscription Customer-owned, implémentée dans `customer` ;
 - au module exécutable `bootstrap` ;
 - aux futurs tests transverses du backend.
 
