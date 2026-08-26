@@ -22,8 +22,10 @@ REQUIRED = [
     "documentation/runbooks/README.md",
     "documentation/ai/README.md",
     "MASTER_PROMPT_INPUT_MANIFEST.yaml",
+    "MASTER_ENGINEERING_PROMPT.md",
     "scripts/verify_documentation_baseline.py",
     "scripts/verify_master_prompt_input_manifest.py",
+    "scripts/verify_master_engineering_prompt.py",
     "scripts/verify_configuration_consolidation.py",
     "frontend/scripts/verify-contract-consolidation.mjs",
 ]
@@ -98,7 +100,7 @@ def main():
     print(f"Required canonical assets: {len(REQUIRED)}.")
 
     run(
-        "1/4 — Documentation non-regression baseline",
+        "1/5 — Documentation non-regression baseline",
         [
             python,
             "scripts/verify_documentation_baseline.py",
@@ -106,7 +108,7 @@ def main():
     )
 
     run(
-        "2/4 — Canonical contract registry / consolidation integrity",
+        "2/5 — Canonical contract registry / consolidation integrity",
         [
             npm,
             "run",
@@ -116,7 +118,7 @@ def main():
     )
 
     run(
-        "3/4 — Configuration documentation / gate alignment",
+        "3/5 — Configuration documentation / gate alignment",
         [
             python,
             "scripts/verify_configuration_consolidation.py",
@@ -124,10 +126,18 @@ def main():
     )
 
     run(
-        "4/4 — Active Master Prompt input manifest",
+        "4/5 — Active Master Prompt input manifest",
         [
             python,
             "scripts/verify_master_prompt_input_manifest.py",
+        ],
+    )
+
+    run(
+        "5/5 — Active Master Engineering Prompt",
+        [
+            python,
+            "scripts/verify_master_engineering_prompt.py",
         ],
     )
 
@@ -146,6 +156,7 @@ def main():
     print(" - contract registry remains structurally valid")
     print(" - configuration gates no longer depend on deleted phase documents")
     print(" - active Master Prompt sources and exclusions remain synchronized")
+    print(" - active Master Engineering Prompt remains complete and current")
     print()
     print("FS-2.7 — Documentation consolidation may be CLOSED.")
 

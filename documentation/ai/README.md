@@ -223,6 +223,23 @@ py scripts/verify_master_prompt_input_manifest.py
 The manifest selects sources but never replaces their source-of-truth authority,
 approval status or generation policy.
 
+## Active Master Engineering Prompt
+
+[`MASTER_ENGINEERING_PROMPT.md`](../../MASTER_ENGINEERING_PROMPT.md) is the
+single active instruction for repository-wide AI engineering work. It unifies
+backend, frontend, contracts, data, integrations, security, tests,
+documentation, CI/CD and infrastructure under the active manifest.
+
+The former `V0` and `V1` prompts are superseded artifacts. They remain in the
+repository for traceability but must not be loaded or combined as active
+instructions.
+
+Validate the active prompt with:
+
+```bash
+py scripts/verify_master_engineering_prompt.py
+```
+
 ## Historical cleanup
 
 Historical AI working assets are reviewed conservatively. They are retained

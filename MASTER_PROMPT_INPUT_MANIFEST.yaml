@@ -47,6 +47,7 @@ contextSelection:
     - "backend/SIXPAY_BACKEND_ENGINEERING_GENERATION_CONTRACT.md"
     - "backend/partner/README.md"
     - "backend/partner/ARCHITECTURE.md"
+    - "MASTER_ENGINEERING_PROMPT.md"
   loadOnDemand:
     architecture:
       roots:
@@ -278,11 +279,22 @@ readinessEvidence:
       status: "PASSED"
 
 masterPromptGeneration:
+  activePrompt:
+    path: "MASTER_ENGINEERING_PROMPT.md"
+    version: "2.0.0"
+    status: "ACTIVE"
+    sourceCommit: "6e42ae7e1d601a760ecb8d185f35c568a8eab77f"
+    validationCommand: "py scripts/verify_master_engineering_prompt.py"
+  supersededPromptArtifacts:
+    loadPolicy: "NEVER_LOAD_AS_ACTIVE_INSTRUCTION"
+    paths:
+      - "MASTER_ENGINEERING_PROMPT_V0.md"
+      - "MASTER_ENGINEERING_PROMPT_V1.md"
   prerequisites:
     - "Run py scripts/verify_master_prompt_input_manifest.py."
     - "Confirm the manifest baselineCommit is an ancestor of the generation branch."
     - "Confirm the worktree contains no unrelated changes."
     - "Resolve any contract whose approval or generation policy blocks the requested work."
   outputRule: >-
-    Generate the Master Prompt from this manifest and the selected sources only.
-    Do not copy historical phase/lot content into the active prompt.
+    Use the active prompt with this manifest and the selected sources only.
+    Do not copy historical phase/lot content into active generation context.

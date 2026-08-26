@@ -44,11 +44,12 @@ Master Prompt input selection:
 
 ```bash
 py scripts/verify_master_prompt_input_manifest.py
+py scripts/verify_master_engineering_prompt.py
 ```
 
-This gate verifies active source selection, module classification, contract
-lifecycle selection, historical AI exclusions and the CustomerSubscription
-ownership boundary before Master Prompt generation.
+These gates verify active source selection, module classification, contract
+lifecycle selection, historical AI exclusions, the CustomerSubscription
+ownership boundary and the canonical prompt before AI-assisted engineering.
 
 ## Specialized gates
 

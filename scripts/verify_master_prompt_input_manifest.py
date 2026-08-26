@@ -142,6 +142,9 @@ def main():
         'mvpIncluded: false',
         'paymentBoundary: "Payment neither owns nor manages the CustomerSubscription lifecycle."',
         'loadPolicy: "NEVER_LOAD_IN_ACTIVE_MASTER_PROMPT"',
+        'path: "MASTER_ENGINEERING_PROMPT.md"',
+        'version: "2.0.0"',
+        'loadPolicy: "NEVER_LOAD_AS_ACTIVE_INSTRUCTION"',
         'expectedCount: 38',
         'status: "PASSED"',
     ]
@@ -153,6 +156,8 @@ def main():
         fail("ENGINEERING_CONTEXT.md does not declare the authoritative branch")
     if "activeManifest: MASTER_PROMPT_INPUT_MANIFEST.yaml" not in classification:
         fail("documentation classification does not reference the active manifest")
+    if "activePrompt: MASTER_ENGINEERING_PROMPT.md" not in classification:
+        fail("documentation classification does not reference the active prompt")
 
     precedence = quoted_list(section(manifest, "precedence", 2))
     if precedence != EXPECTED_PRECEDENCE:
@@ -164,6 +169,17 @@ def main():
     for relative in always_load:
         if not (ROOT / relative).is_file():
             fail(f"always-load source does not exist: {relative}")
+    if "MASTER_ENGINEERING_PROMPT.md" not in always_load:
+        fail("the active Master Engineering Prompt is not in alwaysLoad")
+
+    superseded = quoted_list(
+        section(section(manifest, "masterPromptGeneration", 0), "paths", 4)
+    )
+    if superseded != [
+        "MASTER_ENGINEERING_PROMPT_V0.md",
+        "MASTER_ENGINEERING_PROMPT_V1.md",
+    ]:
+        fail("superseded prompt artifacts are not explicitly excluded")
 
     active_contracts = contract_entries(
         section(manifest, "activeContractCapabilities", 0)
