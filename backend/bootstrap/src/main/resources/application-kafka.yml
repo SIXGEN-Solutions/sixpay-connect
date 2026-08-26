@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: kafka
+    import:
+      - classpath:application-integration-kafka.yml
+
+sixpay:
+  integration:
+    kafka:
+      enabled: true

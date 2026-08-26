@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+mat-card {
+  height: 100%;
+  border-color: var(--sp-color-border);
+  border-radius: var(--sp-radius-lg);
+  background: var(--sp-color-surface-raised);
+  box-shadow: var(--sp-shadow-sm);
+}
+
+mat-card-content {
+  padding-top: var(--sp-space-4);
+}

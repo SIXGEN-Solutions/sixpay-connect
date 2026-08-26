@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: tresorpay
+    import:
+      - classpath:config/payment/tresorpay-common.yml
+
+sixpay:
+  payment:
+    tresorpay:
+      security:
+        mtls-required: ${TRESORPAY_MTLS_REQUIRED:true}
+        oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:true}

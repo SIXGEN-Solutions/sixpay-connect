@@ -1,0 +1,259 @@
+schemaVersion: "1.1"
+
+generation:
+  id: "gate-ia-0r-payment-pilot-customer-support-v1.1.0-rc1"
+  strategyVersion: "1.0.0"
+  masterPrompt:
+    version: "2.0.0"
+    path: "MASTER_ENGINEERING_PROMPT.md"
+  autonomyLevel: "A"
+  status: "BLOCKING_DECISIONS_CLOSED_PENDING_PAYMENT_PREFLIGHT"
+  codeGenerationAllowed: false
+
+repository:
+  url: "https://github.com/SIXGEN-Solutions/sixpay-connect.git"
+  branch: "feat/customer-foundation-contract"
+  baseCommit: "ceb11c732f0c74927238863c37860256c8b200c4"
+
+scope:
+  pilotDomain: "payment"
+  supportDomains:
+    - "customer"
+    - "integration"
+    - "notification"
+  deferredDomains:
+    - "subscription"
+  mvp:
+    subscriptionSystemOfRecord: "TRESOR_PAY"
+    localSubscriptionManagement: false
+    paymentProcessingInSixpay: true
+    observedCustomerReadModel: true
+    immediatePaymentNotification: true
+    endOfDayConfirmation: true
+  future:
+    subscriptionValidationFromSixpay: true
+    digitalKycIdentityDocumentAndSelfie: true
+
+authority:
+  subscription:
+    owner: "TRESOR_PAY"
+    sixpayRole: "NONE_FOR_MVP"
+  bankingCustomer:
+    owner: "AMPLITUDE_CORE_BANKING"
+    sixpayRole: "VERIFY_AND_OBSERVE"
+  payment:
+    owner: "SIXPAY"
+    upstreamRequester: "TRESOR_PAY"
+  observedCustomer:
+    owner: "SIXPAY"
+    modelType: "CQRS_READ_MODEL"
+    authoritativeKycSource: false
+
+businessFlow:
+  subscription:
+    inMvp: false
+    steps:
+      - "Customer creates subscription in TRESOR PAY"
+      - "TRESOR PAY keeps pending bank-validation status"
+      - "Bank agent validates KYC in TRESOR PAY interface"
+      - "TRESOR PAY owns the subscription lifecycle"
+  payment:
+    inMvp: true
+    steps:
+      - "Receive and persist TRESOR PAY payment request"
+      - "Create or update ObservedCustomer"
+      - "Verify banking identity and account through Amplitude"
+      - "Reject or execute debit and CUT credit"
+      - "Notify immediate result to TRESOR PAY"
+      - "Await or reconcile end-of-day processing"
+      - "Notify final Treasury integration confirmation"
+
+model:
+  write:
+    aggregateRoots:
+      - name: "Payment"
+        pilot: true
+    forbiddenAggregateRootsForMvp:
+      - "Subscription"
+      - "Customer"
+  read:
+    projections:
+      - name: "ObservedCustomer"
+        createdOn: "FIRST_PAYMENT_REQUEST"
+        includesFailedPayments: true
+        purposes:
+          - "OPERATIONS"
+          - "AUDIT"
+          - "TRACEABILITY"
+
+payment:
+  candidateStates:
+    - "RECEIVED"
+    - "AUTHORIZATION_CHECKING"
+    - "BANKING_CHECKING"
+    - "REJECTED"
+    - "APPROVED"
+    - "POSTING"
+    - "ACCOUNTING_OUTCOME_UNKNOWN"
+    - "REVERSAL_REQUIRED"
+    - "DEBITED"
+    - "CUT_CREDITED"
+    - "NOTIFIED"
+    - "PENDING_END_OF_DAY_CONFIRMATION"
+    - "TREASURY_INTEGRATED"
+    - "FAILED"
+    - "REVERSAL_PENDING"
+    - "REVERSED"
+  invariants:
+    - "Persist request before external processing"
+    - "Enforce idempotency on TRESOR PAY request and Idempotency-Key"
+    - "Never post before favorable banking checks"
+    - "Keep failed requests visible and auditable"
+    - "Separate immediate notification from TFJ confirmation"
+    - "Make TFJ confirmation idempotent and correlated"
+    - "Deliver notifications through an outbox"
+
+observedCustomer:
+  classification: "READ_MODEL"
+  identityCandidate: "NIU_PLUS_INSTITUTION"
+  storesSecrets: false
+  storesRawAccountNumber: false
+  sourceEvents:
+    - "PaymentRequestReceived"
+    - "BankingVerificationCompleted"
+    - "PaymentRejected"
+    - "PaymentPosted"
+    - "TreasuryIntegrationConfirmed"
+    - "PaymentFailed"
+    - "PaymentReversed"
+
+contracts:
+  registry:
+    path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+    schemaVersion: "1.0"
+    classificationAuthority: true
+  existing:
+    - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+      lifecycleStatus: "REFERENCE_MVP"
+      approvalStatus: "PENDING_APPROVAL"
+      generationPolicy: "REFERENCE_ONLY"
+      usage: "BANKING_VERIFICATION"
+      limitations:
+        - "NO_FUNDS_AVAILABILITY_CONTROL"
+        - "NO_PAYMENT_POSTING"
+        - "NO_CUT_CREDIT"
+        - "NO_END_OF_DAY_CONFIRMATION"
+      configurable:
+        - "timeout"
+        - "retry"
+        - "sla"
+    - path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+      lifecycleStatus: "DEFERRED_FUTURE"
+      approvalStatus: "DRAFT"
+      generationPolicy: "EXCLUDED"
+      mvpIncluded: false
+    - path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+      lifecycleStatus: "DEFERRED_FUTURE"
+      approvalStatus: "DRAFT"
+      generationPolicy: "EXCLUDED"
+      mvpIncluded: false
+  paymentPack:
+    status: "TO_BE_PRODUCED"
+    required:
+      - "TRESOR_PAY_TO_SIXPAY_PAYMENT_API"
+      - "AMPLITUDE_ACCOUNT_CONTROL_AND_POSTING"
+      - "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
+      - "END_OF_DAY_TREASURY_CONFIRMATION"
+      - "RFC_7807_ERRORS"
+      - "IDEMPOTENCY_AND_REPLAY_RULES"
+
+integration:
+  amplitude:
+    purpose:
+      - "SEARCH_BANK_CUSTOMER"
+      - "VERIFY_NIU"
+      - "GET_BANKING_IDENTITY"
+      - "SEARCH_ACCOUNTS"
+      - "VERIFY_ACCOUNT_OWNERSHIP"
+      - "VERIFY_ACCOUNT_STATUS"
+      - "DETECT_BLOCK_OR_OPPOSITION"
+      - "GET_REQUIRED_KYC_FIELDS"
+    timeout: "CONFIGURABLE"
+    retry: "CONFIGURABLE"
+    sla: "CONFIGURABLE"
+  tresorPay:
+    authentication:
+      token: true
+      subscriptionKey: true
+      mvpPolicy: "TOKEN_PLUS_SUBSCRIPTION_KEY"
+      oauth2: "DEFERRED_NON_BLOCKING"
+      mutualTls: "DEFERRED_NON_BLOCKING"
+
+reliability:
+  inbound:
+    idempotencyRequired: true
+    correlationRequired: true
+    persistBeforeProcessing: true
+  outbound:
+    outboxRequired: true
+    signedNotifications: true
+    retry: true
+    backoff: true
+    dlq: true
+    replayProtection: true
+
+security:
+  sensitiveData:
+    - "NIU"
+    - "PHONE"
+    - "EMAIL"
+    - "RIB_OR_IBAN"
+    - "BANK_CUSTOMER_NUMBER"
+  requirements:
+    - "Mask account identifiers in read models and logs"
+    - "Never persist authorization tokens or subscription keys"
+    - "Encrypt sensitive data at rest and in transit"
+    - "Audit detailed reads, searches and exports"
+    - "Apply least privilege"
+
+gates:
+  current: "IA-0R"
+  currentResult: "BLOCKING_ARCHITECTURE_DECISIONS_CLOSED"
+  decisionRegister:
+    path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    status: "CLOSED_FOR_PAYMENT_PREFLIGHT"
+  next:
+    - "IA-0P_PAYMENT_PREFLIGHT"
+    - "IA-0.5P_PAYMENT_CONTRACT_PACK"
+  blockers:
+    - "Payment Contract Pack not approved"
+    - "Formal gate sign-offs not obtained"
+  closedArchitectureDecisions:
+    - "ObservedCustomer identity and cross-institution reconciliation"
+    - "Access matrix and retention baseline"
+    - "TRESOR PAY MVP authentication"
+    - "Timeout, retry and backoff baseline"
+    - "Partial posting and reversal policy"
+    - "TFJ confirmation and matching protocol"
+
+validation:
+  requiredBeforeCodeGeneration:
+    - "Approve Payment API and notification contracts"
+    - "Approve Payment state machine and invariants"
+    - "Confirm contract compliance with IA_0R_BLOCKING_DECISIONS.yaml"
+    - "Obtain formal gate sign-offs"
+
+outputs:
+  updatedDocuments:
+    - "documentation/ai/customer/GATE_IA_0_CUSTOMER_PREFLIGHT.md"
+    - "documentation/ai/customer/CUSTOMER_DOMAIN_GENERATION_BRIEF.md"
+    - "documentation/ai/customer/AI_CONTEXT_MANIFEST.yaml"
+    - "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+    - "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.md"
+
+approvals:
+  productOwner: "PENDING"
+  architect: "PENDING"
+  security: "PENDING"
+  integration: "PENDING"
+  operations: "PENDING"

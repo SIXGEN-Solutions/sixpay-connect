@@ -1,0 +1,857 @@
+version: 1
+baseline: feat/repository-baseline-consolidation-cleanup
+canonical: true
+purpose: feature-flag-classification-and-ownership
+runtimeConsumed: false
+flags:
+  - id: AUTHENTICATION_LOCAL_ENABLED
+    key: "authentication.local.enabled"
+    owner: FRONTEND_AUTH_RUNTIME
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "frontend/src/environments/environment.development.ts"
+      - "frontend/src/environments/environment.integration.ts"
+      - "frontend/src/environments/environment.netlify.ts"
+      - "frontend/src/environments/environment.ts"
+    observedProfiles:
+      - "development"
+      - "integration"
+      - "netlify"
+      - "production"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "ANGULAR_ENVIRONMENT"
+  - id: AUTHENTICATION_OIDC_ENABLED
+    key: "authentication.oidc.enabled"
+    owner: FRONTEND_AUTH_RUNTIME
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "frontend/src/environments/environment.development.ts"
+      - "frontend/src/environments/environment.integration.ts"
+      - "frontend/src/environments/environment.netlify.ts"
+      - "frontend/src/environments/environment.ts"
+    observedProfiles:
+      - "development"
+      - "integration"
+      - "netlify"
+      - "production"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "ANGULAR_ENVIRONMENT"
+  - id: AUTHENTICATION_STANDALONE
+    key: "authentication.standalone"
+    owner: FRONTEND_AUTH_RUNTIME
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "frontend/src/environments/environment.development.ts"
+      - "frontend/src/environments/environment.integration.ts"
+      - "frontend/src/environments/environment.netlify.ts"
+      - "frontend/src/environments/environment.ts"
+    observedProfiles:
+      - "development"
+      - "integration"
+      - "netlify"
+      - "production"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "ANGULAR_ENVIRONMENT"
+  - id: BACKEND_MODE
+    key: "backend.mode"
+    owner: FRONTEND_RUNTIME
+    category: FRONTEND_DATASOURCE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "frontend/src/environments/environment.development.ts"
+      - "frontend/src/environments/environment.integration.ts"
+      - "frontend/src/environments/environment.netlify.ts"
+      - "frontend/src/environments/environment.ts"
+    observedProfiles:
+      - "development"
+      - "integration"
+      - "netlify"
+      - "production"
+    observedValues:
+      - "api"
+      - "mock"
+    environmentVariables:
+      []
+    detection:
+      - "ANGULAR_ENVIRONMENT"
+  - id: SIXPAY_ACCOUNTING_API_ENABLED
+    key: "sixpay.accounting.api.enabled"
+    owner: ACCOUNTING
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-accounting-api-sandbox.yml"
+      - "backend/bootstrap/src/main/resources/application-accounting-api.yml"
+    observedProfiles:
+      - "accounting-api"
+      - "accounting-api-sandbox"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "SIXPAY_ACCOUNTING_API_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_CUSTOMER_OBSERVATION_AUDIT_PERSISTENCE_ENABLED
+    key: "sixpay.customer.observation.audit.persistence.enabled"
+    owner: CUSTOMER
+    category: AUDIT
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/configuration/ObservedCustomerAuditPersistenceConfiguration.java"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_CUSTOMER_OBSERVATION_PERSISTENCE_ENABLED
+    key: "sixpay.customer.observation.persistence.enabled"
+    owner: CUSTOMER
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/configuration/ObservedCustomerPersistenceConfiguration.java"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/configuration/ObservedCustomerPersistenceProperties.java"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_CUSTOMER_OBSERVATION_QUERY_ENABLED
+    key: "sixpay.customer.observation.query.enabled"
+    owner: CUSTOMER
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/api/configuration/ObservedCustomerQueryApiConfiguration.java"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/configuration/ObservedCustomerQueryConfiguration.java"
+      - "backend/customer/src/main/java/com/sixpay/customer/observation/configuration/ObservedCustomerQueryProperties.java"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_CUSTOMER_VERIFICATION_BANKING_ENABLED
+    key: "sixpay.customer.verification.banking.enabled"
+    owner: CUSTOMER
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-amplitude-sandbox.yml"
+      - "backend/bootstrap/src/main/resources/application-customer-banking.yml"
+      - "backend/customer/src/main/java/com/sixpay/customer/verification/infrastructure/banking/configuration/AmplitudeCustomerVerificationConfiguration.java"
+    observedProfiles:
+      - "amplitude-sandbox"
+      - "customer-banking"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "CUSTOMER_VERIFICATION_BANKING_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_E2E_CUSTOMER_ENABLED
+    key: "sixpay.e2e.customer.enabled"
+    owner: TEST_E2E_RUNTIME
+    category: TEST_FIXTURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/java/com/sixpay/bootstrap/integration/e2e/CustomerE2eConfiguration.java"
+    observedProfiles:
+      []
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+  - id: SIXPAY_INTEGRATION_KAFKA_ENABLED
+    key: "sixpay.integration.kafka.enabled"
+    owner: INTEGRATION_SHARED
+    category: TRANSPORT
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-integration-kafka.yml"
+      - "backend/bootstrap/src/main/resources/application-kafka.yml"
+    observedProfiles:
+      - "integration-kafka"
+      - "kafka"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "SIXPAY_KAFKA_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_MESSAGING_OUTBOX_ENABLED
+    key: "sixpay.messaging.outbox.enabled"
+    owner: BOOTSTRAP_RUNTIME
+    category: TRANSPORT
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-secured.yml"
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application.yml"
+      - "backend/integration/src/main/java/com/sixpay/integration/configuration/OutboxRelayAutoConfiguration.java"
+    observedProfiles:
+      - "base"
+      - "secured"
+      - "standalone"
+    observedValues:
+      - "matchIfMissing=true"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_MESSAGING_TRANSPORT
+    key: "sixpay.messaging.transport"
+    owner: BOOTSTRAP_RUNTIME
+    category: TRANSPORT
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-secured.yml"
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application.yml"
+      - "backend/integration/src/main/java/com/sixpay/integration/configuration/InternalMessagingAutoConfiguration.java"
+      - "backend/integration/src/main/java/com/sixpay/integration/configuration/KafkaMessagingAutoConfiguration.java"
+      - "backend/notification/src/main/java/com/sixpay/notification/configuration/NotificationMessagingAutoConfiguration.java"
+    observedProfiles:
+      - "base"
+      - "secured"
+      - "standalone"
+    observedValues:
+      - "internal"
+      - "kafka"
+      - "matchIfMissing=true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_EMAIL_MODE
+    key: "sixpay.notification.email.mode"
+    owner: NOTIFICATION
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/notification/src/main/java/com/sixpay/notification/configuration/NotificationEmailAutoConfiguration.java"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "logging"
+      - "matchIfMissing=true"
+      - "smtp"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_ADMIN_RECIPIENTS_ENABLED
+    key: "sixpay.notification.operational.email.admin-recipients.enabled"
+    owner: NOTIFICATION
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_ENABLED
+    key: "sixpay.notification.operational.email.enabled"
+    owner: NOTIFICATION
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "false"
+    environmentVariables:
+      - "SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_OPERATIONAL_OPERATIONS_METRICS_ENABLED
+    key: "sixpay.notification.operational.operations.metrics-enabled"
+    owner: NOTIFICATION
+    category: OPERATIONS
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_OPERATIONAL_OPERATIONS_RETENTION_ENABLED
+    key: "sixpay.notification.operational.operations.retention-enabled"
+    owner: NOTIFICATION
+    category: OPERATIONS
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "SIXPAY_NOTIFICATION_OPERATIONAL_RETENTION_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_OPERATIONAL_RETRY_ENABLED
+    key: "sixpay.notification.operational.retry.enabled"
+    owner: NOTIFICATION
+    category: RESILIENCE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-notification-operational.yml"
+    observedProfiles:
+      - "notification-operational"
+      - "standalone"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "SIXPAY_NOTIFICATION_OPERATIONAL_RETRY_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_NOTIFICATION_RETRY_ENABLED
+    key: "sixpay.notification.retry.enabled"
+    owner: NOTIFICATION
+    category: RESILIENCE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/notification/src/main/java/com/sixpay/notification/configuration/NotificationRetryAutoConfiguration.java"
+      - "backend/notification/src/main/java/com/sixpay/notification/configuration/NotificationRetryProperties.java"
+    observedProfiles:
+      []
+    observedValues:
+      - "matchIfMissing=true"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+  - id: SIXPAY_PAYMENT_BANKING_AMPLITUDE_COMPENSATION_ENABLED
+    key: "sixpay.payment.banking.amplitude.compensation.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-payment-banking-compensation.yml"
+    observedProfiles:
+      - "payment-banking-compensation"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "AMPLITUDE_COMPENSATION_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_BANKING_AMPLITUDE_POSTING_ENABLED
+    key: "sixpay.payment.banking.amplitude.posting.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-payment-banking-posting.yml"
+    observedProfiles:
+      - "payment-banking-posting"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "AMPLITUDE_POSTING_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_BANKING_AMPLITUDE_RESERVATION_ENABLED
+    key: "sixpay.payment.banking.amplitude.reservation.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-payment-banking-reservation.yml"
+    observedProfiles:
+      - "payment-banking-reservation"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "AMPLITUDE_FUNDS_RESERVATION_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_BANKING_AMPLITUDE_STATUS_ENABLED
+    key: "sixpay.payment.banking.amplitude.status.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-payment-banking-status.yml"
+    observedProfiles:
+      - "payment-banking-status"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "AMPLITUDE_POSTING_STATUS_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_CALLBACK_ENABLED
+    key: "sixpay.payment.callback.enabled"
+    owner: PAYMENT
+    category: INTEGRATION_CALLBACK
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackDetachedJwsSigner.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackProperties.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackSchedulingConfiguration.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackSigningConfiguration.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentStatusCallbackHttpAdapter.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/relay/PaymentCallbackOutboxCoordinator.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/relay/PaymentCallbackOutboxRelay.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/relay/PaymentCallbackPlanFactory.java"
+    observedProfiles:
+      - "standalone"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "SIXPAY_PAYMENT_CALLBACK_ENABLED"
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_OUTBOX_CUSTOMER_PROJECTION_ENABLED
+    key: "sixpay.payment.outbox.customer-projection.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/java/com/sixpay/bootstrap/integration/customer/outbox/CustomerProjectionOutboxProperties.java"
+      - "backend/bootstrap/src/main/java/com/sixpay/bootstrap/integration/customer/outbox/PaymentObservedCustomerOutboxConfiguration.java"
+      - "backend/bootstrap/src/main/resources/application-customer-projection-outbox.yml"
+    observedProfiles:
+      - "customer-projection-outbox"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_ANTI_REPLAY_ENABLED
+    key: "sixpay.payment.tresorpay.anti-replay.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_ANTI_REPLAY_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_CALLBACK_SIGNATURE_ENABLED
+    key: "sixpay.payment.tresorpay.callback.signature-enabled"
+    owner: PAYMENT
+    category: INTEGRATION_CALLBACK
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_CALLBACK_SIGNATURE_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_ENABLED
+    key: "sixpay.payment.tresorpay.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationConfiguration.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_ENABLED"
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_RATE_LIMIT_ENABLED
+    key: "sixpay.payment.tresorpay.rate-limit.enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_RATE_LIMIT_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_API_KEY_ENABLED
+    key: "sixpay.payment.tresorpay.security.api-key-enabled"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "false"
+    environmentVariables:
+      - "TRESORPAY_API_KEY_ENABLED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_MTLS_REQUIRED
+    key: "sixpay.payment.tresorpay.security.mtls-required"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_MTLS_REQUIRED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_OAUTH2_REQUIRED
+    key: "sixpay.payment.tresorpay.security.oauth2-required"
+    owner: PAYMENT
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+    observedProfiles:
+      - "standalone"
+      - "tresorpay"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      - "TRESORPAY_OAUTH2_REQUIRED"
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_SECURITY_AUTHENTICATION_MODE
+    key: "sixpay.security.authentication-mode"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/security/src/main/java/com/sixpay/security/config/OidcSecurityConfiguration.java"
+    observedProfiles:
+      []
+    observedValues:
+      - "OIDC"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+  - id: SIXPAY_SECURITY_AUTHENTICATION_LOCAL_ENABLED
+    key: "sixpay.security.authentication.local.enabled"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-hybrid-auth.yml"
+      - "backend/bootstrap/src/main/resources/application-integration.yml"
+      - "backend/bootstrap/src/main/resources/application-local-auth.yml"
+      - "backend/bootstrap/src/main/resources/application-oidc.yml"
+      - "backend/bootstrap/src/main/resources/application-secured.yml"
+      - "backend/security/src/main/java/com/sixpay/security/api/controller/LocalAuthenticationController.java"
+      - "backend/security/src/main/java/com/sixpay/security/api/controller/LocalPasswordController.java"
+      - "backend/security/src/main/java/com/sixpay/security/configuration/LocalAuthenticationConfiguration.java"
+    observedProfiles:
+      - "hybrid-auth"
+      - "integration"
+      - "local-auth"
+      - "oidc"
+      - "secured"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_SECURITY_AUTHENTICATION_OIDC_ENABLED
+    key: "sixpay.security.authentication.oidc.enabled"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-hybrid-auth.yml"
+      - "backend/bootstrap/src/main/resources/application-integration.yml"
+      - "backend/bootstrap/src/main/resources/application-local-auth.yml"
+      - "backend/bootstrap/src/main/resources/application-oidc.yml"
+      - "backend/bootstrap/src/main/resources/application-secured.yml"
+      - "backend/security/src/main/java/com/sixpay/security/configuration/SixpaySecurityAutoConfiguration.java"
+    observedProfiles:
+      - "hybrid-auth"
+      - "integration"
+      - "local-auth"
+      - "oidc"
+      - "secured"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_SECURITY_LOCAL_SEED_ENABLED
+    key: "sixpay.security.local.seed-enabled"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/java/com/sixpay/bootstrap/security/IntegrationSecurityUserSeeder.java"
+      - "backend/bootstrap/src/main/resources/application-integration.yml"
+    observedProfiles:
+      - "integration"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "CONDITIONAL_ON_PROPERTY"
+      - "YAML_TOGGLE"
+  - id: SIXPAY_SECURITY_MODE
+    key: "sixpay.security.mode"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-secured.yml"
+    observedProfiles:
+      - "oidc"
+      - "secured"
+    observedValues:
+      - "oauth2"
+    environmentVariables:
+      []
+    detection:
+      - "YAML_TOGGLE"
+  - id: SIXPAY_SECURITY_SEED_ENABLED
+    key: "sixpay.security.seed-enabled"
+    owner: SECURITY
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/security/src/main/java/com/sixpay/security/config/SixpaySecurityProperties.java"
+    observedProfiles:
+      []
+    observedValues:
+      []
+    environmentVariables:
+      []
+    detection:
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+  - id: SPRING_FLYWAY_ENABLED
+    key: "spring.flyway.enabled"
+    owner: BOOTSTRAP_RUNTIME
+    category: INFRASTRUCTURE_RUNTIME
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application.yml"
+    observedProfiles:
+      - "base"
+    observedValues:
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "YAML_TOGGLE"
+  - id: SPRINGDOC_API_DOCS_ENABLED
+    key: "springdoc.api-docs.enabled"
+    owner: BOOTSTRAP_RUNTIME
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application.yml"
+    observedProfiles:
+      - "base"
+      - "standalone"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "YAML_TOGGLE"
+  - id: SPRINGDOC_SWAGGER_UI_ENABLED
+    key: "springdoc.swagger-ui.enabled"
+    owner: BOOTSTRAP_RUNTIME
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-standalone.yml"
+      - "backend/bootstrap/src/main/resources/application.yml"
+    observedProfiles:
+      - "base"
+      - "standalone"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "YAML_TOGGLE"

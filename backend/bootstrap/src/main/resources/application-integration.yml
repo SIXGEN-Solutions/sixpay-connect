@@ -1,0 +1,31 @@
+spring:
+  flyway:
+    locations:
+      - classpath:db/migration
+
+sixpay:
+  security:
+
+    authentication:
+      local:
+        enabled: true
+      oidc:
+        enabled: false
+
+    local:
+      seed-enabled: true
+      seed:
+        admin-password: ${SIXPAY_LOCAL_ADMIN_PASSWORD:admin-dev-2026}
+        manager-password: ${SIXPAY_LOCAL_MANAGER_PASSWORD:M@nager-dev-2027}
+        auditor-password: ${SIXPAY_LOCAL_AUDITOR_PASSWORD:@uditor-dev-2026}
+        partner-password: ${SIXPAY_LOCAL_PARTNER_PASSWORD:partner-dev-2026}
+        partner-subject: ${SIXPAY_LOCAL_PARTNER_SUBJECT:f88166d1-39df-4900-bb31-1700d25c3bfa}
+
+server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: false

@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.sp-header {
+  border-bottom: 1px solid var(--sp-color-border);
+}
+
+.sp-header__title {
+  margin-inline-start: var(--sp-space-3);
+  font-weight: 600;
+}
+
+.sp-header__spacer {
+  flex: 1;
+}
+
+.sp-header__logout {
+  margin-left: var(--sp-space-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.sp-header__subject {
+  font-size: var(--sp-font-size-sm);
+}

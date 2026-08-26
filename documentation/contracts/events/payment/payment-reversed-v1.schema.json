@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:event:payment.reversed.v1",
+  "title": "PaymentReversedV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentId",
+    "publicPaymentReference",
+    "reversalOutcome",
+    "reversedAt"
+  ],
+  "properties": {
+    "paymentId": {
+      "type": "string"
+    },
+    "publicPaymentReference": {
+      "type": "string"
+    },
+    "reversalOutcome": {
+      "type": "string"
+    },
+    "reversalReference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reasonCode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reversedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

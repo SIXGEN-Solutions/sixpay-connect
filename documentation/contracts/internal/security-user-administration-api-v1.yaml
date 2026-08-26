@@ -1,0 +1,355 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Internal Security User Administration API
+  version: 1.0.0
+  description: |
+    Canonical contract normalized from the existing Security User Administration implementation.
+    It documents the ADMIN-only boundary for user accounts, authorization assignments,
+    local authentication, linked OIDC identities and local password reset.
+    Authentication runtime endpoints remain outside this contract.
+  x-sixpay-contract:
+    registryId: security-user-administration-api-v1
+    gate: FS-2_REPOSITORY_BASELINE_CONSOLIDATION
+    phaseStep: FS-2.1.3
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: security
+    businessOwner: security
+    deliveryBoundary: administration
+    securityOwner: security
+    capability: SECURITY_USER_ADMINISTRATION
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: RESTRICTED
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+servers:
+  - url: https://sixpay-api.example
+security:
+  - bearerAuth: []
+tags:
+  - name: Security User Administration
+paths:
+  /internal/api/v1/administration/users:
+    get:
+      tags: [Security User Administration]
+      operationId: listSecurityUsers
+      summary: List SIXPAY security users
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      responses:
+        '200':
+          description: Security users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/SecurityUserSummary'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Security User Administration]
+      operationId: createSecurityUser
+      summary: Create a SIXPAY security user
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateSecurityUserRequest'}
+      responses:
+        '201':
+          description: Security user created
+          headers:
+            Location: {schema: {type: string, format: uri}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /internal/api/v1/administration/users/{userId}:
+    get:
+      tags: [Security User Administration]
+      operationId: getSecurityUser
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      responses:
+        '200':
+          description: Security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Security User Administration]
+      operationId: updateSecurityUser
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateSecurityUserRequest'}
+      responses:
+        '200':
+          description: Updated security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Security User Administration]
+      operationId: deleteSecurityUser
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      responses:
+        '204': {description: Security user deleted}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/enable:
+    post:
+      tags: [Security User Administration]
+      operationId: enableSecurityUser
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      responses:
+        '200':
+          description: Enabled security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/disable:
+    post:
+      tags: [Security User Administration]
+      operationId: disableSecurityUser
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      responses:
+        '200':
+          description: Disabled security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/authentication-methods/local:
+    put:
+      tags: [Security User Administration]
+      operationId: setLocalAuthenticationMethod
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SetAuthenticationMethodRequest'}
+      responses:
+        '200':
+          description: Updated security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/local-password-reset:
+    post:
+      tags: [Security User Administration]
+      operationId: resetLocalPassword
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ResetLocalPasswordRequest'}
+      responses:
+        '200':
+          description: Updated security user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/identities/oidc:
+    post:
+      tags: [Security User Administration]
+      operationId: linkOidcIdentity
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LinkOidcIdentityRequest'}
+      responses:
+        '200':
+          description: Security user with linked OIDC identity
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/identities/{identityId}:
+    delete:
+      tags: [Security User Administration]
+      operationId: unlinkOidcIdentity
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters:
+        - {$ref: '#/components/parameters/UserId'}
+        - {$ref: '#/components/parameters/IdentityId'}
+      responses:
+        '200':
+          description: Security user with identity unlinked
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    IdentityId:
+      name: identityId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    BadRequest: {description: Validation or request error}
+    Unauthorized: {description: Authentication required}
+    Forbidden: {description: ROLE_ADMIN is required}
+    NotFound: {description: Security user or identity not found}
+  schemas:
+    SecurityUserAccountStatus:
+      type: string
+      enum: [ACTIVE, DISABLED]
+    AuthenticationIdentityType:
+      type: string
+      enum: [LOCAL, OIDC]
+    SecurityAuditEventType:
+      type: string
+      enum: [LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET, ACCOUNT_LOCKED, OIDC_LOGIN_SUCCESS, OIDC_LOGIN_FAILURE, IDENTITY_LINKED, IDENTITY_UNLINKED, AUTH_METHOD_ENABLED, AUTH_METHOD_DISABLED, USER_CREATED, USER_UPDATED, USER_ENABLED, USER_DISABLED, USER_DELETED]
+    CreateSecurityUserRequest:
+      type: object
+      required: [username, roles, permissions, localAuthenticationEnabled]
+      properties:
+        username: {type: string, maxLength: 150}
+        email: {type: [string, 'null'], format: email, maxLength: 320}
+        roles:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 100}
+        permissions:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 150}
+        localAuthenticationEnabled: {type: boolean}
+        initialPassword: {type: [string, 'null'], minLength: 12, maxLength: 200}
+    UpdateSecurityUserRequest:
+      type: object
+      required: [username, roles, permissions]
+      properties:
+        username: {type: string, maxLength: 150}
+        email: {type: [string, 'null'], format: email, maxLength: 320}
+        roles:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 100}
+        permissions:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 150}
+    SetAuthenticationMethodRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: {type: boolean}
+    ResetLocalPasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword: {type: string, minLength: 12, maxLength: 200}
+    LinkOidcIdentityRequest:
+      type: object
+      required: [provider, providerSubject]
+      properties:
+        provider: {type: string, maxLength: 500}
+        providerSubject: {type: string, maxLength: 255}
+    SecurityUserSummary:
+      type: object
+      required: [id, username, status, localEnabled, oidcLinked]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        email: {type: [string, 'null']}
+        status: {$ref: '#/components/schemas/SecurityUserAccountStatus'}
+        localEnabled: {type: boolean}
+        oidcLinked: {type: boolean}
+        lastAuthenticationAt: {type: [string, 'null'], format: date-time}
+    SecurityIdentityView:
+      type: object
+      required: [id, identityType, status, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        identityType: {$ref: '#/components/schemas/AuthenticationIdentityType'}
+        provider: {type: [string, 'null']}
+        providerSubject: {type: [string, 'null']}
+        status: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    SecurityAuditView:
+      type: object
+      required: [eventType, occurredAt]
+      properties:
+        eventType: {$ref: '#/components/schemas/SecurityAuditEventType'}
+        actorSubject: {type: [string, 'null']}
+        provider: {type: [string, 'null']}
+        detail: {type: [string, 'null']}
+        occurredAt: {type: string, format: date-time}
+    SecurityUserDetail:
+      type: object
+      required: [id, username, status, localEnabled, oidcLinked, roles, permissions, identities, recentAuthenticationEvents]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        email: {type: [string, 'null']}
+        status: {$ref: '#/components/schemas/SecurityUserAccountStatus'}
+        localEnabled: {type: boolean}
+        oidcLinked: {type: boolean}
+        roles:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        permissions:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        identities:
+          type: array
+          items: {$ref: '#/components/schemas/SecurityIdentityView'}
+        recentAuthenticationEvents:
+          type: array
+          items: {$ref: '#/components/schemas/SecurityAuditView'}

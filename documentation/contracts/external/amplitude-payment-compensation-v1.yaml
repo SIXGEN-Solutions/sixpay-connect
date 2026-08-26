@@ -1,0 +1,49 @@
+contract: amplitude-payment-compensation
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Payment
+security:
+  oauth2:
+    grantType: client_credentials
+    scope:
+      - funds.release
+      - payment.reverse
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+headers:
+  required:
+    - Authorization
+    - X-Correlation-ID
+    - X-Request-ID
+    - Idempotency-Key
+operations:
+  release:
+    method: POST
+    path: /v1/payment/funds/releases
+    precondition: reservation exists and no debit has been confirmed
+    outcomes:
+      - RELEASED
+      - ALREADY_RELEASED
+      - REJECTED
+      - UNKNOWN
+  reversal:
+    method: POST
+    path: /v1/payment/reversals
+    precondition:
+      - confirmed financial effect
+      - explicit reversal authorization evidence
+    outcomes:
+      - REVERSED
+      - REJECTED
+      - NOT_ALLOWED
+      - UNKNOWN
+safety:
+  automaticRetry: forbidden
+  timeoutAfterEmission: UNKNOWN
+  http429Or5xx: UNKNOWN
+  replay:
+    onlyAfterLookup: true
+    sameIdempotencyKey: required

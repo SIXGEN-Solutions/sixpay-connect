@@ -1,0 +1,16 @@
+sixpay:
+  customer:
+    verification:
+      banking:
+        enabled: false
+
+    observation:
+      persistence:
+        enabled: false
+
+      audit:
+        persistence:
+          enabled: false
+
+      query:
+        enabled: false

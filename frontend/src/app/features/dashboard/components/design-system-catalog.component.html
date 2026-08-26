@@ -1,0 +1,122 @@
+<sp-toolbar
+  title="Design System minimal viable"
+  description="Catalogue des composants partagés nécessaires au Golden Frontend Partner."
+>
+  <sp-button icon="add">Créer un partenaire</sp-button>
+</sp-toolbar>
+
+<section class="catalog-section" aria-labelledby="foundations-title">
+  <h2 id="foundations-title">Fondations visuelles</h2>
+  <div class="catalog-grid catalog-grid--foundations">
+    <sp-card title="Couleurs" subtitle="États fonctionnels">
+      <div class="color-list">
+        <span class="color-swatch color-swatch--primary">Primaire</span>
+        <span class="color-swatch color-swatch--success">Succès</span>
+        <span class="color-swatch color-swatch--warning">Avertissement</span>
+        <span class="color-swatch color-swatch--error">Erreur</span>
+      </div>
+    </sp-card>
+
+    <sp-card title="Typographie" subtitle="Hiérarchie commune">
+      <h3>Titre de section</h3>
+      <p>Texte courant utilisé dans les interfaces SIXPAY CONNECT.</p>
+      <small>Information secondaire accessible.</small>
+    </sp-card>
+
+    <sp-card title="Espacements et surfaces" subtitle="Tokens partagés">
+      <div class="spacing-sample">
+        <span>4</span><span>8</span><span>12</span><span>16</span><span>24</span><span>32</span>
+      </div>
+    </sp-card>
+  </div>
+</section>
+
+<section class="catalog-section" aria-labelledby="components-title">
+  <h2 id="components-title">Composants prioritaires</h2>
+
+  <div class="catalog-grid">
+    <sp-card title="Actions" subtitle="Boutons et confirmation">
+      <div class="component-row">
+        <sp-button>Principal</sp-button>
+        <sp-button variant="secondary">Secondaire</sp-button>
+        <sp-button variant="danger">Suspendre</sp-button>
+        <sp-button [disabled]="true">Indisponible</sp-button>
+      </div>
+      <div spCardActions>
+        <sp-button variant="secondary" (buttonClick)="openConfirmation()">
+          Ouvrir la confirmation
+        </sp-button>
+      </div>
+    </sp-card>
+
+    <sp-card title="Chargement" subtitle="Retour système accessible">
+      <sp-loading label="Chargement des partenaires" />
+    </sp-card>
+  </div>
+
+  <div class="notification-list">
+    <sp-notification
+      status="info"
+      title="Information"
+      message="Le dossier Partner est en cours de traitement."
+    />
+    @if (showSuccess()) {
+      <sp-notification
+        status="success"
+        title="Opération réussie"
+        message="Le partenaire a été créé."
+        [dismissible]="true"
+        (dismissed)="showSuccess.set(false)"
+      />
+    }
+    <sp-notification
+      status="warning"
+      title="Attention"
+      message="Le seuil de validation nécessite une vérification."
+    />
+    <sp-notification
+      status="error"
+      title="Erreur"
+      message="La demande n’a pas pu être enregistrée."
+    />
+  </div>
+</section>
+
+<section class="catalog-section" aria-labelledby="forms-title">
+  <h2 id="forms-title">Formulaire et erreurs</h2>
+  <div class="catalog-grid">
+    <sp-card title="Recherche" subtitle="Filtrage accessible">
+      <sp-search-field
+        label="Rechercher dans l’audit"
+        placeholder="Action, résultat ou acteur"
+        (searchChange)="searchTerm.set($event)"
+      />
+    </sp-card>
+
+    <sp-card title="Validation" subtitle="Association champ-message">
+      <mat-form-field appearance="outline">
+        <mat-label>Raison sociale</mat-label>
+        <input
+          matInput
+          aria-describedby="legal-name-error"
+          [attr.aria-invalid]="showRequiredError()"
+          (input)="showRequiredError.set(false)"
+        />
+      </mat-form-field>
+      <sp-form-error
+        errorId="legal-name-error"
+        [message]="showRequiredError() ? 'La raison sociale est obligatoire.' : undefined"
+      />
+    </sp-card>
+  </div>
+</section>
+
+<section class="catalog-section" aria-labelledby="table-title">
+  <h2 id="table-title">Tableau d’audit</h2>
+  <sp-data-table
+    caption="Historique des opérations Partner"
+    [columns]="auditColumns"
+    [data]="filteredAuditRows()"
+    emptyMessage="Aucune opération ne correspond à la recherche."
+  />
+</section>

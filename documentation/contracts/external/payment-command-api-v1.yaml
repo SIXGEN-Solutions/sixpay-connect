@@ -1,0 +1,383 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TresorPay Payment Command API
+  version: 1.0.0
+  description: |
+    Official partner-facing command contract used by TresorPay to initiate one
+    debit order through SIXPAY CONNECT. Authentication requires BOTH mutual TLS
+    and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
+    the JSON payload. The initial response is PENDING_CONFIRMATION and callbacks
+    are asynchronous.
+  x-sixpay-contract:
+    registryId: payment-command-api-v1
+    phase: "3"
+    lot: "3.16"
+    lifecycleStatus: DRAFT_IMPLEMENTATION_READY
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: CONTRACT_FIRST
+    codeGenerationAllowed: false
+    domain: payment
+    capability: PAYMENT_INITIATION
+    direction: TRESORPAY_TO_SIXPAY
+    dataClassification: RESTRICTED
+    idempotent: true
+    callbackMode: ASYNCHRONOUS
+servers:
+  - url: https://api.banque.com
+security:
+  - mutualTLS: []
+    oauth2: [payment.initiate]
+tags:
+  - name: Payment Commands
+paths:
+  /v1/payments/initiate:
+    post:
+      tags: [Payment Commands]
+      operationId: initiateDebit
+      summary: Initiate a debit order
+      description: |
+        Idempotency-Key identifies the HTTP replay boundary. endToEndId is the
+        durable business reference; both values are independent. LoginName must
+        match the authenticated partner identity. Beneficiary amounts must sum
+        exactly to montantTotal. The callback is never executed in this HTTP
+        transaction.
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateDebitRequest'
+            example:
+              LoginName: TRESOR_PAY
+              AppID: TP_APP_001
+              endToEndId: AVI-2025-00045678
+              montantTotal: 600000
+              devise: XAF
+              ribDebiteur: 10005-00001-12345678901-12
+              nomDebiteur: Société ABC SARL
+              typeCreance: AVI
+              NUI: "100200300"
+              dateExecution: "2025-07-24T10:30:00Z"
+              beneficiaires:
+                - rib: 10005-00001-000000TRESDGI-97
+                  montant: 300000
+                - rib: 10005-00001-000000TRESDOUANE-11
+                  montant: 200000
+                - rib: 10005-00001-000000TRESDOMAINE-22
+                  montant: 100000
+              callbackURL: https://tresorpay.cm/v1/callbacks/payment-status
+      responses:
+        '200':
+          description: Payment order initiated and awaiting customer confirmation
+          headers:
+            X-Correlation-ID:
+              required: true
+              schema: {type: string, format: uuid}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateDebitResponse'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      callbacks:
+        paymentStatusChanged:
+          '{$request.body#/callbackURL}':
+            post:
+              operationId: receivePaymentStatusCallback
+              summary: Receive an asynchronous payment status notification
+              description: |
+                Delivery is at-least-once. TresorPay deduplicates by eventId.
+                The exact request body is protected by a detached JWS signature.
+              security:
+                - mutualTLS: []
+                  callbackSignature: []
+              parameters:
+                - $ref: '#/components/parameters/RequiredCallbackSignature'
+                - $ref: '#/components/parameters/RequiredCorrelationId'
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/PaymentStatusCallbackRequest'
+              responses:
+                '200':
+                  description: Callback acknowledged
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/components/schemas/CallbackAcknowledgement'
+                '400': {description: Invalid callback payload}
+                '401': {description: Callback authentication or signature failed}
+                '409': {description: Callback event conflict}
+components:
+  securitySchemes:
+    mutualTLS:
+      type: mutualTLS
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.banque.com/oauth2/token
+          scopes:
+            payment.initiate: Initiate debit orders through SIXPAY CONNECT
+    callbackSignature:
+      type: apiKey
+      in: header
+      name: X-SIXPAY-Signature
+      description: Detached JWS signature, not a static API key.
+  parameters:
+    RequiredIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 150}
+    OptionalCorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema: {type: string, format: uuid}
+    RequiredCorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+    RequiredCallbackSignature:
+      name: X-SIXPAY-Signature
+      in: header
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 4096}
+  responses:
+    BadRequest:
+      description: Missing, malformed or invalid request
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/ProblemDetail'}
+    Unauthorized:
+      description: mTLS or OAuth 2.0 authentication failed
+    Forbidden:
+      description: Partner is not authorized
+    Conflict:
+      description: Idempotency or business-reference conflict
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/ProblemDetail'}
+    UnprocessableEntity:
+      description: Payment business rule rejected the command
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/ProblemDetail'}
+    TooManyRequests:
+      description: Partner rate limit exceeded
+      headers:
+        Retry-After:
+          schema: {type: integer, minimum: 1}
+    ServiceUnavailable:
+      description: Required banking capability unavailable
+      headers:
+        Retry-After:
+          schema: {type: integer, minimum: 1}
+  schemas:
+    InitiateDebitRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - LoginName
+        - endToEndId
+        - montantTotal
+        - devise
+        - ribDebiteur
+        - nomDebiteur
+        - typeCreance
+        - NUI
+        - dateExecution
+        - beneficiaires
+        - callbackURL
+      properties:
+        LoginName:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Must match the authenticated partner identity
+        AppID:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 64
+        endToEndId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        montantTotal:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+        devise:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        ribDebiteur:
+          type: string
+          minLength: 8
+          maxLength: 64
+          pattern: '^[A-Za-z0-9-]+$'
+        nomDebiteur:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Verified by the bank
+        typeCreance:
+          type: string
+          enum: [AVI, IM7, RNF]
+        NUI:
+          type: string
+          minLength: 1
+          maxLength: 64
+        dateExecution:
+          type: string
+          format: date-time
+          description: Verified by the bank
+        beneficiaires:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: {$ref: '#/components/schemas/BeneficiaireRequest'}
+          description: Exact sum must equal montantTotal
+        callbackURL:
+          type: string
+          format: uri
+          pattern: '^https://'
+          maxLength: 2048
+          description: Must match the partner callback allowlist
+    BeneficiaireRequest:
+      type: object
+      additionalProperties: false
+      required: [rib, montant]
+      properties:
+        rib:
+          type: string
+          minLength: 8
+          maxLength: 64
+          pattern: '^[A-Za-z0-9-]+$'
+        montant:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amount, currency]
+      properties:
+        amount: {type: number, minimum: 0, multipleOf: 0.01}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+    InitiateDebitResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - OK
+        - Description
+        - Result
+        - paymentReference
+        - endToEndId
+        - bankOperationId
+        - montantTotal
+        - frais
+        - montantNet
+        - Date
+        - ValidityInMinutes
+        - TransactionNumber
+        - TransactionQRCode
+        - Status
+        - NextStep
+      properties:
+        OK: {type: string, const: "200"}
+        Description: {type: string}
+        Result: {type: string, const: Success}
+        paymentReference:
+          type: string
+          pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        endToEndId: {type: string}
+        bankOperationId: {type: string, minLength: 1, maxLength: 128}
+        montantTotal: {$ref: '#/components/schemas/Money'}
+        frais: {$ref: '#/components/schemas/Money'}
+        montantNet: {$ref: '#/components/schemas/Money'}
+        Date: {type: string, format: date-time}
+        ValidityInMinutes: {type: integer, minimum: 1}
+        TransactionNumber: {type: string, minLength: 1, maxLength: 128}
+        TransactionQRCode: {type: string, format: uri}
+        Status: {type: string, const: PENDING_CONFIRMATION}
+        NextStep:
+          type: string
+          const: Awaiting customer confirmation via OTP/SMS
+    PaymentStatusCallbackRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - eventId
+        - eventType
+        - occurredAt
+        - paymentReference
+        - endToEndId
+        - previousStatus
+        - status
+      properties:
+        eventId: {type: string, format: uuid}
+        eventType: {type: string, const: PAYMENT_STATUS_CHANGED}
+        occurredAt: {type: string, format: date-time}
+        paymentReference:
+          type: string
+          pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        endToEndId: {type: string}
+        bankOperationId: {type: [string, 'null']}
+        previousStatus: {$ref: '#/components/schemas/PaymentStatus'}
+        status: {$ref: '#/components/schemas/PaymentStatus'}
+        reasonCode: {type: [string, 'null']}
+        description: {type: [string, 'null']}
+        transactionNumber: {type: [string, 'null']}
+    CallbackAcknowledgement:
+      type: object
+      additionalProperties: false
+      required: [OK, Result, eventId]
+      properties:
+        OK: {type: string, const: "200"}
+        Result: {type: string, const: ACKNOWLEDGED}
+        eventId: {type: string, format: uuid}
+    PaymentStatus:
+      type: string
+      enum:
+        - RECEIVED
+        - PENDING_CONFIRMATION
+        - AUTHORIZATION_CHECKING
+        - BANKING_VERIFICATION_PENDING
+        - FUNDS_CONTROL_PENDING
+        - TREASURY_ACCOUNT_RESOLUTION_PENDING
+        - APPROVED_FOR_POSTING
+        - POSTING_PENDING
+        - POSTING_OUTCOME_UNKNOWN
+        - DEBIT_CONFIRMED
+        - POSTED_PENDING_TFJ
+        - REVERSAL_REQUIRED
+        - REVERSAL_PENDING
+        - REVERSAL_OUTCOME_UNKNOWN
+        - REJECTED
+        - FAILED
+        - TREASURY_INTEGRATED
+        - REVERSED
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, detail, instance, correlationId]
+      properties:
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        instance: {type: string, format: uri-reference}
+        correlationId: {type: string, format: uuid}
+        code: {type: [string, 'null']}

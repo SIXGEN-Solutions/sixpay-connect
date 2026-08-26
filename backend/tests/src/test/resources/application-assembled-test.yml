@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: sixpay-connect-assembled-test
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: sixpay
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    schemas: sixpay
+    default-schema: sixpay
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+    out-of-order: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+sixpay:
+  messaging:
+    transport: internal
+    outbox:
+      enabled: false
+
+  customer:
+    verification:
+      banking:
+        enabled: false
+
+    observation:
+      persistence:
+        enabled: true
+        protection-key-base64: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+
+      query:
+        enabled: true
+        cursor-key-base64: "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8="
+
+      audit:
+        persistence:
+          enabled: true
+
+  reporting:
+    audit-query:
+      cursor-hmac-key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+
+    audit-export:
+      storage-directory: target/assembled-test-audit-exports
+      retrieval-base-uri: https://audit-artifacts.test.local/
+      retention: PT1H
+      recovery-delay-ms: 60000
+
+  notification:
+    retry:
+      enabled: false
+
+  security:
+    authentication:
+      local:
+        enabled: false
+      oidc:
+        enabled: false

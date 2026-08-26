@@ -1,0 +1,35 @@
+body {
+  font-family: var(--sp-font-family);
+  font-size: var(--sp-font-size-base);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+body {
+  font-family: var(--sp-font-family);
+  font-size: var(--sp-font-size-base);
+  line-height: var(--sp-line-height-base);
+}
+
+h1,
+h2,
+h3 {
+  margin-block: 0 var(--sp-space-4);
+  color: var(--sp-color-text);
+  line-height: var(--sp-line-height-tight);
+}
+
+h1 {
+  font-size: var(--sp-font-size-2xl);
+}
+
+h2 {
+  font-size: var(--sp-font-size-xl);
+}
+
+h3 {
+  font-size: var(--sp-font-size-lg);
+}

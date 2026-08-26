@@ -1,0 +1,15 @@
+<button
+  mat-flat-button
+  class="sp-button"
+  [class.sp-button--secondary]="variant() === 'secondary'"
+  [class.sp-button--danger]="variant() === 'danger'"
+  [attr.aria-label]="accessibleLabel() ?? null"
+  [disabled]="disabled()"
+  [type]="type()"
+  (click)="buttonClick.emit($event)"
+>
+  @if (icon(); as iconName) {
+    <mat-icon aria-hidden="true">{{ iconName }}</mat-icon>
+  }
+  <ng-content />
+</button>

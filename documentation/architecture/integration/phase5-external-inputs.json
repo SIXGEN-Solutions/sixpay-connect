@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "gate": "EXTERNAL_SANDBOX_CERTIFICATION",
+  "statusWithoutInputs": "BLOCKED_EXTERNAL",
+  "providers": {
+    "tresorPay": {
+      "required": [
+        "baseUrl",
+        "clientIdentity",
+        "securityMode",
+        "certificateChain",
+        "testPartner",
+        "callbackEndpointRules"
+      ]
+    },
+    "amplitudeCustomerVerification": {
+      "required": [
+        "baseUrl",
+        "tokenUrl",
+        "clientId",
+        "scope",
+        "audience",
+        "sslBundle",
+        "testAccountFixtures"
+      ]
+    },
+    "amplitudePayment": {
+      "required": [
+        "baseUrl",
+        "tokenUrl",
+        "clientId",
+        "scope",
+        "sslBundle",
+        "reservationPostingLookupReversalFixtures"
+      ]
+    },
+    "accountingApi": {
+      "required": [
+        "baseUrl",
+        "clientIdentity",
+        "sslBundle",
+        "batchFixtures",
+        "statusLookupFixtures"
+      ]
+    },
+    "smtp": {
+      "required": [
+        "host",
+        "port",
+        "tlsMode",
+        "credentialReference",
+        "testRecipient"
+      ]
+    }
+  }
+}

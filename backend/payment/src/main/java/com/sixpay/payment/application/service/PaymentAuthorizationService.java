@@ -1,0 +1,80 @@
+package com.sixpay.payment.application.service;
+
+import com.sixpay.payment.domain.model.PaymentFailure;
+import com.sixpay.payment.domain.model.PaymentId;
+import com.sixpay.payment.domain.model.evidence.AuthorizationEvidenceSnapshot;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
+import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.Objects;
+
+/**
+ * Coordinates authorization and banking-verification evidence.
+ */
+@Service
+public class PaymentAuthorizationService {
+
+    private final PaymentMutationCoordinator coordinator;
+
+    public PaymentAuthorizationService(
+            PaymentMutationCoordinator coordinator
+    ) {
+        this.coordinator = Objects.requireNonNull(
+                coordinator,
+                "Payment mutation coordinator"
+        );
+    }
+
+    public PaymentWorkflowResult startAuthorization(
+            PaymentId paymentId,
+            Instant startedAt
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.startAuthorizationChecking(
+                                startedAt
+                        )
+        );
+    }
+
+    public PaymentWorkflowResult recordAuthorizationDecision(
+            PaymentId paymentId,
+            AuthorizationEvidenceSnapshot evidence,
+            PaymentFailure rejectionFailure,
+            Instant decisionAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.recordAuthorizationDecision(
+                                evidence,
+                                rejectionFailure,
+                                decisionAt,
+                                policies
+                        )
+        );
+    }
+
+    public PaymentWorkflowResult recordBankingVerification(
+            PaymentId paymentId,
+            BankingVerificationSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.recordBankingVerification(
+                                evidence,
+                                failure,
+                                decisionAt,
+                                policies
+                        )
+        );
+    }
+}

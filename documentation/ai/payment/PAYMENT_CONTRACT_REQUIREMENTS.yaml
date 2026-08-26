@@ -1,0 +1,867 @@
+schemaVersion: "1.0.0"
+
+document:
+  id: "SIXPAY-PAYMENT-CONTRACT-REQUIREMENTS"
+  title: "SIXPAY CONNECT — Payment Contract Requirements"
+  gate: "IA-0P — Payment Preflight"
+  step: "0P.9 — Préparer la cartographie des contrats"
+  branch: "feat/payment-contract-pack"
+  sourceCommit: "87bb9c79f291a53de8684661f82e19f205b19a43"
+  status: "CONTRACT_REQUIREMENTS_ESTABLISHED"
+  normative: true
+  codeGenerationAllowed: false
+  targetGate: "IA-0.5P — Payment Contract Pack"
+  nextStep: "0P.10 — Définir les exigences de sécurité et d'audit"
+
+baseline:
+  references:
+    - path: "documentation/ai/payment/PAYMENT_SOURCE_BASELINE.md"
+      role: "Source hierarchy and normalized Payment requirements"
+    - path: "documentation/ai/payment/PAYMENT_CONTEXT_MAP.md"
+      role: "System authority, module ownership and integration boundaries"
+    - path: "documentation/ai/payment/PAYMENT_BUSINESS_FLOWS.md"
+      role: "Nominal and alternative flows to cover"
+    - path: "documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md"
+      role: "Aggregate, Value Object and integration-data boundaries"
+    - path: "documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml"
+      role: "States, transitions and replay restrictions"
+    - path: "documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml"
+      role: "Events translated into external messages or read projections"
+    - path: "documentation/ai/customer/IA_0R_BLOCKING_DECISIONS.yaml"
+      role: "Authentication, resilience, partial posting and TFJ decisions"
+    - path: "documentation/contracts/CONTRACT_REGISTRY.yaml"
+      role: "Contract lifecycle, approval and generation policy"
+    - path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+      role: "Reference-only Amplitude customer and account verification contract"
+  precedence:
+    rule: "IA-0R decisions prevail over lower-ranked sources; a requirement without an external source is identified as a SIXPAY decision."
+
+scope:
+  contractFamilyCount: 7
+  concreteArtifactCount: 9
+  rationale: >
+    The seven requested business exchanges form seven contract families.
+    TFJ requires both the primary asynchronous confirmation and the scheduled
+    reconciliation fallback, consolidated in one bidirectional API artifact.
+    Internal query and audit capabilities require separate Payment,
+    ObservedCustomer and privileged Payment Audit APIs to preserve module
+    ownership and isolate restricted audit access.
+  lifecycleStatusAtThisStep: "TO_BE_PRODUCED"
+  approvalStatusAtThisStep: "NOT_DRAFTED"
+  generationPolicyAtThisStep: "FORBIDDEN"
+  targetLifecycleStatus: "ACTIVE_MVP"
+  targetApprovalStatus: "APPROVED"
+  targetGenerationPolicy: "ACTIVE"
+
+globalRequirements:
+  format:
+    specification: "OpenAPI 3.1"
+    mediaTypes:
+      request: "application/json"
+      success: "application/json unless an operation explicitly returns no content"
+      error: "application/problem+json"
+    versioning:
+      uriMajorVersionRequired: true
+      initialMajorVersion: "v1"
+      backwardCompatibility: "Additive changes only within v1"
+      breakingChange: "Requires a new major version and registry entry"
+  transport:
+    protocol: "HTTPS REST"
+    tlsRequired: true
+    restOnlyForMvp: true
+    forbidden:
+      - "Credentials in query parameters"
+      - "Unencrypted transport"
+      - "Direct database integration"
+  correlation:
+    header: "X-Correlation-ID"
+    type: "UUID"
+    propagation: "Propagate unchanged end to end"
+    responseEchoRequired: true
+    bodyConsistency: "When correlationId exists in a payload, it must equal the header"
+    fallback: "SIXPAY may generate a CorrelationId only when an inbound contract explicitly allows an absent value"
+  errors:
+    standard: "RFC 7807 Problem Details"
+    requiredFields:
+      - "type"
+      - "title"
+      - "status"
+      - "code"
+      - "correlationId"
+    optionalSafeFields:
+      - "detail"
+      - "retryAfter"
+      - "violations"
+    forbiddenFields:
+      - "Stack trace"
+      - "Credential or secret"
+      - "Raw Amplitude error"
+      - "Unmasked bank account"
+      - "Internal network or database detail"
+    stableBusinessCodesRequired: true
+    httpStatusAloneIsNotBusinessDecision: true
+  resilienceDefaults:
+    normativeValues: false
+    source: "IA0R-D06"
+    connectionTimeout: "2_SECONDS"
+    responseTimeout: "10_SECONDS"
+    overallOperationTimeout: "15_SECONDS"
+    maximumAttempts: 3
+    backoff: "EXPONENTIAL_WITH_FULL_JITTER"
+    initialBackoff: "500_MILLISECONDS"
+    maximumBackoff: "2_SECONDS"
+    finalValuesSource: "BANK_APPROVED_ENVIRONMENT_CONFIGURATION"
+    honorRetryAfter: true
+    retryableReadConditions:
+      - "Connection failure before response"
+      - "Safe timeout"
+      - "HTTP_429"
+      - "HTTP_502"
+      - "HTTP_503"
+      - "HTTP_504"
+    nonRetryable:
+      - "HTTP_400"
+      - "HTTP_401"
+      - "HTTP_403"
+      - "HTTP_404"
+      - "HTTP_409_BUSINESS_CONFLICT"
+      - "HTTP_422"
+  sensitiveData:
+    minimizationRequired: true
+    accountReferences: "Opaque or masked outside the authorized banking boundary"
+    credentials: "Never persisted in Payment, events, audit payloads or logs"
+    logs: "Structured, redacted and correlated"
+  ownership:
+    externalOpenApiOwner: "integration"
+    rule: "Integration owns external OpenAPI transport contracts but cannot define business decisions."
+    businessRuleOwners:
+      payment: "Payment lifecycle, decisions and externally visible Payment result"
+      customer: "Banking verification semantics and ObservedCustomer projection"
+      accounting: "Posting, unknown outcome, reversal and TFJ matching semantics"
+      notification: "Delivery attempts, retry, DLQ and receipt evidence"
+      reporting: "Read-only query projection and authorized export"
+
+contractFamilies:
+  - id: "PAY-CONTRACT-01"
+    name: "TRESOR PAY payment request"
+    capability: "PAYMENT_REQUEST"
+    direction:
+      caller: "TRESOR_PAY"
+      provider: "SIXPAY"
+      code: "TRESOR_PAY_TO_SIXPAY"
+    owner:
+      openApi: "integration"
+      business: "payment"
+      supporting:
+        - "customer"
+    artifacts:
+      - id: "tresorpay-payment-request-api-v1"
+        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "Submit a payment request"
+          - "Return durable acceptance, duplicate acknowledgement or structured rejection"
+    protocol:
+      style: "SYNCHRONOUS_COMMAND"
+      transport: "HTTPS REST JSON"
+      expectedAcceptance: "202_ACCEPTED_AFTER_DURABLE_PERSISTENCE"
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+      oauth2: "DEFERRED_NON_BLOCKING"
+      mutualTls: "DEFERRED_NON_BLOCKING"
+      source: "IA0R-D05"
+    idempotency:
+      required: true
+      header: "Idempotency-Key"
+      scope: "TRESOR_PAY_CLIENT_PLUS_FINANCIAL_INSTITUTION"
+      fingerprint: "Canonical business payload excluding transport headers"
+      sameKeySameFingerprint: "Return the original Payment identity and current acceptance result without a second effect"
+      sameKeyDifferentFingerprint: "HTTP_409_IDEMPOTENCY_CONFLICT"
+      retention: "13_MONTHS_MINIMUM"
+    correlation:
+      headerRequired: true
+      businessLink: "Stored on Payment and propagated to every downstream call, event and notification"
+    errors:
+      businessCodes:
+        - "PAYMENT_REQUEST_INVALID"
+        - "FINANCIAL_INSTITUTION_UNSUPPORTED"
+        - "IDEMPOTENCY_CONFLICT"
+        - "PAYMENT_REQUEST_ALREADY_ACCEPTED"
+        - "AUTHENTICATION_FAILED"
+        - "AUTHORIZATION_DENIED"
+      duplicateHandling: "A valid identical duplicate is an acknowledged replay, not a new Payment"
+    retry:
+      callerMayRetry: true
+      condition: "Transport failure or retryable server response"
+      keyRule: "Every retry reuses the same Idempotency-Key and CorrelationId"
+      blindNewKeyRetry: "FORBIDDEN"
+    timeout:
+      serverProcessingBoundary: "Durable acceptance only; banking processing is asynchronous"
+      clientValues: "CONFIGURABLE_NON_NORMATIVE"
+    businessResponsibility:
+      - "Authenticate and validate the request boundary."
+      - "Persist Payment before any Amplitude call."
+      - "Create or update the ObservedCustomer candidate projection."
+      - "Never validate or mutate a TRESOR PAY subscription."
+    sourceRequirements:
+      - "PAY-SRC-001"
+      - "PAY-SRC-005"
+      - "PAY-SRC-007"
+      - "PAY-SRC-008"
+      - "PAY-SRC-009"
+      - "PAY-SRC-010"
+
+  - id: "PAY-CONTRACT-02"
+    name: "Amplitude banking verification and funds control"
+    capability: "BANKING_VERIFICATION_AND_FUNDS_CONTROL"
+    direction:
+      caller: "SIXPAY"
+      provider: "AMPLITUDE"
+      code: "SIXPAY_TO_AMPLITUDE"
+    owner:
+      openApi: "integration"
+      business:
+        - "customer"
+        - "payment"
+    artifacts:
+      - id: "amplitude-payment-verification-api-v1"
+        targetPath: "documentation/contracts/amplitude/amplitude-payment-verification-api-v1.yaml"
+        type: "OPENAPI"
+        relationshipToExistingContract: >
+          Reuse compatible schemas from amplitude-customer-verification-api-v1,
+          but create an ACTIVE_MVP contract that adds fresh funds-availability
+          controls and Payment-specific decision inputs.
+        operations:
+          - "Verify customer existence and NIU"
+          - "Verify account existence and ownership"
+          - "Read account status, blocks and oppositions"
+          - "Check available funds, currency, restrictions and limits"
+    protocol:
+      style: "SYNCHRONOUS_QUERY"
+      transport: "HTTPS REST JSON"
+      freshnessRequired: true
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+      scopes:
+        - "amplitude.customer.read"
+        - "amplitude.account.read"
+        - "amplitude.funds.read"
+      source: "Existing Amplitude reference contract; final credentials remain bank-approved configuration"
+    idempotency:
+      required: false
+      rationale: "Read-only operations are naturally safe to repeat"
+      requestIdentity: "Verification request identifier must be logged and correlated"
+      staleResultReuse: "FORBIDDEN_FOR_PAYMENT_DECISION"
+    correlation:
+      headerRequired: true
+      institutionHeaderRequired: true
+    errors:
+      businessCodes:
+        - "BANK_CUSTOMER_NOT_FOUND"
+        - "NIU_MISMATCH"
+        - "BANK_ACCOUNT_NOT_FOUND"
+        - "ACCOUNT_OWNERSHIP_MISMATCH"
+        - "ACCOUNT_BLOCKED"
+        - "ACCOUNT_OPPOSED"
+        - "ACCOUNT_OPERATION_NOT_ALLOWED"
+        - "INSUFFICIENT_FUNDS"
+        - "CURRENCY_MISMATCH"
+        - "BANKING_VERIFICATION_UNAVAILABLE"
+      rawProviderErrorExposure: "FORBIDDEN"
+    retry:
+      automaticReadRetry: true
+      policy: "Global transient-read policy"
+      staleFallback: "FORBIDDEN"
+      circuitBreaker: "REQUIRED"
+    timeout:
+      policy: "Global configurable non-normative defaults"
+      onExhaustion: "Defer or fail safely; never infer a banking approval"
+    businessResponsibility:
+      - "Amplitude remains authoritative for customer, account, restrictions and available funds."
+      - "Customer normalizes the banking facts."
+      - "Payment decides whether the verified facts authorize progression."
+      - "No financial write is performed by this contract."
+    sourceRequirements:
+      - "PAY-SRC-014"
+      - "PAY-SRC-015"
+      - "PAY-SRC-016"
+      - "PAY-SRC-017"
+      - "PAY-SRC-018"
+      - "PAY-SRC-023"
+      - "PAY-SRC-027"
+
+  - id: "PAY-CONTRACT-03"
+    name: "Amplitude debit, CUT credit and posting recovery"
+    capability: "PAYMENT_POSTING"
+    direction:
+      caller: "SIXPAY"
+      provider: "AMPLITUDE"
+      code: "SIXPAY_TO_AMPLITUDE"
+    owner:
+      openApi: "integration"
+      business:
+        - "accounting"
+        - "payment"
+    artifacts:
+      - id: "amplitude-payment-posting-api-v1"
+        targetPath: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "Atomically debit the customer account and credit the configured CUT"
+          - "Query posting outcome by bank idempotency key or Payment reference"
+          - "Request an explicit reversal with a distinct idempotency key"
+          - "Query reversal outcome"
+    protocol:
+      style: "SYNCHRONOUS_FINANCIAL_COMMAND_WITH_QUERY_RECOVERY"
+      transport: "HTTPS REST JSON"
+      preferredOperation: "ATOMIC_DEBIT_AND_CUT_CREDIT"
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+      scopes:
+        - "amplitude.payment.post"
+        - "amplitude.payment.read"
+        - "amplitude.payment.reverse"
+      source: "Amplitude reference security pattern; final credentials remain bank-approved configuration"
+    idempotency:
+      required: true
+      key: "BANK_POSTING_IDEMPOTENCY_KEY"
+      generatedBy: "SIXPAY_ACCOUNTING"
+      sameKeySameInstruction: "Return the same posting identity and known outcome"
+      sameKeyDifferentInstruction: "HTTP_409_IDEMPOTENCY_CONFLICT"
+      reversalKey: "Required, distinct from original posting key"
+      cutAccount: "Resolved from protected bank configuration, never accepted from TRESOR PAY"
+    correlation:
+      headerRequired: true
+      requiredBusinessKeys:
+        - "PaymentReference"
+        - "FinancialInstitutionCode"
+        - "BankPostingIdempotencyKey"
+    errors:
+      businessCodes:
+        - "POSTING_REJECTED"
+        - "POSTING_OUTCOME_UNKNOWN"
+        - "DEBIT_CONFIRMED_CUT_CREDIT_UNKNOWN"
+        - "DEBIT_CONFIRMED_CUT_CREDIT_FAILED"
+        - "POSTING_NOT_FOUND"
+        - "REVERSAL_NOT_ALLOWED"
+        - "REVERSAL_OUTCOME_UNKNOWN"
+      unknownOutcomeRule: "A timeout or connection loss after submission is never interpreted as failure"
+    retry:
+      automaticWriteRetry: "ONLY_IF_AMPLITUDE_IDEMPOTENCY_IS_CONTRACTUALLY_CONFIRMED"
+      afterUnknownOutcome: "QUERY_OUTCOME; DO_NOT_RESUBMIT_BLINDLY"
+      queryRetry: "Global transient-read policy"
+      reversalRetry: "Only with the original reversal idempotency key"
+    timeout:
+      policy: "Global configurable non-normative defaults"
+      onCommandTimeout: "Transition to ACCOUNTING_OUTCOME_UNKNOWN and start outcome lookup"
+    businessResponsibility:
+      - "Accounting owns the posting instruction, outcome lookup and reversal process."
+      - "Amplitude owns and executes bank entries."
+      - "Payment consumes normalized outcomes and owns its lifecycle transition."
+      - "Partial outcomes follow IA0R-D07 and never produce a false success."
+    sourceRequirements:
+      - "PAY-SRC-020"
+      - "PAY-SRC-021"
+      - "PAY-SRC-022"
+      - "PAY-SRC-024"
+      - "PAY-SRC-025"
+      - "PAY-SRC-026"
+      - "IA0R-D07"
+
+  - id: "PAY-CONTRACT-04"
+    name: "Immediate Payment result notification"
+    capability: "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
+    direction:
+      caller: "SIXPAY"
+      provider: "TRESOR_PAY"
+      code: "SIXPAY_TO_TRESOR_PAY"
+    owner:
+      openApi: "integration"
+      business: "payment"
+      delivery: "notification"
+    artifacts:
+      - id: "tresorpay-payment-status-webhook-v1"
+        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+        type: "OPENAPI_WEBHOOK"
+        operations:
+          - "Deliver PAYMENT_RECEIVED"
+          - "Deliver PAYMENT_REJECTED"
+          - "Deliver PAYMENT_PROCESSING"
+          - "Deliver PAYMENT_DEBITED"
+          - "Deliver CUT_CREDITED"
+          - "Deliver PAYMENT_FAILED"
+          - "Deliver PAYMENT_REVERSED"
+    protocol:
+      style: "ASYNCHRONOUS_WEBHOOK"
+      transport: "HTTPS REST JSON"
+      durableAcceptance: "204_NO_CONTENT"
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+        - "HMAC_SHA256_PAYLOAD_SIGNATURE"
+      replayProtection:
+        timestampWindow: "5_MINUTES"
+        signatureKeyIdRequired: true
+      decision: "SIXPAY extension of IA0R-D05 for authenticated signed outbound delivery"
+    idempotency:
+      required: true
+      key: "eventId"
+      deliveryId: "New UUID per attempt"
+      sameEventSamePayload: "Acknowledge without repeating the business effect"
+      sameEventDifferentPayload: "HTTP_409_AND_ALERT"
+    correlation:
+      headerRequired: true
+      payloadRequired: true
+      paymentKeys:
+        - "PaymentId"
+        - "PaymentReference"
+        - "TresorPayRequestId"
+    errors:
+      receiverStatuses:
+        accepted:
+          - "HTTP_204"
+        retryable:
+          - "HTTP_429"
+          - "HTTP_500"
+          - "HTTP_502"
+          - "HTTP_503"
+          - "HTTP_504"
+        permanent:
+          - "HTTP_400"
+          - "HTTP_401"
+          - "HTTP_403"
+          - "HTTP_409_DIFFERENT_PAYLOAD"
+          - "HTTP_422"
+    retry:
+      mechanism: "TRANSACTIONAL_OUTBOX"
+      policy: "Exponential backoff with jitter, Retry-After support and bounded attempts"
+      exhaustion: "DLQ_AND_OPERATIONAL_ALERT"
+      financialEffect: "NONE"
+    timeout:
+      policy: "Configurable delivery timeout"
+      onTimeout: "Retry the same eventId; do not alter Payment financial state"
+    businessResponsibility:
+      - "Expose the immediate result without claiming TFJ finality."
+      - "Notification owns delivery evidence, not the Payment decision."
+      - "A delivery failure does not undo a bank posting."
+    sourceRequirements:
+      - "PAY-SRC-028"
+      - "PAY-SRC-029"
+      - "PAY-SRC-030"
+      - "PAY-SRC-037"
+      - "PAY-SRC-038"
+      - "PAY-SRC-039"
+
+  - id: "PAY-CONTRACT-05"
+    name: "Amplitude TFJ confirmation and fallback reconciliation"
+    capability: "END_OF_DAY_TREASURY_CONFIRMATION"
+    direction:
+      primary:
+        caller: "AMPLITUDE"
+        provider: "SIXPAY"
+        code: "AMPLITUDE_TO_SIXPAY"
+      fallback:
+        caller: "SIXPAY"
+        provider: "AMPLITUDE"
+        code: "SIXPAY_TO_AMPLITUDE"
+    owner:
+      openApi: "integration"
+      business: "accounting"
+      lifecycleConsumer: "payment"
+    artifacts:
+      - id: "amplitude-end-of-day-confirmation-api-v1"
+        targetPath: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+        type: "OPENAPI_BIDIRECTIONAL"
+        operations:
+          - "Receive an asynchronous TFJ result from Amplitude"
+          - "Query missing TFJ results by institution, business date and posting reference"
+    protocol:
+      primary: "ASYNCHRONOUS_HTTPS_WEBHOOK_JSON"
+      fallback: "SCHEDULED_HTTPS_REST_QUERY_JSON"
+      fileDropOrManualImport: "OUT_OF_SCOPE_UNLESS_ADDED_BY_APPROVED_CONTRACT_CHANGE"
+    authentication:
+      tls: "MANDATORY"
+      primary:
+        mechanisms:
+          - "MUTUAL_TLS"
+          - "HMAC_SHA256_PAYLOAD_SIGNATURE"
+      fallback:
+        mechanisms:
+          - "OAUTH2_CLIENT_CREDENTIALS"
+          - "MUTUAL_TLS"
+        scopes:
+          - "amplitude.tfj.read"
+      source: "SIXPAY decision based on Amplitude reference security pattern; bank approval required"
+    idempotency:
+      required: true
+      keyComposition:
+        - "FinancialInstitutionCode"
+        - "BusinessDate"
+        - "BankPostingReference"
+        - "TFJStatus"
+      sameKeySamePayload: "Acknowledge without a second Payment transition"
+      sameKeyDifferentPayload: "Quarantine and alert"
+    correlation:
+      headerRequired: true
+      matchingKeys:
+        - "FinancialInstitutionCode"
+        - "BusinessDate"
+        - "PaymentReference"
+        - "BankPostingReference"
+      unmatched: "QUARANTINE_ALERT_AND_MANUAL_RECONCILIATION"
+    errors:
+      businessCodes:
+        - "TFJ_CONFIRMATION_INVALID"
+        - "TFJ_CONFIRMATION_DUPLICATE"
+        - "TFJ_CONFIRMATION_CONFLICT"
+        - "TFJ_CONFIRMATION_UNMATCHED"
+        - "TFJ_RESULT_NOT_AVAILABLE"
+        - "TFJ_RECONCILIATION_UNAVAILABLE"
+      unmatchedUpdatePayment: false
+    retry:
+      primaryDelivery: "Amplitude retries the same idempotency key according to the approved contract"
+      fallbackQuery: "Global transient-read policy"
+      cutoff: "Keep PENDING_END_OF_DAY_CONFIRMATION, reschedule reconciliation and alert"
+      automaticReversalOnDelay: "FORBIDDEN"
+    timeout:
+      fallbackQuery: "Global configurable non-normative defaults"
+      confirmationCutoff: "Configurable business calendar value, not an HTTP timeout"
+    businessResponsibility:
+      - "Amplitude is the sole source of TFJ finality."
+      - "Accounting validates and matches the confirmation."
+      - "Payment reaches TREASURY_INTEGRATED only after a matched successful result is durably persisted."
+      - "An absent or unmatched result cannot create finality."
+    sourceRequirements:
+      - "PAY-SRC-030"
+      - "PAY-SRC-031"
+      - "PAY-SRC-032"
+      - "PAY-SRC-033"
+      - "IA0R-D08"
+
+  - id: "PAY-CONTRACT-06"
+    name: "Definitive TFJ result notification"
+    capability: "DEFINITIVE_TFJ_RESULT_NOTIFICATION"
+    direction:
+      caller: "SIXPAY"
+      provider: "TRESOR_PAY"
+      code: "SIXPAY_TO_TRESOR_PAY"
+    owner:
+      openApi: "integration"
+      business: "payment"
+      delivery: "notification"
+    artifacts:
+      - id: "tresorpay-treasury-integration-webhook-v1"
+        targetPath: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+        type: "OPENAPI_WEBHOOK"
+        operations:
+          - "Deliver PENDING_END_OF_DAY_CONFIRMATION"
+          - "Deliver TREASURY_INTEGRATED after a matched successful TFJ result"
+          - "Deliver TREASURY_INTEGRATION_FAILED after a matched adverse TFJ result"
+    protocol:
+      style: "ASYNCHRONOUS_WEBHOOK"
+      transport: "HTTPS REST JSON"
+      durableAcceptance: "204_NO_CONTENT"
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+        - "HMAC_SHA256_PAYLOAD_SIGNATURE"
+      replayProtection:
+        timestampWindow: "5_MINUTES"
+        signatureKeyIdRequired: true
+      decision: "SIXPAY extension of IA0R-D05 for authenticated signed outbound delivery"
+    idempotency:
+      required: true
+      key: "eventId"
+      sameEventSamePayload: "Acknowledge without repeating the business effect"
+      sameEventDifferentPayload: "HTTP_409_AND_ALERT"
+    correlation:
+      headerRequired: true
+      requiredBusinessKeys:
+        - "PaymentReference"
+        - "TresorPayRequestId"
+        - "BankPostingReference"
+        - "BusinessDate"
+    errors:
+      receiverPolicy: "Same HTTP and RFC 7807 policy as the immediate-result webhook"
+      prematureNotification: "FORBIDDEN"
+    retry:
+      mechanism: "TRANSACTIONAL_OUTBOX"
+      policy: "Same bounded retry, Retry-After, DLQ and alert policy as the immediate result"
+      exhaustion: "Retain TREASURY_INTEGRATED state and expose delivery failure operationally"
+    timeout:
+      policy: "Configurable delivery timeout"
+      onTimeout: "Retry the same eventId without changing TFJ finality"
+    businessResponsibility:
+      - "Notify only after TreasuryIntegrationConfirmed."
+      - "Allow TRESOR PAY to reconcile and make its receipt available."
+      - "SIXPAY does not generate the TRESOR PAY receipt."
+    sourceRequirements:
+      - "PAY-SRC-034"
+      - "PAY-SRC-035"
+      - "PAY-SRC-036"
+      - "IA0R-D08"
+
+  - id: "PAY-CONTRACT-07"
+    name: "SIXPAY internal Payment, ObservedCustomer and audit query APIs"
+    capability: "PAYMENT_OBSERVED_CUSTOMER_AND_AUDIT_QUERY"
+    direction:
+      caller: "SIXPAY_AUTHORIZED_INTERNAL_CLIENT"
+      provider: "SIXPAY"
+      code: "INTERNAL_CLIENT_TO_SIXPAY"
+    owner:
+      openApi:
+        - "payment"
+        - "customer"
+        - "reporting"
+      business:
+        - "reporting"
+        - "payment"
+        - "customer"
+      security: "security"
+    artifacts:
+      - id: "payment-query-api-v1"
+        targetPath: "documentation/contracts/internal/payment-query-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "List and filter Payments"
+          - "Read Payment detail and status"
+          - "Read normalized banking, posting, notification, TFJ and reversal summaries"
+      - id: "observed-customer-query-api-v1"
+        targetPath: "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "List and filter ObservedCustomers"
+          - "Read an ObservedCustomer and its Payment references"
+          - "Read projection freshness and source institution"
+      - id: "payment-audit-query-api-v1"
+        targetPath: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+        type: "OPENAPI"
+        operations:
+          - "Read Payment lifecycle and integration timeline"
+          - "Search immutable audit evidence authorized for the caller"
+          - "Request and retrieve controlled masked audit exports"
+    protocol:
+      style: "SYNCHRONOUS_READ_ONLY_QUERY"
+      transport: "HTTPS REST JSON"
+      pagination: "STABLE_CURSOR"
+      mutationOperations: "FORBIDDEN"
+    authentication:
+      tls: "MANDATORY"
+      mechanisms:
+        - "OIDC_OAUTH2_BEARER_JWT"
+      authorization: "RBAC_PLUS_SCOPES_PLUS_INSTITUTION_PERIMETER"
+      ordinaryScopes:
+        - "payment.read"
+        - "observed-customer.read"
+      privilegedScopes:
+        - "payment.audit.read"
+        - "payment.audit.export"
+    idempotency:
+      required: false
+      rationale: "All operations are read-only and naturally repeatable"
+      consistency: "Pagination tokens and sort order must be stable within their documented validity"
+    correlation:
+      headerRequired: true
+      audit: "Every privileged consultation, denial and export records actor, scope, purpose, filters and CorrelationId"
+    errors:
+      businessCodes:
+        - "PAYMENT_NOT_FOUND"
+        - "OBSERVED_CUSTOMER_NOT_FOUND"
+        - "AUDIT_RECORD_NOT_FOUND"
+        - "AUDIT_EXPORT_NOT_FOUND"
+        - "INVALID_FILTER"
+        - "PAGE_TOKEN_INVALID"
+        - "DATA_ACCESS_FORBIDDEN"
+        - "AUDIT_ACCESS_FORBIDDEN"
+      existenceLeakage: "Forbidden resources may be returned as not found according to security policy"
+    retry:
+      automaticReadRetry: true
+      policy: "Retry only transient failures; preserve the same page token and filters"
+      exportRetry: "Reuse the stable audit export identity; never create duplicate exports blindly"
+    timeout:
+      policy: "Configurable per query class"
+      longRunningQuery: "Must use bounded pagination or the controlled asynchronous audit export"
+    businessResponsibility:
+      - "Expose read projections without loading or mutating the Payment aggregate."
+      - "Preserve Customer ownership of ObservedCustomer."
+      - "Mask data according to role and purpose."
+      - "Keep audit evidence immutable and consultation access itself auditable."
+      - "Keep privileged audit and export operations separate from ordinary Payment consultation."
+    sourceRequirements:
+      - "PAY-SRC-041"
+      - "PAY-SRC-042"
+      - "PAY-SRC-043"
+      - "PAY-SRC-044"
+      - "PAY-SRC-045"
+      - "PAY-SRC-046"
+
+artifactInventory:
+  - id: "tresorpay-payment-request-api-v1"
+    family: "PAY-CONTRACT-01"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    owner: "integration"
+  - id: "amplitude-payment-verification-api-v1"
+    family: "PAY-CONTRACT-02"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    owner: "integration"
+  - id: "amplitude-payment-posting-api-v1"
+    family: "PAY-CONTRACT-03"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    owner: "integration"
+  - id: "tresorpay-payment-status-webhook-v1"
+    family: "PAY-CONTRACT-04"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    owner: "integration"
+  - id: "amplitude-end-of-day-confirmation-api-v1"
+    family: "PAY-CONTRACT-05"
+    direction: "BIDIRECTIONAL_AMPLITUDE_SIXPAY"
+    owner: "integration"
+  - id: "tresorpay-treasury-integration-webhook-v1"
+    family: "PAY-CONTRACT-06"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    owner: "integration"
+  - id: "payment-query-api-v1"
+    family: "PAY-CONTRACT-07"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    owner: "payment"
+  - id: "observed-customer-query-api-v1"
+    family: "PAY-CONTRACT-07"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    owner: "customer"
+  - id: "payment-audit-query-api-v1"
+    family: "PAY-CONTRACT-07"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    owner: "reporting"
+
+crossContractRules:
+  - id: "PAY-XCON-001"
+    rule: "PaymentReference, TresorPayRequestId and CorrelationId keep the same semantics in every applicable contract."
+  - id: "PAY-XCON-002"
+    rule: "External DTOs never become domain objects; Integration maps them to canonical commands and results."
+  - id: "PAY-XCON-003"
+    rule: "The immediate notification never exposes TREASURY_INTEGRATED before a matched successful TFJ result."
+  - id: "PAY-XCON-004"
+    rule: "Unknown or partial posting outcomes cannot be translated into a final success or failure."
+  - id: "PAY-XCON-005"
+    rule: "Every webhook replay reuses its business eventId while each delivery attempt has a distinct deliveryId."
+  - id: "PAY-XCON-006"
+    rule: "No contract accepts Subscription lifecycle decisions or merchant management in the MVP."
+  - id: "PAY-XCON-007"
+    rule: "No query or audit API provides a Payment mutation operation."
+  - id: "PAY-XCON-008"
+    rule: "Contract examples, errors and logs contain masked or synthetic bank data only."
+  - id: "PAY-XCON-009"
+    rule: "Payment timeline, immutable audit evidence and controlled audit exports are exposed only by payment-audit-query-api-v1."
+  - id: "PAY-XCON-010"
+    rule: "Every privileged audit consultation, denial and export is itself audited."
+
+gateIA05PProductionOrder:
+  - order: 1
+    artifacts:
+      - "tresorpay-payment-request-api-v1"
+    reason: "Closes the inbound identity, persistence acknowledgement and idempotency boundary."
+  - order: 2
+    artifacts:
+      - "amplitude-payment-verification-api-v1"
+      - "amplitude-payment-posting-api-v1"
+    reason: "Closes the bank read, financial write and recovery boundaries."
+  - order: 3
+    artifacts:
+      - "tresorpay-payment-status-webhook-v1"
+    reason: "Closes immediate external outcomes after the state and posting contracts."
+  - order: 4
+    artifacts:
+      - "amplitude-end-of-day-confirmation-api-v1"
+    reason: "Closes primary and fallback Treasury finality."
+  - order: 5
+    artifacts:
+      - "tresorpay-treasury-integration-webhook-v1"
+    reason: "Depends on the finality contract."
+  - order: 6
+    artifacts:
+      - "payment-query-api-v1"
+      - "observed-customer-query-api-v1"
+      - "payment-audit-query-api-v1"
+    reason: "Projects approved state, notification and TFJ semantics while isolating privileged audit access."
+
+approvalRequirements:
+  everyExternalContract:
+    requiredSignOffs:
+      - "Architecture"
+      - "Security"
+      - "Integration"
+      - "Business owner"
+      - "Operations"
+    registryUpdateRequired: true
+    embeddedClassificationRequired: true
+    examplesRequired: true
+    contractTestsRequired: true
+  amplitudeSpecific:
+    bankApprovalRequired:
+      - "Endpoint and operation availability"
+      - "OAuth2 scopes and mutual-TLS trust"
+      - "Atomic debit and CUT-credit semantics"
+      - "Posting and reversal idempotency"
+      - "TFJ payload, matching keys and fallback query"
+      - "Numeric timeout, retry and SLA values"
+  tresorPaySpecific:
+    jointApprovalRequired:
+      - "Payment request schema and idempotency scope"
+      - "Webhook authentication and signature profile"
+      - "Immediate and definitive status vocabularies"
+      - "Delivery acknowledgement and retry behavior"
+
+openDependencies:
+  blockingForIA0PCompletion: []
+  blockingForIA05PApproval:
+    - id: "PAY-CONTRACT-DEP-01"
+      item: "Amplitude validates the active Payment verification operations and funds semantics."
+    - id: "PAY-CONTRACT-DEP-02"
+      item: "Amplitude validates atomic posting, outcome lookup, reversal and TFJ interfaces."
+    - id: "PAY-CONTRACT-DEP-03"
+      item: "TRESOR PAY validates inbound authentication and both webhook profiles."
+    - id: "PAY-CONTRACT-DEP-04"
+      item: "Security approves outbound webhook signing and internal RBAC scopes."
+    - id: "PAY-CONTRACT-DEP-05"
+      item: "Bank-approved numeric resilience and SLA values replace non-normative defaults."
+
+acceptanceCriteria:
+  - "Seven requested contract families are mapped."
+  - "Nine concrete OpenAPI artifacts are named, directed and owned."
+  - "Every family specifies protocol, authentication, idempotency, correlation, errors, retry, timeout and business responsibility."
+  - "The Amplitude posting contract includes safe outcome lookup and explicit reversal operations."
+  - "The TFJ family includes asynchronous confirmation and scheduled fallback reconciliation."
+  - "Immediate and definitive TRESOR PAY notifications are distinct."
+  - "Payment, ObservedCustomer and Payment Audit query APIs preserve module ownership, privilege separation and read-only semantics."
+  - "All requirements cite baseline identifiers or an explicit SIXPAY decision."
+  - "No contract authorizes local Subscription or TRESOR PAY merchant management."
+  - "Code generation remains forbidden until IA-0.5P contracts are approved and registered."
+
+verdict:
+  contractFamilies: "7_OF_7_MAPPED"
+  concreteArtifacts: "9_IDENTIFIED"
+  directions: "CLOSED"
+  ownership: "CLOSED"
+  protocolRequirements: "DEFINED"
+  authenticationRequirements: "DEFINED"
+  idempotencyRequirements: "DEFINED"
+  correlationRequirements: "DEFINED"
+  errorRequirements: "DEFINED"
+  retryRequirements: "DEFINED"
+  timeoutRequirements: "DEFINED_WITH_NON_NORMATIVE_DEFAULTS"
+  businessResponsibilities: "DEFINED"
+  codeGeneration: "FORBIDDEN"
+  nextStep: "0P.10 — SECURITY AND AUDIT REQUIREMENTS"

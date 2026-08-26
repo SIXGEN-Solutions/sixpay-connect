@@ -1,0 +1,347 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-MODEL-VALIDATION
+  title: SIXPAY CONNECT — IA-1 Payment Final Model Validation
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 2_8_FINAL_MODEL_VALIDATION
+  branch: feat/payment-domain-generation-brief
+  validationDate: '2026-07-31'
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+  normative: true
+  codeGenerationAllowed: false
+verdict:
+  domainModel: VALIDATED
+  lot2: COMPLETE
+  modelBlockers: []
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+  globalCodeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+  nextStep: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+modelCounts:
+  aggregateRoots: 1
+  states: 17
+  terminalStates: 4
+  commands: 16
+  aggregateOperations: 17
+  transitions: 38
+  invariants: 76
+  events: 33
+  policies: 14
+  domainServices: 4
+  policyProfiles: 12
+  namedAcceptanceScenarios: 174
+specialSemantics:
+  sameAsSourcePseudoTarget:
+    transitionId: PAY-TR-037
+    status: VALID
+  commandlessReconstitution:
+    operationId: PAY-OP-017
+    status: VALID
+correctionsApplied:
+- id: PAY-FIX-IA1-001
+  artifact: PAYMENT_INVARIANT_CATALOGUE.yaml
+  element: PAY-INV-042.violationResult
+  before: ACCOUNTING_OUTCOME_UNKNOWN
+  after: POSTING_OUTCOME_UNKNOWN
+  reason: Posting and reversal unknown outcomes are distinct IA-1 states.
+- id: PAY-FIX-IA1-002
+  artifact: PAYMENT_INVARIANT_CATALOGUE.yaml
+  element: PAY-INV-061.violationResult
+  before: ACCOUNTING_OUTCOME_UNKNOWN
+  after: REVERSAL_OUTCOME_UNKNOWN
+  reason: Posting and reversal unknown outcomes are distinct IA-1 states.
+- id: PAY-FIX-IA1-003
+  artifact: PAYMENT_ACCEPTANCE_SCENARIOS.md
+  element: Complete acceptance baseline
+  before: 'IA-0P: 16 states, 34 transitions and legacy event/status names'
+  after: 'IA-1: 17 states, 38 transitions, 33 events, 14 policies and 4 Domain Services'
+  reason: The previous acceptance catalogue no longer matched the final model.
+checks:
+- id: PAY-VAL-001
+  category: SYNTAX
+  subject: All six machine-readable IA-1 catalogues parse as YAML.
+  status: PASS
+  severity: BLOCKING
+  evidence: PAYMENT_INVARIANT_CATALOGUE.yaml, PAYMENT_COMMAND_CATALOGUE.yaml, PAYMENT_STATE_MACHINE.yaml, PAYMENT_EVENT_CATALOG.yaml, PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml,
+    AI_CONTEXT_MANIFEST.yaml
+- id: PAY-VAL-002
+  category: CARDINALITY
+  subject: Final model cardinalities match the IA-1 manifest.
+  status: PASS
+  severity: BLOCKING
+  evidence: 76 invariants; 16 commands; 17 operations; 17 states; 38 transitions; 33 events; 14 policies; 4 Domain Services.
+- id: PAY-VAL-003
+  category: IDENTIFIERS
+  subject: All normative ID ranges are unique and contiguous.
+  status: PASS
+  severity: BLOCKING
+  evidence: PAY-INV-001..076, PAY-CMD-001..016, PAY-OP-001..017, PAY-TR-001..038, PAY-EVT-001..033, PAY-POL-001..014, PAY-DS-001..004.
+- id: PAY-VAL-004
+  category: TRACEABILITY
+  subject: All cross-catalogue references resolve to existing elements.
+  status: PASS
+  severity: BLOCKING
+  evidence: Commands, operations, states, invariants, events, policies and Domain Services.
+- id: PAY-VAL-005
+  category: EVENT_MODEL
+  subject: Every canonical fact kind maps to exactly one event type in deterministic order.
+  status: PASS
+  severity: BLOCKING
+  evidence: 33 fact kinds ↔ 33 stable event types.
+- id: PAY-VAL-006
+  category: STATE_MACHINE
+  subject: All 17 states are reachable and terminal states have no outgoing transition.
+  status: PASS
+  severity: BLOCKING
+  evidence: Initial RECEIVED; terminal REJECTED, FAILED, TREASURY_INTEGRATED, REVERSED.
+- id: PAY-VAL-007
+  category: STATE_MACHINE
+  subject: The SAME_AS_SOURCE pseudo-target is explicit and restricted.
+  status: PASS
+  severity: BLOCKING
+  evidence: Only PAY-TR-037 uses it for recoverable pre-financial processing deferral.
+- id: PAY-VAL-008
+  category: AGGREGATE_RECONSTITUTION
+  subject: Reconstitution is not an application command or state transition.
+  status: PASS
+  severity: BLOCKING
+  evidence: PAY-OP-017 has commandId=null, raises no event and performs no transition.
+- id: PAY-VAL-009
+  category: COMMAND_MODEL
+  subject: Command allowed states match the union of their legal state-machine branches.
+  status: PASS
+  severity: BLOCKING
+  evidence: PAY-CMD-002..016 checked; PAY-CMD-001 is creation.
+- id: PAY-VAL-010
+  category: POLICY_SERVICE_MODEL
+  subject: All policies and Domain Services are pure, deterministic and I/O-free.
+  status: PASS
+  severity: BLOCKING
+  evidence: 14 policies and 4 pure Domain Services.
+- id: PAY-VAL-011
+  category: OWNERSHIP
+  subject: Payment remains the sole state-transition and domain-event owner.
+  status: PASS
+  severity: BLOCKING
+  evidence: Domain Services return typed decisions only.
+- id: PAY-VAL-012
+  category: CONFIDENTIALITY
+  subject: Every Payment event is guarded by the disclosure policy.
+  status: PASS
+  severity: BLOCKING
+  evidence: PAY-POL-014 is referenced by all 33 events.
+- id: PAY-VAL-013
+  category: NOTIFICATION
+  subject: Only three result-intent events trigger Notification.
+  status: PASS
+  severity: BLOCKING
+  evidence: PaymentFinalResultAvailable, PaymentImmediateResultAvailable, PaymentReversalResultAvailable
+- id: PAY-VAL-014
+  category: CORRECTION
+  subject: Posting and reversal unknown outcomes use distinct IA-1 states.
+  status: PASS_WITH_CORRECTION
+  severity: BLOCKING
+  evidence: PAY-INV-042 → POSTING_OUTCOME_UNKNOWN; PAY-INV-061 → REVERSAL_OUTCOME_UNKNOWN.
+- id: PAY-VAL-015
+  category: MANIFEST
+  subject: Manifest cardinalities agree with all machine-readable catalogues.
+  status: PASS
+  severity: BLOCKING
+  evidence: All final model counts reconciled.
+- id: PAY-VAL-016
+  category: ACCEPTANCE
+  subject: Acceptance baseline is aligned with the final IA-1 model.
+  status: PASS_WITH_CORRECTION
+  severity: BLOCKING
+  evidence: 174 named scenarios plus generated exhaustive cases.
+- id: PAY-VAL-017
+  category: OPEN_DECISIONS
+  subject: No unresolved decision blocks the shape or semantics of the IA-1 domain model.
+  status: PASS
+  severity: BLOCKING
+  evidence: Remaining items are contract, security, operations or integration approvals.
+- id: PAY-VAL-018
+  category: GENERATION_GATE
+  subject: Global code generation remains disabled.
+  status: EXTERNAL_PENDING
+  severity: GATE
+  evidence: Contract approvals and missing Amplitude verification contract remain unresolved.
+acceptanceCoverage:
+  humanPath: documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md
+  namedScenarioCount: 174
+  families:
+  - code: MDL
+    title: Aggregate and invariant model
+    level: DOMAIN
+    namedScenarioCount: 12
+  - code: VO
+    title: Value Objects
+    level: DOMAIN
+    namedScenarioCount: 10
+  - code: SNP
+    title: Snapshots and evidence
+    level: DOMAIN
+    namedScenarioCount: 10
+  - code: STM
+    title: State machine
+    level: DOMAIN
+    namedScenarioCount: 12
+  - code: EVT
+    title: Domain Events and Outbox mapping
+    level: DOMAIN_APPLICATION
+    namedScenarioCount: 12
+  - code: POL
+    title: Policies
+    level: DOMAIN
+    namedScenarioCount: 14
+  - code: DS
+    title: Pure Domain Services
+    level: DOMAIN
+    namedScenarioCount: 4
+  - code: IDM
+    title: Idempotence and replay
+    level: APPLICATION_PERSISTENCE
+    namedScenarioCount: 10
+  - code: CON
+    title: Concurrency
+    level: APPLICATION_PERSISTENCE
+    namedScenarioCount: 8
+  - code: AMP
+    title: Amplitude integration
+    level: INTEGRATION
+    namedScenarioCount: 14
+  - code: NOT
+    title: Notification
+    level: INTERMODULE
+    namedScenarioCount: 10
+  - code: TFJ
+    title: TFJ finality and reconciliation
+    level: ACCOUNTING_INTERMODULE
+    namedScenarioCount: 12
+  - code: SEC
+    title: Security and confidentiality
+    level: SECURITY_INTEGRATION
+    namedScenarioCount: 15
+  - code: OBS
+    title: ObservedCustomer projection
+    level: REPORTING_CUSTOMER
+    namedScenarioCount: 10
+  - code: PAR
+    title: Partial and uncertain financial outcomes
+    level: DOMAIN_INTEGRATION
+    namedScenarioCount: 9
+  - code: REV
+    title: Reversal
+    level: DOMAIN_ACCOUNTING
+    namedScenarioCount: 12
+  generatedCases:
+    invariants: 76
+    legalTransitions: 38
+    illegalTransitions: EXHAUSTIVE_COMPLEMENT
+    eventSchemas: 33
+    policies: 14
+    domainServices: 4
+    terminalMutationAttempts: ALL_COMMANDS_X_4_TERMINAL_STATES
+openDecisionReview:
+- id: OPEN-BASE-001
+  disposition: SUPERSEDED
+  modelImpact: NONE
+  reason: The authoritative branch is now feat/payment-domain-generation-brief.
+- id: OPEN-BASE-002
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_GLOBAL_CODE_GENERATION
+  reason: Complete Payment Contract Pack approval is still required.
+- id: OPEN-BASE-003
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_VERIFICATION_ADAPTER_GENERATION
+  reason: documentation/contracts/amplitude/amplitude-payment-verification-api-v1.yaml was not present at validation.
+- id: OPEN-BASE-004
+  disposition: CLOSED
+  modelImpact: NONE
+  reason: Final internal query paths exist for Payment, ObservedCustomer and Payment Audit.
+- id: OPEN-BASE-005
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: CONTRACT_MANIFEST_RECONCILIATION_REQUIRED
+  reason: Historical contract artifact count must be confirmed by the contract manifest owners.
+- id: OPEN-BASE-006
+  disposition: DEFERRED_NOT_MVP_MODEL
+  modelImpact: NONE
+  reason: Reservation is absent from the IA-1 Payment aggregate; future support requires a new approved change.
+- id: OPEN-BASE-007
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: BANK_CONTRACT_APPROVAL_REQUIRED
+  reason: Principal posting reference with optional leg references is modeled.
+- id: OPEN-BASE-008
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: OPERATIONS_AND_BANK_APPROVAL_REQUIRED
+  reason: Reversal source states and explicit authorization evidence are modeled.
+- id: OPEN-BASE-009
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: NOTIFIED is not a financial state; delivery belongs to Notification.
+- id: OPEN-BASE-010
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: DEBIT_CONFIRMED explicitly represents debit-only evidence.
+- id: OPEN-BASE-011
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: FAILED is terminal only with proven absence of financial effect.
+- id: OPEN-BASE-012
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SECURITY_ADAPTER_ACTIVATION
+  reason: JWT TTL, clock skew and algorithms remain approved profile/adapter configuration.
+- id: OPEN-BASE-013
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SCHEDULER_AND_ALERT_ACTIVATION
+  reason: Cutoff, reconciliation windows and SLA remain Operations/Accounting configuration.
+generationBlockers:
+- id: GEN-BLOCK-001
+  source: OPEN-BASE-002
+  reason: Complete Payment Contract Pack approval.
+- id: GEN-BLOCK-002
+  source: OPEN-BASE-003
+  reason: Missing approved amplitude-payment-verification-api-v1.yaml.
+- id: GEN-BLOCK-003
+  source: CURRENT_INTERNAL_QUERY_CONTRACTS
+  reason: Current internal query contracts declare approvalStatus=PENDING_APPROVAL and codeGenerationAllowed=false.
+- id: GEN-BLOCK-004
+  source: OPEN-BASE-012
+  reason: Security adapter parameters require approval.
+- id: GEN-BLOCK-005
+  source: OPEN-BASE-013
+  reason: Operational cutoff/reconciliation/SLA parameters require approval.
+finalDecisions:
+- id: PAY-DEC-IA1-061
+  decision: LOT_2_FINAL_MODEL_VALIDATION_PASSES_AFTER_TWO_UNKNOWN_OUTCOME_CORRECTIONS
+- id: PAY-DEC-IA1-062
+  decision: SEVENTEEN_STATES_AND_THIRTY_EIGHT_TRANSITIONS_ARE_FINAL_FOR_IA1
+- id: PAY-DEC-IA1-063
+  decision: THIRTY_THREE_EVENTS_FULLY_COVER_CANONICAL_DOMAIN_FACTS
+- id: PAY-DEC-IA1-064
+  decision: FOURTEEN_POLICIES_AND_FOUR_DOMAIN_SERVICES_PASS_PURITY_AND_OWNERSHIP_VALIDATION
+- id: PAY-DEC-IA1-065
+  decision: PAYMENT_ACCEPTANCE_SCENARIOS_ARE_REBASELINED_TO_IA1
+- id: PAY-DEC-IA1-066
+  decision: SAME_AS_SOURCE_AND_COMMANDLESS_RECONSTITUTION_ARE_EXPLICIT_VALIDATION_EXCEPTIONS
+- id: PAY-DEC-IA1-067
+  decision: NO_OPEN_DECISION_BLOCKS_THE_DOMAIN_MODEL_SHAPE
+- id: PAY-DEC-IA1-068
+  decision: GLOBAL_CODE_GENERATION_REMAINS_FORBIDDEN_UNTIL_CONTRACT_AND_OWNER_APPROVAL
+- id: PAY-DEC-IA1-069
+  decision: DOMAIN_ONLY_IMPLEMENTATION_PLANNING_IS_READY_BUT_NOT_AUTOMATICALLY_AUTHORIZED
+- id: PAY-DEC-IA1-070
+  decision: LOT_2_IS_COMPLETE_AND_THE_IA1_PAYMENT_MODEL_IS_FROZEN_PENDING_APPROVED_CHANGE_CONTROL
+freezePolicy:
+  status: IA1_MODEL_FROZEN
+  changeRequires:
+  - NEW_TRACEABLE_DECISION
+  - UPDATED_CATALOGUES
+  - UPDATED_ACCEPTANCE_SCENARIOS
+  - REEXECUTED_FINAL_VALIDATION

@@ -1,0 +1,3533 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-TEST-TRACEABILITY
+  lot: 8_TEST_PLAN_TRACEABILITY
+  branch: feat/payment-domain-generation-brief
+  status: NORMATIVE_IMPLEMENTED
+  codeGenerationAllowed: false
+counts:
+  invariants: 76
+  transitions: 38
+  events: 33
+  operations: 17
+  futureScenarios: 15
+coverageRules:
+  everyInvariantHasScenario: true
+  everyTransitionHasScenario: true
+  everyTransitionHasOperation: true
+  everyTransitionHasEvent: true
+  everyScenarioHasNamedTest: true
+  everyScenarioHasTargetFile: true
+  futureTestsAreNotClaimedImplemented: true
+transitionCoverage:
+- transitionId: PAY-TR-001
+  requirementRefs:
+  - PAY-INV-010
+  - PAY-INV-021
+  invariantRefs:
+  - PAY-INV-010
+  - PAY-INV-021
+  sourceStates:
+  - RECEIVED
+  condition: COMMAND_ACCEPTED
+  targetState: AUTHORIZATION_CHECKING
+  operationId: PAY-OP-002
+  operation: startAuthorizationChecking
+  eventRefs:
+  - PAY-EVT-002
+  eventNames:
+  - PaymentAuthorizationCheckingStarted
+  scenarioId: PAY-TEST-TR-001
+  scenarioName: transition_pay_tr_001_received_to_authorizationChecking_when_commandAccepted
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-002
+  requirementRefs:
+  - PAY-INV-021
+  - PAY-INV-022
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  invariantRefs:
+  - PAY-INV-021
+  - PAY-INV-022
+  sourceStates:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == APPROVED
+  targetState: BANKING_VERIFICATION_PENDING
+  operationId: PAY-OP-003
+  operation: recordAuthorizationDecision
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-004
+  eventNames:
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentBankingVerificationRequested
+  scenarioId: PAY-TEST-TR-002
+  scenarioName: transition_pay_tr_002_authorizationChecking_to_bankingVerificationPending_when_evidence.outcome==Approved
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-003
+  requirementRefs:
+  - PAY-INV-023
+  - PAY-INV-065
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-023
+  - PAY-INV-065
+  sourceStates:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == REJECTED
+  targetState: REJECTED
+  operationId: PAY-OP-003
+  operation: recordAuthorizationDecision
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-003
+  scenarioName: transition_pay_tr_003_authorizationChecking_to_rejected_when_evidence.outcome==Rejected
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-004
+  requirementRefs:
+  - PAY-INV-027
+  - PAY-INV-028
+  - PAY-INV-030
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  invariantRefs:
+  - PAY-INV-027
+  - PAY-INV-028
+  - PAY-INV-030
+  sourceStates:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == VERIFIED
+  targetState: FUNDS_CONTROL_PENDING
+  operationId: PAY-OP-004
+  operation: recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRequested
+  scenarioId: PAY-TEST-TR-004
+  scenarioName: transition_pay_tr_004_bankingVerificationPending_to_fundsControlPending_when_evidence.outcome==Verified
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-005
+  requirementRefs:
+  - PAY-INV-029
+  - PAY-INV-065
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-029
+  - PAY-INV-065
+  sourceStates:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == REJECTED
+  targetState: REJECTED
+  operationId: PAY-OP-004
+  operation: recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-005
+  scenarioName: transition_pay_tr_005_bankingVerificationPending_to_rejected_when_evidence.outcome==Rejected
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-006
+  requirementRefs:
+  - PAY-INV-029
+  - PAY-INV-068
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-029
+  - PAY-INV-068
+  sourceStates:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  targetState: BANKING_VERIFICATION_PENDING
+  operationId: PAY-OP-004
+  operation: recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-009
+  - PAY-EVT-006
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentProcessingDeferred
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-006
+  scenarioName: transition_pay_tr_006_bankingVerificationPending_to_bankingVerificationPending_when_evidence.outcome==Indeterminate
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-007
+  requirementRefs:
+  - PAY-INV-032
+  - PAY-INV-034
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  invariantRefs:
+  - PAY-INV-032
+  - PAY-INV-034
+  sourceStates:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == VERIFIED
+  targetState: TREASURY_ACCOUNT_RESOLUTION_PENDING
+  operationId: PAY-OP-005
+  operation: recordFundsControl
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-011
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentTreasuryAccountResolutionRequested
+  scenarioId: PAY-TEST-TR-007
+  scenarioName: transition_pay_tr_007_fundsControlPending_to_treasuryAccountResolutionPending_when_evidence.outcome==Verified
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-008
+  requirementRefs:
+  - PAY-INV-033
+  - PAY-INV-065
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-033
+  - PAY-INV-065
+  sourceStates:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == REJECTED
+  targetState: REJECTED
+  operationId: PAY-OP-005
+  operation: recordFundsControl
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-008
+  scenarioName: transition_pay_tr_008_fundsControlPending_to_rejected_when_evidence.outcome==Rejected
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-009
+  requirementRefs:
+  - PAY-INV-038
+  - PAY-INV-039
+  - PAY-INV-040
+  - PAY-INV-041
+  - PAY-POL-004
+  - PAY-POL-005
+  - PAY-POL-007
+  invariantRefs:
+  - PAY-INV-038
+  - PAY-INV-039
+  - PAY-INV-040
+  - PAY-INV-041
+  sourceStates:
+  - APPROVED_FOR_POSTING
+  condition: SOLE_INSTRUCTION_AUTHORIZED
+  targetState: POSTING_PENDING
+  operationId: PAY-OP-007
+  operation: authorizePosting
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  eventNames:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  scenarioId: PAY-TEST-TR-009
+  scenarioName: transition_pay_tr_009_approvedForPosting_to_postingPending_when_soleInstructionAuthorized
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-010
+  requirementRefs:
+  - PAY-INV-033
+  - PAY-INV-068
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-033
+  - PAY-INV-068
+  sourceStates:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  targetState: FUNDS_CONTROL_PENDING
+  operationId: PAY-OP-005
+  operation: recordFundsControl
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-009
+  - PAY-EVT-006
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentProcessingDeferred
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-010
+  scenarioName: transition_pay_tr_010_fundsControlPending_to_fundsControlPending_when_evidence.outcome==Indeterminate
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-011
+  requirementRefs:
+  - PAY-INV-035
+  - PAY-INV-036
+  - PAY-INV-038
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  invariantRefs:
+  - PAY-INV-035
+  - PAY-INV-036
+  - PAY-INV-038
+  sourceStates:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == RESOLVED
+  targetState: APPROVED_FOR_POSTING
+  operationId: PAY-OP-006
+  operation: recordTreasuryAccountResolution
+  eventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-013
+  eventNames:
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentApprovedForPosting
+  scenarioId: PAY-TEST-TR-011
+  scenarioName: transition_pay_tr_011_treasuryAccountResolutionPending_to_approvedForPosting_when_evidence.resolutionoutcome==Resolved
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-012
+  requirementRefs:
+  - PAY-INV-035
+  - PAY-INV-065
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-035
+  - PAY-INV-065
+  sourceStates:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == REJECTED
+  targetState: REJECTED
+  operationId: PAY-OP-006
+  operation: recordTreasuryAccountResolution
+  eventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-012
+  scenarioName: transition_pay_tr_012_treasuryAccountResolutionPending_to_rejected_when_evidence.resolutionoutcome==Rejected
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-013
+  requirementRefs:
+  - PAY-INV-041
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-041
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == COMPLETED
+  targetState: POSTED_PENDING_TFJ
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  scenarioId: PAY-TEST-TR-013
+  scenarioName: transition_pay_tr_013_postingPending_to_postedPendingTfj_when_evidence.outcome==Completed
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-014
+  requirementRefs:
+  - PAY-INV-045
+  - PAY-INV-048
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-045
+  - PAY-INV-048
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  targetState: DEBIT_CONFIRMED
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-018
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentDebitConfirmed
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-014
+  scenarioName: transition_pay_tr_014_postingPending_to_debitConfirmed_when_evidence.outcome==DebitConfirmedCutCreditPending
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-015
+  requirementRefs:
+  - PAY-INV-042
+  - PAY-INV-069
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-042
+  - PAY-INV-069
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == UNKNOWN
+  targetState: POSTING_OUTCOME_UNKNOWN
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-015
+  scenarioName: transition_pay_tr_015_postingPending_to_postingOutcomeUnknown_when_evidence.outcome==Unknown
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-016
+  requirementRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  targetState: REJECTED
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-016
+  scenarioName: transition_pay_tr_016_postingPending_to_rejected_when_evidence.outcome==RejectedNoFinancialEffect&&Failure.Category==BusinessRejection
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-017
+  requirementRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  targetState: FAILED
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-032
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-017
+  scenarioName: transition_pay_tr_017_postingPending_to_failed_when_evidence.outcome==RejectedNoFinancialEffect&&Failure.Category==TechnicalFailure
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-018
+  requirementRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  sourceStates:
+  - POSTING_PENDING
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-018
+  scenarioName: transition_pay_tr_018_postingPending_to_reversalRequired_when_evidence.outcome==ReversalRequired
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-019
+  requirementRefs:
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  sourceStates:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == COMPLETED
+  targetState: POSTED_PENDING_TFJ
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  scenarioId: PAY-TEST-TR-019
+  scenarioName: transition_pay_tr_019_debitConfirmed_to_postedPendingTfj_when_evidence.outcome==Completed
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-020
+  requirementRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  sourceStates:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == UNKNOWN
+  targetState: POSTING_OUTCOME_UNKNOWN
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-020
+  scenarioName: transition_pay_tr_020_debitConfirmed_to_postingOutcomeUnknown_when_evidence.outcome==Unknown
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-021
+  requirementRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  sourceStates:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-008
+  operation: recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-021
+  scenarioName: transition_pay_tr_021_debitConfirmed_to_reversalRequired_when_evidence.outcome==ReversalRequired
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-022
+  requirementRefs:
+  - PAY-INV-042
+  - PAY-INV-044
+  - PAY-INV-050
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-042
+  - PAY-INV-044
+  - PAY-INV-050
+  sourceStates:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == COMPLETED
+  targetState: POSTED_PENDING_TFJ
+  operationId: PAY-OP-009
+  operation: resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-006
+  - PAY-EVT-017
+  eventNames:
+  - PaymentPostingOutcomeResolved
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  scenarioId: PAY-TEST-TR-022
+  scenarioName: transition_pay_tr_022_postingOutcomeUnknown_to_postedPendingTfj_when_authoritativeevidence.outcome==Completed
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-023
+  requirementRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  sourceStates:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  targetState: DEBIT_CONFIRMED
+  operationId: PAY-OP-009
+  operation: resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-018
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeResolved
+  - PaymentDebitConfirmed
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-023
+  scenarioName: transition_pay_tr_023_postingOutcomeUnknown_to_debitConfirmed_when_authoritativeevidence.outcome==DebitConfirmedCutCreditPending
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-024
+  requirementRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  sourceStates:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  targetState: REJECTED
+  operationId: PAY-OP-009
+  operation: resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeResolved
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-024
+  scenarioName: transition_pay_tr_024_postingOutcomeUnknown_to_rejected_when_authoritativeevidence.outcome==RejectedNoFinancialEffect&&Failure.Category==BusinessRejection
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-025
+  requirementRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  sourceStates:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  targetState: FAILED
+  operationId: PAY-OP-009
+  operation: resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-032
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeResolved
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-025
+  scenarioName: transition_pay_tr_025_postingOutcomeUnknown_to_failed_when_authoritativeevidence.outcome==RejectedNoFinancialEffect&&Failure.Category==TechnicalFailure
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-026
+  requirementRefs:
+  - PAY-INV-042
+  - PAY-INV-046
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-001
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-042
+  - PAY-INV-046
+  sourceStates:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSAL_REQUIRED
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-009
+  operation: resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeResolved
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-026
+  scenarioName: transition_pay_tr_026_postingOutcomeUnknown_to_reversalRequired_when_authoritativeevidence.outcome==ReversalRequired
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-027
+  requirementRefs:
+  - PAY-INV-054
+  - PAY-INV-056
+  - PAY-INV-058
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-002
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-054
+  - PAY-INV-056
+  - PAY-INV-058
+  sourceStates:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == INTEGRATED
+  targetState: TREASURY_INTEGRATED
+  operationId: PAY-OP-010
+  operation: recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - TreasuryIntegrationConfirmed
+  - PaymentFinalResultAvailable
+  scenarioId: PAY-TEST-TR-027
+  scenarioName: transition_pay_tr_027_postedPendingTfj_to_treasuryIntegrated_when_evidence.tfjstatus==Integrated
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-028
+  requirementRefs:
+  - PAY-INV-054
+  - PAY-INV-057
+  - PAY-INV-059
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-002
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-054
+  - PAY-INV-057
+  - PAY-INV-059
+  sourceStates:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && evidence.failureEvidence.recoveryAction == REVERSAL_REQUIRED
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-010
+  operation: recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-028
+  scenarioName: transition_pay_tr_028_postedPendingTfj_to_reversalRequired_when_evidence.tfjstatus==Failed&&Evidence.Failureevidence.Recoveryaction==ReversalRequired
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-029
+  requirementRefs:
+  - PAY-INV-055
+  - PAY-INV-057
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-DS-002
+  invariantRefs:
+  - PAY-INV-055
+  - PAY-INV-057
+  sourceStates:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && recoveryAction in [MANUAL_RECONCILIATION, REVERSAL_REVIEW]
+  targetState: POSTED_PENDING_TFJ
+  operationId: PAY-OP-010
+  operation: recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-025
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - PaymentTreasuryReconciliationRequired
+  scenarioId: PAY-TEST-TR-029
+  scenarioName: transition_pay_tr_029_postedPendingTfj_to_postedPendingTfj_when_evidence.tfjstatus==Failed&&RecoveryactionIn[ManualReconciliation,ReversalReview]
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-030
+  requirementRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  - PAY-POL-010
+  - PAY-DS-003
+  invariantRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  sourceStates:
+  - REVERSAL_REQUIRED
+  condition: AUTHORIZATION_ACCEPTED
+  targetState: REVERSAL_PENDING
+  operationId: PAY-OP-011
+  operation: authorizeReversal
+  eventRefs:
+  - PAY-EVT-026
+  - PAY-EVT-027
+  eventNames:
+  - PaymentReversalAuthorized
+  - PaymentReversalRequested
+  scenarioId: PAY-TEST-TR-030
+  scenarioName: transition_pay_tr_030_reversalRequired_to_reversalPending_when_authorizationAccepted
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-031
+  requirementRefs:
+  - PAY-INV-060
+  - PAY-INV-063
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-003
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-060
+  - PAY-INV-063
+  sourceStates:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == REVERSED
+  targetState: REVERSED
+  operationId: PAY-OP-012
+  operation: recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-033
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-TR-031
+  scenarioName: transition_pay_tr_031_reversalPending_to_reversed_when_evidence.outcome==Reversed
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-032
+  requirementRefs:
+  - PAY-INV-061
+  - PAY-INV-069
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-DS-003
+  invariantRefs:
+  - PAY-INV-061
+  - PAY-INV-069
+  sourceStates:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == UNKNOWN
+  targetState: REVERSAL_OUTCOME_UNKNOWN
+  operationId: PAY-OP-012
+  operation: recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-030
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalOutcomeLookupRequested
+  scenarioId: PAY-TEST-TR-032
+  scenarioName: transition_pay_tr_032_reversalPending_to_reversalOutcomeUnknown_when_evidence.outcome==Unknown
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-033
+  requirementRefs:
+  - PAY-INV-062
+  - PAY-INV-064
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-003
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-062
+  - PAY-INV-064
+  sourceStates:
+  - REVERSAL_PENDING
+  condition: evidence.outcome in [REJECTED, NOT_ALLOWED]
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-012
+  operation: recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-020
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-TR-033
+  scenarioName: transition_pay_tr_033_reversalPending_to_reversalRequired_when_evidence.outcomeIn[Rejected,NotAllowed]
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-034
+  requirementRefs:
+  - PAY-INV-061
+  - PAY-INV-063
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-003
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-061
+  - PAY-INV-063
+  sourceStates:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSED
+  targetState: REVERSED
+  operationId: PAY-OP-013
+  operation: resolveReversalOutcome
+  eventRefs:
+  - PAY-EVT-031
+  - PAY-EVT-033
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalOutcomeResolved
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-TR-034
+  scenarioName: transition_pay_tr_034_reversalOutcomeUnknown_to_reversed_when_authoritativeevidence.outcome==Reversed
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-035
+  requirementRefs:
+  - PAY-INV-061
+  - PAY-INV-062
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-003
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-061
+  - PAY-INV-062
+  sourceStates:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome in [REJECTED, NOT_ALLOWED]
+  targetState: REVERSAL_REQUIRED
+  operationId: PAY-OP-013
+  operation: resolveReversalOutcome
+  eventRefs:
+  - PAY-EVT-031
+  - PAY-EVT-020
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalOutcomeResolved
+  - PaymentReversalRequired
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-TR-035
+  scenarioName: transition_pay_tr_035_reversalOutcomeUnknown_to_reversalRequired_when_authoritativeevidence.outcomeIn[Rejected,NotAllowed]
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-036
+  requirementRefs:
+  - PAY-INV-020
+  - PAY-INV-065
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-020
+  - PAY-INV-065
+  sourceStates:
+  - RECEIVED
+  condition: businessOrSecurityRejection is conclusive
+  targetState: REJECTED
+  operationId: PAY-OP-014
+  operation: reject
+  eventRefs:
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-036
+  scenarioName: transition_pay_tr_036_received_to_rejected_when_businessorsecurityrejectionIsConclusive
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-037
+  requirementRefs:
+  - PAY-INV-024
+  - PAY-INV-033
+  - PAY-INV-068
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-024
+  - PAY-INV-033
+  - PAY-INV-068
+  sourceStates:
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: failure.retryDisposition in [SAFE_RETRY, RECOVERY_EVENT_REQUIRED, OPERATOR_ACTION_REQUIRED]
+  targetState: SAME_AS_SOURCE
+  operationId: PAY-OP-015
+  operation: recordRecoverableFailure
+  eventRefs:
+  - PAY-EVT-009
+  - PAY-EVT-006
+  eventNames:
+  - PaymentProcessingDeferred
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-037
+  scenarioName: transition_pay_tr_037_authorizationCheckingorbankingVerificationPendingorfundsControlPendingortreasuryAccountResolutionPending_to_sameAsSource_when_failure.retrydispositionIn[SafeRetry,RecoveryEventRequired,OperatorActionRequired]
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+- transitionId: PAY-TR-038
+  requirementRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  - PAY-POL-012
+  - PAY-POL-013
+  - PAY-DS-004
+  invariantRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  sourceStates:
+  - RECEIVED
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  - APPROVED_FOR_POSTING
+  condition: technical failure and absence of financial effect are proven
+  targetState: FAILED
+  operationId: PAY-OP-016
+  operation: failWithoutFinancialEffect
+  eventRefs:
+  - PAY-EVT-032
+  - PAY-EVT-006
+  eventNames:
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-TR-038
+  scenarioName: transition_pay_tr_038_receivedorauthorizationCheckingorbankingVerificationPendingorfundsControlPendingortreasuryAccountResolutionPendingorapprovedForPosting_to_failed_when_technicalFailureAndAbsenceOfFinancialEffectAreProven
+  testLayer: DOMAIN
+  testStatus: IMPLEMENTED_CYCLE_SUITE_NAMED_SCENARIO_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  expectedInvalidComplement: Every other state/command combination is rejected without mutation, version increment or event.
+invariantCoverage:
+- invariantId: PAY-INV-001
+  statement: A Payment has exactly one non-null, non-nil and immutable PaymentId for its entire lifecycle.
+  sourceRequirementRefs:
+  - PAY-AGG-001
+  - PAY-DEC-IA1-007
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-001
+  scenarioName: invariant_pay_inv_001_aPaymentHasExactlyOneNonNull,NonNilAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-002
+  statement: PaymentSource and ExternalPaymentReference are required at creation, immutable and never recycled.
+  sourceRequirementRefs:
+  - PAY-AGG-002
+  - PAY-DEC-IA1-002
+  - PAY-DEC-IA1-008
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-002
+  scenarioName: invariant_pay_inv_002_paymentsourceAndExternalpaymentreferenceAreRequiredAtCreation,Immutable
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-003
+  statement: The business uniqueness key is PaymentSource plus ExternalPaymentReference; repository-wide uniqueness is enforced atomically outside the aggregate.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-002
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-003
+  scenarioName: invariant_pay_inv_003_theBusinessUniquenessKeyIsPaymentsourcePlusExternalpaymentreference;
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-004
+  statement: PublicPaymentReference is required, globally unique in SIXPAY, immutable and distinct from every internal, external, idempotency, correlation and bank reference.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-010
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-004
+  scenarioName: invariant_pay_inv_004_publicpaymentreferenceIsRequired,GloballyUniqueInSixpay,Immutable
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+  stableErrorCode: PAYMENT_REFERENCE_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-005
+  statement: ExternalSubscriptionReference is required for the MVP, immutable and never resolved or mutated as a local Subscription aggregate.
+  sourceRequirementRefs:
+  - PAY-BOUND-001
+  - PAY-DEC-IA1-009
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-005
+  scenarioName: invariant_pay_inv_005_externalsubscriptionreferenceIsRequiredForTheMvp,ImmutableAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - ARCHITECTURE_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  auditExpectation: No runtime audit; build-time architecture evidence only.
+- invariantId: PAY-INV-006
+  statement: The original PaymentRequestIdentity is required at creation and its idempotency key, request fingerprint and correlation identifier never change.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-011
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-006
+  scenarioName: invariant_pay_inv_006_theOriginalPaymentrequestidentityIsRequiredAtCreationAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-007
+  statement: FinancialInstitutionCode, DebtorAccountReference, requested Money and TreasuryAllocationIntent are immutable original-intent facts.
+  sourceRequirementRefs:
+  - PAY-AGG-004
+  - PAY-DEC-IA1-012
+  - PAY-DEC-IA1-014
+  - PAY-DEC-IA1-015
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-007
+  scenarioName: invariant_pay_inv_007_financialinstitutioncode,Debtoraccountreference,RequestedMoneyAndTreasuryallocationintentAreImmutable
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-008
+  statement: Requested Money and every Treasury allocation are strictly positive, use one currency and allocations sum exactly to the requested amount.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-014
+  - PAY-DEC-IA1-015
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-008
+  scenarioName: invariant_pay_inv_008_requestedMoneyAndEveryTreasuryAllocationAreStrictly
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - VALUE_OBJECT_UNIT
+  - PROPERTY_BASED
+  stableErrorCode: PAYMENT_INVALID_CREATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-009
+  statement: createdAt is immutable; updatedAt never precedes createdAt and changes only on a successful aggregate mutation.
+  sourceRequirementRefs:
+  - PAY-AGG-004
+  - PAY-SNAP-003
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-009
+  scenarioName: invariant_pay_inv_009_createdatIsImmutable;UpdatedatNeverPrecedesCreatedatAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-010
+  statement: businessVersion is non-negative and increases exactly once for each successful state-changing mutation; no-op replay and rejected operations do not increase it.
+  sourceRequirementRefs:
+  - PAY-AGG-011
+  - PAY-AGG-012
+  transitionRefs:
+  - PAY-TR-001
+  operationRefs:
+  - PAY-OP-002
+  operationNames:
+  - startAuthorizationChecking
+  eventRefs:
+  - PAY-EVT-002
+  eventNames:
+  - PaymentAuthorizationCheckingStarted
+  scenarioId: PAY-TEST-INV-010
+  scenarioName: invariant_pay_inv_010_businessversionIsNonNegativeAndIncreasesExactlyOnceFor
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_VERSION_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-011
+  statement: Payment domain state never contains a raw JWT, Subscription Key, credential, signature, JWKS body or secret.
+  sourceRequirementRefs:
+  - PAY-BOUND-002
+  - PAY-SNAP-004
+  - PAY-DEC-IA1-019
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-011
+  scenarioName: invariant_pay_inv_011_paymentDomainStateNeverContainsARawJwt,
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - SERIALIZATION_TEST
+  - SECURITY_TEST
+  stableErrorCode: PAYMENT_SECURITY_REJECTION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-012
+  statement: Payment never stores a clear debtor or Treasury account number; protected token, mask and keyed fingerprint remain distinct representations.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-012
+  - PAY-DEC-IA1-013
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-012
+  scenarioName: invariant_pay_inv_012_paymentNeverStoresAClearDebtorOrTreasury
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - PERSISTENCE_ENCRYPTION
+  - SECURITY_TEST
+  stableErrorCode: PAYMENT_SECURITY_REJECTION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-013
+  statement: Raw TRESOR PAY, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
+  sourceRequirementRefs:
+  - PAY-BOUND-003
+  - PAY-SNAP-004
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-013
+  scenarioName: invariant_pay_inv_013_rawTresorPay,Amplitude,TfjOrNotificationPayloads
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - ARCHITECTURE_TEST
+  - MAPPING_TEST
+  - EVENT_SCHEMA_TEST
+  stableErrorCode: PAYMENT_MAPPING_REJECTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-014
+  statement: Payment domain types have no dependency on Spring, Jakarta Persistence, Hibernate, Jackson, HTTP, Kafka, database entities or another business-domain implementation.
+  sourceRequirementRefs:
+  - PAY-BOUND-004
+  - PAY-BOUND-010
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-014
+  scenarioName: invariant_pay_inv_014_paymentDomainTypesHaveNoDependencyOnSpring,
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - ARCHITECTURE_TEST
+  stableErrorCode: PAYMENT_ARCHITECTURE_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  auditExpectation: No runtime audit; build-time architecture evidence only.
+- invariantId: PAY-INV-015
+  statement: Payment retains at most one current accepted snapshot per evidence category and one current relevant PaymentFailure; full histories remain in audit/reporting.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-003
+  - PAY-DEC-IA1-017
+  - PAY-SNAP-016
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-015
+  scenarioName: invariant_pay_inv_015_paymentRetainsAtMostOneCurrentAcceptedSnapshot
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - RECONSTITUTION_TEST
+  stableErrorCode: PAYMENT_STATE_INCONSISTENT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-016
+  statement: Domain events and external errors expose only explicitly approved safe projections and never serialize complete protected Value Objects or snapshots by default.
+  sourceRequirementRefs:
+  - PAY-SNAP-018
+  - PAY-DEC-IA1-012
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-016
+  scenarioName: invariant_pay_inv_016_domainEventsAndExternalErrorsExposeOnlyExplicitly
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - EVENT_SCHEMA_TEST
+  - API_CONTRACT_TEST
+  - SECURITY_TEST
+  stableErrorCode: PAYMENT_DISCLOSURE_REJECTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-017
+  statement: Payment does not own transport retry, circuit-breaker state, notification delivery attempts, unmatched TFJ records or generic Outbox mechanics.
+  sourceRequirementRefs:
+  - PAY-BOUND-005
+  - PAY-BOUND-007
+  - PAY-BOUND-008
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-017
+  scenarioName: invariant_pay_inv_017_paymentDoesNotOwnTransportRetry,CircuitBreakerState,
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - ARCHITECTURE_TEST
+  stableErrorCode: PAYMENT_BOUNDARY_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  auditExpectation: No runtime audit; build-time architecture evidence only.
+- invariantId: PAY-INV-018
+  statement: Every safe message, reason code and audit projection is free of credentials, clear account data, raw KYC values, stack traces and raw provider errors.
+  sourceRequirementRefs:
+  - PAYMENT_SECURITY_AUDIT_BASELINE
+  - PAY-DEC-IA1-016
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-018
+  scenarioName: invariant_pay_inv_018_everySafeMessage,ReasonCodeAndAuditProjection
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - SECURITY_TEST
+  - API_CONTRACT_TEST
+  stableErrorCode: PAYMENT_SECURITY_REJECTION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-019
+  statement: An unauthenticated transport request creates no Payment; a Payment is durably created before any Amplitude business call.
+  sourceRequirementRefs:
+  - PAY-BASE-005
+  - PAYMENT_AUTHORIZATION_VERIFICATION_DECISION
+  transitionRefs:
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-001
+  operationNames:
+  - receive
+  eventRefs:
+  - PAY-EVT-001
+  eventNames:
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-019
+  scenarioName: invariant_pay_inv_019_anUnauthenticatedTransportRequestCreatesNoPayment;A
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - API_SECURITY_TEST
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  stableErrorCode: PAYMENT_ADMISSION_REJECTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-020
+  statement: Payment creation requires all mandatory canonical identifiers, positive Money, protected debtor account and balanced Treasury allocation intent.
+  sourceRequirementRefs:
+  - PAY-AGG-003
+  - PAY-DEC-IA1-014
+  transitionRefs:
+  - PAY-TR-036
+  - PAY-CREATION
+  operationRefs:
+  - PAY-OP-014
+  - PAY-OP-001
+  operationNames:
+  - reject
+  - receive
+  eventRefs:
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-001
+  eventNames:
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  - PaymentReceived
+  scenarioId: PAY-TEST-INV-020
+  scenarioName: invariant_pay_inv_020_paymentCreationRequiresAllMandatoryCanonicalIdentifiers,Positive
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - PROPERTY_BASED
+  stableErrorCode: PAYMENT_INVALID_CREATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentCreationAndReconstitutionTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-021
+  statement: Banking verification cannot begin before Payment has accepted an AuthorizationEvidenceSnapshot with outcome APPROVED.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-019
+  - PAY-TR-002
+  transitionRefs:
+  - PAY-TR-001
+  - PAY-TR-002
+  operationRefs:
+  - PAY-OP-002
+  - PAY-OP-003
+  operationNames:
+  - startAuthorizationChecking
+  - recordAuthorizationDecision
+  eventRefs:
+  - PAY-EVT-002
+  - PAY-EVT-003
+  - PAY-EVT-004
+  eventNames:
+  - PaymentAuthorizationCheckingStarted
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentBankingVerificationRequested
+  scenarioId: PAY-TEST-INV-021
+  scenarioName: invariant_pay_inv_021_bankingVerificationCannotBeginBeforePaymentHasAccepted
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-022
+  statement: An approved authorization snapshot requires every mandatory request binding to MATCH, a valid payment scope and acceptance inside the approved validity interval.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-019
+  transitionRefs:
+  - PAY-TR-002
+  operationRefs:
+  - PAY-OP-003
+  operationNames:
+  - recordAuthorizationDecision
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-004
+  eventNames:
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentBankingVerificationRequested
+  scenarioId: PAY-TEST-INV-022
+  scenarioName: invariant_pay_inv_022_anApprovedAuthorizationSnapshotRequiresEveryMandatoryRequest
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  - SECURITY_TEST
+  stableErrorCode: PAYMENT_SECURITY_REJECTION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-023
+  statement: A rejected authorization snapshot forbids all Amplitude customer, funds and posting operations for that Payment.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-019
+  transitionRefs:
+  - PAY-TR-003
+  operationRefs:
+  - PAY-OP-003
+  operationNames:
+  - recordAuthorizationDecision
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-023
+  scenarioName: invariant_pay_inv_023_aRejectedAuthorizationSnapshotForbidsAllAmplitudeCustomer,
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - APPLICATION
+  stableErrorCode: PAYMENT_REJECTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-024
+  statement: Authorization infrastructure failure without a canonical decision is represented as a technical PaymentFailure and never fabricated as APPROVED or REJECTED evidence.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-019
+  - PAY-DEC-IA1-016
+  transitionRefs:
+  - PAY-TR-037
+  operationRefs:
+  - PAY-OP-015
+  operationNames:
+  - recordRecoverableFailure
+  eventRefs:
+  - PAY-EVT-009
+  - PAY-EVT-006
+  eventNames:
+  - PaymentProcessingDeferred
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-024
+  scenarioName: invariant_pay_inv_024_authorizationInfrastructureFailureWithoutACanonicalDecisionIs
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-025
+  statement: An identical authorization evidence replay is a no-op; the same authorization evidence identity with another fingerprint is a security conflict.
+  sourceRequirementRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-006
+  - PAY-DEC-IA1-019
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-025
+  scenarioName: invariant_pay_inv_025_anIdenticalAuthorizationEvidenceReplayIsANoOp;
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-026
+  statement: Payment never infers, manages or changes a TRESOR PAY Subscription status from ExternalSubscriptionReference.
+  sourceRequirementRefs:
+  - PAY-BASE-006
+  - PAY-BOUND-001
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-026
+  scenarioName: invariant_pay_inv_026_paymentNeverInfers,ManagesOrChangesATresor
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - ARCHITECTURE_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+  auditExpectation: No runtime audit; build-time architecture evidence only.
+- invariantId: PAY-INV-027
+  statement: BankingVerificationSnapshot and FundsControlSnapshot are distinct evidence categories and neither substitutes for the other.
+  sourceRequirementRefs:
+  - PAY-BASE-011
+  - PAY-BASE-012
+  - PAY-DEC-IA1-020
+  - PAY-DEC-IA1-021
+  transitionRefs:
+  - PAY-TR-004
+  operationRefs:
+  - PAY-OP-004
+  operationNames:
+  - recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRequested
+  scenarioId: PAY-TEST-INV-027
+  scenarioName: invariant_pay_inv_027_bankingverificationsnapshotAndFundscontrolsnapshotAreDistinctEvidenceCategoriesAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-028
+  statement: Only a BankingVerificationSnapshot with outcome VERIFIED may permit progression to funds control.
+  sourceRequirementRefs:
+  - PAY-BASE-010
+  - PAY-DEC-IA1-020
+  transitionRefs:
+  - PAY-TR-004
+  operationRefs:
+  - PAY-OP-004
+  operationNames:
+  - recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRequested
+  scenarioId: PAY-TEST-INV-028
+  scenarioName: invariant_pay_inv_028_onlyABankingverificationsnapshotWithOutcomeVerifiedMayPermit
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_EVIDENCE_NOT_ACCEPTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-029
+  statement: A banking verification outcome REJECTED produces a definitive business rejection before financial submission; INDETERMINATE never permits approval.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-020
+  transitionRefs:
+  - PAY-TR-005
+  - PAY-TR-006
+  operationRefs:
+  - PAY-OP-004
+  operationNames:
+  - recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-009
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  - PaymentProcessingDeferred
+  scenarioId: PAY-TEST-INV-029
+  scenarioName: invariant_pay_inv_029_aBankingVerificationOutcomeRejectedProducesADefinitive
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-030
+  statement: Every accepted banking verification must match the aggregate institution and debtor-account binding fingerprint.
+  sourceRequirementRefs:
+  - PAY-SNAP-007
+  - PAY-DEC-IA1-020
+  transitionRefs:
+  - PAY-TR-004
+  operationRefs:
+  - PAY-OP-004
+  operationNames:
+  - recordBankingVerification
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRequested
+  scenarioId: PAY-TEST-INV-030
+  scenarioName: invariant_pay_inv_030_everyAcceptedBankingVerificationMustMatchTheAggregate
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - MAPPING_TEST
+  stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-031
+  statement: ObservedCustomer or any read projection can inform operations but can never authorize Payment progression or replace a fresh Amplitude verification.
+  sourceRequirementRefs:
+  - PAYMENT_DOMAIN_BOUNDARIES
+  - AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-031
+  scenarioName: invariant_pay_inv_031_observedcustomerOrAnyReadProjectionCanInformOperations
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - ARCHITECTURE_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-032
+  statement: Only a FundsControlSnapshot with outcome VERIFIED, exact Payment amount/account binding and unexpired validity may authorize posting.
+  sourceRequirementRefs:
+  - PAY-SNAP-008
+  - PAY-DEC-IA1-021
+  transitionRefs:
+  - PAY-TR-007
+  operationRefs:
+  - PAY-OP-005
+  operationNames:
+  - recordFundsControl
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-011
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentTreasuryAccountResolutionRequested
+  scenarioId: PAY-TEST-INV-032
+  scenarioName: invariant_pay_inv_032_onlyAFundscontrolsnapshotWithOutcomeVerified,ExactPayment
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-033
+  statement: Funds outcome REJECTED forbids posting and supports business rejection; INDETERMINATE supports only controlled recovery or technical failure.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-021
+  transitionRefs:
+  - PAY-TR-008
+  - PAY-TR-010
+  - PAY-TR-037
+  operationRefs:
+  - PAY-OP-005
+  - PAY-OP-015
+  operationNames:
+  - recordFundsControl
+  - recordRecoverableFailure
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-009
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  - PaymentProcessingDeferred
+  scenarioId: PAY-TEST-INV-033
+  scenarioName: invariant_pay_inv_033_fundsOutcomeRejectedForbidsPostingAndSupportsBusiness
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_PROCESSING_DEFERRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-034
+  statement: Available balance and provider-disclosed available amount are never retained in Payment.
+  sourceRequirementRefs:
+  - PAY-SNAP-009
+  - PAY-DEC-IA1-021
+  transitionRefs:
+  - PAY-TR-007
+  operationRefs:
+  - PAY-OP-005
+  operationNames:
+  - recordFundsControl
+  eventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-011
+  eventNames:
+  - PaymentFundsControlRecorded
+  - PaymentTreasuryAccountResolutionRequested
+  scenarioId: PAY-TEST-INV-034
+  scenarioName: invariant_pay_inv_034_availableBalanceAndProviderDisclosedAvailableAmountAreNever
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - MAPPING_TEST
+  - SECURITY_TEST
+  stableErrorCode: PAYMENT_MAPPING_REJECTED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
+- invariantId: PAY-INV-035
+  statement: Posting authorization requires a TreasuryAccountResolutionSnapshot with outcome RESOLVED and a TreasuryAccountReference produced from protected bank configuration.
+  sourceRequirementRefs:
+  - PAY-BASE-014
+  - PAY-DEC-IA1-022
+  transitionRefs:
+  - PAY-TR-011
+  - PAY-TR-012
+  operationRefs:
+  - PAY-OP-006
+  operationNames:
+  - recordTreasuryAccountResolution
+  eventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-013
+  - PAY-EVT-005
+  - PAY-EVT-006
+  eventNames:
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentApprovedForPosting
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-035
+  scenarioName: invariant_pay_inv_035_postingAuthorizationRequiresATreasuryaccountresolutionsnapshotWithOutcomeResolved
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-036
+  statement: Resolved Treasury institution and allocation-intent fingerprint must match the Payment; inbound beneficiary/account data cannot create or override the CUT reference.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-013
+  - PAY-DEC-IA1-022
+  transitionRefs:
+  - PAY-TR-011
+  operationRefs:
+  - PAY-OP-006
+  operationNames:
+  - recordTreasuryAccountResolution
+  eventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-013
+  eventNames:
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentApprovedForPosting
+  scenarioId: PAY-TEST-INV-036
+  scenarioName: invariant_pay_inv_036_resolvedTreasuryInstitutionAndAllocationIntentFingerprintMustMatch
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-037
+  statement: Once posting is authorized, the accepted favorable authorization, banking, funds and Treasury-resolution evidence cannot be replaced by a less authoritative, stale
+    or differently bound result.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-026
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-037
+  scenarioName: invariant_pay_inv_037_oncePostingIsAuthorized,TheAcceptedFavorableAuthorization,
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-038
+  statement: A Payment is approved for financial submission only when authorization, banking verification, funds control and Treasury resolution are all favorable and mutually
+    coherent.
+  sourceRequirementRefs:
+  - PAY-BASE-010
+  - PAY-BASE-012
+  - PAY-BASE-013
+  transitionRefs:
+  - PAY-TR-009
+  - PAY-TR-011
+  operationRefs:
+  - PAY-OP-007
+  - PAY-OP-006
+  operationNames:
+  - authorizePosting
+  - recordTreasuryAccountResolution
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  - PAY-EVT-012
+  - PAY-EVT-013
+  eventNames:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentApprovedForPosting
+  scenarioId: PAY-TEST-INV-038
+  scenarioName: invariant_pay_inv_038_aPaymentIsApprovedForFinancialSubmissionOnly
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-039
+  statement: One Payment authorizes at most one logical posting instruction for its original payment intention.
+  sourceRequirementRefs:
+  - PAY-AGG-014
+  - PAY-TR-009
+  transitionRefs:
+  - PAY-TR-009
+  operationRefs:
+  - PAY-OP-007
+  operationNames:
+  - authorizePosting
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  eventNames:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  scenarioId: PAY-TEST-INV-039
+  scenarioName: invariant_pay_inv_039_onePaymentAuthorizesAtMostOneLogicalPosting
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  stableErrorCode: PAYMENT_SECOND_POSTING_FORBIDDEN
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-040
+  statement: Every retry of the same posting instruction reuses the exact posting idempotency key and immutable instruction fingerprint; a new key is not a retry.
+  sourceRequirementRefs:
+  - PAYMENT_RESILIENCE_BASELINE
+  - PAY-CONTRACT-002
+  transitionRefs:
+  - PAY-TR-009
+  operationRefs:
+  - PAY-OP-007
+  operationNames:
+  - authorizePosting
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  eventNames:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  scenarioId: PAY-TEST-INV-040
+  scenarioName: invariant_pay_inv_040_everyRetryOfTheSamePostingInstructionReuses
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - CONTRACT_TEST
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-041
+  statement: A posting outcome must match the original Payment reference, amount, institution, debtor account, Treasury reference and posting command identity.
+  sourceRequirementRefs:
+  - PAY-SNAP-007
+  - PAY-DEC-IA1-023
+  transitionRefs:
+  - PAY-TR-009
+  - PAY-TR-013
+  operationRefs:
+  - PAY-OP-007
+  - PAY-OP-008
+  operationNames:
+  - authorizePosting
+  - recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  eventNames:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  scenarioId: PAY-TEST-INV-041
+  scenarioName: invariant_pay_inv_041_aPostingOutcomeMustMatchTheOriginalPayment
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - MAPPING_TEST
+  stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-042
+  statement: Posting outcome UNKNOWN means neither success nor failure, forbids blind financial resubmission and requires authoritative lookup or reconciliation.
+  sourceRequirementRefs:
+  - PAY-BASE-015
+  - PAY-BASE-016
+  - PAY-SNAP-010
+  transitionRefs:
+  - PAY-TR-015
+  - PAY-TR-020
+  - PAY-TR-022
+  - PAY-TR-023
+  - PAY-TR-026
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  - PAY-EVT-021
+  - PAY-EVT-017
+  - PAY-EVT-018
+  - PAY-EVT-020
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentImmediateResultAvailable
+  - PaymentPostingOutcomeResolved
+  - PaymentEndOfDayTrackingRequested
+  - PaymentDebitConfirmed
+  - PaymentReversalRequired
+  scenarioId: PAY-TEST-INV-042
+  scenarioName: invariant_pay_inv_042_postingOutcomeUnknownMeansNeitherSuccessNorFailure,
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - RESILIENCE_TEST
+  stableErrorCode: PAYMENT_EXTERNAL_OUTCOME_UNKNOWN
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-043
+  statement: A posting may be classified REJECTED_NO_FINANCIAL_EFFECT or Payment FAILED only when authoritative evidence proves that neither debit nor CUT credit occurred.
+  sourceRequirementRefs:
+  - PAY-SNAP-010
+  - PAYMENT_STATE_MACHINE
+  transitionRefs:
+  - PAY-TR-016
+  - PAY-TR-017
+  - PAY-TR-024
+  - PAY-TR-025
+  - PAY-TR-038
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  - PAY-OP-016
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  - failWithoutFinancialEffect
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-032
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-043
+  scenarioName: invariant_pay_inv_043_aPostingMayBeClassifiedRejectedNoFinancialEffectOrPayment
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_FAILURE_CLASSIFICATION_INVALID
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-044
+  statement: Posting outcome COMPLETED requires debit SUCCEEDED, CUT credit SUCCEEDED, exact Money and a principal BankPostingReference.
+  sourceRequirementRefs:
+  - PAY-SNAP-011
+  - PAY-DEC-IA1-023
+  transitionRefs:
+  - PAY-TR-013
+  - PAY-TR-019
+  - PAY-TR-022
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-044
+  scenarioName: invariant_pay_inv_044_postingOutcomeCompletedRequiresDebitSucceeded,CutCredit
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_EVIDENCE_INVALID
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-045
+  statement: DEBIT_CONFIRMED_CUT_CREDIT_PENDING requires debit SUCCEEDED, CUT credit PENDING or UNKNOWN, a principal posting reference and no success finalization.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-023
+  transitionRefs:
+  - PAY-TR-014
+  - PAY-TR-020
+  - PAY-TR-023
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-018
+  - PAY-EVT-006
+  - PAY-EVT-019
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentDebitConfirmed
+  - PaymentImmediateResultAvailable
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-045
+  scenarioName: invariant_pay_inv_045_debitConfirmedCutCreditPendingRequiresDebitSucceeded,CutCreditPendingOr
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_EVIDENCE_INVALID
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-046
+  statement: A confirmed debit with explicit CUT-credit failure requires reversal review/authorization and can never be represented as successful or failed-without-effect.
+  sourceRequirementRefs:
+  - PAY-BASE-021
+  - PAY-DEC-IA1-023
+  transitionRefs:
+  - PAY-TR-018
+  - PAY-TR-021
+  - PAY-TR-026
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-046
+  scenarioName: invariant_pay_inv_046_aConfirmedDebitWithExplicitCutCreditFailureRequires
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_REVERSAL_REQUIRED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-047
+  statement: When principal or leg references are present in multiple domain objects, they must be equal and immutable.
+  sourceRequirementRefs:
+  - PAY-POSTREF-001
+  - PAY-POSTREF-003
+  - PAY-DEC-IA1-023
+  transitionRefs:
+  - PAY-TR-018
+  - PAY-TR-021
+  operationRefs:
+  - PAY-OP-008
+  operationNames:
+  - recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-047
+  scenarioName: invariant_pay_inv_047_whenPrincipalOrLegReferencesArePresentIn
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INTEGRATION_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-048
+  statement: The original BankPostingReference is retained for the lifetime of Payment, including after TFJ processing or reversal.
+  sourceRequirementRefs:
+  - PAY-POSTREF-002
+  - PAY-POSTREF-007
+  - PAY-DEC-IA1-006
+  transitionRefs:
+  - PAY-TR-014
+  operationRefs:
+  - PAY-OP-008
+  operationNames:
+  - recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-018
+  - PAY-EVT-006
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentDebitConfirmed
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-048
+  scenarioName: invariant_pay_inv_048_theOriginalBankpostingreferenceIsRetainedForTheLifetime
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - RECONSTITUTION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-049
+  statement: Confirmed debit and CUT credit establish immediate posting facts only; they never establish TFJ finality.
+  sourceRequirementRefs:
+  - PAY-BASE-018
+  - PAY-SNAP-012
+  transitionRefs:
+  - PAY-TR-013
+  - PAY-TR-019
+  operationRefs:
+  - PAY-OP-008
+  operationNames:
+  - recordPostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  scenarioId: PAY-TEST-INV-049
+  scenarioName: invariant_pay_inv_049_confirmedDebitAndCutCreditEstablishImmediatePosting
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVALID_TRANSITION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-050
+  statement: A posting or posting-resolution mutation is committed atomically with aggregate state, immutable audit and Outbox intent, or none of them is committed.
+  sourceRequirementRefs:
+  - PAY-BASE-024
+  - PAYMENT_RESILIENCE_BASELINE
+  transitionRefs:
+  - PAY-TR-013
+  - PAY-TR-019
+  - PAY-TR-022
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-050
+  scenarioName: invariant_pay_inv_050_aPostingOrPostingResolutionMutationIsCommittedAtomically
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - POSTGRES_INTEGRATION
+  - CRASH_RECOVERY_TEST
+  stableErrorCode: PAYMENT_ATOMIC_COMMIT_FAILED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-051
+  statement: Notification is a domain intent/event orthogonal to financial state; delivery success or failure never changes Payment financial status.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-004
+  - PAY-BASE-022
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-051
+  scenarioName: invariant_pay_inv_051_notificationIsADomainIntent/EventOrthogonalToFinancial
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - INTERMODULE_TEST
+  stableErrorCode: PAYMENT_NOTIFICATION_DELIVERY_IGNORED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPostingLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-052
+  statement: At most one logical notification intent exists per Payment, notification purpose and business result version; replay reuses the original event identity.
+  sourceRequirementRefs:
+  - PAY-BASE-023
+  - PAYMENT_RESILIENCE_BASELINE
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-052
+  scenarioName: invariant_pay_inv_052_atMostOneLogicalNotificationIntentExistsPer
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - POSTGRES_INTEGRATION
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-053
+  statement: TFJ tracking begins from a confirmed completed posting and does not wait for notification delivery acknowledgement.
+  sourceRequirementRefs:
+  - PAY-BASE-018
+  - PAY-DEC-IA1-004
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-053
+  scenarioName: invariant_pay_inv_053_tfjTrackingBeginsFromAConfirmedCompletedPosting
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - INTERMODULE_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-054
+  statement: An EndOfDayConfirmationSnapshot enters Payment only after authentication, durable persistence and unique matching on institution, business date, public Payment
+    reference and principal posting reference.
+  sourceRequirementRefs:
+  - PAY-BASE-019
+  - PAY-DEC-IA1-024
+  transitionRefs:
+  - PAY-TR-027
+  - PAY-TR-028
+  operationRefs:
+  - PAY-OP-010
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  - PAY-EVT-020
+  - PAY-EVT-006
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - TreasuryIntegrationConfirmed
+  - PaymentFinalResultAvailable
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  scenarioId: PAY-TEST-INV-054
+  scenarioName: invariant_pay_inv_054_anEndofdayconfirmationsnapshotEntersPaymentOnlyAfterAuthentication,Durable
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - POSTGRES_INTEGRATION
+  - CONTRACT_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-055
+  statement: TFJ PENDING, unmatched, ambiguous or conflicting evidence remains outside Payment and cannot change its state.
+  sourceRequirementRefs:
+  - PAY-BASE-020
+  - PAY-SNAP-014
+  transitionRefs:
+  - PAY-TR-029
+  operationRefs:
+  - PAY-OP-010
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-025
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - PaymentTreasuryReconciliationRequired
+  scenarioId: PAY-TEST-INV-055
+  scenarioName: invariant_pay_inv_055_tfjPending,Unmatched,AmbiguousOrConflictingEvidenceRemains
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - RECONCILIATION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-056
+  statement: Only a uniquely matched TFJ status INTEGRATED establishes TREASURY_INTEGRATED and finalization.
+  sourceRequirementRefs:
+  - PAY-BASE-019
+  - PAY-SNAP-013
+  transitionRefs:
+  - PAY-TR-027
+  operationRefs:
+  - PAY-OP-010
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - TreasuryIntegrationConfirmed
+  - PaymentFinalResultAvailable
+  scenarioId: PAY-TEST-INV-056
+  scenarioName: invariant_pay_inv_056_onlyAUniquelyMatchedTfjStatusIntegratedEstablishes
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVALID_TRANSITION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-057
+  statement: TFJ delay or cutoff expiry keeps Payment pending and cannot alone authorize reversal, failure or another posting.
+  sourceRequirementRefs:
+  - PAY-BASE-021
+  transitionRefs:
+  - PAY-TR-028
+  - PAY-TR-029
+  operationRefs:
+  - PAY-OP-010
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-020
+  - PAY-EVT-006
+  - PAY-EVT-025
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  - PaymentTreasuryReconciliationRequired
+  scenarioId: PAY-TEST-INV-057
+  scenarioName: invariant_pay_inv_057_tfjDelayOrCutoffExpiryKeepsPaymentPending
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - SCHEDULER_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-058
+  statement: An identical terminal TFJ replay is a no-op; conflicting final TFJ evidence is quarantined and never silently replaces terminal evidence.
+  sourceRequirementRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-017
+  - PAY-DEC-IA1-024
+  transitionRefs:
+  - PAY-TR-027
+  operationRefs:
+  - PAY-OP-010
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - TreasuryIntegrationConfirmed
+  - PaymentFinalResultAvailable
+  scenarioId: PAY-TEST-INV-058
+  scenarioName: invariant_pay_inv_058_anIdenticalTerminalTfjReplayIsANoOp;
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  - RECONCILIATION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-059
+  statement: A reversal can be requested only for a confirmed or authoritatively reconciled financial effect and requires BANK_INSTRUCTION or APPROVED_RUNBOOK authorization.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-025
+  - PAY-CONTRACT-002
+  transitionRefs:
+  - PAY-TR-028
+  - PAY-TR-030
+  operationRefs:
+  - PAY-OP-010
+  - PAY-OP-011
+  operationNames:
+  - recordMatchedEndOfDayConfirmation
+  - authorizeReversal
+  eventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-020
+  - PAY-EVT-006
+  - PAY-EVT-026
+  - PAY-EVT-027
+  eventNames:
+  - PaymentEndOfDayConfirmationRecorded
+  - PaymentReversalRequired
+  - PaymentImmediateResultAvailable
+  - PaymentReversalAuthorized
+  - PaymentReversalRequested
+  scenarioId: PAY-TEST-INV-059
+  scenarioName: invariant_pay_inv_059_aReversalCanBeRequestedOnlyForA
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POLICY_TEST
+  - AUTHORIZATION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-060
+  statement: Reversal uses a distinct immutable idempotency key and reversal reference and never overwrites the original posting identity.
+  sourceRequirementRefs:
+  - PAY-POSTREF-007
+  - PAY-DEC-IA1-025
+  transitionRefs:
+  - PAY-TR-030
+  - PAY-TR-031
+  operationRefs:
+  - PAY-OP-011
+  - PAY-OP-012
+  operationNames:
+  - authorizeReversal
+  - recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-026
+  - PAY-EVT-027
+  - PAY-EVT-028
+  - PAY-EVT-033
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalAuthorized
+  - PaymentReversalRequested
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-INV-060
+  scenarioName: invariant_pay_inv_060_reversalUsesADistinctImmutableIdempotencyKeyAnd
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - APPLICATION
+  stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-061
+  statement: Reversal outcome UNKNOWN requires authoritative lookup and forbids blind reversal resubmission.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-025
+  - PAYMENT_RESILIENCE_BASELINE
+  transitionRefs:
+  - PAY-TR-032
+  - PAY-TR-034
+  - PAY-TR-035
+  operationRefs:
+  - PAY-OP-012
+  - PAY-OP-013
+  operationNames:
+  - recordReversalOutcome
+  - resolveReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-030
+  - PAY-EVT-031
+  - PAY-EVT-033
+  - PAY-EVT-029
+  - PAY-EVT-020
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalOutcomeLookupRequested
+  - PaymentReversalOutcomeResolved
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  - PaymentReversalRequired
+  scenarioId: PAY-TEST-INV-061
+  scenarioName: invariant_pay_inv_061_reversalOutcomeUnknownRequiresAuthoritativeLookupAndForbids
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - RESILIENCE_TEST
+  stableErrorCode: PAYMENT_EXTERNAL_OUTCOME_UNKNOWN
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-062
+  statement: REVERSED requires an authoritative outcome REVERSED with a stable reversal reference linked to the same Payment and original posting.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-006
+  - PAY-DEC-IA1-025
+  transitionRefs:
+  - PAY-TR-033
+  - PAY-TR-035
+  operationRefs:
+  - PAY-OP-012
+  - PAY-OP-013
+  operationNames:
+  - recordReversalOutcome
+  - resolveReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-020
+  - PAY-EVT-029
+  - PAY-EVT-031
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentReversalResultAvailable
+  - PaymentReversalOutcomeResolved
+  scenarioId: PAY-TEST-INV-062
+  scenarioName: invariant_pay_inv_062_reversedRequiresAnAuthoritativeOutcomeReversedWithA
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVALID_TRANSITION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-063
+  statement: A rejected or not-allowed reversal does not make the original financial effect disappear and cannot transition Payment to FAILED-without-effect.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-025
+  transitionRefs:
+  - PAY-TR-031
+  - PAY-TR-034
+  operationRefs:
+  - PAY-OP-012
+  - PAY-OP-013
+  operationNames:
+  - recordReversalOutcome
+  - resolveReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-033
+  - PAY-EVT-029
+  - PAY-EVT-031
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  - PaymentReversalOutcomeResolved
+  scenarioId: PAY-TEST-INV-063
+  scenarioName: invariant_pay_inv_063_aRejectedOrNotAllowedReversalDoesNotMake
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-064
+  statement: REJECTED is terminal only for a conclusive business/security rejection before any financial instruction can have produced an effect.
+  sourceRequirementRefs:
+  - PAYMENT_UBIQUITOUS_LANGUAGE
+  - PAYMENT_STATE_MACHINE
+  transitionRefs:
+  - PAY-TR-033
+  operationRefs:
+  - PAY-OP-012
+  operationNames:
+  - recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-020
+  - PAY-EVT-029
+  eventNames:
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalRequired
+  - PaymentReversalResultAvailable
+  scenarioId: PAY-TEST-INV-064
+  scenarioName: invariant_pay_inv_064_rejectedIsTerminalOnlyForAConclusiveBusiness/Security
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-065
+  statement: FAILED is terminal only when absence of financial effect is proven; an uncertain, partial or reversal-required Payment cannot become FAILED.
+  sourceRequirementRefs:
+  - PAY-BASE-015
+  - PAYMENT_STATE_MACHINE
+  transitionRefs:
+  - PAY-TR-003
+  - PAY-TR-005
+  - PAY-TR-008
+  - PAY-TR-012
+  - PAY-TR-016
+  - PAY-TR-024
+  - PAY-TR-036
+  operationRefs:
+  - PAY-OP-003
+  - PAY-OP-004
+  - PAY-OP-005
+  - PAY-OP-006
+  - PAY-OP-008
+  - PAY-OP-009
+  - PAY-OP-014
+  operationNames:
+  - recordAuthorizationDecision
+  - recordBankingVerification
+  - recordFundsControl
+  - recordTreasuryAccountResolution
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  - reject
+  eventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-005
+  - PAY-EVT-006
+  - PAY-EVT-007
+  - PAY-EVT-010
+  - PAY-EVT-012
+  - PAY-EVT-016
+  - PAY-EVT-021
+  eventNames:
+  - PaymentAuthorizationDecisionRecorded
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRecorded
+  - PaymentTreasuryAccountResolutionRecorded
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-065
+  scenarioName: invariant_pay_inv_065_failedIsTerminalOnlyWhenAbsenceOfFinancial
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - STATE_TRANSITION_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-066
+  statement: Every terminal state has finalizedAt, immutable terminal evidence and no later state-changing command; an identical fact replay remains a no-op.
+  sourceRequirementRefs:
+  - PAY-SNAP-017
+  - PAYMENT_STATE_MACHINE
+  transitionRefs:
+  - PAY-TR-017
+  - PAY-TR-025
+  - PAY-TR-038
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-009
+  - PAY-OP-016
+  operationNames:
+  - recordPostingOutcome
+  - resolvePostingOutcome
+  - failWithoutFinancialEffect
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-032
+  - PAY-EVT-006
+  - PAY-EVT-021
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentImmediateResultAvailable
+  - PaymentPostingOutcomeResolved
+  scenarioId: PAY-TEST-INV-066
+  scenarioName: invariant_pay_inv_066_everyTerminalStateHasFinalizedat,ImmutableTerminalEvidence
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentTfjAndReversalLifecycleTest.java
+  auditExpectation: Record safe evidence identity/fingerprint, financial-effect knowledge, decision code and recovery disposition.
+- invariantId: PAY-INV-067
+  statement: Same PaymentSource and ExternalPaymentReference with the same canonical request fingerprint resolves to the original Payment and creates no new business effect.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-002
+  - PAYMENT_RESILIENCE_BASELINE
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-067
+  scenarioName: invariant_pay_inv_067_samePaymentsourceAndExternalpaymentreferenceWithTheSameCanonical
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-068
+  statement: Same source/reference or idempotency scope with a different canonical request fingerprint is a conflict and leaves the original Payment unchanged.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-008
+  - PAY-DEC-IA1-011
+  transitionRefs:
+  - PAY-TR-006
+  - PAY-TR-010
+  - PAY-TR-037
+  operationRefs:
+  - PAY-OP-004
+  - PAY-OP-005
+  - PAY-OP-015
+  operationNames:
+  - recordBankingVerification
+  - recordFundsControl
+  - recordRecoverableFailure
+  eventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-009
+  - PAY-EVT-006
+  - PAY-EVT-010
+  eventNames:
+  - PaymentBankingVerificationRecorded
+  - PaymentProcessingDeferred
+  - PaymentImmediateResultAvailable
+  - PaymentFundsControlRecorded
+  scenarioId: PAY-TEST-INV-068
+  scenarioName: invariant_pay_inv_068_sameSource/ReferenceOrIdempotencyScopeWithADifferent
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - APPLICATION
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_IDEMPOTENCY_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-069
+  statement: Same evidence identity and fingerprint is a no-op without version increment or new domain event; same identity with another fingerprint is a conflict.
+  sourceRequirementRefs:
+  - PAY-SNAP-005
+  - PAY-SNAP-006
+  - PAY-DEC-IA1-026
+  transitionRefs:
+  - PAY-TR-015
+  - PAY-TR-032
+  operationRefs:
+  - PAY-OP-008
+  - PAY-OP-012
+  operationNames:
+  - recordPostingOutcome
+  - recordReversalOutcome
+  eventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  - PAY-EVT-028
+  - PAY-EVT-030
+  eventNames:
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentImmediateResultAvailable
+  - PaymentReversalOutcomeRecorded
+  - PaymentReversalOutcomeLookupRequested
+  scenarioId: PAY-TEST-INV-069
+  scenarioName: invariant_pay_inv_069_sameEvidenceIdentityAndFingerprintIsANoOp
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_EVIDENCE_CONFLICT
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-070
+  statement: A command with an expected business version different from the current version is rejected before mutation.
+  sourceRequirementRefs:
+  - PAYMENT_STATE_MACHINE
+  - PAY-AGG-011
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-070
+  scenarioName: invariant_pay_inv_070_aCommandWithAnExpectedBusinessVersionDifferent
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentConcurrencyIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-071
+  statement: Concurrent creation for the same business uniqueness key results in one Payment; losing transactions reload the winner or return a conflict.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-002
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-071
+  scenarioName: invariant_pay_inv_071_concurrentCreationForTheSameBusinessUniquenessKey
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - POSTGRES_INTEGRATION
+  - CONCURRENCY
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-072
+  statement: Aggregate reconstitution restores structurally valid persisted state, performs no business transition, changes no timestamp/version and raises no event.
+  sourceRequirementRefs:
+  - PAY-DEC-IA1-005
+  - PAY-AGG-010
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-072
+  scenarioName: invariant_pay_inv_072_aggregateReconstitutionRestoresStructurallyValidPersistedState,Performs
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: PLANNED_TEST
+  verificationKinds:
+  - RECONSTITUTION_TEST
+  - PERSISTENCE_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-073
+  statement: An invariant violation causes no partial state mutation, no event registration, no audit transition, no Outbox intent and no version change.
+  sourceRequirementRefs:
+  - PAY-AGG-012
+  - PAY-BASE-024
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-073
+  scenarioName: invariant_pay_inv_073_anInvariantViolationCausesNoPartialStateMutation,
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-074
+  statement: Every successful aggregate mutation registers the exact corresponding domain fact once and commits state, audit and Outbox intent atomically.
+  sourceRequirementRefs:
+  - PAY-AGG-011
+  - PAY-BASE-024
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-074
+  scenarioName: invariant_pay_inv_074_everySuccessfulAggregateMutationRegistersTheExactCorresponding
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - DOMAIN_UNIT
+  - POSTGRES_INTEGRATION
+  stableErrorCode: PAYMENT_ATOMIC_COMMIT_FAILED
+  testFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
+  auditExpectation: Record safe conflict/idempotency/transaction outcome; successful mutation audit and Outbox must share the same transaction.
+- invariantId: PAY-INV-075
+  statement: Outbox republication and consumer redelivery preserve eventId and payload identity and never repeat the aggregate transition or financial effect.
+  sourceRequirementRefs:
+  - PAY-BASE-023
+  - PAYMENT_RESILIENCE_BASELINE
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-075
+  scenarioName: invariant_pay_inv_075_outboxRepublicationAndConsumerRedeliveryPreserveEventidAnd
+  testLayer: DOMAIN_OR_ARCHITECTURE
+  testStatus: PLANNED_TEST
+  verificationKinds:
+  - MESSAGING_INTEGRATION
+  - REPLAY_TEST
+  stableErrorCode: PAYMENT_INVARIANT_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/validation/PaymentDomainKernelCatalogueTest.java
+  auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
+- invariantId: PAY-INV-076
+  statement: The aggregate never performs a network call; external results are accepted only after application orchestration returns a canonical result.
+  sourceRequirementRefs:
+  - PAY-BOUND-004
+  - PAYMENT_AGGREGATE_ROOT
+  transitionRefs: []
+  operationRefs: []
+  operationNames: []
+  eventRefs: []
+  eventNames: []
+  scenarioId: PAY-TEST-INV-076
+  scenarioName: invariant_pay_inv_076_theAggregateNeverPerformsANetworkCall;External
+  testLayer: APPLICATION_OR_PERSISTENCE
+  testStatus: FUTURE_VERTICAL_TEST
+  verificationKinds:
+  - ARCHITECTURE_TEST
+  - APPLICATION
+  stableErrorCode: PAYMENT_BOUNDARY_VIOLATION
+  testFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentApplicationServiceTest.java
+  auditExpectation: No runtime audit; build-time architecture evidence only.
+futureApplicationPersistenceArchitectureScenarios:
+- id: PAY-TEST-APP-001
+  name: intakePersistsPaymentBeforeAnyExternalRequest
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/ReceivePaymentApplicationServiceTest.java
+- id: PAY-TEST-APP-002
+  name: identicalReplayReturnsOriginalResult
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentIdempotencyApplicationTest.java
+- id: PAY-TEST-APP-003
+  name: sameReferenceDifferentPayloadReturnsStableConflict
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentIdempotencyApplicationTest.java
+- id: PAY-TEST-APP-004
+  name: invalidAuthorizationEvidencePreventsPaymentAdmission
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentAuthorizationApplicationTest.java
+- id: PAY-TEST-APP-005
+  name: postingTimeoutTriggersLookupWithoutSecondPosting
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentPostingApplicationTest.java
+- id: PAY-TEST-APP-006
+  name: paymentAuditAndOutboxCommitAtomically
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentTransactionBoundaryTest.java
+- id: PAY-TEST-APP-007
+  name: notificationFailureNeverChangesFinancialState
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentNotificationIndependenceTest.java
+- id: PAY-TEST-APP-008
+  name: tfjIntegratedAbsentAmbiguousAndConflictAreDeterministic
+  layer: APPLICATION
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/application/service/PaymentTfjApplicationTest.java
+- id: PAY-TEST-PERS-001
+  name: externalAndPublicReferencesAreUniquelyConstrained
+  layer: PERSISTENCE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentUniquenessIntegrationTest.java
+- id: PAY-TEST-PERS-002
+  name: optimisticLockRejectsStaleBusinessVersion
+  layer: PERSISTENCE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentOptimisticLockIntegrationTest.java
+- id: PAY-TEST-PERS-003
+  name: rollbackRemovesPaymentAuditAndOutboxTogether
+  layer: PERSISTENCE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentTransactionRollbackIntegrationTest.java
+- id: PAY-TEST-PERS-004
+  name: queryIndexesResolveAllApprovedReferences
+  layer: PERSISTENCE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentQueryRepositoryIntegrationTest.java
+- id: PAY-TEST-PERS-005
+  name: protectedAccountDataIsNeverPersistedInClearText
+  layer: PERSISTENCE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentProtectedDataIntegrationTest.java
+- id: PAY-TEST-ARCH-001
+  name: domainHasNoSpringJpaKafkaHttpOrBusinessModuleDependency
+  layer: ARCHITECTURE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentArchitectureTest.java
+- id: PAY-TEST-ARCH-002
+  name: integrationEventsContainNoJpaEntityAggregateOrSnapshot
+  layer: ARCHITECTURE
+  futureFile: backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentIntegrationEventArchitectureTest.java

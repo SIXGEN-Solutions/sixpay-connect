@@ -1,0 +1,135 @@
+spring:
+  config:
+    import:
+      - classpath:application-notification-operational.yml
+      - classpath:config/payment/tresorpay-common.yml
+
+  datasource:
+    url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb?currentSchema=sixpay}
+    username: ${SIXPAY_DB_USERNAME:sixpay_user}
+    password: ${SIXPAY_DB_PASSWORD:sixpay_password}
+    hikari:
+      schema: sixpay
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: sixpay
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  mail:
+    host: ${SIXPAY_SMTP_HOST:localhost}
+    port: ${SIXPAY_SMTP_PORT:1025}
+    username: ${SIXPAY_SMTP_USERNAME:}
+    password: ${SIXPAY_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SIXPAY_SMTP_AUTH:false}
+          starttls:
+            enable: ${SIXPAY_SMTP_STARTTLS:false}
+            required: ${SIXPAY_SMTP_STARTTLS_REQUIRED:false}
+          connectiontimeout: ${SIXPAY_SMTP_CONNECTION_TIMEOUT_MS:5000}
+          timeout: ${SIXPAY_SMTP_READ_TIMEOUT_MS:5000}
+          writetimeout: ${SIXPAY_SMTP_WRITE_TIMEOUT_MS:5000}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    groups-order: ASC
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,flyway,mappings,metrics
+
+sixpay:
+  notification:
+    email:
+      mode: logging
+      from: no-reply@sixpay.local
+      subject-prefix: "[SIXPAY]"
+
+    operational:
+      email:
+        enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_ENABLED:false}
+        from: ${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_FROM:no-reply@sixpay.local}
+        subject-prefix: "${SIXPAY_NOTIFICATION_OPERATIONAL_EMAIL_SUBJECT_PREFIX:[SIXPAY]}"
+        admin-recipients:
+          - reference: operations-admin
+            email: ${SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_EMAIL:operations@sixpay.local}
+            locale: fr
+            enabled: ${SIXPAY_NOTIFICATION_OPERATIONS_ADMIN_ENABLED:true}
+
+      operations:
+        metrics-enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_ENABLED:true}
+        metrics-refresh-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_METRICS_REFRESH_MS:30000}
+        retention-enabled: ${SIXPAY_NOTIFICATION_OPERATIONAL_RETENTION_ENABLED:true}
+        delivered-retention: ${SIXPAY_NOTIFICATION_OPERATIONAL_DELIVERED_RETENTION:90d}
+        failed-retention: ${SIXPAY_NOTIFICATION_OPERATIONAL_FAILED_RETENTION:365d}
+        purge-batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_BATCH_SIZE:500}
+        purge-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_INTERVAL_MS:86400000}
+
+  payment:
+    tresorpay:
+      security:
+        mtls-required: ${TRESORPAY_MTLS_REQUIRED:false}
+        oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:false}
+
+    callback:
+      enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}
+      poll-delay: ${SIXPAY_PAYMENT_CALLBACK_POLL_DELAY:PT2S}
+      batch-size: ${SIXPAY_PAYMENT_CALLBACK_BATCH_SIZE:50}
+      max-attempts: ${SIXPAY_PAYMENT_CALLBACK_MAX_ATTEMPTS:8}
+      claim-timeout: ${SIXPAY_PAYMENT_CALLBACK_CLAIM_TIMEOUT:PT5M}
+      initial-retry-delay: ${SIXPAY_PAYMENT_CALLBACK_INITIAL_RETRY_DELAY:PT10S}
+      maximum-retry-delay: ${SIXPAY_PAYMENT_CALLBACK_MAXIMUM_RETRY_DELAY:PT1H}
+      worker-id: ${SIXPAY_PAYMENT_CALLBACK_WORKER_ID:payment-callback-worker}
+      signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID:}
+      signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
+
+  customer:
+    observation:
+      persistence:
+        enabled: true
+        max-optimistic-attempts: 3
+        protection-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_PROTECTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      query:
+        enabled: true
+        cursor-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_CURSOR_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      audit:
+        persistence:
+          enabled: true
+      resilience:
+        max-attempts: ${SIXPAY_CUSTOMER_OBSERVATION_MAX_ATTEMPTS:3}
+        initial-backoff: ${SIXPAY_CUSTOMER_OBSERVATION_INITIAL_BACKOFF:10ms}
+        max-backoff: ${SIXPAY_CUSTOMER_OBSERVATION_MAX_BACKOFF:250ms}
+        multiplier: ${SIXPAY_CUSTOMER_OBSERVATION_BACKOFF_MULTIPLIER:2}
+        jitter: ${SIXPAY_CUSTOMER_OBSERVATION_BACKOFF_JITTER:0.20}
+
+  reporting:
+    audit-query:
+      cursor-hmac-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    audit-export:
+      storage-directory: target/test-audit-exports
+      retrieval-base-uri: https://audit-artifacts.test.local/
+      retention: PT1H
+      recovery-delay-ms: 60000

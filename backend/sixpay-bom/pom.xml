@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ========================================================= -->
+    <!-- BOM IDENTIFICATION                                        -->
+    <!-- ========================================================= -->
+
+    <groupId>com.sixpay</groupId>
+    <artifactId>sixpay-bom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>SIXPAY CONNECT - Bill of Materials</name>
+
+    <description>
+        Dependency platform for SIXPAY CONNECT.
+        Spring Boot and Spring Cloud remain the primary authorities for
+        framework and third-party dependency versions.
+    </description>
+
+    <!-- ========================================================= -->
+    <!-- VERSION PROPERTIES                                        -->
+    <!-- ========================================================= -->
+
+    <properties>
+
+        <!-- Framework compatibility baseline -->
+
+        <spring.boot.version>4.1.0</spring.boot.version>
+        <spring.cloud.version>2025.1.2</spring.cloud.version>
+
+        <!-- Dependencies not governed by the imported platforms -->
+
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <springdoc.version>3.0.3</springdoc.version>
+
+        <!-- Internal artifacts follow the SIXPAY release version -->
+
+        <sixpay.modules.version>${project.version}</sixpay.modules.version>
+
+    </properties>
+
+    <!-- ========================================================= -->
+    <!-- DEPENDENCY MANAGEMENT                                     -->
+    <!-- ========================================================= -->
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- ================================================= -->
+            <!-- EXTERNAL PLATFORMS                                -->
+            <!-- ================================================= -->
+
+            <!--
+                Primary authority for Spring Framework, Spring Security,
+                Jackson, Kafka, PostgreSQL, Flyway, Micrometer,
+                OpenTelemetry, Lombok, JUnit, Mockito and Testcontainers.
+            -->
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!--
+                Authority for Spring Cloud components, including
+                Spring Cloud Vault.
+            -->
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- ================================================= -->
+            <!-- ADDITIONAL LIBRARIES                              -->
+            <!-- ================================================= -->
+
+            <!-- MapStruct -->
+
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+
+            <!-- OpenAPI for Spring Boot 4 -->
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- ================================================= -->
+            <!-- SIXPAY PLATFORM MODULES                           -->
+            <!-- ================================================= -->
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>common</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>shared-kernel</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>security</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>integration</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <!-- ================================================= -->
+            <!-- SIXPAY BUSINESS MODULES                           -->
+            <!-- ================================================= -->
+
+            <!--
+                Version management does not authorize direct coupling
+                between business domains. Domain-to-domain communication
+                must follow the architecture rules defined by SIXPAY.
+            -->
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>customer</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>partner</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>payment</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>accounting</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>reporting</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>notification</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sixpay</groupId>
+                <artifactId>administration</artifactId>
+                <version>${sixpay.modules.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>

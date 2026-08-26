@@ -1,0 +1,1004 @@
+schemaVersion: 1.2.0
+document:
+  id: SIXPAY-PAYMENT-POLICY-DOMAIN-SERVICE-CATALOGUE
+  title: SIXPAY CONNECT — Payment Policies and Domain Services
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 3_4_POLICIES_DOMAIN_SERVICES
+  branch: feat/payment-domain-generation-brief
+  status: IMPLEMENTED
+  normative: true
+  codeGenerationAllowed: false
+  nextLot: OWNER_APPROVAL_AND_CONTRACT_GATE_CLOSURE
+designRules:
+  aggregateOwnsStateTransitions: true
+  aggregateOwnsDomainEventRegistration: true
+  domainServicesMutateAggregate: false
+  domainServicesRegisterEvents: false
+  domainPoliciesPerformIo: false
+  domainReadsClockDirectly: false
+  configurationLoadedInsideDomain: false
+  springOrPersistenceDependencyAllowed: false
+  exceptions: Policy/service invalid input may raise a stable domain exception; normal business decisions are returned as typed results.
+decisionTypes:
+  EvidenceTemporalDecision:
+  - VALID
+  - STALE
+  - FUTURE_DATED
+  - INVALID_CHRONOLOGY
+  EvidenceAcceptanceDecision:
+  - ACCEPT
+  - REJECT
+  - INDETERMINATE
+  - CONFLICT
+  EvidenceReplayDecision:
+  - ACCEPT_NEW
+  - NO_OP_IDENTICAL
+  - REPLACE_MORE_AUTHORITATIVE
+  - REJECT_CONFLICT
+  - QUARANTINE_CONFLICT
+  - REJECT_TERMINAL_REPLACEMENT
+  PostingAuthorizationDecision:
+  - AUTHORIZE
+  - NO_OP_SAME_INSTRUCTION
+  - REJECT_INELIGIBLE
+  - REJECT_SECOND_OR_CONFLICTING_INSTRUCTION
+  PostingDecision:
+  - POSTED_PENDING_TFJ
+  - DEBIT_CONFIRMED
+  - POSTING_OUTCOME_UNKNOWN
+  - REJECTED_NO_EFFECT
+  - FAILED_NO_EFFECT
+  - REVERSAL_REQUIRED
+  - NO_OP
+  - CONFLICT
+  EndOfDayDecision:
+  - TREASURY_INTEGRATED
+  - REVERSAL_REQUIRED
+  - MANUAL_RECONCILIATION
+  - NO_OP
+  - QUARANTINE_CONFLICT
+  ReversalDecision:
+  - AUTHORIZE
+  - REVERSED
+  - REVERSAL_OUTCOME_UNKNOWN
+  - REVERSAL_REQUIRED
+  - NO_OP
+  - CONFLICT
+  FailureDispositionDecision:
+  - BUSINESS_REJECT
+  - SECURITY_REJECT
+  - TECHNICAL_FAIL_NO_EFFECT
+  - DEFER
+  - OUTCOME_UNKNOWN
+  - REVERSAL_REQUIRED
+  ResultIntentDecision:
+  - NONE
+  - IMMEDIATE_PROCESSING
+  - IMMEDIATE_REJECTED
+  - IMMEDIATE_FAILED
+  - IMMEDIATE_POSTED_PENDING_TFJ
+  - IMMEDIATE_REVERSAL_REQUIRED
+  - FINAL_TREASURY_INTEGRATED
+  - REVERSAL_REVERSED
+  - REVERSAL_REJECTED_OR_NOT_ALLOWED
+  EventDisclosureDecision:
+  - ALLOW
+  - REJECT_UNDECLARED_FIELD
+  - REJECT_CLASSIFICATION
+  - REJECT_SENSITIVE_DATA
+configurationProfileContract:
+  requiredMetadata:
+  - profileId
+  - profileVersion
+  - effectiveFrom
+  - effectiveUntil?
+  - approvedByReference
+  loadingOwner: APPLICATION_VIA_PAYMENT_POLICY_CONFIGURATION_PORT
+  decisionUse: Handler selects an effective immutable profile and passes it explicitly.
+  auditRule: Profile identity/version is recorded in audit or accepted evidence when it materially influences the decision.
+  secretAllowed: false
+  hardCodedBankSpecificValuesAllowed: false
+profiles:
+- name: EvidenceTemporalProfile
+  purpose: Approved clock-skew and freshness rules by evidence category.
+  forbiddenValues: No implicit or hard-coded duration.
+- name: AuthorizationPolicyProfile
+  purpose: Allowed issuer, scope, algorithms, mandatory binding types and validity semantics.
+  forbiddenValues: No signing key, JWKS body, token or credential.
+- name: BankingVerificationPolicyProfile
+  purpose: Mandatory banking checks and freshness classification.
+  forbiddenValues: No customer/KYC values.
+- name: FundsControlPolicyProfile
+  purpose: Mandatory funds checks and use of authoritative validUntil.
+  forbiddenValues: No balance threshold invented outside exact Payment amount.
+- name: TreasuryResolutionPolicyProfile
+  purpose: Approved protected configuration type, version semantics and bank compatibility.
+  forbiddenValues: No Treasury account token or clear account.
+- name: PostingAuthorizationPolicyProfile
+  purpose: Requirements for the sole posting instruction and evidence coherence.
+  forbiddenValues: No retry or timeout configuration.
+- name: FinancialOutcomePolicyProfile
+  purpose: Approved structural combinations and authoritative-result ranking.
+  forbiddenValues: No HTTP/status-code retry table.
+- name: TfjPolicyProfile
+  purpose: Accepted final statuses, unique-match proof rules and recovery-action semantics.
+  forbiddenValues: No persistence query or scheduler configuration.
+- name: ReversalPolicyProfile
+  purpose: Approved authorization types, reason categories and one-active-instruction rules.
+  forbiddenValues: No operator permissions or credentials.
+- name: FailureClassificationProfile
+  purpose: Stable mappings from category/stage/retry disposition and effect knowledge.
+  forbiddenValues: No free-form message parsing.
+- name: ResultIntentPolicyProfile
+  purpose: Mapping from accepted transitions to IMMEDIATE, FINAL or REVERSAL result types.
+  forbiddenValues: No delivery endpoint, retry or webhook credential.
+- name: EventDisclosureProfile
+  purpose: Event field allowlists, classifications and denylist.
+  forbiddenValues: No decryption capability or secret.
+policies:
+- id: PAY-POL-001
+  name: EvidenceTemporalValidityPolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate structural chronology, future-dating tolerance, freshness and explicit validity windows for canonical evidence.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - EvidenceMetadata
+  - Instant decisionAt
+  - EvidenceTemporalProfile
+  configurationProfile: EvidenceTemporalProfile
+  output: EvidenceTemporalDecision
+  invariantRefs:
+  - PAY-INV-009
+  - PAY-INV-022
+  - PAY-INV-032
+  commandRefs:
+  - PAY-CMD-003
+  - PAY-CMD-004
+  - PAY-CMD-005
+  - PAY-CMD-006
+  - PAY-CMD-010
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Read a system clock.
+  - Invent a freshness duration.
+  - Convert a stale result into approval.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-002
+  name: AuthorizationEvidenceAcceptancePolicy
+  kind: DOMAIN_POLICY
+  purpose: Determine whether minimized authorization evidence is structurally acceptable and correctly bound to the immutable Payment request.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentAuthorizationContext
+  - AuthorizationEvidenceSnapshot
+  - Instant decisionAt
+  - AuthorizationPolicyProfile
+  configurationProfile: AuthorizationPolicyProfile
+  output: EvidenceAcceptanceDecision
+  invariantRefs:
+  - PAY-INV-021
+  - PAY-INV-022
+  - PAY-INV-023
+  - PAY-INV-024
+  - PAY-INV-025
+  commandRefs:
+  - PAY-CMD-003
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Verify a JWT signature or download JWKS.
+  - Read raw claims or credentials.
+  - Fabricate an authorization result after infrastructure failure.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-003
+  name: BankingVerificationAcceptancePolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate banking-verification source, required checks, institution/account binding, outcome semantics and freshness.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentBankingContext
+  - BankingVerificationSnapshot
+  - Instant decisionAt
+  - BankingVerificationPolicyProfile
+  configurationProfile: BankingVerificationPolicyProfile
+  output: EvidenceAcceptanceDecision
+  invariantRefs:
+  - PAY-INV-027
+  - PAY-INV-028
+  - PAY-INV-029
+  - PAY-INV-030
+  - PAY-INV-031
+  commandRefs:
+  - PAY-CMD-004
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Query Amplitude.
+  - Read ObservedCustomer as approval authority.
+  - Inspect KYC values or customer identity payloads.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-004
+  name: FundsControlAcceptancePolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate that funds evidence is favorable, fresh and bound to the exact Payment amount, currency, bank and debtor account.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentFundsContext
+  - FundsControlSnapshot
+  - Instant decisionAt
+  - FundsControlPolicyProfile
+  configurationProfile: FundsControlPolicyProfile
+  output: EvidenceAcceptanceDecision
+  invariantRefs:
+  - PAY-INV-027
+  - PAY-INV-032
+  - PAY-INV-033
+  - PAY-INV-034
+  commandRefs:
+  - PAY-CMD-005
+  - PAY-CMD-007
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Query balances.
+  - Persist available funds.
+  - Extend or infer validUntil.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-005
+  name: TreasuryResolutionAcceptancePolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate protected CUT/Treasury resolution against Payment bank, allocation fingerprint and approved configuration identity/version.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentTreasuryContext
+  - TreasuryAccountResolutionSnapshot
+  - TreasuryAccountReference?
+  - Instant decisionAt
+  - TreasuryResolutionPolicyProfile
+  configurationProfile: TreasuryResolutionPolicyProfile
+  output: EvidenceAcceptanceDecision
+  invariantRefs:
+  - PAY-INV-035
+  - PAY-INV-036
+  - PAY-INV-037
+  - PAY-INV-038
+  commandRefs:
+  - PAY-CMD-006
+  - PAY-CMD-007
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Read protected configuration.
+  - Create a Treasury account from inbound TRESOR PAY data.
+  - Expose the account integration token.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-006
+  name: EvidenceReplayReplacementPolicy
+  kind: DOMAIN_POLICY
+  purpose: Classify new, identical, more authoritative, conflicting or quarantinable evidence without mutating Payment.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - CurrentEvidenceIdentity?
+  - CandidateEvidenceIdentity
+  - EvidenceAuthority
+  - EvidenceConclusiveness
+  - PaymentLifecycleContext
+  configurationProfile: null
+  output: EvidenceReplayDecision
+  invariantRefs:
+  - PAY-INV-025
+  - PAY-INV-037
+  - PAY-INV-042
+  - PAY-INV-058
+  - PAY-INV-069
+  commandRefs:
+  - PAY-CMD-003
+  - PAY-CMD-004
+  - PAY-CMD-005
+  - PAY-CMD-006
+  - PAY-CMD-008
+  - PAY-CMD-009
+  - PAY-CMD-010
+  - PAY-CMD-012
+  - PAY-CMD-013
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Persist audit or quarantine records.
+  - Overwrite terminal evidence.
+  - Treat different fingerprints as a replay.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-007
+  name: PostingInstructionAuthorizationPolicy
+  kind: DOMAIN_POLICY
+  purpose: Authorize the sole logical posting instruction only when all favorable evidence is coherent, fresh and immutable.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentPostingAuthorizationContext
+  - PostingInstructionIdentity
+  - Instant decisionAt
+  - PostingAuthorizationPolicyProfile
+  configurationProfile: PostingAuthorizationPolicyProfile
+  output: PostingAuthorizationDecision
+  invariantRefs:
+  - PAY-INV-032
+  - PAY-INV-035
+  - PAY-INV-037
+  - PAY-INV-038
+  - PAY-INV-039
+  - PAY-INV-040
+  - PAY-INV-041
+  commandRefs:
+  - PAY-CMD-007
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Create the posting instruction identity.
+  - Call Amplitude.
+  - Approve a second logical posting.
+  - Authorize from stale funds evidence.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-008
+  name: PostingOutcomeInterpretationPolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate leg/reference combinations and map canonical posting evidence to a typed financial decision.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentPostingContext
+  - PostingOutcomeSnapshot
+  - PaymentFailure?
+  - FinancialOutcomePolicyProfile
+  configurationProfile: FinancialOutcomePolicyProfile
+  output: PostingOutcomeInterpretation
+  invariantRefs:
+  - PAY-INV-041
+  - PAY-INV-042
+  - PAY-INV-043
+  - PAY-INV-044
+  - PAY-INV-045
+  - PAY-INV-046
+  - PAY-INV-047
+  - PAY-INV-048
+  - PAY-INV-049
+  - PAY-INV-050
+  commandRefs:
+  - PAY-CMD-008
+  - PAY-CMD-009
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Perform lookup or posting.
+  - Assume UNKNOWN means failure.
+  - Establish TFJ finality.
+  - Delete the original posting identity.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-009
+  name: EndOfDayConfirmationAcceptancePolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate a durably matched TFJ confirmation and map INTEGRATED or FAILED recovery semantics without performing the match.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentTfjContext
+  - EndOfDayConfirmationSnapshot
+  - UniqueTfjMatchProof
+  - Instant decisionAt
+  - TfjPolicyProfile
+  configurationProfile: TfjPolicyProfile
+  output: EndOfDayInterpretation
+  invariantRefs:
+  - PAY-INV-053
+  - PAY-INV-054
+  - PAY-INV-055
+  - PAY-INV-056
+  - PAY-INV-057
+  - PAY-INV-058
+  commandRefs:
+  - PAY-CMD-010
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Query TFJ.
+  - Persist or search unmatched confirmations.
+  - Accept PENDING.
+  - Map provider FAILED automatically to Payment FAILED.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-010
+  name: ReversalAuthorizationPolicy
+  kind: DOMAIN_POLICY
+  purpose: Determine whether a confirmed financial effect is eligible for one explicitly authorized reversal instruction.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentReversalEligibilityContext
+  - ReversalInstructionIdentity
+  - ReversalAuthorizationEvidence
+  - Instant decisionAt
+  - ReversalPolicyProfile
+  configurationProfile: ReversalPolicyProfile
+  output: ReversalAuthorizationDecision
+  invariantRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  - PAY-INV-064
+  commandRefs:
+  - PAY-CMD-011
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Approve an actor or runbook.
+  - Call the bank.
+  - Reuse the posting idempotency key.
+  - Authorize reversal without confirmed/reconciled effect.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-011
+  name: ReversalOutcomeInterpretationPolicy
+  kind: DOMAIN_POLICY
+  purpose: Validate canonical reversal evidence and map REVERSED, UNKNOWN, REJECTED or NOT_ALLOWED to a typed decision.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentReversalContext
+  - ReversalSnapshot
+  - PaymentFailure?
+  - FinancialOutcomePolicyProfile
+  configurationProfile: FinancialOutcomePolicyProfile
+  output: ReversalOutcomeInterpretation
+  invariantRefs:
+  - PAY-INV-060
+  - PAY-INV-061
+  - PAY-INV-062
+  - PAY-INV-063
+  - PAY-INV-064
+  commandRefs:
+  - PAY-CMD-012
+  - PAY-CMD-013
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Perform reversal lookup or resubmission.
+  - Erase the original financial effect after rejection.
+  - Treat UNKNOWN as REVERSED or FAILED.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-012
+  name: FailureClassificationPolicy
+  kind: DOMAIN_POLICY
+  purpose: Classify stable PaymentFailure plus proven financial-effect knowledge into reject, fail, defer, unknown or reversal-required semantics.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentFailure
+  - FinancialEffectKnowledge
+  - PaymentStatus
+  - FailureClassificationProfile
+  configurationProfile: FailureClassificationProfile
+  output: FailureDispositionDecision
+  invariantRefs:
+  - PAY-INV-024
+  - PAY-INV-029
+  - PAY-INV-033
+  - PAY-INV-043
+  - PAY-INV-057
+  - PAY-INV-062
+  - PAY-INV-064
+  - PAY-INV-065
+  - PAY-INV-066
+  - PAY-INV-067
+  - PAY-INV-068
+  commandRefs:
+  - PAY-CMD-003
+  - PAY-CMD-004
+  - PAY-CMD-005
+  - PAY-CMD-006
+  - PAY-CMD-008
+  - PAY-CMD-009
+  - PAY-CMD-010
+  - PAY-CMD-012
+  - PAY-CMD-013
+  - PAY-CMD-014
+  - PAY-CMD-015
+  - PAY-CMD-016
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Parse free-form provider text as a business decision.
+  - Return FAILED when financial effect is uncertain.
+  - Reveal technical diagnostics.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-013
+  name: PaymentResultIntentPolicy
+  kind: DOMAIN_POLICY
+  purpose: Determine whether an accepted mutation requires an immediate, final or reversal result intent and its safe semantic result type.
+  conceptualPackage: com.sixpay.payment.domain.policy
+  inputs:
+  - PaymentResultContext
+  - PaymentStatus previousStatus
+  - PaymentStatus resultingStatus
+  - PaymentFailure?
+  - Instant availableAt
+  - ResultIntentPolicyProfile
+  configurationProfile: ResultIntentPolicyProfile
+  output: ResultIntentDecision
+  invariantRefs:
+  - PAY-INV-051
+  - PAY-INV-052
+  - PAY-INV-053
+  - PAY-INV-057
+  - PAY-INV-068
+  commandRefs:
+  - PAY-CMD-003
+  - PAY-CMD-004
+  - PAY-CMD-005
+  - PAY-CMD-006
+  - PAY-CMD-008
+  - PAY-CMD-009
+  - PAY-CMD-010
+  - PAY-CMD-012
+  - PAY-CMD-013
+  - PAY-CMD-014
+  - PAY-CMD-015
+  - PAY-CMD-016
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Deliver a notification.
+  - Use notification outcome to change Payment state.
+  - Expose a full failure or snapshot.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+- id: PAY-POL-014
+  name: PaymentEventDisclosurePolicy
+  kind: BOUNDARY_POLICY
+  purpose: Validate the explicit Outbox payload against the event catalogue, classification rules and sensitive-data denylist.
+  conceptualPackage: com.sixpay.payment.application.policy
+  inputs:
+  - PaymentDomainEvent
+  - ExplicitEventPayload
+  - EventDisclosureProfile
+  configurationProfile: EventDisclosureProfile
+  output: EventDisclosureDecision
+  invariantRefs:
+  - PAY-INV-011
+  - PAY-INV-012
+  - PAY-INV-013
+  - PAY-INV-016
+  - PAY-INV-018
+  commandRefs: []
+  purity:
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    frameworkDependencyAllowed: false
+    secretAccessAllowed: false
+    currentTimeReadAllowed: false
+    timeMustBeExplicitInput: true
+  forbidden:
+  - Serialize the aggregate or snapshot automatically.
+  - Decrypt or retrieve protected account material.
+  - Publish a payload not declared in the event catalogue.
+  verification:
+  - PURE_UNIT_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+  - DECISION_TABLE_TEST
+domainServices:
+- id: PAY-DS-001
+  name: PostingOutcomeDecisionService
+  kind: PURE_DOMAIN_SERVICE
+  conceptualPackage: com.sixpay.payment.domain.service
+  purpose: Coordinate evidence replay, structural posting interpretation and failure classification into one immutable PostingDecision.
+  inputs:
+  - PaymentPostingContext
+  - PostingOutcomeSnapshot candidate
+  - PaymentFailure?
+  - CurrentPostingEvidence?
+  - Instant decisionAt
+  - PaymentPolicyBundle
+  output: PostingDecision
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  commandRefs:
+  - PAY-CMD-008
+  - PAY-CMD-009
+  invariantRefs:
+  - PAY-INV-041
+  - PAY-INV-042
+  - PAY-INV-043
+  - PAY-INV-044
+  - PAY-INV-045
+  - PAY-INV-046
+  - PAY-INV-047
+  - PAY-INV-048
+  - PAY-INV-049
+  - PAY-INV-050
+  purity:
+    stateless: true
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    eventRegistrationAllowed: false
+    aggregateMutationAllowed: false
+    frameworkDependencyAllowed: false
+  forbidden:
+  - Mutate Payment.
+  - Register events.
+  - Execute or look up posting.
+  - Choose a new posting identity.
+  verification:
+  - PURE_UNIT_TEST
+  - DECISION_TABLE_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+- id: PAY-DS-002
+  name: EndOfDayDecisionService
+  kind: PURE_DOMAIN_SERVICE
+  conceptualPackage: com.sixpay.payment.domain.service
+  purpose: Coordinate replay, unique-match proof, TFJ interpretation and failure classification into one immutable EndOfDayDecision.
+  inputs:
+  - PaymentTfjContext
+  - EndOfDayConfirmationSnapshot candidate
+  - UniqueTfjMatchProof
+  - PaymentFailure?
+  - CurrentTfjEvidence?
+  - Instant decisionAt
+  - PaymentPolicyBundle
+  output: EndOfDayDecision
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  commandRefs:
+  - PAY-CMD-010
+  invariantRefs:
+  - PAY-INV-053
+  - PAY-INV-054
+  - PAY-INV-055
+  - PAY-INV-056
+  - PAY-INV-057
+  - PAY-INV-058
+  purity:
+    stateless: true
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    eventRegistrationAllowed: false
+    aggregateMutationAllowed: false
+    frameworkDependencyAllowed: false
+  forbidden:
+  - Perform TFJ matching or lookup.
+  - Persist quarantine.
+  - Mutate Payment.
+  - Register events.
+  verification:
+  - PURE_UNIT_TEST
+  - DECISION_TABLE_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+- id: PAY-DS-003
+  name: ReversalDecisionService
+  kind: PURE_DOMAIN_SERVICE
+  conceptualPackage: com.sixpay.payment.domain.service
+  purpose: Coordinate authorization or canonical reversal outcome interpretation with replay and failure rules.
+  inputs:
+  - PaymentReversalContext
+  - ReversalDecisionInput
+  - CurrentReversalEvidence?
+  - Instant decisionAt
+  - PaymentPolicyBundle
+  output: ReversalDecision
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-010
+  - PAY-POL-011
+  - PAY-POL-012
+  commandRefs:
+  - PAY-CMD-011
+  - PAY-CMD-012
+  - PAY-CMD-013
+  invariantRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  - PAY-INV-061
+  - PAY-INV-062
+  - PAY-INV-063
+  - PAY-INV-064
+  purity:
+    stateless: true
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    eventRegistrationAllowed: false
+    aggregateMutationAllowed: false
+    frameworkDependencyAllowed: false
+  forbidden:
+  - Authorize the human/operator.
+  - Submit or look up reversal.
+  - Mutate Payment.
+  - Register events.
+  verification:
+  - PURE_UNIT_TEST
+  - DECISION_TABLE_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+- id: PAY-DS-004
+  name: PaymentResultIntentService
+  kind: PURE_DOMAIN_SERVICE
+  conceptualPackage: com.sixpay.payment.domain.service
+  purpose: Build the typed result-intent decision associated with an accepted Payment mutation.
+  inputs:
+  - PaymentResultContext
+  - PaymentStatus previousStatus
+  - PaymentStatus resultingStatus
+  - PaymentFailure?
+  - Instant availableAt
+  - PaymentPolicyBundle
+  output: ResultIntentDecision
+  policyRefs:
+  - PAY-POL-013
+  commandRefs:
+  - PAY-CMD-003
+  - PAY-CMD-004
+  - PAY-CMD-005
+  - PAY-CMD-006
+  - PAY-CMD-008
+  - PAY-CMD-009
+  - PAY-CMD-010
+  - PAY-CMD-012
+  - PAY-CMD-013
+  - PAY-CMD-014
+  - PAY-CMD-015
+  - PAY-CMD-016
+  invariantRefs:
+  - PAY-INV-051
+  - PAY-INV-052
+  - PAY-INV-053
+  - PAY-INV-057
+  - PAY-INV-068
+  purity:
+    stateless: true
+    deterministicForSameInputs: true
+    ioAllowed: false
+    repositoryAccessAllowed: false
+    networkAccessAllowed: false
+    eventRegistrationAllowed: false
+    aggregateMutationAllowed: false
+    frameworkDependencyAllowed: false
+  forbidden:
+  - Deliver Notification.
+  - Change Payment financial state.
+  - Read external data.
+  - Register the event itself.
+  verification:
+  - PURE_UNIT_TEST
+  - DECISION_TABLE_TEST
+  - PROPERTY_BASED_WHERE_APPLICABLE
+explicitlyExternalComponents:
+- name: PaymentPolicyConfigurationPort
+  owner: APPLICATION
+  reasonNotDomainService: Loads approved versioned profiles and effective dates.
+- name: AuthorizationEvidenceVerifierPort
+  owner: SECURITY_INTEGRATION
+  reasonNotDomainService: Verifies token, signature, JWKS and credentials.
+- name: BankingVerificationPort
+  owner: CUSTOMER_INTEGRATION
+  reasonNotDomainService: Calls or resolves authoritative Amplitude customer/account checks.
+- name: FundsControlPort
+  owner: ACCOUNTING_INTEGRATION
+  reasonNotDomainService: Executes exact read-only bank checks.
+- name: TreasuryAccountResolverPort
+  owner: ACCOUNTING_PROTECTED_CONFIGURATION
+  reasonNotDomainService: Reads protected CUT configuration and returns canonical resolution.
+- name: PostingPort
+  owner: ACCOUNTING_INTEGRATION
+  reasonNotDomainService: Executes the authorized bank write.
+- name: PostingOutcomeLookupPort
+  owner: ACCOUNTING_INTEGRATION
+  reasonNotDomainService: Performs authoritative read-only lookup.
+- name: TfjConfirmationMatcherPort
+  owner: ACCOUNTING
+  reasonNotDomainService: Persists, uniquely matches and quarantines TFJ confirmations.
+- name: ReversalPort
+  owner: ACCOUNTING_INTEGRATION
+  reasonNotDomainService: Executes an explicitly authorized reversal.
+- name: ReversalOutcomeLookupPort
+  owner: ACCOUNTING_INTEGRATION
+  reasonNotDomainService: Performs authoritative reversal lookup.
+- name: PaymentInstructionMaterialPort
+  owner: APPLICATION_SECURE_ADAPTER
+  reasonNotDomainService: Retrieves protected account material outside general events.
+- name: PaymentRepository
+  owner: APPLICATION_PERSISTENCE
+  reasonNotDomainService: Loads and saves aggregate state.
+- name: PaymentCommandRegistry
+  owner: APPLICATION_PERSISTENCE
+  reasonNotDomainService: Deduplicates application commands.
+- name: TransactionalOutbox
+  owner: INFRASTRUCTURE
+  reasonNotDomainService: Persists and publishes event envelopes.
+- name: Clock
+  owner: APPLICATION_PLATFORM
+  reasonNotDomainService: Supplies an explicit Instant to domain operations and policies.
+- name: RetryCircuitBreakerDlqPolicy
+  owner: INTEGRATION_OPERATIONS
+  reasonNotDomainService: Owns transport resilience, budgets and runbooks.
+decisions:
+- id: PAY-DEC-IA1-051
+  decision: POLICY_DOMAIN_SERVICE_PORT_AND_INFRASTRUCTURE_RESPONSIBILITIES_ARE_EXPLICITLY_SEPARATED
+- id: PAY-DEC-IA1-052
+  decision: ALL_DOMAIN_POLICIES_AND_SERVICES_ARE_PURE_DETERMINISTIC_AND_RECEIVE_TIME_CONFIGURATION_EXPLICITLY
+- id: PAY-DEC-IA1-053
+  decision: FOURTEEN_POLICIES_AND_FOUR_PURE_DOMAIN_SERVICES_FORM_THE_PAYMENT_DECISION_MODEL
+- id: PAY-DEC-IA1-054
+  decision: PAYMENT_AGGREGATE_REMAINS_SOLE_STATE_AND_EVENT_OWNER_DOMAIN_SERVICES_RETURN_DECISIONS_ONLY
+- id: PAY-DEC-IA1-055
+  decision: POLICY_PROFILES_ARE_VERSIONED_APPROVED_AND_INJECTED_NO_BANK_CONSTANT_IS_INVENTED_OR_HARD_CODED
+- id: PAY-DEC-IA1-056
+  decision: PERSISTENT_MATCHING_LOOKUP_RETRY_CIRCUIT_BREAKER_DLQ_AND_SECRET_ACCESS_REMAIN_OUTSIDE_DOMAIN
+- id: PAY-DEC-IA1-057
+  decision: EVIDENCE_REPLAY_REPLACEMENT_AND_CONFLICT_CLASSIFICATION_USE_ONE_SHARED_DOMAIN_POLICY
+- id: PAY-DEC-IA1-058
+  decision: POSTING_TFJ_AND_REVERSAL_SERVICES_RETURN_IMMUTABLE_DECISIONS_WITHOUT_MUTATION_EVENT_OR_IO
+- id: PAY-DEC-IA1-059
+  decision: RESULT_INTENT_DECISION_AND_EVENT_PAYLOAD_DISCLOSURE_ARE_SEPARATE_POLICIES
+- id: PAY-DEC-IA1-060
+  decision: POLICY_AND_SERVICE_DEFINITIONS_DO_NOT_AUTHORIZE_JAVA_GENERATION_BEFORE_FINAL_MODEL_VALIDATION
+readiness:
+  policyCount: 14
+  pureDomainPolicyCount: 13
+  boundaryPolicyCount: 1
+  pureDomainServiceCount: 4
+  configurationProfileCount: 12
+  externalComponentCount: 16
+  humanValidationRequired: true
+  finalValidationLotReadyAfterApproval: true
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+  lot2_8FinalValidationPassed: true
+  domainModelComplete: true
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+finalValidation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+implementation:
+  status: IMPLEMENTED
+  policyCount: 14
+  profileCount: 12
+  domainServiceCount: 4
+  packages:
+  - com.sixpay.payment.domain.policy
+  - com.sixpay.payment.domain.service
+  pure: true
+  ioAllowed: false
+  repositoryAccessAllowed: false
+  externalClientAccessAllowed: false
+  systemClockAccessAllowed: false
+  aggregateMutationAllowed: false
+  eventRegistrationAllowed: false

@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: local-auth
+    import:
+      - classpath:config/security/local-auth-common.yml
+
+sixpay:
+  security:
+    authentication:
+      local:
+        enabled: true
+      oidc:
+        enabled: false

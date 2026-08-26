@@ -1,0 +1,2 @@
+com.sixpay.integration.configuration.IntegrationAutoConfiguration
+com.sixpay.integration.kafka.configuration.IntegrationKafkaAutoConfiguration

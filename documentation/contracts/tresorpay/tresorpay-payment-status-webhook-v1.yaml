@@ -1,0 +1,886 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Payment Status Webhook
+  version: 1.0.0
+  description: |
+    Webhook delivered by SIXPAY to the callback endpoint registered and
+    allow-listed for TRESOR PAY. It reports durable Payment lifecycle facts
+    using at-least-once delivery.
+
+    `eventId` identifies one immutable logical event and is reused for every
+    delivery attempt. `X-Webhook-Delivery-ID` identifies one transport attempt
+    and changes on retry. TRESOR PAY must persist the event identifier and the
+    canonical payload fingerprint before returning HTTP 204.
+
+    Notifications do not create or change the financial truth. A delivery
+    failure never rolls back a Payment, and a notification replay never
+    re-executes a bank operation.
+
+    `PAYMENT_DEBITED` is an intermediate fact. `CUT_CREDITED` confirms the
+    immediate accounting posting but not TFJ finality. TFJ finality is delivered
+    by its dedicated contract.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryId: "tresorpay-payment-status-webhook-v1"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.5"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "PAYMENT_STATUS_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    deliverySemantics: "AT_LEAST_ONCE"
+    eventTypes:
+      - "PAYMENT_RECEIVED"
+      - "PAYMENT_REJECTED"
+      - "PAYMENT_PROCESSING"
+      - "PAYMENT_DEBITED"
+      - "CUT_CREDITED"
+      - "PAYMENT_FAILED"
+      - "PAYMENT_REVERSED"
+    limitations:
+      - "NO_TFJ_FINALITY"
+      - "NO_FINANCIAL_COMMAND"
+      - "NO_SUBSCRIPTION_LIFECYCLE_UPDATE"
+
+servers:
+  - url: https://tresorpay.example
+    description: Registered TRESOR PAY environment endpoint
+
+security:
+  - bearerAuth: []
+    subscriptionKey: []
+
+tags:
+  - name: Payment status
+    description: Idempotent SIXPAY Payment lifecycle notifications.
+
+paths:
+  /v1/callbacks/payment-status:
+    post:
+      tags: [Payment status]
+      operationId: receiveSixpayPaymentStatus
+      summary: Receive a SIXPAY Payment status event
+      description: |
+        TRESOR PAY validates transport credentials, signature freshness and the
+        HMAC signature over the raw body before parsing it.
+
+        HTTP 204 means the event was durably accepted or that the same eventId
+        and identical payload were already accepted. TRESOR PAY must not assume
+        delivery order; `paymentVersion` is monotonic for one Payment.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/DeliveryId'
+        - $ref: '#/components/parameters/DeliveryAttempt'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureKeyId'
+        - $ref: '#/components/parameters/SignatureTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStatusEvent'
+      responses:
+        '204':
+          description: Event durably accepted or identical event already processed
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/EventConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived service token issued for SIXPAY webhook delivery.
+    subscriptionKey:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+      description: TRESOR PAY subscription key provisioned to SIXPAY.
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: Must equal `correlationId` in the event body.
+      schema:
+        type: string
+        format: uuid
+    EventId:
+      name: X-Webhook-Event-ID
+      in: header
+      required: true
+      description: Must equal immutable `eventId` in the event body.
+      schema:
+        type: string
+        format: uuid
+    DeliveryId:
+      name: X-Webhook-Delivery-ID
+      in: header
+      required: true
+      description: |
+        Unique identifier of this transport attempt. A new UUID is generated
+        for each retry while eventId and payload remain unchanged.
+      schema:
+        type: string
+        format: uuid
+    DeliveryAttempt:
+      name: X-Webhook-Delivery-Attempt
+      in: header
+      required: true
+      description: Attempt number starting at one.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    Signature:
+      name: X-SIXPAY-Signature
+      in: header
+      required: true
+      description: |
+        `v1=<base64url-signature>` where the signature is
+        `HMAC-SHA256(secret, signingInput)`.
+
+        `signingInput` is the UTF-8 concatenation of:
+        `timestamp + "." + HTTP_METHOD + "." + request_target + "." +
+        base64url(SHA-256(raw_request_body))`.
+      schema:
+        type: string
+        pattern: '^v1=[A-Za-z0-9_-]{43}$'
+    SignatureKeyId:
+      name: X-SIXPAY-Signature-Key-ID
+      in: header
+      required: true
+      description: Identifier of the active shared secret, supporting rotation.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        pattern: '^[A-Za-z0-9._-]+$'
+    SignatureTimestamp:
+      name: X-SIXPAY-Signature-Timestamp
+      in: header
+      required: true
+      description: Unix epoch seconds; accepted only within a five-minute window.
+      schema:
+        type: string
+        pattern: '^[0-9]{10}$'
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RetryAfter:
+      description: Delay in seconds before the next delivery attempt.
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    PaymentStatusEvent:
+      oneOf:
+        - $ref: '#/components/schemas/PaymentReceivedEvent'
+        - $ref: '#/components/schemas/PaymentRejectedEvent'
+        - $ref: '#/components/schemas/PaymentProcessingEvent'
+        - $ref: '#/components/schemas/PaymentDebitedEvent'
+        - $ref: '#/components/schemas/CutCreditedEvent'
+        - $ref: '#/components/schemas/PaymentFailedEvent'
+        - $ref: '#/components/schemas/PaymentReversedEvent'
+      discriminator:
+        propertyName: eventType
+        mapping:
+          PAYMENT_RECEIVED: '#/components/schemas/PaymentReceivedEvent'
+          PAYMENT_REJECTED: '#/components/schemas/PaymentRejectedEvent'
+          PAYMENT_PROCESSING: '#/components/schemas/PaymentProcessingEvent'
+          PAYMENT_DEBITED: '#/components/schemas/PaymentDebitedEvent'
+          CUT_CREDITED: '#/components/schemas/CutCreditedEvent'
+          PAYMENT_FAILED: '#/components/schemas/PaymentFailedEvent'
+          PAYMENT_REVERSED: '#/components/schemas/PaymentReversedEvent'
+
+    BaseEvent:
+      type: object
+      required:
+        - schemaVersion
+        - eventId
+        - eventType
+        - occurredAt
+        - correlationId
+        - paymentId
+        - paymentReference
+        - tresorPayPaymentReference
+        - financialInstitutionCode
+        - paymentVersion
+      properties:
+        schemaVersion:
+          type: string
+          const: '1.0'
+        eventId:
+          type: string
+          format: uuid
+          description: Immutable logical-event idempotency key.
+        eventType:
+          $ref: '#/components/schemas/PaymentStatusEventType'
+        occurredAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          format: uuid
+        causationId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        tresorPayPaymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        paymentVersion:
+          type: integer
+          minimum: 1
+          description: Monotonic aggregate version used for out-of-order delivery.
+
+    PaymentStatusEventType:
+      type: string
+      enum:
+        - PAYMENT_RECEIVED
+        - PAYMENT_REJECTED
+        - PAYMENT_PROCESSING
+        - PAYMENT_DEBITED
+        - CUT_CREDITED
+        - PAYMENT_FAILED
+        - PAYMENT_REVERSED
+
+    PaymentReceivedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_RECEIVED
+            data:
+              $ref: '#/components/schemas/PaymentReceivedData'
+
+    PaymentRejectedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_REJECTED
+            data:
+              $ref: '#/components/schemas/PaymentRejectedData'
+
+    PaymentProcessingEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_PROCESSING
+            data:
+              $ref: '#/components/schemas/PaymentProcessingData'
+
+    PaymentDebitedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_DEBITED
+            data:
+              $ref: '#/components/schemas/PaymentDebitedData'
+
+    CutCreditedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: CUT_CREDITED
+            data:
+              $ref: '#/components/schemas/CutCreditedData'
+
+    PaymentFailedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_FAILED
+            data:
+              $ref: '#/components/schemas/PaymentFailedData'
+
+    PaymentReversedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - eventType
+            - data
+          properties:
+            eventType:
+              type: string
+              const: PAYMENT_REVERSED
+            data:
+              $ref: '#/components/schemas/PaymentReversedData'
+
+    PaymentReceivedData:
+      type: object
+      additionalProperties: false
+      required:
+        - acknowledgementId
+        - receivedAt
+        - status
+      properties:
+        acknowledgementId:
+          type: string
+          format: uuid
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          const: RECEIVED
+
+    PaymentRejectedData:
+      type: object
+      additionalProperties: false
+      required:
+        - reasonCode
+        - rejectedAt
+        - financialEffect
+      properties:
+        reasonCode:
+          $ref: '#/components/schemas/SafeReasonCode'
+        reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+          description: Safe explanation without account or internal provider data.
+        rejectedAt:
+          type: string
+          format: date-time
+        financialEffect:
+          type: string
+          const: NONE
+
+    PaymentProcessingData:
+      type: object
+      additionalProperties: false
+      required:
+        - phase
+        - reasonCode
+        - financialOutcomeKnown
+        - processingSince
+      properties:
+        phase:
+          type: string
+          enum:
+            - BANKING_VERIFICATION
+            - FUNDS_CONTROL
+            - POSTING
+            - POSTING_OUTCOME_RECOVERY
+            - CUT_CREDIT_PENDING
+            - REVERSAL_REQUIRED
+            - REVERSAL_OUTCOME_RECOVERY
+        reasonCode:
+          $ref: '#/components/schemas/SafeReasonCode'
+        financialOutcomeKnown:
+          type: boolean
+          description: False for any unresolved financial operation.
+        bankPostingReference:
+          oneOf:
+            - $ref: '#/components/schemas/BankReference'
+            - type: 'null'
+        processingSince:
+          type: string
+          format: date-time
+        nextUpdateExpectedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+
+    PaymentDebitedData:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - bankPostingReference
+        - bankDebitReference
+        - debitedAt
+        - cutCreditStatus
+        - finality
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        bankPostingReference:
+          $ref: '#/components/schemas/BankReference'
+        bankDebitReference:
+          $ref: '#/components/schemas/BankReference'
+        debitedAt:
+          type: string
+          format: date-time
+        cutCreditStatus:
+          type: string
+          enum:
+            - PENDING
+            - UNKNOWN
+            - FAILED
+        finality:
+          type: string
+          const: INTERMEDIATE
+
+    CutCreditedData:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - bankPostingReference
+        - bankDebitReference
+        - bankCutCreditReference
+        - creditedAt
+        - immediateResult
+        - tfjFinality
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        bankPostingReference:
+          $ref: '#/components/schemas/BankReference'
+        bankDebitReference:
+          $ref: '#/components/schemas/BankReference'
+        bankCutCreditReference:
+          $ref: '#/components/schemas/BankReference'
+        creditedAt:
+          type: string
+          format: date-time
+        immediateResult:
+          type: string
+          const: POSTED_PENDING_TFJ
+        tfjFinality:
+          type: boolean
+          const: false
+
+    PaymentFailedData:
+      type: object
+      additionalProperties: false
+      required:
+        - failureCode
+        - failedAt
+        - financialEffect
+      properties:
+        failureCode:
+          $ref: '#/components/schemas/SafeReasonCode'
+        failureReason:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+          description: Safe explanation without raw Amplitude error.
+        failedAt:
+          type: string
+          format: date-time
+        financialEffect:
+          type: string
+          const: NONE
+
+    PaymentReversedData:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - originalBankPostingReference
+        - bankReversalReference
+        - reversedAt
+        - status
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        originalBankPostingReference:
+          $ref: '#/components/schemas/BankReference'
+        bankReversalReference:
+          $ref: '#/components/schemas/BankReference'
+        reversedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          const: REVERSED
+
+    PaymentReference:
+      type: string
+      minLength: 8
+      maxLength: 100
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$'
+
+    FinancialInstitutionCode:
+      type: string
+      minLength: 2
+      maxLength: 35
+      pattern: '^[A-Z0-9][A-Z0-9._-]{1,34}$'
+
+    BankReference:
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{7,127}$'
+
+    SafeReasonCode:
+      type: string
+      minLength: 2
+      maxLength: 64
+      pattern: '^[A-Z][A-Z0-9_]{1,63}$'
+
+    Money:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    ProblemDetail:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe detail without credentials or financial identifiers.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          enum:
+            - REQUEST_INVALID
+            - AUTHENTICATION_REQUIRED
+            - ACCESS_DENIED
+            - SIGNATURE_INVALID
+            - SIGNATURE_EXPIRED
+            - EVENT_ID_CONFLICT
+            - EVENT_TYPE_UNSUPPORTED
+            - SCHEMA_VERSION_UNSUPPORTED
+            - RATE_LIMIT_EXCEEDED
+            - TRESOR_PAY_INTERNAL_ERROR
+            - TRESOR_PAY_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+        retryable:
+          type: boolean
+        retryAfter:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+        invalidParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvalidParameter'
+
+    InvalidParameter:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+        reason:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Malformed body or inconsistent header/body identifiers
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Bearer token, Subscription Key or signature is invalid
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Authenticated SIXPAY caller is not authorized for this callback
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    EventConflict:
+      description: eventId was previously accepted with a different payload
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Event or schema version is well formed but unsupported
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Receiver rate limit exceeded
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Temporary TRESOR PAY processing error
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    BadGateway:
+      description: Temporary gateway error
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: TRESOR PAY callback service is temporarily unavailable
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    GatewayTimeout:
+      description: Temporary gateway timeout
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+x-sixpay-delivery-policy:
+  source: "TRANSACTIONAL_OUTBOX"
+  semantics: "AT_LEAST_ONCE"
+  durableAcceptance: "HTTP_204_AFTER_EVENT_ID_AND_PAYLOAD_HASH_COMMIT"
+  idempotency:
+    key: "eventId"
+    sameEventSamePayload: "HTTP_204_NO_SECOND_BUSINESS_EFFECT"
+    sameEventDifferentPayload: "HTTP_409_AND_SECURITY_ALERT"
+  attempts:
+    eventId: "UNCHANGED"
+    payload: "UNCHANGED"
+    deliveryId: "NEW_UUID_PER_ATTEMPT"
+    deliveryAttempt: "INCREMENTED"
+    signatureTimestamp: "REFRESHED_AND_RESIGNED"
+  ordering:
+    transportOrderGuaranteed: false
+    paymentVersion: "MONOTONIC_PER_PAYMENT"
+    staleEvent: "ACKNOWLEDGE_AND_RETAIN_FOR_AUDIT_WITHOUT_STATE_REGRESSION"
+    versionGap: "ACKNOWLEDGE_AND_TRIGGER_RECONCILIATION_OR_STATUS_QUERY"
+  timeout:
+    values: "CONFIGURABLE"
+    result: "DELIVERY_OUTCOME_UNKNOWN"
+    action: "RETRY_SAME_EVENT"
+    paymentFinancialStateChange: false
+  retry:
+    conditions:
+      - "CONNECTION_FAILURE"
+      - "TIMEOUT"
+      - "HTTP_429"
+      - "HTTP_500"
+      - "HTTP_502"
+      - "HTTP_503"
+      - "HTTP_504"
+    backoff: "EXPONENTIAL_WITH_FULL_JITTER"
+    honorRetryAfter: true
+    maximumAttempts: "CONFIGURABLE_BOUNDED"
+    permanentStatuses:
+      - "HTTP_400"
+      - "HTTP_401"
+      - "HTTP_403"
+      - "HTTP_409_DIFFERENT_PAYLOAD"
+      - "HTTP_422"
+  exhaustion:
+    action:
+      - "MOVE_TO_DLQ"
+      - "RAISE_OPERATIONAL_ALERT"
+      - "PRESERVE_DELIVERY_EVIDENCE"
+    paymentFinancialStateChange: false
+  operationalReplay:
+    authorization: "RBAC_AND_AUDIT_REQUIRED"
+    eventId: "UNCHANGED"
+    payload: "UNCHANGED"
+    deliveryId: "NEW_UUID"
+    financialReplay: "FORBIDDEN"
+
+x-sixpay-signature-policy:
+  algorithm: "HMAC_SHA256"
+  timestampWindow: "5_MINUTES"
+  compare: "CONSTANT_TIME"
+  keyStorage: "SECRETS_MANAGER_ONLY"
+  keyRotation:
+    keyIdRequired: true
+    overlapRequired: true
+  verificationOrder:
+    - "TRANSPORT_CREDENTIALS"
+    - "TIMESTAMP_WINDOW"
+    - "SIGNATURE_OVER_RAW_BODY"
+    - "HEADER_BODY_IDENTIFIER_MATCH"
+    - "EVENT_ID_DEDUPLICATION"
+    - "SCHEMA_VALIDATION"
+
+x-sixpay-event-semantics:
+  PAYMENT_RECEIVED:
+    financialMeaning: "No banking effect; Payment request is durably persisted."
+  PAYMENT_REJECTED:
+    financialMeaning: "Final business rejection before financial effect."
+  PAYMENT_PROCESSING:
+    financialMeaning: "Non-final state; may represent an unknown financial outcome."
+  PAYMENT_DEBITED:
+    financialMeaning: "Customer debit confirmed; CUT credit not yet confirmed."
+  CUT_CREDITED:
+    financialMeaning: "Debit and accounting CUT credit confirmed; TFJ remains pending."
+  PAYMENT_FAILED:
+    financialMeaning: "Technical failure proven with no financial effect."
+  PAYMENT_REVERSED:
+    financialMeaning: "Explicit bank reversal confirmed."
+
+x-sixpay-sensitive-data-policy:
+  forbiddenInPayload:
+    - "Authorization token"
+    - "Subscription Key"
+    - "HMAC secret"
+    - "RIB or IBAN"
+    - "Account balance"
+    - "Customer KYC data"
+    - "Raw Amplitude response or error"
+  forbiddenInLogs:
+    - "Authorization header"
+    - "X-Subscription-Key"
+    - "X-SIXPAY-Signature"
+    - "Raw request body"
+  allowedFinancialIdentifiers:
+    - "Opaque Payment references"
+    - "Opaque bank posting, debit, CUT credit and reversal references"
+
+x-sixpay-approval-prerequisites:
+  - "TRESOR PAY approves callback path and endpoint registration."
+  - "TRESOR PAY and SIXPAY approve the seven event semantics."
+  - "Security approves Bearer, Subscription Key, HMAC profile and key rotation."
+  - "TRESOR PAY confirms durable eventId deduplication and payload-hash storage."
+  - "Operations approves retry, DLQ, alert and replay procedures."

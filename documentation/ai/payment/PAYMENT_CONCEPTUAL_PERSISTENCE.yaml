@@ -1,0 +1,259 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-CONCEPTUAL-PERSISTENCE
+  lot: 7_CONCEPTUAL_PERSISTENCE_CONCURRENCY
+  status: NORMATIVE_IMPLEMENTED
+  codeGenerationAllowed: false
+principles:
+  tableNamesAreFinal: false
+  capabilitiesAreMandatoryWhereFlagged: true
+  jpaEntitiesAllowed: false
+  databaseMigrationsAllowed: false
+  aggregateAndTechnicalModelsSeparated: true
+  paymentAuditOutboxAtomic: true
+  optimisticLocking: business_version
+  defaultIsolation: READ_COMMITTED_WITH_UNIQUE_CONSTRAINTS_AND_OPTIMISTIC_LOCKING
+  serializableIsolationDefault: false
+  pessimisticAggregateLockDefault: false
+capabilities:
+- id: PAY-PERS-001
+  capability: Aggregate state persistence
+  purpose: Persist and reconstitute the complete PaymentState without creating events.
+  logicalOwner: payment
+  candidateStorage: payments
+  mandatory: true
+  minimumData:
+  - payment_id
+  - public_payment_reference
+  - payment_source
+  - external_payment_reference
+  - canonical_request_fingerprint
+  - payment_status
+  - business_version
+  - received_at
+  - updated_at
+  - finalized_at
+  - current safe evidence and instruction references
+  constraints:
+  - PRIMARY KEY(payment_id)
+  - UNIQUE(public_payment_reference)
+  - UNIQUE(payment_source, external_payment_reference)
+  - CHECK(business_version > 0)
+  - optimistic lock on business_version
+- id: PAY-PERS-002
+  capability: Current failure persistence
+  purpose: Persist the current safe PaymentFailure required for reconstitution.
+  logicalOwner: payment
+  candidateStorage: payments columns or payment_failures
+  mandatory: true
+  minimumData:
+  - failure_code
+  - failure_category
+  - failure_stage
+  - retry_disposition
+  - safe_message
+  - occurred_at
+  - external_system
+  constraints:
+  - no free-form provider message
+  - no stack trace
+  - no secret or account value
+- id: PAY-PERS-003
+  capability: Failure history
+  purpose: Retain an immutable history when operational or regulatory requirements demand more than the current failure.
+  logicalOwner: payment
+  candidateStorage: payment_failure_history
+  mandatory: false
+  decision: OPTIONAL_CAPABILITY_NOT_MANDATED_AS_A_SEPARATE_TABLE
+  constraints:
+  - append-only
+  - ordered by payment_id and occurred_at
+  - safe failure fields only
+- id: PAY-PERS-004
+  capability: Immutable audit
+  purpose: Persist one immutable audit record for every registered Payment Domain Event.
+  logicalOwner: payment
+  candidateStorage: payment_audit
+  mandatory: true
+  constraints:
+  - UNIQUE(event_id)
+  - UNIQUE(payment_id, aggregate_version, event_sequence)
+  - UPDATE and DELETE blocked
+  - same transaction as Payment and Outbox
+- id: PAY-PERS-005
+  capability: Request idempotency
+  purpose: Resolve identical replays to the original result and reject conflicting payloads.
+  logicalOwner: payment application boundary
+  candidateStorage: payment_idempotency
+  mandatory: true
+  constraints:
+  - UNIQUE(idempotency_scope, idempotency_key)
+  - store canonical request fingerprint
+  - store original safe response/result reference
+  - same transaction as successful first admission when applicable
+- id: PAY-PERS-006
+  capability: Transactional Outbox
+  purpose: Persist publishable integration intents without contacting Kafka in the business transaction.
+  logicalOwner: payment
+  candidateStorage: payment_outbox
+  mandatory: true
+  constraints:
+  - UNIQUE(event_id)
+  - UNIQUE(aggregate_id, aggregate_version, event_sequence)
+  - same transaction as Payment and audit
+  - at-least-once relay
+- id: PAY-PERS-007
+  capability: Authorization replay protection
+  purpose: Prevent reuse of protected authorization evidence where the approved security profile requires one-time semantics.
+  logicalOwner: payment security/application boundary
+  candidateStorage: payment_authorization_replay
+  mandatory: PROFILE_DEPENDENT
+  constraints:
+  - UNIQUE(issuer, evidence_reference_or_jti_hash)
+  - store only protected fingerprint/hash
+  - never store bearer token or raw JWT
+  - expiry aligned with approved security profile
+- id: PAY-PERS-008
+  capability: Authoritative financial outcome lookup correlation
+  purpose: Retain immutable posting/reversal instruction keys and opaque bank references required to resolve uncertain outcomes.
+  logicalOwner: payment
+  candidateStorage: payments and/or dedicated protected lookup projection
+  mandatory: true
+  constraints:
+  - UNIQUE(posting_idempotency_key)
+  - reversal idempotency key unique within payment scope
+  - original principal posting reference immutable
+  - no blind financial resubmission
+queryIndexes:
+- id: PAY-IDX-001
+  query: PaymentId lookup
+  columns:
+  - payment_id
+  type: PRIMARY_OR_UNIQUE
+- id: PAY-IDX-002
+  query: TRESOR PAY reference lookup
+  columns:
+  - payment_source
+  - external_payment_reference
+  type: UNIQUE
+- id: PAY-IDX-003
+  query: Public SIXPAY reference lookup
+  columns:
+  - public_payment_reference
+  type: UNIQUE
+- id: PAY-IDX-004
+  query: Bank posting reference lookup
+  columns:
+  - principal_posting_reference
+  type: INDEX_OR_UNIQUE_WHEN_BANK_CONTRACT_ALLOWS
+- id: PAY-IDX-005
+  query: Status work queue
+  columns:
+  - payment_status
+  - updated_at
+  type: INDEX
+- id: PAY-IDX-006
+  query: Period consultation
+  columns:
+  - received_at
+  - payment_id
+  type: INDEX
+- id: PAY-IDX-007
+  query: Correlation tracing
+  columns:
+  - correlation_id
+  - occurred_at
+  type: INDEX_ON_AUDIT_AND_IDEMPOTENCY
+- id: PAY-IDX-008
+  query: TFJ reconciliation
+  columns:
+  - financial_institution_code
+  - business_date
+  - principal_posting_reference
+  type: INDEX
+- id: PAY-IDX-009
+  query: Outbox relay
+  columns:
+  - status
+  - next_attempt_at
+  - occurred_at
+  type: INDEX
+protectedData:
+  accountReferences: protected tokenized/vault reference plus masked display and binding fingerprint
+  encryptionAtRest: required for protected columns or external vault references
+  rawTokensAllowed: false
+  rawCredentialsAllowed: false
+  rawBankPayloadAllowed: false
+  hashes: versioned keyed or cryptographic fingerprints with documented rotation
+retention:
+  paymentState: business and regulatory retention policy
+  audit: append-only regulatory retention; no application UPDATE/DELETE
+  idempotency: at least the longest client retry and financial reconciliation window
+  outbox: retain published metadata/payload hash according to event and audit policy
+  authorizationReplay: approved security TTL plus operational margin
+  decisionOwner: Security, Compliance, Accounting and Operations
+concurrencyScenarios:
+- id: PAY-CONC-001
+  scenario: Two simultaneous requests with the same idempotency key and the same payload
+  arbitration: Unique idempotency key plus canonical fingerprint
+  winner: The transaction that creates the idempotency record first
+  loser: Reloads the committed original result and returns it
+  paymentMutationCount: 1
+  financialOperationCount: 1
+  stableOutcome: IDEMPOTENT_REPLAY_OR_RETRY_AFTER_WINNER_COMMIT
+- id: PAY-CONC-002
+  scenario: Same external reference with different idempotency keys and equivalent payload
+  arbitration: UNIQUE(payment_source, external_payment_reference) plus canonical fingerprint comparison
+  winner: First committed Payment
+  loser: Returns the existing Payment/result as a semantic replay
+  paymentMutationCount: 1
+  financialOperationCount: 1
+  stableOutcome: EXISTING_PAYMENT_RETURNED
+- id: PAY-CONC-003
+  scenario: Same external reference with different payloads
+  arbitration: Unique external reference and canonical fingerprint mismatch
+  winner: First committed Payment remains authoritative
+  loser: Rejected as conflict without mutation
+  paymentMutationCount: 1
+  financialOperationCount: 1
+  stableOutcome: PAYMENT_IDEMPOTENCY_CONFLICT
+- id: PAY-CONC-004
+  scenario: Duplicate Amplitude callback
+  arbitration: Evidence identity and fingerprint plus optimistic locking
+  winner: First accepted evidence transition
+  loser: Identical callback is no-op; different callback is quarantined/conflict
+  paymentMutationCount: 1
+  financialOperationCount: NO_NEW_OPERATION
+  stableOutcome: NO_OP_OR_EVIDENCE_CONFLICT
+- id: PAY-CONC-005
+  scenario: TFJ callback received before the expected projection or consumer state
+  arbitration: Durable inbox/staging keyed by confirmation identity and posting reference
+  winner: Callback is durably retained
+  loser: Not applicable
+  paymentMutationCount: 0_UNTIL_PAYMENT_IS_MATCHABLE
+  financialOperationCount: 0
+  stableOutcome: DEFERRED_MATCH_WITHOUT_DATA_LOSS
+- id: PAY-CONC-006
+  scenario: Notification delivery replay
+  arbitration: Consumer idempotency by sourceEventId and notification phase
+  winner: First delivery/processed marker
+  loser: No-op delivery replay
+  paymentMutationCount: 0
+  financialOperationCount: 0
+  stableOutcome: NOTIFICATION_NO_OP
+- id: PAY-CONC-007
+  scenario: Duplicate reversal result
+  arbitration: Reversal evidence identity/fingerprint plus optimistic locking
+  winner: First conclusive reversal outcome
+  loser: Identical no-op; conflicting evidence quarantined
+  paymentMutationCount: 1
+  financialOperationCount: NO_SECOND_REVERSAL
+  stableOutcome: NO_OP_OR_EVIDENCE_CONFLICT
+- id: PAY-CONC-008
+  scenario: Concurrent transition while reconciliation is processing
+  arbitration: Optimistic lock on business_version and full state re-evaluation
+  winner: First committed valid transition
+  loser: Reloads current Payment and re-runs domain decision; never blind retries a financial command
+  paymentMutationCount: ONE_PER_VERSION
+  financialOperationCount: NO_DUPLICATE_FINANCIAL_COMMAND
+  stableOutcome: VERSION_CONFLICT_THEN_REEVALUATION

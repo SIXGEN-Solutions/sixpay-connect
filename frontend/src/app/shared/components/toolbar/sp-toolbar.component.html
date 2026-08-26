@@ -1,0 +1,11 @@
+<header class="sp-toolbar">
+  <div>
+    <h1>{{ title() }}</h1>
+    @if (description(); as text) {
+      <p>{{ text }}</p>
+    }
+  </div>
+  <div class="sp-toolbar__actions">
+    <ng-content />
+  </div>
+</header>

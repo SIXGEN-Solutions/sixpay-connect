@@ -1,0 +1,82 @@
+schemaVersion: 1.0.0
+document:
+  id: SIXPAY-PAYMENT-OUTBOX-CONTRACT
+  lot: 6_EVENTS_AUDIT_OUTBOX
+  status: NORMATIVE_IMPLEMENTED
+  codeGenerationAllowed: false
+logicalTable: payment_outbox_events
+transaction: SAME_AS_PAYMENT_AND_AUDIT
+fields:
+- name: eventId
+  type: UUID
+  unique: true
+- name: aggregateId
+  type: PaymentId
+- name: aggregateType
+  type: PAYMENT
+- name: eventType
+  type: stable string
+- name: schemaVersion
+  type: positive integer
+- name: aggregateVersion
+  type: positive long
+- name: eventSequence
+  type: positive int
+- name: correlationId
+  type: CorrelationId
+- name: causationId
+  type: UUID?
+  required: false
+- name: occurredAt
+  type: Instant
+- name: payload
+  type: JSON safe allowlisted payload
+- name: payloadHash
+  type: SHA-256
+- name: status
+  type: PENDING|PUBLISHED|RETRYABLE|QUARANTINED
+- name: attemptCount
+  type: non-negative integer
+- name: nextAttemptAt
+  type: Instant?
+  required: false
+- name: publishedAt
+  type: Instant?
+  required: false
+constraints:
+- UNIQUE(event_id)
+- UNIQUE(aggregate_id, aggregate_version, event_sequence)
+- CHECK(attempt_count >= 0)
+publisher:
+  deliveryGuarantee: AT_LEAST_ONCE
+  publisher: GENERIC_INTEGRATION_OUTBOX_RELAY
+  partitionKey: paymentId
+  orderingKey:
+  - aggregateVersion
+  - eventSequence
+  deduplicationKey: eventId
+  payloadIdentity:
+  - eventId
+  - eventType
+  - schemaVersion
+  - payloadHash
+  sameEventIdDifferentPayload: QUARANTINE_AND_ALERT
+  republishRule: PRESERVE_EVENT_ID_EVENT_TYPE_SCHEMA_VERSION_OCCURRED_AT_AND_PAYLOAD
+  claimingPattern: FOR_UPDATE_SKIP_LOCKED
+  publishStateModel:
+  - PENDING
+  - PUBLISHED
+  - RETRYABLE
+  - QUARANTINED
+  consumerGuarantee:
+    deduplicateBy: eventId
+    processedMarkerAtomicWithConsumerMutation: true
+    unsupportedSchemaVersion: QUARANTINE_AND_ALERT
+failureAfterCommit:
+  paymentStateRollback: false
+  auditRollback: false
+  outboxRollback: false
+  outboxStatus: PENDING_OR_RETRYABLE
+  retryOwner: GENERIC_INTEGRATION_OUTBOX_RELAY
+  financialOperationReplayAllowed: false
+  alerting: AFTER_CONFIGURED_RETRY_OR_AGE_THRESHOLD

@@ -1,0 +1,72 @@
+contract: amplitude-customer-verification
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Customer Verification
+transport:
+  protocol: HTTPS
+  method: POST
+  path: /v1/accounts/verify
+security:
+  oauth2:
+    grantType: client_credentials
+    registrationId: core-banking-customer-verification
+    scope: customer.verify
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+    sslBundle: core-banking-client
+headers:
+  required:
+    - Authorization
+    - X-Correlation-ID
+    - X-Request-ID
+request:
+  fields:
+    accountReference: {required: true, classification: CONFIDENTIAL}
+    expectedNiu: {required: true, classification: PERSONAL}
+    expectedAccountHolder: {required: true, classification: PERSONAL}
+    financialInstitutionCode: {required: true}
+response:
+  required:
+    - code
+    - result
+    - observedAt
+    - checks
+  resultValues:
+    - SUCCESS
+    - FAILURE
+    - REJECTED
+  checkValues:
+    - PASS
+    - FAIL
+    - UNKNOWN
+functionalCodes:
+  success:
+    - "00"
+  businessFailure:
+    - "01"
+    - "02"
+    - "03"
+    - "04"
+  note: Provisional values. Replace through configuration after provider approval.
+httpErrors:
+  "401": AUTHENTICATION_FAILED
+  "403": AUTHORIZATION_FAILED
+  "404": PROTOCOL_ERROR
+  "409": CONFLICT
+  "429": RATE_LIMITED
+  "5xx": DEPENDENCY_UNAVAILABLE
+retry:
+  readOnlyOperation: true
+  maximumAttempts: 3
+  retryable:
+    - TIMEOUT
+    - RATE_LIMITED
+    - DEPENDENCY_UNAVAILABLE
+  nonRetryable:
+    - AUTHENTICATION_FAILED
+    - AUTHORIZATION_FAILED
+    - PROTOCOL_ERROR
+    - INVALID_RESPONSE

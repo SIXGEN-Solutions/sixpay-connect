@@ -1,0 +1,58 @@
+<div class="sp-shell">
+  <sp-header />
+
+  @if (errorService.currentError(); as error) {
+    <section
+      class="sp-shell__error"
+      role="alert"
+      aria-live="assertive"
+      [attr.data-error-kind]="error.kind"
+    >
+      <mat-icon aria-hidden="true">
+        {{ error.kind === 'rate-limit' ? 'schedule' : 'error' }}
+      </mat-icon>
+
+      <div>
+        <strong>{{ error.title }}</strong>
+        <p>{{ error.detail }}</p>
+
+        @if (error.retryAfterSeconds !== null) {
+          <p>
+            Réessayez dans
+            <strong>{{ error.retryAfterSeconds }} s</strong>.
+          </p>
+        }
+
+        @if (error.correlationId) {
+          <small>
+            Référence support :
+            <code>{{ error.correlationId }}</code>
+          </small>
+        }
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Fermer le message d’erreur"
+        (click)="errorService.clear()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </section>
+  }
+
+  <mat-sidenav-container class="sp-shell__container">
+    <mat-sidenav mode="side" opened>
+      <sp-sidebar />
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <main class="sp-shell__content" tabindex="-1">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+
+  <sp-footer />
+</div>

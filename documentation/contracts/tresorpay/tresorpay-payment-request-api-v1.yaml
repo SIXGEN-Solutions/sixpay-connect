@@ -1,0 +1,987 @@
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Payment Request API
+  version: 1.0.0
+  summary: Receive a TRESOR PAY payment order for asynchronous bank processing.
+  description: |
+    Normative inbound contract used by TRESOR PAY to submit a payment order to
+    SIXPAY CONNECT.
+
+    A successful `202 Accepted` response confirms only that SIXPAY has
+    authenticated, validated and durably persisted the request. It does not
+    confirm the banking verification, debit, CUT credit or TFJ integration.
+    Those outcomes are returned through the versioned immediate-result and
+    final-result notification contracts.
+
+    The TRESOR PAY source document calls this operation `InitiateDebit` and
+    uses `endToEndId` as the unique payment reference. This contract preserves
+    that business meaning through `tresorPayPaymentReference`.
+
+    Security normalization:
+
+    * `Authorization: Bearer ...` and `X-Subscription-Key` are mandatory for
+      the MVP;
+    * the Bearer Token is a short-lived asymmetric JWT signed by TRESOR PAY
+      and bound to the subscription, client, bank, account and payment;
+    * SIXPAY validates that authorization token locally; no synchronous
+      subscription-verification call is made for the MVP;
+    * `LoginName`, `APIKey` and `PIN` are forbidden in the JSON body;
+    * credentials must never be persisted in Payment, events, audit payloads
+      or logs;
+    * OAuth 2.0 client credentials and mutual TLS are declared as deferred
+      mechanisms and are not active alternatives for the MVP operation.
+
+    Treasury-account normalization:
+
+    * TRESOR PAY may declare the intended beneficiary accounts received from
+      its source process;
+    * SIXPAY must resolve and validate every declared beneficiary against
+      bank-controlled Treasury/CUT configuration;
+    * a request value never creates or overrides a Treasury account;
+    * Payment retains only protected references and the resolved Treasury
+      configuration identity required for audit.
+
+    Replay rules:
+
+    * a retry reuses the same `Idempotency-Key`, `X-Correlation-ID` and
+      canonical business payload;
+    * the same key and same canonical payload returns the original
+      acknowledgement with `Idempotency-Replayed: true`;
+    * the same key with a different canonical payload returns
+      `409 IDEMPOTENCY_CONFLICT`;
+    * the same TRESOR PAY payment reference with an equivalent payload is an
+      acknowledged replay, even if a different idempotency key is supplied;
+    * the same TRESOR PAY payment reference with a different payload returns
+      `409 PAYMENT_REFERENCE_CONFLICT`;
+    * a new idempotency key must never be generated merely to bypass an
+      uncertain prior result.
+  x-sixpay-contract:
+    registryId: "tresorpay-payment-request-api-v1"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.1"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "payment"
+    capability: "PAYMENT_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    transportOwner: "integration"
+    businessOwner: "payment"
+    sourceSystem: "TRESOR_PAY"
+    paymentSystemOfRecord: "SIXPAY"
+    subscriptionSystemOfRecord: "TRESOR_PAY"
+    bankingSystemOfRecord: "AMPLITUDE"
+    sourceRequirements:
+      - "PAY-SRC-001"
+      - "PAY-SRC-002"
+      - "PAY-SRC-003"
+      - "PAY-SRC-004"
+      - "PAY-SRC-005"
+      - "PAY-SRC-006"
+      - "PAY-SRC-007"
+      - "PAY-SRC-008"
+      - "PAY-SRC-009"
+      - "PAY-SRC-010"
+      - "PAY-SRC-011"
+      - "PAY-SRC-012"
+      - "PAY-SRC-020"
+      - "PAY-SRC-021"
+      - "PAY-SRC-046"
+      - "PAY-SRC-051"
+  contact:
+    name: SIXGEN Solutions - SIXPAY Architecture
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+
+servers:
+  - url: https://api.sixpay.example
+    description: Environment-specific SIXPAY endpoint
+
+security:
+  - bearerAuth: []
+    subscriptionKey: []
+
+tags:
+  - name: TRESOR PAY payments
+    description: Authenticated payment orders submitted by TRESOR PAY.
+
+paths:
+  /api/v1/integrations/tresorpay/payments:
+    post:
+      tags:
+        - TRESOR PAY payments
+      operationId: receiveTresorPayPaymentRequest
+      summary: Submit a TRESOR PAY payment order
+      description: |
+        Authenticates and validates the request, enforces idempotency and
+        durably persists Payment before any call to Amplitude.
+
+        `202 Accepted` is an intake acknowledgement. Banking controls and
+        financial posting continue asynchronously.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/TresorPayAppId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+            examples:
+              standardTreasuryAllocation:
+                summary: Synthetic request split between Treasury beneficiaries
+                value:
+                  schemaVersion: "1.0"
+                  tresorPayPaymentReference: "AVI-DEMO-00045678"
+                  subscriptionReference: "SUB-DEMO-000042"
+                  financialInstitutionCode: "BANK-DEMO"
+                  customer:
+                    niu: "NIU-DEMO-100200300"
+                    name: "Entreprise Démonstration SARL"
+                  debtorAccount:
+                    rib: "XXXXX-XXXXX-XXXXXXXXXXX-XX"
+                  totalAmount:
+                    amount: 600000
+                    currency: "XAF"
+                  claimType: "AVI"
+                  requestedExecutionAt: "2026-08-03T10:30:00Z"
+                  treasuryBeneficiaries:
+                    - beneficiaryReference: "TREASURY-TAX"
+                      account:
+                        rib: "XXXXX-XXXXX-XXXXXXTAXXX-XX"
+                      amount:
+                        amount: 300000
+                        currency: "XAF"
+                    - beneficiaryReference: "TREASURY-CUSTOMS"
+                      account:
+                        rib: "XXXXX-XXXXX-XXXXCUSTOMS-XX"
+                      amount:
+                        amount: 200000
+                        currency: "XAF"
+                    - beneficiaryReference: "TREASURY-ESTATES"
+                      account:
+                        rib: "XXXXX-XXXXX-XXXXESTATES-XX"
+                      amount:
+                        amount: 100000
+                        currency: "XAF"
+                  reason: "Synthetic AVI collection payment"
+                  callbackUrl: "https://tresorpay.example/v1/callbacks/payment-status"
+                  metadata:
+                    source-channel: "TRESOR_PAY"
+      responses:
+        '202':
+          description: |
+            Request durably accepted for asynchronous processing. The same
+            acknowledgement is returned for an accepted replay.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            Location:
+              $ref: '#/components/headers/PaymentLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAcknowledgement'
+              examples:
+                accepted:
+                  summary: New payment request accepted
+                  value:
+                    acknowledgementId: "8b7effbf-7193-4dbc-80c5-50284406570c"
+                    paymentId: "aa686337-700d-4b66-a9ec-a284ed821f68"
+                    paymentReference: "PAY-DEMO-2026-000001"
+                    tresorPayPaymentReference: "AVI-DEMO-00045678"
+                    status: "RECEIVED"
+                    receivedAt: "2026-08-03T10:30:01Z"
+                    correlationId: "57db67dc-5112-4e4e-bfc2-5ac50f66ba87"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Short-lived asymmetric JWT signed by TRESOR PAY. It attests that the
+        subscription is ACTIVE and binds the subscription, client NIU,
+        financial institution, debtor-account hash and payment reference.
+        SIXPAY validates it locally and binds its `client_id` claim to the
+        Subscription Key owner and `X-TresorPay-App-Id`.
+    subscriptionKey:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+      description: |
+        MVP Subscription Key provisioned to TRESOR PAY. It is a transport
+        credential and is unrelated to `subscriptionReference`.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Opaque identifier of one logical payment submission. It remains
+        unchanged for every transport retry and must not contain customer,
+        account or credential data.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+      example: "AVI-DEMO-00045678"
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: |
+        UUID propagated unchanged through Payment, integrations, events,
+        notifications, logs, traces and audit.
+      schema:
+        type: string
+        format: uuid
+      example: "57db67dc-5112-4e4e-bfc2-5ac50f66ba87"
+    TresorPayAppId:
+      name: X-TresorPay-App-Id
+      in: header
+      required: true
+      description: |
+        Registered TRESOR PAY application identifier. This non-secret
+        identifier is the normalized equivalent of the source `AppID`.
+      schema:
+        type: string
+        minLength: 3
+        maxLength: 64
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$'
+      example: "TP_APP_DEMO"
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyReplayed:
+      description: |
+        `true` when the acknowledgement is the result of an accepted replay
+        and no second Payment was created.
+      required: true
+      schema:
+        type: boolean
+    PaymentLocation:
+      description: URI of the accepted SIXPAY Payment resource.
+      required: true
+      schema:
+        type: string
+        format: uri-reference
+      example: "/api/v1/payments/aa686337-700d-4b66-a9ec-a284ed821f68"
+
+  schemas:
+    PaymentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - schemaVersion
+        - tresorPayPaymentReference
+        - subscriptionReference
+        - financialInstitutionCode
+        - customer
+        - debtorAccount
+        - totalAmount
+        - claimType
+        - treasuryBeneficiaries
+      properties:
+        schemaVersion:
+          type: string
+          const: "1.0"
+          description: Payload schema version within API major version v1.
+        tresorPayPaymentReference:
+          type: string
+          minLength: 8
+          maxLength: 100
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$'
+          description: |
+            Unique and immutable payment reference generated by TRESOR PAY.
+            Maps to `endToEndId` in the supplied TRESOR PAY signature.
+          example: "AVI-DEMO-00045678"
+        subscriptionReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$'
+          description: |
+            Opaque reference of the subscription owned by TRESOR PAY. SIXPAY
+            records it for traceability only and must neither look up, validate
+            nor mutate a local subscription.
+          example: "SUB-DEMO-000042"
+        financialInstitutionCode:
+          type: string
+          minLength: 2
+          maxLength: 35
+          pattern: '^[A-Z0-9][A-Z0-9._-]{1,34}$'
+          description: Bank/institution code registered for the caller.
+          example: "BANK-DEMO"
+        customer:
+          $ref: '#/components/schemas/CustomerClaim'
+        debtorAccount:
+          $ref: '#/components/schemas/AccountReference'
+        totalAmount:
+          $ref: '#/components/schemas/Money'
+        claimType:
+          type: string
+          minLength: 2
+          maxLength: 35
+          pattern: '^[A-Z0-9][A-Z0-9._-]{1,34}$'
+          description: |
+            TRESOR PAY claim type. Known examples include AVI, IM7 and RNF.
+            Acceptance of a code is configuration-controlled.
+          examples:
+            - "AVI"
+            - "IM7"
+            - "RNF"
+        requestedExecutionAt:
+          type: string
+          format: date-time
+          description: |
+            Requested execution instant in UTC. It is an intention, not proof
+            of the effective bank posting date.
+        treasuryBeneficiaries:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: |
+            Requested Treasury allocation. Beneficiary accounts must resolve
+            to active bank-controlled Treasury/CUT configuration. Their amount
+            sum and currency must equal `totalAmount`.
+          items:
+            $ref: '#/components/schemas/TreasuryBeneficiary'
+        reason:
+          type: string
+          maxLength: 500
+          description: Non-sensitive payment reason.
+        callbackUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          pattern: '^https://'
+          description: |
+            HTTPS callback URL corresponding to the supplied source
+            `callbackURL`. Its origin must be pre-registered for TRESOR PAY;
+            arbitrary callback destinations are rejected to prevent SSRF.
+          example: "https://tresorpay.example/v1/callbacks/payment-status"
+        metadata:
+          $ref: '#/components/schemas/PaymentMetadata'
+
+    CustomerClaim:
+      type: object
+      additionalProperties: false
+      required:
+        - niu
+        - name
+      description: |
+        Customer identity claimed by TRESOR PAY and verified against
+        Amplitude. It is neither authoritative KYC data nor a local Customer
+        aggregate.
+      properties:
+        niu:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._/-]{2,49}$'
+          description: |
+            Normalized name for the source `NUI` field. The wire contract uses
+            `niu` consistently with the SIXPAY domain language.
+          example: "NIU-DEMO-100200300"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Name claimed by TRESOR PAY (`nomDebiteur` in the source).
+          example: "Entreprise Démonstration SARL"
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Optional opaque TRESOR PAY customer reference.
+
+    AccountReference:
+      type: object
+      additionalProperties: false
+      description: |
+        Protected bank-account reference. At least one identifier is required.
+        If several identifiers are present, they must identify the same account.
+        Raw values are write-only and must be encrypted at rest, masked in
+        operational views and redacted from logs, traces, events and errors.
+      properties:
+        rib:
+          type: string
+          minLength: 10
+          maxLength: 50
+          pattern: '^[A-Za-z0-9][A-Za-z0-9 -]{8,48}[A-Za-z0-9]$'
+          writeOnly: true
+          description: Domestic RIB as received from the authorized caller.
+          example: "XXXXX-XXXXX-XXXXXXXXXXX-XX"
+        iban:
+          type: string
+          minLength: 15
+          maxLength: 34
+          pattern: '^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$'
+          writeOnly: true
+        opaqueAccountReference:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+          writeOnly: true
+      anyOf:
+        - required: [rib]
+        - required: [iban]
+        - required: [opaqueAccountReference]
+
+    Money:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+          description: |
+            Decimal monetary amount represented as a JSON number, never as a
+            locale-formatted string.
+          example: 600000
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: ISO 4217 alphabetic currency code.
+          example: "XAF"
+
+    TreasuryBeneficiary:
+      type: object
+      additionalProperties: false
+      required:
+        - beneficiaryReference
+        - account
+        - amount
+      properties:
+        beneficiaryReference:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{1,99}$'
+          description: |
+            Stable Treasury allocation reference. It must resolve to
+            bank-controlled configuration and does not authorize account
+            creation or override.
+          example: "TREASURY-TAX"
+        account:
+          allOf:
+            - $ref: '#/components/schemas/AccountReference'
+          description: |
+            Declared beneficiary account from the TRESOR PAY source. SIXPAY
+            must verify it against the configured account for
+            `beneficiaryReference` before any posting.
+        amount:
+          $ref: '#/components/schemas/Money'
+
+    PaymentMetadata:
+      type: object
+      maxProperties: 20
+      description: |
+        Optional non-sensitive metadata. Keys are namespaced, values are
+        bounded primitives and no field may carry credentials, raw KYC
+        documents, account identifiers or unbounded payloads.
+      propertyNames:
+        pattern: '^[a-z][a-z0-9.-]{2,63}$'
+      additionalProperties:
+        oneOf:
+          - type: string
+            maxLength: 200
+          - type: number
+          - type: integer
+          - type: boolean
+
+    PaymentAcknowledgement:
+      type: object
+      additionalProperties: false
+      required:
+        - acknowledgementId
+        - paymentId
+        - paymentReference
+        - tresorPayPaymentReference
+        - status
+        - receivedAt
+        - correlationId
+      properties:
+        acknowledgementId:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+          description: SIXPAY Payment aggregate identity.
+        paymentReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Stable SIXPAY business reference.
+        tresorPayPaymentReference:
+          type: string
+          minLength: 8
+          maxLength: 100
+        status:
+          type: string
+          const: "RECEIVED"
+          description: |
+            Durable intake state only. It does not mean ACCEPTED, DEBITED,
+            CUT_CREDITED or TREASURY_INTEGRATED.
+        receivedAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          format: uuid
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          maxLength: 1000
+          description: Safe description without credential or account value.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          description: Stable machine-readable SIXPAY boundary error code.
+          enum:
+            - PAYMENT_REQUEST_INVALID
+            - AUTHENTICATION_FAILED
+            - AUTHORIZATION_DENIED
+            - AUTHORIZATION_TOKEN_INVALID
+            - AUTHORIZATION_TOKEN_EXPIRED
+            - AUTHORIZATION_CLAIMS_MISMATCH
+            - AUTHORIZATION_REPLAY_DETECTED
+            - AUTHORIZATION_KEY_UNAVAILABLE
+            - IDEMPOTENCY_CONFLICT
+            - PAYMENT_REFERENCE_CONFLICT
+            - FINANCIAL_INSTITUTION_UNSUPPORTED
+            - SUBSCRIPTION_REFERENCE_INVALID
+            - DEBTOR_ACCOUNT_REFERENCE_INVALID
+            - TREASURY_BENEFICIARY_INVALID
+            - TREASURY_ALLOCATION_MISMATCH
+            - CURRENCY_UNSUPPORTED
+            - EXECUTION_DATE_INVALID
+            - CALLBACK_URL_NOT_ALLOWED
+            - CONTENT_TYPE_UNSUPPORTED
+            - RATE_LIMIT_EXCEEDED
+            - INTERNAL_ERROR
+            - SERVICE_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+        retryAfter:
+          type: integer
+          minimum: 1
+          description: Optional safe retry delay in seconds.
+        violations:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/InvalidParameter'
+
+    InvalidParameter:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        reason:
+          type: string
+          maxLength: 500
+
+  responses:
+    BadRequest:
+      description: Malformed headers, JSON or unsupported request structure
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Bearer token or Subscription Key is missing or invalid
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: |
+        Authenticated TRESOR PAY client is not permitted to submit the request
+        for the declared application or financial institution.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency key or TRESOR PAY payment-reference conflict
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnsupportedMediaType:
+      description: Content-Type is not application/json
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: |
+        Request is structurally valid but violates boundary semantics, such as
+        an allocation total mismatch or an unregistered Treasury beneficiary.
+        Banking outcomes such as account-not-found or insufficient-funds are
+        not returned here; they are asynchronous Payment results.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: TRESOR PAY intake rate exceeded
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before retry.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected SIXPAY failure before a safe result is available
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: SIXPAY cannot guarantee durable acceptance
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before retry.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+x-sixpay-business-rules:
+  - id: "PAY-IN-001"
+    rule: "Persist the authenticated request before any Amplitude call."
+  - id: "PAY-IN-002"
+    rule: "The beneficiary amount sum and currencies must equal totalAmount."
+  - id: "PAY-IN-003"
+    rule: "Every beneficiary must resolve to active bank-controlled Treasury/CUT configuration."
+  - id: "PAY-IN-004"
+    rule: "subscriptionReference is trace-only and never triggers local subscription validation."
+  - id: "PAY-IN-005"
+    rule: "Credentials are accepted only through registered security headers."
+  - id: "PAY-IN-006"
+    rule: "A 202 acknowledgement is not a banking or financial success result."
+  - id: "PAY-IN-007"
+    rule: "callbackUrl must use HTTPS and a pre-registered TRESOR PAY origin."
+  - id: "PAY-IN-008"
+    rule: "Examples and operational telemetry must never expose full account identifiers."
+
+x-sixpay-idempotency-policy:
+  requiredHeader: "Idempotency-Key"
+  scope:
+    - "AUTHENTICATED_TRESOR_PAY_CLIENT"
+    - "X_TRESOR_PAY_APP_ID"
+    - "FINANCIAL_INSTITUTION_CODE"
+  fingerprint:
+    algorithm: "SHA-256_OR_APPROVED_EQUIVALENT"
+    input: "Canonical PaymentRequest excluding transport credentials and callback delivery state"
+    storedValue: "Digest only"
+  sameKeySameFingerprint:
+    httpStatus: 202
+    returnOriginalAcknowledgement: true
+    responseHeader:
+      name: "Idempotency-Replayed"
+      value: true
+  sameKeyDifferentFingerprint:
+    httpStatus: 409
+    errorCode: "IDEMPOTENCY_CONFLICT"
+  samePaymentReferenceSameFingerprint:
+    httpStatus: 202
+    returnOriginalAcknowledgement: true
+  samePaymentReferenceDifferentFingerprint:
+    httpStatus: 409
+    errorCode: "PAYMENT_REFERENCE_CONFLICT"
+  retention: "13_MONTHS_MINIMUM"
+
+x-sixpay-replay-policy:
+  callerMayRetryWhen:
+    - "Connection failed before an HTTP response was received"
+    - "HTTP 429 was returned"
+    - "HTTP 500 was returned before a durable result could be recovered"
+    - "HTTP 503 was returned"
+  callerMustReuse:
+    - "Idempotency-Key"
+    - "X-Correlation-ID"
+    - "Canonical business payload"
+  retryableStatuses:
+    - 429
+    - 500
+    - 503
+  nonRetryableStatuses:
+    - 400
+    - 401
+    - 403
+    - 409
+    - 415
+    - 422
+  blindNewKeyRetry: "FORBIDDEN"
+  serverDuplicateFinancialEffect: "FORBIDDEN"
+
+x-sixpay-tresorpay-source-mapping:
+  sourceOperation: "InitiateDebit"
+  sourceMethod: "POST"
+  sourcePath: "/v1/payments/initiate"
+  fieldMapping:
+    LoginName:
+      target: "Bearer token subject / registered client identity"
+      acceptedInBody: false
+    APIKey:
+      target: "X-Subscription-Key"
+      acceptedInBody: false
+      sensitive: true
+    AppID:
+      target: "X-TresorPay-App-Id"
+      acceptedInBody: false
+    PIN:
+      target: "No direct equivalent"
+      acceptedInBody: false
+      sensitive: true
+      rationale: "PIN is not a service-to-service Payment domain attribute."
+    endToEndId:
+      target: "tresorPayPaymentReference"
+    endoToEndId:
+      target: "tresorPayPaymentReference"
+      note: "Typographical variant observed in the supplied JSON example; not accepted on the canonical wire contract."
+    montantTotal:
+      target: "totalAmount.amount"
+    devise:
+      target: "totalAmount.currency"
+    ribDebiteur:
+      target: "debtorAccount.rib"
+    nomDebiteur:
+      target: "customer.name"
+    typeCreance:
+      target: "claimType"
+    NUI:
+      target: "customer.niu"
+      note: "Canonical SIXPAY spelling is NIU."
+    dateExecution:
+      target: "requestedExecutionAt"
+    beneficiaires:
+      target: "treasuryBeneficiaries"
+    callbackURL:
+      target: "callbackUrl"
+  responseMapping:
+    sourceSynchronous200:
+      target: "202 PaymentAcknowledgement"
+      rationale: "The SIXPAY endpoint acknowledges durable intake before asynchronous banking processing."
+    bankOperationId:
+      target: "Not present at intake; returned by the immediate-result notification when known."
+    TransactionNumber:
+      target: "Not present at intake; represented by approved downstream result contracts when applicable."
+    TransactionQRCode:
+      target: "Excluded from the MVP Payment intake contract."
+    Status:
+      target: "RECEIVED at intake; banking statuses are delivered asynchronously."
+    NextStep:
+      target: "Excluded from intake acknowledgement; lifecycle is represented by Payment state and notifications."
+  legacyErrorMapping:
+    "2001":
+      meaning: "Account not found"
+      handling: "Asynchronous banking rejection; not an intake 400/401 error."
+    "2002":
+      meaning: "Invalid PIN"
+      handling: "Removed from body authentication; transport authentication failure maps to HTTP 401."
+    "2003":
+      meaning: "Account suspended"
+      handling: "Asynchronous banking rejection."
+    "2004":
+      meaning: "Invalid beneficiary account"
+      handling: "Boundary allow-list failure may be HTTP 422; bank verification failure is asynchronous."
+    "2005":
+      meaning: "Insufficient funds"
+      handling: "Asynchronous banking rejection."
+    "2006":
+      meaning: "Daily limit exceeded"
+      handling: "Asynchronous banking rejection."
+
+x-sixpay-sensitive-data:
+  forbiddenRequestBodyProperties:
+    - "LoginName"
+    - "APIKey"
+    - "AppID"
+    - "PIN"
+  writeOnlyProperties:
+    - "debtorAccount.rib"
+    - "debtorAccount.iban"
+    - "debtorAccount.opaqueAccountReference"
+    - "treasuryBeneficiaries[].account.rib"
+    - "treasuryBeneficiaries[].account.iban"
+    - "treasuryBeneficiaries[].account.opaqueAccountReference"
+  forbiddenInResponsesErrorsEventsAndLogs:
+    - "Authorization header"
+    - "X-Subscription-Key"
+    - "Full debtor account identifier"
+    - "Full beneficiary account identifier"
+    - "Raw request payload"
+    - "Unverified KYC data beyond the approved minimal audit projection"
+
+x-sixpay-local-authorization-validation:
+  decisionReference: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+  mode: "LOCAL_SIGNED_TOKEN_VALIDATION"
+  remoteSubscriptionVerificationApiRequired: false
+  token:
+    format: "JWT_COMPACT_JWS"
+    allowedAlgorithms:
+      - "RS256"
+      - "PS256"
+      - "ES256"
+    forbiddenAlgorithms:
+      - "none"
+    headerRequirements:
+      typ: "JWT"
+      kidRequired: true
+    requiredClaims:
+      - "iss"
+      - "aud"
+      - "sub"
+      - "jti"
+      - "iat"
+      - "nbf"
+      - "exp"
+      - "client_id"
+      - "subscription_status"
+      - "customer_niu"
+      - "financial_institution_code"
+      - "debtor_account_hash"
+      - "payment_reference"
+      - "scope"
+    requiredValues:
+      subscription_status: "ACTIVE"
+      scopeContains: "payment:initiate"
+    maximumTtl: "5_MINUTES_RECOMMENDED_PENDING_SECURITY_APPROVAL"
+  requestBinding:
+    sub: "subscriptionReference"
+    client_id:
+      - "X-TresorPay-App-Id"
+      - "Subscription Key owner"
+    customer_niu: "customer.niu"
+    financial_institution_code: "financialInstitutionCode"
+    debtor_account_hash: "Canonical debtorAccount digest"
+    payment_reference: "tresorPayPaymentReference"
+  jwks:
+    transport: "HTTPS"
+    endpointSource: "SIXPAY_CONTROLLED_CONFIGURATION"
+    cacheRequired: true
+    controlledRefreshOnUnknownKid: true
+    tokenProvidedKeyUrlAllowed: false
+  replay:
+    jtiRequired: true
+    bindJtiToCanonicalRequest: true
+    rawTokenStorageAllowed: false
+    tokenDigestStorageAllowed: true
+
+x-sixpay-deferred-security:
+  activation: "DEFERRED_NON_BLOCKING"
+  activeForThisVersion: false
+  rationale: |
+    IA0R-D05 fixes Bearer Token plus Subscription Key for the MVP. OAuth 2.0
+    client credentials and mutual TLS are documented for compatibility
+    planning but cannot be activated without a versioned security review.
+  oauth2ClientCredentials:
+    tokenUrl: "https://identity.sixpay.example/oauth2/token"
+    scope: "tresorpay.payment.write"
+    clientBindingRequired: true
+  mutualTLS:
+    certificateAuthority: "BANK_APPROVED_CA"
+    bindCertificateToAuthenticatedClient: true

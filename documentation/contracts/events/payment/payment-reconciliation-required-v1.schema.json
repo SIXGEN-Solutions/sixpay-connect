@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:event:payment.reconciliation-required.v1",
+  "title": "PaymentReconciliationRequiredV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentId",
+    "publicPaymentReference",
+    "reasonCode",
+    "nextAction",
+    "detectedAt"
+  ],
+  "properties": {
+    "paymentId": {
+      "type": "string"
+    },
+    "publicPaymentReference": {
+      "type": "string"
+    },
+    "reasonCode": {
+      "type": "string"
+    },
+    "nextAction": {
+      "type": "string"
+    },
+    "bankPostingReference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "detectedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

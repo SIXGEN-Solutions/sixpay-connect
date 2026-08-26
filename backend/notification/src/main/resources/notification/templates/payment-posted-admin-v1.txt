@@ -1,0 +1,7 @@
+SIXPAY payment posted
+
+Payment reference: {{paymentReference}}
+Payment ID: {{paymentId}}
+Partner: {{partnerId}}
+Amount: {{amount}} {{currency}}
+Posted at: {{postedAt}}

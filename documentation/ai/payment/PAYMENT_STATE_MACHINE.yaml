@@ -1,0 +1,1256 @@
+schemaVersion: 4.0.0
+document:
+  id: SIXPAY-PAYMENT-STATE-MACHINE
+  title: SIXPAY CONNECT — IA-1 Payment State Machine
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 4_NORMATIVE_STATE_MACHINE
+  branch: feat/payment-domain-generation-brief
+  status: NORMATIVE_IMPLEMENTED
+  normative: true
+  codeGenerationAllowed: false
+  nextLot: LOT_5_APPLICATION_BOUNDARY_OR_OWNER_APPROVED_NEXT_STEP
+  replacesSemanticsOf: IA-0P_PAYMENT_STATE_MACHINE_V1
+references:
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
+  role: Commands and named operations
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
+  role: Machine-readable commands and operations
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+  role: Cross-object and lifecycle guards
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
+  role: Machine-readable invariant guards
+- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+  role: Aggregate ownership
+- path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+  role: Canonical result semantics
+- path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+  role: Machine-readable IA-1 Payment domain events
+- path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+  role: Human-readable IA-1 Payment domain events
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+  role: Machine-readable policies and Domain Services
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  role: Human-readable policies and Domain Services
+semantics:
+  aggregate: Payment
+  initialState: RECEIVED
+  terminalStates:
+  - REJECTED
+  - FAILED
+  - TREASURY_INTEGRATED
+  - REVERSED
+  notificationState: null
+  notificationRule: NOTIFICATION_INTENT_IS_ORTHOGONAL_AND_DELIVERY_NEVER_CHANGES_FINANCIAL_STATE
+  oneLogicalPostingPerPayment: true
+  financialReplayAfterUnknownAllowed: false
+  tfjFinalityRule: ONLY_UNIQUELY_MATCHED_INTEGRATED_EVIDENCE_ESTABLISHES_FINALITY
+  invalidTransitionBehavior: PAYMENT_DOMAIN_EXCEPTION_NO_MUTATION_NO_EVENT_NO_VERSION_INCREMENT
+  sameAsSourcePseudoTarget:
+    value: SAME_AS_SOURCE
+    allowedTransitionIds:
+    - PAY-TR-037
+    meaning: The aggregate retains the concrete source state after a recoverable pre-financial failure.
+  reconstitution:
+    operationId: PAY-OP-017
+    commandId: null
+    createsTransition: false
+    createsEvent: false
+creation:
+  commandId: PAY-CMD-001
+  operationId: PAY-OP-001
+  operation: Payment.receive
+  createdState: RECEIVED
+  requiredInvariantRefs:
+  - PAY-INV-001
+  - PAY-INV-002
+  - PAY-INV-003
+  - PAY-INV-004
+  - PAY-INV-005
+  - PAY-INV-006
+  - PAY-INV-007
+  - PAY-INV-008
+  - PAY-INV-019
+  - PAY-INV-020
+  domainFactKinds:
+  - PAYMENT_RECEIVED
+  domainEventRefs:
+  - PAY-EVT-001
+  policyRefs: []
+  domainServiceRefs: []
+states:
+  RECEIVED:
+    description: Authenticated canonical Payment intention is durably persisted.
+    terminal: false
+    financialEffectPossible: false
+  AUTHORIZATION_CHECKING:
+    description: SIXPAY is awaiting or applying the canonical TRESOR PAY authorization decision.
+    terminal: false
+    financialEffectPossible: false
+  BANKING_VERIFICATION_PENDING:
+    description: Authorization is approved and fresh customer/account verification is pending.
+    terminal: false
+    financialEffectPossible: false
+  FUNDS_CONTROL_PENDING:
+    description: Banking identity/account verification is approved and exact funds control is pending.
+    terminal: false
+    financialEffectPossible: false
+  TREASURY_ACCOUNT_RESOLUTION_PENDING:
+    description: Funds are approved and protected CUT/Treasury configuration resolution is pending.
+    terminal: false
+    financialEffectPossible: false
+  APPROVED_FOR_POSTING:
+    description: All required favorable evidence exists and one posting may be authorized.
+    terminal: false
+    financialEffectPossible: false
+  POSTING_PENDING:
+    description: The sole posting instruction is durable and may have reached Amplitude.
+    terminal: false
+    financialEffectPossible: true
+  POSTING_OUTCOME_UNKNOWN:
+    description: Posting result is uncertain and only authoritative lookup/reconciliation is allowed.
+    terminal: false
+    financialEffectPossible: true
+  DEBIT_CONFIRMED:
+    description: Debtor debit is confirmed while CUT credit is not confirmed complete.
+    terminal: false
+    financialEffectPossible: true
+  POSTED_PENDING_TFJ:
+    description: Debit and CUT credit are confirmed; immediate result and TFJ tracking intents exist.
+    terminal: false
+    financialEffectPossible: true
+  REVERSAL_REQUIRED:
+    description: A confirmed/reconciled effect requires explicit authorized reversal handling.
+    terminal: false
+    financialEffectPossible: true
+  REVERSAL_PENDING:
+    description: An authorized reversal instruction is durable and awaiting a known result.
+    terminal: false
+    financialEffectPossible: true
+  REVERSAL_OUTCOME_UNKNOWN:
+    description: Reversal result is uncertain and only authoritative lookup is allowed.
+    terminal: false
+    financialEffectPossible: true
+  REJECTED:
+    description: Conclusive business/security rejection with no financial effect.
+    terminal: true
+    financialEffectPossible: false
+  FAILED:
+    description: Technical processing ended with proven absence of financial effect.
+    terminal: true
+    financialEffectPossible: false
+  TREASURY_INTEGRATED:
+    description: Uniquely matched Amplitude TFJ INTEGRATED evidence establishes finality.
+    terminal: true
+    financialEffectPossible: true
+  REVERSED:
+    description: Authorized bank reversal is confirmed; original posting evidence remains.
+    terminal: true
+    financialEffectPossible: true
+transitions:
+- id: PAY-TR-001
+  commandId: PAY-CMD-002
+  operationId: PAY-OP-002
+  from:
+  - RECEIVED
+  condition: COMMAND_ACCEPTED
+  to: AUTHORIZATION_CHECKING
+  guardRefs:
+  - PAY-INV-010
+  - PAY-INV-021
+  domainFactKinds:
+  - AUTHORIZATION_CHECKING_STARTED
+  replay: IDENTICAL_COMMAND_NO_OP
+  domainEventRefs:
+  - PAY-EVT-002
+  policyRefs: []
+  domainServiceRefs: []
+- id: PAY-TR-002
+  commandId: PAY-CMD-003
+  operationId: PAY-OP-003
+  from:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == APPROVED
+  to: BANKING_VERIFICATION_PENDING
+  guardRefs:
+  - PAY-INV-021
+  - PAY-INV-022
+  domainFactKinds:
+  - AUTHORIZATION_DECISION_RECORDED
+  - BANKING_VERIFICATION_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-004
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
+- id: PAY-TR-003
+  commandId: PAY-CMD-003
+  operationId: PAY-OP-003
+  from:
+  - AUTHORIZATION_CHECKING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-023
+  - PAY-INV-065
+  domainFactKinds:
+  - AUTHORIZATION_DECISION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-003
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-004
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == VERIFIED
+  to: FUNDS_CONTROL_PENDING
+  guardRefs:
+  - PAY-INV-027
+  - PAY-INV-028
+  - PAY-INV-030
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - FUNDS_CONTROL_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-008
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
+- id: PAY-TR-005
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-029
+  - PAY-INV-065
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-006
+  commandId: PAY-CMD-004
+  operationId: PAY-OP-004
+  from:
+  - BANKING_VERIFICATION_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  to: BANKING_VERIFICATION_PENDING
+  guardRefs:
+  - PAY-INV-029
+  - PAY-INV-068
+  domainFactKinds:
+  - BANKING_VERIFICATION_RECORDED
+  - PAYMENT_PROCESSING_DEFERRED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-007
+  - PAY-EVT-009
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-007
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == VERIFIED
+  to: TREASURY_ACCOUNT_RESOLUTION_PENDING
+  guardRefs:
+  - PAY-INV-032
+  - PAY-INV-034
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - TREASURY_ACCOUNT_RESOLUTION_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-011
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
+- id: PAY-TR-008
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-033
+  - PAY-INV-065
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-009
+  commandId: PAY-CMD-007
+  operationId: PAY-OP-007
+  from:
+  - APPROVED_FOR_POSTING
+  condition: SOLE_INSTRUCTION_AUTHORIZED
+  to: POSTING_PENDING
+  guardRefs:
+  - PAY-INV-038
+  - PAY-INV-039
+  - PAY-INV-040
+  - PAY-INV-041
+  domainFactKinds:
+  - POSTING_AUTHORIZED
+  - POSTING_REQUESTED
+  replay: SAME_INSTRUCTION_NO_OP_DIFFERENT_INSTRUCTION_CONFLICT
+  domainEventRefs:
+  - PAY-EVT-014
+  - PAY-EVT-015
+  policyRefs:
+  - PAY-POL-004
+  - PAY-POL-005
+  - PAY-POL-007
+  domainServiceRefs: []
+- id: PAY-TR-010
+  commandId: PAY-CMD-005
+  operationId: PAY-OP-005
+  from:
+  - FUNDS_CONTROL_PENDING
+  condition: evidence.outcome == INDETERMINATE
+  to: FUNDS_CONTROL_PENDING
+  guardRefs:
+  - PAY-INV-033
+  - PAY-INV-068
+  domainFactKinds:
+  - FUNDS_CONTROL_RECORDED
+  - PAYMENT_PROCESSING_DEFERRED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-010
+  - PAY-EVT-009
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-011
+  commandId: PAY-CMD-006
+  operationId: PAY-OP-006
+  from:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == RESOLVED
+  to: APPROVED_FOR_POSTING
+  guardRefs:
+  - PAY-INV-035
+  - PAY-INV-036
+  - PAY-INV-038
+  domainFactKinds:
+  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  - PAYMENT_APPROVED_FOR_POSTING
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-013
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  domainServiceRefs: []
+- id: PAY-TR-012
+  commandId: PAY-CMD-006
+  operationId: PAY-OP-006
+  from:
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: evidence.resolutionOutcome == REJECTED
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-035
+  - PAY-INV-065
+  domainFactKinds:
+  - TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-012
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-013
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-041
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-014
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  to: DEBIT_CONFIRMED
+  guardRefs:
+  - PAY-INV-045
+  - PAY-INV-048
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - DEBIT_CONFIRMED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-018
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-015
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == UNKNOWN
+  to: POSTING_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-069
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - POSTING_OUTCOME_LOOKUP_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-016
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-017
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-032
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-018
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - POSTING_PENDING
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-019
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-044
+  - PAY-INV-049
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-006
+  - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-020
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == UNKNOWN
+  to: POSTING_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - POSTING_OUTCOME_LOOKUP_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-019
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-021
+  commandId: PAY-CMD-008
+  operationId: PAY-OP-008
+  from:
+  - DEBIT_CONFIRMED
+  condition: evidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-046
+  - PAY-INV-047
+  domainFactKinds:
+  - POSTING_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-016
+  - PAY-EVT-020
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-022
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == COMPLETED
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-044
+  - PAY-INV-050
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - IMMEDIATE_RESULT_AVAILABLE
+  - TFJ_TRACKING_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-006
+  - PAY-EVT-017
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-023
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == DEBIT_CONFIRMED_CUT_CREDIT_PENDING
+  to: DEBIT_CONFIRMED
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-045
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - DEBIT_CONFIRMED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-018
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-024
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == BUSINESS_REJECTION
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-065
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-025
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REJECTED_NO_FINANCIAL_EFFECT && failure.category == TECHNICAL_FAILURE
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-032
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-026
+  commandId: PAY-CMD-009
+  operationId: PAY-OP-009
+  from:
+  - POSTING_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-042
+  - PAY-INV-046
+  domainFactKinds:
+  - POSTING_OUTCOME_RESOLVED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-021
+  - PAY-EVT-020
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-001
+  - PAY-DS-004
+- id: PAY-TR-027
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == INTEGRATED
+  to: TREASURY_INTEGRATED
+  guardRefs:
+  - PAY-INV-054
+  - PAY-INV-056
+  - PAY-INV-058
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - TREASURY_INTEGRATION_CONFIRMED
+  - FINAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-023
+  - PAY-EVT-024
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-002
+  - PAY-DS-004
+- id: PAY-TR-028
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && evidence.failureEvidence.recoveryAction == REVERSAL_REQUIRED
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-054
+  - PAY-INV-057
+  - PAY-INV-059
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-020
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-002
+  - PAY-DS-004
+- id: PAY-TR-029
+  commandId: PAY-CMD-010
+  operationId: PAY-OP-010
+  from:
+  - POSTED_PENDING_TFJ
+  condition: evidence.tfjStatus == FAILED && recoveryAction in [MANUAL_RECONCILIATION, REVERSAL_REVIEW]
+  to: POSTED_PENDING_TFJ
+  guardRefs:
+  - PAY-INV-055
+  - PAY-INV-057
+  domainFactKinds:
+  - TFJ_CONFIRMATION_RECORDED
+  - TREASURY_RECONCILIATION_REQUIRED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-022
+  - PAY-EVT-025
+  policyRefs:
+  - PAY-POL-001
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  domainServiceRefs:
+  - PAY-DS-002
+- id: PAY-TR-030
+  commandId: PAY-CMD-011
+  operationId: PAY-OP-011
+  from:
+  - REVERSAL_REQUIRED
+  condition: AUTHORIZATION_ACCEPTED
+  to: REVERSAL_PENDING
+  guardRefs:
+  - PAY-INV-059
+  - PAY-INV-060
+  domainFactKinds:
+  - REVERSAL_AUTHORIZED
+  - REVERSAL_REQUESTED
+  replay: SAME_ACTIVE_INSTRUCTION_NO_OP_DIFFERENT_CONFLICT
+  domainEventRefs:
+  - PAY-EVT-026
+  - PAY-EVT-027
+  policyRefs:
+  - PAY-POL-010
+  domainServiceRefs:
+  - PAY-DS-003
+- id: PAY-TR-031
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == REVERSED
+  to: REVERSED
+  guardRefs:
+  - PAY-INV-060
+  - PAY-INV-063
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - PAYMENT_REVERSED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-033
+  - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
+- id: PAY-TR-032
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome == UNKNOWN
+  to: REVERSAL_OUTCOME_UNKNOWN
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-069
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - REVERSAL_OUTCOME_LOOKUP_REQUESTED
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-030
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  domainServiceRefs:
+  - PAY-DS-003
+- id: PAY-TR-033
+  commandId: PAY-CMD-012
+  operationId: PAY-OP-012
+  from:
+  - REVERSAL_PENDING
+  condition: evidence.outcome in [REJECTED, NOT_ALLOWED]
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-062
+  - PAY-INV-064
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RECORDED
+  - REVERSAL_REVIEW_REQUESTED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-028
+  - PAY-EVT-020
+  - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
+- id: PAY-TR-034
+  commandId: PAY-CMD-013
+  operationId: PAY-OP-013
+  from:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome == REVERSED
+  to: REVERSED
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-063
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RESOLVED
+  - PAYMENT_REVERSED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-031
+  - PAY-EVT-033
+  - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
+- id: PAY-TR-035
+  commandId: PAY-CMD-013
+  operationId: PAY-OP-013
+  from:
+  - REVERSAL_OUTCOME_UNKNOWN
+  condition: authoritativeEvidence.outcome in [REJECTED, NOT_ALLOWED]
+  to: REVERSAL_REQUIRED
+  guardRefs:
+  - PAY-INV-061
+  - PAY-INV-062
+  domainFactKinds:
+  - REVERSAL_OUTCOME_RESOLVED
+  - REVERSAL_REVIEW_REQUESTED
+  - REVERSAL_RESULT_AVAILABLE
+  replay: IDENTICAL_EVIDENCE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-031
+  - PAY-EVT-020
+  - PAY-EVT-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-003
+  - PAY-DS-004
+- id: PAY-TR-036
+  commandId: PAY-CMD-014
+  operationId: PAY-OP-014
+  from:
+  - RECEIVED
+  condition: businessOrSecurityRejection is conclusive
+  to: REJECTED
+  guardRefs:
+  - PAY-INV-020
+  - PAY-INV-065
+  domainFactKinds:
+  - PAYMENT_REJECTED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-005
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-037
+  commandId: PAY-CMD-015
+  operationId: PAY-OP-015
+  from:
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  condition: failure.retryDisposition in [SAFE_RETRY, RECOVERY_EVENT_REQUIRED, OPERATOR_ACTION_REQUIRED]
+  to: SAME_AS_SOURCE
+  guardRefs:
+  - PAY-INV-024
+  - PAY-INV-033
+  - PAY-INV-068
+  domainFactKinds:
+  - PAYMENT_PROCESSING_DEFERRED
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: IDENTICAL_FAILURE_NO_OP
+  domainEventRefs:
+  - PAY-EVT-009
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+- id: PAY-TR-038
+  commandId: PAY-CMD-016
+  operationId: PAY-OP-016
+  from:
+  - RECEIVED
+  - AUTHORIZATION_CHECKING
+  - BANKING_VERIFICATION_PENDING
+  - FUNDS_CONTROL_PENDING
+  - TREASURY_ACCOUNT_RESOLUTION_PENDING
+  - APPROVED_FOR_POSTING
+  condition: technical failure and absence of financial effect are proven
+  to: FAILED
+  guardRefs:
+  - PAY-INV-043
+  - PAY-INV-066
+  domainFactKinds:
+  - PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  - IMMEDIATE_RESULT_AVAILABLE
+  replay: TERMINAL_IDENTICAL_REPLAY_NO_OP
+  domainEventRefs:
+  - PAY-EVT-032
+  - PAY-EVT-006
+  policyRefs:
+  - PAY-POL-012
+  - PAY-POL-013
+  domainServiceRefs:
+  - PAY-DS-004
+replayDefaults:
+  sameCommandIdSameFingerprint: RETURN_RECORDED_COMMAND_RESULT
+  sameCommandIdDifferentFingerprint: COMMAND_CONFLICT_NO_PAYMENT_MUTATION
+  sameEvidenceIdentitySameFingerprint: NO_OP
+  sameEvidenceIdentityDifferentFingerprint: EVIDENCE_CONFLICT_NO_PAYMENT_MUTATION
+  terminalSameFactReplay: NO_OP
+  terminalNewStateChangingCommand: REJECT
+  staleExpectedVersion: REJECT_BEFORE_MUTATION
+  outboxRepublication: PRESERVE_EVENT_ID_AND_PAYLOAD_NO_DOMAIN_TRANSITION
+  unknownFinancialOutcome: LOOKUP_OR_RECONCILIATION_ONLY
+stateCoherence:
+  RECEIVED:
+  - COMPLETE_IMMUTABLE_REQUEST_INTENT
+  AUTHORIZATION_CHECKING:
+  - NO_BANKING_OR_FINANCIAL_EVIDENCE_ASSUMED
+  BANKING_VERIFICATION_PENDING:
+  - AUTHORIZATION_APPROVED
+  FUNDS_CONTROL_PENDING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  TREASURY_ACCOUNT_RESOLUTION_PENDING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  - FUNDS_CONTROL_VERIFIED
+  APPROVED_FOR_POSTING:
+  - AUTHORIZATION_APPROVED
+  - BANKING_VERIFICATION_VERIFIED
+  - FUNDS_CONTROL_VERIFIED_AND_FRESH
+  - TREASURY_ACCOUNT_RESOLVED
+  POSTING_PENDING:
+  - SOLE_POSTING_INSTRUCTION_DURABLE
+  POSTING_OUTCOME_UNKNOWN:
+  - POSTING_OUTCOME_UNKNOWN
+  - LOOKUP_REQUIRED
+  DEBIT_CONFIRMED:
+  - DEBIT_SUCCEEDED
+  - CUT_CREDIT_NOT_SUCCEEDED
+  - PRINCIPAL_POSTING_REFERENCE
+  POSTED_PENDING_TFJ:
+  - DEBIT_SUCCEEDED
+  - CUT_CREDIT_SUCCEEDED
+  - PRINCIPAL_POSTING_REFERENCE
+  REVERSAL_REQUIRED:
+  - CONFIRMED_OR_RECONCILED_FINANCIAL_EFFECT
+  - REVERSAL_REASON
+  REVERSAL_PENDING:
+  - AUTHORIZED_REVERSAL_INSTRUCTION_DURABLE
+  REVERSAL_OUTCOME_UNKNOWN:
+  - REVERSAL_OUTCOME_UNKNOWN
+  - LOOKUP_REQUIRED
+  REJECTED:
+  - CONCLUSIVE_PRE_FINALITY_REJECTION
+  - NO_FINANCIAL_EFFECT
+  FAILED:
+  - TECHNICAL_FAILURE
+  - NO_FINANCIAL_EFFECT_PROVEN
+  TREASURY_INTEGRATED:
+  - UNIQUELY_MATCHED_TFJ_INTEGRATED
+  REVERSED:
+  - AUTHORITATIVE_REVERSAL_CONFIRMED
+  - ORIGINAL_POSTING_PRESERVED
+counts:
+  stateCount: 17
+  terminalStateCount: 4
+  transitionCount: 38
+  eventTypeCount: 33
+  policyCount: 14
+  domainServiceCount: 4
+eventBinding:
+  factKindToEventType: ONE_TO_ONE
+  eventIdRange:
+    from: PAY-EVT-001
+    through: PAY-EVT-033
+  multipleEventsPerTransition:
+    aggregateVersion: SAME_RESULTING_VERSION
+    eventSequence: DOMAIN_FACT_ORDER_ONE_BASED
+policyServiceBinding:
+  aggregateOwnsTransition: true
+  servicesReturnDecisionsOnly: true
+  profileLoadingOwner: APPLICATION
+  decisionAtSource: APPLICATION_CLOCK
+finalValidation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+readiness:
+  lot2_8FinalValidationPassed: true
+  domainModelComplete: true
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+implementation:
+  status: IMPLEMENTED
+  stateCount: 17
+  terminalStateCount: 4
+  transitionCount: 38
+  aggregateOwnsTransitions: true
+  invalidTransitionIsAtomic: true
+normativeArtifacts:
+  transitionTable: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  mermaidDiagram: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  terminalStateMatrix: documentation/ai/payment/PAYMENT_NORMATIVE_STATE_MACHINE.md
+  forbiddenTransitionMatrix: documentation/ai/payment/PAYMENT_FORBIDDEN_TRANSITION_MATRIX.md
+  stateExternalEventMatrix: documentation/ai/payment/PAYMENT_STATE_EXTERNAL_EVENT_MATRIX.md
+normativeDecisions:
+  notifiedIsPaymentState: false
+  notificationDeliveryChangesFinancialState: false
+  postingUnknownRepresentation: POSTING_OUTCOME_UNKNOWN
+  reversalUnknownRepresentation: REVERSAL_OUTCOME_UNKNOWN
+  blindPostingReplayAllowed: false
+  blindReversalReplayAllowed: false
+  failedRequiresProvenNoFinancialEffect: true
+  originalPostingPreservedAfterReversal: true
+determinism:
+  undeclaredStateCommandCombination: PAYMENT_INVALID_TRANSITION
+  invalidTransitionMutation: false
+  invalidTransitionVersionIncrement: false
+  invalidTransitionEventRegistration: false
+  identicalReplay: TRANSITION_SPECIFIC_NO_OP
+  conflictingEvidence: PAYMENT_EVIDENCE_CONFLICT_NO_MUTATION

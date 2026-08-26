@@ -1,0 +1,13 @@
+spring:
+  config:
+    import:
+      - classpath:config/security/oidc-common.yml
+
+sixpay:
+  security:
+    mode: oauth2
+    authentication:
+      local:
+        enabled: false
+      oidc:
+        enabled: true

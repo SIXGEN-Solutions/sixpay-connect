@@ -1,0 +1,38 @@
+<form class="sp-audit-filter" [formGroup]="form" (ngSubmit)="search()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Du</mat-label>
+    <input matInput type="date" formControlName="from" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Au</mat-label>
+    <input matInput type="date" formControlName="to" />
+  </mat-form-field>
+  <sp-button type="submit" icon="search" [disabled]="loading() || invalidPeriod()">
+    Rechercher
+  </sp-button>
+</form>
+
+@if (invalidPeriod()) {
+  <p class="sp-audit-filter__error" role="alert">
+    La date de début doit être antérieure ou égale à la date de fin.
+  </p>
+}
+
+@if (loading()) {
+  <sp-loading label="Chargement de l’historique d’audit" />
+} @else {
+  <sp-data-table
+    caption="Historique d’audit du partenaire"
+    [columns]="columns"
+    [data]="entries()"
+    emptyMessage="Aucun événement sur cette période"
+  />
+  <mat-paginator
+    aria-label="Pagination de l’historique d’audit"
+    [length]="totalElements()"
+    [pageIndex]="page()"
+    [pageSize]="size()"
+    [pageSizeOptions]="[10, 25, 50, 100]"
+    (page)="changePage($event)"
+  />
+}

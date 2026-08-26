@@ -1,0 +1,2786 @@
+schemaVersion: 6.0.0
+document:
+  id: SIXPAY-PAYMENT-DOMAIN-EVENT-CATALOGUE
+  title: SIXPAY CONNECT — IA-1 Payment Domain Event Catalogue
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 6_EVENTS_AUDIT_OUTBOX
+  branch: feat/payment-domain-generation-brief
+  status: NORMATIVE_IMPLEMENTED
+  normative: true
+  codeGenerationAllowed: false
+  nextLot: OWNER_REVIEW_AND_VERTICAL_IMPLEMENTATION_APPROVAL
+  replacesSemanticsOf: IA-0P_PAYMENT_EVENT_CATALOG_V1
+scope:
+  paymentAggregateEventCount: 33
+  idRange:
+    from: PAY-EVT-001
+    through: PAY-EVT-033
+  includes: ONLY_EVENTS_REGISTERED_BY_PAYMENT_AGGREGATE
+  excludes:
+  - NOTIFICATION_DELIVERY_PROCESS_EVENTS
+  - ACCOUNTING_PROCESS_EVENTS
+  - CUSTOMER_PROCESS_EVENTS
+  - RAW_EXTERNAL_CALLBACKS
+  - COMMAND_OBJECTS
+domainContract:
+  conceptualInterface: PaymentDomainEvent extends DomainEvent
+  sharedKernelReference: com.sixpay.sharedkernel.domain.event.DomainEvent
+  requiredFields:
+  - name: eventId
+    type: UUID
+    source: GENERATED_ONCE
+  - name: paymentId
+    type: PaymentId
+  - name: paymentReference
+    type: PublicPaymentReference
+  - name: correlationId
+    type: CorrelationId
+  - name: aggregateVersion
+    type: positive long
+  - name: eventSequence
+    type: positive int
+  - name: causationId
+    type: UUID?
+    required: false
+  - name: occurredAt
+    type: Instant
+  eventTypeRule: EXACT_JAVA_RECORD_SIMPLE_NAME
+  eventIdFormat: UUID_V4_NON_NIL
+  occurredAtSource: CONTROLLED_INSTANT_SUPPLIED_TO_AGGREGATE_OPERATION
+  multipleEventsPerMutation:
+    aggregateVersion: SAME_RESULTING_VERSION
+    eventSequence: ONE_BASED_ORDER_WITHIN_MUTATION
+integrationEnvelopeMapping:
+  implementationReference: com.sixpay.common.messaging.model.IntegrationEventEnvelope
+  aggregateType: PAYMENT
+  mapping:
+    eventId: domainEvent.eventId
+    eventType: domainEvent.eventType
+    schemaVersion: catalogue event schemaVersion
+    aggregateId: domainEvent.paymentId.value
+    correlationId: domainEvent.correlationId.value
+    occurredAt: domainEvent.occurredAt
+    payload: explicit JSON safe payload including common payload fields
+  commonPayloadFields:
+  - name: paymentReference
+    type: PublicPaymentReference
+    required: true
+  - name: paymentStatus
+    type: PaymentStatus
+    required: true
+  - name: aggregateVersion
+    type: positive long
+    required: true
+  - name: eventSequence
+    type: positive int
+    required: true
+  - name: causationId
+    type: UUID
+    required: false
+  wholeDomainObjectSerializationAllowed: false
+publicationPolicy:
+  mechanism: TRANSACTIONAL_OUTBOX
+  guarantee: AT_LEAST_ONCE
+  aggregateTransaction:
+  - PAYMENT_STATE
+  - IMMUTABLE_AUDIT
+  - OUTBOX_EVENTS
+  partitionKey: aggregateId
+  ordering:
+  - aggregateVersion
+  - eventSequence
+  noOpOrRejectedOperationCreatesEvent: false
+  reconstitutionCreatesEvent: false
+  republish: PRESERVE_EVENT_ID_EVENT_TYPE_SCHEMA_VERSION_AND_PAYLOAD
+  sameEventIdDifferentPayload: QUARANTINE_AND_ALERT
+consumerPolicy:
+  deduplicationKey: eventId
+  consumerMutationAndProcessedMarkerAtomic: true
+  unsupportedSchemaVersion: VERSION_QUARANTINE_AND_ALERT
+  projectionReplay: ALLOWED_WITHOUT_EXTERNAL_SIDE_EFFECT
+  processRequestReplay: EVENT_SPECIFIC_BUSINESS_IDEMPOTENCY_REQUIRED
+  notificationReplay: SOURCE_EVENT_ID_PLUS_NOTIFICATION_PHASE
+payloadComponents:
+  MoneyPayload:
+    fields:
+    - name: amount
+      type: decimal string
+    - name: currency
+      type: ISO-4217 string
+  SafeCheckResult:
+    fields:
+    - name: type
+      type: stable check code
+    - name: result
+      type: PASS|FAIL|UNKNOWN
+    - name: reasonCode
+      type: FailureCode
+      required: false
+  PostingLegPayload:
+    fields:
+    - name: status
+      type: PostingLegStatus
+    - name: reference
+      type: string
+      required: false
+    - name: effectiveAt
+      type: Instant
+      required: false
+    - name: failureCode
+      type: FailureCode
+      required: false
+sensitiveDataDenylist: &id006
+- AUTHORIZATION_TOKEN
+- SUBSCRIPTION_KEY
+- API_KEY_PASSWORD_SECRET_OR_PRIVATE_KEY
+- RAW_JWT_CLAIMS_SIGNATURE_OR_JWKS
+- CLEAR_DEBTOR_OR_TREASURY_ACCOUNT
+- GENERAL_EVENT_ACCOUNT_INTEGRATION_TOKEN
+- FULL_NIU_OR_CUSTOMER_IDENTITY
+- RAW_KYC_DATA
+- AVAILABLE_OR_LEDGER_BALANCE
+- RAW_TRESOR_PAY_OR_AMPLITUDE_PAYLOAD
+- STACK_TRACE_SQL_ENDPOINT_OR_INFRASTRUCTURE_TOPOLOGY
+- FREE_FORM_PROVIDER_ERROR
+- OPERATOR_CREDENTIAL_OR_BANK_INSTRUCTION_DOCUMENT
+events:
+- id: PAY-EVT-001
+  name: PaymentReceived
+  factKind: PAYMENT_RECEIVED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: LIFECYCLE_FACT
+  schemaVersion: 1
+  description: A canonical authenticated Payment intention has been durably created.
+  payloadFields:
+  - name: externalPaymentReference
+    type: ExternalPaymentReference
+    required: true
+    classification: BUSINESS_REFERENCE
+  - name: source
+    type: PaymentSource
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - &id002
+    name: requestedAmount
+    type: MoneyPayload
+    required: true
+    classification: RESTRICTED_FINANCIAL
+    description: Decimal string amount and ISO-4217 currency.
+  - name: maskedDebtorAccountReference
+    type: string
+    required: true
+    classification: RESTRICTED_DISPLAY
+  - name: receivedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Create or update the initial ObservedCustomer projection from minimized Payment facts.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - &id001
+    module: reporting
+    purpose: Update Payment search and immutable timeline projections.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  sensitiveDataForbidden:
+  - ExternalSubscriptionReference unless an approved consumer contract requires it.
+  - Clear debtor account.
+  - Inbound headers or raw request.
+  - Authorization token or Subscription Key.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-001
+    operationRefs:
+    - PAY-OP-001
+    transitionRefs: []
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-002
+  name: PaymentAuthorizationCheckingStarted
+  factKind: AUTHORIZATION_CHECKING_STARTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested authorization-evidence evaluation.
+  payloadFields:
+  - name: startedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: security
+    purpose: Resolve and validate canonical TRESOR PAY authorization evidence.
+    sideEffect: IDEMPOTENT_SECURITY_VALIDATION
+    idempotency: eventId
+  - module: integration
+    purpose: Coordinate local token/JWKS validation without exposing credentials to Payment.
+    sideEffect: IDEMPOTENT_SECURITY_VALIDATION
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: REVALIDATION_ALLOWED_BY_EVENT_ID_NO_FINANCIAL_EFFECT
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-002
+    operationRefs:
+    - PAY-OP-002
+    transitionRefs:
+    - PAY-TR-001
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-003
+  name: PaymentAuthorizationDecisionRecorded
+  factKind: AUTHORIZATION_DECISION_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted a canonical authorization decision.
+  payloadFields:
+  - name: outcome
+    type: APPROVED|REJECTED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: authorizationEvidenceReference
+    type: AuthorizationEvidenceReference
+    required: true
+    classification: RESTRICTED_SECURITY_EVIDENCE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: rejectionCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Raw JWT.
+  - Raw jti.
+  - Raw claims.
+  - Signature bytes.
+  - JWKS document.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-003
+    operationRefs:
+    - PAY-OP-003
+    transitionRefs:
+    - PAY-TR-002
+    - PAY-TR-003
+  policyRefs:
+  - PAY-POL-002
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-004
+  name: PaymentBankingVerificationRequested
+  factKind: BANKING_VERIFICATION_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested fresh banking customer/account verification.
+  payloadFields:
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: debtorAccountBindingFingerprint
+    type: AccountBindingFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Execute or reuse the canonical fresh customer/account verification workflow.
+    sideEffect: IDEMPOTENT_READ_WORKFLOW
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Clear account.
+  - Account integration token.
+  - NIU or customer identity values.
+  - Requested KYC payload.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: SAFE_READ_RETRY_KEYED_BY_EVENT_ID_AND_PAYMENT_VERSION
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-003
+    operationRefs:
+    - PAY-OP-003
+    transitionRefs:
+    - PAY-TR-002
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-005
+  name: PaymentRejected
+  factKind: PAYMENT_REJECTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: TERMINAL_FACT
+  schemaVersion: 1
+  description: Payment has reached terminal REJECTED with proven absence of financial effect.
+  payloadFields:
+  - &id003
+    name: failureCode
+    type: FailureCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - &id004
+    name: failureCategory
+    type: FailureCategory
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - &id005
+    name: failureStage
+    type: FailureStage
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: finalizedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Update ObservedCustomer rejection and decision counters.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Human free-form provider error.
+  - Raw KYC or account data.
+  - Stack trace.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-003
+    - PAY-CMD-004
+    - PAY-CMD-005
+    - PAY-CMD-006
+    - PAY-CMD-008
+    - PAY-CMD-009
+    - PAY-CMD-014
+    operationRefs:
+    - PAY-OP-003
+    - PAY-OP-004
+    - PAY-OP-005
+    - PAY-OP-006
+    - PAY-OP-008
+    - PAY-OP-009
+    - PAY-OP-014
+    transitionRefs:
+    - PAY-TR-003
+    - PAY-TR-005
+    - PAY-TR-008
+    - PAY-TR-012
+    - PAY-TR-016
+    - PAY-TR-024
+    - PAY-TR-036
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-006
+  name: PaymentImmediateResultAvailable
+  factKind: IMMEDIATE_RESULT_AVAILABLE
+  classification: PAYMENT_DOMAIN_EVENT
+  role: RESULT_INTENT
+  schemaVersion: 1
+  description: A non-final or immediate Payment result is durably available for delivery.
+  payloadFields:
+  - name: externalPaymentReference
+    type: ExternalPaymentReference
+    required: true
+    classification: BUSINESS_REFERENCE
+  - name: resultType
+    type: REJECTED|FAILED|PROCESSING|POSTED_PENDING_TFJ|REVERSAL_REQUIRED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: failureCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: availableAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: notification
+    purpose: Create or reuse the immediate TRESOR PAY NotificationDelivery.
+    sideEffect: TRESOR_PAY_NOTIFICATION
+    idempotency: sourceEventId+IMMEDIATE
+  - *id001
+  sensitiveDataForbidden:
+  - Customer identity.
+  - Clear account.
+  - Provider diagnostics.
+  - Full PaymentFailure.safeMessage by default.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: NOTIFICATION_REUSES_SOURCE_EVENT_ID_AND_PHASE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-003
+    - PAY-CMD-004
+    - PAY-CMD-005
+    - PAY-CMD-006
+    - PAY-CMD-008
+    - PAY-CMD-009
+    - PAY-CMD-010
+    - PAY-CMD-014
+    - PAY-CMD-015
+    - PAY-CMD-016
+    operationRefs:
+    - PAY-OP-003
+    - PAY-OP-004
+    - PAY-OP-005
+    - PAY-OP-006
+    - PAY-OP-008
+    - PAY-OP-009
+    - PAY-OP-010
+    - PAY-OP-014
+    - PAY-OP-015
+    - PAY-OP-016
+    transitionRefs:
+    - PAY-TR-003
+    - PAY-TR-005
+    - PAY-TR-006
+    - PAY-TR-008
+    - PAY-TR-010
+    - PAY-TR-012
+    - PAY-TR-013
+    - PAY-TR-014
+    - PAY-TR-015
+    - PAY-TR-016
+    - PAY-TR-017
+    - PAY-TR-018
+    - PAY-TR-019
+    - PAY-TR-020
+    - PAY-TR-021
+    - PAY-TR-022
+    - PAY-TR-023
+    - PAY-TR-024
+    - PAY-TR-025
+    - PAY-TR-026
+    - PAY-TR-028
+    - PAY-TR-036
+    - PAY-TR-037
+    - PAY-TR-038
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-007
+  name: PaymentBankingVerificationRecorded
+  factKind: BANKING_VERIFICATION_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted a canonical banking verification result.
+  payloadFields:
+  - name: verificationId
+    type: BankingVerificationId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: outcome
+    type: VERIFIED|REJECTED|INDETERMINATE
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: checkResults
+    type: bounded list<SafeCheckResult>
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Update ObservedCustomer with minimized observed banking outcomes.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - NIU.
+  - Customer name/contact.
+  - KYC values.
+  - Raw customer/account reference.
+  - Available balance.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-004
+    operationRefs:
+    - PAY-OP-004
+    transitionRefs:
+    - PAY-TR-004
+    - PAY-TR-005
+    - PAY-TR-006
+  policyRefs:
+  - PAY-POL-003
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-008
+  name: PaymentFundsControlRequested
+  factKind: FUNDS_CONTROL_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested exact funds and execution checks.
+  payloadFields:
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - *id002
+  - name: debtorAccountBindingFingerprint
+    type: AccountBindingFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Execute or reuse the exact amount/account read-only funds control.
+    sideEffect: IDEMPOTENT_READ_WORKFLOW
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Clear account.
+  - Account integration token.
+  - Current or available balance.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: SAFE_READ_RETRY_KEYED_BY_EVENT_ID_AND_PAYMENT_VERSION
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-004
+    operationRefs:
+    - PAY-OP-004
+    transitionRefs:
+    - PAY-TR-004
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-009
+  name: PaymentProcessingDeferred
+  factKind: PAYMENT_PROCESSING_DEFERRED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: LIFECYCLE_FACT
+  schemaVersion: 1
+  description: Payment processing remains non-terminal while controlled recovery or operator action is required.
+  payloadFields:
+  - *id003
+  - *id004
+  - *id005
+  - name: retryDisposition
+    type: RetryDisposition
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: deferredAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Stack trace.
+  - Endpoint.
+  - Raw provider error.
+  - Credential.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-004
+    - PAY-CMD-005
+    - PAY-CMD-015
+    operationRefs:
+    - PAY-OP-004
+    - PAY-OP-005
+    - PAY-OP-015
+    transitionRefs:
+    - PAY-TR-006
+    - PAY-TR-010
+    - PAY-TR-037
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-010
+  name: PaymentFundsControlRecorded
+  factKind: FUNDS_CONTROL_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted a canonical funds-control result for its exact amount and account.
+  payloadFields:
+  - name: verificationReference
+    type: FundsVerificationReference
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: outcome
+    type: VERIFIED|REJECTED|INDETERMINATE
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: checkResults
+    type: bounded list<SafeCheckResult>
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: validUntil
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Available amount.
+  - Ledger balance.
+  - Clear account.
+  - Raw Amplitude response.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-005
+    operationRefs:
+    - PAY-OP-005
+    transitionRefs:
+    - PAY-TR-007
+    - PAY-TR-008
+    - PAY-TR-010
+  policyRefs:
+  - PAY-POL-004
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-011
+  name: PaymentTreasuryAccountResolutionRequested
+  factKind: TREASURY_ACCOUNT_RESOLUTION_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested protected Treasury-account resolution.
+  payloadFields:
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: allocationIntentFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Resolve the protected CUT/Treasury configuration for the Payment bank and allocation intent.
+    sideEffect: IDEMPOTENT_PROTECTED_CONFIGURATION_RESOLUTION
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Inbound Treasury account.
+  - Treasury account token.
+  - Clear CUT account.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: RESOLUTION_REUSES_EVENT_ID_AND_CONFIGURATION_SCOPE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-005
+    operationRefs:
+    - PAY-OP-005
+    transitionRefs:
+    - PAY-TR-007
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-012
+  name: PaymentTreasuryAccountResolutionRecorded
+  factKind: TREASURY_ACCOUNT_RESOLUTION_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted the protected Treasury-account resolution outcome.
+  payloadFields:
+  - name: outcome
+    type: RESOLVED|REJECTED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: treasuryConfigurationId
+    type: string
+    required: false
+    classification: RESTRICTED_BANK_CONFIGURATION
+  - name: configurationVersion
+    type: string
+    required: false
+    classification: RESTRICTED_BANK_CONFIGURATION
+  - name: maskedTreasuryAccountReference
+    type: string
+    required: false
+    classification: RESTRICTED_DISPLAY
+  - name: rejectionCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Treasury account token.
+  - Clear CUT account.
+  - Raw protected configuration.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-006
+    operationRefs:
+    - PAY-OP-006
+    transitionRefs:
+    - PAY-TR-011
+    - PAY-TR-012
+  policyRefs:
+  - PAY-POL-005
+  - PAY-POL-006
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-013
+  name: PaymentApprovedForPosting
+  factKind: PAYMENT_APPROVED_FOR_POSTING
+  classification: PAYMENT_DOMAIN_EVENT
+  role: LIFECYCLE_FACT
+  schemaVersion: 1
+  description: All authorization, banking, funds and Treasury evidence permits one posting instruction.
+  payloadFields:
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - *id002
+  - name: approvedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-006
+    operationRefs:
+    - PAY-OP-006
+    transitionRefs:
+    - PAY-TR-011
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-014
+  name: PaymentPostingAuthorized
+  factKind: POSTING_AUTHORIZED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_AUTHORIZATION_FACT
+  schemaVersion: 1
+  description: The sole logical posting instruction has been durably authorized.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: postingIdempotencyKey
+    type: PostingIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: postingInstructionFingerprint
+    type: PostingInstructionFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: authorizedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Debtor account token.
+  - Treasury account token.
+  - Clear account.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-007
+    operationRefs:
+    - PAY-OP-007
+    transitionRefs:
+    - PAY-TR-009
+  policyRefs:
+  - PAY-POL-007
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-015
+  name: PaymentPostingRequested
+  factKind: POSTING_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: The sole authorized posting has been durably requested.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: postingIdempotencyKey
+    type: PostingIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: postingInstructionFingerprint
+    type: PostingInstructionFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - *id002
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Create or reuse the unique posting workflow and obtain protected execution material through the approved internal port.
+    sideEffect: AMPLITUDE_POSTING
+    idempotency: postingInstructionId+postingIdempotencyKey+instructionFingerprint
+  - *id001
+  sensitiveDataForbidden:
+  - Clear debtor account.
+  - Debtor account token in general integration event payload.
+  - Treasury account token in general integration event payload.
+  - A replacement posting identity.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: ACCOUNTING_REUSES_ORIGINAL_POSTING_IDENTITY_NEVER_BLIND_WRITE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-007
+    operationRefs:
+    - PAY-OP-007
+    transitionRefs:
+    - PAY-TR-009
+  policyRefs:
+  - PAY-POL-007
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-016
+  name: PaymentPostingOutcomeRecorded
+  factKind: POSTING_OUTCOME_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted the current direct canonical posting outcome.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: outcome
+    type: COMPLETED|REJECTED_NO_FINANCIAL_EFFECT|DEBIT_CONFIRMED_CUT_CREDIT_PENDING|REVERSAL_REQUIRED|UNKNOWN
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: debitLeg
+    type: PostingLegPayload
+    required: true
+    classification: RESTRICTED_FINANCIAL
+  - name: cutCreditLeg
+    type: PostingLegPayload
+    required: true
+    classification: RESTRICTED_FINANCIAL
+  - name: businessDate
+    type: LocalDate
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: rejectionCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: nextAction
+    type: PostingNextAction
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Correlate Payment decision with the canonical posting/reconciliation workflow.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Post-debit balance.
+  - Clear account.
+  - Raw core-banking entries.
+  - Raw Amplitude response.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    operationRefs:
+    - PAY-OP-008
+    transitionRefs:
+    - PAY-TR-013
+    - PAY-TR-014
+    - PAY-TR-015
+    - PAY-TR-016
+    - PAY-TR-017
+    - PAY-TR-018
+    - PAY-TR-019
+    - PAY-TR-020
+    - PAY-TR-021
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-001
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-017
+  name: PaymentEndOfDayTrackingRequested
+  factKind: TFJ_TRACKING_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested TFJ finality tracking for a completed posting.
+  payloadFields:
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Register unique TFJ matching and scheduled read-only fallback reconciliation.
+    sideEffect: TFJ_TRACKING_AND_LOOKUP
+    idempotency: paymentId+principalPostingReference+businessDate
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: REUSE_EXISTING_TFJ_TRACKER_READ_LOOKUP_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    - PAY-CMD-009
+    operationRefs:
+    - PAY-OP-008
+    - PAY-OP-009
+    transitionRefs:
+    - PAY-TR-013
+    - PAY-TR-019
+    - PAY-TR-022
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-018
+  name: PaymentDebitConfirmed
+  factKind: DEBIT_CONFIRMED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_FACT
+  schemaVersion: 1
+  description: The debtor debit is confirmed while complete CUT credit is not yet confirmed.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: debitLegReference
+    type: BankPostingReference.debitLeg
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: debitedAt
+    type: Instant
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Update reconciliation views without issuing another debit.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FINANCIAL_REPLAY_FORBIDDEN_FACT_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    - PAY-CMD-009
+    operationRefs:
+    - PAY-OP-008
+    - PAY-OP-009
+    transitionRefs:
+    - PAY-TR-014
+    - PAY-TR-023
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-019
+  name: PaymentPostingOutcomeLookupRequested
+  factKind: POSTING_OUTCOME_LOOKUP_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested authoritative resolution of an uncertain posting.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: postingIdempotencyKey
+    type: PostingIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: lookupMode
+    type: IDEMPOTENCY_KEY|BANK_REFERENCE
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: unknownSince
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Perform authoritative read-only posting lookup using the original instruction identity.
+    sideEffect: AMPLITUDE_READ_ONLY_LOOKUP
+    idempotency: postingInstructionId+lookupMode+eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: READ_ONLY_LOOKUP_ALLOWED_BLIND_POSTING_REPLAY_FORBIDDEN
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    operationRefs:
+    - PAY-OP-008
+    transitionRefs:
+    - PAY-TR-015
+    - PAY-TR-020
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-020
+  name: PaymentReversalRequired
+  factKind: REVERSAL_REVIEW_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: LIFECYCLE_AND_PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment requires explicit reversal review because a financial effect exists or is authoritatively reconciled.
+  payloadFields:
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reasonCode
+    type: FailureCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: sourceStage
+    type: POSTING|TFJ|REVERSAL
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: knownDebitStatus
+    type: PostingLegStatus
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: knownCutCreditStatus
+    type: PostingLegStatus
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: requiredAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Open or reuse the reversal/reconciliation case; do not reverse automatically.
+    sideEffect: REVERSAL_CASE_ONLY
+    idempotency: paymentId+principalPostingReference+reasonCode
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: OPEN_OR_REUSE_CASE_AUTOMATIC_REVERSAL_FORBIDDEN
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    - PAY-CMD-009
+    - PAY-CMD-010
+    - PAY-CMD-012
+    - PAY-CMD-013
+    operationRefs:
+    - PAY-OP-008
+    - PAY-OP-009
+    - PAY-OP-010
+    - PAY-OP-012
+    - PAY-OP-013
+    transitionRefs:
+    - PAY-TR-018
+    - PAY-TR-021
+    - PAY-TR-026
+    - PAY-TR-028
+    - PAY-TR-033
+    - PAY-TR-035
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-021
+  name: PaymentPostingOutcomeResolved
+  factKind: POSTING_OUTCOME_RESOLVED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_EVIDENCE_FACT
+  schemaVersion: 1
+  description: An authoritative lookup has resolved the original uncertain posting.
+  payloadFields:
+  - name: postingInstructionId
+    type: PostingInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: previousOutcome
+    type: UNKNOWN
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: resolvedOutcome
+    type: COMPLETED|REJECTED_NO_FINANCIAL_EFFECT|DEBIT_CONFIRMED_CUT_CREDIT_PENDING|REVERSAL_REQUIRED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: debitLeg
+    type: PostingLegPayload
+    required: true
+    classification: RESTRICTED_FINANCIAL
+  - name: cutCreditLeg
+    type: PostingLegPayload
+    required: true
+    classification: RESTRICTED_FINANCIAL
+  - name: businessDate
+    type: LocalDate
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: rejectionCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: resolvedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Close or update the posting reconciliation case.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FINANCIAL_REPLAY_FORBIDDEN_FACT_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-009
+    operationRefs:
+    - PAY-OP-009
+    transitionRefs:
+    - PAY-TR-022
+    - PAY-TR-023
+    - PAY-TR-024
+    - PAY-TR-025
+    - PAY-TR-026
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-008
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-001
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-022
+  name: PaymentEndOfDayConfirmationRecorded
+  factKind: TFJ_CONFIRMATION_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: TREASURY_EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted a uniquely matched final TFJ confirmation.
+  payloadFields:
+  - name: confirmationId
+    type: TfjConfirmationId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: financialInstitutionCode
+    type: FinancialInstitutionCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: businessDate
+    type: LocalDate
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: tfjStatus
+    type: INTEGRATED|FAILED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: failureCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: recoveryAction
+    type: MANUAL_RECONCILIATION|REVERSAL_REVIEW|REVERSAL_REQUIRED
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: confirmedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: matchedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  consumers:
+  - module: accounting
+    purpose: Close or update the uniquely matched TFJ reconciliation workflow.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Raw TFJ payload or file.
+  - Unmatched confirmation data.
+  - Clear CUT or debtor account.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-010
+    operationRefs:
+    - PAY-OP-010
+    transitionRefs:
+    - PAY-TR-027
+    - PAY-TR-028
+    - PAY-TR-029
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-009
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-023
+  name: TreasuryIntegrationConfirmed
+  factKind: TREASURY_INTEGRATION_CONFIRMED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: TERMINAL_FINANCIAL_FACT
+  schemaVersion: 1
+  description: Uniquely matched TFJ INTEGRATED evidence has established Treasury finality.
+  payloadFields:
+  - name: confirmationId
+    type: TfjConfirmationId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: confirmedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Update ObservedCustomer success and finality counters.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FINANCIAL_REPLAY_FORBIDDEN_FACT_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-010
+    operationRefs:
+    - PAY-OP-010
+    transitionRefs:
+    - PAY-TR-027
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-024
+  name: PaymentFinalResultAvailable
+  factKind: FINAL_RESULT_AVAILABLE
+  classification: PAYMENT_DOMAIN_EVENT
+  role: RESULT_INTENT
+  schemaVersion: 1
+  description: The final Treasury-integrated result is durably available for delivery.
+  payloadFields:
+  - name: externalPaymentReference
+    type: ExternalPaymentReference
+    required: true
+    classification: BUSINESS_REFERENCE
+  - name: resultType
+    type: TREASURY_INTEGRATED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: confirmationId
+    type: TfjConfirmationId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: availableAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: notification
+    purpose: Create or reuse the final TRESOR PAY NotificationDelivery.
+    sideEffect: TRESOR_PAY_NOTIFICATION
+    idempotency: sourceEventId+FINAL
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: NOTIFICATION_REUSES_SOURCE_EVENT_ID_AND_PHASE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-010
+    operationRefs:
+    - PAY-OP-010
+    transitionRefs:
+    - PAY-TR-027
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-025
+  name: PaymentTreasuryReconciliationRequired
+  factKind: TREASURY_RECONCILIATION_REQUIRED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: A matched adverse TFJ result requires manual reconciliation or reversal review.
+  payloadFields:
+  - name: confirmationId
+    type: TfjConfirmationId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: principalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: businessDate
+    type: LocalDate
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: failureCode
+    type: FailureCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: recoveryAction
+    type: MANUAL_RECONCILIATION|REVERSAL_REVIEW
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: requiredAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Open or reuse a manual Treasury reconciliation case.
+    sideEffect: RECONCILIATION_CASE_ONLY
+    idempotency: confirmationId+paymentId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: OPEN_OR_REUSE_RECONCILIATION_CASE_NO_FINANCIAL_WRITE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-010
+    operationRefs:
+    - PAY-OP-010
+    transitionRefs:
+    - PAY-TR-029
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-002
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-026
+  name: PaymentReversalAuthorized
+  factKind: REVERSAL_AUTHORIZED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_AUTHORIZATION_FACT
+  schemaVersion: 1
+  description: One reversal instruction has been explicitly and durably authorized.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: reversalIdempotencyKey
+    type: ReversalIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: originalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: authorizationType
+    type: BANK_INSTRUCTION|APPROVED_RUNBOOK
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: authorizationReference
+    type: ReversalAuthorizationReference
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: reasonCode
+    type: FailureCode
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: authorizedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - *id001
+  sensitiveDataForbidden:
+  - Bank instruction document.
+  - Operator credential.
+  - Free-form operator comment.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-011
+    operationRefs:
+    - PAY-OP-011
+    transitionRefs:
+    - PAY-TR-030
+  policyRefs:
+  - PAY-POL-010
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: false
+    integrationMappingRequired: false
+    integrationSchemaVersion: null
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-027
+  name: PaymentReversalRequested
+  factKind: REVERSAL_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: The explicitly authorized reversal has been durably requested.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: reversalIdempotencyKey
+    type: ReversalIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: originalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: instructionFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Submit or reuse the explicitly authorized reversal instruction.
+    sideEffect: AMPLITUDE_REVERSAL
+    idempotency: reversalInstructionId+reversalIdempotencyKey+instructionFingerprint
+  - *id001
+  sensitiveDataForbidden:
+  - Original posting idempotency key reuse.
+  - Clear account.
+  - Raw bank instruction.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: ACCOUNTING_REUSES_ORIGINAL_REVERSAL_IDENTITY_NEVER_BLIND_WRITE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-011
+    operationRefs:
+    - PAY-OP-011
+    transitionRefs:
+    - PAY-TR-030
+  policyRefs:
+  - PAY-POL-010
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-028
+  name: PaymentReversalOutcomeRecorded
+  factKind: REVERSAL_OUTCOME_RECORDED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_EVIDENCE_FACT
+  schemaVersion: 1
+  description: Payment has accepted the current direct canonical reversal outcome.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: outcome
+    type: REVERSED|REJECTED|NOT_ALLOWED|UNKNOWN
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: reversalReference
+    type: ReversalReference
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reversalEntryReference
+    type: string
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reasonCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: acceptedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Update the reversal and reconciliation workflow.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-012
+    operationRefs:
+    - PAY-OP-012
+    transitionRefs:
+    - PAY-TR-031
+    - PAY-TR-032
+    - PAY-TR-033
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-029
+  name: PaymentReversalResultAvailable
+  factKind: REVERSAL_RESULT_AVAILABLE
+  classification: PAYMENT_DOMAIN_EVENT
+  role: RESULT_INTENT
+  schemaVersion: 1
+  description: A conclusive reversal result is durably available for delivery.
+  payloadFields:
+  - name: externalPaymentReference
+    type: ExternalPaymentReference
+    required: true
+    classification: BUSINESS_REFERENCE
+  - name: resultType
+    type: REVERSED|REVERSAL_REQUIRED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: originalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reversalReference
+    type: ReversalReference
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: failureCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: availableAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: notification
+    purpose: Create or reuse the reversal-phase TRESOR PAY NotificationDelivery.
+    sideEffect: TRESOR_PAY_NOTIFICATION
+    idempotency: sourceEventId+REVERSAL
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: NOTIFICATION_REUSES_SOURCE_EVENT_ID_AND_PHASE
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-012
+    - PAY-CMD-013
+    operationRefs:
+    - PAY-OP-012
+    - PAY-OP-013
+    transitionRefs:
+    - PAY-TR-031
+    - PAY-TR-033
+    - PAY-TR-034
+    - PAY-TR-035
+  policyRefs:
+  - PAY-POL-013
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-004
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-030
+  name: PaymentReversalOutcomeLookupRequested
+  factKind: REVERSAL_OUTCOME_LOOKUP_REQUESTED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: PROCESS_REQUEST
+  schemaVersion: 1
+  description: Payment has durably requested resolution of an uncertain reversal outcome.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: reversalIdempotencyKey
+    type: ReversalIdempotencyKey
+    required: true
+    classification: RESTRICTED_OPERATIONAL_REFERENCE
+  - name: reversalReference
+    type: ReversalReference
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: requestedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Perform authoritative read-only lookup for the original reversal instruction.
+    sideEffect: AMPLITUDE_READ_ONLY_LOOKUP
+    idempotency: reversalInstructionId+eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: READ_ONLY_LOOKUP_ALLOWED_BLIND_REVERSAL_REPLAY_FORBIDDEN
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-012
+    operationRefs:
+    - PAY-OP-012
+    transitionRefs:
+    - PAY-TR-032
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-031
+  name: PaymentReversalOutcomeResolved
+  factKind: REVERSAL_OUTCOME_RESOLVED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: FINANCIAL_EVIDENCE_FACT
+  schemaVersion: 1
+  description: An authoritative lookup has resolved the original uncertain reversal.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: previousOutcome
+    type: UNKNOWN
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: resolvedOutcome
+    type: REVERSED|REJECTED|NOT_ALLOWED
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: reversalReference
+    type: ReversalReference
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reversalEntryReference
+    type: string
+    required: false
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reasonCode
+    type: FailureCode
+    required: false
+    classification: INTERNAL_NON_SENSITIVE
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint
+    required: true
+    classification: INTERNAL_SECURITY_METADATA
+  - name: resolvedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: accounting
+    purpose: Close or update the reversal outcome-reconciliation case.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-013
+    operationRefs:
+    - PAY-OP-013
+    transitionRefs:
+    - PAY-TR-034
+    - PAY-TR-035
+  policyRefs:
+  - PAY-POL-006
+  - PAY-POL-011
+  - PAY-POL-012
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-032
+  name: PaymentFailedWithoutFinancialEffect
+  factKind: PAYMENT_FAILED_WITHOUT_FINANCIAL_EFFECT
+  classification: PAYMENT_DOMAIN_EVENT
+  role: TERMINAL_FACT
+  schemaVersion: 1
+  description: Payment has reached terminal FAILED with proven absence of financial effect.
+  payloadFields:
+  - *id003
+  - *id004
+  - *id005
+  - name: finalizedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Update ObservedCustomer technical-failure counters and last outcome.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden:
+  - Stack trace.
+  - Endpoint or topology.
+  - Raw provider error.
+  - Customer/account data.
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FORBIDDEN_PROJECTION_REPLAY_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-008
+    - PAY-CMD-009
+    - PAY-CMD-016
+    operationRefs:
+    - PAY-OP-008
+    - PAY-OP-009
+    - PAY-OP-016
+    transitionRefs:
+    - PAY-TR-017
+    - PAY-TR-025
+    - PAY-TR-038
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs: []
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+- id: PAY-EVT-033
+  name: PaymentReversed
+  factKind: PAYMENT_REVERSED
+  classification: PAYMENT_DOMAIN_EVENT
+  role: TERMINAL_FINANCIAL_FACT
+  schemaVersion: 1
+  description: The explicitly authorized reversal is confirmed while original posting evidence remains.
+  payloadFields:
+  - name: reversalInstructionId
+    type: ReversalInstructionId
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  - name: originalPostingReference
+    type: BankPostingReference.principal
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reversalReference
+    type: ReversalReference
+    required: true
+    classification: RESTRICTED_FINANCIAL_REFERENCE
+  - name: reversedAt
+    type: Instant
+    required: true
+    classification: INTERNAL_NON_SENSITIVE
+  consumers:
+  - module: customer
+    purpose: Update ObservedCustomer final reversal outcome.
+    sideEffect: PROJECTION_ONLY
+    idempotency: eventId
+  - *id001
+  sensitiveDataForbidden: []
+  replayPolicy:
+    publication: SAME_EVENT_ID_SCHEMA_VERSION_AND_PAYLOAD
+    consumerDeduplication: eventId
+    projectionReplayAllowed: true
+    externalSideEffectReplay: FINANCIAL_REPLAY_FORBIDDEN_FACT_ONLY
+  producer:
+    module: payment
+    aggregate: Payment
+    commandRefs:
+    - PAY-CMD-012
+    - PAY-CMD-013
+    operationRefs:
+    - PAY-OP-012
+    - PAY-OP-013
+    transitionRefs:
+    - PAY-TR-031
+    - PAY-TR-034
+  policyRefs:
+  - PAY-POL-014
+  domainServiceRefs:
+  - PAY-DS-003
+  lot6Publication:
+    auditRequired: true
+    outboxRequired: true
+    integrationMappingRequired: true
+    integrationSchemaVersion: 1
+    deduplicationKey: eventId
+    ordering:
+    - aggregateVersion
+    - eventSequence
+    reproducibleFrom:
+    - persisted audit record
+    - persisted outbox payload
+    - event catalogue schema version
+    publicationFailureEffectOnPayment: NONE
+legacyMigration:
+  PaymentRequestReceived:
+  - PaymentReceived
+  PaymentRequestRejected:
+  - PaymentRejected
+  - PaymentImmediateResultAvailable
+  BankingVerificationStarted:
+  - PaymentBankingVerificationRequested
+  BankingVerificationCompleted:
+  - PaymentBankingVerificationRecorded
+  - PaymentFundsControlRecorded
+  PaymentApproved:
+  - PaymentApprovedForPosting
+  PaymentPostingStarted:
+  - PaymentPostingAuthorized
+  - PaymentPostingRequested
+  PaymentDebited:
+  - PaymentDebitConfirmed
+  TreasuryAccountCredited:
+  - PaymentPostingOutcomeRecorded
+  - PaymentImmediateResultAvailable
+  - PaymentEndOfDayTrackingRequested
+  PaymentPostingOutcomeUnknown:
+  - PaymentPostingOutcomeRecorded
+  - PaymentPostingOutcomeLookupRequested
+  - PaymentImmediateResultAvailable
+  PaymentImmediateResultAvailable:
+  - PaymentImmediateResultAvailable
+  PaymentNotificationDelivered:
+  - REMOVED_FROM_PAYMENT_CATALOGUE_OWNED_BY_NOTIFICATION
+  PaymentPendingEndOfDayConfirmation:
+  - PaymentEndOfDayTrackingRequested
+  TreasuryIntegrationConfirmed:
+  - TreasuryIntegrationConfirmed
+  PaymentReversalRequired:
+  - PaymentReversalRequired
+  PaymentReversed:
+  - PaymentReversed
+  - PaymentReversalResultAvailable
+  PaymentFailed:
+  - PaymentFailedWithoutFinancialEffect
+  - PaymentImmediateResultAvailable
+rules:
+- id: PAY-EVT-RULE-001
+  rule: Every Payment event is an immutable past-tense fact registered only after a successful aggregate mutation.
+- id: PAY-EVT-RULE-002
+  rule: Every event type maps to exactly one canonical domain fact kind.
+- id: PAY-EVT-RULE-003
+  rule: No-op replay, stale command, conflict, invalid transition and reconstitution create no event.
+- id: PAY-EVT-RULE-004
+  rule: All events from one mutation share the resulting aggregateVersion and use eventSequence for deterministic local order.
+- id: PAY-EVT-RULE-005
+  rule: Event publication and redelivery preserve eventId, type, schema version and payload.
+- id: PAY-EVT-RULE-006
+  rule: Payment mutation, immutable audit and Outbox event records commit atomically.
+- id: PAY-EVT-RULE-007
+  rule: Domain event payloads are explicit safe views and never automatic serialization of aggregates, snapshots or protected Value Objects.
+- id: PAY-EVT-RULE-008
+  rule: Only RESULT_INTENT events trigger Notification delivery; delivery events remain owned by Notification and never mutate Payment.
+- id: PAY-EVT-RULE-009
+  rule: PROCESS_REQUEST replay uses the event-specific business idempotency identity and never relies on broker delivery semantics alone.
+- id: PAY-EVT-RULE-010
+  rule: Projection replay never invokes Amplitude, TRESOR PAY or another financial/notification side effect.
+- id: PAY-EVT-RULE-011
+  rule: EventType is stable; schemaVersion changes for required-field, removal, rename or semantic changes.
+- id: PAY-EVT-RULE-012
+  rule: A retired event name is never reused for a different business fact.
+decisions:
+- id: PAY-DEC-IA1-041
+  decision: PAYMENT_EVENT_CATALOGUE_CONTAINS_ONLY_PAYMENT_AGGREGATE_EVENTS
+- id: PAY-DEC-IA1-042
+  decision: PAYMENT_DOMAIN_EVENT_CONTRACT_EXTENDS_SHARED_DOMAIN_EVENT_AND_MAPS_EXPLICITLY_TO_INTEGRATION_ENVELOPE
+- id: PAY-DEC-IA1-043
+  decision: THIRTY_THREE_STABLE_EVENT_TYPES_MAP_ONE_TO_ONE_TO_CANONICAL_FACT_KINDS
+- id: PAY-DEC-IA1-044
+  decision: MULTIPLE_EVENTS_SHARE_AGGREGATE_VERSION_AND_USE_EVENT_SEQUENCE
+- id: PAY-DEC-IA1-045
+  decision: EXPLICIT_MINIMIZED_SAFE_PAYLOADS_NO_AUTOMATIC_DOMAIN_SERIALIZATION
+- id: PAY-DEC-IA1-046
+  decision: PROCESS_REQUEST_EVENTS_REQUIRE_EVENT_SPECIFIC_BUSINESS_IDEMPOTENCY
+- id: PAY-DEC-IA1-047
+  decision: RESULT_INTENT_EVENTS_ARE_THE_ONLY_NOTIFICATION_TRIGGERS_DELIVERY_REMAINS_OUTSIDE_PAYMENT
+- id: PAY-DEC-IA1-048
+  decision: EVENT_TYPE_STABLE_SCHEMA_VERSIONED_RETIRED_NAMES_NEVER_REUSED
+- id: PAY-DEC-IA1-049
+  decision: PAYMENT_REVERSED_IS_AN_EXPLICIT_TERMINAL_FACT_DISTINCT_FROM_REVERSAL_RESULT_DELIVERY
+- id: PAY-DEC-IA1-050
+  decision: PROCESSING_AND_CONCLUSIVE_REVERSAL_RESULTS_MUST_REGISTER_THEIR_RESULT_INTENT_EVENTS
+readiness:
+  eventCount: 33
+  humanValidationRequired: true
+  machineValidationRequired: true
+  codeGeneration: FORBIDDEN_PENDING_EXPLICIT_APPROVAL
+  policiesAndDomainServicesBound: true
+  finalValidationLotReadyAfterValidation: true
+  lot2_8FinalValidationPassed: true
+  domainModelComplete: true
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+policyBindings:
+  disclosurePolicy: PAY-POL-014
+  resultIntentPolicy: PAY-POL-013
+  resultIntentService: PAY-DS-004
+  postingInstructionPolicy: PAY-POL-007
+  reversalAuthorizationPolicy: PAY-POL-010
+finalValidation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+implementation:
+  status: IMPLEMENTED
+  eventRecordCount: 33
+  explicitSafePayloads: true
+  wholeAggregateOrSnapshotFieldsAllowed: false
+  sameMutationVersionAndSequenceEnforced: true
+transactionBoundary:
+  name: PAYMENT_STATE_AUDIT_OUTBOX_TRANSACTION
+  atomicParticipants:
+  - PAYMENT_AGGREGATE_STATE
+  - PAYMENT_BUSINESS_VERSION
+  - IMMUTABLE_PAYMENT_AUDIT_RECORDS
+  - PAYMENT_OUTBOX_MESSAGES
+  - IDEMPOTENCY_RESULT_WHEN_APPLICABLE
+  commitRule: ALL_OR_NOTHING
+  aggregateDirectKafkaCallAllowed: false
+  applicationDirectKafkaCallAllowedInsideBusinessTransaction: false
+  publisherRunsAfterCommit: true
+  publisherFailureAfterCommit:
+    paymentStateRollback: false
+    auditRollback: false
+    outboxRollback: false
+    outboxStatus: PENDING_OR_RETRYABLE
+    retryOwner: GENERIC_INTEGRATION_OUTBOX_RELAY
+    financialOperationReplayAllowed: false
+    alerting: AFTER_CONFIGURED_RETRY_OR_AGE_THRESHOLD
+auditContract:
+  appendOnly: true
+  mutableOrDeletable: false
+  requiredFields:
+  - name: auditId
+    type: UUID
+    source: GENERATED_ONCE
+  - name: paymentId
+    type: PaymentId
+  - name: publicPaymentReference
+    type: PublicPaymentReference
+  - name: eventId
+    type: UUID
+  - name: eventType
+    type: stable string
+  - name: sourceStatus
+    type: PaymentStatus?
+    required: false
+  - name: targetStatus
+    type: PaymentStatus
+  - name: aggregateVersion
+    type: positive long
+  - name: eventSequence
+    type: positive int
+  - name: correlationId
+    type: CorrelationId
+  - name: causationId
+    type: UUID?
+    required: false
+  - name: occurredAt
+    type: Instant
+  - name: resultCode
+    type: stable safe code?
+    required: false
+  - name: evidenceFingerprint
+    type: EvidenceFingerprint?
+    required: false
+  - name: principalPostingReference
+    type: opaque string?
+    required: false
+  - name: payloadHash
+    type: SHA-256
+  forbiddenFields: *id006
+  auditOrdering:
+  - aggregateVersion
+  - eventSequence
+  auditEventRelation: ONE_AUDIT_RECORD_PER_DOMAIN_EVENT
+outboxContract:
+  deliveryGuarantee: AT_LEAST_ONCE
+  publisher: GENERIC_INTEGRATION_OUTBOX_RELAY
+  partitionKey: paymentId
+  orderingKey:
+  - aggregateVersion
+  - eventSequence
+  deduplicationKey: eventId
+  payloadIdentity:
+  - eventId
+  - eventType
+  - schemaVersion
+  - payloadHash
+  sameEventIdDifferentPayload: QUARANTINE_AND_ALERT
+  republishRule: PRESERVE_EVENT_ID_EVENT_TYPE_SCHEMA_VERSION_OCCURRED_AT_AND_PAYLOAD
+  claimingPattern: FOR_UPDATE_SKIP_LOCKED
+  publishStateModel:
+  - PENDING
+  - PUBLISHED
+  - RETRYABLE
+  - QUARANTINED
+  consumerGuarantee:
+    deduplicateBy: eventId
+    processedMarkerAtomicWithConsumerMutation: true
+    unsupportedSchemaVersion: QUARANTINE_AND_ALERT
+domainToIntegrationEventPolicy:
+  domainEventPackage: com.sixpay.payment.domain.event
+  integrationEventPackage: com.sixpay.payment.events
+  directDomainEventPublicationAllowed: false
+  automaticWholeObjectSerializationAllowed: false
+  mapping: EXPLICIT_ALLOWLIST_MAPPER
+  versioning: INTEGRATION_EVENT_SCHEMA_VERSION_INDEPENDENT_FROM_JAVA_CLASS_VERSION
+  nonPublishableDomainEvents: MAY_REMAIN_AUDIT_ONLY
+  integrationEventNameRule: PAYMENT_<FACT>_V<SCHEMA_VERSION>

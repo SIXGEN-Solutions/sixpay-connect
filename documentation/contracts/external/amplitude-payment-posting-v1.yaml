@@ -1,0 +1,55 @@
+contract: amplitude-payment-posting
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Payment
+operation:
+  method: POST
+  path: /v1/payment/postings
+  financialSideEffect: true
+security:
+  oauth2:
+    grantType: client_credentials
+    registrationId: amplitude-payment
+    scope: payment.post
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+headers:
+  required:
+    - Authorization
+    - X-Correlation-ID
+    - X-Request-ID
+    - Idempotency-Key
+idempotency:
+  required: true
+  sameKeySamePayload: return same outcome
+  sameKeyDifferentPayload: reject with conflict
+  retention: TO_CONFIRM
+outcomes:
+  COMPLETED:
+    nextAction: NONE
+  REJECTED_NO_FINANCIAL_EFFECT:
+    nextAction: NONE
+  DEBIT_CONFIRMED_CUT_CREDIT_PENDING:
+    nextAction:
+      - WAIT_FOR_CUT_CREDIT
+      - QUERY_OUTCOME
+      - OPEN_RECONCILIATION
+  REVERSAL_REQUIRED:
+    nextAction: REQUEST_EXPLICIT_REVERSAL
+  UNKNOWN:
+    nextAction:
+      - QUERY_OUTCOME
+      - OPEN_RECONCILIATION
+unknownOutcome:
+  timeoutAfterEmission: UNKNOWN
+  http429Or5xx: UNKNOWN
+  automaticRetry: forbidden
+  resolution: lookup by idempotency key or bank reference
+functionalCodes:
+  completed: ["00"]
+  rejected: ["10"]
+  pendingOrUnknown: ["20", "21"]
+  note: provisional and configuration-backed

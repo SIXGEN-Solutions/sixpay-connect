@@ -1,0 +1,11 @@
+sixpay:
+  payment:
+    outbox:
+      customer-projection:
+        enabled: true
+        batch-size: 50
+        polling-interval: 1s
+        max-attempts: 10
+        initial-backoff: 1s
+        max-backoff: 5m
+        processing-timeout: 2m

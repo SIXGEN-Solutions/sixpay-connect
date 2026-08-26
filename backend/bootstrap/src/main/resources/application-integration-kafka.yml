@@ -1,0 +1,56 @@
+sixpay:
+  integration:
+    kafka:
+      enabled: ${SIXPAY_KAFKA_ENABLED:false}
+      client-id: ${SIXPAY_KAFKA_CLIENT_ID:sixpay-modular-monolith}
+      topics:
+        payment.received.v1: ${SIXPAY_TOPIC_PAYMENT_LIFECYCLE:sixpay.payment.lifecycle.v1}
+        payment.failed.v1: ${SIXPAY_TOPIC_PAYMENT_LIFECYCLE:sixpay.payment.lifecycle.v1}
+        payment.posted.v1: ${SIXPAY_TOPIC_PAYMENT_FINANCIAL:sixpay.payment.financial.v1}
+        payment.reversed.v1: ${SIXPAY_TOPIC_PAYMENT_FINANCIAL:sixpay.payment.financial.v1}
+        payment.reconciliation-required.v1: ${SIXPAY_TOPIC_PAYMENT_RECONCILIATION:sixpay.payment.reconciliation.v1}
+      producer:
+        idempotence: true
+        acks: all
+        retries: 2147483647
+        max-in-flight-requests: 5
+      consumer:
+        auto-offset-reset: earliest
+        enable-auto-commit: false
+        concurrency: ${SIXPAY_KAFKA_CONCURRENCY:1}
+        poll-timeout: 3s
+      outbox:
+        batch-size: ${SIXPAY_OUTBOX_BATCH_SIZE:100}
+        poll-interval: ${SIXPAY_OUTBOX_POLL_INTERVAL:1s}
+        delivered-retention: ${SIXPAY_OUTBOX_DELIVERED_RETENTION:30d}
+        cleanup-batch-size: ${SIXPAY_OUTBOX_CLEANUP_BATCH_SIZE:500}
+      retry:
+        first-delay: 1m
+        second-delay: 10m
+        third-delay: 1h
+        maximum-attempts: 4
+        dead-letter-suffix: .dlq
+      retention:
+        main: 14d
+        reconciliation: 30d
+        retry: 7d
+        dead-letter: 90d
+        deduplication: 90d
+
+spring:
+  kafka:
+    bootstrap-servers: ${SIXPAY_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+    listener:
+      ack-mode: record

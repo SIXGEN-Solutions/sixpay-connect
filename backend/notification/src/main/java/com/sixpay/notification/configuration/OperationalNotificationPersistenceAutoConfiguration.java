@@ -1,0 +1,72 @@
+package com.sixpay.notification.configuration;
+
+import com.sixpay.notification.domain.repository.NotificationAttemptRepository;
+import com.sixpay.notification.domain.repository.NotificationReplayRepository;
+import com.sixpay.notification.domain.repository.OperationalNotificationOperationsRepository;
+import com.sixpay.notification.domain.repository.OperationalNotificationRepository;
+import com.sixpay.notification.infrastructure.operational.persistence.NotificationTemplateVariablesCodec;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationAttemptSpringDataRepository;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationJpaEntity;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationPersistenceAdapter;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationReplaySpringDataRepository;
+import com.sixpay.notification.infrastructure.operational.persistence.OperationalNotificationSpringDataRepository;
+import jakarta.persistence.EntityManager;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import tools.jackson.databind.ObjectMapper;
+
+@AutoConfiguration(
+        before = OperationalNotificationApplicationAutoConfiguration.class
+)
+@ConditionalOnClass({
+        EntityManager.class,
+        JpaRepository.class
+})
+@EntityScan(
+        basePackageClasses =
+                OperationalNotificationJpaEntity.class
+)
+@EnableJpaRepositories(
+        basePackageClasses =
+                OperationalNotificationSpringDataRepository.class
+)
+public class OperationalNotificationPersistenceAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    NotificationTemplateVariablesCodec
+    notificationTemplateVariablesCodec(
+            ObjectMapper objectMapper
+    ) {
+        return new NotificationTemplateVariablesCodec(
+                objectMapper
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean({
+            OperationalNotificationRepository.class,
+            NotificationAttemptRepository.class,
+            OperationalNotificationOperationsRepository.class,
+            NotificationReplayRepository.class
+    })
+    OperationalNotificationPersistenceAdapter
+    operationalNotificationPersistenceAdapter(
+            OperationalNotificationSpringDataRepository notificationRepository,
+            OperationalNotificationAttemptSpringDataRepository attemptRepository,
+            OperationalNotificationReplaySpringDataRepository replayRepository,
+            NotificationTemplateVariablesCodec variablesCodec
+    ) {
+        return new OperationalNotificationPersistenceAdapter(
+                notificationRepository,
+                attemptRepository,
+                replayRepository,
+                variablesCodec
+        );
+    }
+}

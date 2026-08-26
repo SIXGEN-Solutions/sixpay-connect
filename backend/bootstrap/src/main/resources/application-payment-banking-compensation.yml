@@ -1,0 +1,22 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        compensation:
+          enabled: ${AMPLITUDE_COMPENSATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          release-path: ${AMPLITUDE_FUNDS_RELEASE_PATH:/v1/payment/funds/releases}
+          reversal-path: ${AMPLITUDE_REVERSAL_PATH:/v1/payment/reversals}
+          connect-timeout: ${AMPLITUDE_COMPENSATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_COMPENSATION_READ_TIMEOUT:10s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_COMPENSATION_CONTRACT_VERSION:provisional-v1}
+            idempotency-header: ${AMPLITUDE_COMPENSATION_IDEMPOTENCY_HEADER:Idempotency-Key}
+            release-success-codes: ["00", "01"]
+            release-rejected-codes: ["10"]
+            reversal-success-codes: ["00"]
+            reversal-rejected-codes: ["10"]
+            reversal-not-allowed-codes: ["11"]

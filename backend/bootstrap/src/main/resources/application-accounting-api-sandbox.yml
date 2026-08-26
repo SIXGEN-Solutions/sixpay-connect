@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: accounting-api-sandbox
+    import:
+      - classpath:application-accounting.yml
+      - classpath:application-accounting-api.yml
+
+sixpay:
+  accounting:
+    api:
+      enabled: true

@@ -1,0 +1,495 @@
+schemaVersion: 9.0.0
+context:
+  id: sixpay-payment-domain-brief-v1
+  domain: payment
+  gate: IA-1_PAYMENT_DOMAIN_BRIEF
+  lot: 9_BRIEF_CONSOLIDATION
+  branch: feat/payment-domain-generation-brief
+  baselineDate: '2026-07-31'
+  status: IN_REVIEW
+  normative: true
+  implementationDate: '2026-07-31'
+codeGenerationAllowed: false
+generationReadiness: IA1_BRIEF_COMPLETE_PENDING_APPROVALS
+nextStep: PRODUCT_ARCHITECTURE_ENGINEERING_REVIEW_AND_APPROVAL
+primaryDocuments:
+- path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  role: Consolidated official twenty-section IA-1 Payment brief
+- path: documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
+  role: Machine-readable IA-1 exit-criteria and approval validation
+- path: documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
+  role: Human test strategy and end-to-end requirements traceability
+- path: documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
+  role: Machine-readable invariant, transition, event and test coverage matrix
+- path: documentation/ai/payment/PAYMENT_EVENTS_AUDIT_OUTBOX_BRIEF.md
+  role: Events, immutable audit and transactional Outbox boundary
+- path: documentation/ai/payment/PAYMENT_EVENT_PUBLICATION_MATRIX.yaml
+  role: Machine-readable event audit/outbox/integration publication matrix
+- path: documentation/ai/payment/PAYMENT_AUDIT_RECORD_SCHEMA.yaml
+  role: Normative append-only Payment audit schema
+- path: documentation/ai/payment/PAYMENT_OUTBOX_CONTRACT.yaml
+  role: Normative Payment Outbox contract
+- path: documentation/ai/payment/PAYMENT_INVARIANT_FORMALIZATION.md
+  role: Human exhaustive invariant enforcement strategy
+- path: documentation/ai/payment/PAYMENT_INVARIANT_RESPONSIBILITY_MATRIX.md
+  role: Cross-layer invariant responsibility matrix
+- path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  role: Human final validation
+- path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  role: Machine final validation
+- path: documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md
+  role: Final IA-1 acceptance baseline
+- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
+  role: Aggregate Root
+- path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
+  role: Value Objects
+- path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
+  role: Snapshots
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
+  role: Human invariants
+- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
+  role: Machine invariants
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
+  role: Human commands and operations
+- path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.yaml
+  role: Machine commands and operations
+- path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
+  role: Final state machine
+- path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
+  role: Human events
+- path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
+  role: Machine events
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
+  role: Human policies/services
+- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
+  role: Machine policies/services
+- path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md
+  role: Consolidated final model
+modelCounts:
+  aggregateRoots: 1
+  states: 17
+  terminalStates: 4
+  commands: 16
+  aggregateOperations: 17
+  transitions: 38
+  invariants: 76
+  events: 33
+  policies: 14
+  domainServices: 4
+  policyProfiles: 12
+  namedAcceptanceScenarios: 174
+validation:
+  humanPath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
+  machinePath: documentation/ai/payment/PAYMENT_MODEL_VALIDATION.yaml
+  status: PASS_WITH_EXTERNAL_GENERATION_BLOCKERS
+  modelBlockerCount: 0
+  generationBlockerCount: 5
+  correctionCount: 3
+traceability:
+  requiredPrefixes:
+  - PAY-BASE-
+  - PAY-BOUND-
+  - PAY-POSTREF-
+  - PAY-AGG-
+  - PAY-VO-
+  - PAY-SNAP-
+  - PAY-INV-
+  - PAY-CMD-
+  - PAY-OP-
+  - PAY-TR-
+  - PAY-EVT-
+  - PAY-POL-
+  - PAY-DS-
+  - PAY-VAL-
+  - PAY-FIX-
+  - PAY-ACC-
+  - PAY-DEC-
+  - PAY-CONTRACT-
+  - PAY-AI-
+  - PAY-SRC-
+  - SRC-
+  - OPEN-
+  untracedRuleAllowed: false
+finalDecisions:
+- id: PAY-DEC-IA1-061
+  decision: LOT_2_FINAL_MODEL_VALIDATION_PASSES_AFTER_TWO_UNKNOWN_OUTCOME_CORRECTIONS
+- id: PAY-DEC-IA1-062
+  decision: SEVENTEEN_STATES_AND_THIRTY_EIGHT_TRANSITIONS_ARE_FINAL_FOR_IA1
+- id: PAY-DEC-IA1-063
+  decision: THIRTY_THREE_EVENTS_FULLY_COVER_CANONICAL_DOMAIN_FACTS
+- id: PAY-DEC-IA1-064
+  decision: FOURTEEN_POLICIES_AND_FOUR_DOMAIN_SERVICES_PASS_PURITY_AND_OWNERSHIP_VALIDATION
+- id: PAY-DEC-IA1-065
+  decision: PAYMENT_ACCEPTANCE_SCENARIOS_ARE_REBASELINED_TO_IA1
+- id: PAY-DEC-IA1-066
+  decision: SAME_AS_SOURCE_AND_COMMANDLESS_RECONSTITUTION_ARE_EXPLICIT_VALIDATION_EXCEPTIONS
+- id: PAY-DEC-IA1-067
+  decision: NO_OPEN_DECISION_BLOCKS_THE_DOMAIN_MODEL_SHAPE
+- id: PAY-DEC-IA1-068
+  decision: GLOBAL_CODE_GENERATION_REMAINS_FORBIDDEN_UNTIL_CONTRACT_AND_OWNER_APPROVAL
+- id: PAY-DEC-IA1-069
+  decision: DOMAIN_ONLY_IMPLEMENTATION_PLANNING_IS_READY_BUT_NOT_AUTOMATICALLY_AUTHORIZED
+- id: PAY-DEC-IA1-070
+  decision: LOT_2_IS_COMPLETE_AND_THE_IA1_PAYMENT_MODEL_IS_FROZEN_PENDING_APPROVED_CHANGE_CONTROL
+- id: PAY-DEC-IA1-099
+  decision: LOT_5_FORMALIZES_ALL_SEVENTY_SIX_EXISTING_INVARIANTS_WITHOUT_RENUMBERING_OR_DUPLICATING_THEM
+- id: PAY-DEC-IA1-100
+  decision: GLOBAL_EXTERNAL_REFERENCE_UNIQUENESS_IS_SHARED_BY_APPLICATION_PERSISTENCE_AND_IDEMPOTENCY_STORE_NOT_THE_AGGREGATE_ALONE
+- id: PAY-DEC-IA1-101
+  decision: UNKNOWN_BANK_OUTCOMES_REQUIRE_AUTHORITATIVE_LOOKUP_AND_NEVER_BLIND_FINANCIAL_RESUBMISSION
+- id: PAY-DEC-IA1-102
+  decision: PAYMENT_STATE_AUDIT_AND_OUTBOX_ATOMICITY_IS_A_FUTURE_APPLICATION_PERSISTENCE_IMPLEMENTATION_OBLIGATION
+- id: PAY-DEC-IA1-103
+  decision: LOT_6_REUSES_THE_EXISTING_THIRTY_THREE_DOMAIN_EVENTS_AND_CREATES_NO_PARALLEL_EVENT_HIERARCHY
+- id: PAY-DEC-IA1-104
+  decision: PAYMENT_STATE_VERSION_IMMUTABLE_AUDIT_OUTBOX_AND_APPLICABLE_IDEMPOTENCY_RESULT_SHARE_ONE_DATABASE_TRANSACTION
+- id: PAY-DEC-IA1-105
+  decision: DOMAIN_EVENTS_ARE_NEVER_PUBLISHED_DIRECTLY_AND_REQUIRE_EXPLICIT_ALLOWLISTED_INTEGRATION_EVENT_MAPPING
+- id: PAY-DEC-IA1-106
+  decision: KAFKA_PUBLICATION_FAILURE_AFTER_COMMIT_NEVER_ROLLS_BACK_OR_REPLAYS_THE_PAYMENT_FINANCIAL_TRANSITION
+- id: PAY-DEC-IA1-107
+  decision: OUTBOX_REPUBLICATION_PRESERVES_EVENT_ID_SCHEMA_VERSION_OCCURRED_AT_AND_PAYLOAD_IDENTITY
+- id: PAY-DEC-IA1-116
+  decision: LOT_8_REUSES_EXISTING_TESTS_AND_ADDS_A_MACHINE_VERIFIABLE_TRACEABILITY_MATRIX_WITHOUT_DUPLICATING_DOMAIN_BEHAVIOR_TESTS
+- id: PAY-DEC-IA1-117
+  decision: EVERY_PAYMENT_INVARIANT_AND_LEGAL_TRANSITION_HAS_ONE_STABLE_NAMED_TEST_SCENARIO_AND_TARGET_FILE
+- id: PAY-DEC-IA1-118
+  decision: FUTURE_APPLICATION_AND_PERSISTENCE_TESTS_ARE_DISTINGUISHED_FROM_CURRENT_IMPLEMENTED_DOMAIN_TESTS
+- id: PAY-DEC-IA1-119
+  decision: EVENT_CONFIDENTIALITY_ARCHITECTURE_VALIDATION_INSPECTS_ONLY_RECORD_COMPONENTS_USING_A_ROBUST_PATTERN
+- id: PAY-DEC-IA1-120
+  decision: LOT_9_CONSOLIDATES_ALL_VALIDATED_PAYMENT_DECISIONS_INTO_THE_OFFICIAL_TWENTY_SECTION_BRIEF
+- id: PAY-DEC-IA1-121
+  decision: PAYMENT_IA1_BRIEF_STATUS_IS_IN_REVIEW_UNTIL_PRODUCT_ARCHITECTURE_AND_ENGINEERING_APPROVALS_ARE_RECORDED
+- id: PAY-DEC-IA1-122
+  decision: NO_UNRESOLVED_PLACEHOLDER_IS_ALLOWED_IN_THE_CONSOLIDATED_BRIEF
+- id: PAY-DEC-IA1-123
+  decision: MODEL_COMPLETENESS_DOES_NOT_OVERRIDE_EXTERNAL_GENERATION_BLOCKERS_OR_REQUIRED_APPROVALS
+openDecisionReview:
+- id: OPEN-BASE-001
+  disposition: SUPERSEDED
+  modelImpact: NONE
+  reason: The authoritative branch is now feat/payment-domain-generation-brief.
+- id: OPEN-BASE-002
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_GLOBAL_CODE_GENERATION
+  reason: Complete Payment Contract Pack approval is still required.
+- id: OPEN-BASE-003
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_VERIFICATION_ADAPTER_GENERATION
+  reason: documentation/contracts/amplitude/amplitude-payment-verification-api-v1.yaml was not present at validation.
+- id: OPEN-BASE-004
+  disposition: CLOSED
+  modelImpact: NONE
+  reason: Final internal query paths exist for Payment, ObservedCustomer and Payment Audit.
+- id: OPEN-BASE-005
+  disposition: EXTERNAL_PENDING
+  modelImpact: NONE
+  generationImpact: CONTRACT_MANIFEST_RECONCILIATION_REQUIRED
+  reason: Historical contract artifact count must be confirmed by the contract manifest owners.
+- id: OPEN-BASE-006
+  disposition: DEFERRED_NOT_MVP_MODEL
+  modelImpact: NONE
+  reason: Reservation is absent from the IA-1 Payment aggregate; future support requires a new approved change.
+- id: OPEN-BASE-007
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: BANK_CONTRACT_APPROVAL_REQUIRED
+  reason: Principal posting reference with optional leg references is modeled.
+- id: OPEN-BASE-008
+  disposition: MODEL_CLOSED_EXTERNAL_APPROVAL_PENDING
+  modelImpact: CLOSED
+  generationImpact: OPERATIONS_AND_BANK_APPROVAL_REQUIRED
+  reason: Reversal source states and explicit authorization evidence are modeled.
+- id: OPEN-BASE-009
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: NOTIFIED is not a financial state; delivery belongs to Notification.
+- id: OPEN-BASE-010
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: DEBIT_CONFIRMED explicitly represents debit-only evidence.
+- id: OPEN-BASE-011
+  disposition: CLOSED
+  modelImpact: CLOSED
+  reason: FAILED is terminal only with proven absence of financial effect.
+- id: OPEN-BASE-012
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SECURITY_ADAPTER_ACTIVATION
+  reason: JWT TTL, clock skew and algorithms remain approved profile/adapter configuration.
+- id: OPEN-BASE-013
+  disposition: EXTERNAL_CONFIGURATION_PENDING
+  modelImpact: NONE
+  generationImpact: BLOCKS_SCHEDULER_AND_ALERT_ACTIVATION
+  reason: Cutoff, reconciliation windows and SLA remain Operations/Accounting configuration.
+generationBlockers:
+- id: GEN-BLOCK-001
+  source: OPEN-BASE-002
+  reason: Complete Payment Contract Pack approval.
+- id: GEN-BLOCK-002
+  source: OPEN-BASE-003
+  reason: Missing approved amplitude-payment-verification-api-v1.yaml.
+- id: GEN-BLOCK-003
+  source: CURRENT_INTERNAL_QUERY_CONTRACTS
+  reason: Current internal query contracts declare approvalStatus=PENDING_APPROVAL and codeGenerationAllowed=false.
+- id: GEN-BLOCK-004
+  source: OPEN-BASE-012
+  reason: Security adapter parameters require approval.
+- id: GEN-BLOCK-005
+  source: OPEN-BASE-013
+  reason: Operational cutoff/reconciliation/SLA parameters require approval.
+generationRules:
+  forbiddenUntilExplicitApproval:
+  - APPLICATION_CODE_GENERATION_OR_MODIFICATION
+  - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
+  - OPENAPI_MODIFICATION
+  - ADAPTER_OR_CONTROLLER_GENERATION
+  - ACTIVATION_OF_BANK_SPECIFIC_CONFIGURATION
+  modelFreeze: IA1_MODEL_FROZEN
+readiness:
+  lot2_1AggregateRootPrepared: true
+  lot2_2ValueObjectsPrepared: true
+  lot2_3SnapshotsPrepared: true
+  lot2_4InvariantsPrepared: true
+  lot2_5CommandsAndOperationsPrepared: true
+  lot2_5StateMachineReconciled: true
+  lot2_6DomainEventsPrepared: true
+  lot2_7PoliciesAndDomainServicesPrepared: true
+  lot2_8FinalValidationPassed: true
+  lot2Complete: true
+  domainModelComplete: true
+  domainModelFrozen: true
+  modelBlockers: 0
+  generationReadiness: READY_PENDING_EXTERNAL_APPROVALS
+  codeGeneration: FORBIDDEN_PENDING_APPROVALS
+  lot3_1FoundationImplemented: true
+  lot3DomainOnlyProgramAuthorized: true
+  lot3_2ReadyForExplicitActivation: true
+  globalCodeGeneration: FORBIDDEN_PENDING_EXTERNAL_APPROVALS
+  lot3_2IdentifiersValueObjectsImplemented: true
+  lot3_3ReadyForExplicitActivation: true
+  lot3_3SnapshotsFinancialEvidenceImplemented: true
+  lot3_4ReadyForExplicitActivation: true
+  lot3_4PoliciesDomainServicesImplemented: true
+  lot3_5ReadyForExplicitActivation: true
+  lot3_5AggregateRootDomainEventsImplemented: true
+  paymentDomainOnlyImplementationComplete: true
+  nextIncrementRequiresExplicitActivation: true
+  lot3_10FinalDomainKernelValidationImplemented: true
+  paymentDomainKernelValidated: true
+  lot5InvariantFormalizationImplemented: true
+  allInvariantStrategiesComplete: true
+  invariantResponsibilitySplitComplete: true
+  lot6EventsAuditOutboxImplemented: true
+  eventPublicationMatrixComplete: true
+  auditRecordSchemaComplete: true
+  outboxContractComplete: true
+  domainToIntegrationMappingPolicyComplete: true
+  stableArchitectureAndManifestValidationImplemented: true
+  lot8TestPlanTraceabilityImplemented: true
+  allInvariantScenariosNamed: true
+  allTransitionScenariosNamed: true
+  traceabilityValidationTestImplemented: true
+  lot9BriefConsolidationImplemented: true
+  briefTwentySectionsComplete: true
+  briefPlaceholderFree: true
+  requiredApprovalsRecorded: false
+  ia1GateStatus: IN_REVIEW
+implementationAuthorization:
+  id: PAY-AUTH-IA1-001
+  status: ACTIVE
+  authorizationBasis: USER_EXPLICIT_INSTRUCTION
+  authorizedAt: '2026-07-31'
+  scope: PAYMENT_DOMAIN_ONLY
+  globalCodeGenerationAllowed: false
+  currentIncrement: LOT_9_BRIEF_CONSOLIDATION
+  currentIncrementCodeGenerationAllowed: true
+  futureIncrementActivationRequired: true
+  programAllowedPaths:
+  - backend/payment/pom.xml
+  - backend/payment/*.md
+  - backend/payment/src/main/java/com/sixpay/payment/PaymentModule.java
+  - backend/payment/src/main/java/com/sixpay/payment/domain/**
+  - backend/payment/src/test/java/com/sixpay/payment/domain/**
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/**
+  - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+  currentIncrementAllowedPaths:
+  - backend/payment/ACCEPTANCE-TRACEABILITY.md
+  - backend/payment/src/test/java/com/sixpay/payment/architecture/PaymentBriefValidationTest.java
+  - documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
+  - documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
+  - documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml
+  allowedChangeKinds:
+  - OFFICIAL_BRIEF_CONSOLIDATION
+  - TWENTY_SECTION_TEMPLATE_COMPLETION
+  - PLACEHOLDER_ELIMINATION
+  - GATE_EXIT_CRITERIA_VALIDATION
+  - APPROVAL_STATUS_RECORDING
+  - MANIFEST_AND_ACCEPTANCE_SYNCHRONIZATION
+  forbiddenChangeKinds:
+  - DOMAIN_MODEL_SEMANTIC_CHANGE
+  - AUTOMATIC_GATE_APPROVAL
+  - APPROVAL_FABRICATION
+  - APPLICATION_OR_INFRASTRUCTURE_GENERATION
+  - DATABASE_SCHEMA_OR_MIGRATION_GENERATION
+  - OPENAPI_MODIFICATION
+  - ADAPTER_OR_CONTROLLER_GENERATION
+  forbiddenProductionPaths:
+  - backend/payment/src/main/java/com/sixpay/payment/api/**
+  - backend/payment/src/main/java/com/sixpay/payment/application/**
+  - backend/payment/src/main/java/com/sixpay/payment/configuration/**
+  - backend/payment/src/main/java/com/sixpay/payment/events/**
+  - backend/payment/src/main/java/com/sixpay/payment/infrastructure/**
+  - backend/payment/src/main/resources/db/**
+  - backend/payment/src/main/resources/openapi/**
+  constraints:
+    javaVersion: 21
+    frameworkFreeDomain: true
+    anotherBusinessDomainDependencyAllowed: false
+    springDependencyAllowedInCurrentIncrement: false
+    databaseOrNetworkAccessAllowed: false
+    globalGenerationBlockersRemainApplicable: true
+    modelFreezeRemainsApplicable: true
+    implementedLocalTypeCount: 22
+    reusedPlatformTypes:
+    - com.sixpay.common.context.CorrelationId
+    - com.sixpay.sharedkernel.domain.valueobject.Money
+    - com.sixpay.sharedkernel.domain.valueobject.ValueObject
+    snapshotsDeferred: false
+    aggregateRootDeferred: false
+    implementedSnapshotCount: 7
+    snapshotSupportPackage: com.sixpay.payment.domain.model.evidence
+    policiesDeferred: false
+    domainEventsDeferred: false
+    systemClockAccessAllowed: false
+    ioAllowed: false
+    implementedPolicyCount: 14
+    implementedPolicyProfileCount: 12
+    implementedDomainServiceCount: 4
+    decisionResultOnly: true
+    aggregateMutationAllowed: true
+    eventRegistrationAllowed: true
+    repositoryAccessAllowed: false
+    externalClientAccessAllowed: false
+    aggregateRootImplemented: true
+    immutablePaymentStateImplemented: true
+    aggregateOperationCount: 17
+    paymentStateCount: 17
+    legalTransitionCount: 38
+    domainEventCount: 33
+    terminalStateCount: 4
+    aggregateOwnsMutation: true
+    aggregateOwnsEventRegistration: true
+    oneVersionIncrementPerSuccessfulMutation: true
+    eventSequenceOneBasedPerMutation: true
+    reconstitutionCreatesEvents: false
+    noOpCreatesEvents: false
+    invalidTransitionCreatesEvents: false
+    invariantCount: 76
+    policyCount: 14
+    domainServiceCount: 4
+    finalKernelValidationImplemented: true
+    payIdentifierTraceabilityRequired: true
+    formalizedInvariantCount: 76
+    initialRecommendedInvariantCount: 22
+    initialRecommendedInvariantCoverageComplete: true
+    stableErrorCodeRequired: true
+    checkMomentRequired: true
+    proofProviderRequired: true
+    aggregateMethodMappingRequired: true
+    testTraceabilityRequired: true
+    auditImpactRequired: true
+    persistenceOrIntegrationConstraintRequired: true
+    domainBehaviorModified: false
+    formalizedEventCount: 33
+    auditRequiredForEveryDomainEvent: true
+    transactionalOutboxRequiredForPublishableEvents: true
+    directKafkaFromAggregateAllowed: false
+    directDomainEventPublicationAllowed: false
+    explicitIntegrationEventMappingRequired: true
+    eventDeduplicationKey: eventId
+    eventOrdering: aggregateVersion,eventSequence
+    outboxDeliveryGuarantee: AT_LEAST_ONCE
+    kafkaFailureRollsBackPayment: false
+    kafkaFailureReplaysFinancialOperation: false
+    testTraceabilityInvariantCount: 76
+    testTraceabilityTransitionCount: 38
+    everyInvariantHasNamedScenario: true
+    everyTransitionHasNamedScenario: true
+    futureTestsMarkedAsFuture: true
+    architectureTestUsesRecordComponentInspection: true
+    briefRequiredSectionCount: 20
+    briefActualSectionCount: 20
+    briefPlaceholderCount: 0
+    briefStatus: IN_REVIEW
+    productApprovalRecorded: false
+    architectureApprovalRecorded: false
+    engineeringApprovalRecorded: false
+    ia1GateApproved: false
+implementationDecisions:
+- id: PAY-DEC-IA1-071
+  decision: USER_AUTHORIZES_PAYMENT_DOMAIN_ONLY_IMPLEMENTATION_WITH_GLOBAL_GENERATION_REMAINING_DISABLED
+- id: PAY-DEC-IA1-072
+  decision: LOT_3_1_ADDS_ONLY_COMMON_SHARED_KERNEL_AND_JUNIT_DEPENDENCIES
+- id: PAY-DEC-IA1-073
+  decision: PAYMENT_MODULE_IS_A_NON_EXECUTABLE_FRAMEWORK_FREE_DOMAIN_LIBRARY
+- id: PAY-DEC-IA1-074
+  decision: LOT_3_1_CREATES_NO_APPLICATION_API_PERSISTENCE_MESSAGING_OR_EXTERNAL_ADAPTER_CODE
+- id: PAY-DEC-IA1-075
+  decision: ARCHITECTURE_TESTS_ENFORCE_THE_ACTIVE_DOMAIN_ONLY_AUTHORIZATION
+- id: PAY-DEC-IA1-076
+  decision: LOT_3_2_ACTIVATES_ONLY_BASE_IDENTIFIERS_VALUE_OBJECTS_AND_CLOSED_CLASSIFICATIONS
+- id: PAY-DEC-IA1-077
+  decision: PAYMENT_REUSES_COMMON_CORRELATION_ID_WITH_CANONICAL_UUID_VALIDATION_IN_PAYMENT_REQUEST_IDENTITY
+- id: PAY-DEC-IA1-078
+  decision: PROTECTED_ACCOUNT_REFERENCES_USE_EXPLICIT_CLASSES_AND_MASKED_STRING_REPRESENTATION
+- id: PAY-DEC-IA1-079
+  decision: TREASURY_ALLOCATION_INTENT_CANONICALIZES_ORDER_AND_ENFORCES_EXACT_TOTAL
+- id: PAY-DEC-IA1-080
+  decision: SNAPSHOT_COMMAND_INSTRUCTION_EVENT_AND_AGGREGATE_TYPES_REMAIN_DEFERRED
+- id: PAY-DEC-IA1-081
+  decision: LOT_3_3_IMPLEMENT_SEVEN_IMMUTABLE_MINIMIZED_EVIDENCE_SNAPSHOTS
+- id: PAY-DEC-IA1-082
+  decision: SNAPSHOT_CONSTRUCTORS_ENFORCE_STRUCTURE_WHILE_CONTEXTUAL_ACCEPTANCE_REMAINS_POLICY_OWNED
+- id: PAY-DEC-IA1-083
+  decision: POSTING_AND_REVERSAL_SUPPORT_IDENTITIES_ARE_IMPLEMENTED_WITHOUT_FULL_AUTHORIZATION_COMPOSITES
+- id: PAY-DEC-IA1-084
+  decision: FULL_SNAPSHOT_STRING_REPRESENTATIONS_EXCLUDE_PROTECTED_TOKENS_AND_BINDING_FINGERPRINTS
+- id: PAY-DEC-IA1-085
+  decision: PAYMENT_STATE_AGGREGATE_POLICIES_SERVICES_AND_EVENTS_REMAIN_DEFERRED
+- id: PAY-DEC-IA1-086
+  decision: LOT_3_4_IMPLEMENT_FOURTEEN_PURE_PAYMENT_POLICIES_AND_TWELVE_INJECTED_PROFILES
+- id: PAY-DEC-IA1-087
+  decision: FOUR_DOMAIN_SERVICES_COMPOSE_TYPED_DECISIONS_WITHOUT_MUTATION_EVENT_OR_IO
+- id: PAY-DEC-IA1-088
+  decision: PAYMENT_EVENT_DISCLOSURE_POLICY_REMAINS_PURE_AND_DOMAIN_ONLY_UNTIL_APPLICATION_OUTBOX_MAPPING_IS_AUTHORIZED
+- id: PAY-DEC-IA1-089
+  decision: ALL_TIME_AND_CONFIGURATION_ARE_EXPLICIT_INPUTS_NO_DEFAULT_BANK_VALUES_OR_SYSTEM_CLOCK_READS
+- id: PAY-DEC-IA1-090
+  decision: PAYMENT_AGGREGATE_ROOT_AND_DOMAIN_EVENTS_REMAIN_DEFERRED_TO_EXPLICIT_NEXT_INCREMENT
+- id: PAY-DEC-IA1-091
+  decision: LOT_3_5_IMPLEMENT_PAYMENT_AS_THE_SOLE_STATE_TRANSITION_VERSION_AND_EVENT_OWNER
+- id: PAY-DEC-IA1-092
+  decision: PAYMENT_MUTATIONS_PREPARE_AN_IMMUTABLE_NEXT_STATE_AND_COMPLETE_EVENT_BATCH_BEFORE_ATOMIC_COMMIT
+- id: PAY-DEC-IA1-093
+  decision: THIRTY_THREE_EXPLICIT_SAFE_DOMAIN_EVENT_RECORDS_IMPLEMENT_THE_FROZEN_EVENT_CATALOGUE
+- id: PAY-DEC-IA1-094
+  decision: ALL_EVENTS_FROM_ONE_MUTATION_SHARE_RESULTING_VERSION_AND_USE_ONE_BASED_SEQUENCE
+- id: PAY-DEC-IA1-095
+  decision: RECONSTITUTION_NO_OP_REPLAY_CONFLICT_AND_INVALID_TRANSITION_ARE_EVENTLESS_AND_VERSIONLESS
+- id: PAY-DEC-IA1-096
+  decision: LOT_3_10_VALIDATES_THE_EXISTING_DOMAIN_KERNEL_WITHOUT_DUPLICATING_DOMAIN_BEHAVIOR
+- id: PAY-DEC-IA1-097
+  decision: PAYMENT_DOMAIN_EXCEPTION_RESIDES_IN_THE_CANONICAL_DOMAIN_EXCEPTION_PACKAGE
+- id: PAY-DEC-IA1-098
+  decision: SEVENTEEN_STATES_SEVENTEEN_OPERATIONS_THIRTY_EIGHT_TRANSITIONS_SEVENTY_SIX_INVARIANTS_AND_THIRTY_THREE_EVENTS_ARE_MACHINE_TRACEABLE
+- id: PAY-DEC-IA1-113
+  decision: ARCHITECTURE_TESTS_VALIDATE_STABLE_CODE_BOUNDARIES_WITHOUT_HARD_CODING_THE_ACTIVE_INCREMENT
+- id: PAY-DEC-IA1-114
+  decision: MANIFEST_TESTS_PARSE_YAML_AND_VALIDATE_GENERIC_AUTHORIZATION_COUNTS_READINESS_AND_FREEZE
+- id: PAY-DEC-IA1-115
+  decision: IMPLEMENTED_DOMAIN_CAPABILITIES_ARE_NOT_MARKED_DEFERRED

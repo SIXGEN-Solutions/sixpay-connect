@@ -1,0 +1,20 @@
+# Hybrid Local + OIDC capability profile.
+# DA-3 provides Local credentials and cookie-backed session handling.
+# DA-4 owns browser/provider OIDC composition.
+# DA-8 owns final active-session arbitration.
+
+spring:
+  config:
+    activate:
+      on-profile: hybrid-auth
+    import:
+      - classpath:config/security/local-auth-common.yml
+      - classpath:config/security/oidc-common.yml
+
+sixpay:
+  security:
+    authentication:
+      local:
+        enabled: true
+      oidc:
+        enabled: true

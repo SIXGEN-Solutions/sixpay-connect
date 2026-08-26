@@ -1,0 +1,18 @@
+# Propriétaire par défaut du repository.
+# Remplacer ou compléter ces règles avec des équipes GitHub
+# (par exemple @SIXGEN-Solutions/backend) dès leur création.
+* @toukam-rodrigue
+
+# Gouvernance et automatisation
+/.github/ @toukam-rodrigue
+
+# Backend
+/backend/ @toukam-rodrigue
+
+# Frontend
+/frontend/ @toukam-rodrigue
+
+# Architecture, exploitation et outillage
+/documentation/ @toukam-rodrigue
+/infrastructure/ @toukam-rodrigue
+/scripts/ @toukam-rodrigue

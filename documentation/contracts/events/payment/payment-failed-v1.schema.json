@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:event:payment.failed.v1",
+  "title": "PaymentFailedV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentId",
+    "publicPaymentReference",
+    "failureCode",
+    "finalStatus",
+    "failedAt"
+  ],
+  "properties": {
+    "paymentId": {
+      "type": "string"
+    },
+    "publicPaymentReference": {
+      "type": "string"
+    },
+    "failureCode": {
+      "type": "string"
+    },
+    "finalStatus": {
+      "type": "string"
+    },
+    "failedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

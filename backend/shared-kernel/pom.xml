@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ========================================================= -->
+    <!-- PARENT                                                    -->
+    <!-- ========================================================= -->
+
+    <parent>
+        <groupId>com.sixpay</groupId>
+        <artifactId>sixpay-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <!-- ========================================================= -->
+    <!-- MODULE IDENTIFICATION                                     -->
+    <!-- ========================================================= -->
+
+    <artifactId>shared-kernel</artifactId>
+    <packaging>jar</packaging>
+
+    <name>SIXPAY CONNECT - Shared Kernel</name>
+
+    <description>
+        Shared domain primitives and Domain-Driven Design building
+        blocks for SIXPAY CONNECT.
+    </description>
+
+    <!-- ========================================================= -->
+    <!-- DEPENDENCIES                                              -->
+    <!-- ========================================================= -->
+
+    <dependencies>
+
+        <!-- SIXPAY technical common components -->
+
+        <dependency>
+            <groupId>com.sixpay</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Unit testing -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

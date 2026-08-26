@@ -1,0 +1,198 @@
+package com.sixpay.payment.domain.model;
+
+import com.sixpay.payment.domain.exception.PaymentDomainException;
+
+import com.sixpay.payment.domain.event.*;
+import com.sixpay.payment.domain.model.evidence.AuthorizationEvidenceSnapshot;
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class PaymentPreFinancialLifecycleTest {
+
+    @Test
+    void favorableEvidenceProgressesToApprovedForPosting() {
+        Payment payment = PaymentAggregateTestFixtures.approvedPayment();
+
+        assertEquals(
+                PaymentStatus.APPROVED_FOR_POSTING,
+                payment.status()
+        );
+        assertEquals(6L, payment.businessVersion());
+        assertEquals(10, payment.domainEvents().size());
+
+        List<PaymentDomainEvent> lastMutation =
+                payment.domainEvents().subList(8, 10);
+
+        assertTrue(
+                lastMutation.get(0)
+                        instanceof PaymentTreasuryAccountResolutionRecorded
+        );
+        assertTrue(
+                lastMutation.get(1)
+                        instanceof PaymentApprovedForPosting
+        );
+        assertEquals(6L, lastMutation.get(0).aggregateVersion());
+        assertEquals(6L, lastMutation.get(1).aggregateVersion());
+        assertEquals(1, lastMutation.get(0).eventSequence());
+        assertEquals(2, lastMutation.get(1).eventSequence());
+    }
+
+    @Test
+    void identicalAuthorizationReplayIsStrictNoOp() {
+        Payment payment = PaymentAggregateTestFixtures.newPayment();
+        payment.startAuthorizationChecking(
+                PaymentAggregateTestFixtures.T0.plusSeconds(1)
+        );
+        AuthorizationEvidenceSnapshot evidence =
+                PaymentAggregateTestFixtures.authorizationApproved("3");
+
+        payment.recordAuthorizationDecision(
+                evidence,
+                null,
+                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.profiles()
+        );
+
+        long version = payment.businessVersion();
+        int eventCount = payment.domainEvents().size();
+
+        payment.recordAuthorizationDecision(
+                PaymentAggregateTestFixtures
+                        .authorizationApproved("3"),
+                null,
+                PaymentAggregateTestFixtures.T0.plusSeconds(3),
+                PaymentAggregateTestFixtures.profiles()
+        );
+
+        assertEquals(version, payment.businessVersion());
+        assertEquals(eventCount, payment.domainEvents().size());
+    }
+
+    @Test
+    void conflictingAuthorizationLeavesAggregateUntouched() {
+        Payment payment = PaymentAggregateTestFixtures.newPayment();
+        payment.startAuthorizationChecking(
+                PaymentAggregateTestFixtures.T0.plusSeconds(1)
+        );
+        payment.recordAuthorizationDecision(
+                PaymentAggregateTestFixtures
+                        .authorizationApproved("3"),
+                null,
+                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.profiles()
+        );
+
+        PaymentState before = payment.toState();
+        int eventCount = payment.domainEvents().size();
+
+        assertThrows(
+                PaymentDomainException.class,
+                () -> payment.recordAuthorizationDecision(
+                        PaymentAggregateTestFixtures
+                                .authorizationApproved("9"),
+                        null,
+                        PaymentAggregateTestFixtures.T0
+                                .plusSeconds(3),
+                        PaymentAggregateTestFixtures.profiles()
+                )
+        );
+
+        assertEquals(before, payment.toState());
+        assertEquals(eventCount, payment.domainEvents().size());
+    }
+
+    @Test
+    void conclusiveRejectionIsTerminalAndProducesResultIntent() {
+        Payment payment = PaymentAggregateTestFixtures.newPayment();
+        PaymentFailure rejection =
+                PaymentAggregateTestFixtures.businessFailure(
+                        "INVALID_REQUEST",
+                        FailureStage.INTAKE,
+                        PaymentAggregateTestFixtures.T0.plusSeconds(1)
+                );
+
+        payment.reject(
+                rejection,
+                PaymentAggregateTestFixtures.T0.plusSeconds(1),
+                PaymentAggregateTestFixtures.profiles()
+        );
+
+        assertEquals(PaymentStatus.REJECTED, payment.status());
+        assertEquals(2L, payment.businessVersion());
+        assertTrue(payment.toState().finalizedAt().isPresent());
+
+        List<PaymentDomainEvent> events =
+                payment.domainEvents().subList(1, 3);
+        assertTrue(events.get(0) instanceof PaymentRejected);
+        assertTrue(
+                events.get(1)
+                        instanceof PaymentImmediateResultAvailable
+        );
+    }
+
+    @Test
+    void recoverableFailureKeepsConcreteStateAndIncrementsOnce() {
+        Payment payment = PaymentAggregateTestFixtures.newPayment();
+        payment.startAuthorizationChecking(
+                PaymentAggregateTestFixtures.T0.plusSeconds(1)
+        );
+
+        PaymentFailure failure =
+                PaymentAggregateTestFixtures.technicalFailure(
+                        "JWKS_TEMPORARILY_UNAVAILABLE",
+                        FailureStage.AUTHORIZATION,
+                        PaymentAggregateTestFixtures.T0.plusSeconds(2)
+                );
+
+        payment.recordRecoverableFailure(
+                failure,
+                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.profiles()
+        );
+
+        assertEquals(
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                payment.status()
+        );
+        assertEquals(3L, payment.businessVersion());
+
+        List<PaymentDomainEvent> events =
+                payment.domainEvents().subList(
+                        payment.domainEvents().size() - 2,
+                        payment.domainEvents().size()
+                );
+        assertTrue(events.get(0) instanceof PaymentProcessingDeferred);
+        assertTrue(
+                events.get(1)
+                        instanceof PaymentImmediateResultAvailable
+        );
+    }
+
+    @Test
+    void invalidTransitionCreatesNoMutationOrEvent() {
+        Payment payment = PaymentAggregateTestFixtures.newPayment();
+        PaymentState before = payment.toState();
+        int eventCount = payment.domainEvents().size();
+
+        assertThrows(
+                PaymentDomainException.class,
+                () -> payment.recordFundsControl(
+                        PaymentAggregateTestFixtures
+                                .fundsVerified("5"),
+                        null,
+                        PaymentAggregateTestFixtures.T0
+                                .plusSeconds(2),
+                        PaymentAggregateTestFixtures.profiles()
+                )
+        );
+
+        assertEquals(before, payment.toState());
+        assertEquals(eventCount, payment.domainEvents().size());
+    }
+}

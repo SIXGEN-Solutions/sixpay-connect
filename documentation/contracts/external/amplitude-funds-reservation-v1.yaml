@@ -1,0 +1,54 @@
+contract: amplitude-funds-reservation
+version: provisional-v1
+status: SANDBOX_BASELINE_PENDING_PROVIDER_APPROVAL
+owner:
+  provider: Core Banking / Amplitude
+  consumer: SIXPAY Payment
+operation:
+  method: POST
+  path: /v1/payment/funds/reservations
+  financialSideEffect: true
+security:
+  oauth2:
+    grantType: client_credentials
+    registrationId: amplitude-payment
+    scope: funds.reserve
+    audience: TO_CONFIRM
+  mtls:
+    required: true
+headers:
+  required:
+    - Authorization
+    - X-Correlation-ID
+    - X-Request-ID
+    - Idempotency-Key
+idempotency:
+  required: true
+  keyOwner: SIXPAY Payment
+  retention: TO_CONFIRM
+  sameKeyDifferentPayload: MUST_REJECT
+outcomes:
+  RESERVED:
+    required:
+      - reservationReference
+      - reservedAmount
+      - currency
+      - accountBindingFingerprint
+      - observedAt
+      - expiresAt
+  REJECTED:
+    required:
+      - reasonCode
+unknownOutcome:
+  timeoutAfterEmission: UNKNOWN
+  http429Or5xx: UNKNOWN
+  automaticRetry: forbidden
+  resolution: lookup endpoint required in Lot 5.4.3
+functionalCodes:
+  reserved: ["00"]
+  rejected:
+    accountBlocked: "02"
+    accountOpposed: "03"
+    insufficientFunds: "04"
+    limitExceeded: "05"
+  note: provisional and configuration-backed

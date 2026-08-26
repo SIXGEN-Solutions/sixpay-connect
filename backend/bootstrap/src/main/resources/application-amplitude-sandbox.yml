@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: amplitude-sandbox
+    import:
+      - classpath:application-customer-banking.yml
+
+sixpay:
+  customer:
+    verification:
+      banking:
+        enabled: true

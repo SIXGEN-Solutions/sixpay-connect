@@ -1,0 +1,470 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Treasury Integration Webhook
+  version: 1.0.0
+  description: |
+    Dedicated at-least-once webhook for the end-of-day Treasury lifecycle.
+    It distinguishes immediate posting completion from Amplitude TFJ finality.
+
+    `PENDING_END_OF_DAY_CONFIRMATION` means debit and CUT credit are known but
+    TFJ finality is still pending. `TREASURY_INTEGRATED` is emitted only after
+    a successful Amplitude TFJ result is durably persisted and uniquely matched.
+    `TREASURY_INTEGRATION_FAILED` reports a matched adverse result; it is not an
+    instruction to execute a reversal.
+
+    Delivery failure never changes financial truth. Operational replay preserves
+    the immutable `eventId` and payload and never replays a bank operation.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryId: "tresorpay-treasury-integration-webhook-v1"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "TREASURY_INTEGRATION_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    deliverySemantics: "AT_LEAST_ONCE"
+    eventTypes:
+      - "PENDING_END_OF_DAY_CONFIRMATION"
+      - "TREASURY_INTEGRATED"
+      - "TREASURY_INTEGRATION_FAILED"
+    limitations:
+      - "NO_FINANCIAL_COMMAND"
+      - "NO_AUTOMATIC_REVERSAL"
+      - "NO_UNMATCHED_TFJ_NOTIFICATION"
+      - "NO_SUBSCRIPTION_LIFECYCLE_UPDATE"
+
+servers:
+  - url: https://tresorpay.example
+    description: Registered and allow-listed TRESOR PAY callback endpoint
+
+security:
+  - bearerAuth: []
+    subscriptionKey: []
+
+tags:
+  - name: Treasury integration
+    description: Idempotent end-of-day Treasury lifecycle notifications.
+
+paths:
+  /v1/callbacks/treasury-integration:
+    post:
+      tags: [Treasury integration]
+      operationId: receiveSixpayTreasuryIntegrationEvent
+      summary: Receive a SIXPAY Treasury integration event
+      description: |
+        TRESOR PAY validates credentials, timestamp freshness and the signature
+        over the raw body before parsing it. HTTP 204 means durable acceptance
+        or acceptance of the same eventId with an identical payload.
+
+        Delivery order is not guaranteed. `paymentVersion` is monotonic for one
+        Payment and stale events must not overwrite a newer projection.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/DeliveryId'
+        - $ref: '#/components/parameters/DeliveryAttempt'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureKeyId'
+        - $ref: '#/components/parameters/SignatureTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TreasuryIntegrationEvent'
+      responses:
+        '204':
+          description: Event durably accepted or identical event already processed
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/EventConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived service token issued for SIXPAY webhook delivery.
+    subscriptionKey:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: Must equal correlationId in the body.
+      schema:
+        type: string
+        format: uuid
+    EventId:
+      name: X-Webhook-Event-ID
+      in: header
+      required: true
+      description: Must equal immutable eventId in the body.
+      schema:
+        type: string
+        format: uuid
+    DeliveryId:
+      name: X-Webhook-Delivery-ID
+      in: header
+      required: true
+      description: Unique identifier for this transport attempt; changes on retry.
+      schema:
+        type: string
+        format: uuid
+    DeliveryAttempt:
+      name: X-Webhook-Delivery-Attempt
+      in: header
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    Signature:
+      name: X-SIXPAY-Signature
+      in: header
+      required: true
+      description: |
+        `v1=<base64url-signature>` where signature is HMAC-SHA256 over
+        `timestamp + "." + HTTP_METHOD + "." + request_target + "." +
+        base64url(SHA-256(raw_request_body))`.
+      schema:
+        type: string
+        pattern: '^v1=[A-Za-z0-9_-]{43}$'
+    SignatureKeyId:
+      name: X-SIXPAY-Signature-Key-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        pattern: '^[A-Za-z0-9._-]+$'
+    SignatureTimestamp:
+      name: X-SIXPAY-Signature-Timestamp
+      in: header
+      required: true
+      description: Unix epoch seconds accepted only within a five-minute window.
+      schema:
+        type: string
+        pattern: '^[0-9]{10}$'
+
+  headers:
+    CorrelationId:
+      required: true
+      description: End-to-end correlation identifier.
+      schema:
+        type: string
+        format: uuid
+    RetryAfter:
+      description: Delay in seconds before the next delivery attempt.
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    TreasuryIntegrationEvent:
+      oneOf:
+        - $ref: '#/components/schemas/PendingEndOfDayConfirmationEvent'
+        - $ref: '#/components/schemas/TreasuryIntegratedEvent'
+        - $ref: '#/components/schemas/TreasuryIntegrationFailedEvent'
+      discriminator:
+        propertyName: eventType
+        mapping:
+          PENDING_END_OF_DAY_CONFIRMATION: '#/components/schemas/PendingEndOfDayConfirmationEvent'
+          TREASURY_INTEGRATED: '#/components/schemas/TreasuryIntegratedEvent'
+          TREASURY_INTEGRATION_FAILED: '#/components/schemas/TreasuryIntegrationFailedEvent'
+
+    EventEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - schemaVersion
+        - eventId
+        - eventType
+        - occurredAt
+        - correlationId
+        - paymentId
+        - paymentReference
+        - tresorPayRequestId
+        - paymentVersion
+        - data
+      properties:
+        schemaVersion:
+          type: string
+          const: "1.0"
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        correlationId:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        paymentReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9._:/-]+$'
+        tresorPayRequestId:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9._:/-]+$'
+        paymentVersion:
+          type: integer
+          minimum: 1
+        data:
+          type: object
+
+    PendingEndOfDayConfirmationEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            eventType:
+              const: PENDING_END_OF_DAY_CONFIRMATION
+            data:
+              $ref: '#/components/schemas/PendingData'
+
+    TreasuryIntegratedEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            eventType:
+              const: TREASURY_INTEGRATED
+            data:
+              $ref: '#/components/schemas/IntegratedData'
+
+    TreasuryIntegrationFailedEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            eventType:
+              const: TREASURY_INTEGRATION_FAILED
+            data:
+              $ref: '#/components/schemas/FailedData'
+
+    PendingData:
+      type: object
+      additionalProperties: false
+      required:
+        - financialInstitutionCode
+        - businessDate
+        - bankPostingReference
+        - pendingSince
+      properties:
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        businessDate:
+          type: string
+          format: date
+        bankPostingReference:
+          $ref: '#/components/schemas/BankPostingReference'
+        pendingSince:
+          type: string
+          format: date-time
+        expectedCutoffAt:
+          type: string
+          format: date-time
+
+    IntegratedData:
+      type: object
+      additionalProperties: false
+      required:
+        - financialInstitutionCode
+        - businessDate
+        - bankPostingReference
+        - tfjConfirmationId
+        - integratedAt
+      properties:
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        businessDate:
+          type: string
+          format: date
+        bankPostingReference:
+          $ref: '#/components/schemas/BankPostingReference'
+        tfjConfirmationId:
+          type: string
+          format: uuid
+        tfjBatchReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9._:/-]+$'
+        integratedAt:
+          type: string
+          format: date-time
+
+    FailedData:
+      type: object
+      additionalProperties: false
+      required:
+        - financialInstitutionCode
+        - businessDate
+        - bankPostingReference
+        - tfjConfirmationId
+        - failureCode
+        - failureDescription
+        - recoveryAction
+        - failedAt
+      properties:
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        businessDate:
+          type: string
+          format: date
+        bankPostingReference:
+          $ref: '#/components/schemas/BankPostingReference'
+        tfjConfirmationId:
+          type: string
+          format: uuid
+        failureCode:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: '^[A-Z0-9_]+$'
+        failureDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+        recoveryAction:
+          type: string
+          enum:
+            - MANUAL_RECONCILIATION
+            - REVERSAL_REVIEW
+            - REVERSAL_REQUIRED
+        failedAt:
+          type: string
+          format: date-time
+
+    FinancialInstitutionCode:
+      type: string
+      minLength: 2
+      maxLength: 35
+      pattern: '^[A-Z0-9._-]+$'
+
+    BankPostingReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: '^[A-Za-z0-9._:/-]+$'
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Caller is authenticated but not authorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    EventConflict:
+      description: Same eventId was already accepted with a different payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid event
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit reached
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Internal receiver failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: Receiver temporarily unavailable
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+

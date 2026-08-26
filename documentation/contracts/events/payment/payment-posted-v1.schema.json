@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:event:payment.posted.v1",
+  "title": "PaymentPostedV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentId",
+    "publicPaymentReference",
+    "partnerId",
+    "financialInstitutionCode",
+    "amount",
+    "currency",
+    "postingOutcome",
+    "postedAt"
+  ],
+  "properties": {
+    "paymentId": {
+      "type": "string"
+    },
+    "publicPaymentReference": {
+      "type": "string"
+    },
+    "partnerId": {
+      "type": "string"
+    },
+    "financialInstitutionCode": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "postingOutcome": {
+      "type": "string"
+    },
+    "bankPostingReference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "businessDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "postedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

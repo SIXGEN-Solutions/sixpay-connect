@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: sixpay
+
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: sixpay
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    schemas: sixpay
+    default-schema: sixpay
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+
+sixpay:
+  messaging:
+    transport: internal
+    outbox:
+      enabled: true
+      batch-size: 100
+      polling-delay: 1h
+
+  notification:
+    retry:
+      enabled: false
+
+  security:
+    mode: standalone

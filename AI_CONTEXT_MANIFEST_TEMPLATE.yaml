@@ -1,0 +1,145 @@
+schemaVersion: "1.0"
+
+generation:
+  id: "<domain>-<capability>-v<version>"
+  strategyVersion: "1.0.0"
+  masterPrompt:
+    version: "2.0.0"
+    path: "MASTER_ENGINEERING_PROMPT.md"
+  autonomyLevel: "A|B|C|D"
+  status: "DRAFT|APPROVED|RUNNING|COMPLETED|BLOCKED"
+
+repository:
+  url: "https://github.com/SIXGEN-Solutions/sixpay-connect.git"
+  branch: "<generation-branch>"
+  baseCommit: "<full-sha>"
+  worktreeCleanAtStart: true
+
+brief:
+  path: "<path-to-approved-domain-brief.md>"
+  version: "<semver>"
+  status: "APPROVED"
+  approvalReference: "<review-or-ticket-reference>"
+
+scope:
+  domain: "<domain>"
+  capability: "<capability>"
+  useCases:
+    - "<use-case-id>"
+  included:
+    - "<deliverable>"
+  excluded:
+    - "<explicit-non-goal>"
+  allowedPaths:
+    - "backend/<domain>/**"
+  forbiddenPaths:
+    - "backend/partner/**"
+
+authorities:
+  - priority: 1
+    id: "volumes-1-to-6"
+    path: "<repository-path-or-controlled-reference>"
+    version: "<version-or-revision>"
+    required: true
+    applicableSections:
+      - "<section>"
+  - priority: 4
+    id: "backend-generation-contract"
+    path: "backend/SIXPAY_BACKEND_ENGINEERING_GENERATION_CONTRACT.md"
+    version: "<git-blob-sha-or-commit>"
+    required: true
+    applicableSections:
+      - "all"
+
+contracts:
+  openapi:
+    - path: "<openapi-path>"
+      version: "<api-version>"
+      operations:
+        - "<operationId>"
+      approved: true
+  events:
+    - path: "<event-contract-path>"
+      name: "<event-name>"
+      version: "<event-version>"
+      approved: true
+  migrations:
+    - path: "<flyway-migration-path-or-none>"
+      destructive: false
+      approved: true
+
+dependencies:
+  allowedModules:
+    - "common"
+    - "shared-kernel"
+  forbiddenModules:
+    - "<forbidden-direct-domain-dependency>"
+  newLibraries:
+    - name: "<none-or-library>"
+      justification: "<not-applicable-or-approved-justification>"
+      approvalReference: "<not-applicable-or-reference>"
+
+security:
+  roleMatrixPath: "<role-matrix-path>"
+  dataClassification: "PUBLIC|INTERNAL|CONFIDENTIAL|RESTRICTED"
+  productionDataAllowed: false
+  secretsAllowed: false
+  objectAuthorizationRequired: true
+  securityApprovalReference: "<reference-or-not-required>"
+
+decisions:
+  resolved:
+    - id: "<decision-id>"
+      outcome: "<approved-outcome>"
+      reference: "<approval-reference>"
+  pending: []
+
+validation:
+  backend:
+    targeted:
+      - "mvn --batch-mode --no-transfer-progress verify -pl <domain> -am"
+    global:
+      - "mvn --batch-mode --no-transfer-progress verify"
+  frontend:
+    targeted:
+      - "npm run test -- --run <target>"
+    global:
+      - "npm run lint"
+      - "npm run test:coverage"
+      - "npm run build"
+      - "npm run test:e2e"
+  contracts:
+    - "<contract-validation-command>"
+  security:
+    - "<dependency-or-security-analysis-command>"
+  requiredCiChecks:
+    - "Backend CI"
+    - "Frontend CI"
+
+outputs:
+  generationReport: "<reports>/<generation-id>-report.md"
+  evidenceDirectory: "<reports>/<generation-id>/"
+  expectedArtifacts:
+    - "<artifact>"
+
+approvals:
+  product:
+    status: "APPROVED"
+    reference: "<reference>"
+  architecture:
+    status: "APPROVED"
+    reference: "<reference>"
+  engineering:
+    status: "APPROVED"
+    reference: "<reference>"
+  security:
+    status: "APPROVED|NOT_REQUIRED"
+    reference: "<reference-or-not-required>"
+
+risks:
+  destructiveMigration: false
+  publicContractChange: false
+  architectureDeviation: false
+  unresolvedSecurityDecision: false
+  notes:
+    - "<known-risk-or-none>"

@@ -1,0 +1,17 @@
+<nav aria-label="Navigation principale">
+  <mat-nav-list>
+    @for (item of navigation.items(); track item.route) {
+      <a
+        mat-list-item
+        [routerLink]="item.route"
+        routerLinkActive="sp-sidebar__link--active"
+        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+      >
+        <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+      </a>
+    }
+  </mat-nav-list>
+
+  <sp-role-simulator />
+</nav>

@@ -1,0 +1,17 @@
+.sp-audit-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-space-3);
+}
+
+.sp-audit-filter__error {
+  color: var(--sp-color-error);
+}
+
+@media (max-width: 768px) {
+  .sp-audit-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

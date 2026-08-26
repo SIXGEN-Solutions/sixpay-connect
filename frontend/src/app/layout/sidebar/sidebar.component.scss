@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  min-width: 15rem;
+}
+
+.sp-sidebar__link--active {
+  background: var(--sp-color-primary-container);
+}
+
+@media (max-width: 48rem) {
+  :host {
+    min-width: 4.5rem;
+  }
+
+  [matListItemTitle] {
+    display: none;
+  }
+}

@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: sixpay-payment-customer-test
+
+  flyway:
+    enabled: false
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: sixpay
+        jdbc:
+          time_zone: UTC
+
+sixpay:
+  customer:
+    observation:
+      persistence:
+        enabled: true
+        protection-key-base64: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+
+      query:
+        enabled: false
+
+      audit:
+        persistence:
+          enabled: false

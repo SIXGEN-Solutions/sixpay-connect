@@ -1,0 +1,681 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT Partner API
+  version: 1.1.0
+  description: Frozen HTTP contract for the Golden Partner module.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+tags:
+  - name: Partners
+
+paths:
+  /api/v1/partners:
+    get:
+      tags: [Partners]
+      operationId: listPartners
+      summary: List partners with page-based pagination
+      description: >-
+        Requires the partner.read authority. Internal ADMIN, MANAGER and AUDITOR
+        roles remain accepted by the implementation for backward-compatible RBAC.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Partner page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Partners]
+      operationId: createPartner
+      summary: Create a partner in pending validation status
+      parameters:
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePartnerRequest'
+      responses:
+        '201':
+          description: Partner created
+          headers:
+            Location:
+              description: URI of the created partner
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/v1/partners/{partnerId}:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+    get:
+      tags: [Partners]
+      operationId: getPartner
+      summary: Get the complete partner record
+      responses:
+        '200':
+          description: Partner found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/partners/{partnerId}/validation:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+    post:
+      tags: [Partners]
+      operationId: decidePartner
+      summary: Approve or reject a pending partner
+      parameters:
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerDecisionRequest'
+      responses:
+        '200':
+          description: Decision applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/v1/partners/{partnerId}/suspension:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+    post:
+      tags: [Partners]
+      operationId: suspendPartner
+      summary: Suspend an active partner
+      parameters:
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuspendPartnerRequest'
+      responses:
+        '200':
+          description: Partner suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/v1/partners/{partnerId}/reactivation:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+    post:
+      tags: [Partners]
+      operationId: reactivatePartner
+      summary: Reactivate a suspended partner
+      parameters:
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      responses:
+        '200':
+          description: Partner reactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/v1/partners/{partnerId}/validation-thresholds/{transactionType}:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+      - name: transactionType
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags: [Partners]
+      operationId: configurePartnerValidationThreshold
+      summary: Configure a validation threshold for a transaction type
+      parameters:
+        - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureValidationThresholdRequest'
+      responses:
+        '200':
+          description: Threshold configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/v1/partners/{partnerId}/status:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+    get:
+      tags: [Partners]
+      operationId: getPartnerStatus
+      summary: Get current partner connection eligibility status
+      responses:
+        '200':
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/partners/{partnerId}/audit:
+    parameters:
+      - $ref: '#/components/parameters/PartnerId'
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+    get:
+      tags: [Partners]
+      operationId: getPartnerAuditTrail
+      summary: Query the immutable audit trail over a period
+      responses:
+        '200':
+          description: Audit page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerAuditPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PartnerId:
+      name: partnerId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OptionalCorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 150
+    RequiredIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 150
+
+  responses:
+    BadRequest:
+      description: Missing, malformed or invalid request data
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication is required
+    Forbidden:
+      description: The authenticated principal is not authorized
+    NotFound:
+      description: Partner not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Duplicate or concurrent operation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Partner business rule rejected the operation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    CreatePartnerRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - legalName
+        - technicalContactName
+        - technicalContactEmail
+        - authorizedTransactionTypes
+      properties:
+        legalName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        technicalContactName:
+          type: string
+          minLength: 1
+          maxLength: 150
+        technicalContactEmail:
+          type: string
+          format: email
+          maxLength: 254
+        authorizedTransactionTypes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+
+    PartnerDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVE, REJECT]
+        reason:
+          type: [string, 'null']
+          maxLength: 500
+
+    SuspendPartnerRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+    ConfigureValidationThresholdRequest:
+      type: object
+      additionalProperties: false
+      required: [currency, amount, validationLevels]
+      properties:
+        currency:
+          type: string
+          pattern: '^[A-Za-z]{3}$'
+        amount:
+          type: number
+          minimum: 0.0001
+        validationLevels:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    PartnerPageResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerSummaryResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+
+    PartnerSummaryResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - legalName
+        - technicalContactName
+        - technicalContactEmail
+        - authorizedTransactionTypes
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        legalName:
+          type: string
+        technicalContactName:
+          type: string
+        technicalContactEmail:
+          type: string
+          format: email
+        authorizedTransactionTypes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PartnerResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - legalName
+        - technicalContactName
+        - technicalContactEmail
+        - authorizedTransactionTypes
+        - status
+        - validationThresholds
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        legalName:
+          type: string
+        technicalContactName:
+          type: string
+        technicalContactEmail:
+          type: string
+          format: email
+        authorizedTransactionTypes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        statusReason:
+          type: [string, 'null']
+        validationThresholds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationThresholdResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ValidationThresholdResponse:
+      type: object
+      additionalProperties: false
+      required: [transactionType, currency, amount, validationLevels]
+      properties:
+        transactionType:
+          type: string
+        currency:
+          type: string
+        amount:
+          type: number
+        validationLevels:
+          type: integer
+
+    PartnerStatusResponse:
+      type: object
+      additionalProperties: false
+      required: [partnerId, status, connection, updatedAt]
+      properties:
+        partnerId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/PartnerStatus'
+        statusReason:
+          type: [string, 'null']
+        connection:
+          $ref: '#/components/schemas/PartnerConnectionInfoResponse'
+        updatedAt:
+          type: string
+          format: date-time
+
+    PartnerConnectionInfoResponse:
+      type: object
+      additionalProperties: false
+      required: [apiBasePath, supportedAuthenticationMethods, newTransactionsAllowed]
+      properties:
+        apiBasePath:
+          type: string
+        supportedAuthenticationMethods:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [MTLS, API_KEY]
+        newTransactionsAllowed:
+          type: boolean
+
+    PartnerAuditPageResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerAuditResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+
+    PartnerAuditResponse:
+      type: object
+      additionalProperties: false
+      required: [partnerId, action, result, actorId, correlationId, details, occurredAt]
+      properties:
+        partnerId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        result:
+          type: string
+        actorId:
+          type: string
+        correlationId:
+          type: string
+        details:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+
+    PartnerStatus:
+      type: string
+      enum:
+        - PENDING_VALIDATION
+        - ACTIVE
+        - REJECTED
+        - SUSPENDED
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: object
+          additionalProperties:
+            type: string

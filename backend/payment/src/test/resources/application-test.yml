@@ -1,0 +1,4 @@
+sixpay:
+  payment:
+    tresorpay:
+      enabled: false

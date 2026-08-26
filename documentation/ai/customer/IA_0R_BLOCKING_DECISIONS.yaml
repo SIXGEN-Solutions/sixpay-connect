@@ -1,0 +1,226 @@
+schemaVersion: "1.0"
+
+register:
+  id: "ia-0r-blocking-decisions"
+  gate: "IA-0R"
+  step: "0.3"
+  branch: "feat/customer-foundation-contract"
+  baseCommit: "ceb11c732f0c74927238863c37860256c8b200c4"
+  status: "CLOSED_FOR_PAYMENT_PREFLIGHT"
+  decisionDate: "2026-07-30"
+  scope:
+    - "payment"
+    - "observed-customer"
+    - "security"
+    - "reliability"
+    - "end-of-day-confirmation"
+
+statusModel:
+  DECIDED: "Normative architecture decision applicable to the MVP."
+  DEFERRED_NON_BLOCKING: "Value or enhancement may be supplied later without changing the MVP architecture."
+  EXTERNAL_APPROVAL_REQUIRED: "Formal approval remains required at the applicable gate."
+
+decisions:
+  - id: "IA0R-D01"
+    subject: "ObservedCustomer stable identity"
+    status: "DECIDED"
+    decision:
+      technicalIdentifier: "UUID"
+      authoritativeMatchingKey: "FINANCIAL_INSTITUTION_CODE_PLUS_BANK_CUSTOMER_REFERENCE"
+      niuRole: "MATCHING_ATTRIBUTE_NOT_IDENTIFIER"
+      provisionalObservation:
+        allowed: true
+        condition: "Bank customer reference is not yet available."
+        key: "SOURCE_SYSTEM_PLUS_EXTERNAL_PAYMENT_REQUEST_ID"
+      consolidation:
+        automatic: false
+        rule: "Consolidate only after a fresh Amplitude verification returns the same bank customer reference."
+      niuChange:
+        effect: "Update the observed attribute and preserve its history; never change ObservedCustomerId."
+    rationale:
+      - "NIU can be absent, corrected or duplicated across imperfect source data."
+      - "A technical identity must remain stable across observations."
+
+  - id: "IA0R-D02"
+    subject: "Cross-institution reconciliation"
+    status: "DECIDED"
+    decision:
+      automaticMergeAcrossInstitutions: false
+      defaultRule: "Maintain one ObservedCustomer per financial institution and bank customer reference."
+      crossInstitutionView: "Search-time correlation by normalized NIU with an explicit non-authoritative indicator."
+      manualMerge: false
+    rationale:
+      - "SIXPAY is not the customer master."
+      - "The same NIU can be associated with distinct banking identities and accounts."
+
+  - id: "IA0R-D03"
+    subject: "Access matrix and data exposure"
+    status: "DECIDED"
+    decision:
+      accountIdentifiersInUi: "MASKED"
+      tokensAndSubscriptionKeys: "NEVER_PERSISTED_OR_DISPLAYED"
+      roles:
+        OPS:
+          permissions:
+            - "SEARCH_OBSERVED_CUSTOMER"
+            - "VIEW_MASKED_PAYMENT_SUMMARY"
+            - "VIEW_OPERATIONAL_FAILURE_REASON"
+          export: false
+        MANAGER:
+          permissions:
+            - "OPS_PERMISSIONS"
+            - "VIEW_PAYMENT_TIMELINE"
+            - "VIEW_TFJ_STATUS"
+            - "EXPORT_MASKED_OPERATIONAL_REPORT"
+          export: true
+        AUDITOR:
+          permissions:
+            - "READ_IMMUTABLE_AUDIT_TRAIL"
+            - "VIEW_MASKED_CORRELATION_DATA"
+          export: "CONTROLLED_AND_AUDITED"
+        ADMIN:
+          permissions:
+            - "MANAGE_TECHNICAL_CONFIGURATION"
+          businessDataAccess: false
+      audit:
+        searches: true
+        detailViews: true
+        exports: true
+    rationale:
+      - "Least privilege separates business consultation from technical administration."
+
+  - id: "IA0R-D04"
+    subject: "Retention and deletion baseline"
+    status: "DECIDED"
+    decision:
+      paymentAndBusinessAudit:
+        retention: "10_YEARS_AFTER_FINAL_PAYMENT_STATE"
+      observedCustomer:
+        retention: "DERIVED_FROM_LATEST_RETAINED_PAYMENT"
+        deleteOrAnonymizeWhenNoPaymentRemains: true
+      idempotencyRecords:
+        retention: "13_MONTHS_AFTER_LAST_ATTEMPT"
+      outboxPayload:
+        retention: "90_DAYS_AFTER_TERMINAL_DELIVERY"
+      outboxDeliveryMetadata:
+        retention: "10_YEARS"
+      technicalLogs:
+        retention: "13_MONTHS"
+        sensitivePayloadAllowed: false
+      legalOverride:
+        allowed: true
+        rule: "A stricter applicable legal or bank policy overrides these architecture defaults."
+    rationale:
+      - "The baseline supports payment traceability while limiting operational payload retention."
+
+  - id: "IA0R-D05"
+    subject: "TRESOR PAY inbound authentication"
+    status: "DECIDED"
+    decision:
+      mvpMandatory:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+      transport: "TLS"
+      oauth2: "DEFERRED_NON_BLOCKING"
+      mutualTls: "DEFERRED_NON_BLOCKING"
+      credentialStorage: "SECRETS_MANAGER_ONLY"
+      logging: "CREDENTIALS_MUST_BE_REDACTED"
+    rationale:
+      - "This matches the integration decision already provided for the MVP."
+      - "OAuth2 and mTLS can be introduced without changing the Payment domain."
+
+  - id: "IA0R-D06"
+    subject: "Timeout, retry, backoff and SLA"
+    status: "DECIDED"
+    decision:
+      contractValues: "CONFIGURABLE_AND_NON_NORMATIVE_UNTIL_BANK_APPROVAL"
+      baselineDefaults:
+        connectionTimeout: "2_SECONDS"
+        responseTimeout: "10_SECONDS"
+        overallOperationTimeout: "15_SECONDS"
+        maximumAttempts: 3
+        backoff: "EXPONENTIAL_WITH_FULL_JITTER"
+        initialBackoff: "500_MILLISECONDS"
+        maximumBackoff: "2_SECONDS"
+      retryPolicy:
+        reads: "RETRY_TRANSIENT_FAILURES"
+        writes: "RETRY_ONLY_WITH_CONFIRMED_IDEMPOTENCY_AND_UNKNOWN_OUTCOME_HANDLING"
+        nonRetryable:
+          - "HTTP_400"
+          - "HTTP_401"
+          - "HTTP_403"
+          - "HTTP_404"
+          - "HTTP_409_BUSINESS_CONFLICT"
+          - "HTTP_422"
+      sla:
+        numericCommitmentRequiredForCodeGeneration: false
+        finalValuesSource: "BANK_APPROVED_ENVIRONMENT_CONFIGURATION"
+    rationale:
+      - "Missing commercial SLA values must not block contract or domain design."
+
+  - id: "IA0R-D07"
+    subject: "Partial accounting outcome and reversal"
+    status: "DECIDED"
+    decision:
+      preferredCoreBankingOperation: "ATOMIC_DEBIT_AND_CUT_CREDIT"
+      automaticBlindRetryAfterUnknownOutcome: false
+      debitConfirmedCutCreditUnknown:
+        paymentState: "ACCOUNTING_OUTCOME_UNKNOWN"
+        customerNotification: "PROCESSING"
+        tresorPayNotification: "PROCESSING"
+        action:
+          - "QUERY_BY_IDEMPOTENCY_KEY_OR_POSTING_REFERENCE"
+          - "OPEN_RECONCILIATION_CASE"
+          - "RAISE_OPERATIONAL_ALERT"
+      debitConfirmedCutCreditFailed:
+        paymentState: "REVERSAL_REQUIRED"
+        successNotificationAllowed: false
+        action:
+          - "REQUEST_EXPLICIT_BANK_REVERSAL"
+          - "TRACK_REVERSAL_WITH_A_DISTINCT_IDEMPOTENCY_KEY"
+      reversal:
+        automaticBusinessDecision: false
+        requiresBankInstructionOrApprovedRunbook: true
+        mustBeAudited: true
+    rationale:
+      - "A duplicated financial write is more harmful than delayed reconciliation."
+
+  - id: "IA0R-D08"
+    subject: "TFJ confirmation protocol"
+    status: "DECIDED"
+    decision:
+      primaryMode: "AMPLITUDE_ASYNCHRONOUS_CONFIRMATION"
+      fallbackMode: "SIXPAY_SCHEDULED_RECONCILIATION_QUERY"
+      finalitySource: "AMPLITUDE_TFJ_RESULT"
+      matchingKey:
+        - "FINANCIAL_INSTITUTION_CODE"
+        - "BUSINESS_DATE"
+        - "PAYMENT_REFERENCE"
+        - "BANK_POSTING_REFERENCE"
+      idempotencyKey: "FINANCIAL_INSTITUTION_CODE_PLUS_BUSINESS_DATE_PLUS_BANK_POSTING_REFERENCE_PLUS_TFJ_STATUS"
+      unmatchedConfirmation:
+        action:
+          - "QUARANTINE"
+          - "ALERT"
+          - "MANUAL_RECONCILIATION"
+        updatePayment: false
+      noConfirmationByCutoff:
+        paymentState: "PENDING_END_OF_DAY_CONFIRMATION"
+        successFinalNotificationAllowed: false
+        action:
+          - "RETRY_RECONCILIATION"
+          - "RAISE_OPERATIONAL_ALERT"
+      finalNotification:
+        event: "TREASURY_INTEGRATION_CONFIRMED"
+        condition: "A matched successful TFJ result is durably persisted."
+    rationale:
+      - "Immediate posting confirmation and Treasury integration finality are distinct facts."
+
+gateOutcome:
+  architectureDecisionsClosed: true
+  remainingNonDecisionDependencies:
+    - "Produce and approve the Payment Contract Pack."
+    - "Obtain formal bank approval for Amplitude numeric SLA values."
+    - "Obtain Product, Architecture, Security, Integration and Operations gate sign-offs."
+  nextGate: "IA-0P_PAYMENT_PREFLIGHT"
+  codeGenerationAllowed: false

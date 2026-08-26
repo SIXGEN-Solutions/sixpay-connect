@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sixpay:accounting:batch-response:v1",
+  "title": "AccountingBatchResponseV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "batchId",
+    "idempotencyKey",
+    "status",
+    "processedAt",
+    "items"
+  ],
+  "properties": {
+    "batchId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "COMPLETED",
+        "NOT_COMPLETED"
+      ]
+    },
+    "providerBatchReference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "processedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paymentId",
+          "status"
+        ],
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "REJECTED",
+              "RECONCILIATION_REQUIRED"
+            ]
+          },
+          "providerItemReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rejectionCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,59 +1,140 @@
-# Frontend
+# SIXPAY CONNECT — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.4.
+Application web Angular de SIXPAY CONNECT. Le domaine `Partner` constitue le Golden Module
+de référence pour l’implémentation des futurs domaines métier.
 
-## Development server
+## Prérequis
 
-To start a local development server, run:
+| Outil   | Version           |
+| ------- | ----------------- |
+| Node.js | `22.23.1`         |
+| npm     | `>= 10` et `< 12` |
 
-```bash
-ng serve
-```
+Les versions attendues sont aussi déclarées dans `.node-version`, `.nvmrc` et
+`package.json`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Avec `nvm` :
 
 ```bash
-ng generate --help
+nvm install
+nvm use
+node --version
+npm --version
 ```
 
-## Building
+## Installation
 
-To build the project run:
+Depuis `frontend/` :
 
 ```bash
-ng build
+npm ci
+npm run test:e2e:install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+`npm ci` est obligatoire en CI et recommandé localement après un changement de branche.
+Il installe exactement les versions enregistrées dans `package-lock.json`.
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Démarrage local
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+L’application est accessible sur `http://localhost:4200`. Le serveur Angular utilise
+`proxy.conf.json` pour transmettre les appels `/api` au backend local et éviter les
+erreurs CORS.
 
-For end-to-end (e2e) testing, run:
+Le mode développement utilise une identité `standalone`. Ce mode est strictement réservé
+au poste de développement.
+
+## Environnements
+
+| Environnement | Fichier/configuration                  | Authentification | API                           |
+| ------------- | -------------------------------------- | ---------------- | ----------------------------- |
+| Développement | `environment.development.ts`           | `standalone`     | URL relative via proxy        |
+| QA            | build de production avec paramètres QA | OIDC Code + PKCE | point d’entrée QA             |
+| Production    | `environment.ts`                       | OIDC Code + PKCE | URL relative au reverse proxy |
+
+Les paramètres `authority`, `clientId`, `scope` et `apiBaseUrl` ne doivent contenir aucun
+secret. Les secrets, certificats et clés privées restent gérés par la plateforme de
+déploiement et le fournisseur d’identité.
+
+## Commandes principales
 
 ```bash
-ng e2e
+npm start
+npm run lint
+npm test
+npm run test:coverage
+npm run test:e2e
+npm run test:e2e:a11y
+npm run dependencies:audit
+npm run build
+npm run format:check
+npm run gate:7
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Architecture
 
-## Additional Resources
+```text
+src/app/
+├── core/           Authentification, HTTP, erreurs et services singleton
+├── layout/         Shell, header, sidebar et footer
+├── shared/         Composants, directives et utilitaires sans dépendance métier
+└── features/
+    └── partners/   Golden Module métier
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Une feature respecte la structure suivante :
+
+```text
+features/<domain>/
+├── api/
+├── components/
+├── guards/
+├── models/
+├── resolvers/
+├── security/
+├── services/
+├── store/
+├── <domain>.routes.ts
+└── index.ts
+```
+
+Les règles détaillées de développement et de réplication sont décrites dans :
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) ;
+- [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) ;
+- [CI.md](CI.md) ;
+- [TESTING.md](TESTING.md) ;
+- [SECURITY-MATRIX.md](SECURITY-MATRIX.md) ;
+- [GOLDEN-MODULE-CHECKLIST.md](GOLDEN-MODULE-CHECKLIST.md).
+
+## Intégration API
+
+- les composants appellent les services applicatifs ;
+- les services utilisent le client API du domaine ;
+- le client API manipule les DTO HTTP ;
+- les mappers convertissent DTO et modèles applicatifs ;
+- les interceptors ajoutent l’URL, le JWT, `X-Correlation-ID` et
+  `Idempotency-Key` ;
+- les erreurs RFC 7807 `ProblemDetail` sont converties en erreurs applicatives.
+
+Le contrat Partner est contrôlé avec :
+
+```bash
+npm run contract:partner
+```
+
+## Pull Requests
+
+Le workflow `Frontend CI` exécute l’installation déterministe, le contrat OpenAPI, le
+lint, les tests avec couverture, l’analyse des dépendances, le build de production, les
+tests E2E et l’accessibilité.
+
+La règle de protection de la branche cible doit rendre obligatoires les contrôles :
+
+- `Frontend quality gate` ;
+- `Frontend E2E`.
+
+Une Pull Request ne doit jamais être fusionnée si l’un de ces contrôles échoue.
