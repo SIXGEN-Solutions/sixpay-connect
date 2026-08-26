@@ -1,13 +1,56 @@
-## Persistence ownership
+# Accounting Module
 
-Accounting owns the following production tables:
+## Purpose
 
-| Table | Purpose |
-|---|---|
-| accounting_batches | Accounting batch identity, status and submission state |
-| accounting_batch_items | Payment items assigned to a batch |
-| accounting_batch_tracking | Batch submission and reconciliation tracking |
-| accounting_batch_item_tracking | Item-level submission and reconciliation tracking |
+The Accounting module owns accounting-batch constitution, submission tracking
+and reconciliation for completed Payment operations.
 
-The schema is maintained by the module migration:
-backend/accounting/src/main/resources/db/migration/V400__accounting_baseline.sql
+## Responsibilities
+
+- select eligible Payment records for accounting;
+- build and persist accounting batches and batch items;
+- submit batches through the provider-specific accounting adapter;
+- reconcile acknowledged, rejected and unknown outcomes;
+- expose the internal accounting-batch query API.
+
+Provider-specific DTOs, mappings and OAuth2 client configuration remain inside
+Accounting. Provider-neutral HTTP and resilience support belongs to
+backend/integration.
+
+## API
+
+Base path: /internal/api/v1/accounting-batches
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | /internal/api/v1/accounting-batches | Search accounting batches |
+| GET | /internal/api/v1/accounting-batches/{batchId} | Retrieve one batch |
+
+The active contract is:
+documentation/contracts/internal/accounting-query-api-v1.yaml
+
+## Persistence
+
+Accounting owns its PostgreSQL tables and Flyway migrations. Repository
+adapters and JPA entities remain under the infrastructure.persistence package.
+Unknown financial outcomes are reconciled before any retry; blind resubmission
+is prohibited.
+
+## Structure
+
+The module follows the Partner reference layering:
+
+- domain: batches, tracking and accounting policies;
+- application: constitution, selection and reconciliation use cases;
+- api: HTTP controllers, validation and mapping;
+- infrastructure: persistence and accounting-provider adapters.
+
+## Validation
+
+From backend:
+
+    mvn -pl accounting -am test
+    mvn -pl accounting -am clean verify
+    mvn -pl accounting -am -Pfull-tests clean verify
+
+The full-tests command requires Docker for PostgreSQL integration tests.
