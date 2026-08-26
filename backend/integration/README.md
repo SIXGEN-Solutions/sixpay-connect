@@ -55,3 +55,11 @@ From backend:
     mvn -pl integration -am -Pfull-tests clean verify
 
 The full-tests command requires Docker for PostgreSQL-backed integration tests.
+
+## Persistence ownership
+
+Integration owns no production business tables.
+
+Outbox records remain owned by the originating business module. Integration
+only claims and transports those records. Test-only migration fixtures do not
+define production ownership.

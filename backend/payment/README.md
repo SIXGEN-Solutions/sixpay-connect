@@ -52,3 +52,21 @@ From backend:
 
 The full-tests command requires Docker when PostgreSQL integration tests are
 selected.
+
+## Persistence ownership
+
+Payment owns these production tables:
+
+| Table | Purpose |
+|---|---|
+| payments | Payment aggregate and lifecycle |
+| payment_audit | Immutable Payment audit |
+| payment_outbox_events | Payment integration events |
+| payment_idempotency | Command idempotency and replay data |
+| payment_observed_customer_link | Link to an ObservedCustomer projection |
+
+Payment does not own Customer, CustomerSubscription, Accounting or Reporting
+tables.
+
+Schema:
+backend/payment/src/main/resources/db/migration/V300__payment_baseline.sql

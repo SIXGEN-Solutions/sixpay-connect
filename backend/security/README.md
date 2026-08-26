@@ -47,3 +47,23 @@ From backend:
     mvn -pl security -am -Pfull-tests clean verify
 
 The full-tests command requires Docker when integration tests are selected.
+
+## Persistence ownership
+
+Security owns these production tables:
+
+| Table/family | Purpose |
+|---|---|
+| security_user_accounts | Canonical SIXPAY accounts |
+| security_user_identities | Local and external identity links |
+| security_local_users | Local credentials and state |
+| security_user_roles | Role assignments |
+| security_user_permissions | Permission assignments |
+| security_password_history | Password history |
+| security_authentication_audit | Authentication audit |
+| security_audit_events | Security and authorization audit |
+
+Administration exposes management HTTP boundaries but does not own these tables.
+
+Schema:
+backend/security/src/main/resources/db/migration/V700__security_baseline.sql

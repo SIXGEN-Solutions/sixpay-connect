@@ -42,3 +42,17 @@ From backend:
 
 The full-tests command requires Docker when PostgreSQL integration tests are
 selected.
+
+## Persistence ownership
+
+Reporting owns these production tables:
+
+| Table | Purpose |
+|---|---|
+| reporting_payment_audit_evidence | Payment audit read evidence |
+| reporting_payment_audit_export_job | Controlled audit export jobs |
+
+Reporting does not update Payment-owned tables or persist financial state.
+
+Schema:
+backend/reporting/src/main/resources/db/migration/V500__reporting_baseline.sql

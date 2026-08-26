@@ -28,3 +28,9 @@ From backend:
 Repository-wide verification:
 
     python scripts/verify_baseline.py
+
+## Persistence ownership
+
+The tests module owns no production tables or Flyway baseline. Test-only
+migration fixtures may exist, but production schema ownership remains with the
+owning backend module.

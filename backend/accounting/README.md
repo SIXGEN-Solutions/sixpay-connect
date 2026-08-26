@@ -54,3 +54,17 @@ From backend:
     mvn -pl accounting -am -Pfull-tests clean verify
 
 The full-tests command requires Docker for PostgreSQL integration tests.
+
+## Persistence ownership
+
+Accounting owns these production tables:
+
+| Table | Purpose |
+|---|---|
+| accounting_batches | Accounting batch identity and submission state |
+| accounting_batch_items | Payment items assigned to a batch |
+| accounting_batch_tracking | Batch reconciliation tracking |
+| accounting_batch_item_tracking | Item-level reconciliation tracking |
+
+Schema:
+backend/accounting/src/main/resources/db/migration/V400__accounting_baseline.sql

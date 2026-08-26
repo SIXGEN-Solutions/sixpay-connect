@@ -59,3 +59,20 @@ From backend:
     mvn -pl partner -am -Pcoverage clean verify
 
 The full-tests command requires Docker for PostgreSQL integration tests.
+
+## Persistence ownership
+
+Partner owns these production tables:
+
+| Table | Purpose |
+|---|---|
+| partners | Partner aggregate |
+| partner_authorized_perimeters | Partner access perimeters |
+| partner_validation_thresholds | Current validation thresholds |
+| partner_validation_threshold_history | Immutable threshold history |
+| partner_audit | Partner audit records |
+| partner_idempotency | Mutation idempotency records |
+| partner_outbox_events | Partner integration events |
+
+Schema:
+backend/partner/src/main/resources/db/migration/V100__partner_baseline.sql

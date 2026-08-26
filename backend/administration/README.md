@@ -50,3 +50,18 @@ From backend:
 
     mvn -pl administration -am test
     mvn -pl administration -am clean verify
+
+## Persistence ownership
+
+Administration owns these production tables:
+
+| Table | Purpose |
+|---|---|
+| operational_incident | Operational incident state |
+| operational_incident_timeline | Incident timeline entries |
+
+Security-owned users, identities, credentials and authorization tables are not
+duplicated by Administration.
+
+Schema:
+backend/administration/src/main/resources/db/migration/V800__administration_baseline.sql

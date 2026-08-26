@@ -67,3 +67,27 @@ From backend:
 
 The full-tests command requires Docker when PostgreSQL integration tests are
 selected.
+
+## Persistence ownership
+
+Customer owns these production table families:
+
+| Table/family | Purpose |
+|---|---|
+| customer_management_customer | Local customer lifecycle |
+| customer_management_bank_account | Customer bank-account references |
+| customer_management_subscription | Local CustomerSubscription lifecycle |
+| customer_management_audit | Customer-management audit |
+| customer_observed_customer | ObservedCustomer projection |
+| customer_observed_institution | Observed institution projection |
+| customer_observed_account | Observed account projection |
+| customer_observed_payment | Observed payment projection |
+| customer_observation_processed_event | Observation idempotency |
+| customer_observation_audit | Observation audit |
+| customer_observed_master_link | Observed/local customer link |
+
+The external TRESOR PAY subscription is not stored as a local
+CustomerSubscription record.
+
+Schema:
+backend/customer/src/main/resources/db/migration/V200__customer_baseline.sql
