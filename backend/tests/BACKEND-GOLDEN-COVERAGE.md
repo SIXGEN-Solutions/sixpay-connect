@@ -16,7 +16,7 @@ SIXPAY CONNECT against the `partner` golden-module reference.
 Authoritative implementation branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The goal of 8.2.0 is classification and gap identification.

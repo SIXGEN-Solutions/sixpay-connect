@@ -3,7 +3,7 @@
 The authoritative implementation branch is:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 `partner` remains the golden reference for implementation and layered test

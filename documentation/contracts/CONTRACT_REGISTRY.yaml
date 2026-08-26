@@ -4,7 +4,7 @@ registry:
   baseline: "REPOSITORY_BASELINE_CONSOLIDATION"
   gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
   step: "FS-2.1.0_CONTRACT_REGISTRY_NORMALIZATION"
-  branch: "feat/repository-baseline-consolidation"
+  branch: "feat/repository-baseline-consolidation-cleanup"
   classificationDate: "2026-08-23"
   gateSemantics: "GLOBAL_REGISTRY_GOVERNANCE"
   historicalContractGatesPreserved: true

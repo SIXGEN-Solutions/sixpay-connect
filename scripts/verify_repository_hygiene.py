@@ -1,12 +1,13 @@
 from collections import defaultdict
 from hashlib import sha256
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 
 ROOT = Path.cwd()
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation"
+EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 
 REQUIRED = [
     "ENGINEERING_CONTEXT.md",
@@ -46,6 +47,7 @@ FORBIDDEN_SUFFIXES = (
     ".jar",
     ".log",
     ".orig",
+    ".patch",
     ".pyc",
     ".rej",
     ".tmp",
@@ -54,6 +56,7 @@ FORBIDDEN_SUFFIXES = (
 )
 
 STALE_BRANCHES = (
+    "feat/repository-baseline-consolidation",
     "feat/sixpay-test-validate-pilote",
     "feat/hybrid-authentification-system",
     "feat/sixpay-customer-management-baseline",
@@ -143,13 +146,20 @@ def main():
             errors.append(f"required canonical artifact is missing: {relative}")
 
     engineering = ROOT / "ENGINEERING_CONTEXT.md"
-    if engineering.is_file() and EXPECTED_BRANCH not in engineering.read_text(
-        encoding="utf-8", errors="ignore"
-    ):
-        errors.append(
-            "ENGINEERING_CONTEXT.md does not declare the authoritative branch "
-            + EXPECTED_BRANCH
+    if engineering.is_file():
+        engineering_text = engineering.read_text(
+            encoding="utf-8",
+            errors="ignore",
         )
+        expected_declaration = (
+            "**Primary implementation branch:** "
+            f"`'{EXPECTED_BRANCH}'`"
+        )
+        if expected_declaration not in engineering_text:
+            errors.append(
+                "ENGINEERING_CONTEXT.md does not declare the exact "
+                "authoritative branch " + EXPECTED_BRANCH
+            )
 
     duplicate_candidates = defaultdict(list)
 
@@ -185,7 +195,11 @@ def main():
         if b"\0" not in data and relative != "scripts/verify_repository_hygiene.py":
             text = data.decode("utf-8", errors="ignore")
             for branch in STALE_BRANCHES:
-                if branch in text:
+                branch_pattern = re.compile(
+                    rf"(?<![A-Za-z0-9._/-]){re.escape(branch)}"
+                    rf"(?![A-Za-z0-9._/-])"
+                )
+                if branch_pattern.search(text):
                     errors.append(
                         f"stale authoritative-branch reference {branch}: {relative}"
                     )

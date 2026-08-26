@@ -1,8 +1,8 @@
 # FS-2.3.5 — Cross-Domain Persistence Review
 
-**Branch:** `feat/repository-baseline-consolidation`  
-**Gate:** `FS-2.3 — Database baseline consolidation`  
-**Status:** Reviewed  
+**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Gate:** `FS-2.3 — Database baseline consolidation`
+**Status:** Reviewed
 **Golden module:** Partner
 
 ## Purpose

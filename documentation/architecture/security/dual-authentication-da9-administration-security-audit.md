@@ -11,7 +11,7 @@ security module       -> users, identities, credentials, authorization, audit
 partner/payment/...   -> no authentication-mechanism knowledge
 ```
 
-The authoritative branch is `feat/repository-baseline-consolidation`; `partner`
+The authoritative branch is `feat/repository-baseline-consolidation-cleanup`; `partner`
 remains the structural golden reference.
 
 ## Existing baseline reviewed

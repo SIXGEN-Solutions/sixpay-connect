@@ -8,7 +8,7 @@ used to prove that user's identity.
 Authoritative implementation branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The `partner` module remains the golden implementation/structure reference.

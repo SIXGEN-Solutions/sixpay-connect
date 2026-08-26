@@ -182,7 +182,7 @@ if (registry) {
 
   if (
     registry.registry?.branch
-    !== 'feat/repository-baseline-consolidation'
+    !== 'feat/repository-baseline-consolidation-cleanup'
   ) {
     fail(`${registryRelative}: authoritative branch metadata is stale`);
   }

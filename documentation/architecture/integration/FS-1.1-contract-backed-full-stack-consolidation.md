@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented on `feat/repository-baseline-consolidation`.
+Implemented on `feat/repository-baseline-consolidation-cleanup`.
 
 ## Purpose
 

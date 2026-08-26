@@ -6,6 +6,9 @@ This document defines the canonical FS-2.9 repository-hygiene policy. The
 authoritative branch must describe the current system, not local build output,
 empty future structure or superseded delivery scaffolding.
 
+The authoritative implementation branch is
+`feat/repository-baseline-consolidation-cleanup`.
+
 ## Retention rules
 
 Tracked content must have a current repository purpose. The following are
@@ -14,6 +17,8 @@ retained:
 - implementation, tests and executable validation gates;
 - canonical architecture, requirements and contracts;
 - approved reference sources and AI traceability assets;
+- phase-branch metadata preserved inside assets explicitly classified as
+  historical traceability;
 - source-controlled developer configuration that is actively usable;
 - runtime contract mirrors required by an owning module.
 

@@ -17,7 +17,7 @@ The frontend continues to use `withCredentials: true`.
 Authoritative branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The `partner` module remains the golden implementation and folder-structure reference.

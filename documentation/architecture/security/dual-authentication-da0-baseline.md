@@ -9,7 +9,7 @@ DA-0 is intentionally documentation-only. It defines architecture, ownership, in
 The authoritative implementation branch for this phase is:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The repository entry point remains:

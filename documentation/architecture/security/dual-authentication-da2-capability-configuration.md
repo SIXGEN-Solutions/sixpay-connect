@@ -8,7 +8,7 @@ independent authentication capabilities.
 Authoritative branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 DA-2 changes configuration semantics. It does not implement Local credential

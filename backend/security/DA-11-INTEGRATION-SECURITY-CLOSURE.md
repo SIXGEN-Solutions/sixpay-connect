@@ -19,7 +19,7 @@ DA-11.6 — Golden closure
 The authoritative implementation branch is:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 `ENGINEERING_CONTEXT.md` remains the mandatory repository entry point.

@@ -34,7 +34,7 @@ reference.
 Authoritative branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 Mandatory entry point:

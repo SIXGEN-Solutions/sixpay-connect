@@ -1,8 +1,8 @@
 # FS-2.3.8 — Database Baseline Governance Gate
 
-**Branch:** `feat/repository-baseline-consolidation`  
-**Gate:** `FS-2.3 — Database baseline consolidation`  
-**Status:** Non-regression gate  
+**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Gate:** `FS-2.3 — Database baseline consolidation`
+**Status:** Non-regression gate
 **Golden module:** Partner
 
 ## Purpose

@@ -7,7 +7,7 @@ Scope: documentation and ownership only.
 Implementation branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 Golden business-module reference:

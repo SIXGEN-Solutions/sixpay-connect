@@ -7,7 +7,7 @@ DA-8 removes the remaining dual-session bootstrap behavior from the frontend.
 Authoritative branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 `partner` remains the golden business-module reference. Authentication/session

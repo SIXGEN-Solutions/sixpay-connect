@@ -16,7 +16,7 @@ DA-1 through DA-11.
 
 ```text
 ENGINEERING_CONTEXT.md
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The `partner` module remains the golden business-module reference. The

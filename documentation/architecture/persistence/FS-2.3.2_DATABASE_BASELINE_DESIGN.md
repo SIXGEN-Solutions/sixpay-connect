@@ -1,8 +1,8 @@
 # FS-2.3.2 — Database Baseline Design Matrix
 
-**Branch:** `feat/repository-baseline-consolidation`  
-**Gate:** `FS-2.3 — Database baseline consolidation`  
-**Status:** Design / no SQL deletion yet  
+**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Gate:** `FS-2.3 — Database baseline consolidation`
+**Status:** Design / no SQL deletion yet
 **Golden module:** Partner
 
 ## Purpose

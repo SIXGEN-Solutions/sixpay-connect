@@ -8,7 +8,7 @@ authentication and before authorization/business access.
 Authoritative branch:
 
 ```text
-feat/repository-baseline-consolidation
+feat/repository-baseline-consolidation-cleanup
 ```
 
 The `partner` module remains the golden business-module reference. Authentication

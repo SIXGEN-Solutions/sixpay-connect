@@ -1,5 +1,5 @@
 version: 1
-baseline: feat/repository-baseline-consolidation
+baseline: feat/repository-baseline-consolidation-cleanup
 canonical: true
 purpose: feature-flag-classification-and-ownership
 runtimeConsumed: false

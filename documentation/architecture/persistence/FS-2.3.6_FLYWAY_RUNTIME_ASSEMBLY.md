@@ -1,8 +1,8 @@
 # FS-2.3.6 — Flyway Runtime Assembly
 
-**Branch:** `feat/repository-baseline-consolidation`  
-**Gate:** `FS-2.3 — Database baseline consolidation`  
-**Status:** Runtime assembly  
+**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Gate:** `FS-2.3 — Database baseline consolidation`
+**Status:** Runtime assembly
 **Golden module:** Partner
 
 ## Canonical distinction
