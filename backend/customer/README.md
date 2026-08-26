@@ -41,3 +41,13 @@ Detailed evidence is maintained in:
 ```text
 CUSTOMER-TEST-COVERAGE.md
 ```
+
+## Customer-owned subscription management
+
+The Customer module owns the implemented subscription capability linking an
+enrolled Customer, a Partner and a verified bank account. Canonical contract:
+documentation/contracts/internal/customer-subscription-management-api-v1.yaml
+
+Authorities: subscription.read, subscription.create, subscription.update,
+subscription.suspend and subscription.close. This capability is distinct from
+the deferred TRESOR PAY subscription authorization contracts.

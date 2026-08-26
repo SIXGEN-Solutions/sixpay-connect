@@ -723,6 +723,32 @@ contracts:
         - "ACCEPTED does not claim final mailbox delivery"
         - "SMTP credentials come from deployment configuration or secret store"
         - "Provider error messages are not part of the contract and are not persisted"
+  - id: "customer-subscription-management-api-v1"
+    path: "documentation/contracts/internal/customer-subscription-management-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "customer"
+    securityOwner: "security"
+    capability: "CUSTOMER_SUBSCRIPTION_MANAGEMENT"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.4"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      scopes: ["subscription.read", "subscription.create", "subscription.update", "subscription.suspend", "subscription.close"]
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      pagination: "NOT_REQUIRED"
+      purpose: ["Manage the Customer-owned subscription relationship", "Activate, suspend, close and read a subscription"]
+      constraints: ["Distinct from deferred TRESOR PAY subscription authorization", "References an enrolled Customer and bank account", "Closure is logical and history is retained"]
+
 missingMvpContracts:
   status: "PARTIALLY_CLOSED"
   contracts:

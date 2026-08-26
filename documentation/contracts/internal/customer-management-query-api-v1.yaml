@@ -5,7 +5,7 @@ info:
   description: |
     Canonical contract normalized from the existing Customer Management implementation.
     It documents the complete implemented /internal/api/v1/customers boundary.
-    Subscription endpoints under /internal/api/v1/subscriptions are outside this contract.
+    Customer Subscription endpoints are defined by customer-subscription-management-api-v1.yaml.
     No endpoint or field is introduced by this contract.
   x-sixpay-contract:
     registryId: customer-management-query-api-v1

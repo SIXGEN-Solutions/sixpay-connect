@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Internal Customer Subscription Management API
+  version: 1.0.0
+  description: Canonical API for the Customer-owned subscription capability. This is distinct from deferred TRESOR PAY subscription authorization contracts.
+  x-sixpay-contract:
+    registryId: customer-subscription-management-api-v1
+    gate: FS-2_REPOSITORY_BASELINE_CONSOLIDATION
+    phaseStep: FS-2.1.4
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: customer
+    businessOwner: customer
+    securityOwner: security
+    capability: CUSTOMER_SUBSCRIPTION_MANAGEMENT
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: CONFIDENTIAL
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+servers:
+  - url: https://sixpay-api.example
+security:
+  - bearerAuth: []
+tags:
+  - name: Customer Subscriptions
+paths:
+  /internal/api/v1/subscriptions:
+    get:
+      tags: [Customer Subscriptions]
+      operationId: listCustomerSubscriptions
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.read]}
+      parameters: [{$ref: '#/components/parameters/CustomerIdQuery'}]
+      responses:
+        '200': {description: Customer subscriptions, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/CustomerSubscriptionResponse'}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Customer Subscriptions]
+      operationId: createCustomerSubscription
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.create]}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateCustomerSubscriptionRequest'}}}}
+      responses:
+        '201': {description: Pending subscription created, headers: {Location: {schema: {type: string, format: uri}}}, content: {application/json: {schema: {$ref: '#/components/schemas/CustomerSubscriptionResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/subscriptions/{subscriptionId}:
+    get:
+      tags: [Customer Subscriptions]
+      operationId: getCustomerSubscription
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.read]}
+      parameters: [{$ref: '#/components/parameters/SubscriptionId'}]
+      responses:
+        '200': {description: Customer subscription, content: {application/json: {schema: {$ref: '#/components/schemas/CustomerSubscriptionResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Customer Subscriptions]
+      operationId: closeCustomerSubscription
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.close]}
+      parameters: [{$ref: '#/components/parameters/SubscriptionId'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionReasonRequest'}}}}
+      responses:
+        '204': {description: Subscription closed; history retained}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/subscriptions/{subscriptionId}/activation:
+    post:
+      tags: [Customer Subscriptions]
+      operationId: activateCustomerSubscription
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.update]}
+      parameters: [{$ref: '#/components/parameters/SubscriptionId'}]
+      responses:
+        '200': {description: Activated subscription, content: {application/json: {schema: {$ref: '#/components/schemas/CustomerSubscriptionResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/subscriptions/{subscriptionId}/suspension:
+    post:
+      tags: [Customer Subscriptions]
+      operationId: suspendCustomerSubscription
+      x-sixpay-authorization: {requiredAuthorities: [SCOPE_subscription.suspend]}
+      parameters: [{$ref: '#/components/parameters/SubscriptionId'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionReasonRequest'}}}}
+      responses:
+        '200': {description: Suspended subscription, content: {application/json: {schema: {$ref: '#/components/schemas/CustomerSubscriptionResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    CustomerIdQuery: {name: customerId, in: query, required: true, schema: {type: string, format: uuid}}
+    SubscriptionId: {name: subscriptionId, in: path, required: true, schema: {type: string, format: uuid}}
+  responses:
+    BadRequest: {description: Validation or request error}
+    Unauthorized: {description: Authentication required}
+    Forbidden: {description: Required subscription authority is missing}
+    NotFound: {description: Customer, bank account or subscription not found}
+  schemas:
+    CreateCustomerSubscriptionRequest:
+      type: object
+      required: [customerId, partnerId, bankAccountId]
+      properties:
+        customerId: {type: string, format: uuid}
+        partnerId: {type: string, format: uuid}
+        bankAccountId: {type: string, format: uuid}
+    SubscriptionReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 1, maxLength: 500}
+    CustomerSubscriptionStatus: {type: string, enum: [PENDING_ACTIVATION, ACTIVE, SUSPENDED, CLOSED]}
+    CustomerSubscriptionResponse:
+      type: object
+      required: [id, customerId, partnerId, bankAccountId, status, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        customerId: {type: string, format: uuid}
+        partnerId: {type: string, format: uuid}
+        bankAccountId: {type: string, format: uuid}
+        status: {$ref: '#/components/schemas/CustomerSubscriptionStatus'}
+        statusReason: {type: [string, 'null']}
+        createdAt: {type: string, format: date-time}
+        activatedAt: {type: [string, 'null'], format: date-time}
+        updatedAt: {type: string, format: date-time}
+        closedAt: {type: [string, 'null'], format: date-time}
