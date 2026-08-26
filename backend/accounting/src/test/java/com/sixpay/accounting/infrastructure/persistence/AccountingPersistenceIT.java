@@ -13,6 +13,7 @@ import com.sixpay.accounting.domain.model.AccountingBatchTracking;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
 import com.sixpay.accounting.domain.repository
         .AccountingBatchTrackingRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -21,6 +22,7 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -95,8 +97,23 @@ class AccountingPersistenceIT {
     private AccountingBatchTrackingRepository trackingRepository;
 
     @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private AccountingBatchSpringDataRepository
             springDataRepository;
+
+    @BeforeEach
+    void cleanDatabase() {
+        jdbcTemplate.execute("""
+        TRUNCATE TABLE
+            accounting_batch_item_tracking,
+            accounting_batch_tracking,
+            accounting_batch_items,
+            accounting_batches
+        RESTART IDENTITY CASCADE
+        """);
+    }
 
     @Test
     void persistsAndReloadsBatchFromPostgreSql() {
