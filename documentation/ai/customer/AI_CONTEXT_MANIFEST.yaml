@@ -4,8 +4,8 @@ generation:
   id: "gate-ia-0r-payment-pilot-customer-support-v1.1.0-rc1"
   strategyVersion: "1.0.0"
   masterPrompt:
-    version: "V0.0"
-    path: "MASTER_ENGINEERING_PROMPT_V0.md"
+    version: "2.0.0"
+    path: "MASTER_ENGINEERING_PROMPT.md"
   autonomyLevel: "A"
   status: "BLOCKING_DECISIONS_CLOSED_PENDING_PAYMENT_PREFLIGHT"
   codeGenerationAllowed: false

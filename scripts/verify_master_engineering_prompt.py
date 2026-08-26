@@ -46,6 +46,13 @@ def main():
     classification = read(CLASSIFICATION)
     package = json.loads(read(PACKAGE_JSON))
 
+    versioned_prompt_duplicates = sorted(ROOT.glob("MASTER_ENGINEERING_PROMPT_V*.md"))
+    if versioned_prompt_duplicates:
+        fail(
+            "versioned prompt duplicate is present: "
+            + versioned_prompt_duplicates[0].name
+        )
+
     metadata = [
         "ACTIVE — Prompt canonique d’ingénierie assistée par IA",
         "Version | **2.0.0**",
@@ -161,9 +168,9 @@ def main():
         'version: "2.0.0"',
         'status: "ACTIVE"',
         'validationCommand: "py scripts/verify_master_engineering_prompt.py"',
-        'loadPolicy: "NEVER_LOAD_AS_ACTIVE_INSTRUCTION"',
-        '      - "MASTER_ENGINEERING_PROMPT_V0.md"',
-        '      - "MASTER_ENGINEERING_PROMPT_V1.md"',
+        'retentionPolicy: "GIT_HISTORY_ONLY"',
+        'activeInstructionAllowed: false',
+        'repositoryFilesRequired: false',
     ]
     for rule in manifest_rules:
         if rule not in manifest:
@@ -173,8 +180,7 @@ def main():
 
     classification_rules = [
         "activePrompt: MASTER_ENGINEERING_PROMPT.md",
-        "    - MASTER_ENGINEERING_PROMPT_V0.md",
-        "    - MASTER_ENGINEERING_PROMPT_V1.md",
+        "supersededPromptRetention: GIT_HISTORY_ONLY",
     ]
     for rule in classification_rules:
         if rule not in classification:
@@ -188,6 +194,7 @@ def main():
 
     print("Active Master Engineering Prompt gate PASSED.")
     print(" - version: 2.0.0")
+    print(" - versioned prompt duplicates in repository root: none")
     print(f" - canonical sections: {len(required_headings)}")
     print(f" - historical AI paths excluded: {len(historical_paths)}")
     print(" - backend, frontend and full-stack rules: present")

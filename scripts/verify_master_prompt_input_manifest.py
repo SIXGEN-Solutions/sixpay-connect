@@ -144,7 +144,9 @@ def main():
         'loadPolicy: "NEVER_LOAD_IN_ACTIVE_MASTER_PROMPT"',
         'path: "MASTER_ENGINEERING_PROMPT.md"',
         'version: "2.0.0"',
-        'loadPolicy: "NEVER_LOAD_AS_ACTIVE_INSTRUCTION"',
+        'retentionPolicy: "GIT_HISTORY_ONLY"',
+        'activeInstructionAllowed: false',
+        'repositoryFilesRequired: false',
         'expectedCount: 38',
         'status: "PASSED"',
     ]
@@ -171,15 +173,6 @@ def main():
             fail(f"always-load source does not exist: {relative}")
     if "MASTER_ENGINEERING_PROMPT.md" not in always_load:
         fail("the active Master Engineering Prompt is not in alwaysLoad")
-
-    superseded = quoted_list(
-        section(section(manifest, "masterPromptGeneration", 0), "paths", 4)
-    )
-    if superseded != [
-        "MASTER_ENGINEERING_PROMPT_V0.md",
-        "MASTER_ENGINEERING_PROMPT_V1.md",
-    ]:
-        fail("superseded prompt artifacts are not explicitly excluded")
 
     active_contracts = contract_entries(
         section(manifest, "activeContractCapabilities", 0)

@@ -94,9 +94,7 @@ categories:
 masterPrompt:
   activeManifest: MASTER_PROMPT_INPUT_MANIFEST.yaml
   activePrompt: MASTER_ENGINEERING_PROMPT.md
-  supersededPrompts:
-    - MASTER_ENGINEERING_PROMPT_V0.md
-    - MASTER_ENGINEERING_PROMPT_V1.md
+  supersededPromptRetention: GIT_HISTORY_ONLY
   activeSelectionRule: >-
     Start from ENGINEERING_CONTEXT.md, canonical documentation and active
     contracts. Add AI assets only by domain and explicit need. Never bulk

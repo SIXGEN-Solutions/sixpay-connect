@@ -7,8 +7,8 @@ This repository contains the official reference implementation of SIXPAY CONNECT
 ## AI-assisted engineering
 
 - [AI generation strategy](AI_GENERATION_STRATEGY.md)
-- [Master Engineering Prompt V0 — backend](MASTER_ENGINEERING_PROMPT_V0.md)
-- [Master Engineering Prompt V1 — full-stack](MASTER_ENGINEERING_PROMPT_V1.md)
+- [Master Engineering Prompt — active](MASTER_ENGINEERING_PROMPT.md)
+- [Active Master Prompt input manifest](MASTER_PROMPT_INPUT_MANIFEST.yaml)
 - [Domain Generation Brief template](DOMAIN_GENERATION_BRIEF_TEMPLATE.md)
 - [AI context manifest template](AI_CONTEXT_MANIFEST_TEMPLATE.yaml)
 - [AI generation report template](AI_GENERATION_REPORT_TEMPLATE.md)

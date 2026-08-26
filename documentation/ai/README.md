@@ -230,9 +230,8 @@ single active instruction for repository-wide AI engineering work. It unifies
 backend, frontend, contracts, data, integrations, security, tests,
 documentation, CI/CD and infrastructure under the active manifest.
 
-The former `V0` and `V1` prompts are superseded artifacts. They remain in the
-repository for traceability but must not be loaded or combined as active
-instructions.
+Superseded prompts are retained only through Git history. They must not be
+restored, loaded or combined with the active instruction.
 
 Validate the active prompt with:
 

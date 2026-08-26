@@ -297,19 +297,19 @@ Le Master Engineering Prompt :
 - ne contient pas de logique métier propre à un domaine ;
 - possède une version et un historique de changements.
 
-Les références officielles sont :
+La référence officielle unique est :
 
-- `MASTER_ENGINEERING_PROMPT_V0.md` pour l’orchestration backend ;
-- `MASTER_ENGINEERING_PROMPT_V1.md` pour l’orchestration full-stack.
+- `MASTER_ENGINEERING_PROMPT.md` pour l’orchestration backend, frontend et
+  full-stack.
 
-Versions recommandées :
+Version active :
 
 | Version | Objet |
 | --- | --- |
-| `V0` | orchestration backend à partir du contrat d’ingénierie existant |
-| `V1` | orchestration full-stack après intégration des règles frontend |
-| `V1.1` | corrections issues du pilote `customer` |
-| `V2` | industrialisation multi-domaines après retour d’expérience mesuré |
+| `2.0.0` | orchestration canonique multi-domaines et full-stack à partir du manifeste actif |
+
+Les prompts précédents sont conservés uniquement dans l’historique Git. Ils ne
+constituent plus des instructions chargeables depuis le worktree courant.
 
 ### 7.3 Niveau 3 — Domain Generation Brief
 
@@ -355,7 +355,9 @@ Chaque campagne de génération doit produire un manifeste de contexte dérivé 
 generation:
   id: customer-create-v1
   strategyVersion: 1.0.0
-  masterPromptVersion: V1
+  masterPrompt:
+    version: 2.0.0
+    path: MASTER_ENGINEERING_PROMPT.md
   repository:
     branch: feat/customer-create
     baseCommit: <sha>
@@ -908,7 +910,7 @@ Le domaine `customer` doit être le premier pilote après le Golden Partner.
 - évaluer la qualité de génération backend et frontend ;
 - valider le Master Prompt full-stack ;
 - mesurer les corrections humaines et les régressions ;
-- produire la version `V1.1` du Master Prompt.
+- intégrer les corrections validées au prompt canonique.
 
 ### 19.2 Critères de succès
 
@@ -940,20 +942,21 @@ reproductibilité le sont.
 
 ### Étape 2 — Master Engineering Prompt
 
-**État : terminée par le versionnement des artefacts de référence.**
+**État : terminée par l’activation du prompt canonique.**
 
-- `MASTER_ENGINEERING_PROMPT_V0.md` : orchestration backend ;
-- `MASTER_ENGINEERING_PROMPT_V1.md` : orchestration full-stack ;
+- `MASTER_ENGINEERING_PROMPT.md` : orchestration backend, frontend et full-stack ;
+- `MASTER_PROMPT_INPUT_MANIFEST.yaml` : sélection déterministe du contexte actif ;
 - `DOMAIN_GENERATION_BRIEF_TEMPLATE.md` : préparation métier et technique ;
 - `AI_CONTEXT_MANIFEST_TEMPLATE.yaml` : contexte immuable d’une campagne ;
 - `AI_GENERATION_REPORT_TEMPLATE.md` : preuves et rapport de livraison.
 
 ### Étape 3 — Pilote Customer
 
-- exécuter les Gates IA-0 à IA-7 ;
-- mesurer les écarts ;
-- corriger la stratégie et le Master Prompt ;
-- publier `V1.1`.
+**État : terminé et intégré au prompt canonique `2.0.0`.**
+
+- les écarts du pilote ont été mesurés ;
+- les règles backend et frontend ont été consolidées ;
+- le manifeste actif gouverne désormais la sélection du contexte.
 
 ### Étape 4 — Industrialisation contrôlée
 

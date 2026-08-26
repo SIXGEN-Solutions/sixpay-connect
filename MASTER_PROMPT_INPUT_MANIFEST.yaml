@@ -285,11 +285,10 @@ masterPromptGeneration:
     status: "ACTIVE"
     sourceCommit: "6e42ae7e1d601a760ecb8d185f35c568a8eab77f"
     validationCommand: "py scripts/verify_master_engineering_prompt.py"
-  supersededPromptArtifacts:
-    loadPolicy: "NEVER_LOAD_AS_ACTIVE_INSTRUCTION"
-    paths:
-      - "MASTER_ENGINEERING_PROMPT_V0.md"
-      - "MASTER_ENGINEERING_PROMPT_V1.md"
+  supersededPromptHistory:
+    retentionPolicy: "GIT_HISTORY_ONLY"
+    activeInstructionAllowed: false
+    repositoryFilesRequired: false
   prerequisites:
     - "Run py scripts/verify_master_prompt_input_manifest.py."
     - "Confirm the manifest baselineCommit is an ancestor of the generation branch."

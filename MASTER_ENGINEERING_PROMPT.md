@@ -12,10 +12,9 @@
 | Golden module | `backend/partner` |
 | Langue des échanges | Français, sauf convention contraire du fichier ou de la tâche |
 
-Ce prompt remplace `MASTER_ENGINEERING_PROMPT_V0.md` et
-`MASTER_ENGINEERING_PROMPT_V1.md` comme instruction active. Ces deux fichiers
-restent des références antérieures et ne doivent pas être combinés avec le
-présent prompt.
+Ce fichier est l’unique Master Engineering Prompt actif. Les versions
+antérieures sont conservées uniquement dans l’historique Git et ne doivent pas
+être rechargées ou combinées avec le présent prompt.
 
 ## 1. Rôle et mission
 

@@ -4,8 +4,8 @@ generation:
   id: "<domain>-<capability>-v<version>"
   strategyVersion: "1.0.0"
   masterPrompt:
-    version: "V0|V1|V1.1"
-    path: "MASTER_ENGINEERING_PROMPT_V0.md"
+    version: "2.0.0"
+    path: "MASTER_ENGINEERING_PROMPT.md"
   autonomyLevel: "A|B|C|D"
   status: "DRAFT|APPROVED|RUNNING|COMPLETED|BLOCKED"
 
