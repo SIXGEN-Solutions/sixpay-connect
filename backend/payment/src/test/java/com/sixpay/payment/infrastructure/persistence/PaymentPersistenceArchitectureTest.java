@@ -64,7 +64,7 @@ class PaymentPersistenceArchitectureTest {
                         "com.sixpay.payment.application.command",
                         "com.sixpay.payment.application.query",
                         "com.sixpay.payment.application.view",
-                        "com.sixpay.payment.application.port.in",
+                        "com.sixpay.payment.application.port.input",
                         "com.sixpay.payment.application.service"
                 );
 
@@ -105,7 +105,7 @@ class PaymentPersistenceArchitectureTest {
                 List.of(),
                 violations,
                 "Persistence may depend only on "
-                        + "application.port.out"
+                        + "application.port.output"
         );
     }
 
@@ -293,7 +293,7 @@ class PaymentPersistenceArchitectureTest {
                         .sorted()
                         .toList(),
                 actualFiles,
-                "Unexpected type in Payment persistence package"
+                "Unexpected type input Payment persistence package"
         );
     }
 

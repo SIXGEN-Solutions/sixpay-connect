@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Executes the complete projection mutation in a bounded retry loop.
+ * Executes the complete projection mutation input a bounded retry loop.
  *
  * <p>Each attempt receives a fresh transaction. Idempotence races are retried
  * by invoking the application service again, which reloads the winning

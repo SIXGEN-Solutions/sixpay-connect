@@ -2,9 +2,9 @@ package com.sixpay.bootstrap.security;
 
 import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.model.SecurityUserSummary;
-import com.sixpay.security.application.port.in.CreateSecurityUserCommand;
-import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase;
-import com.sixpay.security.application.port.in.UpdateSecurityUserCommand;
+import com.sixpay.security.application.port.input.CreateSecurityUserCommand;
+import com.sixpay.security.application.port.input.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.input.UpdateSecurityUserCommand;
 import com.sixpay.security.authorization.SixpayPermission;
 import com.sixpay.security.authorization.SixpayRole;
 import org.springframework.beans.factory.annotation.Value;

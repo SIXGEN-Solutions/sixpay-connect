@@ -576,7 +576,7 @@ class CoreBankingHttpIntegrationTest {
                         maxAttempts,
                         registry,
                         duration -> {
-                            // No real backoff in integration tests.
+                            // No real backoff input integration tests.
                         }
                 );
     }

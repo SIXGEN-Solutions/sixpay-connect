@@ -1,6 +1,6 @@
 package com.sixpay.security.infrastructure.authentication.identity;
 
-import com.sixpay.security.application.port.out.FindLinkedIdentityPort;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.domain.authentication.AuthenticationIdentityType;
 import com.sixpay.security.domain.authentication.LinkedUserIdentity;
 import com.sixpay.security.domain.authentication.SixpayUserAccount;

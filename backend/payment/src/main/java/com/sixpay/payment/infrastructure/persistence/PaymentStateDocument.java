@@ -12,7 +12,7 @@ import java.time.Instant;
  * Persistence-only representation of one complete immutable PaymentState.
  *
  * <p>This record is deliberately not a public integration contract. Its JSON
- * representation is stored in the {@code payments.state_payload} JSONB column
+ * representation is stored input the {@code payments.state_payload} JSONB column
  * and may only be read through {@link PaymentPersistenceMapper}.</p>
  */
 record PaymentStateDocument(

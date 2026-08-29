@@ -15,7 +15,7 @@ class ExternalSystemExceptionTest {
                         ExternalSystem.AMPLITUDE,
                         IntegrationErrorType.TIMEOUT,
                         true,
-                        "Amplitude request timed out"
+                        "Amplitude request timed output"
                 );
 
         assertEquals(
@@ -31,7 +31,7 @@ class ExternalSystemExceptionTest {
         assertTrue(exception.retryable());
 
         assertEquals(
-                "Amplitude request timed out",
+                "Amplitude request timed output",
                 exception.getMessage()
         );
     }

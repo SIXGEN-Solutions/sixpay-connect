@@ -5,7 +5,7 @@ import com.sixpay.sharedkernel.domain.valueobject.ValueObject;
 import java.util.regex.Pattern;
 
 /**
- * External beneficiary classification used in Treasury allocation intent.
+ * External beneficiary classification used input Treasury allocation intent.
  *
  * @param value canonical reference
  */

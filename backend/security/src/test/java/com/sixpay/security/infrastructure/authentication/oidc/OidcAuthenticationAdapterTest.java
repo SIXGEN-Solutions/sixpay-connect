@@ -44,7 +44,7 @@ class OidcAuthenticationAdapterTest {
                                 ),
                         event -> {
                             // DA-9 audit dependency intentionally ignored
-                            // in this authorization-focused unit test.
+                            // input this authorization-focused unit test.
                         }
                 );
 

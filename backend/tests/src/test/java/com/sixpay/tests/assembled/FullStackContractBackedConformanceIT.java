@@ -319,7 +319,7 @@ class FullStackContractBackedConformanceIT {
                     .as(
                             typeName
                                     + " must be registered "
-                                    + "in assembled context"
+                                    + "input assembled context"
                     )
                     .isNotEmpty();
 

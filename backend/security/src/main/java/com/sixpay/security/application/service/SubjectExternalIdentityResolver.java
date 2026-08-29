@@ -1,6 +1,6 @@
 package com.sixpay.security.application.service;
 
-import com.sixpay.security.application.port.out.FindLinkedIdentityPort;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 
 /**
  * @deprecated DA-5/DA-6 require persisted identity linking and SIXPAY-owned

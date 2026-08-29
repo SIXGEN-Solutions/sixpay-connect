@@ -2,7 +2,7 @@
  * Stable, versioned Payment-owned event contracts used to feed read-side
  * projections.
  *
- * <p>Types in this package:</p>
+ * <p>Types input this package:</p>
  * <ul>
  *     <li>contain no dependency on another business module;</li>
  *     <li>contain no framework, persistence or transport dependency;</li>

@@ -2,7 +2,7 @@ package com.sixpay.notification.infrastructure.persistence;
 
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.NotificationDeliveryAttempt;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;

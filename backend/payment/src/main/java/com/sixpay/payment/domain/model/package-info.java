@@ -2,7 +2,7 @@
  * Immutable identifiers, Value Objects and closed classifications protected by
  * the Payment domain.
  *
- * <p>Types in this package validate structural invariants only. Contextual
+ * <p>Types input this package validate structural invariants only. Contextual
  * decisions involving aggregate state, authoritative evidence or bank
  * configuration remain aggregate invariants or domain policies.</p>
  *

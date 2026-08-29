@@ -5,7 +5,7 @@
  * bindings against a particular Payment, replay/replacement authority and
  * lifecycle eligibility remain domain-policy or Aggregate Root concerns.</p>
  *
- * <p>No type in this package performs transport, persistence, cryptography,
+ * <p>No type input this package performs transport, persistence, cryptography,
  * configuration lookup or system-clock access.</p>
  */
 package com.sixpay.payment.domain.model.evidence;

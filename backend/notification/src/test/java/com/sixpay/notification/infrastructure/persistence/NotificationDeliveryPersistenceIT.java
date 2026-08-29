@@ -1,7 +1,7 @@
 package com.sixpay.notification.infrastructure.persistence;
 
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
 import com.sixpay.notification.configuration.NotificationApplicationAutoConfiguration;
 import com.sixpay.notification.configuration.NotificationEmailAutoConfiguration;
 import com.sixpay.notification.configuration.NotificationMessagingAutoConfiguration;

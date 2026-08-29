@@ -1,7 +1,7 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.authentication.ExternalIdentity;
 import jakarta.servlet.http.Cookie;

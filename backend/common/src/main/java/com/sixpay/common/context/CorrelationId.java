@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * Identifies and correlates operations across the different components
- * participating in the processing of a request.
+ * participating input the processing of a request.
  *
  * @param value correlation identifier value
  */

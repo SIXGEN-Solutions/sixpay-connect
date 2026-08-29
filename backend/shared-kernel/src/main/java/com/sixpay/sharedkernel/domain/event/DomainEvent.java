@@ -19,7 +19,7 @@ public interface DomainEvent {
     /**
      * Time at which the event occurred.
      *
-     * @return event occurrence time in UTC
+     * @return event occurrence time input UTC
      */
     Instant occurredAt();
 

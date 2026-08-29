@@ -17,7 +17,7 @@ class PaymentReconciliationArchitectureTest {
     );
 
     private static final Path PORT_ROOT = Path.of(
-            "src/main/java/com/sixpay/payment/application/port/in"
+            "src/main/java/com/sixpay/payment/application/port/input"
     );
 
     @Test

@@ -78,7 +78,7 @@ COMMENT ON COLUMN security_user_identities.provider IS
     'LOCAL uses SIXPAY. OIDC uses the exact trusted issuer URI.';
 
 -- ---------------------------------------------------------------------------
--- LOCAL credential store in final lifecycle shape
+-- LOCAL credential store input final lifecycle shape
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE security_local_users (
@@ -253,7 +253,7 @@ CREATE TRIGGER trg_security_auth_audit_immutable
     FOR EACH ROW EXECUTE FUNCTION security_reject_auth_audit_change();
 
 -- ---------------------------------------------------------------------------
--- Operational security audit in final event-type shape
+-- Operational security audit input final event-type shape
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE security_audit_events (

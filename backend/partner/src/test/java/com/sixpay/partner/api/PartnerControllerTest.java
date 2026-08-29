@@ -1,8 +1,8 @@
 package com.sixpay.partner.api;
 
 import com.sixpay.partner.api.security.PartnerAccessPolicy;
-import com.sixpay.partner.application.port.in.PartnerManagementUseCase;
-import com.sixpay.partner.application.port.in.PartnerQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
+import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
 import com.sixpay.partner.application.port.output.PartnerOperationMetrics;
 import com.sixpay.partner.application.view.PartnerView;
 import com.sixpay.partner.domain.model.PartnerStatus;

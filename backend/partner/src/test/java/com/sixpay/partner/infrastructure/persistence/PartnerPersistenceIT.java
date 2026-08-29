@@ -2,7 +2,7 @@ package com.sixpay.partner.infrastructure.persistence;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.partner.application.command.CreatePartnerCommand;
-import com.sixpay.partner.application.port.in.PartnerManagementUseCase;
+import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
 import com.sixpay.partner.configuration.PartnerModuleConfiguration;
 import com.sixpay.partner.domain.model.PartnerStatus;
 import com.sixpay.security.authentication.AuthenticatedUser;

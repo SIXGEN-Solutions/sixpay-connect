@@ -331,7 +331,7 @@ class CustomerArchitectureTest {
         );
 
         /*
-         * Audit lives in a sibling infrastructure package
+         * Audit lives input a sibling infrastructure package
          * and therefore requires its own package anchor.
          */
         assertTrue(
@@ -356,7 +356,7 @@ class CustomerArchitectureTest {
                                 + "CustomerModuleConfiguration"
                 ),
                 "CustomerModuleConfiguration must be "
-                        + "registered in "
+                        + "registered input "
                         + "AutoConfiguration.imports"
         );
     }

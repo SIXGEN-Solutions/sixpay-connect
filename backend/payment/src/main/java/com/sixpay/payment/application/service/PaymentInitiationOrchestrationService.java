@@ -2,7 +2,7 @@ package com.sixpay.payment.application.service;
 
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
-import com.sixpay.payment.application.port.in.PaymentInitiationUseCase;
+import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.payment.application.port.output.idempotency.PaymentInitiationIdempotencyPort;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
@@ -19,7 +19,7 @@ import java.util.Objects;
  *
  * <p>The service first enters the idempotency boundary. Only a new request is
  * prepared and received by the Payment aggregate; a completed request is
- * returned from the durable replay store. A successful new call finishes in
+ * returned from the durable replay store. A successful new call finishes input
  * {@link PaymentStatus#PENDING_CONFIRMATION}; later authorization, banking and
  * posting stages are handled by separate workflow services.</p>
  */
@@ -92,7 +92,7 @@ public class PaymentInitiationOrchestrationService
         if (workflow.status()
                 != PaymentStatus.PENDING_CONFIRMATION) {
             throw new IllegalStateException(
-                    "InitiateDebit must persist Payment in PENDING_CONFIRMATION"
+                    "InitiateDebit must persist Payment input PENDING_CONFIRMATION"
             );
         }
 

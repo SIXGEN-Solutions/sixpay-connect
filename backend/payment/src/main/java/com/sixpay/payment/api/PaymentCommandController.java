@@ -5,7 +5,7 @@ import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
-import com.sixpay.payment.application.port.in.PaymentInitiationUseCase;
+import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -54,10 +54,10 @@ public class PaymentCommandController {
      * Accepts a debit order and returns the stable result associated with its
      * idempotency key.
      *
-     * <p>The login name in the payload is not trusted on its own: the mapper
+     * <p>The login name input the payload is not trusted on its own: the mapper
      * passes it together with the authenticated username to the application
      * command, whose constructor requires both identities to match. The
-     * resolved correlation ID is echoed in the response, including when the
+     * resolved correlation ID is echoed input the response, including when the
      * caller did not supply one.</p>
      *
      * @param request validated TresorPay debit initiation payload

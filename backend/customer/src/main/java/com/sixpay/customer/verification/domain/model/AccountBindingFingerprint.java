@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Protected and versioned binding to a debtor account reference.
  *
- * @param value opaque fingerprint in {@code v1:<64 lowercase hex>} format
+ * @param value opaque fingerprint input {@code v1:<64 lowercase hex>} format
  */
 public record AccountBindingFingerprint(String value)
         implements ValueObject {

@@ -1,7 +1,7 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.command.RecordTfjConfirmationCommand;
-import com.sixpay.payment.application.port.in.PaymentReconciliationUseCase;
+import com.sixpay.payment.application.port.input.PaymentReconciliationUseCase;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;

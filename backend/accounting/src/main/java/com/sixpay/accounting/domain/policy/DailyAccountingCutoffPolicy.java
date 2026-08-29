@@ -40,13 +40,13 @@ public final class DailyAccountingCutoffPolicy
         if (mode == AccountingCutoffMode.MANUAL) {
             businessDate = manual.orElseThrow(
                     () -> new IllegalArgumentException(
-                            "manualBusinessDate is required in MANUAL mode"
+                            "manualBusinessDate is required input MANUAL mode"
                     )
             );
         } else {
             if (manual.isPresent()) {
                 throw new IllegalArgumentException(
-                        "manualBusinessDate must be empty in AUTO mode"
+                        "manualBusinessDate must be empty input AUTO mode"
                 );
             }
 

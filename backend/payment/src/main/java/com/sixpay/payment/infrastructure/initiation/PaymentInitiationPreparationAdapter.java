@@ -175,7 +175,7 @@ public final class PaymentInitiationPreparationAdapter
 
     /**
      * Produces an opaque stable beneficiary reference so the raw beneficiary
-     * RIB is not stored in the Payment aggregate.
+     * RIB is not stored input the Payment aggregate.
      */
     private static TreasuryBeneficiaryReference beneficiaryReference(
             InitiateDebitBeneficiaryCommand item

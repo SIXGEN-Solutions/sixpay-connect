@@ -1,7 +1,7 @@
 package com.sixpay.payment.api;
 
 import com.sixpay.payment.api.response.PaymentQueryResponses;
-import com.sixpay.payment.application.port.in.PaymentProjectionQueryUseCase;
+import com.sixpay.payment.application.port.input.PaymentProjectionQueryUseCase;
 import com.sixpay.payment.application.query.SearchPaymentProjectionsQuery;
 import com.sixpay.payment.application.security.PaymentAccessPolicy;
 import com.sixpay.payment.application.view.PaymentProjectionViews;

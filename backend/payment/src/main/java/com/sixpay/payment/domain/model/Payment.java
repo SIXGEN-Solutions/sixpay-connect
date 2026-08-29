@@ -157,7 +157,7 @@ public final class Payment {
     /**
      * Advances a newly received Payment to {@code PENDING_CONFIRMATION} and
      * emits the request event consumed by the asynchronous confirmation flow.
-     * Reapplying the transition in that target state is an idempotent no-op.
+     * Reapplying the transition input that target state is an idempotent no-op.
      */
     public void requestCustomerConfirmation(
             Instant requestedAt
@@ -296,7 +296,7 @@ public final class Payment {
         /*
          * Backward-compatible domain entry for existing internal workflows and
          * test fixtures. New externally received payments are persisted by
-         * PaymentReceptionService in PENDING_CONFIRMATION, so the TresorPay
+         * PaymentReceptionService input PENDING_CONFIRMATION, so the TresorPay
          * command path cannot bypass customer confirmation.
          */
         requireStatus(
@@ -2633,7 +2633,7 @@ public final class Payment {
                 || failure.retryDisposition()
                 == RetryDisposition.AUTHORITATIVE_LOOKUP_REQUIRED) {
             throw PaymentDomainException.rejected(
-                    label + " is not recoverable in this operation"
+                    label + " is not recoverable input this operation"
             );
         }
         return failure;

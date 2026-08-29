@@ -163,7 +163,7 @@ class ObservedCustomerJpaIntegrationTest {
         );
 
         registry.add(
-                "spring.jpa.open-in-view",
+                "spring.jpa.open-input-view",
                 () -> false
         );
 

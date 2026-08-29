@@ -1,7 +1,7 @@
 package com.sixpay.payment.api;
 
 import com.sixpay.payment.api.response.PaymentQueryResponses;
-import com.sixpay.payment.application.port.in.PaymentProjectionQueryUseCase;
+import com.sixpay.payment.application.port.input.PaymentProjectionQueryUseCase;
 import com.sixpay.payment.application.query.PaymentSearchSort;
 import com.sixpay.payment.application.query.SearchPaymentProjectionsQuery;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +15,6 @@ import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;

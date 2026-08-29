@@ -3,7 +3,8 @@ package com.sixpay.notification.application.service;
 import com.sixpay.notification.application.model.NotificationDeliveryAttempt;
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -76,7 +77,7 @@ class RetryNotificationDeliveriesServiceTest {
     }
 
     private RetryNotificationDeliveriesService service(
-            com.sixpay.notification.application.port.out.PartnerNotificationSender
+            PartnerNotificationSender
                     sender
     ) {
         return new RetryNotificationDeliveriesService(

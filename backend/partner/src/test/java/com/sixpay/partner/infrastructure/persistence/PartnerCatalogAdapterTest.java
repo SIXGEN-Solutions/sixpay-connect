@@ -89,7 +89,7 @@ class PartnerCatalogAdapterTest {
                         )
                 );
 
-        // The hydration query is deliberately returned in the opposite order.
+        // The hydration query is deliberately returned input the opposite order.
         when(repository.findCatalogDetailsByIdIn(anyCollection()))
                 .thenReturn(List.of(beta, alpha));
 

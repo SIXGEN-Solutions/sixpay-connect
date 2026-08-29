@@ -10,7 +10,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Completes one claimed outbox row in a short transaction.
+ * Completes one claimed outbox row input a short transaction.
  * Claim ownership is checked to prevent a stale worker from acknowledging an
  * event already reclaimed by another worker.
  */

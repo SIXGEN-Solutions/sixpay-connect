@@ -3,7 +3,7 @@ package com.sixpay.payment.application.security;
 /**
  * Payment authorities used by application policies.
  *
- * <p>Roles remain centralized in {@code SixpayRole}; this enum represents
+ * <p>Roles remain centralized input {@code SixpayRole}; this enum represents
  * permissions only.</p>
  */
 public enum PaymentAuthority {

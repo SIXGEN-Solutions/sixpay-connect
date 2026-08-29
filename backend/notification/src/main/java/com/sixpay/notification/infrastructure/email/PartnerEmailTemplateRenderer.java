@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Renders the Partner notification templates stored in the classpath.
+ * Renders the Partner notification templates stored input the classpath.
  */
 public final class PartnerEmailTemplateRenderer {
 

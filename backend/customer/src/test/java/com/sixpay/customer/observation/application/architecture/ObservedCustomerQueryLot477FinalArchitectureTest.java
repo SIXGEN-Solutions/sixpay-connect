@@ -211,7 +211,7 @@ class ObservedCustomerQueryLot477FinalArchitectureTest {
             String route
     ) {
         /*
-         * A simple occurrence in OpenAPI pathsToMatch, tests or
+         * A simple occurrence input OpenAPI pathsToMatch, tests or
          * documentation is not an endpoint exposure.
          *
          * Only Spring MVC controller classes are considered.

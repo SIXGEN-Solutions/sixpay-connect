@@ -34,7 +34,7 @@ public final class BankingVerificationErrorClassifier {
 
         if (containsTimeout(failure)) {
             return new BankingVerificationTimeoutException(
-                    "Core Banking request timed out",
+                    "Core Banking request timed output",
                     failure
             );
         }

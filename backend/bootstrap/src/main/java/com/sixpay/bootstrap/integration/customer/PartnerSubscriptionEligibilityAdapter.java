@@ -2,7 +2,7 @@ package com.sixpay.bootstrap.integration.customer;
 
 import com.sixpay.customer.management.application.port.output.PartnerSubscriptionEligibilityPort;
 import com.sixpay.partner.application.exception.PartnerNotFoundException;
-import com.sixpay.partner.application.port.in.PartnerQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
 import com.sixpay.partner.domain.model.PartnerId;
 import com.sixpay.partner.domain.model.PartnerStatus;
 import org.springframework.stereotype.Component;

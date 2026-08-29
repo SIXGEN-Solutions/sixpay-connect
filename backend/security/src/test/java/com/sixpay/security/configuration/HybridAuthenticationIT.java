@@ -1,10 +1,10 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
-import com.sixpay.security.application.port.out.AuthenticationAuditPort;
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
+import com.sixpay.security.application.port.output.AuthenticationAuditPort;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.junit.jupiter.api.Test;

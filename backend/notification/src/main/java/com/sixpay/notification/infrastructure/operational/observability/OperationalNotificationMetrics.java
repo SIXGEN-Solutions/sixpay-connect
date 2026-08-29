@@ -72,7 +72,7 @@ public final class OperationalNotificationMetrics
                         AtomicLong::doubleValue
                 )
                 .description(
-                        "Age in seconds of the oldest due notification"
+                        "Age input seconds of the oldest due notification"
                 )
                 .register(registry);
 

@@ -53,7 +53,7 @@ public class PaymentAtomicPersistenceAdapter
 
     /**
      * Writes the aggregate snapshot, append-only audit entries and pending
-     * outbox records in one database transaction. Publishing is deliberately
+     * outbox records input one database transaction. Publishing is deliberately
      * deferred: relays can deliver the committed outbox records after the HTTP
      * request completes without risking an event for rolled-back state.
      */

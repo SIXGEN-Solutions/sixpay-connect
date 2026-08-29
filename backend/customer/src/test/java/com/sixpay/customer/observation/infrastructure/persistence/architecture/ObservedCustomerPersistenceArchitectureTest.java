@@ -287,7 +287,7 @@ class ObservedCustomerPersistenceArchitectureTest {
         assertTrue(
                 start >= 0,
                 "Observed Customer section not found "
-                        + "in canonical Customer baseline"
+                        + "input canonical Customer baseline"
         );
 
         int customerManagementStart =
@@ -299,7 +299,7 @@ class ObservedCustomerPersistenceArchitectureTest {
         assertTrue(
                 customerManagementStart > start,
                 "Customer Management section must appear "
-                        + "after Observed Customer in V200"
+                        + "after Observed Customer input V200"
         );
 
         return baseline.substring(

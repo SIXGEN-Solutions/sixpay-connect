@@ -124,7 +124,7 @@ public final class CustomerSubscription
         if (status != CustomerSubscriptionStatus.PENDING_ACTIVATION
                 && status != CustomerSubscriptionStatus.SUSPENDED) {
             throw new CustomerDomainException(
-                    "cannot activate subscription in status " + status
+                    "cannot activate subscription input status " + status
             );
         }
 
@@ -153,7 +153,7 @@ public final class CustomerSubscription
     public void close(String reason, Instant now) {
         if (status == CustomerSubscriptionStatus.CLOSED) {
             throw new CustomerDomainException(
-                    "cannot close subscription already in status CLOSED"
+                    "cannot close subscription already input status CLOSED"
             );
         }
 
@@ -177,7 +177,7 @@ public final class CustomerSubscription
             throw new CustomerDomainException(
                     "cannot "
                             + operation
-                            + " subscription in status "
+                            + " subscription input status "
                             + status
                             + "; expected "
                             + expected

@@ -72,7 +72,7 @@ public class CustomerSubscriptionController {
                 response.id(),
                 "SUBSCRIPTION_CREATED",
                 null,
-                "Customer subscription created in pending activation status"
+                "Customer subscription created input pending activation status"
         );
 
         return ResponseEntity.created(location).body(response);

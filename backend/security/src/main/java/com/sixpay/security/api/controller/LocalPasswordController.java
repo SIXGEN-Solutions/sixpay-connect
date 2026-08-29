@@ -1,8 +1,8 @@
 package com.sixpay.security.api.controller;
 
 import com.sixpay.security.api.dto.LocalPasswordChangeRequest;
-import com.sixpay.security.application.port.in.ChangeLocalPasswordCommand;
-import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordCommand;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.domain.authentication.AuthenticationMethod;
@@ -117,7 +117,7 @@ public final class LocalPasswordController {
 
         /*
          * The database lifecycle is now normal. Promote the same authenticated
-         * session immediately so the user does not need to log out and back in.
+         * session immediately so the user does not need to log output and back input.
          */
         sessionManager
                 .completeLocalPasswordChange(

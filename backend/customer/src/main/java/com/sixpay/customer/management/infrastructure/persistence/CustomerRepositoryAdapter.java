@@ -61,7 +61,7 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
          * the unique index.
          *
          * Therefore the switch is intentionally persisted
-         * in two phases.
+         * input two phases.
          */
         boolean defaultAccountChanged =
                 entity.prepareDefaultAccountSwitch(

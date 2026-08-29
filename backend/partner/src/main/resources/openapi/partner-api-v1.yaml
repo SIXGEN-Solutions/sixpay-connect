@@ -52,7 +52,7 @@ paths:
     post:
       tags: [Partners]
       operationId: createPartner
-      summary: Create a partner in pending validation status
+      summary: Create a partner input pending validation status
       parameters:
         - $ref: '#/components/parameters/OptionalCorrelationId'
         - $ref: '#/components/parameters/RequiredIdempotencyKey'

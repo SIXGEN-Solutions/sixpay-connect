@@ -216,7 +216,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                         && oidcRuntime.contains("security:")
                         && oidcRuntime.contains("oauth2:")
                         && oidcRuntime.contains("resourceserver:"),
-                "OAuth2 runtime assembly must remain in Bootstrap profile"
+                "OAuth2 runtime assembly must remain input Bootstrap profile"
         );
 
         assertTrue(
@@ -230,7 +230,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                 localRuntime.contains("server:")
                         && localRuntime.contains("servlet:")
                         && localRuntime.contains("session:"),
-                "HTTP session runtime assembly must remain in Bootstrap"
+                "HTTP session runtime assembly must remain input Bootstrap"
         );
     }
 
@@ -313,7 +313,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                     module
                             + " consumes Security configuration "
                             + matcher.group(1)
-                            + " through @Value in "
+                            + " through @Value input "
                             + javaFile
             );
         }
@@ -337,7 +337,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                     module
                             + " consumes Security configuration "
                             + matcher.group(1)
-                            + " through @ConfigurationProperties in "
+                            + " through @ConfigurationProperties input "
                             + javaFile
             );
         }
@@ -372,7 +372,7 @@ class SecurityAuthenticationConfigurationArchitectureTest {
                         module
                                 + " consumes Security configuration "
                                 + prefixMatcher.group(1)
-                                + " through @ConditionalOnProperty in "
+                                + " through @ConditionalOnProperty input "
                                 + javaFile
                 );
             }

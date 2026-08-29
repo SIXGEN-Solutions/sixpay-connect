@@ -5,10 +5,10 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
 import com.sixpay.notification.application.model.PartnerDecisionNotification.Decision;
-import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
-import com.sixpay.notification.application.port.out.PartnerNotificationSender;
-import com.sixpay.notification.application.port.out.PartnerStatusChangedEventDecoder;
+import com.sixpay.notification.application.port.input.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
+import com.sixpay.notification.application.port.output.PartnerStatusChangedEventDecoder;
 
 import java.time.Instant;
 import java.util.Objects;

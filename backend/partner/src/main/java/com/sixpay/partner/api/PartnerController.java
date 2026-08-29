@@ -13,8 +13,8 @@ import com.sixpay.partner.application.command.CreatePartnerCommand;
 import com.sixpay.partner.application.command.DecidePartnerCommand;
 import com.sixpay.partner.application.command.ReactivatePartnerCommand;
 import com.sixpay.partner.application.command.SuspendPartnerCommand;
-import com.sixpay.partner.application.port.in.PartnerManagementUseCase;
-import com.sixpay.partner.application.port.in.PartnerQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
+import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
 import com.sixpay.partner.domain.model.PartnerId;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.validation.annotation.Validated;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -69,7 +68,7 @@ public class PartnerController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create a partner in pending validation status")
+    @Operation(summary = "Create a partner input pending validation status")
     public ResponseEntity<PartnerResponse> create(
             @Valid @RequestBody CreatePartnerRequest request,
             @RequestHeader(name = CORRELATION_HEADER, required = false)

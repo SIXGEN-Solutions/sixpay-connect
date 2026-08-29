@@ -1,7 +1,7 @@
 package com.sixpay.security.infrastructure.authentication.persistence;
 
 import com.sixpay.security.application.model.PasswordHistorySnapshot;
-import com.sixpay.security.application.port.out.PasswordHistoryPort;
+import com.sixpay.security.application.port.output.PasswordHistoryPort;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;

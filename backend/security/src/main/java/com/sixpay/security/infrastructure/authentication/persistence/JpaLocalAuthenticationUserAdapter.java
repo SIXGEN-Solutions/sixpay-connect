@@ -1,9 +1,9 @@
 package com.sixpay.security.infrastructure.authentication.persistence;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.security.application.port.out.ChangeLocalCredentialPort;
-import com.sixpay.security.application.port.out.LoadAuthenticationUserPort;
-import com.sixpay.security.application.port.out.SaveAuthenticationUserStatePort;
+import com.sixpay.security.application.port.output.ChangeLocalCredentialPort;
+import com.sixpay.security.application.port.output.LoadAuthenticationUserPort;
+import com.sixpay.security.application.port.output.SaveAuthenticationUserStatePort;
 import com.sixpay.security.domain.authentication.LocalAuthenticationUser;
 import com.sixpay.security.domain.authentication.LocalCredential;
 import com.sixpay.security.domain.authentication.PasswordPolicy;

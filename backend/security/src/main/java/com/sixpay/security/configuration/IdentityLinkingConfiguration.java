@@ -1,7 +1,7 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.FindLinkedIdentityPort;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.service.LinkedExternalIdentityResolver;
 import com.sixpay.security.infrastructure.authentication.identity.JpaLinkedIdentityAdapter;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserIdentitySpringDataRepository;

@@ -2,7 +2,7 @@ package com.sixpay.notification.infrastructure.messaging.kafka;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.common.validation.Preconditions;
-import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.input.HandleIntegrationEventUseCase;
 import org.springframework.kafka.annotation.KafkaListener;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;

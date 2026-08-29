@@ -396,7 +396,7 @@ class PaymentIdempotencyFoundationIT {
         try {
             if (!latch.await(5, TimeUnit.SECONDS)) {
                 throw new IllegalStateException(
-                        "Concurrency test latch timed out"
+                        "Concurrency test latch timed output"
                 );
             }
         } catch (InterruptedException exception) {

@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
- * One beneficiary allocation in an InitiateDebit request.
+ * One beneficiary allocation input an InitiateDebit request.
  */
 public record InitiateDebitBeneficiaryRequest(
         @JsonProperty("rib")

@@ -1,6 +1,6 @@
 package com.sixpay.notification.configuration;
 
-import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.input.HandleIntegrationEventUseCase;
 import com.sixpay.notification.infrastructure.messaging.internal.InternalIntegrationEventListener;
 import com.sixpay.notification.infrastructure.messaging.kafka.KafkaIntegrationEventListener;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

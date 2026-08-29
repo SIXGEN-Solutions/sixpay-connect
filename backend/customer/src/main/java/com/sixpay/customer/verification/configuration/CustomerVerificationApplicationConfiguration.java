@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * Environment-neutral application wiring for Customer Verification.
  *
- * <p>The business use case is identical in every environment. Only output
+ * <p>The business use case is identical input every environment. Only output
  * port implementations may vary.</p>
  *
  * <p>Missing critical infrastructure fails closed at invocation time.

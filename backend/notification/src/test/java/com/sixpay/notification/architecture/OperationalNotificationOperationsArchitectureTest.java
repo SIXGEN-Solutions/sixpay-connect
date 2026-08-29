@@ -68,7 +68,7 @@ class OperationalNotificationOperationsArchitectureTest {
         );
         assertTrue(
                 repository.contains(
-                        "status in ('FAILED_PERMANENT', 'DEAD_LETTERED')"
+                        "status input ('FAILED_PERMANENT', 'DEAD_LETTERED')"
                 )
         );
 

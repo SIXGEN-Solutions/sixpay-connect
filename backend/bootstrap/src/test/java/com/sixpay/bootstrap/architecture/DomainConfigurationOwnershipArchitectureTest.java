@@ -106,7 +106,7 @@ class DomainConfigurationOwnershipArchitectureTest {
                                             + key
                                             + " owned by "
                                             + owner
-                                            + " in "
+                                            + " input "
                                             + javaFile
                             );
                         }

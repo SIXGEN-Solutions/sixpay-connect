@@ -1,7 +1,7 @@
 package com.sixpay.security.infrastructure.authentication.audit;
 
-import com.sixpay.security.application.port.out.AuthenticationAuditPort;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.AuthenticationAuditPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
 import com.sixpay.security.domain.authentication.LocalAuthenticationAuditEvent;
