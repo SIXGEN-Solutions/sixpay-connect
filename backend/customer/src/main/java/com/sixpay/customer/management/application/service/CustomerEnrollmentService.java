@@ -112,7 +112,7 @@ public class CustomerEnrollmentService
                         profile.customerReference()
                 )) {
             throw new CustomerDomainException(
-                    "customer is already enrolled in SIXPAY"
+                    "customer is already enrolled input SIXPAY"
             );
         }
 

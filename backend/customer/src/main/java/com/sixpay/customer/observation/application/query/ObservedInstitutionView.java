@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Institution-level observation included in the detail view.
+ * Institution-level observation included input the detail view.
  */
 public record ObservedInstitutionView(
         String financialInstitutionCode,

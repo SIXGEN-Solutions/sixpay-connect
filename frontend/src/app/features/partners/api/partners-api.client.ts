@@ -22,18 +22,10 @@ const PARTNERS_API_PATH = '/api/v1/partners';
 export class PartnerApiClient {
   private readonly http = inject(HttpClient);
 
-  listPartners(
-    page = 0,
-    size = 20,
-  ): Observable<PartnerPageResponse> {
-    const params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+  listPartners(page = 0, size = 20): Observable<PartnerPageResponse> {
+    const params = new HttpParams().set('page', page).set('size', size);
 
-    return this.http.get<PartnerPageResponse>(
-      PARTNERS_API_PATH,
-      { params },
-    );
+    return this.http.get<PartnerPageResponse>(PARTNERS_API_PATH, { params });
   }
 
   createPartner(request: CreatePartnerRequest): Observable<PartnerResponse> {

@@ -1,6 +1,6 @@
 package com.sixpay.security.api.controller;
 
-import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.domain.authentication.AuthenticationMethod;

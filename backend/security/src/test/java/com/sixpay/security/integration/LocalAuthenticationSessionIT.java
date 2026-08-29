@@ -1,9 +1,9 @@
 package com.sixpay.security.integration;
 
-import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.in.ChangeLocalPasswordUseCase;
-import com.sixpay.security.application.port.in.LocalLoginCommand;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
+import com.sixpay.security.application.port.input.LocalLoginCommand;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
 import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;

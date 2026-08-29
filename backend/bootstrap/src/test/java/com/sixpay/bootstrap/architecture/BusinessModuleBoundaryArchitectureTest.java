@@ -66,7 +66,7 @@ class BusinessModuleBoundaryArchitectureTest {
             PUBLIC_SECURITY_PREFIXES =
             List.of(
                     "com.sixpay.security.authorization.",
-                    "com.sixpay.security.application.port.in.",
+                    "com.sixpay.security.application.port.input.",
                     "com.sixpay.security.application.port.input.",
                     "com.sixpay.security.application.model."
             );
@@ -277,7 +277,7 @@ class BusinessModuleBoundaryArchitectureTest {
 
         return lower.contains(".infrastructure.")
                 || lower.contains(".domain.repository.")
-                || lower.contains(".application.port.out.")
+                || lower.contains(".application.port.output.")
                 || lower.contains(".application.port.output.")
                 || lower.contains(".configuration.")
                 || lower.contains(".config.")

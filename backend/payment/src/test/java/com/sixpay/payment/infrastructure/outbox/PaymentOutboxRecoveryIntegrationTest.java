@@ -74,7 +74,7 @@ class PaymentOutboxRecoveryIntegrationTest {
                 () -> "validate"
         );
         registry.add(
-                "spring.jpa.open-in-view",
+                "spring.jpa.open-input-view",
                 () -> false
         );
         registry.add(

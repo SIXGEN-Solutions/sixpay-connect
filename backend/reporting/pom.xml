@@ -68,7 +68,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- OpenAPI annotations/API only; Swagger UI stays in bootstrap. -->
+        <!-- OpenAPI annotations/API only; Swagger UI stays input bootstrap. -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>

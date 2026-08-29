@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "spring.flyway.validate-on-migrate=true",
                 "spring.flyway.baseline-on-migrate=false",
                 "spring.flyway.clean-disabled=true",
-                "spring.flyway.out-of-order=true",
+                "spring.flyway.output-of-order=true",
 
                 "sixpay.payment.callback.enabled=false",
                 "sixpay.customer.verification.banking.enabled=false",

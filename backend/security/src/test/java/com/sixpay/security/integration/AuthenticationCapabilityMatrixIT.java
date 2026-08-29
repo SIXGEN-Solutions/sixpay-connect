@@ -1,9 +1,9 @@
 package com.sixpay.security.integration;
 
-import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.PasswordHistoryPort;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.PasswordHistoryPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
 import com.sixpay.security.domain.authentication.PasswordPolicy;

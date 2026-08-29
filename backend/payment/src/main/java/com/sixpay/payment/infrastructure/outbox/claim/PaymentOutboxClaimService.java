@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Claims a bounded batch in one short database transaction.
+ * Claims a bounded batch input one short database transaction.
  */
 @Component
 public final class PaymentOutboxClaimService {

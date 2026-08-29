@@ -1,8 +1,4 @@
-export type IntegrationHealth =
-  | 'AVAILABLE'
-  | 'DEGRADED'
-  | 'UNAVAILABLE'
-  | 'UNKNOWN';
+export type IntegrationHealth = 'AVAILABLE' | 'DEGRADED' | 'UNAVAILABLE' | 'UNKNOWN';
 
 export interface GeneralSettings {
   readonly accountingCutoffZone: string;

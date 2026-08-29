@@ -26,7 +26,9 @@ function readBody(request) {
   return new Promise((resolve, reject) => {
     let body = '';
     request.setEncoding('utf8');
-    request.on('data', (chunk) => { body += chunk; });
+    request.on('data', (chunk) => {
+      body += chunk;
+    });
     request.on('end', () => resolve(body));
     request.on('error', reject);
   });
@@ -38,10 +40,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (
-    request.method === 'POST' &&
-    request.url === '/api/v1/customer-verifications'
-  ) {
+  if (request.method === 'POST' && request.url === '/api/v1/customer-verifications') {
     if (request.headers.authorization !== 'Bearer cm9-e2e-token') {
       send(response, 401, { code: 'UNAUTHORIZED' });
       return;

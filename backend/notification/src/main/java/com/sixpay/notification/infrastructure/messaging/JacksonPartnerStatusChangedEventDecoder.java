@@ -1,7 +1,7 @@
 package com.sixpay.notification.infrastructure.messaging;
 
 import com.sixpay.notification.application.model.PartnerStatusChangedEvent;
-import com.sixpay.notification.application.port.out.PartnerStatusChangedEventDecoder;
+import com.sixpay.notification.application.port.output.PartnerStatusChangedEventDecoder;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 

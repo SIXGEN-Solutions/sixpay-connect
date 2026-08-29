@@ -233,7 +233,7 @@ class PaymentObservedCustomerEndToEndArchitectureTest {
 
             assertTrue(
                     violations.isEmpty(),
-                    () -> token + " found in " + violations
+                    () -> token + " found input " + violations
             );
         }
     }

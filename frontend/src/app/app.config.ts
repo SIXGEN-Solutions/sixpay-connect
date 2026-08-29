@@ -13,37 +13,33 @@ import { apiErrorInterceptor } from './core/errors/api-error.interceptor';
 import { GlobalErrorHandler } from './core/errors/global-error.handler';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import {
-  validateAuthenticationEnvironment,
-} from '../environments/authentication-environment';
+import { validateAuthenticationEnvironment } from '../environments/authentication-environment';
 import { AuthenticationEnvironment } from '../environments/environment.model';
 
 validateAuthenticationEnvironment(environment);
 
-const authenticationEnvironment: AuthenticationEnvironment =
-  environment.authentication;
+const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
 
-const oidcProviders =
-  authenticationEnvironment.oidc.enabled
-    ? [
-        provideAuth({
-          config: {
-            authority: authenticationEnvironment.oidc.authority!,
-            clientId: authenticationEnvironment.oidc.clientId!,
-            scope: authenticationEnvironment.oidc.scope!,
-            responseType: 'code',
-            redirectUrl: window.location.origin,
-            postLogoutRedirectUri: window.location.origin,
-            silentRenew: true,
-            useRefreshToken: true,
-            renewTimeBeforeTokenExpiresInSeconds: 30,
-            unauthorizedRoute: '/login',
-            forbiddenRoute: '/forbidden',
-            logLevel: LogLevel.None,
-          },
-        }),
-      ]
-    : [];
+const oidcProviders = authenticationEnvironment.oidc.enabled
+  ? [
+      provideAuth({
+        config: {
+          authority: authenticationEnvironment.oidc.authority!,
+          clientId: authenticationEnvironment.oidc.clientId!,
+          scope: authenticationEnvironment.oidc.scope!,
+          responseType: 'code',
+          redirectUrl: window.location.origin,
+          postLogoutRedirectUri: window.location.origin,
+          silentRenew: true,
+          useRefreshToken: true,
+          renewTimeBeforeTokenExpiresInSeconds: 30,
+          unauthorizedRoute: '/login',
+          forbiddenRoute: '/forbidden',
+          logLevel: LogLevel.None,
+        },
+      }),
+    ]
+  : [];
 
 export const appConfig: ApplicationConfig = {
   providers: [

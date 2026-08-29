@@ -1,10 +1,5 @@
-import {
-  AppEnvironment,
-  AuthenticationEnvironment,
-} from './environment.model';
-import {
-  validateAuthenticationEnvironment,
-} from './authentication-environment';
+import { AppEnvironment, AuthenticationEnvironment } from './environment.model';
+import { validateAuthenticationEnvironment } from './authentication-environment';
 
 describe('validateAuthenticationEnvironment', () => {
   it('accepts Local-only production authentication', () => {
@@ -52,9 +47,7 @@ describe('validateAuthenticationEnvironment', () => {
           oidc: { enabled: false },
         }),
       ),
-    ).toThrowError(
-      'At least one production authentication capability must be enabled',
-    );
+    ).toThrowError('At least one production authentication capability must be enabled');
   });
 
   it('rejects standalone authentication in production', () => {
@@ -66,9 +59,7 @@ describe('validateAuthenticationEnvironment', () => {
           oidc: { enabled: false },
         }),
       ),
-    ).toThrowError(
-      'Standalone authentication is not allowed in production',
-    );
+    ).toThrowError('Standalone authentication is not allowed in production');
   });
 
   it('rejects OIDC without its public client configuration', () => {
@@ -80,9 +71,7 @@ describe('validateAuthenticationEnvironment', () => {
           oidc: { enabled: true },
         }),
       ),
-    ).toThrowError(
-      'OIDC authority must be configured when OIDC is enabled',
-    );
+    ).toThrowError('OIDC authority must be configured when OIDC is enabled');
   });
 
   it('accepts standalone for non-production demo environments', () => {
@@ -97,15 +86,11 @@ describe('validateAuthenticationEnvironment', () => {
       },
     };
 
-    expect(() =>
-      validateAuthenticationEnvironment(environment),
-    ).not.toThrow();
+    expect(() => validateAuthenticationEnvironment(environment)).not.toThrow();
   });
 });
 
-function productionEnvironment(
-  authentication: AuthenticationEnvironment,
-): AppEnvironment {
+function productionEnvironment(authentication: AuthenticationEnvironment): AppEnvironment {
   return {
     production: true,
     apiBaseUrl: '',
@@ -114,9 +99,7 @@ function productionEnvironment(
   };
 }
 
-function configuredOidc(
-  enabled: boolean,
-): AuthenticationEnvironment['oidc'] {
+function configuredOidc(enabled: boolean): AuthenticationEnvironment['oidc'] {
   return {
     enabled,
     authority: 'https://identity.sixpay.example',

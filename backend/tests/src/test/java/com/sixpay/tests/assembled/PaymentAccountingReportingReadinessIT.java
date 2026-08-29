@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Phase 8.3.3 — Payment / Accounting / Reporting cross-module readiness gate.
  *
- * <p>INT-11 Payment -> Accounting is still PLANNED / TO_DEFINE in the
+ * <p>INT-11 Payment -> Accounting is still PLANNED / TO_DEFINE input the
  * authoritative integration architecture. This test therefore proves the
  * current assembled topology without inventing an unapproved production
  * contract.</p>
@@ -33,7 +33,7 @@ class PaymentAccountingReportingReadinessIT
         extends CrossModulePostgreSqlTestSupport {
 
     private static final String PAYMENT_QUERY_USE_CASE =
-            "com.sixpay.payment.application.port.in.PaymentProjectionQueryUseCase";
+            "com.sixpay.payment.application.port.input.PaymentProjectionQueryUseCase";
     private static final String ACCOUNTING_BATCH_BUILDER =
             "com.sixpay.accounting.application.service.AccountingBatchBuilder";
     private static final String ACCOUNTING_CANDIDATE_SOURCE =
@@ -89,7 +89,7 @@ class PaymentAccountingReportingReadinessIT
         Class<?> type = requiredType(typeName);
         Map<String, ?> beans = context.getBeansOfType(type);
         assertThat(beans)
-                .as(typeName + " must participate in the assembled context")
+                .as(typeName + " must participate input the assembled context")
                 .isNotEmpty();
     }
 

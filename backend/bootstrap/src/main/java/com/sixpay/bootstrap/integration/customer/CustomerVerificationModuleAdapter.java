@@ -53,7 +53,7 @@ public final class CustomerVerificationModuleAdapter
             throw technicalFailure(
                     request,
                     CustomerVerificationTechnicalException.ErrorType.TIMEOUT,
-                    "Customer verification timed out",
+                    "Customer verification timed output",
                     exception
             );
         } catch (BankingVerificationUnavailableException exception) {

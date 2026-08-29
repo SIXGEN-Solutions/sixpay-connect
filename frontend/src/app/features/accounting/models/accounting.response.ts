@@ -21,8 +21,7 @@ export interface AccountingBatchItemResponse {
   readonly status: string;
 }
 
-export interface AccountingBatchDetailResponse
-  extends AccountingBatchSummaryResponse {
+export interface AccountingBatchDetailResponse extends AccountingBatchSummaryResponse {
   readonly idempotencyKey: string;
   readonly items: readonly AccountingBatchItemResponse[];
 }

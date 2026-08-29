@@ -45,7 +45,7 @@ public final class PaymentAuditExportService
         Instant now = clock.instant();
         if (command.occurredTo().isAfter(now)) {
             throw new AuditExportPolicyException(
-                    "Audit export period cannot end in the future"
+                    "Audit export period cannot end input the future"
             );
         }
 

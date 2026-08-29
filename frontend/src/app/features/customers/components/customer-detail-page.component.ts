@@ -6,10 +6,7 @@ import { SpButtonComponent } from '../../../shared/components/button/sp-button.c
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { MockContentStateComponent } from '../../../shared/components/mock-content-state/mock-content-state.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
-import {
-  ObservedCustomerDetail,
-  ObservedCustomerPaymentPage,
-} from '../models/customers';
+import { ObservedCustomerDetail, ObservedCustomerPaymentPage } from '../models/customers';
 import { CustomersService } from '../services/customers.service';
 
 @Component({
@@ -36,34 +33,73 @@ import { CustomersService } from '../services/customers.service';
         <div class="sp-grid">
           <sp-card title="Identité observée">
             <dl class="sp-details">
-              <div><dt>Observed Customer ID</dt><dd>{{ currentCustomer.observedCustomerId }}</dd></div>
-              <div><dt>NIU</dt><dd>{{ currentCustomer.niu.maskedValue }}</dd></div>
-              <div><dt>Téléphone</dt><dd>{{ currentCustomer.phone?.maskedValue ?? '—' }}</dd></div>
-              <div><dt>Email</dt><dd>{{ currentCustomer.email?.maskedValue ?? '—' }}</dd></div>
+              <div>
+                <dt>Observed Customer ID</dt>
+                <dd>{{ currentCustomer.observedCustomerId }}</dd>
+              </div>
+              <div>
+                <dt>NIU</dt>
+                <dd>{{ currentCustomer.niu.maskedValue }}</dd>
+              </div>
+              <div>
+                <dt>Téléphone</dt>
+                <dd>{{ currentCustomer.phone?.maskedValue ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{{ currentCustomer.email?.maskedValue ?? '—' }}</dd>
+              </div>
             </dl>
           </sp-card>
 
           <sp-card title="Projection">
             <dl class="sp-details">
-              <div><dt>Première observation</dt><dd>{{ currentCustomer.firstObservedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-              <div><dt>Dernière observation</dt><dd>{{ currentCustomer.lastObservedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-              <div><dt>Mise à jour projection</dt><dd>{{ currentCustomer.projectionUpdatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-              <div><dt>Version</dt><dd>{{ currentCustomer.projectionVersion }}</dd></div>
-              <div><dt>Watermark</dt><dd>{{ currentCustomer.sourceEventWatermark }}</dd></div>
-              <div><dt>Dernier statut</dt><dd>{{ currentCustomer.lastPaymentStatus ?? '—' }}</dd></div>
+              <div>
+                <dt>Première observation</dt>
+                <dd>{{ currentCustomer.firstObservedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+              </div>
+              <div>
+                <dt>Dernière observation</dt>
+                <dd>{{ currentCustomer.lastObservedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+              </div>
+              <div>
+                <dt>Mise à jour projection</dt>
+                <dd>{{ currentCustomer.projectionUpdatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+              </div>
+              <div>
+                <dt>Version</dt>
+                <dd>{{ currentCustomer.projectionVersion }}</dd>
+              </div>
+              <div>
+                <dt>Watermark</dt>
+                <dd>{{ currentCustomer.sourceEventWatermark }}</dd>
+              </div>
+              <div>
+                <dt>Dernier statut</dt>
+                <dd>{{ currentCustomer.lastPaymentStatus ?? '—' }}</dd>
+              </div>
             </dl>
           </sp-card>
         </div>
 
         <div class="sp-kpis">
-          <sp-card title="Paiements"><strong>{{ currentCustomer.totalPayments }}</strong></sp-card>
-          <sp-card title="Succès"><strong>{{ currentCustomer.successfulPayments }}</strong></sp-card>
-          <sp-card title="Échecs"><strong>{{ currentCustomer.failedPayments }}</strong></sp-card>
+          <sp-card title="Paiements"
+            ><strong>{{ currentCustomer.totalPayments }}</strong></sp-card
+          >
+          <sp-card title="Succès"
+            ><strong>{{ currentCustomer.successfulPayments }}</strong></sp-card
+          >
+          <sp-card title="Échecs"
+            ><strong>{{ currentCustomer.failedPayments }}</strong></sp-card
+          >
         </div>
 
         <sp-card title="Institutions observées">
           <div class="sp-institutions">
-            @for (institution of currentCustomer.institutions; track institution.financialInstitutionCode) {
+            @for (
+              institution of currentCustomer.institutions;
+              track institution.financialInstitutionCode
+            ) {
               <section class="sp-institution">
                 <div>
                   <strong>{{ institution.financialInstitutionCode }}</strong>
@@ -115,7 +151,10 @@ import { CustomersService } from '../services/customers.service';
                         <td>{{ payment.financialInstitutionCode }}</td>
                         <td>
                           @if (payment.amount) {
-                            {{ payment.amount.amount | currency: payment.amount.currency : 'code' : '1.0-0' }}
+                            {{
+                              payment.amount.amount
+                                | currency: payment.amount.currency : 'code' : '1.0-0'
+                            }}
                           } @else {
                             —
                           }
@@ -165,22 +204,88 @@ import { CustomersService } from '../services/customers.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-space-3)}
-    .sp-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
-    .sp-kpis strong{font-size:2rem}
-    .sp-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3);margin:0}
-    .sp-details div{display:grid;gap:.25rem}
-    .sp-details dt{color:var(--mat-sys-on-surface-variant);font-size:.85rem}
-    .sp-details dd{margin:0;font-weight:700;overflow-wrap:anywhere}
-    .sp-institutions{display:grid;gap:var(--sp-space-3)}
-    .sp-institution{display:flex;justify-content:space-between;gap:var(--sp-space-3);padding-bottom:var(--sp-space-3);border-bottom:1px solid var(--mat-sys-outline-variant)}
-    .sp-institution p{margin:.25rem 0 0;color:var(--mat-sys-on-surface-variant)}
-    .sp-table-scroll{overflow-x:auto}
-    .sp-table{width:100%;border-collapse:collapse}
-    .sp-table th,.sp-table td{padding:var(--sp-space-2);text-align:left;border-bottom:1px solid var(--mat-sys-outline-variant);white-space:nowrap}
-    .sp-pagination{display:flex;justify-content:space-between;gap:var(--sp-space-3);margin-top:var(--sp-space-3)}
-    @media(max-width:850px){.sp-grid,.sp-kpis,.sp-details{grid-template-columns:1fr}.sp-institution{flex-direction:column}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-space-3);
+    }
+    .sp-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    .sp-kpis strong {
+      font-size: 2rem;
+    }
+    .sp-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+      margin: 0;
+    }
+    .sp-details div {
+      display: grid;
+      gap: 0.25rem;
+    }
+    .sp-details dt {
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 0.85rem;
+    }
+    .sp-details dd {
+      margin: 0;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .sp-institutions {
+      display: grid;
+      gap: var(--sp-space-3);
+    }
+    .sp-institution {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sp-space-3);
+      padding-bottom: var(--sp-space-3);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+    }
+    .sp-institution p {
+      margin: 0.25rem 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+    .sp-table-scroll {
+      overflow-x: auto;
+    }
+    .sp-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sp-table th,
+    .sp-table td {
+      padding: var(--sp-space-2);
+      text-align: left;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      white-space: nowrap;
+    }
+    .sp-pagination {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sp-space-3);
+      margin-top: var(--sp-space-3);
+    }
+    @media (max-width: 850px) {
+      .sp-grid,
+      .sp-kpis,
+      .sp-details {
+        grid-template-columns: 1fr;
+      }
+      .sp-institution {
+        flex-direction: column;
+      }
+    }
   `,
 })
 export class CustomerDetailPageComponent {

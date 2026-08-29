@@ -1,6 +1,6 @@
 package com.sixpay.notification.infrastructure.scheduling;
 
-import com.sixpay.notification.application.port.in.RetryNotificationDeliveriesUseCase;
+import com.sixpay.notification.application.port.input.RetryNotificationDeliveriesUseCase;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Objects;

@@ -10,10 +10,7 @@ describe('PartnersMockService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        PartnersMockService,
-        MockScenarioService,
-      ],
+      providers: [PartnersMockService, MockScenarioService],
     });
 
     service = TestBed.inject(PartnersMockService);
@@ -21,15 +18,9 @@ describe('PartnersMockService', () => {
   });
 
   it('returns three distinct pages for size ten', async () => {
-    const first = await firstValueFrom(
-      service.search({ page: 0, size: 10 }),
-    );
-    const second = await firstValueFrom(
-      service.search({ page: 1, size: 10 }),
-    );
-    const third = await firstValueFrom(
-      service.search({ page: 2, size: 10 }),
-    );
+    const first = await firstValueFrom(service.search({ page: 0, size: 10 }));
+    const second = await firstValueFrom(service.search({ page: 1, size: 10 }));
+    const third = await firstValueFrom(service.search({ page: 2, size: 10 }));
 
     expect(first.items).toHaveLength(10);
     expect(second.items).toHaveLength(10);
@@ -38,19 +29,13 @@ describe('PartnersMockService', () => {
     expect(first.totalElements).toBe(28);
     expect(first.totalPages).toBe(3);
 
-    const ids = [
-      ...first.items,
-      ...second.items,
-      ...third.items,
-    ].map((item) => item.id);
+    const ids = [...first.items, ...second.items, ...third.items].map((item) => item.id);
 
     expect(new Set(ids).size).toBe(28);
   });
 
   it('returns an empty page beyond the last page without corrupting totals', async () => {
-    const page = await firstValueFrom(
-      service.search({ page: 3, size: 10 }),
-    );
+    const page = await firstValueFrom(service.search({ page: 3, size: 10 }));
 
     expect(page.items).toHaveLength(0);
     expect(page.page).toBe(3);
@@ -62,9 +47,7 @@ describe('PartnersMockService', () => {
   it('returns an empty catalog for the empty scenario', async () => {
     scenario.setScenario('empty');
 
-    const page = await firstValueFrom(
-      service.search({ page: 0, size: 20 }),
-    );
+    const page = await firstValueFrom(service.search({ page: 0, size: 20 }));
 
     expect(page.items).toHaveLength(0);
     expect(page.totalElements).toBe(0);
@@ -72,17 +55,11 @@ describe('PartnersMockService', () => {
   });
 
   it('keeps list detail and status coherent', async () => {
-    const page = await firstValueFrom(
-      service.search({ page: 0, size: 20 }),
-    );
+    const page = await firstValueFrom(service.search({ page: 0, size: 20 }));
     const selected = page.items[0]!;
 
-    const detail = await firstValueFrom(
-      service.get(selected.id),
-    );
-    const status = await firstValueFrom(
-      service.getStatus(selected.id),
-    );
+    const detail = await firstValueFrom(service.get(selected.id));
+    const status = await firstValueFrom(service.getStatus(selected.id));
 
     expect(detail.id).toBe(selected.id);
     expect(detail.legalName).toBe(selected.legalName);
@@ -94,12 +71,8 @@ describe('PartnersMockService', () => {
   it('keeps lifecycle changes visible through subsequent reads', async () => {
     const id = '10000000-0000-4000-8000-000000000004';
 
-    await firstValueFrom(
-      service.decide(id, { decision: 'APPROVE' }),
-    );
-    await firstValueFrom(
-      service.suspend(id, { reason: 'Compliance hardening test' }),
-    );
+    await firstValueFrom(service.decide(id, { decision: 'APPROVE' }));
+    await firstValueFrom(service.suspend(id, { reason: 'Compliance hardening test' }));
 
     const suspended = await firstValueFrom(service.get(id));
     expect(suspended.status).toBe('SUSPENDED');

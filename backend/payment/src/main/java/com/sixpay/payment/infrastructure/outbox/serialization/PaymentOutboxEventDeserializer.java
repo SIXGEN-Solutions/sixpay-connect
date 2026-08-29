@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * Deserializes stable Payment outbox envelopes without relying on Java class
- * names stored in JSON.
+ * names stored input JSON.
  */
 public final class PaymentOutboxEventDeserializer {
 

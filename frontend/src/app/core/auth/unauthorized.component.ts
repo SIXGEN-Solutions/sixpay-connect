@@ -36,11 +36,7 @@ import { SpButtonComponent } from '../../shared/components/button/sp-button.comp
 
 @Component({
   selector: 'sp-forbidden',
-  imports: [
-    MatCardModule,
-    RouterLink,
-    SpButtonComponent,
-  ],
+  imports: [MatCardModule, RouterLink, SpButtonComponent],
   template: `
     <main class="sp-unauthorized">
       <mat-card appearance="outlined">
@@ -49,23 +45,13 @@ import { SpButtonComponent } from '../../shared/components/button/sp-button.comp
         </mat-card-header>
 
         <mat-card-content>
-          <p>
-            Votre compte est authentifié, mais votre rôle ne permet pas
-            cette opération.
-          </p>
+          <p>Votre compte est authentifié, mais votre rôle ne permet pas cette opération.</p>
         </mat-card-content>
 
         <mat-card-actions>
-          <sp-button
-            icon="arrow_back"
-            (buttonClick)="goBack()"
-          >
-            Page précédente
-          </sp-button>
+          <sp-button icon="arrow_back" (buttonClick)="goBack()"> Page précédente </sp-button>
 
-          <a routerLink="/">
-            Retour au tableau de bord
-          </a>
+          <a routerLink="/"> Retour au tableau de bord </a>
         </mat-card-actions>
       </mat-card>
     </main>

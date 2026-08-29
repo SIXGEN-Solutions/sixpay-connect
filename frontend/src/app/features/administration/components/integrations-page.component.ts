@@ -21,7 +21,9 @@ import { AdministrationService } from '../services/administration.service';
       <div class="sp-grid">
         @for (integration of integrations(); track integration.integrationId) {
           <sp-card [title]="integration.name" [subtitle]="integration.type">
-            <p><strong>{{ integration.health }}</strong></p>
+            <p>
+              <strong>{{ integration.health }}</strong>
+            </p>
             <p>{{ integration.detail }}</p>
             <p>
               Dernier succès :
@@ -38,9 +40,21 @@ import { AdministrationService } from '../services/administration.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3)}
-    @media(max-width:700px){.sp-grid{grid-template-columns:1fr}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    @media (max-width: 700px) {
+      .sp-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class IntegrationsPageComponent {

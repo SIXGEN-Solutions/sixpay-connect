@@ -11,12 +11,7 @@ import { SecurityUserAdministrationService } from '../services/security-user-adm
 
 @Component({
   selector: 'sp-security-users-page',
-  imports: [
-    RouterLink,
-    DatePipe,
-    SpCardComponent,
-    SpToolbarComponent,
-  ],
+  imports: [RouterLink, DatePipe, SpCardComponent, SpToolbarComponent],
   template: `
     <section class="sp-page">
       <sp-toolbar
@@ -39,22 +34,18 @@ import { SecurityUserAdministrationService } from '../services/security-user-adm
         </sp-card>
       } @else {
         @for (user of users(); track user.id) {
-          <sp-card
-            [title]="user.username"
-            [subtitle]="user.email ?? 'Email non renseigné'"
-          >
+          <sp-card [title]="user.username" [subtitle]="user.email ?? 'Email non renseigné'">
             <p>
-              Statut: <strong>{{ user.status }}</strong><br />
+              Statut: <strong>{{ user.status }}</strong
+              ><br />
               Local:
-              <strong>{{ user.localEnabled ? 'Activé' : 'Désactivé' }}</strong><br />
+              <strong>{{ user.localEnabled ? 'Activé' : 'Désactivé' }}</strong
+              ><br />
               SSO:
-              <strong>{{ user.oidcLinked ? 'Lié' : 'Non lié' }}</strong><br />
+              <strong>{{ user.oidcLinked ? 'Lié' : 'Non lié' }}</strong
+              ><br />
               Dernière authentification:
-              {{
-                user.lastAuthenticationAt
-                  ? (user.lastAuthenticationAt | date: 'medium')
-                  : '—'
-              }}
+              {{ user.lastAuthenticationAt ? (user.lastAuthenticationAt | date: 'medium') : '—' }}
             </p>
             <a spCardActions [routerLink]="[user.id]">Administrer</a>
           </sp-card>
@@ -63,8 +54,15 @@ import { SecurityUserAdministrationService } from '../services/security-user-adm
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-actions{display:flex;justify-content:flex-end}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
   `,
 })
 export class SecurityUsersPageComponent {

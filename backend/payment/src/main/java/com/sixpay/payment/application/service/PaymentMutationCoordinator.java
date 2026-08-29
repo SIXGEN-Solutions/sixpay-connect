@@ -46,6 +46,11 @@ public class PaymentMutationCoordinator {
         );
     }
 
+    /**
+     * Persists a newly created aggregate together with every domain event it
+     * emitted during creation. A changed aggregate without events is rejected
+     * because it could not be audited or published reliably.
+     */
     public PaymentWorkflowResult persistNew(Payment payment) {
         Objects.requireNonNull(payment, "Payment");
 

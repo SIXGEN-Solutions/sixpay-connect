@@ -1,9 +1,9 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.api.controller.AuthenticationSessionController;
-import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
@@ -270,7 +270,7 @@ public class SixpaySecurityAutoConfiguration {
 
                             /*
                              * SIXPAY is an Angular SPA. Angular sends the raw
-                             * XSRF-TOKEN cookie value in X-XSRF-TOKEN.
+                             * XSRF-TOKEN cookie value input X-XSRF-TOKEN.
                              *
                              * Spring Security's default XOR request handler
                              * expects a BREACH-encoded request token and
@@ -314,7 +314,7 @@ public class SixpaySecurityAutoConfiguration {
                                     .permitAll();
 
                             /*
-                             * Springdoc is disabled by default in bootstrap
+                             * Springdoc is disabled by default input bootstrap
                              * application.yml. When a development/sandbox
                              * profile explicitly enables it, its static UI
                              * resources and OpenAPI descriptor must remain

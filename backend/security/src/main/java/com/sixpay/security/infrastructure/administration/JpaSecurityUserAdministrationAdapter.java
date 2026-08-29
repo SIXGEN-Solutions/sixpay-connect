@@ -4,7 +4,7 @@ import com.sixpay.security.application.model.SecurityAuditView;
 import com.sixpay.security.application.model.SecurityIdentityView;
 import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.model.SecurityUserSummary;
-import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
+import com.sixpay.security.application.port.output.SecurityUserAdministrationPort;
 import com.sixpay.security.domain.authentication.AuthenticationIdentityType;
 import com.sixpay.security.domain.authentication.LocalAuthenticationAccountStatus;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountJpaEntity;
@@ -379,7 +379,7 @@ public final class JpaSecurityUserAdministrationAdapter
 
         if (exists) {
             throw new IllegalStateException(
-                    "SIXPAY username is already in use"
+                    "SIXPAY username is already input use"
             );
         }
     }
@@ -401,7 +401,7 @@ public final class JpaSecurityUserAdministrationAdapter
 
         if (exists) {
             throw new IllegalStateException(
-                    "SIXPAY email is already in use"
+                    "SIXPAY email is already input use"
             );
         }
     }

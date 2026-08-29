@@ -1,10 +1,6 @@
 export type CustomerStatus = 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
-export type SubscriptionStatus =
-  | 'PENDING_ACTIVATION'
-  | 'ACTIVE'
-  | 'SUSPENDED'
-  | 'CLOSED';
+export type SubscriptionStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
 export interface CustomerBankAccount {
   id: string;
@@ -60,7 +56,6 @@ export interface CustomerSubscription {
   updatedAt: Date;
   closedAt: Date | null;
 }
-
 
 export interface CustomerSearchCriteria {
   niu?: string;

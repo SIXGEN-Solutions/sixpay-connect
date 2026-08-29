@@ -137,7 +137,7 @@ class BootstrapGlobalConfigurationArchitectureTest {
                 () -> "New domain-owned configuration "
                                 + "was added to base application.yml: "
                                 + violations
-                                + ". Domain runtime values belong in "
+                                + ". Domain runtime values belong input "
                                 + "an explicit Bootstrap profile or "
                                 + "reusable configuration fragment."
         );

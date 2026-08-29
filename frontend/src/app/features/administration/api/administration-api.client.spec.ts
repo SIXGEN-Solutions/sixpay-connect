@@ -1,133 +1,72 @@
-import {
-  provideHttpClient,
-} from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import {
-  TestBed,
-} from '@angular/core/testing';
-import {
-  firstValueFrom,
-} from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 
-import {
-  AdministrationApiClient,
-} from './administration-api.client';
+import { AdministrationApiClient } from './administration-api.client';
 
-describe(
-  'AdministrationApiClient',
-  () => {
-    let client:
-      AdministrationApiClient;
+describe('AdministrationApiClient', () => {
+  let client: AdministrationApiClient;
 
-    let http:
-      HttpTestingController;
+  let http: HttpTestingController;
 
-    beforeEach(() => {
-      TestBed.configureTestingModule({
-        providers: [
-          provideHttpClient(),
-          provideHttpClientTesting(),
-        ],
-      });
-
-      client = TestBed.inject(
-        AdministrationApiClient,
-      );
-
-      http = TestBed.inject(
-        HttpTestingController,
-      );
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
-    afterEach(() => {
-      http.verify();
+    client = TestBed.inject(AdministrationApiClient);
+
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  it('calls overview endpoint', async () => {
+    const promise = firstValueFrom(client.overview());
+
+    const request = http.expectOne('/internal/api/v1/administration/overview');
+
+    expect(request.request.method).toBe('GET');
+
+    request.flush({
+      settings: {
+        accountingCutoffZone: 'Africa/Douala',
+        accountingCutoffTime: '23:59',
+      },
+      integrations: [],
+      observedAt: '2026-08-23T10:00:00Z',
     });
 
-    it(
-      'calls overview endpoint',
-      async () => {
-        const promise =
-          firstValueFrom(
-            client.overview(),
-          );
+    await promise;
+  });
 
-        const request =
-          http.expectOne(
-            '/internal/api/v1/administration/overview',
-          );
+  it('calls settings endpoint', async () => {
+    const promise = firstValueFrom(client.settings());
 
-        expect(
-          request.request.method,
-        ).toBe('GET');
+    const request = http.expectOne('/internal/api/v1/administration/settings');
 
-        request.flush({
-          settings: {
-            accountingCutoffZone:
-              'Africa/Douala',
-            accountingCutoffTime:
-              '23:59',
-          },
-          integrations: [],
-          observedAt:
-            '2026-08-23T10:00:00Z',
-        });
+    expect(request.request.method).toBe('GET');
 
-        await promise;
-      },
-    );
+    request.flush({
+      accountingCutoffZone: 'Africa/Douala',
+      accountingCutoffTime: '23:59',
+    });
 
-    it(
-      'calls settings endpoint',
-      async () => {
-        const promise =
-          firstValueFrom(
-            client.settings(),
-          );
+    await promise;
+  });
 
-        const request =
-          http.expectOne(
-            '/internal/api/v1/administration/settings',
-          );
+  it('calls integrations endpoint', async () => {
+    const promise = firstValueFrom(client.integrations());
 
-        expect(
-          request.request.method,
-        ).toBe('GET');
+    const request = http.expectOne('/internal/api/v1/administration/integrations');
 
-        request.flush({
-          accountingCutoffZone:
-            'Africa/Douala',
-          accountingCutoffTime:
-            '23:59',
-        });
+    expect(request.request.method).toBe('GET');
 
-        await promise;
-      },
-    );
+    request.flush([]);
 
-    it(
-      'calls integrations endpoint',
-      async () => {
-        const promise =
-          firstValueFrom(
-            client.integrations(),
-          );
-
-        const request =
-          http.expectOne(
-            '/internal/api/v1/administration/integrations',
-          );
-
-        expect(
-          request.request.method,
-        ).toBe('GET');
-
-        request.flush([]);
-
-        await promise;
-      },
-    );
-  },
-);
+    await promise;
+  });
+});

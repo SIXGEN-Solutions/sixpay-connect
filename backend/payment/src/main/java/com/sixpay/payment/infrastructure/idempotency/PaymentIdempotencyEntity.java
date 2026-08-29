@@ -231,7 +231,7 @@ public class PaymentIdempotencyEntity {
     private void requireInProgress() {
         if (status != Status.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Idempotency record is not in progress"
+                    "Idempotency record is not input progress"
             );
         }
     }

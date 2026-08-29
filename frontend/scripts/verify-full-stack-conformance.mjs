@@ -43,15 +43,10 @@ function walk(root, predicate = () => true) {
   return files;
 }
 
-const backendJavaFiles = walk(
-  path.join(repoRoot, 'backend'),
-  (file) => file.endsWith('.java'),
-);
+const backendJavaFiles = walk(path.join(repoRoot, 'backend'), (file) => file.endsWith('.java'));
 
 function backendContains(token) {
-  return backendJavaFiles.some(
-    (file) => fs.readFileSync(file, 'utf8').includes(token),
-  );
+  return backendJavaFiles.some((file) => fs.readFileSync(file, 'utf8').includes(token));
 }
 
 function assertPublishedContract(capability, contractPath, endpointToken) {
@@ -63,9 +58,7 @@ function assertPublishedContract(capability, contractPath, endpointToken) {
   }
 
   if (!source.includes(endpointToken)) {
-    fail(
-      `${capability}: published contract ${contractPath} does not contain ${endpointToken}`,
-    );
+    fail(`${capability}: published contract ${contractPath} does not contain ${endpointToken}`);
   }
 }
 
@@ -84,16 +77,14 @@ function assertPublishedContract(capability, contractPath, endpointToken) {
 const capabilities = [
   {
     name: 'Partner',
-    frontend:
-      'src/app/features/partners/api/partners-api.client.ts',
+    frontend: 'src/app/features/partners/api/partners-api.client.ts',
     endpointTokens: ['/api/v1/partners'],
     backendOwnership: ['PartnerController'],
     contract: null,
   },
   {
     name: 'Payment',
-    frontend:
-      'src/app/features/payments/api/payments-api.client.ts',
+    frontend: 'src/app/features/payments/api/payments-api.client.ts',
     endpointTokens: ['/internal/api/v1/payments'],
     backendOwnership: ['PaymentQueryController'],
     contract: {
@@ -103,8 +94,7 @@ const capabilities = [
   },
   {
     name: 'Reporting',
-    frontend:
-      'src/app/features/reporting/api/reporting-api.client.ts',
+    frontend: 'src/app/features/reporting/api/reporting-api.client.ts',
     endpointTokens: [
       '/internal/api/v1/payment-audit-records',
       '/internal/api/v1/payment-audit-exports',
@@ -118,20 +108,17 @@ const capabilities = [
   },
   {
     name: 'Customer Management',
-    frontend:
-      'src/app/features/customers/api/customer-management-api.client.ts',
+    frontend: 'src/app/features/customers/api/customer-management-api.client.ts',
     endpointTokens: ['/internal/api/v1/customers'],
     backendOwnership: ['CustomerController'],
     contract: {
-      path:
-        'documentation/contracts/internal/customer-management-query-api-v1.yaml',
+      path: 'documentation/contracts/internal/customer-management-query-api-v1.yaml',
       endpointToken: '/internal/api/v1/customers',
     },
   },
   {
     name: 'Observed Customer',
-    frontend:
-      'src/app/features/customers/api/customers-api.client.ts',
+    frontend: 'src/app/features/customers/api/customers-api.client.ts',
     endpointTokens: ['/internal/api/v1/observed-customers'],
     backendOwnership: ['ObservedCustomer'],
     contract: {
@@ -141,35 +128,21 @@ const capabilities = [
   },
   {
     name: 'Accounting',
-    frontend:
-      'src/app/features/accounting/api/accounting-api.client.ts',
+    frontend: 'src/app/features/accounting/api/accounting-api.client.ts',
     endpointTokens: ['/internal/api/v1/accounting-batches'],
-    backendOwnership: [
-      'AccountingBatchQueryController',
-      'AccountingBatchQueryUseCase',
-    ],
+    backendOwnership: ['AccountingBatchQueryController', 'AccountingBatchQueryUseCase'],
     contract: {
-      path:
-        'documentation/contracts/internal/accounting-query-api-v1.yaml',
-      endpointToken:
-        '/internal/api/v1/accounting-batches',
+      path: 'documentation/contracts/internal/accounting-query-api-v1.yaml',
+      endpointToken: '/internal/api/v1/accounting-batches',
     },
   },
   {
     name: 'Operational Administration',
-    frontend:
-      'src/app/features/administration/api/administration-api.client.ts',
+    frontend: 'src/app/features/administration/api/administration-api.client.ts',
 
-    endpointTokens: [
-      '/internal/api/v1/administration',
-    ],
+    endpointTokens: ['/internal/api/v1/administration'],
 
-    frontendTokens: [
-      '/internal/api/v1/administration',
-      '/overview',
-      '/settings',
-      '/integrations',
-    ],
+    frontendTokens: ['/internal/api/v1/administration', '/overview', '/settings', '/integrations'],
 
     backendOwnership: [
       'AdministrationQueryController',
@@ -178,16 +151,13 @@ const capabilities = [
     ],
 
     contract: {
-      path:
-        'documentation/contracts/internal/administration-operational-api-v1.yaml',
-      endpointToken:
-        '/internal/api/v1/administration/overview',
+      path: 'documentation/contracts/internal/administration-operational-api-v1.yaml',
+      endpointToken: '/internal/api/v1/administration/overview',
     },
   },
   {
     name: 'Incidents',
-    frontend:
-      'src/app/features/incidents/api/incidents-api.client.ts',
+    frontend: 'src/app/features/incidents/api/incidents-api.client.ts',
     endpointTokens: ['/internal/api/v1/incidents'],
     backendOwnership: [
       'IncidentQueryController',
@@ -203,13 +173,11 @@ const capabilities = [
   },
   {
     name: 'Security User Administration',
-    frontend:
-      'src/app/features/administration/services/security-user-administration.service.ts',
+    frontend: 'src/app/features/administration/services/security-user-administration.service.ts',
     endpointTokens: ['/internal/api/v1/administration/users'],
     backendOwnership: ['SecurityUserAdministration'],
     contract: {
-      path:
-        'documentation/contracts/internal/security-user-administration-api-v1.yaml',
+      path: 'documentation/contracts/internal/security-user-administration-api-v1.yaml',
       endpointToken: '/internal/api/v1/administration/users',
     },
   },
@@ -227,15 +195,11 @@ const expectedFullStackCapabilities = [
   'Incidents',
 ];
 
-const declaredFullStackCapabilities = new Set(
-  capabilities.map((capability) => capability.name),
-);
+const declaredFullStackCapabilities = new Set(capabilities.map((capability) => capability.name));
 
 for (const expectedCapability of expectedFullStackCapabilities) {
   if (!declaredFullStackCapabilities.has(expectedCapability)) {
-    fail(
-      `FS-1.2 required full-stack capability is missing: ${expectedCapability}`,
-    );
+    fail(`FS-1.2 required full-stack capability is missing: ${expectedCapability}`);
   }
 }
 
@@ -243,15 +207,12 @@ for (const capability of capabilities) {
   const frontendFile = path.join(frontendRoot, capability.frontend);
   const source = read(frontendFile);
 
-  for (
-    const frontendToken
-    of capability.frontendTokens ?? []
-  ) {
+  for (const frontendToken of capability.frontendTokens ?? []) {
     if (!source.includes(frontendToken)) {
       fail(
-        `${capability.name}: Angular client `
-          + `does not declare required token `
-          + `${frontendToken}`,
+        `${capability.name}: Angular client ` +
+          `does not declare required token ` +
+          `${frontendToken}`,
       );
     }
   }
@@ -262,27 +223,19 @@ for (const capability of capabilities) {
 
   for (const endpoint of capability.endpointTokens) {
     if (!source.includes(endpoint)) {
-      fail(
-        `${capability.name}: Angular client no longer declares endpoint ${endpoint}`,
-      );
+      fail(`${capability.name}: Angular client no longer declares endpoint ${endpoint}`);
     }
 
-    const backendToken = endpoint.endsWith('/')
-      ? endpoint.slice(0, -1)
-      : endpoint;
+    const backendToken = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
 
     if (!backendContains(backendToken)) {
-      fail(
-        `${capability.name}: no Spring source contains endpoint ${backendToken}`,
-      );
+      fail(`${capability.name}: no Spring source contains endpoint ${backendToken}`);
     }
   }
 
   for (const ownershipToken of capability.backendOwnership) {
     if (!backendContains(ownershipToken)) {
-      fail(
-        `${capability.name}: expected backend ownership token "${ownershipToken}" not found`,
-      );
+      fail(`${capability.name}: expected backend ownership token "${ownershipToken}" not found`);
     }
   }
 
@@ -298,9 +251,7 @@ for (const capability of capabilities) {
    * No silent HTTP -> mock fallback.
    * FS-1.1 remains the broader UI-level mock dependency gate.
    */
-  if (
-    /catchError\s*\([\s\S]{0,500}?(?:MockService|this\.mock|mock\.)/.test(source)
-  ) {
+  if (/catchError\s*\([\s\S]{0,500}?(?:MockService|this\.mock|mock\.)/.test(source)) {
     fail(`${capability.name}: API boundary contains a silent mock fallback`);
   }
 }
@@ -328,33 +279,21 @@ for (const check of [
 
   for (const file of walk(
     absoluteRoot,
-    (candidate) =>
-      candidate.endsWith('.ts')
-      || candidate.endsWith('.html'),
+    (candidate) => candidate.endsWith('.ts') || candidate.endsWith('.html'),
   )) {
-    const relativeFile = path
-      .relative(frontendRoot, file)
-      .replaceAll('\\', '/');
+    const relativeFile = path.relative(frontendRoot, file).replaceAll('\\', '/');
 
-    if (
-      relativeFile.startsWith(
-        `${check.serviceDirectory}/`,
-      )
-    ) {
+    if (relativeFile.startsWith(`${check.serviceDirectory}/`)) {
       continue;
     }
 
     const uiSource = fs.readFileSync(file, 'utf8');
 
     if (
-      uiSource.includes(check.forbiddenType)
-      || new RegExp(
-        `from\\s+['"][^'"]*-mock\\.service['"]`,
-      ).test(uiSource)
+      uiSource.includes(check.forbiddenType) ||
+      new RegExp(`from\\s+['"][^'"]*-mock\\.service['"]`).test(uiSource)
     ) {
-      fail(
-        `${relativeFile}: integration UI must not depend directly on ${check.forbiddenType}`,
-      );
+      fail(`${relativeFile}: integration UI must not depend directly on ${check.forbiddenType}`);
     }
   }
 }

@@ -4,7 +4,7 @@ import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.notification.application.model.NotificationDeliveryRegistration;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
 import com.sixpay.notification.application.model.PartnerStatusChangedEvent;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

@@ -173,7 +173,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
     private void requireStatus(PartnerStatus expected, String operation) {
         if (status != expected) {
             throw new PartnerDomainException(
-                    "cannot " + operation + " partner in status " + status + "; expected " + expected);
+                    "cannot " + operation + " partner input status " + status + "; expected " + expected);
         }
     }
 

@@ -2,8 +2,8 @@ package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.exception.ExternalIdentityNotLinkedException;
 import com.sixpay.security.application.exception.SixpayUserDisabledException;
-import com.sixpay.security.application.port.out.ExternalIdentityResolver;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;

@@ -4,46 +4,21 @@
 />
 
 <sp-card title="Compte et autorisations">
-  <form
-    class="sp-security-user-form"
-    [formGroup]="form"
-    (ngSubmit)="submit()"
-    novalidate
-  >
+  <form class="sp-security-user-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="sp-security-user-form__grid">
       <mat-form-field appearance="outline">
         <mat-label>Nom utilisateur</mat-label>
-        <input
-          matInput
-          formControlName="username"
-          maxlength="150"
-          autocomplete="username"
-        />
-        <sp-form-error
-          errorId="username-error"
-          [message]="fieldError('username')"
-        />
+        <input matInput formControlName="username" maxlength="150" autocomplete="username" />
+        <sp-form-error errorId="username-error" [message]="fieldError('username')" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Courriel</mat-label>
-        <input
-          matInput
-          type="email"
-          formControlName="email"
-          maxlength="320"
-          autocomplete="email"
-        />
-        <sp-form-error
-          errorId="email-error"
-          [message]="fieldError('email')"
-        />
+        <input matInput type="email" formControlName="email" maxlength="320" autocomplete="email" />
+        <sp-form-error errorId="email-error" [message]="fieldError('email')" />
       </mat-form-field>
 
-      <mat-form-field
-        appearance="outline"
-        class="sp-security-user-form__wide"
-      >
+      <mat-form-field appearance="outline" class="sp-security-user-form__wide">
         <mat-label>Rôles SIXPAY</mat-label>
         <mat-select formControlName="roles" multiple>
           @for (role of availableRoles; track role) {
@@ -52,44 +27,27 @@
             </mat-option>
           }
         </mat-select>
-        <mat-hint>
-          Sélectionnez un ou plusieurs rôles reconnus par SIXPAY.
-        </mat-hint>
+        <mat-hint> Sélectionnez un ou plusieurs rôles reconnus par SIXPAY. </mat-hint>
       </mat-form-field>
 
-      <mat-form-field
-        appearance="outline"
-        class="sp-security-user-form__wide"
-      >
+      <mat-form-field appearance="outline" class="sp-security-user-form__wide">
         <mat-label>Permissions</mat-label>
-        <mat-select
-          formControlName="permissions"
-          multiple
-        >
-          @for (
-            permission of availablePermissions;
-            track permission
-          ) {
+        <mat-select formControlName="permissions" multiple>
+          @for (permission of availablePermissions; track permission) {
             <mat-option [value]="permission">
               {{ permission }}
             </mat-option>
           }
         </mat-select>
-        <mat-hint>
-          Les permissions sont stockées sans le préfixe Spring SCOPE_.
-        </mat-hint>
+        <mat-hint> Les permissions sont stockées sans le préfixe Spring SCOPE_. </mat-hint>
       </mat-form-field>
     </div>
 
-    <mat-checkbox
-      formControlName="localAuthenticationEnabled"
-    >
+    <mat-checkbox formControlName="localAuthenticationEnabled">
       Activer l’authentification Local à la création
     </mat-checkbox>
 
-    @if (
-      form.controls.localAuthenticationEnabled.value
-    ) {
+    @if (form.controls.localAuthenticationEnabled.value) {
       <mat-form-field appearance="outline">
         <mat-label>Mot de passe initial</mat-label>
         <input
@@ -100,29 +58,16 @@
           maxlength="200"
         />
         <mat-hint>12 caractères minimum.</mat-hint>
-        <sp-form-error
-          errorId="initialPassword-error"
-          [message]="fieldError('initialPassword')"
-        />
+        <sp-form-error errorId="initialPassword-error" [message]="fieldError('initialPassword')" />
       </mat-form-field>
     }
 
     <div class="sp-security-user-form__actions">
-      <sp-button
-        type="submit"
-        icon="add"
-        [disabled]="submitting()"
-      >
-        {{
-          submitting()
-            ? 'Création…'
-            : 'Créer l’utilisateur'
-        }}
+      <sp-button type="submit" icon="add" [disabled]="submitting()">
+        {{ submitting() ? 'Création…' : 'Créer l’utilisateur' }}
       </sp-button>
 
-      <a routerLink="/administration/users">
-        Annuler
-      </a>
+      <a routerLink="/administration/users"> Annuler </a>
     </div>
   </form>
 </sp-card>

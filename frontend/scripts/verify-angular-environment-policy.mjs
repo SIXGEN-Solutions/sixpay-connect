@@ -4,8 +4,7 @@ import path from 'node:path';
 const root = process.cwd();
 const envRoot = path.join(root, 'src', 'environments');
 
-const read = (relative) =>
-  fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 const errors = [];
 
@@ -16,9 +15,7 @@ const files = {
   netlify: 'src/environments/environment.netlify.ts',
 };
 
-const source = Object.fromEntries(
-  Object.entries(files).map(([name, file]) => [name, read(file)]),
-);
+const source = Object.fromEntries(Object.entries(files).map(([name, file]) => [name, read(file)]));
 
 function requireToken(name, token, message) {
   if (!source[name].includes(token)) {
@@ -56,13 +53,13 @@ for (const token of [
 
 // Every environment must be typed against AppEnvironment.
 for (const [name, text] of Object.entries(source)) {
-  if (!text.includes("satisfies AppEnvironment")) {
+  if (!text.includes('satisfies AppEnvironment')) {
     errors.push(`${name}: environment must satisfy AppEnvironment`);
   }
 }
 
 // Production policy.
-requireToken('production', "production: true", 'production flag must remain true');
+requireToken('production', 'production: true', 'production flag must remain true');
 requireToken('production', "mode: 'api'", 'production must remain API-backed');
 requireToken('production', 'standalone: false', 'production standalone auth must remain disabled');
 
@@ -87,9 +84,13 @@ requireToken('production', 'standalone: false', 'production standalone auth must
 forbidToken('production', "mode: 'mock'", 'production must never use mock datasource');
 
 // Integration policy.
-requireToken('integration', "production: false", 'integration production flag must remain false');
+requireToken('integration', 'production: false', 'integration production flag must remain false');
 requireToken('integration', "mode: 'api'", 'integration must remain API-backed');
-requireToken('integration', 'standalone: false', 'integration standalone auth must remain disabled');
+requireToken(
+  'integration',
+  'standalone: false',
+  'integration standalone auth must remain disabled',
+);
 
 {
   const local = section(source.integration, 'local:', 'oidc:');
@@ -106,7 +107,7 @@ requireToken('integration', 'standalone: false', 'integration standalone auth mu
 forbidToken('integration', "mode: 'mock'", 'integration must never use mock datasource');
 
 // Development policy.
-requireToken('development', "production: false", 'development production flag must remain false');
+requireToken('development', 'production: false', 'development production flag must remain false');
 requireToken('development', "mode: 'mock'", 'development must remain explicit mock mode');
 requireToken('development', 'standalone: true', 'development standalone auth must remain enabled');
 
@@ -123,7 +124,7 @@ requireToken('development', 'standalone: true', 'development standalone auth mus
 }
 
 // Netlify/demo policy.
-requireToken('netlify', "production: false", 'netlify production flag must remain false');
+requireToken('netlify', 'production: false', 'netlify production flag must remain false');
 requireToken('netlify', "mode: 'mock'", 'netlify must remain explicit mock mode');
 requireToken('netlify', 'standalone: true', 'netlify standalone auth must remain enabled');
 
@@ -141,8 +142,7 @@ requireToken('netlify', 'standalone: true', 'netlify standalone auth must remain
 
 // Angular CLI environment mapping.
 const angular = JSON.parse(read('angular.json'));
-const buildConfigurations =
-  angular?.projects?.frontend?.architect?.build?.configurations ?? {};
+const buildConfigurations = angular?.projects?.frontend?.architect?.build?.configurations ?? {};
 
 const expectedReplacements = {
   development: 'src/environments/environment.development.ts',
@@ -159,16 +159,12 @@ for (const [configuration, expectedWith] of Object.entries(expectedReplacements)
   );
 
   if (!expected) {
-    errors.push(
-      `angular.json: ${configuration} must replace environment.ts with ${expectedWith}`,
-    );
+    errors.push(`angular.json: ${configuration} must replace environment.ts with ${expectedWith}`);
   }
 }
 
 if (buildConfigurations.production?.fileReplacements?.length) {
-  errors.push(
-    'angular.json: production must use canonical environment.ts without replacement',
-  );
+  errors.push('angular.json: production must use canonical environment.ts without replacement');
 }
 
 if (angular?.projects?.frontend?.architect?.build?.defaultConfiguration !== 'production') {
@@ -191,9 +187,7 @@ for (const token of [
   'OIDC scope must be configured when OIDC is enabled',
 ]) {
   if (!authValidator.includes(token)) {
-    errors.push(
-      `authentication-environment.ts: reviewed runtime validation changed: ${token}`,
-    );
+    errors.push(`authentication-environment.ts: reviewed runtime validation changed: ${token}`);
   }
 }
 

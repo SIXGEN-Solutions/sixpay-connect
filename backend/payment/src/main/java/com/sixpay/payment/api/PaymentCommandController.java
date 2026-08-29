@@ -5,7 +5,7 @@ import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
-import com.sixpay.payment.application.port.in.PaymentInitiationUseCase;
+import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,6 +17,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * HTTP entry point for partner-initiated debit orders.
+ *
+ * <p>This boundary binds the partner identity carried by the request to the
+ * authenticated principal, resolves a correlation identifier and delegates
+ * all idempotency and Payment lifecycle decisions to the application layer.
+ * Authentication credentials are excluded; correlation and idempotency data
+ * are retained only as request-control metadata.</p>
+ */
 @RestController
 @RequestMapping("/v1/payments")
 @Tag(name = "Payment Commands", description = "TresorPay Payment initiation API")
@@ -41,6 +50,21 @@ public class PaymentCommandController {
         this.correlationIdResolver = correlationIdResolver;
     }
 
+    /**
+     * Accepts a debit order and returns the stable result associated with its
+     * idempotency key.
+     *
+     * <p>The login name input the payload is not trusted on its own: the mapper
+     * passes it together with the authenticated username to the application
+     * command, whose constructor requires both identities to match. The
+     * resolved correlation ID is echoed input the response, including when the
+     * caller did not supply one.</p>
+     *
+     * @param request validated TresorPay debit initiation payload
+     * @param idempotencyKey required key used to replay the same result
+     * @param correlationHeader optional caller correlation identifier
+     * @return the accepted Payment result and the effective correlation ID
+     */
     @PostMapping("/initiate")
     @PreAuthorize("hasAuthority('SCOPE_payment.initiate')")
     @Operation(operationId = "initiateDebit", summary = "Initiate a debit order")

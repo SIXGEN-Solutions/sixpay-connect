@@ -30,7 +30,10 @@ import { ReportingService } from '../services/reporting.service';
   template: `
     <section class="sp-page">
       <a routerLink="/reporting">← Retour Audit / Reporting</a>
-      <sp-toolbar [title]="'Timeline ' + paymentId" description="Lifecycle Payment ordonné et normalisé." />
+      <sp-toolbar
+        [title]="'Timeline ' + paymentId"
+        description="Lifecycle Payment ordonné et normalisé."
+      />
 
       <sp-card title="Filtres">
         <form class="sp-filter" [formGroup]="form" (ngSubmit)="search()">
@@ -66,7 +69,11 @@ import { ReportingService } from '../services/reporting.service';
                       <span>{{ entry.category }}</span>
                     </div>
                     <p>{{ entry.fromState ?? '—' }} → {{ entry.toState ?? '—' }}</p>
-                    <p>{{ entry.sourceSystem }} · {{ entry.result ?? '—' }} · v{{ entry.aggregateVersion }}</p>
+                    <p>
+                      {{ entry.sourceSystem }} · {{ entry.result ?? '—' }} · v{{
+                        entry.aggregateVersion
+                      }}
+                    </p>
                     <small>{{ entry.occurredAt | date: 'dd/MM/yyyy HH:mm:ss.SSS' }}</small>
                   </div>
                 </li>
@@ -96,15 +103,58 @@ import { ReportingService } from '../services/reporting.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-filter{display:flex;gap:var(--sp-space-3);align-items:center;flex-wrap:wrap}
-    .sp-timeline{list-style:none;padding:0;display:grid;gap:var(--sp-space-3)}
-    .sp-timeline li{display:grid;grid-template-columns:auto 1fr;gap:var(--sp-space-3)}
-    .sp-marker{width:12px;height:12px;border-radius:50%;background:var(--mat-sys-primary);margin-top:.35rem}
-    .sp-row{display:flex;justify-content:space-between;gap:var(--sp-space-3)}
-    .sp-timeline p{margin:.25rem 0;color:var(--mat-sys-on-surface-variant)}
-    .sp-pagination{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-space-3);margin-top:var(--sp-space-3)}
-    @media(max-width:700px){.sp-row,.sp-pagination{align-items:flex-start;flex-direction:column}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-filter {
+      display: flex;
+      gap: var(--sp-space-3);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .sp-timeline {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: var(--sp-space-3);
+    }
+    .sp-timeline li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--sp-space-3);
+    }
+    .sp-marker {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--mat-sys-primary);
+      margin-top: 0.35rem;
+    }
+    .sp-row {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sp-space-3);
+    }
+    .sp-timeline p {
+      margin: 0.25rem 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+    .sp-pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-space-3);
+      margin-top: var(--sp-space-3);
+    }
+    @media (max-width: 700px) {
+      .sp-row,
+      .sp-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
   `,
 })
 export class PaymentTimelinePageComponent {

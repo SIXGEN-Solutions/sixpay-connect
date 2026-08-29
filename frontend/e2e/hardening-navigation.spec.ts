@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Phase 7.8 navigation hardening', () => {
-  test('renders a real 404 for an unknown route', async ({
-    page,
-  }) => {
+  test('renders a real 404 for an unknown route', async ({ page }) => {
     await page.goto('/route-sixpay-inconnue');
 
     await expect(
@@ -18,9 +16,7 @@ test.describe('Phase 7.8 navigation hardening', () => {
       }),
     ).toBeVisible();
 
-    await expect(page).toHaveURL(
-      /\/route-sixpay-inconnue$/,
-    );
+    await expect(page).toHaveURL(/\/route-sixpay-inconnue$/);
 
     await expect(
       page.getByRole('link', {

@@ -1,6 +1,6 @@
 package com.sixpay.notification.configuration;
 
-import com.sixpay.notification.application.port.out.PartnerNotificationSender;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
 import com.sixpay.notification.infrastructure.email.EmailPartnerNotificationSender;
 import com.sixpay.notification.infrastructure.email.LoggingPartnerNotificationSender;
 import com.sixpay.notification.infrastructure.email.NotificationEmailProperties;

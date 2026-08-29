@@ -25,16 +25,11 @@ export const authenticationInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 function isSixpayApiRequest(url: string): boolean {
-  if (
-    SIXPAY_API_PATH_PREFIXES.some((prefix) => url.startsWith(prefix))
-  ) {
+  if (SIXPAY_API_PATH_PREFIXES.some((prefix) => url.startsWith(prefix))) {
     return true;
   }
 
   const apiBaseUrl = environment.apiBaseUrl.replace(/\/+$/, '');
 
-  return Boolean(
-    apiBaseUrl &&
-    url.startsWith(`${apiBaseUrl}/`),
-  );
+  return Boolean(apiBaseUrl && url.startsWith(`${apiBaseUrl}/`));
 }

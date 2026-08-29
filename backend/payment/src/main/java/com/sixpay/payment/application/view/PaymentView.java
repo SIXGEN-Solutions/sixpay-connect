@@ -18,7 +18,7 @@ import java.util.Objects;
  *
  * <p>The view intentionally excludes debtor-account data and complete
  * evidence snapshots. Transport adapters may map this view to approved API
- * contracts in a later lot.</p>
+ * contracts input a later lot.</p>
  */
 public record PaymentView(
         PaymentId paymentId,

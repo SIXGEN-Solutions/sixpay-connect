@@ -15,8 +15,7 @@ export function mapAccountingBatchSummaryResponse(
   return {
     batchId: response.batchId,
     businessDate: response.businessDate,
-    financialInstitutionCode:
-      response.financialInstitutionCode,
+    financialInstitutionCode: response.financialInstitutionCode,
     status: response.status,
     itemCount: response.itemCount,
     createdAt: new Date(response.createdAt),
@@ -28,21 +27,15 @@ export function mapAccountingBatchItemResponse(
 ): AccountingBatchItem {
   return {
     paymentId: response.paymentId,
-    publicPaymentReference:
-      response.publicPaymentReference,
+    publicPaymentReference: response.publicPaymentReference,
     partnerId: response.partnerId,
     amount: response.amount,
     currency: response.currency,
-    paymentOccurredAt:
-      new Date(response.paymentOccurredAt),
-    paymentBusinessDate:
-      response.paymentBusinessDate,
-    bankPostingReference:
-      response.bankPostingReference,
-    tresorPayStatus:
-      response.tresorPayStatus,
-    tresorPayStatusCheckedAt:
-      new Date(response.tresorPayStatusCheckedAt),
+    paymentOccurredAt: new Date(response.paymentOccurredAt),
+    paymentBusinessDate: response.paymentBusinessDate,
+    bankPostingReference: response.bankPostingReference,
+    tresorPayStatus: response.tresorPayStatus,
+    tresorPayStatusCheckedAt: new Date(response.tresorPayStatusCheckedAt),
     status: response.status,
   };
 }
@@ -53,8 +46,6 @@ export function mapAccountingBatchDetailResponse(
   return {
     ...mapAccountingBatchSummaryResponse(response),
     idempotencyKey: response.idempotencyKey,
-    items: response.items.map(
-      mapAccountingBatchItemResponse,
-    ),
+    items: response.items.map(mapAccountingBatchItemResponse),
   };
 }

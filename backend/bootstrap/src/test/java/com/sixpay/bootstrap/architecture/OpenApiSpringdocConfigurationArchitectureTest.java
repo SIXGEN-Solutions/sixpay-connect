@@ -171,7 +171,7 @@ class OpenApiSpringdocConfigurationArchitectureTest {
                         "/internal/api/v1/payments/*/timeline"
                 ),
                 "Payment timeline must remain included "
-                        + "in Reporting OpenAPI group"
+                        + "input Reporting OpenAPI group"
         );
     }
 
@@ -312,7 +312,7 @@ class OpenApiSpringdocConfigurationArchitectureTest {
 
                         violations.add(
                                 module
-                                        + " owns runtime OpenAPI grouping in "
+                                        + " owns runtime OpenAPI grouping input "
                                         + javaFile
                         );
                     }

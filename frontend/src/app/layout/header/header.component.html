@@ -1,9 +1,7 @@
 <mat-toolbar class="sp-header">
   <mat-icon aria-hidden="true">account_balance</mat-icon>
 
-  <span class="sp-header__title">
-    SIXPAY CONNECT
-  </span>
+  <span class="sp-header__title"> SIXPAY CONNECT </span>
 
   <span class="sp-header__spacer"></span>
 
@@ -12,11 +10,7 @@
       {{ username }}
     </span>
 
-    <button
-      type="button"
-      class="sp-header__logout"
-      (click)="authentication.logout()"
-    >
+    <button type="button" class="sp-header__logout" (click)="authentication.logout()">
       Déconnexion
     </button>
   }

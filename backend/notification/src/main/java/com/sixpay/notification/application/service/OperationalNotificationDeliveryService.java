@@ -131,7 +131,7 @@ public final class OperationalNotificationDeliveryService
 
         /*
          * claimForDispatch already moved the persisted state to DISPATCHING.
-         * A first attempt in a cycle originates from PENDING (initial cycle)
+         * A first attempt input a cycle originates from PENDING (initial cycle)
          * or FAILED_RETRYABLE (replayed cycle). Later attempts originate from
          * FAILED_RETRYABLE.
          */

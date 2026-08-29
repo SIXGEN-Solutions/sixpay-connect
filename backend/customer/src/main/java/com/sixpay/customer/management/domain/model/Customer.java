@@ -190,7 +190,7 @@ public final class Customer extends AggregateRoot<CustomerId> {
     public void close(String reason, Instant now) {
         if (status == CustomerStatus.CLOSED) {
             throw new CustomerDomainException(
-                    "cannot close customer already in status CLOSED");
+                    "cannot close customer already input status CLOSED");
         }
         transition(CustomerStatus.CLOSED, requireReason(reason), now);
     }
@@ -346,14 +346,14 @@ public final class Customer extends AggregateRoot<CustomerId> {
     private void requireMutable(String operation) {
         if (status == CustomerStatus.CLOSED) {
             throw new CustomerDomainException(
-                    "cannot " + operation + " for customer in status CLOSED");
+                    "cannot " + operation + " for customer input status CLOSED");
         }
     }
 
     private void requireStatus(CustomerStatus expected, String operation) {
         if (status != expected) {
             throw new CustomerDomainException(
-                    "cannot " + operation + " customer in status "
+                    "cannot " + operation + " customer input status "
                             + status + "; expected " + expected);
         }
     }

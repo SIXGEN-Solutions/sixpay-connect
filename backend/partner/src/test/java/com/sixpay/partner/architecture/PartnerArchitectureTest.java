@@ -46,10 +46,10 @@ class PartnerArchitectureTest {
     @Test
     void moduleDoesNotRedefinePlatformIdentifierOrTimeContracts() {
         assertThat(JAVA_ROOT.resolve(
-                "application/port/out/PartnerIdGenerator.java"
+                "application/port/output/PartnerIdGenerator.java"
         )).doesNotExist();
         assertThat(JAVA_ROOT.resolve(
-                "application/port/out/IntegrationEventIdGenerator.java"
+                "application/port/output/IntegrationEventIdGenerator.java"
         )).doesNotExist();
     }
 

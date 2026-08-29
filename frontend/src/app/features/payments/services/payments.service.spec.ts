@@ -82,9 +82,7 @@ describe('PaymentsService', () => {
   it('maps API detail responses to application models', async () => {
     const { service } = configure(true);
 
-    const detail = await firstValueFrom(
-      service.get('7fa85f64-5717-4562-b3fc-2c963f66afa1'),
-    );
+    const detail = await firstValueFrom(service.get('7fa85f64-5717-4562-b3fc-2c963f66afa1'));
 
     expect(detail?.createdAt).toBeInstanceOf(Date);
     expect(detail?.paymentReference).toBe('PAY-2026-0001842');

@@ -1,6 +1,6 @@
 package com.sixpay.partner.api;
 
-import com.sixpay.partner.application.port.in.PartnerListQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerListQueryUseCase;
 import com.sixpay.partner.application.port.output.PartnerOperationMetrics;
 import com.sixpay.partner.application.view.PartnerPage;
 import com.sixpay.partner.application.view.PartnerSummaryView;

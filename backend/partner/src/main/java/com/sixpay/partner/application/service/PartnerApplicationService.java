@@ -10,8 +10,8 @@ import com.sixpay.partner.application.command.PartnerDecision;
 import com.sixpay.partner.application.command.ReactivatePartnerCommand;
 import com.sixpay.partner.application.command.SuspendPartnerCommand;
 import com.sixpay.partner.application.exception.PartnerNotFoundException;
-import com.sixpay.partner.application.port.in.PartnerManagementUseCase;
-import com.sixpay.partner.application.port.in.PartnerQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
+import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
 import com.sixpay.partner.application.port.output.PartnerAuditRecord;
 import com.sixpay.partner.application.port.output.PartnerAuditTrail;
 import com.sixpay.partner.application.port.output.PartnerEventPublisher;
@@ -100,7 +100,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
         );
         persistAndPublish(partner, command.actorId(), correlation(command.correlationId()));
         appendAudit(partner.id(), "PARTNER_CREATED", command.actorId(), correlation(command.correlationId()),
-                "Partner created in PENDING_VALIDATION status", now);
+                "Partner created input PENDING_VALIDATION status", now);
         idempotencyStore.complete(operation, requireIdempotencyKey(command.idempotencyKey()), partner.id(), now);
         metrics.succeeded(PartnerOperationMetrics.Operation.CREATE);
         logOutcome("create", partner, correlation(command.correlationId()));

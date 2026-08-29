@@ -8,12 +8,7 @@ import { SpButtonComponent } from '../../shared/components/button/sp-button.comp
 
 @Component({
   selector: 'sp-not-found',
-  imports: [
-    MatCardModule,
-    MatIconModule,
-    RouterLink,
-    SpButtonComponent,
-  ],
+  imports: [MatCardModule, MatIconModule, RouterLink, SpButtonComponent],
   template: `
     <main class="sp-not-found">
       <mat-card appearance="outlined">
@@ -24,23 +19,14 @@ import { SpButtonComponent } from '../../shared/components/button/sp-button.comp
 
           <h1>Page introuvable</h1>
 
-          <p>
-            La page demandée n’existe pas ou son adresse a changé.
-          </p>
+          <p>La page demandée n’existe pas ou son adresse a changé.</p>
 
           <div class="sp-not-found__actions">
-            <sp-button
-              type="button"
-              icon="arrow_back"
-              variant="secondary"
-              (buttonClick)="goBack()"
-            >
+            <sp-button type="button" icon="arrow_back" variant="secondary" (buttonClick)="goBack()">
               Page précédente
             </sp-button>
 
-            <a routerLink="/">
-              Retour au tableau de bord
-            </a>
+            <a routerLink="/"> Retour au tableau de bord </a>
           </div>
         </mat-card-content>
       </mat-card>

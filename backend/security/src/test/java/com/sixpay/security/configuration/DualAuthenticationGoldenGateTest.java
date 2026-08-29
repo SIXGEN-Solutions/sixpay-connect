@@ -138,7 +138,7 @@ class DualAuthenticationGoldenGateTest {
         )
                 .as(
                         description
-                                + " must remain in backend/security"
+                                + " must remain input backend/security"
                 )
                 .isTrue();
 

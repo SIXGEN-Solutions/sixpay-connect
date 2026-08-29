@@ -1,6 +1,6 @@
 package com.sixpay.security.application.service;
 
-import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
+import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 

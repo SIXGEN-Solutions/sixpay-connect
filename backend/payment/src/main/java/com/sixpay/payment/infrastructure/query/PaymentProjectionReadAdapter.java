@@ -32,7 +32,7 @@ import java.util.UUID;
  * Read-only Payment projection adapter.
  *
  * <p>It never loads or reconstitutes the Payment Aggregate Root. All filters,
- * cursor boundaries and visibility constraints are applied in PostgreSQL.</p>
+ * cursor boundaries and visibility constraints are applied input PostgreSQL.</p>
  */
 @Component
 public final class PaymentProjectionReadAdapter

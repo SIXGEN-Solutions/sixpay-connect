@@ -163,7 +163,9 @@ export class PaymentsMockService {
       (!query.paymentReference ||
         payment.paymentReference.toLowerCase().includes(query.paymentReference.toLowerCase())) &&
       (!query.tresorPayRequestId ||
-        payment.tresorPayRequestId.toLowerCase().includes(query.tresorPayRequestId.toLowerCase())) &&
+        payment.tresorPayRequestId
+          .toLowerCase()
+          .includes(query.tresorPayRequestId.toLowerCase())) &&
       (!query.observedCustomerId || payment.observedCustomerId === query.observedCustomerId) &&
       (!query.financialInstitutionCode ||
         payment.financialInstitutionCode === query.financialInstitutionCode) &&
@@ -178,18 +180,14 @@ export class PaymentsMockService {
     );
   }
 
-  private readonly toSummary = (
-    payment: PaymentDetailResponse,
-  ): PaymentSummaryResponse => ({
+  private readonly toSummary = (payment: PaymentDetailResponse): PaymentSummaryResponse => ({
     paymentId: payment.paymentId,
     paymentReference: payment.paymentReference,
     tresorPayRequestId: payment.tresorPayRequestId,
     observedCustomerId: payment.observedCustomerId ?? null,
     financialInstitutionCode: payment.financialInstitutionCode,
 
-    ...(payment.debtorAccount
-      ? { debtorAccount: { ...payment.debtorAccount } }
-      : {}),
+    ...(payment.debtorAccount ? { debtorAccount: { ...payment.debtorAccount } } : {}),
 
     amount: { ...payment.amount },
     status: payment.status,

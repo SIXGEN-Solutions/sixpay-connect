@@ -7,7 +7,5 @@ export const administrationGuard: CanActivateFn = () => {
   const authentication = inject(AuthenticationService);
   const router = inject(Router);
 
-  return authentication.hasAnyRole(['ADMIN'])
-    ? true
-    : router.createUrlTree(['/forbidden']);
+  return authentication.hasAnyRole(['ADMIN']) ? true : router.createUrlTree(['/forbidden']);
 };

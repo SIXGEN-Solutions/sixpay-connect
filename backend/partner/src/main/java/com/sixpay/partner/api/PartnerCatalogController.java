@@ -1,7 +1,7 @@
 package com.sixpay.partner.api;
 
 import com.sixpay.partner.api.response.PartnerPageResponse;
-import com.sixpay.partner.application.port.in.PartnerListQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerListQueryUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

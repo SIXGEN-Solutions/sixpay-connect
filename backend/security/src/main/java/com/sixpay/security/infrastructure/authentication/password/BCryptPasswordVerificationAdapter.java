@@ -1,6 +1,6 @@
 package com.sixpay.security.infrastructure.authentication.password;
 
-import com.sixpay.security.application.port.out.PasswordVerificationPort;
+import com.sixpay.security.application.port.output.PasswordVerificationPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Objects;

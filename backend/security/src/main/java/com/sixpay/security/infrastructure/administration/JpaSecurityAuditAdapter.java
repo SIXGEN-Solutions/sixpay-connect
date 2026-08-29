@@ -1,6 +1,6 @@
 package com.sixpay.security.infrastructure.administration;
 
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 
 import java.util.Objects;

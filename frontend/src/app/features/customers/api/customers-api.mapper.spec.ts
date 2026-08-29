@@ -16,12 +16,14 @@ describe('customers-api.mapper', () => {
     legalName: 'CAMEROUN SERVICES SARL',
     phone: null,
     email: { maskedValue: 'c***@example.cm' },
-    institutions: [{
-      financialInstitutionCode: 'LRB',
-      firstObservedAt: '2026-07-13T11:15:00Z',
-      lastObservedAt: '2026-08-08T13:47:12Z',
-      accounts: [{ reference: 'ACC-REF-8921', maskedValue: '•••• 8921' }],
-    }],
+    institutions: [
+      {
+        financialInstitutionCode: 'LRB',
+        firstObservedAt: '2026-07-13T11:15:00Z',
+        lastObservedAt: '2026-08-08T13:47:12Z',
+        accounts: [{ reference: 'ACC-REF-8921', maskedValue: '•••• 8921' }],
+      },
+    ],
     firstObservedAt: '2026-07-13T11:15:00Z',
     lastObservedAt: '2026-08-08T13:47:12Z',
     totalPayments: 17,
@@ -60,16 +62,18 @@ describe('customers-api.mapper', () => {
 
   it('maps linked Payment references with UUIDs', () => {
     const page: ObservedCustomerPaymentPageResponse = {
-      items: [{
-        paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
-        paymentReference: 'PAY-2026-0001842',
-        financialInstitutionCode: 'LRB',
-        amount: { amount: 125000, currency: 'XAF' },
-        status: 'TREASURY_INTEGRATED',
-        reasonCode: null,
-        createdAt: '2026-08-08T13:47:12Z',
-        updatedAt: '2026-08-08T13:47:13Z',
-      }],
+      items: [
+        {
+          paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
+          paymentReference: 'PAY-2026-0001842',
+          financialInstitutionCode: 'LRB',
+          amount: { amount: 125000, currency: 'XAF' },
+          status: 'TREASURY_INTEGRATED',
+          reasonCode: null,
+          createdAt: '2026-08-08T13:47:12Z',
+          updatedAt: '2026-08-08T13:47:13Z',
+        },
+      ],
       size: 1,
       hasMore: false,
       snapshotAt: '2026-08-08T14:00:00Z',

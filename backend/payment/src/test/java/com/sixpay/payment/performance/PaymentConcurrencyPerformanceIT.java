@@ -263,7 +263,7 @@ class PaymentConcurrencyPerformanceIT {
                                                 TimeUnit.SECONDS
                                         )) {
                                             throw new IllegalStateException(
-                                                    "Replay start timed out"
+                                                    "Replay start timed output"
                                             );
                                         }
 
@@ -461,7 +461,7 @@ class PaymentConcurrencyPerformanceIT {
                                                 TimeUnit.SECONDS
                                         )) {
                                             throw new IllegalStateException(
-                                                    "Volume start timed out"
+                                                    "Volume start timed output"
                                             );
                                         }
 

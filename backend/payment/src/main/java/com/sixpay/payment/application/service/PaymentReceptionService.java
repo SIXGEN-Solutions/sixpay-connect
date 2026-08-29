@@ -10,6 +10,14 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * Creates the Payment aggregate for a prepared initiation and advances it to
+ * the customer-confirmation waiting state.
+ *
+ * <p>The external payment reference is checked before creation for a clearer
+ * application error; the database unique constraint remains the final guard
+ * against concurrent duplicates.</p>
+ */
 @Service
 public class PaymentReceptionService {
 
@@ -30,6 +38,10 @@ public class PaymentReceptionService {
         );
     }
 
+    /**
+     * Creates a Payment, records reception and confirmation-request domain
+     * events, then persists the aggregate, audit trail and outbox atomically.
+     */
     public PaymentWorkflowResult receive(
             PaymentId paymentId,
             PublicPaymentReference publicPaymentReference,

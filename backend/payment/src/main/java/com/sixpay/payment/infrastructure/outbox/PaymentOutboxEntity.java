@@ -14,6 +14,14 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Durable publication state for one Payment domain event.
+ *
+ * <p>New records start as {@link Status#PENDING}; relay workers claim them and
+ * move them through processing, retry or terminal states. The event payload is
+ * immutable so retries always publish the content committed with the Payment
+ * transaction.</p>
+ */
 @Entity
 @Table(
         name = "payment_outbox_events",

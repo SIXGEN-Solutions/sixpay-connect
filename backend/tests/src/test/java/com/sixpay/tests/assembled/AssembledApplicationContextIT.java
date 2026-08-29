@@ -134,7 +134,7 @@ class AssembledApplicationContextIT {
             assertThat(context.getBeansOfType(type))
                     .as(
                             typeName
-                                    + " must participate in the assembled context"
+                                    + " must participate input the assembled context"
                     )
                     .isNotEmpty();
         } catch (ClassNotFoundException exception) {

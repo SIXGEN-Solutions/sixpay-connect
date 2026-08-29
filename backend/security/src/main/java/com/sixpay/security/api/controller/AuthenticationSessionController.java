@@ -1,8 +1,8 @@
 package com.sixpay.security.api.controller;
 
 import com.sixpay.security.api.dto.AuthenticationSessionResponse;
-import com.sixpay.security.application.port.in.GetCurrentSessionUseCase;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;

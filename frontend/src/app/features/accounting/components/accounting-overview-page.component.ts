@@ -9,10 +9,7 @@ import { RouterLink } from '@angular/router';
 import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
-import {
-  AccountingBatchStatus,
-  AccountingBatchSummary,
-} from '../models/accounting';
+import { AccountingBatchStatus, AccountingBatchSummary } from '../models/accounting';
 import { AccountingBatchQuery } from '../models/accounting-query';
 import { AccountingService } from '../services/accounting.service';
 
@@ -31,24 +28,13 @@ import { AccountingService } from '../services/accounting.service';
   ],
   template: `
     <section class="sp-page">
-      <sp-toolbar
-        title="Comptabilisation"
-        description="Consultation des lots comptables."
-      />
+      <sp-toolbar title="Comptabilisation" description="Consultation des lots comptables." />
 
       <sp-card title="Filtres">
-        <form
-          class="sp-filter-grid"
-          [formGroup]="form"
-          (ngSubmit)="search()"
-        >
+        <form class="sp-filter-grid" [formGroup]="form" (ngSubmit)="search()">
           <mat-form-field appearance="outline">
             <mat-label>Business date</mat-label>
-            <input
-              matInput
-              formControlName="businessDate"
-              placeholder="YYYY-MM-DD"
-            />
+            <input matInput formControlName="businessDate" placeholder="YYYY-MM-DD" />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -66,18 +52,9 @@ import { AccountingService } from '../services/accounting.service';
           </mat-form-field>
 
           <div class="sp-actions">
-            <sp-button
-              type="submit"
-              icon="search"
-            >
-              Rechercher
-            </sp-button>
+            <sp-button type="submit" icon="search"> Rechercher </sp-button>
 
-            <sp-button
-              type="button"
-              icon="restart_alt"
-              (buttonClick)="reset()"
-            >
+            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()">
               Réinitialiser
             </sp-button>
           </div>
@@ -96,9 +73,7 @@ import { AccountingService } from '../services/accounting.service';
 
       <sp-card title="Lots comptables">
         @if (batches().length === 0) {
-          <p class="sp-empty">
-            Aucun lot ne correspond aux critères.
-          </p>
+          <p class="sp-empty">Aucun lot ne correspond aux critères.</p>
         } @else {
           <div class="sp-table-scroll">
             <table class="sp-table">
@@ -117,12 +92,7 @@ import { AccountingService } from '../services/accounting.service';
                 @for (batch of batches(); track batch.batchId) {
                   <tr>
                     <td>
-                      <a
-                        [routerLink]="[
-                          'batches',
-                          batch.batchId
-                        ]"
-                      >
+                      <a [routerLink]="['batches', batch.batchId]">
                         {{ batch.batchId }}
                       </a>
                     </td>
@@ -199,8 +169,7 @@ import { AccountingService } from '../services/accounting.service';
     .sp-table td {
       padding: var(--sp-space-2);
       text-align: left;
-      border-bottom:
-        1px solid var(--mat-sys-outline-variant);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
       white-space: nowrap;
     }
 
@@ -224,19 +193,14 @@ export class AccountingOverviewPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly accounting = inject(AccountingService);
 
-  protected readonly batches =
-    signal<readonly AccountingBatchSummary[]>([]);
+  protected readonly batches = signal<readonly AccountingBatchSummary[]>([]);
 
-  protected readonly statuses: readonly AccountingBatchStatus[] = [
-    'NOT_COMPLETED',
-    'COMPLETED'
-  ];
+  protected readonly statuses: readonly AccountingBatchStatus[] = ['NOT_COMPLETED', 'COMPLETED'];
 
-  protected readonly form =
-    this.formBuilder.nonNullable.group({
-      businessDate: [''],
-      status: [''],
-    });
+  protected readonly form = this.formBuilder.nonNullable.group({
+    businessDate: [''],
+    status: [''],
+  });
 
   constructor() {
     this.search();
@@ -258,11 +222,9 @@ export class AccountingOverviewPageComponent {
         : {}),
     };
 
-    this.accounting
-      .search(query)
-      .subscribe((batches) => {
-        this.batches.set(batches);
-      });
+    this.accounting.search(query).subscribe((batches) => {
+      this.batches.set(batches);
+    });
   }
 
   protected reset(): void {
@@ -275,9 +237,6 @@ export class AccountingOverviewPageComponent {
   }
 
   protected totalItems(): number {
-    return this.batches().reduce(
-      (total, batch) => total + batch.itemCount,
-      0,
-    );
+    return this.batches().reduce((total, batch) => total + batch.itemCount, 0);
   }
 }

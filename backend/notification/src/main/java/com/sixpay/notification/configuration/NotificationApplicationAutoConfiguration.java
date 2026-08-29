@@ -2,10 +2,10 @@ package com.sixpay.notification.configuration;
 
 import com.sixpay.common.time.SystemTimeProvider;
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
-import com.sixpay.notification.application.port.out.PartnerNotificationSender;
-import com.sixpay.notification.application.port.out.PartnerStatusChangedEventDecoder;
+import com.sixpay.notification.application.port.input.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
+import com.sixpay.notification.application.port.output.PartnerStatusChangedEventDecoder;
 import com.sixpay.notification.application.service.PartnerDecisionNotificationService;
 import com.sixpay.notification.application.service.NotificationRetryPolicy;
 import com.sixpay.notification.infrastructure.messaging.JacksonPartnerStatusChangedEventDecoder;

@@ -31,54 +31,29 @@ import { CustomerManagementService } from '../services/customer-management.servi
     />
 
     <sp-card title="1. Recherche bancaire">
-      <form
-        class="customer-enrollment-form"
-        [formGroup]="form"
-        (ngSubmit)="search()"
-        novalidate
-      >
+      <form class="customer-enrollment-form" [formGroup]="form" (ngSubmit)="search()" novalidate>
         <mat-form-field appearance="outline">
           <mat-label>Institution financière</mat-label>
-          <input
-            matInput
-            formControlName="financialInstitutionCode"
-            autocomplete="off"
-          />
+          <input matInput formControlName="financialInstitutionCode" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>NIU</mat-label>
-          <input
-            matInput
-            formControlName="niu"
-            autocomplete="off"
-          />
+          <input matInput formControlName="niu" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Numéro client</mat-label>
-          <input
-            matInput
-            formControlName="customerNumber"
-            autocomplete="off"
-          />
+          <input matInput formControlName="customerNumber" autocomplete="off" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Référence compte</mat-label>
-          <input
-            matInput
-            formControlName="accountReference"
-            autocomplete="off"
-          />
+          <input matInput formControlName="accountReference" autocomplete="off" />
         </mat-form-field>
 
         <div class="customer-enrollment-form__actions">
-          <sp-button
-            type="submit"
-            icon="search"
-            [disabled]="searching()"
-          >
+          <sp-button type="submit" icon="search" [disabled]="searching()">
             {{ searching() ? 'Recherche…' : 'Rechercher dans Amplitude' }}
           </sp-button>
         </div>
@@ -115,8 +90,8 @@ import { CustomerManagementService } from '../services/customer-management.servi
         </div>
 
         <p class="customer-preview__notice">
-          Le preview ne constitue pas une preuve. La confirmation déclenche
-          une vérification bancaire fraîche côté backend avant création.
+          Le preview ne constitue pas une preuve. La confirmation déclenche une vérification
+          bancaire fraîche côté backend avant création.
         </p>
 
         <div class="customer-enrollment-form__actions">
@@ -132,49 +107,51 @@ import { CustomerManagementService } from '../services/customer-management.servi
       </sp-card>
     }
   `,
-  styles: [`
-    .customer-enrollment-form {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      align-items: start;
-    }
-
-    .customer-enrollment-form__actions {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .customer-preview {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .customer-preview > div {
-      display: grid;
-      gap: 0.25rem;
-    }
-
-    .customer-preview__label {
-      font-size: 0.875rem;
-      opacity: 0.75;
-    }
-
-    .customer-preview__notice {
-      margin: 1rem 0;
-    }
-
-    @media (max-width: 700px) {
-      .customer-enrollment-form,
-      .customer-preview {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .customer-enrollment-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: start;
       }
-    }
-  `],
+
+      .customer-enrollment-form__actions {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .customer-preview {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .customer-preview > div {
+        display: grid;
+        gap: 0.25rem;
+      }
+
+      .customer-preview__label {
+        font-size: 0.875rem;
+        opacity: 0.75;
+      }
+
+      .customer-preview__notice {
+        margin: 1rem 0;
+      }
+
+      @media (max-width: 700px) {
+        .customer-enrollment-form,
+        .customer-preview {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
 })
 export class CustomerEnrollmentWizardComponent {
   private readonly fb = inject(FormBuilder);
@@ -187,16 +164,10 @@ export class CustomerEnrollmentWizardComponent {
   protected readonly preview = signal<BankingCustomerPreview | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
-    financialInstitutionCode: [
-      '',
-      [Validators.required, Validators.maxLength(50)],
-    ],
+    financialInstitutionCode: ['', [Validators.required, Validators.maxLength(50)]],
     niu: [''],
     customerNumber: [''],
-    accountReference: [
-      '',
-      [Validators.required, Validators.maxLength(100)],
-    ],
+    accountReference: ['', [Validators.required, Validators.maxLength(100)]],
   });
 
   protected search(): void {
@@ -215,24 +186,16 @@ export class CustomerEnrollmentWizardComponent {
 
     this.service
       .bankingPreview({
-        financialInstitutionCode:
-          value.financialInstitutionCode.trim(),
-        accountReference:
-          value.accountReference.trim(),
+        financialInstitutionCode: value.financialInstitutionCode.trim(),
+        accountReference: value.accountReference.trim(),
         ...(niu ? { niu } : {}),
-        ...(customerNumber
-          ? { customerNumber }
-          : {}),
+        ...(customerNumber ? { customerNumber } : {}),
       })
       .pipe(
         catchError(() => EMPTY),
-        finalize(() =>
-          this.searching.set(false)
-        ),
+        finalize(() => this.searching.set(false)),
       )
-      .subscribe((preview) =>
-        this.preview.set(preview)
-      );
+      .subscribe((preview) => this.preview.set(preview));
   }
 
   protected enroll(): void {
@@ -242,37 +205,27 @@ export class CustomerEnrollmentWizardComponent {
 
     const value = this.form.getRawValue();
     const niu = value.niu.trim();
-    const customerNumber =
-      value.customerNumber.trim();
+    const customerNumber = value.customerNumber.trim();
 
     this.enrolling.set(true);
 
     this.service
       .enroll({
-        financialInstitutionCode:
-          value.financialInstitutionCode.trim(),
-        accountReference:
-          value.accountReference.trim(),
+        financialInstitutionCode: value.financialInstitutionCode.trim(),
+        accountReference: value.accountReference.trim(),
         ...(niu ? { niu } : {}),
-        ...(customerNumber
-          ? { customerNumber }
-          : {}),
+        ...(customerNumber ? { customerNumber } : {}),
       })
       .pipe(
         catchError(() => EMPTY),
-        finalize(() =>
-          this.enrolling.set(false)
-        ),
+        finalize(() => this.enrolling.set(false)),
       )
       .subscribe((customer) => {
-        void this.router.navigate(
-          ['/customers', customer.id],
-          {
-            queryParams: {
-              enrolled: true,
-            },
+        void this.router.navigate(['/customers', customer.id], {
+          queryParams: {
+            enrolled: true,
           },
-        );
+        });
       });
   }
 }

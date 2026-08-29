@@ -1,7 +1,7 @@
 package com.sixpay.notification.infrastructure.email;
 
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
-import com.sixpay.notification.application.port.out.PartnerNotificationSender;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
 import com.sixpay.notification.infrastructure.email.smtp.SmtpEmailGateway;
 
 import java.util.Objects;

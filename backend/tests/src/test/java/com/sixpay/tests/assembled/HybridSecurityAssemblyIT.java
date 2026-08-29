@@ -1,6 +1,6 @@
 package com.sixpay.tests.assembled;
 
-import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;

@@ -36,10 +36,25 @@ import { IdentityService } from '../services/identity.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-tabs{display:flex;gap:var(--sp-space-3)}
-    .sp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3)}
-    @media(max-width:700px){.sp-grid{grid-template-columns:1fr}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-tabs {
+      display: flex;
+      gap: var(--sp-space-3);
+    }
+    .sp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    @media (max-width: 700px) {
+      .sp-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class RolesPageComponent {

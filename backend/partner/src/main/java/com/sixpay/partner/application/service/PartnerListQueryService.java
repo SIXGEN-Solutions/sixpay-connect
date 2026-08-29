@@ -1,6 +1,6 @@
 package com.sixpay.partner.application.service;
 
-import com.sixpay.partner.application.port.in.PartnerListQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerListQueryUseCase;
 import com.sixpay.partner.application.port.output.PartnerCatalog;
 import com.sixpay.partner.application.view.PartnerPage;
 import org.springframework.stereotype.Service;

@@ -2,8 +2,8 @@ package com.sixpay.security.api.controller;
 
 import com.sixpay.security.api.dto.AuthenticationSessionResponse;
 import com.sixpay.security.api.dto.LocalLoginRequest;
-import com.sixpay.security.application.port.in.AuthenticateLocalUserUseCase;
-import com.sixpay.security.application.port.in.LocalLoginCommand;
+import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
+import com.sixpay.security.application.port.input.LocalLoginCommand;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.authentication.AuthenticationMethod;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;

@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.util.Currency;
 
 /**
- * Represents a monetary amount in a specific currency.
+ * Represents a monetary amount input a specific currency.
  *
  * @param amount monetary amount
  * @param currency monetary currency

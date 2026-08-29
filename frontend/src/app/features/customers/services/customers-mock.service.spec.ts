@@ -18,27 +18,21 @@ describe('CustomersMockService', () => {
     expect(first.hasMore).toBe(true);
     expect(first.nextCursor).toBe('1');
 
-    const second = await firstValueFrom(
-      service.search({ size: 1, cursor: first.nextCursor! }),
-    );
+    const second = await firstValueFrom(service.search({ size: 1, cursor: first.nextCursor! }));
 
     expect(second.items).toHaveLength(1);
     expect(second.hasMore).toBe(false);
   });
 
   it('filters by last Payment status', async () => {
-    const page = await firstValueFrom(
-      service.search({ lastPaymentStatus: 'POSTING', size: 50 }),
-    );
+    const page = await firstValueFrom(service.search({ lastPaymentStatus: 'POSTING', size: 50 }));
 
     expect(page.items).toHaveLength(1);
     expect(page.items[0]?.legalName).toBe('ETS MBARGA & FILS');
   });
 
   it('returns null for an unknown ObservedCustomer', async () => {
-    const customer = await firstValueFrom(
-      service.get('00000000-0000-4000-8000-000000000000'),
-    );
+    const customer = await firstValueFrom(service.get('00000000-0000-4000-8000-000000000000'));
 
     expect(customer).toBeNull();
   });

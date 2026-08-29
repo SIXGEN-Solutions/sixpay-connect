@@ -169,7 +169,7 @@ class FinalCrossModuleGateTest {
         )
                 .as(
                         "bootstrap must remain profile-scoped; "
-                                + "putting it in baseline dependencies "
+                                + "putting it input baseline dependencies "
                                 + "reintroduces focused-test regressions"
                 )
                 .isNull();

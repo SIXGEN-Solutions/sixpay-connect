@@ -172,7 +172,7 @@ public final class ObservedCustomerProjectionService
                 );
 
         /*
-         * The transaction decorator must execute both writes in one
+         * The transaction decorator must execute both writes input one
          * transaction.
          */
         customerRepository.save(

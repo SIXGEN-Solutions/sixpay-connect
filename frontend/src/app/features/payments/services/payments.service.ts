@@ -4,10 +4,7 @@ import { catchError, map, Observable, of, throwError } from 'rxjs';
 
 import { BackendModeService } from '../../../core/backend/backend-mode.service';
 import { PaymentsApiClient } from '../api/payments-api.client';
-import {
-  mapPaymentDetailResponse,
-  mapPaymentSearchPageResponse,
-} from '../api/payments-api.mapper';
+import { mapPaymentDetailResponse, mapPaymentSearchPageResponse } from '../api/payments-api.mapper';
 import { PaymentSearchQuery } from '../models/payment-query';
 import { PaymentDetail, PaymentSearchPage } from '../models/payments';
 import { PaymentsMockService } from './payments-mock.service';
@@ -28,9 +25,9 @@ export class PaymentsService {
 
   get(paymentId: string): Observable<PaymentDetail | null> {
     if (this.backendMode.usesMock) {
-      return this.mock.get(paymentId).pipe(
-        map((response) => (response ? mapPaymentDetailResponse(response) : null)),
-      );
+      return this.mock
+        .get(paymentId)
+        .pipe(map((response) => (response ? mapPaymentDetailResponse(response) : null)));
     }
 
     return this.api.getPayment(paymentId).pipe(

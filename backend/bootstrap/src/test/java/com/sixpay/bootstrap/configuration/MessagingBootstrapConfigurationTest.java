@@ -5,7 +5,7 @@ import com.sixpay.integration.configuration.InternalMessagingAutoConfiguration;
 import com.sixpay.integration.configuration.KafkaMessagingAutoConfiguration;
 import com.sixpay.integration.messaging.internal.InternalEventBusTransport;
 import com.sixpay.integration.messaging.kafka.KafkaEventTransport;
-import com.sixpay.notification.application.port.in.HandleIntegrationEventUseCase;
+import com.sixpay.notification.application.port.input.HandleIntegrationEventUseCase;
 import com.sixpay.notification.configuration.NotificationMessagingAutoConfiguration;
 import com.sixpay.notification.infrastructure.messaging.internal.InternalIntegrationEventListener;
 import com.sixpay.notification.infrastructure.messaging.kafka.KafkaIntegrationEventListener;

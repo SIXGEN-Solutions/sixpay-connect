@@ -16,6 +16,12 @@ import java.util.function.Function;
 
 /**
  * PostgreSQL-backed idempotent execution adapter for InitiateDebit.
+ *
+ * <p>The transaction covers the idempotency record and the complete new-request
+ * action. Consequently, a successful commit contains both the replayable
+ * response and the Payment/audit/outbox writes; a failure rolls them back
+ * together. A PostgreSQL advisory lock serializes concurrent calls for the
+ * same operation and key.</p>
  */
 @Component
 @ConditionalOnBean({
@@ -74,6 +80,12 @@ public class PaymentInitiationIdempotencyAdapter
         );
     }
 
+    /**
+     * Fingerprints canonical business content, serializes competing requests
+     * for the key, then selects one of three outcomes: replay a completed
+     * response, reject a still-running request, or execute and store a new
+     * response.
+     */
     @Override
     @Transactional
     public InitiateDebitResult execute(
@@ -155,6 +167,11 @@ public class PaymentInitiationIdempotencyAdapter
         return result;
     }
 
+    /**
+     * Decodes the stored response and verifies that its Payment identifier
+     * agrees with the independently stored idempotency metadata before it is
+     * returned to the caller.
+     */
     private InitiateDebitResult replay(
             PaymentIdempotencyDecision decision
     ) {

@@ -94,7 +94,7 @@ class CustomerProjectionOutboxObservabilityArchitectureTest {
         /*
          * The metric names are assembled from PREFIX and bounded suffixes.
          * Do not require the complete concatenated metric name to appear
-         * literally in the Java source.
+         * literally input the Java source.
          */
         assertTrue(
                 source.contains(

@@ -107,12 +107,7 @@ describe('ReportingService', () => {
   it('uses mock datasource for reporting in mock mode', async () => {
     const { service, api, mock } = configure(false);
 
-    await firstValueFrom(
-      service.timeline(
-        '7fa85f64-5717-4562-b3fc-2c963f66afa1',
-        { size: 10 },
-      ),
-    );
+    await firstValueFrom(service.timeline('7fa85f64-5717-4562-b3fc-2c963f66afa1', { size: 10 }));
 
     expect(mock.timeline).toHaveBeenCalledOnce();
     expect(api.timeline).not.toHaveBeenCalled();
@@ -152,9 +147,7 @@ describe('ReportingService', () => {
   it('maps API audit details to application models', async () => {
     const { service } = configure(true);
 
-    const record = await firstValueFrom(
-      service.getAudit('22222222-2222-4222-8222-222222222201'),
-    );
+    const record = await firstValueFrom(service.getAudit('22222222-2222-4222-8222-222222222201'));
 
     expect(record?.occurredAt).toBeInstanceOf(Date);
     expect(record?.integrityScheme).toBe('HASH_CHAIN');
@@ -173,9 +166,7 @@ describe('ReportingService', () => {
       ),
     );
 
-    const record = await firstValueFrom(
-      service.getAudit('missing-audit'),
-    );
+    const record = await firstValueFrom(service.getAudit('missing-audit'));
 
     expect(record).toBeNull();
   });
@@ -193,9 +184,7 @@ describe('ReportingService', () => {
       ),
     );
 
-    const exportJob = await firstValueFrom(
-      service.getExport('missing-export'),
-    );
+    const exportJob = await firstValueFrom(service.getExport('missing-export'));
 
     expect(exportJob).toBeNull();
   });

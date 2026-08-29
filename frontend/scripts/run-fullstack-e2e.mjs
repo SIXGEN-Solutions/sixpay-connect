@@ -18,17 +18,11 @@ const postgresContainer = `sixpay-fullstack-postgres-${process.pid}`;
 let backendProcess;
 
 function run(command, args, options = {}) {
-  const isWindowsCmd =
-    process.platform === 'win32' &&
-    command.toLowerCase().endsWith('.cmd');
+  const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
 
-  const executable = isWindowsCmd
-    ? process.env.ComSpec || 'cmd.exe'
-    : command;
+  const executable = isWindowsCmd ? process.env.ComSpec || 'cmd.exe' : command;
 
-  const executableArgs = isWindowsCmd
-    ? ['/d', '/s', '/c', command, ...args]
-    : args;
+  const executableArgs = isWindowsCmd ? ['/d', '/s', '/c', command, ...args] : args;
 
   const result = spawnSync(executable, executableArgs, {
     stdio: 'inherit',
@@ -38,9 +32,7 @@ function run(command, args, options = {}) {
   if (result.error) throw result.error;
 
   if (result.status !== 0) {
-    throw new Error(
-      `${command} ${args.join(' ')} failed with exit code ${result.status}`,
-    );
+    throw new Error(`${command} ${args.join(' ')} failed with exit code ${result.status}`);
   }
 }
 
@@ -98,9 +90,7 @@ function findBootstrapJar() {
 
   const candidates = readdirSync(bootstrapTarget).filter(
     (name) =>
-      name.endsWith('.jar') &&
-      !name.endsWith('.jar.original') &&
-      !name.startsWith('original-'),
+      name.endsWith('.jar') && !name.endsWith('.jar.original') && !name.startsWith('original-'),
   );
 
   if (candidates.length !== 1) {
@@ -128,11 +118,7 @@ function terminateProcessTree(child) {
   if (!child || child.exitCode !== null) return;
 
   if (process.platform === 'win32') {
-    spawnSync(
-      'taskkill',
-      ['/PID', String(child.pid), '/T', '/F'],
-      { stdio: 'ignore' },
-    );
+    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
   } else {
     child.kill('SIGTERM');
   }
@@ -165,15 +151,7 @@ async function main() {
 
   run(
     maven,
-    [
-      '-f',
-      join(backendDir, 'pom.xml'),
-      '-pl',
-      'bootstrap',
-      '-am',
-      '-DskipTests',
-      'package',
-    ],
+    ['-f', join(backendDir, 'pom.xml'), '-pl', 'bootstrap', '-am', '-DskipTests', 'package'],
     { cwd: repositoryRoot },
   );
 
@@ -184,8 +162,7 @@ async function main() {
     env: {
       ...process.env,
       SPRING_PROFILES_ACTIVE: 'integration',
-      SPRING_DATASOURCE_URL:
-        `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
+      SPRING_DATASOURCE_URL: `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
       SPRING_DATASOURCE_USERNAME: 'sixpay',
       SPRING_DATASOURCE_PASSWORD: 'sixpay-test',
       SIXPAY_LOCAL_ADMIN_PASSWORD: 'admin-dev-2026',
@@ -196,11 +173,10 @@ async function main() {
 
   await waitForBackend();
 
-  run(
-    npx,
-    ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'],
-    { cwd: frontendDir, env: process.env },
-  );
+  run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
+    cwd: frontendDir,
+    env: process.env,
+  });
 }
 
 try {

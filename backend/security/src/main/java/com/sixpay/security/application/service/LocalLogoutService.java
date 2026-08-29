@@ -1,8 +1,8 @@
 package com.sixpay.security.application.service;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.security.application.port.in.LogoutUseCase;
-import com.sixpay.security.application.port.out.AuthenticationAuditPort;
+import com.sixpay.security.application.port.input.LogoutUseCase;
+import com.sixpay.security.application.port.output.AuthenticationAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.authentication.LocalAuthenticationAuditEvent;
 import com.sixpay.security.domain.authentication.LocalAuthenticationAuditOutcome;

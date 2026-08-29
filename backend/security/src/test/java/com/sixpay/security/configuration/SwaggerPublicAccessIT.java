@@ -1,6 +1,6 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;

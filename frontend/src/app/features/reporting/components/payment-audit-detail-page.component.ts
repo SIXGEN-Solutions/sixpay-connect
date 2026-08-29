@@ -28,23 +28,59 @@ import { ReportingService } from '../services/reporting.service';
         <div class="sp-grid">
           <sp-card title="Événement">
             <dl class="sp-details">
-              <div><dt>Audit ID</dt><dd>{{ audit.auditId }}</dd></div>
-              <div><dt>Date</dt><dd>{{ audit.occurredAt | date: 'dd/MM/yyyy HH:mm:ss.SSS' }}</dd></div>
-              <div><dt>Résultat</dt><dd>{{ audit.result }}</dd></div>
-              <div><dt>Reason code</dt><dd>{{ audit.reasonCode }}</dd></div>
-              <div><dt>Source</dt><dd>{{ audit.sourceSystem }}</dd></div>
-              <div><dt>Correlation ID</dt><dd>{{ audit.correlationId }}</dd></div>
+              <div>
+                <dt>Audit ID</dt>
+                <dd>{{ audit.auditId }}</dd>
+              </div>
+              <div>
+                <dt>Date</dt>
+                <dd>{{ audit.occurredAt | date: 'dd/MM/yyyy HH:mm:ss.SSS' }}</dd>
+              </div>
+              <div>
+                <dt>Résultat</dt>
+                <dd>{{ audit.result }}</dd>
+              </div>
+              <div>
+                <dt>Reason code</dt>
+                <dd>{{ audit.reasonCode }}</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>{{ audit.sourceSystem }}</dd>
+              </div>
+              <div>
+                <dt>Correlation ID</dt>
+                <dd>{{ audit.correlationId }}</dd>
+              </div>
             </dl>
           </sp-card>
 
           <sp-card title="Acteur / cible">
             <dl class="sp-details">
-              <div><dt>Acteur</dt><dd>{{ audit.actorType }} / {{ audit.actorId }}</dd></div>
-              <div><dt>Rôles</dt><dd>{{ audit.actorRoles.join(', ') || '—' }}</dd></div>
-              <div><dt>Cible</dt><dd>{{ audit.targetType }} / {{ audit.targetId }}</dd></div>
-              <div><dt>Payment</dt><dd>{{ audit.paymentReference ?? audit.paymentId ?? '—' }}</dd></div>
-              <div><dt>Avant</dt><dd>{{ audit.beforeState ?? '—' }}</dd></div>
-              <div><dt>Après</dt><dd>{{ audit.afterState ?? '—' }}</dd></div>
+              <div>
+                <dt>Acteur</dt>
+                <dd>{{ audit.actorType }} / {{ audit.actorId }}</dd>
+              </div>
+              <div>
+                <dt>Rôles</dt>
+                <dd>{{ audit.actorRoles.join(', ') || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Cible</dt>
+                <dd>{{ audit.targetType }} / {{ audit.targetId }}</dd>
+              </div>
+              <div>
+                <dt>Payment</dt>
+                <dd>{{ audit.paymentReference ?? audit.paymentId ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Avant</dt>
+                <dd>{{ audit.beforeState ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Après</dt>
+                <dd>{{ audit.afterState ?? '—' }}</dd>
+              </div>
             </dl>
           </sp-card>
         </div>
@@ -52,13 +88,18 @@ import { ReportingService } from '../services/reporting.service';
         <sp-card title="Métadonnées minimisées">
           <dl class="sp-details">
             @for (item of audit.metadata | keyvalue; track item.key) {
-              <div><dt>{{ item.key }}</dt><dd>{{ item.value }}</dd></div>
+              <div>
+                <dt>{{ item.key }}</dt>
+                <dd>{{ item.value }}</dd>
+              </div>
             }
           </dl>
         </sp-card>
 
         <sp-card title="Preuve d'intégrité">
-          <p><strong>{{ audit.integrityScheme }}</strong></p>
+          <p>
+            <strong>{{ audit.integrityScheme }}</strong>
+          </p>
           <p class="sp-wrap">{{ audit.integrityValue }}</p>
         </sp-card>
       } @else if (notFound()) {
@@ -71,14 +112,44 @@ import { ReportingService } from '../services/reporting.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-space-3)}
-    .sp-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3);margin:0}
-    .sp-details div{display:grid;gap:.2rem}
-    .sp-details dt{color:var(--mat-sys-on-surface-variant);font-size:.85rem}
-    .sp-details dd{margin:0;font-weight:700;overflow-wrap:anywhere}
-    .sp-wrap{overflow-wrap:anywhere}
-    @media(max-width:800px){.sp-grid,.sp-details{grid-template-columns:1fr}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-space-3);
+    }
+    .sp-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+      margin: 0;
+    }
+    .sp-details div {
+      display: grid;
+      gap: 0.2rem;
+    }
+    .sp-details dt {
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 0.85rem;
+    }
+    .sp-details dd {
+      margin: 0;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .sp-wrap {
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 800px) {
+      .sp-grid,
+      .sp-details {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class PaymentAuditDetailPageComponent {

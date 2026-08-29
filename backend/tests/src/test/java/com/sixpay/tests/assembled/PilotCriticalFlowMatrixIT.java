@@ -71,12 +71,12 @@ class PilotCriticalFlowMatrixIT
             FlowExpectation.wired(
                     "Payment -> Customer Verification",
                     CUSTOMER_VERIFICATION_PORT,
-                    "INT-03 is an implemented in-process module boundary"
+                    "INT-03 is an implemented input-process module boundary"
             ),
             FlowExpectation.wired(
                     "Payment -> Observed Customer projection",
                     OBSERVED_CUSTOMER_PROJECTION_PORT,
-                    "INT-10 projection boundary must participate in the assembled application"
+                    "INT-10 projection boundary must participate input the assembled application"
             ),
             FlowExpectation.wired(
                     "Payment -> Observed Customer orchestration",

@@ -1,6 +1,6 @@
 package com.sixpay.notification.configuration;
 
-import com.sixpay.notification.application.port.out.NotificationDeliveryStore;
+import com.sixpay.notification.application.port.output.NotificationDeliveryStore;
 import com.sixpay.notification.infrastructure.persistence.JpaNotificationDeliveryStore;
 import com.sixpay.notification.infrastructure.persistence.NotificationDeliveryJpaEntity;
 import com.sixpay.notification.infrastructure.persistence.NotificationDeliverySpringDataRepository;

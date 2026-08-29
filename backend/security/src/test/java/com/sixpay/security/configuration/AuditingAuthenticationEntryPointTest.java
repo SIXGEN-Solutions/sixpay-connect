@@ -1,6 +1,6 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.out.SecurityAuditPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
 import org.junit.jupiter.api.Test;

@@ -158,7 +158,7 @@ class ObservedCustomerLot487FinalArchitectureTest {
                                 return java.util.stream.Stream.of(
                                         path
                                                 + " has no protection "
-                                                + "marker in toString()"
+                                                + "marker input toString()"
                                 );
                             }
 
@@ -282,7 +282,7 @@ class ObservedCustomerLot487FinalArchitectureTest {
                         path
                                 + " exposes sensitive expression "
                                 + expression
-                                + " in toString()"
+                                + " input toString()"
                 )
                 .toList();
     }

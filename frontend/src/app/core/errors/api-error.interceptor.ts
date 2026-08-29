@@ -1,15 +1,8 @@
-import {
-  HttpErrorResponse,
-  HttpInterceptorFn,
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
-import {
-  ApplicationError,
-  ApplicationErrorKind,
-  isProblemDetail,
-} from './api-error.model';
+import { ApplicationError, ApplicationErrorKind, isProblemDetail } from './api-error.model';
 import { ErrorService } from './error.service';
 
 const CORRELATION_ID_HEADER = 'X-Correlation-ID';
@@ -57,10 +50,7 @@ export function mapHttpErrorResponse(
   };
 }
 
-export function parseRetryAfter(
-  value: string | null,
-  now = Date.now(),
-): number | null {
+export function parseRetryAfter(value: string | null, now = Date.now()): number | null {
   if (!value) {
     return null;
   }
@@ -80,21 +70,14 @@ export function parseRetryAfter(
   return Math.max(0, Math.ceil((retryAt - now) / 1000));
 }
 
-function isExpectedLocalAuthenticationFailure(
-  url: string,
-  error: HttpErrorResponse,
-): boolean {
-  const expectedAnonymousStatus =
-    error.status === 401 || error.status === 403;
+function isExpectedLocalAuthenticationFailure(url: string, error: HttpErrorResponse): boolean {
+  const expectedAnonymousStatus = error.status === 401 || error.status === 403;
 
   if (!expectedAnonymousStatus) {
     return false;
   }
 
-  return (
-    matchesPath(url, LOCAL_AUTH_ME_PATH) ||
-    matchesPath(url, LOCAL_AUTH_LOGOUT_PATH)
-  );
+  return matchesPath(url, LOCAL_AUTH_ME_PATH) || matchesPath(url, LOCAL_AUTH_LOGOUT_PATH);
 }
 
 function matchesPath(url: string, path: string): boolean {
@@ -129,37 +112,32 @@ function defaultErrorCopy(status: number): {
     case 0:
       return {
         title: 'Service indisponible',
-        detail:
-          'Impossible de joindre le serveur SIXPAY. Vérifiez la connectivité puis réessayez.',
+        detail: 'Impossible de joindre le serveur SIXPAY. Vérifiez la connectivité puis réessayez.',
       };
 
     case 404:
       return {
         title: 'Ressource introuvable',
-        detail:
-          'La ressource demandée n’existe pas ou n’est plus disponible.',
+        detail: 'La ressource demandée n’existe pas ou n’est plus disponible.',
       };
 
     case 429:
       return {
         title: 'Trop de requêtes',
-        detail:
-          'Le service limite temporairement les requêtes. Réessayez après le délai indiqué.',
+        detail: 'Le service limite temporairement les requêtes. Réessayez après le délai indiqué.',
       };
 
     default:
       if (status >= 500) {
         return {
           title: 'Erreur serveur',
-          detail:
-            'Le service SIXPAY rencontre une erreur temporaire. Réessayez ultérieurement.',
+          detail: 'Le service SIXPAY rencontre une erreur temporaire. Réessayez ultérieurement.',
         };
       }
 
       return {
         title: 'Erreur de communication',
-        detail:
-          'Une erreur est survenue pendant la communication avec le serveur.',
+        detail: 'Une erreur est survenue pendant la communication avec le serveur.',
       };
   }
 }

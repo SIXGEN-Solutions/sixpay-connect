@@ -1,10 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  computed,
-  inject,
-  Injectable,
-  signal,
-} from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import {
@@ -34,87 +29,55 @@ import {
 } from './authentication.model';
 import { LocalAuthenticationClient } from './local-authentication.client';
 
-const RETURN_URL_STORAGE_KEY =
-  'sixpay.authentication.return-url';
+const RETURN_URL_STORAGE_KEY = 'sixpay.authentication.return-url';
 
-const STANDALONE_ROLE_STORAGE_KEY =
-  'sixpay.authentication.standalone-role';
+const STANDALONE_ROLE_STORAGE_KEY = 'sixpay.authentication.standalone-role';
 
-const FALLBACK_STANDALONE_PARTNER_SUBJECT =
-  '11111111-1111-4111-8111-111111111111';
+const FALLBACK_STANDALONE_PARTNER_SUBJECT = '11111111-1111-4111-8111-111111111111';
 
-const authenticationEnvironment:
-  AuthenticationEnvironment =
-    environment.authentication;
+const authenticationEnvironment: AuthenticationEnvironment = environment.authentication;
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
 
-  private readonly oidc = inject(
-    OidcSecurityService,
-    { optional: true },
-  );
+  private readonly oidc = inject(OidcSecurityService, { optional: true });
 
-  private readonly authenticationClient =
-    inject(LocalAuthenticationClient);
+  private readonly authenticationClient = inject(LocalAuthenticationClient);
 
-  private readonly errorService =
-    inject(ErrorService);
+  private readonly errorService = inject(ErrorService);
 
-  private readonly identityState =
-    signal<AuthenticatedIdentity | null>(null);
+  private readonly identityState = signal<AuthenticatedIdentity | null>(null);
 
-  private readonly usernameState =
-    signal<string | null>(null);
+  private readonly usernameState = signal<string | null>(null);
 
-  private readonly activeAuthenticationMethodState =
-    signal<ActiveAuthenticationMethod>(null);
+  private readonly activeAuthenticationMethodState = signal<ActiveAuthenticationMethod>(null);
 
-  private readonly passwordChangeRequiredState =
-    signal(false);
+  private readonly passwordChangeRequiredState = signal(false);
 
-  private readonly readyState =
-    new ReplaySubject<boolean>(1);
+  private readonly readyState = new ReplaySubject<boolean>(1);
 
   readonly identity = this.identityState.asReadonly();
   readonly username = this.usernameState.asReadonly();
-  readonly activeAuthenticationMethod =
-    this.activeAuthenticationMethodState.asReadonly();
-  readonly passwordChangeRequired =
-    this.passwordChangeRequiredState.asReadonly();
+  readonly activeAuthenticationMethod = this.activeAuthenticationMethodState.asReadonly();
+  readonly passwordChangeRequired = this.passwordChangeRequiredState.asReadonly();
 
-  readonly isAuthenticated = computed(
-    () => this.identityState() !== null,
-  );
+  readonly isAuthenticated = computed(() => this.identityState() !== null);
 
-  readonly subject = computed(
-    () => this.identityState()?.subject ?? null,
-  );
+  readonly subject = computed(() => this.identityState()?.subject ?? null);
 
-  readonly roles = computed(
-    () =>
-      this.identityState()?.roles ??
-      new Set<SixpayRole>(),
-  );
+  readonly roles = computed(() => this.identityState()?.roles ?? new Set<SixpayRole>());
 
-  readonly permissions = computed(
-    () =>
-      this.identityState()?.permissions ??
-      new Set<string>(),
-  );
+  readonly permissions = computed(() => this.identityState()?.permissions ?? new Set<string>());
 
   readonly ready$ = this.readyState.asObservable();
 
-  readonly isStandaloneMode =
-    authenticationEnvironment.standalone;
+  readonly isStandaloneMode = authenticationEnvironment.standalone;
 
-  readonly localEnabled =
-    authenticationEnvironment.local.enabled;
+  readonly localEnabled = authenticationEnvironment.local.enabled;
 
-  readonly oidcEnabled =
-    authenticationEnvironment.oidc.enabled;
+  readonly oidcEnabled = authenticationEnvironment.oidc.enabled;
 
   readonly isLocalEnabled = this.localEnabled;
   readonly isOidcEnabled = this.oidcEnabled;
@@ -130,19 +93,11 @@ export class AuthenticationService {
     this.initializeAuthentication();
   }
 
-  hasRole(
-    role: SixpayRole | string,
-  ): boolean {
-    return this.roles().has(
-      role
-        .replace(/^ROLE_/, '')
-        .toUpperCase() as SixpayRole,
-    );
+  hasRole(role: SixpayRole | string): boolean {
+    return this.roles().has(role.replace(/^ROLE_/, '').toUpperCase() as SixpayRole);
   }
 
-  hasAnyRole(
-    roles: readonly SixpayRole[],
-  ): boolean {
+  hasAnyRole(roles: readonly SixpayRole[]): boolean {
     return roles.some((role) => this.hasRole(role));
   }
 
@@ -155,10 +110,7 @@ export class AuthenticationService {
       return;
     }
 
-    this.storage?.setItem(
-      STANDALONE_ROLE_STORAGE_KEY,
-      role,
-    );
+    this.storage?.setItem(STANDALONE_ROLE_STORAGE_KEY, role);
 
     this.identityState.set({
       subject: this.standaloneSubjectForRole(role),
@@ -167,31 +119,21 @@ export class AuthenticationService {
     });
   }
 
-  loginLocal(
-    request: LocalLoginRequest,
-    returnUrl = '/',
-  ): Observable<void> {
+  loginLocal(request: LocalLoginRequest, returnUrl = '/'): Observable<void> {
     if (!this.localEnabled) {
-      return throwError(
-        () => new Error('Local authentication is not enabled'),
-      );
+      return throwError(() => new Error('Local authentication is not enabled'));
     }
 
-    this.storage?.setItem(
-      RETURN_URL_STORAGE_KEY,
-      this.safeReturnUrl(returnUrl),
-    );
+    this.storage?.setItem(RETURN_URL_STORAGE_KEY, this.safeReturnUrl(returnUrl));
 
-    return this.authenticationClient
-      .login(request)
-      .pipe(
-        tap((session) => {
-          this.errorService.clear();
-          this.setCanonicalSession(session);
-        }),
-        tap(() => this.completeLoginNavigation()),
-        map(() => undefined),
-      );
+    return this.authenticationClient.login(request).pipe(
+      tap((session) => {
+        this.errorService.clear();
+        this.setCanonicalSession(session);
+      }),
+      tap(() => this.completeLoginNavigation()),
+      map(() => undefined),
+    );
   }
 
   /**
@@ -201,17 +143,10 @@ export class AuthenticationService {
    * reloads /auth/me so the frontend state remains backend-authoritative before
    * leaving the mandatory password-change route.
    */
-  changeLocalPassword(
-    request: LocalPasswordChangeRequest,
-  ): Observable<void> {
-    if (
-      this.activeAuthenticationMethodState() !== 'local'
-    ) {
+  changeLocalPassword(request: LocalPasswordChangeRequest): Observable<void> {
+    if (this.activeAuthenticationMethodState() !== 'local') {
       return throwError(
-        () =>
-          new Error(
-            'LOCAL authentication is required to change a LOCAL password',
-          ),
+        () => new Error('LOCAL authentication is required to change a LOCAL password'),
       );
     }
 
@@ -219,26 +154,17 @@ export class AuthenticationService {
      * Preserve whether the lifecycle remediation was mandatory before /auth/me
      * refresh changes passwordChangeRequired to false.
      */
-    const mandatoryChange =
-      this.passwordChangeRequiredState();
+    const mandatoryChange = this.passwordChangeRequiredState();
 
-    return this.authenticationClient
-      .changePassword(request)
-      .pipe(
-        switchMap(() =>
-          this.authenticationClient.currentUser(),
-        ),
-        tap((session) => {
-          this.errorService.clear();
-          this.setCanonicalSession(session);
-        }),
-        tap(() =>
-          this.completePasswordChangeNavigation(
-            mandatoryChange,
-          ),
-        ),
-        map(() => undefined),
-      );
+    return this.authenticationClient.changePassword(request).pipe(
+      switchMap(() => this.authenticationClient.currentUser()),
+      tap((session) => {
+        this.errorService.clear();
+        this.setCanonicalSession(session);
+      }),
+      tap(() => this.completePasswordChangeNavigation(mandatoryChange)),
+      map(() => undefined),
+    );
   }
 
   loginOidc(returnUrl = '/'): void {
@@ -246,10 +172,7 @@ export class AuthenticationService {
       return;
     }
 
-    this.storage?.setItem(
-      RETURN_URL_STORAGE_KEY,
-      this.safeReturnUrl(returnUrl),
-    );
+    this.storage?.setItem(RETURN_URL_STORAGE_KEY, this.safeReturnUrl(returnUrl));
 
     this.oidc?.authorize();
   }
@@ -263,10 +186,7 @@ export class AuthenticationService {
       return;
     }
 
-    if (
-      this.activeAuthenticationMethodState() === 'local' &&
-      this.passwordChangeRequiredState()
-    ) {
+    if (this.activeAuthenticationMethodState() === 'local' && this.passwordChangeRequiredState()) {
       void this.router.navigate(['/change-password']);
       return;
     }
@@ -277,8 +197,7 @@ export class AuthenticationService {
   logout(): void {
     this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
-    const authenticationMethod =
-      this.activeAuthenticationMethodState();
+    const authenticationMethod = this.activeAuthenticationMethodState();
 
     if (!this.isAuthenticated()) {
       this.finishFrontendLogout(authenticationMethod);
@@ -289,16 +208,13 @@ export class AuthenticationService {
       .logout()
       .pipe(
         catchError(() => of(undefined)),
-        finalize(() =>
-          this.finishFrontendLogout(authenticationMethod),
-        ),
+        finalize(() => this.finishFrontendLogout(authenticationMethod)),
       )
       .subscribe();
   }
 
   expireSession(): void {
-    const authenticationMethod =
-      this.activeAuthenticationMethodState();
+    const authenticationMethod = this.activeAuthenticationMethodState();
 
     this.errorService.clear();
     this.clearSession();
@@ -320,18 +236,16 @@ export class AuthenticationService {
   private tryExistingBackendSession(): void {
     this.clearSession();
 
-    this.authenticationClient
-      .currentUser()
-      .subscribe({
-        next: (session) => {
-          this.errorService.clear();
-          this.setCanonicalSession(session);
-          this.readyState.next(true);
-        },
-        error: () => {
-          this.tryExistingOidcSession();
-        },
-      });
+    this.authenticationClient.currentUser().subscribe({
+      next: (session) => {
+        this.errorService.clear();
+        this.setCanonicalSession(session);
+        this.readyState.next(true);
+      },
+      error: () => {
+        this.tryExistingOidcSession();
+      },
+    });
   }
 
   private tryExistingOidcSession(): void {
@@ -370,13 +284,10 @@ export class AuthenticationService {
         take(1),
         switchMap((accessToken) => {
           if (!accessToken) {
-            return throwError(
-              () => new Error('OIDC access token is unavailable'),
-            );
+            return throwError(() => new Error('OIDC access token is unavailable'));
           }
 
-          return this.authenticationClient
-            .establishOidcSession(accessToken);
+          return this.authenticationClient.establishOidcSession(accessToken);
         }),
       )
       .subscribe({
@@ -397,9 +308,7 @@ export class AuthenticationService {
     this.readyState.next(true);
   }
 
-  private setCanonicalSession(
-    session: AuthenticationSessionResponse,
-  ): void {
+  private setCanonicalSession(session: AuthenticationSessionResponse): void {
     this.identityState.set({
       subject: session.subject,
       roles: normalizeSixpayRoles(session.roles),
@@ -408,33 +317,25 @@ export class AuthenticationService {
 
     this.usernameState.set(session.username);
 
-    const authenticationMethod =
-      session.authenticationMethod.toLowerCase() as Exclude<
-        ActiveAuthenticationMethod,
-        null
-      >;
+    const authenticationMethod = session.authenticationMethod.toLowerCase() as Exclude<
+      ActiveAuthenticationMethod,
+      null
+    >;
 
-    this.activeAuthenticationMethodState.set(
-      authenticationMethod,
-    );
+    this.activeAuthenticationMethodState.set(authenticationMethod);
 
     this.passwordChangeRequiredState.set(
-      authenticationMethod === 'local' &&
-        (session.passwordChangeRequired ?? false),
+      authenticationMethod === 'local' && (session.passwordChangeRequired ?? false),
     );
   }
 
-  private completePasswordChangeNavigation(
-    mandatoryChange: boolean,
-  ): void {
+  private completePasswordChangeNavigation(mandatoryChange: boolean): void {
     if (this.passwordChangeRequiredState()) {
       return;
     }
 
     if (mandatoryChange) {
-      this.storage?.removeItem(
-        RETURN_URL_STORAGE_KEY,
-      );
+      this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
       void this.router.navigateByUrl('/');
       return;
@@ -444,27 +345,15 @@ export class AuthenticationService {
   }
 
   private navigateToStoredReturnUrl(): void {
-    const storedReturnUrl =
-      this.storage?.getItem(
-        RETURN_URL_STORAGE_KEY,
-      ) ?? '/';
+    const storedReturnUrl = this.storage?.getItem(RETURN_URL_STORAGE_KEY) ?? '/';
 
-    this.storage?.removeItem(
-      RETURN_URL_STORAGE_KEY,
-    );
+    this.storage?.removeItem(RETURN_URL_STORAGE_KEY);
 
-    void this.router.navigateByUrl(
-      this.applicationReturnUrl(
-        storedReturnUrl,
-      ),
-    );
+    void this.router.navigateByUrl(this.applicationReturnUrl(storedReturnUrl));
   }
 
-  private applicationReturnUrl(
-    returnUrl: string,
-  ): string {
-    const safeReturnUrl =
-      this.safeReturnUrl(returnUrl);
+  private applicationReturnUrl(returnUrl: string): string {
+    const safeReturnUrl = this.safeReturnUrl(returnUrl);
 
     if (
       safeReturnUrl === '/login' ||
@@ -480,18 +369,14 @@ export class AuthenticationService {
     return safeReturnUrl;
   }
 
-  private finishFrontendLogout(
-    authenticationMethod: ActiveAuthenticationMethod,
-  ): void {
+  private finishFrontendLogout(authenticationMethod: ActiveAuthenticationMethod): void {
     this.errorService.clear();
     this.clearSession();
 
     if (authenticationMethod === 'oidc' && this.oidc) {
-      this.oidc
-        .logoffAndRevokeTokens()
-        .subscribe({
-          error: () => this.oidc?.logoffLocal(),
-        });
+      this.oidc.logoffAndRevokeTokens().subscribe({
+        error: () => this.oidc?.logoffLocal(),
+      });
       return;
     }
 
@@ -499,20 +384,15 @@ export class AuthenticationService {
   }
 
   private initializeStandaloneIdentity(): void {
-    const localUser =
-      authenticationEnvironment.standaloneUser;
+    const localUser = authenticationEnvironment.standaloneUser;
 
-    const storedRole =
-      this.storage?.getItem(
-        STANDALONE_ROLE_STORAGE_KEY,
-      ) as SixpayRole | null;
+    const storedRole = this.storage?.getItem(STANDALONE_ROLE_STORAGE_KEY) as SixpayRole | null;
 
     const roles = storedRole
       ? new Set<SixpayRole>([storedRole])
       : normalizeSixpayRoles(localUser?.roles ?? []);
 
-    const effectiveRole =
-      storedRole ?? roles.values().next().value ?? null;
+    const effectiveRole = storedRole ?? roles.values().next().value ?? null;
 
     this.identityState.set({
       subject: this.standaloneSubjectForRole(effectiveRole),
@@ -526,20 +406,14 @@ export class AuthenticationService {
     this.readyState.next(true);
   }
 
-  private standaloneSubjectForRole(
-    role: SixpayRole | null,
-  ): string {
+  private standaloneSubjectForRole(role: SixpayRole | null): string {
     if (role === 'PARTNER') {
       return (
-        authenticationEnvironment.standalonePartner?.subject ??
-        FALLBACK_STANDALONE_PARTNER_SUBJECT
+        authenticationEnvironment.standalonePartner?.subject ?? FALLBACK_STANDALONE_PARTNER_SUBJECT
       );
     }
 
-    return (
-      authenticationEnvironment.standaloneUser?.subject ??
-      'local-user'
-    );
+    return authenticationEnvironment.standaloneUser?.subject ?? 'local-user';
   }
 
   private clearSession(): void {
@@ -554,11 +428,6 @@ export class AuthenticationService {
   }
 
   private safeReturnUrl(returnUrl: string): string {
-    return (
-      returnUrl.startsWith('/') &&
-      !returnUrl.startsWith('//')
-    )
-      ? returnUrl
-      : '/';
+    return returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
   }
 }

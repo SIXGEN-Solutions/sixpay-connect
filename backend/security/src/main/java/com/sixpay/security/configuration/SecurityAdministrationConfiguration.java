@@ -1,9 +1,9 @@
 package com.sixpay.security.configuration;
 
-import com.sixpay.security.application.port.in.SecurityUserAdministrationUseCase;
-import com.sixpay.security.application.port.out.PasswordHistoryPort;
-import com.sixpay.security.application.port.out.SecurityAuditPort;
-import com.sixpay.security.application.port.out.SecurityUserAdministrationPort;
+import com.sixpay.security.application.port.input.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.output.PasswordHistoryPort;
+import com.sixpay.security.application.port.output.SecurityAuditPort;
+import com.sixpay.security.application.port.output.SecurityUserAdministrationPort;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.administration.JpaSecurityAuditAdapter;

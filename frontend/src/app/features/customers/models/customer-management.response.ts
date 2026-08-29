@@ -53,7 +53,6 @@ export interface CustomerSubscriptionResponse {
   closedAt: string | null;
 }
 
-
 export interface CustomerPageResponse {
   content: CustomerMasterResponse[];
   totalElements: number;

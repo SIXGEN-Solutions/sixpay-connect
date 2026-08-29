@@ -1,7 +1,4 @@
-import {
-  HttpErrorResponse,
-  HttpRequest,
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom, throwError } from 'rxjs';
@@ -27,24 +24,18 @@ describe('sessionErrorInterceptor', () => {
       ],
     });
 
-    const request = new HttpRequest(
-      'POST',
-      '/api/v1/auth/login',
-      {},
-    );
+    const request = new HttpRequest('POST', '/api/v1/auth/login', {});
 
     await expect(
       firstValueFrom(
         TestBed.runInInjectionContext(() =>
-          sessionErrorInterceptor(
-            request,
-            () =>
-              throwError(
-                () =>
-                  new HttpErrorResponse({
-                    status: 401,
-                  }),
-              ),
+          sessionErrorInterceptor(request, () =>
+            throwError(
+              () =>
+                new HttpErrorResponse({
+                  status: 401,
+                }),
+            ),
           ),
         ),
       ),
@@ -70,37 +61,29 @@ describe('sessionErrorInterceptor', () => {
       ],
     });
 
-    const request = new HttpRequest(
-      'GET',
-      '/internal/api/v1/payments',
-    );
+    const request = new HttpRequest('GET', '/internal/api/v1/payments');
 
     await expect(
       firstValueFrom(
         TestBed.runInInjectionContext(() =>
-          sessionErrorInterceptor(
-            request,
-            () =>
-              throwError(
-                () =>
-                  new HttpErrorResponse({
-                    status: 401,
-                  }),
-              ),
+          sessionErrorInterceptor(request, () =>
+            throwError(
+              () =>
+                new HttpErrorResponse({
+                  status: 401,
+                }),
+            ),
           ),
         ),
       ),
     ).rejects.toBeInstanceOf(HttpErrorResponse);
 
     expect(authentication.expireSession).toHaveBeenCalledOnce();
-    expect(router.navigate).toHaveBeenCalledWith(
-      ['/login'],
-      {
-        queryParams: {
-          returnUrl: '/payments',
-          sessionExpired: true,
-        },
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+      queryParams: {
+        returnUrl: '/payments',
+        sessionExpired: true,
       },
-    );
+    });
   });
 });

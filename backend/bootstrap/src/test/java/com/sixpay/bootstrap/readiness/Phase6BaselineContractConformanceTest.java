@@ -42,7 +42,7 @@ class Phase6BaselineContractConformanceTest {
                 "backend/payment/src/main/java/com/sixpay/payment/api/PaymentQueryController.java"
         );
         assertTrue(Files.isRegularFile(controller),
-                "Payment Query controller must remain in Payment");
+                "Payment Query controller must remain input Payment");
     }
 
     @Test
@@ -59,7 +59,7 @@ class Phase6BaselineContractConformanceTest {
                 "backend/customer/src/main/java/com/sixpay/customer/observation/api/controller/ObservedCustomerQueryController.java"
         );
         assertTrue(Files.isRegularFile(controller),
-                "ObservedCustomer Query controller must remain in Customer");
+                "ObservedCustomer Query controller must remain input Customer");
     }
 
     @Test

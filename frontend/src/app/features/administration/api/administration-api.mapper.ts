@@ -28,9 +28,7 @@ export function mapIntegrationStatusResponse(
     health: response.health,
     detail: response.detail,
     lastSuccessfulAt:
-      response.lastSuccessfulAt === null
-        ? null
-        : new Date(response.lastSuccessfulAt),
+      response.lastSuccessfulAt === null ? null : new Date(response.lastSuccessfulAt),
     lastCheckedAt: new Date(response.lastCheckedAt),
   };
 }
@@ -39,12 +37,8 @@ export function mapAdministrationOverviewResponse(
   response: AdministrationOverviewResponse,
 ): AdministrationOverview {
   return {
-    settings: mapAdministrationSettingsResponse(
-      response.settings,
-    ),
-    integrations: response.integrations.map(
-      mapIntegrationStatusResponse,
-    ),
+    settings: mapAdministrationSettingsResponse(response.settings),
+    integrations: response.integrations.map(mapIntegrationStatusResponse),
     observedAt: new Date(response.observedAt),
   };
 }

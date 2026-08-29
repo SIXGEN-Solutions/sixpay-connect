@@ -2,9 +2,9 @@ package com.sixpay.security.application.service;
 
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.security.application.model.PasswordHistorySnapshot;
-import com.sixpay.security.application.port.in.ChangeLocalPasswordCommand;
-import com.sixpay.security.application.port.in.LocalLoginCommand;
-import com.sixpay.security.application.port.out.*;
+import com.sixpay.security.application.port.input.ChangeLocalPasswordCommand;
+import com.sixpay.security.application.port.input.LocalLoginCommand;
+import com.sixpay.security.application.port.output.*;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.authentication.*;

@@ -37,10 +37,7 @@ export const sessionErrorInterceptor: HttpInterceptorFn = (request, next) => {
          * business authorization failure.
          */
         void router.navigate(['/change-password']);
-      } else if (
-        error instanceof HttpErrorResponse &&
-        error.status === 403
-      ) {
+      } else if (error instanceof HttpErrorResponse && error.status === 403) {
         void router.navigate(['/forbidden']);
       }
 
@@ -50,8 +47,5 @@ export const sessionErrorInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 function isLocalAuthenticationRequest(url: string): boolean {
-  return (
-    url.startsWith(LOCAL_AUTH_PATH_PREFIX) ||
-    url.includes(LOCAL_AUTH_PATH_PREFIX)
-  );
+  return url.startsWith(LOCAL_AUTH_PATH_PREFIX) || url.includes(LOCAL_AUTH_PATH_PREFIX);
 }

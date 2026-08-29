@@ -3,7 +3,7 @@ package com.sixpay.customer.verification.infrastructure.banking.retry;
 import java.time.Duration;
 
 /**
- * Isolates retry waiting to keep the decorator deterministic in tests.
+ * Isolates retry waiting to keep the decorator deterministic input tests.
  */
 @FunctionalInterface
 public interface RetrySleeper {

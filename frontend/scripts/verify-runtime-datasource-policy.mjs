@@ -48,13 +48,7 @@ function walk(root) {
 
       if (entry.isDirectory()) {
         stack.push(resolved);
-      } else if (
-        entry.isFile()
-        && (
-          entry.name.endsWith('.ts')
-          || entry.name.endsWith('.html')
-        )
-      ) {
+      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.html'))) {
         files.push(resolved);
       }
     }
@@ -64,9 +58,7 @@ function walk(root) {
 }
 
 function relative(file) {
-  return path
-    .relative(frontendRoot, file)
-    .replaceAll('\\', '/');
+  return path.relative(frontendRoot, file).replaceAll('\\', '/');
 }
 
 /*
@@ -81,119 +73,67 @@ function relative(file) {
  * API failure -> silent mock fallback is forbidden.
  */
 
-const productionEnvironment = read(
-  'src/environments/environment.ts',
-);
-const integrationEnvironment = read(
-  'src/environments/environment.integration.ts',
-);
-const developmentEnvironment = read(
-  'src/environments/environment.development.ts',
-);
-const demoEnvironment = read(
-  'src/environments/environment.netlify.ts',
-);
+const productionEnvironment = read('src/environments/environment.ts');
+const integrationEnvironment = read('src/environments/environment.integration.ts');
+const developmentEnvironment = read('src/environments/environment.development.ts');
+const demoEnvironment = read('src/environments/environment.netlify.ts');
 
-assertContains(
-  productionEnvironment,
-  'production: true',
-  'production environment',
-);
-assertContains(
-  productionEnvironment,
-  "mode: 'api'",
-  'production environment',
-);
-assertNotContains(
-  productionEnvironment,
-  "mode: 'mock'",
-  'production environment',
-);
+assertContains(productionEnvironment, 'production: true', 'production environment');
+assertContains(productionEnvironment, "mode: 'api'", 'production environment');
+assertNotContains(productionEnvironment, "mode: 'mock'", 'production environment');
 
-assertContains(
-  integrationEnvironment,
-  "mode: 'api'",
-  'integration environment',
-);
-assertNotContains(
-  integrationEnvironment,
-  "mode: 'mock'",
-  'integration environment',
-);
+assertContains(integrationEnvironment, "mode: 'api'", 'integration environment');
+assertNotContains(integrationEnvironment, "mode: 'mock'", 'integration environment');
 
-assertContains(
-  developmentEnvironment,
-  "mode: 'mock'",
-  'development environment',
-);
-assertContains(
-  demoEnvironment,
-  "mode: 'mock'",
-  'demo environment',
-);
+assertContains(developmentEnvironment, "mode: 'mock'", 'development environment');
+assertContains(demoEnvironment, "mode: 'mock'", 'demo environment');
 
-const backendModeService = read(
-  'src/app/core/backend/backend-mode.service.ts',
-);
+const backendModeService = read('src/app/core/backend/backend-mode.service.ts');
 
-for (const token of [
-  "this.mode === 'api'",
-  "this.mode === 'mock'",
-]) {
-  assertContains(
-    backendModeService,
-    token,
-    'BackendModeService',
-  );
+for (const token of ["this.mode === 'api'", "this.mode === 'mock'"]) {
+  assertContains(backendModeService, token, 'BackendModeService');
 }
 
 const switchedDomains = [
   {
     name: 'Partner',
-    service:
-      'src/app/features/partners/services/partners.service.ts',
+    service: 'src/app/features/partners/services/partners.service.ts',
     apiType: 'PartnerApiClient',
     mockType: 'PartnersMockService',
   },
   {
     name: 'Payment',
-    service:
-      'src/app/features/payments/services/payments.service.ts',
+    service: 'src/app/features/payments/services/payments.service.ts',
     apiType: 'PaymentsApiClient',
     mockType: 'PaymentsMockService',
   },
   {
     name: 'Reporting',
-    service:
-      'src/app/features/reporting/services/reporting.service.ts',
+    service: 'src/app/features/reporting/services/reporting.service.ts',
     apiType: 'ReportingApiClient',
     mockType: 'ReportingMockService',
   },
   {
     name: 'Observed Customer',
-    service:
-      'src/app/features/customers/services/customers.service.ts',
+    service: 'src/app/features/customers/services/customers.service.ts',
     apiType: 'CustomersApiClient',
     mockType: 'CustomersMockService',
   },
   {
     name: 'Accounting',
-    service:
-      'src/app/features/accounting/services/accounting.service.ts',
+    service: 'src/app/features/accounting/services/accounting.service.ts',
     apiType: 'AccountingApiClient',
     mockType: 'AccountingMockService',
   },
   {
     name: 'Operational Administration',
-    service:
-      'src/app/features/administration/services/administration.service.ts',
+    service: 'src/app/features/administration/services/administration.service.ts',
     apiType: 'AdministrationApiClient',
     mockType: 'AdministrationMockService',
   },
   {
     name: 'Incidents',
-    service:
-      'src/app/features/incidents/services/incidents.service.ts',
+    service: 'src/app/features/incidents/services/incidents.service.ts',
     apiType: 'IncidentsApiClient',
     mockType: 'IncidentsMockService',
   },
@@ -202,39 +142,19 @@ const switchedDomains = [
 for (const domain of switchedDomains) {
   const source = read(domain.service);
 
-  for (const token of [
-    'BackendModeService',
-    domain.apiType,
-    domain.mockType,
-  ]) {
-    assertContains(
-      source,
-      token,
-      `${domain.name} service`,
-    );
+  for (const token of ['BackendModeService', domain.apiType, domain.mockType]) {
+    assertContains(source, token, `${domain.name} service`);
   }
 
-  if (
-    !source.includes('backendMode.usesApi')
-    && !source.includes('backendMode.usesMock')
-  ) {
-    fail(
-      `${domain.name}: explicit API/mock runtime boundary is missing`,
-    );
+  if (!source.includes('backendMode.usesApi') && !source.includes('backendMode.usesMock')) {
+    fail(`${domain.name}: explicit API/mock runtime boundary is missing`);
   }
 
-  const catchErrorBlocks = source.match(
-    /catchError\s*\([\s\S]{0,1000}?\)\s*[,)]/g,
-  ) ?? [];
+  const catchErrorBlocks = source.match(/catchError\s*\([\s\S]{0,1000}?\)\s*[,)]/g) ?? [];
 
   for (const block of catchErrorBlocks) {
-    if (
-      block.includes('this.mock')
-      || block.includes(domain.mockType)
-    ) {
-      fail(
-        `${domain.name}: silent API-to-mock fallback is forbidden`,
-      );
+    if (block.includes('this.mock') || block.includes(domain.mockType)) {
+      fail(`${domain.name}: silent API-to-mock fallback is forbidden`);
     }
   }
 }
@@ -242,14 +162,12 @@ for (const domain of switchedDomains) {
 const apiOnlyDomains = [
   {
     name: 'Customer Management',
-    service:
-      'src/app/features/customers/services/customer-management.service.ts',
+    service: 'src/app/features/customers/services/customer-management.service.ts',
     apiType: 'CustomerManagementApiClient',
   },
   {
     name: 'Security User Administration',
-    service:
-      'src/app/features/administration/services/security-user-administration.service.ts',
+    service: 'src/app/features/administration/services/security-user-administration.service.ts',
     apiType: 'HttpClient',
   },
 ];
@@ -257,22 +175,10 @@ const apiOnlyDomains = [
 for (const domain of apiOnlyDomains) {
   const source = read(domain.service);
 
-  assertContains(
-    source,
-    domain.apiType,
-    `${domain.name} service`,
-  );
+  assertContains(source, domain.apiType, `${domain.name} service`);
 
-  for (const forbidden of [
-    'MockService',
-    'backendMode.usesMock',
-    'backendMode.usesApi',
-  ]) {
-    assertNotContains(
-      source,
-      forbidden,
-      `${domain.name} service`,
-    );
+  for (const forbidden of ['MockService', 'backendMode.usesMock', 'backendMode.usesApi']) {
+    assertNotContains(source, forbidden, `${domain.name} service`);
   }
 }
 
@@ -295,9 +201,7 @@ const declaredDomains = new Set([
 
 for (const domain of expectedDomains) {
   if (!declaredDomains.has(domain)) {
-    fail(
-      `FS-1.5 required domain is missing from runtime datasource policy: ${domain}`,
-    );
+    fail(`FS-1.5 required domain is missing from runtime datasource policy: ${domain}`);
   }
 }
 
@@ -321,23 +225,12 @@ for (const [root, serviceDirectory] of uiPolicies) {
 
     const source = fs.readFileSync(file, 'utf8');
 
-    const importsMockDatasource =
-      /from\s+['"][^'"]*-mock\.service['"]/.test(
-        source,
-      );
+    const importsMockDatasource = /from\s+['"][^'"]*-mock\.service['"]/.test(source);
 
-    const referencesMockService =
-      /\b[A-Za-z0-9]+MockService\b/.test(
-        source,
-      );
+    const referencesMockService = /\b[A-Za-z0-9]+MockService\b/.test(source);
 
-    if (
-      importsMockDatasource
-      || referencesMockService
-    ) {
-      fail(
-        `${rel}: application UI must not depend directly on a mock datasource service`,
-      );
+    if (importsMockDatasource || referencesMockService) {
+      fail(`${rel}: application UI must not depend directly on a mock datasource service`);
     }
   }
 }
@@ -353,17 +246,11 @@ for (const token of [
   '"src/environments/environment.development.ts"',
   '"src/environments/environment.netlify.ts"',
 ]) {
-  assertContains(
-    angularJson,
-    token,
-    'Angular environment configuration',
-  );
+  assertContains(angularJson, token, 'Angular environment configuration');
 }
 
 if (failures.length > 0) {
-  console.error(
-    '\nFS-1.5 runtime datasource policy FAILED:\n',
-  );
+  console.error('\nFS-1.5 runtime datasource policy FAILED:\n');
 
   for (const failure of failures) {
     console.error(` - ${failure}`);
@@ -373,11 +260,9 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
+console.log('FS-1.5 runtime datasource policy PASSED.');
 console.log(
-  'FS-1.5 runtime datasource policy PASSED.',
-);
-console.log(
-  'Production and integration are API-only. '
-    + 'Development/demo/tests may use mocks. '
-    + 'Silent API-to-mock fallback is forbidden for all contract-backed domains.',
+  'Production and integration are API-only. ' +
+    'Development/demo/tests may use mocks. ' +
+    'Silent API-to-mock fallback is forbidden for all contract-backed domains.',
 );

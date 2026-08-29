@@ -98,12 +98,7 @@ describe('CustomersService', () => {
   it('uses the API datasource for linked Payments in api mode', async () => {
     const { service, api, mock } = configure(true);
 
-    await firstValueFrom(
-      service.payments(
-        '7cb96138-c2b7-4f61-8bb3-b3b00599f101',
-        { size: 10 },
-      ),
-    );
+    await firstValueFrom(service.payments('7cb96138-c2b7-4f61-8bb3-b3b00599f101', { size: 10 }));
 
     expect(api.payments).toHaveBeenCalledOnce();
     expect(mock.payments).not.toHaveBeenCalled();
@@ -112,9 +107,7 @@ describe('CustomersService', () => {
   it('maps API detail responses to application models', async () => {
     const { service } = configure(true);
 
-    const detail = await firstValueFrom(
-      service.get('7cb96138-c2b7-4f61-8bb3-b3b00599f101'),
-    );
+    const detail = await firstValueFrom(service.get('7cb96138-c2b7-4f61-8bb3-b3b00599f101'));
 
     expect(detail?.firstObservedAt).toBeInstanceOf(Date);
     expect(detail?.legalName).toBe('CAMEROUN SERVICES SARL');

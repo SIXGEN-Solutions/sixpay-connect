@@ -1,8 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { PaymentsApiClient } from './payments-api.client';
@@ -23,20 +20,22 @@ describe('PaymentsApiClient', () => {
   afterEach(() => controller.verify());
 
   it('calls the published Payment search endpoint with contract query parameters', () => {
-    client.searchPayments({
-      paymentReference: 'PAY-2026-0001842',
-      financialInstitutionCode: 'LRB',
-      status: 'TREASURY_INTEGRATED',
-      createdFrom: new Date('2026-08-08T00:00:00Z'),
-      amountMin: 1000,
-      currency: 'XAF',
-      sort: 'CREATED_AT_DESC',
-      cursor: 'cursor-2',
-      size: 50,
-    }).subscribe();
+    client
+      .searchPayments({
+        paymentReference: 'PAY-2026-0001842',
+        financialInstitutionCode: 'LRB',
+        status: 'TREASURY_INTEGRATED',
+        createdFrom: new Date('2026-08-08T00:00:00Z'),
+        amountMin: 1000,
+        currency: 'XAF',
+        sort: 'CREATED_AT_DESC',
+        cursor: 'cursor-2',
+        size: 50,
+      })
+      .subscribe();
 
-    const request = controller.expectOne((candidate) =>
-      candidate.url === '/internal/api/v1/payments',
+    const request = controller.expectOne(
+      (candidate) => candidate.url === '/internal/api/v1/payments',
     );
 
     expect(request.request.method).toBe('GET');

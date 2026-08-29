@@ -1,11 +1,6 @@
 export type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-export type IncidentStatus =
-  | 'OPEN'
-  | 'INVESTIGATING'
-  | 'MONITORING'
-  | 'RESOLVED'
-  | 'CLOSED';
+export type IncidentStatus = 'OPEN' | 'INVESTIGATING' | 'MONITORING' | 'RESOLVED' | 'CLOSED';
 
 export interface IncidentTimelineEntry {
   readonly eventId: string;

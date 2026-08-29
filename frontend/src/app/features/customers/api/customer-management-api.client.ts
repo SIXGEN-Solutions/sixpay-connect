@@ -25,12 +25,8 @@ const SUBSCRIPTIONS = '/internal/api/v1/subscriptions';
 export class CustomerManagementApiClient {
   private readonly http = inject(HttpClient);
 
-  search(
-    criteria: CustomerSearchCriteria,
-  ): Observable<CustomerPageResponse> {
-    let params = new HttpParams()
-      .set('page', criteria.page)
-      .set('size', criteria.size);
+  search(criteria: CustomerSearchCriteria): Observable<CustomerPageResponse> {
+    let params = new HttpParams().set('page', criteria.page).set('size', criteria.size);
 
     if (criteria.niu) {
       params = params.set('niu', criteria.niu);
@@ -42,10 +38,7 @@ export class CustomerManagementApiClient {
       params = params.set('status', criteria.status);
     }
     if (criteria.financialInstitutionCode) {
-      params = params.set(
-        'financialInstitutionCode',
-        criteria.financialInstitutionCode,
-      );
+      params = params.set('financialInstitutionCode', criteria.financialInstitutionCode);
     }
 
     return this.http.get<CustomerPageResponse>(CUSTOMERS, {
@@ -54,18 +47,13 @@ export class CustomerManagementApiClient {
   }
 
   get(customerId: string): Observable<CustomerMasterResponse> {
-    return this.http.get<CustomerMasterResponse>(
-      `${CUSTOMERS}/${encodeURIComponent(customerId)}`,
-    );
+    return this.http.get<CustomerMasterResponse>(`${CUSTOMERS}/${encodeURIComponent(customerId)}`);
   }
 
   bankingPreview(
     request: BankingCustomerPreviewRequest,
   ): Observable<BankingCustomerPreviewResponse> {
-    return this.http.post<BankingCustomerPreviewResponse>(
-      `${CUSTOMERS}/banking-preview`,
-      request,
-    );
+    return this.http.post<BankingCustomerPreviewResponse>(`${CUSTOMERS}/banking-preview`, request);
   }
 
   enroll(request: EnrollCustomerRequest): Observable<CustomerMasterResponse> {
@@ -81,20 +69,14 @@ export class CustomerManagementApiClient {
     return this.http.post<CustomerMasterResponse>(CUSTOMERS, null, { params });
   }
 
-  update(
-    customerId: string,
-    request: UpdateCustomerRequest,
-  ): Observable<CustomerMasterResponse> {
+  update(customerId: string, request: UpdateCustomerRequest): Observable<CustomerMasterResponse> {
     return this.http.put<CustomerMasterResponse>(
       `${CUSTOMERS}/${encodeURIComponent(customerId)}`,
       request,
     );
   }
 
-  suspend(
-    customerId: string,
-    request: ReasonRequest,
-  ): Observable<CustomerMasterResponse> {
+  suspend(customerId: string, request: ReasonRequest): Observable<CustomerMasterResponse> {
     return this.http.post<CustomerMasterResponse>(
       `${CUSTOMERS}/${encodeURIComponent(customerId)}/suspension`,
       request,
@@ -118,20 +100,14 @@ export class CustomerManagementApiClient {
     );
   }
 
-  makeDefaultAccount(
-    customerId: string,
-    accountId: string,
-  ): Observable<CustomerMasterResponse> {
+  makeDefaultAccount(customerId: string, accountId: string): Observable<CustomerMasterResponse> {
     return this.http.put<CustomerMasterResponse>(
       `${CUSTOMERS}/${encodeURIComponent(customerId)}/accounts/${encodeURIComponent(accountId)}/default`,
       null,
     );
   }
 
-  removeAccount(
-    customerId: string,
-    accountId: string,
-  ): Observable<CustomerMasterResponse> {
+  removeAccount(customerId: string, accountId: string): Observable<CustomerMasterResponse> {
     return this.http.delete<CustomerMasterResponse>(
       `${CUSTOMERS}/${encodeURIComponent(customerId)}/accounts/${encodeURIComponent(accountId)}`,
     );
@@ -143,15 +119,11 @@ export class CustomerManagementApiClient {
     });
   }
 
-  createSubscription(
-    request: CreateSubscriptionRequest,
-  ): Observable<CustomerSubscriptionResponse> {
+  createSubscription(request: CreateSubscriptionRequest): Observable<CustomerSubscriptionResponse> {
     return this.http.post<CustomerSubscriptionResponse>(SUBSCRIPTIONS, request);
   }
 
-  activateSubscription(
-    subscriptionId: string,
-  ): Observable<CustomerSubscriptionResponse> {
+  activateSubscription(subscriptionId: string): Observable<CustomerSubscriptionResponse> {
     return this.http.post<CustomerSubscriptionResponse>(
       `${SUBSCRIPTIONS}/${encodeURIComponent(subscriptionId)}/activation`,
       null,
@@ -168,13 +140,9 @@ export class CustomerManagementApiClient {
     );
   }
 
-  closeSubscription(
-    subscriptionId: string,
-    request: ReasonRequest,
-  ): Observable<void> {
-    return this.http.delete<void>(
-      `${SUBSCRIPTIONS}/${encodeURIComponent(subscriptionId)}`,
-      { body: request },
-    );
+  closeSubscription(subscriptionId: string, request: ReasonRequest): Observable<void> {
+    return this.http.delete<void>(`${SUBSCRIPTIONS}/${encodeURIComponent(subscriptionId)}`, {
+      body: request,
+    });
   }
 }

@@ -5,7 +5,7 @@ package com.sixpay.notification.events;
  *
  * These constants do not imply Kafka transport. While modules are co-deployed,
  * composition adapters may invoke the Notification receiving use case
- * in-process.
+ * input-process.
  */
 public final class OperationalNotificationEventTypes {
 

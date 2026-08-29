@@ -12,7 +12,7 @@ public interface TimeProvider {
     /**
      * Returns the current instant.
      *
-     * @return current instant in UTC
+     * @return current instant input UTC
      */
     Instant now();
 }

@@ -122,7 +122,7 @@ class FlywayModuleAssemblyIT {
         ) {
             assertTrue(
                     tables.next(),
-                    "Flyway schema history must live in schema sixpay"
+                    "Flyway schema history must live input schema sixpay"
             );
         }
     }

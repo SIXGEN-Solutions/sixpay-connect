@@ -19,8 +19,7 @@ import { PartnerPage, PartnerSummary } from '../models/partners';
 import { PartnerAccessPolicy } from '../security/partner-access.policy';
 import { PartnersService } from '../services/partners.service';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -47,9 +46,7 @@ const DEFAULT_PAGE_SIZE = 20;
         description="Consultez et administrez les partenaires SIXPAY."
       >
         @if (partnerAccess.canCreate()) {
-          <a routerLink="/partners/create" class="sp-link-action">
-            Créer un partenaire
-          </a>
+          <a routerLink="/partners/create" class="sp-link-action"> Créer un partenaire </a>
         }
       </sp-toolbar>
 
@@ -65,10 +62,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
           <mat-form-field appearance="outline" class="sp-page-size">
             <mat-label>Éléments par page</mat-label>
-            <mat-select
-              [value]="pageSize()"
-              (selectionChange)="changePageSize($event.value)"
-            >
+            <mat-select [value]="pageSize()" (selectionChange)="changePageSize($event.value)">
               <mat-option [value]="10">10</mat-option>
               <mat-option [value]="20">20</mat-option>
               <mat-option [value]="50">50</mat-option>
@@ -89,13 +83,7 @@ const DEFAULT_PAGE_SIZE = 20;
             message="Impossible de charger les partenaires pour le moment."
           />
           <div class="sp-state-action">
-            <sp-button
-              type="button"
-              icon="refresh"
-              (buttonClick)="reload()"
-            >
-              Réessayer
-            </sp-button>
+            <sp-button type="button" icon="refresh" (buttonClick)="reload()"> Réessayer </sp-button>
           </div>
         } @else if (page(); as currentPage) {
           @if (currentPage.items.length === 0) {
@@ -107,13 +95,9 @@ const DEFAULT_PAGE_SIZE = 20;
           } @else {
             <div class="sp-result-meta">
               <span>
-                {{ firstVisibleItem() }}–{{ lastVisibleItem() }}
-                sur {{ currentPage.totalElements }}
+                {{ firstVisibleItem() }}–{{ lastVisibleItem() }} sur {{ currentPage.totalElements }}
               </span>
-              <span>
-                Page {{ currentPage.page + 1 }}
-                sur {{ currentPage.totalPages }}
-              </span>
+              <span> Page {{ currentPage.page + 1 }} sur {{ currentPage.totalPages }} </span>
             </div>
 
             <div class="sp-table-scroll">
@@ -142,10 +126,7 @@ const DEFAULT_PAGE_SIZE = 20;
                         <strong>{{ partner.legalName }}</strong>
                       </td>
                       <td>
-                        <span
-                          class="sp-status"
-                          [attr.data-status]="partner.status"
-                        >
+                        <span class="sp-status" [attr.data-status]="partner.status">
                           {{ partner.status }}
                         </span>
                       </td>
@@ -195,37 +176,25 @@ const DEFAULT_PAGE_SIZE = 20;
 
       <sp-card title="Accès direct par identifiant">
         <p class="sp-support-copy">
-          Utilisez cet accès secondaire pour le support ou le diagnostic
-          lorsqu'un identifiant Partner est déjà connu.
+          Utilisez cet accès secondaire pour le support ou le diagnostic lorsqu'un identifiant
+          Partner est déjà connu.
         </p>
 
-        <form
-          class="sp-access-form"
-          [formGroup]="form"
-          (ngSubmit)="openById()"
-          novalidate
-        >
+        <form class="sp-access-form" [formGroup]="form" (ngSubmit)="openById()" novalidate>
           <mat-form-field appearance="outline">
             <mat-label>Identifiant Partner</mat-label>
-            <input
-              matInput
-              formControlName="partnerId"
-              autocomplete="off"
-            />
+            <input matInput formControlName="partnerId" autocomplete="off" />
             <sp-form-error
               errorId="partner-id-error"
               [message]="
-                form.controls.partnerId.touched &&
-                form.controls.partnerId.invalid
+                form.controls.partnerId.touched && form.controls.partnerId.invalid
                   ? 'Saisissez un identifiant UUID valide.'
                   : undefined
               "
             />
           </mat-form-field>
 
-          <sp-button type="submit" icon="search">
-            Consulter
-          </sp-button>
+          <sp-button type="submit" icon="search"> Consulter </sp-button>
         </form>
       </sp-card>
     </section>
@@ -418,28 +387,18 @@ export class PartnerAccessPageComponent {
       return 0;
     }
 
-    return Math.min(
-      (currentPage.page + 1) * currentPage.size,
-      currentPage.totalElements,
-    );
+    return Math.min((currentPage.page + 1) * currentPage.size, currentPage.totalElements);
   });
 
-  protected readonly canPreviousPage = computed(
-    () => (this.page()?.page ?? 0) > 0,
-  );
+  protected readonly canPreviousPage = computed(() => (this.page()?.page ?? 0) > 0);
 
   protected readonly canNextPage = computed(() => {
     const currentPage = this.page();
-    return currentPage
-      ? currentPage.page + 1 < currentPage.totalPages
-      : false;
+    return currentPage ? currentPage.page + 1 < currentPage.totalPages : false;
   });
 
   protected readonly form = this.formBuilder.nonNullable.group({
-    partnerId: [
-      '',
-      [Validators.required, Validators.pattern(UUID_PATTERN)],
-    ],
+    partnerId: ['', [Validators.required, Validators.pattern(UUID_PATTERN)]],
   });
 
   constructor() {
@@ -484,10 +443,7 @@ export class PartnerAccessPageComponent {
       return;
     }
 
-    void this.router.navigate([
-      '/partners',
-      this.form.controls.partnerId.value,
-    ]);
+    void this.router.navigate(['/partners', this.form.controls.partnerId.value]);
   }
 
   private loadPage(): void {
@@ -507,10 +463,7 @@ export class PartnerAccessPageComponent {
         next: (page) => {
           this.page.set(page);
 
-          if (
-            page.totalPages > 0 &&
-            page.page >= page.totalPages
-          ) {
+          if (page.totalPages > 0 && page.page >= page.totalPages) {
             this.pageIndex.set(page.totalPages - 1);
           }
         },

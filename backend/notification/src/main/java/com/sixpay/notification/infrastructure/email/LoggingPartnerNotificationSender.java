@@ -1,7 +1,7 @@
 package com.sixpay.notification.infrastructure.email;
 
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
-import com.sixpay.notification.application.port.out.PartnerNotificationSender;
+import com.sixpay.notification.application.port.output.PartnerNotificationSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

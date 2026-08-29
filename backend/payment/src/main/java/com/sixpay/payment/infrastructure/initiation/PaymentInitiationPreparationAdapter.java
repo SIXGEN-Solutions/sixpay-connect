@@ -37,6 +37,16 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Builds the domain-safe representation of a new partner debit request.
+ *
+ * <p>Raw account references are converted to masked displays and deterministic
+ * integration tokens before they enter the Payment aggregate. Beneficiary
+ * references and the allocation fingerprint are likewise derived without
+ * persisting raw beneficiary RIBs. This adapter prepares state only; aggregate
+ * transitions and persistence remain the responsibility of the application
+ * workflow.</p>
+ */
 @Component
 public final class PaymentInitiationPreparationAdapter
         implements PaymentInitiationPreparationPort {
@@ -50,6 +60,12 @@ public final class PaymentInitiationPreparationAdapter
                 Objects.requireNonNull(identifierGenerator);
     }
 
+    /**
+     * Generates Payment identities and translates the command into a
+     * {@link NewPaymentIntent}. The idempotency request hash is retained as the
+     * request fingerprint, while a separate hash protects the allocation
+     * intent against later substitution.
+     */
     @Override
     public PreparedPaymentInitiation prepare(
             InitiateDebitCommand command,
@@ -119,6 +135,11 @@ public final class PaymentInitiationPreparationAdapter
         );
     }
 
+    /**
+     * Creates a partner-bound account token plus a display-safe masked RIB.
+     * Binding the hash to the partner prevents equal RIBs received from two
+     * partners from sharing the same integration token.
+     */
     private static DebtorAccountReference debtorReference(
             InitiateDebitCommand command,
             FinancialInstitutionCode institution
@@ -152,6 +173,10 @@ public final class PaymentInitiationPreparationAdapter
                 .toList();
     }
 
+    /**
+     * Produces an opaque stable beneficiary reference so the raw beneficiary
+     * RIB is not stored input the Payment aggregate.
+     */
     private static TreasuryBeneficiaryReference beneficiaryReference(
             InitiateDebitBeneficiaryCommand item
     ) {
@@ -180,6 +205,10 @@ public final class PaymentInitiationPreparationAdapter
                 .collect(Collectors.joining("|"));
     }
 
+    /**
+     * Derives the external TresorPay subscription identity. This is not the
+     * local CustomerSubscription aggregate identifier owned by Customer.
+     */
     private static String subscriptionReference(
             InitiateDebitCommand command
     ) {

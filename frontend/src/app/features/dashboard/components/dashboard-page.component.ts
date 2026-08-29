@@ -13,8 +13,23 @@ import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolba
 })
 export class DashboardPageComponent {
   protected readonly recentPayments = [
-    { reference: 'PAY-2026-0001842', customer: 'CAMEROUN SERVICES SARL', amount: '125 000 XAF', status: 'SUCCESS' },
-    { reference: 'PAY-2026-0001841', customer: 'ETS MBARGA & FILS', amount: '62 500 XAF', status: 'PROCESSING' },
-    { reference: 'PAY-2026-0001840', customer: 'AFRICA LOGISTICS SA', amount: '350 000 XAF', status: 'FAILED' },
+    {
+      reference: 'PAY-2026-0001842',
+      customer: 'CAMEROUN SERVICES SARL',
+      amount: '125 000 XAF',
+      status: 'SUCCESS',
+    },
+    {
+      reference: 'PAY-2026-0001841',
+      customer: 'ETS MBARGA & FILS',
+      amount: '62 500 XAF',
+      status: 'PROCESSING',
+    },
+    {
+      reference: 'PAY-2026-0001840',
+      customer: 'AFRICA LOGISTICS SA',
+      amount: '350 000 XAF',
+      status: 'FAILED',
+    },
   ];
 }

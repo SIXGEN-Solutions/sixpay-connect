@@ -26,23 +26,17 @@ export class CustomersService {
   private readonly api = inject(CustomersApiClient);
   private readonly mock = inject(CustomersMockService);
 
-  search(
-    query: ObservedCustomerSearchQuery,
-  ): Observable<ObservedCustomerSearchPage> {
-    const source$ = this.backendMode.usesApi
-      ? this.api.search(query)
-      : this.mock.search(query);
+  search(query: ObservedCustomerSearchQuery): Observable<ObservedCustomerSearchPage> {
+    const source$ = this.backendMode.usesApi ? this.api.search(query) : this.mock.search(query);
 
     return source$.pipe(map(mapObservedCustomerSearchPageResponse));
   }
 
   get(observedCustomerId: string): Observable<ObservedCustomerDetail | null> {
     if (this.backendMode.usesMock) {
-      return this.mock.get(observedCustomerId).pipe(
-        map((response) =>
-          response ? mapObservedCustomerDetailResponse(response) : null,
-        ),
-      );
+      return this.mock
+        .get(observedCustomerId)
+        .pipe(map((response) => (response ? mapObservedCustomerDetailResponse(response) : null)));
     }
 
     return this.api.get(observedCustomerId).pipe(
