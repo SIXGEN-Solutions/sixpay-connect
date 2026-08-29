@@ -4,7 +4,6 @@ kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"
 metadata:
   project: "SIXPAY CONNECT"
   repository: "SIXGEN-Solutions/sixpay-connect"
-  authoritativeBranch: "feat/repository-baseline-consolidation-cleanup"
   baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
   generatedOn: "2026-08-26"
   status: "ACTIVE"
@@ -297,3 +296,13 @@ masterPromptGeneration:
   outputRule: >-
     Use the active prompt with this manifest and the selected sources only.
     Do not copy historical phase/lot content into active generation context.
+revisionPolicy:
+  selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"
+  authoritativeRevisionRequiredForWrite: true
+  exactHeadRequiredByDefault: false
+  rules:
+    - "Use the branch, tag or commit explicitly selected for the task."
+    - "Report the checked-out revision before modifying files."
+    - "The baseline commit must remain an ancestor of the selected revision."
+    - "Require exact HEAD equality only for immutable revision validation."
+    - "A synthetic Codex worktree branch name is not a failure by itself."

@@ -12,9 +12,13 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Primary implementation branch:** `'feat/repository-baseline-consolidation-cleanup'`
+**Authoritative implementation revision:** Provided by the task invocation or selected execution environment.`
+The authoritative revision is a runtime parameter. Repository documentation
+must not hard-code a temporary feature branch as the permanent source of truth.
 
-**Current delivery focus:** Repository Baseline Consolidation.
+When a task explicitly provides a branch, tag or commit, that revision governs
+the task. Otherwise, the agent uses the checked-out revision and reports it
+before making changes.
 
 ---
 
@@ -27,7 +31,7 @@ contracts, implementation, infrastructure, tests and AI assets evolve together.
 
 # Source of Truth
 
-1. `feat/repository-baseline-consolidation-cleanup`
+1. Implementation on the authoritative revision selected for the task
 2. `documentation/architecture/`
 3. `documentation/requirements/`
 4. `documentation/contracts/`
