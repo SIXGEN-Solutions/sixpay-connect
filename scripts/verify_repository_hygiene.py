@@ -7,7 +7,6 @@ import sys
 
 
 ROOT = Path.cwd()
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 
 REQUIRED = [
     "ENGINEERING_CONTEXT.md",

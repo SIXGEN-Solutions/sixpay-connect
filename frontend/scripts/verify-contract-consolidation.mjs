@@ -165,9 +165,13 @@ if (registry) {
     fail(`${registryRelative}: expected schemaVersion "1.0"`);
   }
 
-  if (registry.registry?.branch !== 'feat/repository-baseline-consolidation-cleanup') {
-    fail(`${registryRelative}: authoritative branch metadata is stale`);
+  if (registry.registry?.repository !== 'SIXGEN-Solutions/sixpay-connect') {
+    fail(`${registryRelative}: repository identity is missing or invalid`);
   }
+
+if (Object.hasOwn(registry.registry ?? {}, 'branch')) {
+  fail(`${registryRelative}: contract registry must not pin a Git branch`);
+}
 
   if (!Array.isArray(registry.contracts)) {
     fail(`${registryRelative}: contracts must be an array`);

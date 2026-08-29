@@ -13,9 +13,8 @@ REGISTRY = ROOT / "documentation/contracts/CONTRACT_REGISTRY.yaml"
 BACKEND_POM = ROOT / "backend/pom.xml"
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 EXPECTED_PRECEDENCE = [
-    "authoritative implementation branch",
+    "authoritative implementation revision",
     "documentation/architecture/",
     "documentation/requirements/",
     "documentation/contracts/",
@@ -132,7 +131,10 @@ def main():
     required_literals = [
         'schemaVersion: "1.0"',
         'kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"',
-        f'authoritativeBranch: "{EXPECTED_BRANCH}"',
+        'revisionPolicy:',
+        'selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"',
+        'authoritativeRevisionRequiredForWrite: true',
+        'exactHeadRequiredByDefault: false',
         'status: "ACTIVE"',
         'goldenBusinessModule: "backend/partner"',
         'owner: "customer"',

@@ -4,7 +4,6 @@ import subprocess
 import sys
 
 ROOT = Path.cwd()
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 

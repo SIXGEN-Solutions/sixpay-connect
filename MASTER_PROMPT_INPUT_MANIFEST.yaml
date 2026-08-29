@@ -10,11 +10,20 @@ metadata:
   purpose: >-
     Deterministic input selection for Master Prompt generation. This manifest
     selects current-state sources; it does not replace their authority.
-
+revisionPolicy:
+  selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"
+  authoritativeRevisionRequiredForWrite: true
+  exactHeadRequiredByDefault: false
+  rules:
+    - "Use the branch, tag or commit explicitly selected for the task."
+    - "Report the checked-out revision before modifying files."
+    - "The baseline commit must remain an ancestor of the selected revision."
+    - "Require exact HEAD equality only for immutable revision validation."
+    - "A synthetic Codex worktree branch name is not a failure by itself."
 authority:
   conflictRule: "FIRST_MATCH_WINS"
   precedence:
-    - "authoritative implementation branch"
+    - "authoritative implementation revision"
     - "documentation/architecture/"
     - "documentation/requirements/"
     - "documentation/contracts/"
@@ -290,19 +299,9 @@ masterPromptGeneration:
     repositoryFilesRequired: false
   prerequisites:
     - "Run py scripts/verify_master_prompt_input_manifest.py."
-    - "Confirm the manifest baselineCommit is an ancestor of the generation branch."
+    - "Confirm the manifest baselineCommit is an ancestor of the selected revision."
     - "Confirm the worktree contains no unrelated changes."
     - "Resolve any contract whose approval or generation policy blocks the requested work."
   outputRule: >-
     Use the active prompt with this manifest and the selected sources only.
     Do not copy historical phase/lot content into active generation context.
-revisionPolicy:
-  selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"
-  authoritativeRevisionRequiredForWrite: true
-  exactHeadRequiredByDefault: false
-  rules:
-    - "Use the branch, tag or commit explicitly selected for the task."
-    - "Report the checked-out revision before modifying files."
-    - "The baseline commit must remain an ancestor of the selected revision."
-    - "Require exact HEAD equality only for immutable revision validation."
-    - "A synthetic Codex worktree branch name is not a failure by itself."

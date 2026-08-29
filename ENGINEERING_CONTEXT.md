@@ -12,7 +12,8 @@
 
 **Organization:** SIXGEN-Solutions
 
-**Authoritative implementation revision:** Provided by the task invocation or selected execution environment.`
+**Authoritative implementation revision:** Provided by the task invocation or 
+selected execution environment.
 The authoritative revision is a runtime parameter. Repository documentation
 must not hard-code a temporary feature branch as the permanent source of truth.
 

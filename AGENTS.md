@@ -18,11 +18,22 @@ context. Never treat deferred contracts as active MVP contracts.
 Follow the source precedence, contract policies and generation permissions
 defined by these sources.
 
-## Repository identity
+## Repository revision
 
-The authoritative implementation branch is:
+The authoritative branch, tag or commit is provided by the task invocation or
+selected by the execution environment.
 
-`feat/repository-baseline-consolidation-cleanup`
+Before writing files:
+
+- report the current branch and `HEAD`;
+- confirm that the manifest baseline commit is an ancestor of `HEAD`;
+- use the explicitly requested revision when one is provided;
+- preserve unrelated and pre-existing changes;
+- do not require `HEAD` to equal a hard-coded commit unless the user explicitly
+  requests immutable revision validation.
+
+A synthetic branch name used by Codex Cloud is not, by itself, a failure when
+the checked-out commit corresponds to the requested revision.
 
 Before writing files:
 
@@ -100,3 +111,42 @@ Canonical non-Docker validations include:
 ```bash
 cd backend
 mvn verify
+```
+
+```bash
+cd frontend
+npm run verify:sixpay
+```
+
+Use `npm ci --no-audit --no-fund` first when frontend dependencies are absent
+or must be restored from the lockfile.
+
+Run Python gates with the platform-appropriate launcher:
+
+```bash
+python3 scripts/<gate>.py
+```
+
+On Windows:
+
+```powershell
+py scripts\<gate>.py
+```
+
+`verify_baseline.py`, `-Pfull-tests` and Testcontainers validations require
+Docker when PostgreSQL integration tests are executed.
+
+A gate may be reported as passed only when its command finishes successfully.
+Distinguish repository failures from environment blockers.
+
+Before completing a modification, run:
+
+```bash
+git diff --check
+git status --short
+```
+
+Report changed files, executed validations, skipped validations, environment
+blockers and remaining risks.
+
+Do not commit or push unless explicitly requested.
