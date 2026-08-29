@@ -4,10 +4,10 @@
 
 DA-7 turns the existing mutually-exclusive login presentation into a capability-driven hybrid login.
 
-Authoritative branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 ## Existing implementation reviewed

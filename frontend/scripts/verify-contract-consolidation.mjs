@@ -169,9 +169,9 @@ if (registry) {
     fail(`${registryRelative}: repository identity is missing or invalid`);
   }
 
-if (Object.hasOwn(registry.registry ?? {}, 'branch')) {
-  fail(`${registryRelative}: contract registry must not pin a Git branch`);
-}
+  if (Object.hasOwn(registry.registry ?? {}, 'branch')) {
+    fail(`${registryRelative}: contract registry must not pin a Git branch`);
+  }
 
   if (!Array.isArray(registry.contracts)) {
     fail(`${registryRelative}: contracts must be an array`);

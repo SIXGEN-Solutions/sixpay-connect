@@ -5,10 +5,10 @@
 DA-1 formalizes the single internal authenticated-identity contract used after
 authentication and before authorization/business access.
 
-Authoritative branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 The `partner` module remains the golden business-module reference. Authentication

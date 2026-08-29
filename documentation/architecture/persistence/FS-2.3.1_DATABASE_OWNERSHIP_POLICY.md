@@ -1,6 +1,6 @@
 # FS-2.3.1 — Database Ownership & Flyway Policy
 
-**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Revision policy:** Task-selected authoritative revision
 **Gate:** `FS-2.3 — Database baseline consolidation`
 **Status:** Policy
 **Golden module:** Partner

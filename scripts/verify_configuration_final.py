@@ -69,10 +69,10 @@ def main():
 
     engineering = ENGINEERING.read_text(encoding="utf-8")
 
-    if EXPECTED_BRANCH not in engineering:
+    if "**Authoritative implementation revision:**" not in engineering:
         fail(
             "ENGINEERING_CONTEXT.md does not declare "
-            f"{EXPECTED_BRANCH}"
+            "the authoritative revision policy"
         )
 
     for relative in REQUIRED_PHASE_DOCS:

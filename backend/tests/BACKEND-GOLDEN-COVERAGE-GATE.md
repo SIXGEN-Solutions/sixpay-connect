@@ -31,10 +31,10 @@ reference.
 
 ## 2. Source of truth
 
-Authoritative branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 Mandatory entry point:

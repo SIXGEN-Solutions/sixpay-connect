@@ -5,10 +5,10 @@
 DA-4 completes the provider-neutral OIDC authentication path while preserving
 Local authentication from DA-3.
 
-Authoritative branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 The `partner` module remains the golden business-module reference. OIDC remains

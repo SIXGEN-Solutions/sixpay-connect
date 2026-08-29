@@ -5,10 +5,10 @@
 DA-5 separates the canonical SIXPAY user from the authentication identities
 used to prove that user's identity.
 
-Authoritative implementation branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 The `partner` module remains the golden implementation/structure reference.

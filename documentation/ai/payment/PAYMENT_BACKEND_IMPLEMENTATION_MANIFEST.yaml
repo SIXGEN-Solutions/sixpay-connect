@@ -4,7 +4,7 @@ domain: payment
 phase: PHASE_3_PAYMENT_BACKEND_IMPLEMENTATION
 currentLot: LOT_3_1_BACKEND_FOUNDATION
 status: READY_FOR_HUMAN_APPLICATION
-authoritativeBranch: feat/payment-domain-generation-brief
+historicalSourceBranch: feat/payment-domain-generation-brief
 
 sourceOfTruth:
   entryPoint: ENGINEERING_CONTEXT.md

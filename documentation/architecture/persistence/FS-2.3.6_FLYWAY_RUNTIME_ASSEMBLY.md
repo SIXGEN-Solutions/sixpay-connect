@@ -1,6 +1,6 @@
 # FS-2.3.6 — Flyway Runtime Assembly
 
-**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Revision policy:** Task-selected authoritative revision
 **Gate:** `FS-2.3 — Database baseline consolidation`
 **Status:** Runtime assembly
 **Golden module:** Partner

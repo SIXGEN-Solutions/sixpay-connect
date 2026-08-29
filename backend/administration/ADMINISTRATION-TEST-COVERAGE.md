@@ -10,7 +10,7 @@ Sous-lot 4 — Tests / documentation
 
 ## Source of truth
 
-The authoritative implementation branch is `feat/repository-baseline-consolidation-cleanup`. `ENGINEERING_CONTEXT.md` remains the mandatory engineering entry point and `partner` remains the golden business-module reference.
+The authoritative implementation revision is supplied by the task invocation or selected execution environment. `ENGINEERING_CONTEXT.md` remains the mandatory engineering entry point and `partner` remains the golden business-module reference.
 
 Administration is no longer a module shell. The implemented responsibility split is:
 

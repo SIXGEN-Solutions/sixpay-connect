@@ -83,10 +83,10 @@ def main():
         errors="ignore",
     )
 
-    if EXPECTED_BRANCH not in engineering:
+    if "**Authoritative implementation revision:**" not in engineering:
         fail(
             "ENGINEERING_CONTEXT.md does not declare "
-            + EXPECTED_BRANCH
+            "the authoritative revision policy"
         )
 
     for relative in REQUIRED:

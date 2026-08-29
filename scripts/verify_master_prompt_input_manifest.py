@@ -156,8 +156,8 @@ def main():
         if literal not in manifest:
             fail(f"missing required manifest rule: {literal}")
 
-    if EXPECTED_BRANCH not in engineering:
-        fail("ENGINEERING_CONTEXT.md does not declare the authoritative branch")
+    if "**Authoritative implementation revision:**" not in engineering:
+        fail("ENGINEERING_CONTEXT.md does not declare the authoritative revision policy")
     if "activeManifest: MASTER_PROMPT_INPUT_MANIFEST.yaml" not in classification:
         fail("documentation classification does not reference the active manifest")
     if "activePrompt: MASTER_ENGINEERING_PROMPT.md" not in classification:

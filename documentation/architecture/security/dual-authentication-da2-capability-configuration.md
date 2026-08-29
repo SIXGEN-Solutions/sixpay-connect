@@ -5,10 +5,10 @@
 DA-2 replaces the exclusive authentication-mode configuration model with
 independent authentication capabilities.
 
-Authoritative branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 DA-2 changes configuration semantics. It does not implement Local credential
