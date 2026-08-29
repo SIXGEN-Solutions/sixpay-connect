@@ -59,7 +59,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(
         classes =
-                AdministrationIncidentFullStackConformanceTest
+                AdministrationIncidentFullStackConformanceIT
                         .TestApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
@@ -72,7 +72,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 )
 @ActiveProfiles("test")
 @Testcontainers
-class AdministrationIncidentFullStackConformanceTest {
+class AdministrationIncidentFullStackConformanceIT {
 
     private static final String CORRELATION =
             "X-Correlation-Id";
