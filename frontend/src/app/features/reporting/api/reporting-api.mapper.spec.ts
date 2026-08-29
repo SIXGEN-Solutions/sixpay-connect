@@ -12,16 +12,18 @@ import {
 describe('reporting-api.mapper', () => {
   it('maps timeline dates and cursor metadata', () => {
     const response: PaymentTimelinePageResponse = {
-      items: [{
-        timelineEntryId: '11111111-1111-4111-8111-111111111101',
-        paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
-        category: 'DOMAIN',
-        eventType: 'PAYMENT_RECEIVED',
-        occurredAt: '2026-08-08T13:47:12.104Z',
-        correlationId: 'e5e41af6-6f71-4cf2-a111-42837d1ea100',
-        sourceSystem: 'TRESOR_PAY',
-        aggregateVersion: 1,
-      }],
+      items: [
+        {
+          timelineEntryId: '11111111-1111-4111-8111-111111111101',
+          paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
+          category: 'DOMAIN',
+          eventType: 'PAYMENT_RECEIVED',
+          occurredAt: '2026-08-08T13:47:12.104Z',
+          correlationId: 'e5e41af6-6f71-4cf2-a111-42837d1ea100',
+          sourceSystem: 'TRESOR_PAY',
+          aggregateVersion: 1,
+        },
+      ],
       size: 1,
       hasMore: false,
       snapshotAt: '2026-08-08T14:00:00Z',

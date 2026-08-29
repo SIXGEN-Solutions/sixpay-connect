@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { CreateSecurityUserRequest, SecurityUserDetail, UpdateSecurityUserRequest } from '../models/security-user-administration';
+import {
+  CreateSecurityUserRequest,
+  SecurityUserDetail,
+  UpdateSecurityUserRequest,
+} from '../models/security-user-administration';
 import { SecurityUserAdministrationService } from './security-user-administration.service';
 
 const API = '/internal/api/v1/administration/users';
@@ -25,14 +29,21 @@ describe('SecurityUserAdministrationService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(SecurityUserAdministrationService);
     http = TestBed.inject(HttpTestingController);
   });
 
   it('creates a canonical SIXPAY user', () => {
     const request: CreateSecurityUserRequest = {
-      username: 'admin', email: 'admin@sixpay.local', roles: ['ADMIN'], permissions: ['payment.read'], localAuthenticationEnabled: true, initialPassword: 'Admin-dev-2026',
+      username: 'admin',
+      email: 'admin@sixpay.local',
+      roles: ['ADMIN'],
+      permissions: ['payment.read'],
+      localAuthenticationEnabled: true,
+      initialPassword: 'Admin-dev-2026',
     };
     service.createUser(request).subscribe((user) => expect(user).toEqual(USER));
     const call = http.expectOne(API);
@@ -56,7 +67,12 @@ describe('SecurityUserAdministrationService', () => {
   });
 
   it('updates canonical account and SIXPAY authorization', () => {
-    const request: UpdateSecurityUserRequest = { username: 'ops-admin', email: 'ops-admin@sixpay.local', roles: ['ADMIN', 'AUDITOR'], permissions: ['reporting.read'] };
+    const request: UpdateSecurityUserRequest = {
+      username: 'ops-admin',
+      email: 'ops-admin@sixpay.local',
+      roles: ['ADMIN', 'AUDITOR'],
+      permissions: ['reporting.read'],
+    };
     service.updateUser(USER.id, request).subscribe((user) => expect(user.id).toBe(USER.id));
     const call = http.expectOne(`${API}/${USER.id}`);
     expect(call.request.method).toBe('PUT');
@@ -101,7 +117,9 @@ describe('SecurityUserAdministrationService', () => {
     linkCall.flush(USER);
 
     service.unlinkIdentity(USER.id, 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb').subscribe();
-    const unlinkCall = http.expectOne(`${API}/${USER.id}/identities/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb`);
+    const unlinkCall = http.expectOne(
+      `${API}/${USER.id}/identities/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb`,
+    );
     expect(unlinkCall.request.method).toBe('DELETE');
     unlinkCall.flush(USER);
     http.verify();

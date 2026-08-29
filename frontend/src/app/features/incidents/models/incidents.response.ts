@@ -1,7 +1,4 @@
-import {
-  IncidentSeverity,
-  IncidentStatus,
-} from './incidents';
+import { IncidentSeverity, IncidentStatus } from './incidents';
 
 export interface IncidentSummaryResponse {
   readonly incidentId: string;
@@ -20,21 +17,18 @@ export interface IncidentTimelineEntryResponse {
   readonly actor: string;
 }
 
-export interface IncidentDetailResponse
-  extends IncidentSummaryResponse {
+export interface IncidentDetailResponse extends IncidentSummaryResponse {
   readonly description: string;
   readonly impact: string;
   readonly accountingBatchId: string | null;
   readonly paymentId: string | null;
   readonly paymentReference: string | null;
   readonly correlationId: string | null;
-  readonly timeline:
-    readonly IncidentTimelineEntryResponse[];
+  readonly timeline: readonly IncidentTimelineEntryResponse[];
 }
 
 export interface IncidentPageResponse {
-  readonly content:
-    readonly IncidentSummaryResponse[];
+  readonly content: readonly IncidentSummaryResponse[];
   readonly page: number;
   readonly size: number;
   readonly totalElements: number;

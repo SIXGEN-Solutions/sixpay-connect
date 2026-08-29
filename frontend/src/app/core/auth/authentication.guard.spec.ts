@@ -6,18 +6,10 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
-import {
-  firstValueFrom,
-  Observable,
-  of,
-} from 'rxjs';
+import { firstValueFrom, Observable, of } from 'rxjs';
 
-import {
-  authenticationGuard,
-} from './authentication.guard';
-import {
-  AuthenticationService,
-} from './authentication.service';
+import { authenticationGuard } from './authentication.guard';
+import { AuthenticationService } from './authentication.service';
 
 describe('authenticationGuard', () => {
   it('redirects anonymous user to login and preserves requested business URL', async () => {
@@ -38,25 +30,13 @@ describe('authenticationGuard', () => {
       ],
     });
 
-    const result =
-      await executeGuard(
-        '/payments',
-      );
+    const result = await executeGuard('/payments');
 
-    const router =
-      TestBed.inject(Router);
+    const router = TestBed.inject(Router);
 
-    expect(
-      result instanceof UrlTree,
-    ).toBe(true);
+    expect(result instanceof UrlTree).toBe(true);
 
-    expect(
-      router.serializeUrl(
-        result as UrlTree,
-      ),
-    ).toBe(
-      '/login?returnUrl=%2Fpayments',
-    );
+    expect(router.serializeUrl(result as UrlTree)).toBe('/login?returnUrl=%2Fpayments');
   });
 
   it('redirects a restricted LOCAL session to change-password', async () => {
@@ -77,25 +57,13 @@ describe('authenticationGuard', () => {
       ],
     });
 
-    const result =
-      await executeGuard(
-        '/payments',
-      );
+    const result = await executeGuard('/payments');
 
-    const router =
-      TestBed.inject(Router);
+    const router = TestBed.inject(Router);
 
-    expect(
-      result instanceof UrlTree,
-    ).toBe(true);
+    expect(result instanceof UrlTree).toBe(true);
 
-    expect(
-      router.serializeUrl(
-        result as UrlTree,
-      ),
-    ).toBe(
-      '/change-password',
-    );
+    expect(router.serializeUrl(result as UrlTree)).toBe('/change-password');
   });
 
   it('allows normal LOCAL session into business routes', async () => {
@@ -116,11 +84,7 @@ describe('authenticationGuard', () => {
       ],
     });
 
-    expect(
-      await executeGuard(
-        '/payments',
-      ),
-    ).toBe(true);
+    expect(await executeGuard('/payments')).toBe(true);
   });
 
   it('does not apply SIXPAY local-password restriction to OIDC session', async () => {
@@ -141,26 +105,19 @@ describe('authenticationGuard', () => {
       ],
     });
 
-    expect(
-      await executeGuard(
-        '/payments',
-      ),
-    ).toBe(true);
+    expect(await executeGuard('/payments')).toBe(true);
   });
 
-  function executeGuard(
-    url: string,
-  ): Promise<boolean | UrlTree> {
-    return TestBed.runInInjectionContext(
-      () =>
-        firstValueFrom(
-          authenticationGuard(
-            {} as ActivatedRouteSnapshot,
-            {
-              url,
-            } as RouterStateSnapshot,
-          ) as Observable<boolean | UrlTree>,
-        ),
+  function executeGuard(url: string): Promise<boolean | UrlTree> {
+    return TestBed.runInInjectionContext(() =>
+      firstValueFrom(
+        authenticationGuard(
+          {} as ActivatedRouteSnapshot,
+          {
+            url,
+          } as RouterStateSnapshot,
+        ) as Observable<boolean | UrlTree>,
+      ),
     );
   }
 });

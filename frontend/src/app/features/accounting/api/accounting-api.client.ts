@@ -8,43 +8,27 @@ import {
   AccountingBatchPageResponse,
 } from '../models/accounting.response';
 
-const ACCOUNTING_BATCHES_API_PATH =
-  '/internal/api/v1/accounting-batches';
+const ACCOUNTING_BATCHES_API_PATH = '/internal/api/v1/accounting-batches';
 
 @Injectable({ providedIn: 'root' })
 export class AccountingApiClient {
   private readonly http = inject(HttpClient);
 
-  search(
-    query: AccountingBatchQuery,
-  ): Observable<AccountingBatchPageResponse> {
-    let params = new HttpParams()
-      .set('page', query.page ?? 0)
-      .set('size', query.size ?? 20);
+  search(query: AccountingBatchQuery): Observable<AccountingBatchPageResponse> {
+    let params = new HttpParams().set('page', query.page ?? 0).set('size', query.size ?? 20);
 
     if (query.businessDate !== undefined) {
-      params = params.set(
-        'businessDate',
-        query.businessDate,
-      );
+      params = params.set('businessDate', query.businessDate);
     }
 
     if (query.status !== undefined) {
-      params = params.set(
-        'status',
-        query.status,
-      );
+      params = params.set('status', query.status);
     }
 
-    return this.http.get<AccountingBatchPageResponse>(
-      ACCOUNTING_BATCHES_API_PATH,
-      { params },
-    );
+    return this.http.get<AccountingBatchPageResponse>(ACCOUNTING_BATCHES_API_PATH, { params });
   }
 
-  get(
-    batchId: string,
-  ): Observable<AccountingBatchDetailResponse> {
+  get(batchId: string): Observable<AccountingBatchDetailResponse> {
     return this.http.get<AccountingBatchDetailResponse>(
       `${ACCOUNTING_BATCHES_API_PATH}/${encodeURIComponent(batchId)}`,
     );

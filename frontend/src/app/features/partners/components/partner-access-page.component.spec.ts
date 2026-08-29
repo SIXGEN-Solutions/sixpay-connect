@@ -33,9 +33,9 @@ describe('PartnerAccessPageComponent hardening', () => {
   };
 
   function configure(
-    searchImplementation: (
-      query: PartnerSearchQuery,
-    ) => Observable<PartnerPage> = vi.fn(() => of(page)),
+    searchImplementation: (query: PartnerSearchQuery) => Observable<PartnerPage> = vi.fn(() =>
+      of(page),
+    ),
     usesMock = true,
   ) {
     const partners = {
@@ -66,9 +66,7 @@ describe('PartnerAccessPageComponent hardening', () => {
       ],
     });
 
-    fixture = TestBed.createComponent(
-      PartnerAccessPageComponent,
-    );
+    fixture = TestBed.createComponent(PartnerAccessPageComponent);
     fixture.detectChanges();
 
     return partners;
@@ -81,18 +79,16 @@ describe('PartnerAccessPageComponent hardening', () => {
       page: 0,
       size: 20,
     });
-    expect(fixture.nativeElement.textContent)
-      .toContain('TresorPay');
+    expect(fixture.nativeElement.textContent).toContain('TresorPay');
   });
 
   it('requests page one when next is selected', () => {
-    const search = vi.fn(
-      (query: PartnerSearchQuery): Observable<PartnerPage> =>
-        of({
-          ...page,
-          page: query.page ?? 0,
-          size: query.size ?? 20,
-        }),
+    const search = vi.fn((query: PartnerSearchQuery): Observable<PartnerPage> =>
+      of({
+        ...page,
+        page: query.page ?? 0,
+        size: query.size ?? 20,
+      }),
     );
 
     configure(search);
@@ -101,9 +97,7 @@ describe('PartnerAccessPageComponent hardening', () => {
       fixture.nativeElement.querySelectorAll('button'),
     ) as HTMLButtonElement[];
 
-    const next = buttons.find(
-      (button) => button.textContent?.includes('Suivant'),
-    );
+    const next = buttons.find((button) => button.textContent?.includes('Suivant'));
 
     next?.click();
     fixture.detectChanges();
@@ -120,16 +114,11 @@ describe('PartnerAccessPageComponent hardening', () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate');
 
-    const row = fixture.nativeElement.querySelector(
-      '.sp-partner-row',
-    ) as HTMLTableRowElement;
+    const row = fixture.nativeElement.querySelector('.sp-partner-row') as HTMLTableRowElement;
 
     row.click();
 
-    expect(navigate).toHaveBeenCalledWith([
-      '/partners',
-      '10000000-0000-4000-8000-000000000001',
-    ]);
+    expect(navigate).toHaveBeenCalledWith(['/partners', '10000000-0000-4000-8000-000000000001']);
   });
 
   it('shows empty and error states without inventing data', () => {
@@ -147,30 +136,21 @@ describe('PartnerAccessPageComponent hardening', () => {
       ),
     );
 
-    expect(fixture.nativeElement.textContent)
-      .toContain('Aucun partenaire');
+    expect(fixture.nativeElement.textContent).toContain('Aucun partenaire');
 
     TestBed.resetTestingModule();
 
-    configure(
-      vi.fn(() =>
-        throwError(
-          () => new Error('Partner catalog unavailable'),
-        ),
-      ),
-    );
+    configure(vi.fn(() => throwError(() => new Error('Partner catalog unavailable'))));
 
-    expect(fixture.nativeElement.textContent)
-      .toContain('Catalogue indisponible');
+    expect(fixture.nativeElement.textContent).toContain('Catalogue indisponible');
   });
 
   it('hides the mock state panel in API mode', () => {
-    configure(vi.fn(() => of(page)), false);
+    configure(
+      vi.fn(() => of(page)),
+      false,
+    );
 
-    expect(
-      fixture.nativeElement.querySelector(
-        'sp-mock-state-panel',
-      ),
-    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('sp-mock-state-panel')).toBeNull();
   });
 });

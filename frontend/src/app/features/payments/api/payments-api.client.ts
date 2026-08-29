@@ -3,10 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { PaymentSearchQuery } from '../models/payment-query';
-import {
-  PaymentDetailResponse,
-  PaymentSearchPageResponse,
-} from '../models/payments.response';
+import { PaymentDetailResponse, PaymentSearchPageResponse } from '../models/payments.response';
 
 const PAYMENTS_API_PATH = '/internal/api/v1/payments';
 

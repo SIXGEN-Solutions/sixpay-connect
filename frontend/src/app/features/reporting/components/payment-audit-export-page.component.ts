@@ -54,11 +54,7 @@ import { ReportingService } from '../services/reporting.service';
             <mat-hint>10 à 500 caractères</mat-hint>
           </mat-form-field>
 
-          <sp-button
-            type="submit"
-            icon="download"
-            [disabled]="form.invalid || submitting()"
-          >
+          <sp-button type="submit" icon="download" [disabled]="form.invalid || submitting()">
             Demander l'export
           </sp-button>
         </form>
@@ -66,10 +62,27 @@ import { ReportingService } from '../services/reporting.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-space-3)}
-    .sp-purpose{grid-column:1/-1}
-    @media(max-width:800px){.sp-form{grid-template-columns:1fr}.sp-purpose{grid-column:auto}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--sp-space-3);
+    }
+    .sp-purpose {
+      grid-column: 1/-1;
+    }
+    @media (max-width: 800px) {
+      .sp-form {
+        grid-template-columns: 1fr;
+      }
+      .sp-purpose {
+        grid-column: auto;
+      }
+    }
   `,
 })
 export class PaymentAuditExportPageComponent {

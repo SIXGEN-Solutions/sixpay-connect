@@ -22,7 +22,9 @@ export function mapPaymentSummaryResponse(response: PaymentSummaryResponse): Pay
   };
 }
 
-export function mapPaymentSearchPageResponse(response: PaymentSearchPageResponse): PaymentSearchPage {
+export function mapPaymentSearchPageResponse(
+  response: PaymentSearchPageResponse,
+): PaymentSearchPage {
   return {
     items: response.items.map(mapPaymentSummaryResponse),
     size: response.size,

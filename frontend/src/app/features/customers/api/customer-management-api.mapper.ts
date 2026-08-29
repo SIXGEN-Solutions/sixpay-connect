@@ -11,9 +11,7 @@ import {
   CustomerSubscriptionResponse,
 } from '../models/customer-management.response';
 
-export function mapCustomerMaster(
-  response: CustomerMasterResponse,
-): CustomerMaster {
+export function mapCustomerMaster(response: CustomerMasterResponse): CustomerMaster {
   return {
     ...response,
     createdAt: new Date(response.createdAt),
@@ -46,10 +44,7 @@ export function mapCustomerSubscription(
   };
 }
 
-
-export function mapCustomerPage(
-  response: CustomerPageResponse,
-): CustomerPage {
+export function mapCustomerPage(response: CustomerPageResponse): CustomerPage {
   return {
     ...response,
     content: response.content.map(mapCustomerMaster),

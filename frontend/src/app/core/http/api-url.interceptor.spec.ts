@@ -1,8 +1,5 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { apiUrlInterceptor, resolveSixpayApiUrl } from './api-url.interceptor';
@@ -48,20 +45,20 @@ describe('apiUrlInterceptor', () => {
   });
 
   it('does not rewrite absolute URLs', () => {
-    expect(
-      resolveSixpayApiUrl('https://example.test/health', 'https://sixpay.example'),
-    ).toBe('https://example.test/health');
+    expect(resolveSixpayApiUrl('https://example.test/health', 'https://sixpay.example')).toBe(
+      'https://example.test/health',
+    );
   });
 
   it('prefixes a public API URL with apiBaseUrl', () => {
-    expect(
-      resolveSixpayApiUrl('/api/v1/partners', 'https://sixpay.example/'),
-    ).toBe('https://sixpay.example/api/v1/partners');
+    expect(resolveSixpayApiUrl('/api/v1/partners', 'https://sixpay.example/')).toBe(
+      'https://sixpay.example/api/v1/partners',
+    );
   });
 
   it('prefixes an internal API URL with apiBaseUrl', () => {
-    expect(
-      resolveSixpayApiUrl('/internal/api/v1/payments', 'https://sixpay.example/'),
-    ).toBe('https://sixpay.example/internal/api/v1/payments');
+    expect(resolveSixpayApiUrl('/internal/api/v1/payments', 'https://sixpay.example/')).toBe(
+      'https://sixpay.example/internal/api/v1/payments',
+    );
   });
 });

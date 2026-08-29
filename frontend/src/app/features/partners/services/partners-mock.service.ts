@@ -33,7 +33,12 @@ const FIXED_PARTNERS: readonly PartnerResponse[] = [
   partner('10000000-0000-4000-8000-000000000009', 'SCB Cameroun', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000010', 'Ecobank Cameroon', 'REJECTED', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000011', 'Commercial Bank Cameroon', 'ACTIVE', 'PAYMENT'),
-  partner('10000000-0000-4000-8000-000000000012', 'Banque Atlantique Cameroun', 'PENDING_VALIDATION', 'PAYMENT'),
+  partner(
+    '10000000-0000-4000-8000-000000000012',
+    'Banque Atlantique Cameroun',
+    'PENDING_VALIDATION',
+    'PAYMENT',
+  ),
   partner('10000000-0000-4000-8000-000000000013', 'Union Bank of Cameroon', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000014', 'Access Bank Cameroon', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000015', 'Citibank Cameroon', 'SUSPENDED', 'PAYMENT'),
@@ -41,23 +46,36 @@ const FIXED_PARTNERS: readonly PartnerResponse[] = [
   partner('10000000-0000-4000-8000-000000000017', 'CBC', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000018', 'Bange Bank Cameroon', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000019', 'Bank of Africa Cameroon', 'ACTIVE', 'PAYMENT'),
-  partner('10000000-0000-4000-8000-000000000020', 'Société Générale Cameroun', 'PENDING_VALIDATION', 'PAYMENT'),
+  partner(
+    '10000000-0000-4000-8000-000000000020',
+    'Société Générale Cameroun',
+    'PENDING_VALIDATION',
+    'PAYMENT',
+  ),
   partner('10000000-0000-4000-8000-000000000021', 'Orange Money Cameroon', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000022', 'MTN Mobile Money Cameroon', 'ACTIVE', 'PAYMENT'),
-  partner('10000000-0000-4000-8000-000000000023', 'Express Union Mobile Money', 'SUSPENDED', 'PAYMENT'),
+  partner(
+    '10000000-0000-4000-8000-000000000023',
+    'Express Union Mobile Money',
+    'SUSPENDED',
+    'PAYMENT',
+  ),
   partner('10000000-0000-4000-8000-000000000024', 'Campost Money', 'PENDING_VALIDATION', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000025', 'YUP Cameroon', 'REJECTED', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000026', 'Cameroon Treasury Gateway', 'ACTIVE', 'PAYMENT'),
   partner('10000000-0000-4000-8000-000000000027', 'Public Revenue Gateway', 'ACTIVE', 'PAYMENT'),
-  partner('10000000-0000-4000-8000-000000000028', 'Municipal Services Gateway', 'PENDING_VALIDATION', 'PAYMENT'),
+  partner(
+    '10000000-0000-4000-8000-000000000028',
+    'Municipal Services Gateway',
+    'PENDING_VALIDATION',
+    'PAYMENT',
+  ),
 ];
 
 @Injectable({ providedIn: 'root' })
 export class PartnersMockService {
   private readonly scenario = inject(MockScenarioService);
-  private readonly partners = new Map(
-    FIXED_PARTNERS.map((item) => [item.id, clonePartner(item)]),
-  );
+  private readonly partners = new Map(FIXED_PARTNERS.map((item) => [item.id, clonePartner(item)]));
 
   search(query: PartnerSearchQuery): Observable<PartnerPageResponse> {
     const page = query.page ?? 0;
@@ -80,8 +98,9 @@ export class PartnersMockService {
     }
 
     const items = [...this.partners.values()]
-      .sort((left, right) =>
-        left.legalName.localeCompare(right.legalName) || left.id.localeCompare(right.id),
+      .sort(
+        (left, right) =>
+          left.legalName.localeCompare(right.legalName) || left.id.localeCompare(right.id),
       )
       .map(toSummary);
 
@@ -151,17 +170,13 @@ export class PartnersMockService {
     );
   }
 
-  decide(
-    partnerId: string,
-    request: PartnerDecisionRequest,
-  ): Observable<PartnerResponse> {
+  decide(partnerId: string, request: PartnerDecisionRequest): Observable<PartnerResponse> {
     const existing = this.partners.get(partnerId);
     if (!existing) {
       return throwError(() => new Error(`Mock Partner not found: ${partnerId}`));
     }
 
-    const nextStatus: PartnerStatus =
-      request.decision === 'APPROVE' ? 'ACTIVE' : 'REJECTED';
+    const nextStatus: PartnerStatus = request.decision === 'APPROVE' ? 'ACTIVE' : 'REJECTED';
 
     return this.updatePartner(existing, {
       status: nextStatus,
@@ -169,10 +184,7 @@ export class PartnersMockService {
     });
   }
 
-  suspend(
-    partnerId: string,
-    request: SuspendPartnerRequest,
-  ): Observable<PartnerResponse> {
+  suspend(partnerId: string, request: SuspendPartnerRequest): Observable<PartnerResponse> {
     const existing = this.partners.get(partnerId);
     if (!existing) {
       return throwError(() => new Error(`Mock Partner not found: ${partnerId}`));
@@ -207,9 +219,7 @@ export class PartnersMockService {
     }
 
     const filtered = existing.validationThresholds.filter(
-      (item) =>
-        item.transactionType !== transactionType ||
-        item.currency !== request.currency,
+      (item) => item.transactionType !== transactionType || item.currency !== request.currency,
     );
 
     return this.updatePartner(existing, {
@@ -225,10 +235,7 @@ export class PartnersMockService {
     });
   }
 
-  getAuditTrail(
-    partnerId: string,
-    query: PartnerAuditQuery,
-  ): Observable<PartnerAuditPageResponse> {
+  getAuditTrail(partnerId: string, query: PartnerAuditQuery): Observable<PartnerAuditPageResponse> {
     const page = query.page ?? 0;
     const size = query.size ?? 50;
     const existing = this.partners.get(partnerId);
@@ -292,9 +299,7 @@ export class PartnersMockService {
   }
 
   private withScenarioDelay<T>(source: Observable<T>): Observable<T> {
-    return this.scenario.scenario() === 'loading'
-      ? source.pipe(delay(MOCK_DELAY_MS))
-      : source;
+    return this.scenario.scenario() === 'loading' ? source.pipe(delay(MOCK_DELAY_MS)) : source;
   }
 }
 

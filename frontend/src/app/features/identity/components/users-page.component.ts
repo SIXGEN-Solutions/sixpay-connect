@@ -44,11 +44,7 @@ import { IdentityService } from '../services/identity.service';
                   <td>{{ user.roles.join(', ') }}</td>
                   <td>{{ user.status }}</td>
                   <td>
-                    {{
-                      user.lastLoginAt
-                        ? (user.lastLoginAt | date: 'dd/MM/yyyy HH:mm:ss')
-                        : '—'
-                    }}
+                    {{ user.lastLoginAt ? (user.lastLoginAt | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
                   </td>
                 </tr>
               }
@@ -59,22 +55,35 @@ import { IdentityService } from '../services/identity.service';
 
       <sp-card title="Important">
         <p>
-          Cette page ne crée, ne désactive et ne modifie aucun compte.
-          L'Identity Provider reste la source d'autorité.
+          Cette page ne crée, ne désactive et ne modifie aucun compte. L'Identity Provider reste la
+          source d'autorité.
         </p>
       </sp-card>
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-tabs{display:flex;gap:var(--sp-space-3)}
-    .sp-table-scroll{overflow-x:auto}
-    .sp-table{width:100%;border-collapse:collapse}
-    .sp-table th,.sp-table td{
-      padding:var(--sp-space-2);
-      text-align:left;
-      border-bottom:1px solid var(--mat-sys-outline-variant);
-      white-space:nowrap
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-tabs {
+      display: flex;
+      gap: var(--sp-space-3);
+    }
+    .sp-table-scroll {
+      overflow-x: auto;
+    }
+    .sp-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sp-table th,
+    .sp-table td {
+      padding: var(--sp-space-2);
+      text-align: left;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      white-space: nowrap;
     }
   `,
 })

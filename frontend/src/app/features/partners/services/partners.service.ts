@@ -17,12 +17,7 @@ import {
   SuspendPartnerRequest,
 } from '../models/create-partners.request';
 import { PartnerSearchQuery } from '../models/partner-query';
-import {
-  Partner,
-  PartnerAuditPage,
-  PartnerPage,
-  PartnerStatusView,
-} from '../models/partners';
+import { Partner, PartnerAuditPage, PartnerPage, PartnerStatusView } from '../models/partners';
 import { PartnersMockService } from './partners-mock.service';
 
 @Injectable({ providedIn: 'root' })
@@ -63,10 +58,7 @@ export class PartnersService {
     return source$.pipe(map(mapPartnerStatusResponse));
   }
 
-  decide(
-    partnerId: string,
-    request: PartnerDecisionRequest,
-  ): Observable<Partner> {
+  decide(partnerId: string, request: PartnerDecisionRequest): Observable<Partner> {
     const source$ = this.backendMode.usesApi
       ? this.api.decidePartner(partnerId, request)
       : this.mock.decide(partnerId, request);
@@ -74,10 +66,7 @@ export class PartnersService {
     return source$.pipe(map(mapPartnerResponse));
   }
 
-  suspend(
-    partnerId: string,
-    request: SuspendPartnerRequest,
-  ): Observable<Partner> {
+  suspend(partnerId: string, request: SuspendPartnerRequest): Observable<Partner> {
     const source$ = this.backendMode.usesApi
       ? this.api.suspendPartner(partnerId, request)
       : this.mock.suspend(partnerId, request);
@@ -105,10 +94,7 @@ export class PartnersService {
     return source$.pipe(map(mapPartnerResponse));
   }
 
-  getAuditTrail(
-    partnerId: string,
-    query: PartnerAuditQuery,
-  ): Observable<PartnerAuditPage> {
+  getAuditTrail(partnerId: string, query: PartnerAuditQuery): Observable<PartnerAuditPage> {
     const source$ = this.backendMode.usesApi
       ? this.api.getPartnerAuditTrail(partnerId, query)
       : this.mock.getAuditTrail(partnerId, query);

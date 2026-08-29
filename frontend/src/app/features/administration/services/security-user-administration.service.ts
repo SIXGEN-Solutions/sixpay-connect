@@ -27,10 +27,7 @@ export class SecurityUserAdministrationService {
     return this.http.get<SecurityUserDetail>(`${API}/${userId}`);
   }
 
-  updateUser(
-    userId: string,
-    request: UpdateSecurityUserRequest,
-  ): Observable<SecurityUserDetail> {
+  updateUser(userId: string, request: UpdateSecurityUserRequest): Observable<SecurityUserDetail> {
     return this.http.put<SecurityUserDetail>(`${API}/${userId}`, request);
   }
 
@@ -38,24 +35,16 @@ export class SecurityUserAdministrationService {
     return this.http.post<SecurityUserDetail>(`${API}/${userId}/enable`, {});
   }
 
-  setLocalEnabled(
-    userId: string,
-    enabled: boolean,
-  ): Observable<SecurityUserDetail> {
-    return this.http.put<SecurityUserDetail>(
-      `${API}/${userId}/authentication-methods/local`,
-      { enabled },
-    );
+  setLocalEnabled(userId: string, enabled: boolean): Observable<SecurityUserDetail> {
+    return this.http.put<SecurityUserDetail>(`${API}/${userId}/authentication-methods/local`, {
+      enabled,
+    });
   }
 
-  resetLocalPassword(
-    userId: string,
-    newPassword: string,
-  ): Observable<SecurityUserDetail> {
-    return this.http.post<SecurityUserDetail>(
-      `${API}/${userId}/local-password-reset`,
-      { newPassword },
-    );
+  resetLocalPassword(userId: string, newPassword: string): Observable<SecurityUserDetail> {
+    return this.http.post<SecurityUserDetail>(`${API}/${userId}/local-password-reset`, {
+      newPassword,
+    });
   }
 
   linkOidcIdentity(
@@ -63,19 +52,14 @@ export class SecurityUserAdministrationService {
     provider: string,
     providerSubject: string,
   ): Observable<SecurityUserDetail> {
-    return this.http.post<SecurityUserDetail>(
-      `${API}/${userId}/identities/oidc`,
-      { provider, providerSubject },
-    );
+    return this.http.post<SecurityUserDetail>(`${API}/${userId}/identities/oidc`, {
+      provider,
+      providerSubject,
+    });
   }
 
-  unlinkIdentity(
-    userId: string,
-    identityId: string,
-  ): Observable<SecurityUserDetail> {
-    return this.http.delete<SecurityUserDetail>(
-      `${API}/${userId}/identities/${identityId}`,
-    );
+  unlinkIdentity(userId: string, identityId: string): Observable<SecurityUserDetail> {
+    return this.http.delete<SecurityUserDetail>(`${API}/${userId}/identities/${identityId}`);
   }
 
   disableUser(userId: string): Observable<SecurityUserDetail> {

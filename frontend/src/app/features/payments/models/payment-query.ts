@@ -1,10 +1,7 @@
 import { PaymentStatus } from './payments';
 
 export type PaymentSort =
-  | 'CREATED_AT_ASC'
-  | 'CREATED_AT_DESC'
-  | 'UPDATED_AT_ASC'
-  | 'UPDATED_AT_DESC';
+  'CREATED_AT_ASC' | 'CREATED_AT_DESC' | 'UPDATED_AT_ASC' | 'UPDATED_AT_DESC';
 
 export interface PaymentSearchQuery {
   readonly paymentReference?: string;

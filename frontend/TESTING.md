@@ -24,12 +24,12 @@ et simule uniquement les réponses backend au niveau réseau Playwright.
 
 Les seuils Vitest restent bloquants :
 
-| Mesure | Seuil |
-| --- | ---: |
-| Statements | 70 % |
-| Branches | 60 % |
-| Functions | 60 % |
-| Lines | 70 % |
+| Mesure     | Seuil |
+| ---------- | ----: |
+| Statements |  70 % |
+| Branches   |  60 % |
+| Functions  |  60 % |
+| Lines      |  70 % |
 
 ## Commandes
 

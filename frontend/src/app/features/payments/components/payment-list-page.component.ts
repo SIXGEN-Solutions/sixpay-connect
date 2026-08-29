@@ -114,7 +114,9 @@ import { PaymentsService } from '../services/payments.service';
 
           <div class="sp-filter-actions">
             <sp-button type="submit" icon="search">Rechercher</sp-button>
-            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()">Réinitialiser</sp-button>
+            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()"
+              >Réinitialiser</sp-button
+            >
           </div>
         </form>
       </sp-card>
@@ -180,9 +182,14 @@ import { PaymentsService } from '../services/payments.service';
                           <td>{{ payment.debtorAccount?.maskedValue ?? '—' }}</td>
                           <td>{{ payment.financialInstitutionCode }}</td>
                           <td>
-                            {{ payment.amount.amount | currency: payment.amount.currency : 'code' : '1.0-0' }}
+                            {{
+                              payment.amount.amount
+                                | currency: payment.amount.currency : 'code' : '1.0-0'
+                            }}
                           </td>
-                          <td><strong>{{ payment.status }}</strong></td>
+                          <td>
+                            <strong>{{ payment.status }}</strong>
+                          </td>
                           <td>{{ payment.reasonCode ?? '—' }}</td>
                           <td>{{ payment.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                         </tr>
@@ -362,49 +369,37 @@ export class PaymentListPageComponent {
   }
 
   private buildQuery(cursor?: string): PaymentSearchQuery {
-  const value = this.form.getRawValue();
+    const value = this.form.getRawValue();
 
-  return {
-    ...(value.paymentReference.trim()
-      ? { paymentReference: value.paymentReference.trim() }
-      : {}),
+    return {
+      ...(value.paymentReference.trim() ? { paymentReference: value.paymentReference.trim() } : {}),
 
-    ...(value.tresorPayRequestId.trim()
-      ? { tresorPayRequestId: value.tresorPayRequestId.trim() }
-      : {}),
+      ...(value.tresorPayRequestId.trim()
+        ? { tresorPayRequestId: value.tresorPayRequestId.trim() }
+        : {}),
 
-    ...(value.observedCustomerId.trim()
-      ? { observedCustomerId: value.observedCustomerId.trim() }
-      : {}),
+      ...(value.observedCustomerId.trim()
+        ? { observedCustomerId: value.observedCustomerId.trim() }
+        : {}),
 
-    ...(value.financialInstitutionCode.trim()
-      ? { financialInstitutionCode: value.financialInstitutionCode.trim() }
-      : {}),
+      ...(value.financialInstitutionCode.trim()
+        ? { financialInstitutionCode: value.financialInstitutionCode.trim() }
+        : {}),
 
-    ...(value.status
-      ? { status: value.status as PaymentSummary['status'] }
-      : {}),
+      ...(value.status ? { status: value.status as PaymentSummary['status'] } : {}),
 
-    ...(value.reasonCode.trim()
-      ? { reasonCode: value.reasonCode.trim() }
-      : {}),
+      ...(value.reasonCode.trim() ? { reasonCode: value.reasonCode.trim() } : {}),
 
-    ...(value.amountMin !== null
-      ? { amountMin: value.amountMin }
-      : {}),
+      ...(value.amountMin !== null ? { amountMin: value.amountMin } : {}),
 
-    ...(value.amountMax !== null
-      ? { amountMax: value.amountMax }
-      : {}),
+      ...(value.amountMax !== null ? { amountMax: value.amountMax } : {}),
 
-    ...(value.currency.trim()
-      ? { currency: value.currency.trim().toUpperCase() }
-      : {}),
+      ...(value.currency.trim() ? { currency: value.currency.trim().toUpperCase() } : {}),
 
-    sort: value.sort,
-    size: value.size,
+      sort: value.sort,
+      size: value.size,
 
-    ...(cursor ? { cursor } : {}),
-  };
-}
+      ...(cursor ? { cursor } : {}),
+    };
+  }
 }

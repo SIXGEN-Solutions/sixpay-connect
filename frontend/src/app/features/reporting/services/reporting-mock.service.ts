@@ -164,7 +164,10 @@ const AUDIT_RECORDS: readonly PaymentAuditRecordResponse[] = [
 
 @Injectable({ providedIn: 'root' })
 export class ReportingMockService {
-  timeline(paymentId: string, query: PaymentTimelineQuery): Observable<PaymentTimelinePageResponse> {
+  timeline(
+    paymentId: string,
+    query: PaymentTimelineQuery,
+  ): Observable<PaymentTimelinePageResponse> {
     if (paymentId !== PAYMENT_ID) {
       return of({
         items: [],
@@ -175,30 +178,36 @@ export class ReportingMockService {
       });
     }
 
-    const filtered = TIMELINE.filter((entry) =>
-      (!query.category || entry.category === query.category) &&
-      (!query.occurredFrom || new Date(entry.occurredAt) >= query.occurredFrom) &&
-      (!query.occurredTo || new Date(entry.occurredAt) <= query.occurredTo),
+    const filtered = TIMELINE.filter(
+      (entry) =>
+        (!query.category || entry.category === query.category) &&
+        (!query.occurredFrom || new Date(entry.occurredAt) >= query.occurredFrom) &&
+        (!query.occurredTo || new Date(entry.occurredAt) <= query.occurredTo),
     );
 
     return of(this.timelinePage(filtered, query.cursor, query.size));
   }
 
   searchAudit(query: PaymentAuditQuery): Observable<PaymentAuditPageResponse> {
-    const items = AUDIT_RECORDS.filter((record) =>
-      (!query.paymentId || record.paymentId === query.paymentId) &&
-      (!query.paymentReference ||
-        (record.paymentReference ?? '').toLowerCase().includes(query.paymentReference.toLowerCase())) &&
-      (!query.observedCustomerId || record.observedCustomerId === query.observedCustomerId) &&
-      (!query.actorId || record.actor.actorId.toLowerCase().includes(query.actorId.toLowerCase())) &&
-      (!query.actorType || record.actor.actorType === query.actorType) &&
-      (!query.action || record.action.toLowerCase().includes(query.action.toLowerCase())) &&
-      (!query.result || record.result === query.result) &&
-      (!query.reasonCode || record.reasonCode.toLowerCase().includes(query.reasonCode.toLowerCase())) &&
-      (!query.correlationId || record.correlationId === query.correlationId) &&
-      (!query.sourceSystem || record.sourceSystem === query.sourceSystem) &&
-      new Date(record.occurredAt) >= query.occurredFrom &&
-      new Date(record.occurredAt) <= query.occurredTo,
+    const items = AUDIT_RECORDS.filter(
+      (record) =>
+        (!query.paymentId || record.paymentId === query.paymentId) &&
+        (!query.paymentReference ||
+          (record.paymentReference ?? '')
+            .toLowerCase()
+            .includes(query.paymentReference.toLowerCase())) &&
+        (!query.observedCustomerId || record.observedCustomerId === query.observedCustomerId) &&
+        (!query.actorId ||
+          record.actor.actorId.toLowerCase().includes(query.actorId.toLowerCase())) &&
+        (!query.actorType || record.actor.actorType === query.actorType) &&
+        (!query.action || record.action.toLowerCase().includes(query.action.toLowerCase())) &&
+        (!query.result || record.result === query.result) &&
+        (!query.reasonCode ||
+          record.reasonCode.toLowerCase().includes(query.reasonCode.toLowerCase())) &&
+        (!query.correlationId || record.correlationId === query.correlationId) &&
+        (!query.sourceSystem || record.sourceSystem === query.sourceSystem) &&
+        new Date(record.occurredAt) >= query.occurredFrom &&
+        new Date(record.occurredAt) <= query.occurredTo,
     );
 
     const sorted = [...items].sort((a, b) =>

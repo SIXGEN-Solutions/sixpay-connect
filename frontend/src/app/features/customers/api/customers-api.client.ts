@@ -18,13 +18,10 @@ const OBSERVED_CUSTOMERS_API_PATH = '/internal/api/v1/observed-customers';
 export class CustomersApiClient {
   private readonly http = inject(HttpClient);
 
-  search(
-    query: ObservedCustomerSearchQuery,
-  ): Observable<ObservedCustomerSearchPageResponse> {
-    return this.http.get<ObservedCustomerSearchPageResponse>(
-      OBSERVED_CUSTOMERS_API_PATH,
-      { params: this.searchParams(query) },
-    );
+  search(query: ObservedCustomerSearchQuery): Observable<ObservedCustomerSearchPageResponse> {
+    return this.http.get<ObservedCustomerSearchPageResponse>(OBSERVED_CUSTOMERS_API_PATH, {
+      params: this.searchParams(query),
+    });
   }
 
   get(observedCustomerId: string): Observable<ObservedCustomerDetailResponse> {
@@ -53,43 +50,25 @@ export class CustomersApiClient {
       params = params.set('legalName', query.legalName);
     }
     if (query.financialInstitutionCode) {
-      params = params.set(
-        'financialInstitutionCode',
-        query.financialInstitutionCode,
-      );
+      params = params.set('financialInstitutionCode', query.financialInstitutionCode);
     }
     if (query.lastPaymentStatus) {
       params = params.set('lastPaymentStatus', query.lastPaymentStatus);
     }
     if (query.lastFailureReasonCode) {
-      params = params.set(
-        'lastFailureReasonCode',
-        query.lastFailureReasonCode,
-      );
+      params = params.set('lastFailureReasonCode', query.lastFailureReasonCode);
     }
     if (query.firstObservedFrom) {
-      params = params.set(
-        'firstObservedFrom',
-        query.firstObservedFrom.toISOString(),
-      );
+      params = params.set('firstObservedFrom', query.firstObservedFrom.toISOString());
     }
     if (query.firstObservedTo) {
-      params = params.set(
-        'firstObservedTo',
-        query.firstObservedTo.toISOString(),
-      );
+      params = params.set('firstObservedTo', query.firstObservedTo.toISOString());
     }
     if (query.lastObservedFrom) {
-      params = params.set(
-        'lastObservedFrom',
-        query.lastObservedFrom.toISOString(),
-      );
+      params = params.set('lastObservedFrom', query.lastObservedFrom.toISOString());
     }
     if (query.lastObservedTo) {
-      params = params.set(
-        'lastObservedTo',
-        query.lastObservedTo.toISOString(),
-      );
+      params = params.set('lastObservedTo', query.lastObservedTo.toISOString());
     }
     if (query.paymentFrom) {
       params = params.set('paymentFrom', query.paymentFrom.toISOString());

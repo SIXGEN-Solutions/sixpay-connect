@@ -62,7 +62,10 @@ import { ReportingService } from '../services/reporting.service';
             <mat-label>Résultat</mat-label>
             <mat-select formControlName="result">
               <mat-option value="">Tous</mat-option>
-              @for (result of ['SUCCESS','FAILURE','DENIED','NO_OP','QUARANTINED']; track result) {
+              @for (
+                result of ['SUCCESS', 'FAILURE', 'DENIED', 'NO_OP', 'QUARANTINED'];
+                track result
+              ) {
                 <mat-option [value]="result">{{ result }}</mat-option>
               }
             </mat-select>
@@ -90,7 +93,9 @@ import { ReportingService } from '../services/reporting.service';
 
           <div class="sp-actions">
             <sp-button type="submit" icon="search">Rechercher</sp-button>
-            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()">Réinitialiser</sp-button>
+            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()"
+              >Réinitialiser</sp-button
+            >
           </div>
         </form>
       </sp-card>
@@ -121,7 +126,9 @@ import { ReportingService } from '../services/reporting.service';
                   @for (record of currentPage.items; track record.auditId) {
                     <tr>
                       <td>{{ record.occurredAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                      <td><a [routerLink]="[record.auditId]">{{ record.action }}</a></td>
+                      <td>
+                        <a [routerLink]="[record.auditId]">{{ record.action }}</a>
+                      </td>
                       <td>{{ record.actorType }} / {{ record.actorId }}</td>
                       <td>{{ record.targetType }}</td>
                       <td>{{ record.result }}</td>
@@ -138,18 +145,40 @@ import { ReportingService } from '../services/reporting.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
-    .sp-actions{display:flex;gap:var(--sp-space-2);align-items:center}
-    .sp-table-scroll{overflow-x:auto}
-    .sp-table{width:100%;border-collapse:collapse}
-    .sp-table th,.sp-table td{
-      padding:var(--sp-space-2);
-      text-align:left;
-      border-bottom:1px solid var(--mat-sys-outline-variant);
-      white-space:nowrap
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
     }
-    @media(max-width:900px){.sp-filter-grid{grid-template-columns:1fr}}
+    .sp-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    .sp-actions {
+      display: flex;
+      gap: var(--sp-space-2);
+      align-items: center;
+    }
+    .sp-table-scroll {
+      overflow-x: auto;
+    }
+    .sp-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sp-table th,
+    .sp-table td {
+      padding: var(--sp-space-2);
+      text-align: left;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      white-space: nowrap;
+    }
+    @media (max-width: 900px) {
+      .sp-filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class PaymentAuditListPageComponent {
@@ -187,9 +216,7 @@ export class PaymentAuditListPageComponent {
       sort: 'OCCURRED_AT_DESC',
       size: 50,
       ...(value.paymentId.trim() ? { paymentId: value.paymentId.trim() } : {}),
-      ...(value.paymentReference.trim()
-        ? { paymentReference: value.paymentReference.trim() }
-        : {}),
+      ...(value.paymentReference.trim() ? { paymentReference: value.paymentReference.trim() } : {}),
       ...(value.actorId.trim() ? { actorId: value.actorId.trim() } : {}),
       ...(value.action.trim() ? { action: value.action.trim() } : {}),
       ...(value.result ? { result: value.result as NonNullable<PaymentAuditQuery['result']> } : {}),

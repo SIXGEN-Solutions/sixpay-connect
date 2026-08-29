@@ -34,7 +34,8 @@ export interface PaymentTimelineEntryResponse {
   readonly eventType: string;
   readonly fromState?: PaymentStateResponse | null;
   readonly toState?: PaymentStateResponse | null;
-  readonly result?: 'SUCCESS' | 'FAILURE' | 'DEFERRED' | 'UNKNOWN' | 'PARTIAL' | 'NO_OP' | 'QUARANTINED';
+  readonly result?:
+    'SUCCESS' | 'FAILURE' | 'DEFERRED' | 'UNKNOWN' | 'PARTIAL' | 'NO_OP' | 'QUARANTINED';
   readonly reasonCode?: string | null;
   readonly occurredAt: string;
   readonly correlationId: string;

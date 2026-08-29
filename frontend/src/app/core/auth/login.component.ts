@@ -1,11 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, effect, inject, signal } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -39,19 +34,10 @@ import { AuthenticationService } from './authentication.service';
           }
 
           @if (authentication.localEnabled) {
-            <form
-              class="sp-local-login-form"
-              [formGroup]="form"
-              (ngSubmit)="loginLocal()"
-            >
+            <form class="sp-local-login-form" [formGroup]="form" (ngSubmit)="loginLocal()">
               <mat-form-field appearance="outline">
                 <mat-label>Email / Nom d’utilisateur</mat-label>
-                <input
-                  matInput
-                  type="text"
-                  autocomplete="username"
-                  formControlName="username"
-                />
+                <input matInput type="text" autocomplete="username" formControlName="username" />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -74,11 +60,7 @@ import { AuthenticationService } from './authentication.service';
                 </p>
               }
 
-              <sp-button
-                icon="login"
-                type="submit"
-                [disabled]="form.invalid || submitting()"
-              >
+              <sp-button icon="login" type="submit" [disabled]="form.invalid || submitting()">
                 {{ submitting() ? 'Connexion…' : 'Se connecter' }}
               </sp-button>
             </form>
@@ -94,11 +76,7 @@ import { AuthenticationService } from './authentication.service';
 
           @if (authentication.oidcEnabled) {
             <section class="sp-sso-login">
-              <sp-button
-                icon="login"
-                variant="secondary"
-                (buttonClick)="loginOidc()"
-              >
+              <sp-button icon="login" variant="secondary" (buttonClick)="loginOidc()">
                 Se connecter avec SSO
               </sp-button>
             </section>
@@ -184,8 +162,7 @@ export class LoginComponent {
   protected readonly sessionExpired =
     this.route.snapshot.queryParamMap.get('sessionExpired') === 'true';
 
-  private readonly returnUrl =
-    this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
+  private readonly returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
 
   protected readonly form = new FormGroup({
     username: new FormControl('', {
@@ -219,10 +196,7 @@ export class LoginComponent {
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
         error: (error: unknown) => {
-          if (
-            error instanceof HttpErrorResponse &&
-            error.status === 401
-          ) {
+          if (error instanceof HttpErrorResponse && error.status === 401) {
             this.invalidCredentials.set(true);
           }
         },

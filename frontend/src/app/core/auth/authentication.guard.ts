@@ -17,23 +17,18 @@ export const authenticationGuard: CanActivateFn = (_route, state) => {
   return authentication.ready$.pipe(
     map(() => {
       if (!authentication.isAuthenticated()) {
-        return router.createUrlTree(
-          ['/login'],
-          {
-            queryParams: {
-              returnUrl: state.url,
-            },
+        return router.createUrlTree(['/login'], {
+          queryParams: {
+            returnUrl: state.url,
           },
-        );
+        });
       }
 
       if (
         authentication.activeAuthenticationMethod() === 'local' &&
         authentication.passwordChangeRequired()
       ) {
-        return router.createUrlTree(
-          ['/change-password'],
-        );
+        return router.createUrlTree(['/change-password']);
       }
 
       return true;

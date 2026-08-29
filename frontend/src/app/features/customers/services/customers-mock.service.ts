@@ -72,7 +72,9 @@ const CUSTOMERS: readonly ObservedCustomerDetailResponse[] = [
   },
 ];
 
-const CUSTOMER_PAYMENTS: Readonly<Record<string, readonly ObservedCustomerPaymentReferenceResponse[]>> = {
+const CUSTOMER_PAYMENTS: Readonly<
+  Record<string, readonly ObservedCustomerPaymentReferenceResponse[]>
+> = {
   [CUSTOMER_ONE_ID]: [
     {
       paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
@@ -160,10 +162,11 @@ export class CustomersMockService {
   ): Observable<ObservedCustomerPaymentPageResponse> {
     let items = [...(CUSTOMER_PAYMENTS[observedCustomerId] ?? [])];
 
-    items = items.filter((payment) =>
-      (!query.status || payment.status === query.status) &&
-      (!query.createdFrom || new Date(payment.createdAt) >= query.createdFrom) &&
-      (!query.createdTo || new Date(payment.createdAt) <= query.createdTo),
+    items = items.filter(
+      (payment) =>
+        (!query.status || payment.status === query.status) &&
+        (!query.createdFrom || new Date(payment.createdAt) >= query.createdFrom) &&
+        (!query.createdTo || new Date(payment.createdAt) <= query.createdTo),
     );
 
     const size = Math.max(1, Math.min(query.size ?? 2, 200));
@@ -187,8 +190,7 @@ export class CustomersMockService {
     const institutionMatches =
       !query.financialInstitutionCode ||
       customer.institutions.some(
-        (institution) =>
-          institution.financialInstitutionCode === query.financialInstitutionCode,
+        (institution) => institution.financialInstitutionCode === query.financialInstitutionCode,
       );
 
     return (
@@ -201,12 +203,9 @@ export class CustomersMockService {
         (customer.lastFailureReasonCode ?? '')
           .toLowerCase()
           .includes(query.lastFailureReasonCode.toLowerCase())) &&
-      (!query.firstObservedFrom ||
-        new Date(customer.firstObservedAt) >= query.firstObservedFrom) &&
-      (!query.firstObservedTo ||
-        new Date(customer.firstObservedAt) <= query.firstObservedTo) &&
-      (!query.lastObservedFrom ||
-        new Date(customer.lastObservedAt) >= query.lastObservedFrom) &&
+      (!query.firstObservedFrom || new Date(customer.firstObservedAt) >= query.firstObservedFrom) &&
+      (!query.firstObservedTo || new Date(customer.firstObservedAt) <= query.firstObservedTo) &&
+      (!query.lastObservedFrom || new Date(customer.lastObservedAt) >= query.lastObservedFrom) &&
       (!query.lastObservedTo || new Date(customer.lastObservedAt) <= query.lastObservedTo)
     );
   }

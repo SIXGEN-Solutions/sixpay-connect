@@ -8,8 +8,7 @@ export const SIXPAY_SECURITY_ROLES = [
   'PARTNER',
 ] as const;
 
-export type SecurityAdministrationRole =
-  (typeof SIXPAY_SECURITY_ROLES)[number];
+export type SecurityAdministrationRole = (typeof SIXPAY_SECURITY_ROLES)[number];
 
 export const SIXPAY_SECURITY_PERMISSIONS = [
   'observed-customer.read',
@@ -22,5 +21,4 @@ export const SIXPAY_SECURITY_PERMISSIONS = [
   'payment.audit.export',
 ] as const;
 
-export type SecurityAdministrationPermission =
-  (typeof SIXPAY_SECURITY_PERMISSIONS)[number];
+export type SecurityAdministrationPermission = (typeof SIXPAY_SECURITY_PERMISSIONS)[number];

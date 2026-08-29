@@ -8,7 +8,13 @@ import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolba
 
 @Component({
   selector: 'sp-reporting-home-page',
-  imports: [ReactiveFormsModule, RouterLink, SpButtonComponent, SpCardComponent, SpToolbarComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    SpButtonComponent,
+    SpCardComponent,
+    SpToolbarComponent,
+  ],
   template: `
     <section class="sp-page">
       <sp-toolbar
@@ -39,21 +45,41 @@ import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolba
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
-    input{width:100%;box-sizing:border-box;padding:.75rem;border:1px solid var(--mat-sys-outline-variant);border-radius:8px}
-    label{display:block;margin-bottom:.35rem;font-weight:700}
-    @media(max-width:900px){.sp-grid{grid-template-columns:1fr}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75rem;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 8px;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 700;
+    }
+    @media (max-width: 900px) {
+      .sp-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class ReportingHomePageComponent {
   private readonly router = inject(Router);
 
-  protected readonly paymentId = new FormControl(
-    '7fa85f64-5717-4562-b3fc-2c963f66afa1',
-    { nonNullable: true },
-  );
-
+  protected readonly paymentId = new FormControl('7fa85f64-5717-4562-b3fc-2c963f66afa1', {
+    nonNullable: true,
+  });
 
   protected openTimeline(): void {
     const paymentId = this.paymentId.value.trim();

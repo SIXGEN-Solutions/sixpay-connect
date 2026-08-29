@@ -88,9 +88,7 @@ describe('PartnersService hardening', () => {
   it('uses API pagination parameters unchanged in API mode', async () => {
     const { service, api, mock } = configure(true);
 
-    const page = await firstValueFrom(
-      service.search({ page: 1, size: 50 }),
-    );
+    const page = await firstValueFrom(service.search({ page: 1, size: 50 }));
 
     expect(api.listPartners).toHaveBeenCalledWith(1, 50);
     expect(mock.search).not.toHaveBeenCalled();
@@ -109,9 +107,7 @@ describe('PartnersService hardening', () => {
   it('never calls the API datasource in mock mode', async () => {
     const { service, api, mock } = configure(false);
 
-    await firstValueFrom(
-      service.search({ page: 2, size: 10 }),
-    );
+    await firstValueFrom(service.search({ page: 2, size: 10 }));
 
     expect(mock.search).toHaveBeenCalledWith({
       page: 2,
@@ -134,9 +130,7 @@ describe('PartnersService hardening', () => {
         reason: 'Compliance',
       }),
     );
-    await firstValueFrom(
-      service.reactivate('partner-id'),
-    );
+    await firstValueFrom(service.reactivate('partner-id'));
 
     expect(mock.decide).toHaveBeenCalledOnce();
     expect(mock.suspend).toHaveBeenCalledOnce();

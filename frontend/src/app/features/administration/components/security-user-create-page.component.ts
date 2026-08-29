@@ -52,13 +52,7 @@ export class SecurityUserCreatePageComponent {
     roles: this.formBuilder.nonNullable.control<string[]>([]),
     permissions: this.formBuilder.nonNullable.control<string[]>([]),
     localAuthenticationEnabled: [true],
-    initialPassword: [
-      '',
-      [
-        Validators.minLength(12),
-        Validators.maxLength(200),
-      ],
-    ],
+    initialPassword: ['', [Validators.minLength(12), Validators.maxLength(200)]],
   });
 
   protected submit(): void {
@@ -69,10 +63,7 @@ export class SecurityUserCreatePageComponent {
 
     const value = this.form.getRawValue();
 
-    if (
-      value.localAuthenticationEnabled &&
-      value.initialPassword.trim().length < 12
-    ) {
+    if (value.localAuthenticationEnabled && value.initialPassword.trim().length < 12) {
       this.form.controls.initialPassword.setErrors({
         minlength: true,
       });
@@ -90,41 +81,30 @@ export class SecurityUserCreatePageComponent {
         email: value.email.trim() || null,
         roles: value.roles,
         permissions: value.permissions,
-        localAuthenticationEnabled:
-          value.localAuthenticationEnabled,
-        initialPassword:
-          value.localAuthenticationEnabled
-            ? value.initialPassword
-            : null,
+        localAuthenticationEnabled: value.localAuthenticationEnabled,
+        initialPassword: value.localAuthenticationEnabled ? value.initialPassword : null,
       })
       .pipe(
         catchError(() => EMPTY),
         finalize(() => this.submitting.set(false)),
       )
       .subscribe((user) => {
-        void this.router.navigate(
-          ['/administration/users', user.id],
-          {
-            queryParams: {
-              created: true,
-            },
+        void this.router.navigate(['/administration/users', user.id], {
+          queryParams: {
+            created: true,
           },
-        );
+        });
       });
   }
 
-  protected fieldError(
-    name: keyof typeof this.form.controls,
-  ): string | undefined {
-    const backendError =
-      this.errorService.currentError()?.fieldErrors[name];
+  protected fieldError(name: keyof typeof this.form.controls): string | undefined {
+    const backendError = this.errorService.currentError()?.fieldErrors[name];
 
     if (backendError) {
       return backendError;
     }
 
-    const control =
-      this.form.controls[name];
+    const control = this.form.controls[name];
 
     if (!control.touched || !control.errors) {
       return undefined;

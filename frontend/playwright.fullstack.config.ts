@@ -7,10 +7,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env['CI']),
   retries: process.env['CI'] ? 1 : 0,
   workers: 1,
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report-fullstack' }],
-  ],
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report-fullstack' }]],
   use: {
     baseURL: 'http://127.0.0.1:4202',
     trace: 'retain-on-failure',

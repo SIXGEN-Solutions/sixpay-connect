@@ -23,18 +23,38 @@ import { ReportingService } from '../services/reporting.service';
 
         <sp-card title="Statut">
           <dl class="sp-details">
-            <div><dt>Statut</dt><dd>{{ exportJob.status }}</dd></div>
-            <div><dt>Demandé par</dt><dd>{{ exportJob.requestedBy }}</dd></div>
-            <div><dt>Demandé le</dt><dd>{{ exportJob.requestedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-            <div><dt>Expire le</dt><dd>{{ exportJob.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-            <div><dt>Nombre d'enregistrements</dt><dd>{{ exportJob.recordCount ?? '—' }}</dd></div>
-            <div><dt>Checksum</dt><dd>{{ exportJob.checksum ?? '—' }}</dd></div>
+            <div>
+              <dt>Statut</dt>
+              <dd>{{ exportJob.status }}</dd>
+            </div>
+            <div>
+              <dt>Demandé par</dt>
+              <dd>{{ exportJob.requestedBy }}</dd>
+            </div>
+            <div>
+              <dt>Demandé le</dt>
+              <dd>{{ exportJob.requestedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+            </div>
+            <div>
+              <dt>Expire le</dt>
+              <dd>{{ exportJob.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+            </div>
+            <div>
+              <dt>Nombre d'enregistrements</dt>
+              <dd>{{ exportJob.recordCount ?? '—' }}</dd>
+            </div>
+            <div>
+              <dt>Checksum</dt>
+              <dd>{{ exportJob.checksum ?? '—' }}</dd>
+            </div>
           </dl>
 
           <p><strong>Justification :</strong> {{ exportJob.businessPurpose }}</p>
 
           @if (exportJob.retrievalUri) {
-            <p>URI de récupération mockée : <code>{{ exportJob.retrievalUri }}</code></p>
+            <p>
+              URI de récupération mockée : <code>{{ exportJob.retrievalUri }}</code>
+            </p>
           }
         </sp-card>
       } @else if (notFound()) {
@@ -47,12 +67,35 @@ import { ReportingService } from '../services/reporting.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-space-3);margin:0}
-    .sp-details div{display:grid;gap:.2rem}
-    .sp-details dt{color:var(--mat-sys-on-surface-variant);font-size:.85rem}
-    .sp-details dd{margin:0;font-weight:700;overflow-wrap:anywhere}
-    @media(max-width:700px){.sp-details{grid-template-columns:1fr}}
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
+    }
+    .sp-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+      margin: 0;
+    }
+    .sp-details div {
+      display: grid;
+      gap: 0.2rem;
+    }
+    .sp-details dt {
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 0.85rem;
+    }
+    .sp-details dd {
+      margin: 0;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 700px) {
+      .sp-details {
+        grid-template-columns: 1fr;
+      }
+    }
   `,
 })
 export class PaymentAuditExportStatusPageComponent {

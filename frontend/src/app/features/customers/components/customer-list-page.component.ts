@@ -79,9 +79,13 @@ import { CustomersService } from '../services/customers.service';
           <mat-form-field appearance="outline">
             <mat-label>Tri</mat-label>
             <mat-select formControlName="sort">
-              <mat-option value="LAST_OBSERVED_AT_DESC">Dernière observation décroissante</mat-option>
+              <mat-option value="LAST_OBSERVED_AT_DESC"
+                >Dernière observation décroissante</mat-option
+              >
               <mat-option value="LAST_OBSERVED_AT_ASC">Dernière observation croissante</mat-option>
-              <mat-option value="FIRST_OBSERVED_AT_DESC">Première observation décroissante</mat-option>
+              <mat-option value="FIRST_OBSERVED_AT_DESC"
+                >Première observation décroissante</mat-option
+              >
               <mat-option value="FIRST_OBSERVED_AT_ASC">Première observation croissante</mat-option>
             </mat-select>
           </mat-form-field>
@@ -97,7 +101,9 @@ import { CustomersService } from '../services/customers.service';
 
           <div class="sp-actions">
             <sp-button type="submit" icon="search">Rechercher</sp-button>
-            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()">Réinitialiser</sp-button>
+            <sp-button type="button" icon="restart_alt" (buttonClick)="reset()"
+              >Réinitialiser</sp-button
+            >
           </div>
         </form>
       </sp-card>
@@ -199,24 +205,63 @@ import { CustomersService } from '../services/customers.service';
     </section>
   `,
   styles: `
-    :host,.sp-page{display:grid;gap:var(--sp-space-4)}
-    .sp-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-space-3)}
-    .sp-actions{display:flex;gap:var(--sp-space-2);align-items:center}
-    .sp-meta,.sp-pagination{display:flex;justify-content:space-between;gap:var(--sp-space-3);align-items:center}
-    .sp-meta{margin-bottom:var(--sp-space-3);color:var(--mat-sys-on-surface-variant);font-size:.875rem}
-    .sp-pagination{margin-top:var(--sp-space-3)}
-    .sp-table-scroll{overflow-x:auto}
-    .sp-table{width:100%;border-collapse:collapse}
-    .sp-table th,.sp-table td{
-      padding:var(--sp-space-2);
-      text-align:left;
-      border-bottom:1px solid var(--mat-sys-outline-variant);
-      white-space:nowrap
+    :host,
+    .sp-page {
+      display: grid;
+      gap: var(--sp-space-4);
     }
-    @media(max-width:1000px){.sp-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:700px){
-      .sp-filter-grid{grid-template-columns:1fr}
-      .sp-meta{align-items:flex-start;flex-direction:column}
+    .sp-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--sp-space-3);
+    }
+    .sp-actions {
+      display: flex;
+      gap: var(--sp-space-2);
+      align-items: center;
+    }
+    .sp-meta,
+    .sp-pagination {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sp-space-3);
+      align-items: center;
+    }
+    .sp-meta {
+      margin-bottom: var(--sp-space-3);
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 0.875rem;
+    }
+    .sp-pagination {
+      margin-top: var(--sp-space-3);
+    }
+    .sp-table-scroll {
+      overflow-x: auto;
+    }
+    .sp-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sp-table th,
+    .sp-table td {
+      padding: var(--sp-space-2);
+      text-align: left;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      white-space: nowrap;
+    }
+    @media (max-width: 1000px) {
+      .sp-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 700px) {
+      .sp-filter-grid {
+        grid-template-columns: 1fr;
+      }
+      .sp-meta {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
   `,
 })
@@ -256,8 +301,7 @@ export class CustomerListPageComponent {
         : {}),
       ...(value.lastPaymentStatus
         ? {
-            lastPaymentStatus:
-              value.lastPaymentStatus as ObservedCustomerPaymentStatusResponse,
+            lastPaymentStatus: value.lastPaymentStatus as ObservedCustomerPaymentStatusResponse,
           }
         : {}),
       ...(value.lastFailureReasonCode.trim()

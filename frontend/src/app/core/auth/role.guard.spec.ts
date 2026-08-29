@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  provideRouter,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
 import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 
 import { SixpayRole } from './authentication.model';
@@ -58,9 +64,7 @@ describe('roleGuard', () => {
 
     const result = await resultPromise;
     expect(result instanceof UrlTree).toBe(true);
-    expect(router.serializeUrl(result as UrlTree)).toBe(
-      '/login?returnUrl=%2Fpayments%2FPAY-1',
-    );
+    expect(router.serializeUrl(result as UrlTree)).toBe('/login?returnUrl=%2Fpayments%2FPAY-1');
   });
 
   it('allows an authenticated user when no role is required', async () => {

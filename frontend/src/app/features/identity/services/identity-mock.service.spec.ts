@@ -14,12 +14,7 @@ describe('IdentityMockService', () => {
   it('exposes only supported SIXPAY roles', async () => {
     const roles = await firstValueFrom(service.roles());
 
-    expect(roles.map((role) => role.role)).toEqual([
-      'ADMIN',
-      'MANAGER',
-      'AUDITOR',
-      'PARTNER',
-    ]);
+    expect(roles.map((role) => role.role)).toEqual(['ADMIN', 'MANAGER', 'AUDITOR', 'PARTNER']);
   });
 
   it('returns mock identities without mutation capabilities', async () => {

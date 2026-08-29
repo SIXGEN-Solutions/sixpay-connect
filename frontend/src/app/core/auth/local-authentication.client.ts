@@ -20,36 +20,25 @@ const AUTH_API_PATH = '/api/v1/auth';
 export class LocalAuthenticationClient {
   private readonly http = inject(HttpClient);
 
-  login(
-    request: LocalLoginRequest,
-  ): Observable<AuthenticationSessionResponse> {
-    return this.http.post<AuthenticationSessionResponse>(
-      `${AUTH_API_PATH}/login`,
-      request,
-      { withCredentials: true },
-    );
+  login(request: LocalLoginRequest): Observable<AuthenticationSessionResponse> {
+    return this.http.post<AuthenticationSessionResponse>(`${AUTH_API_PATH}/login`, request, {
+      withCredentials: true,
+    });
   }
 
   currentUser(): Observable<AuthenticationSessionResponse> {
-    return this.http.get<AuthenticationSessionResponse>(
-      `${AUTH_API_PATH}/me`,
-      { withCredentials: true },
-    );
+    return this.http.get<AuthenticationSessionResponse>(`${AUTH_API_PATH}/me`, {
+      withCredentials: true,
+    });
   }
 
-  changePassword(
-    request: LocalPasswordChangeRequest,
-  ): Observable<void> {
-    return this.http.post<void>(
-      `${AUTH_API_PATH}/password/change`,
-      request,
-      { withCredentials: true },
-    );
+  changePassword(request: LocalPasswordChangeRequest): Observable<void> {
+    return this.http.post<void>(`${AUTH_API_PATH}/password/change`, request, {
+      withCredentials: true,
+    });
   }
 
-  establishOidcSession(
-    accessToken: string,
-  ): Observable<AuthenticationSessionResponse> {
+  establishOidcSession(accessToken: string): Observable<AuthenticationSessionResponse> {
     return this.http.post<AuthenticationSessionResponse>(
       `${AUTH_API_PATH}/session/oidc`,
       {},
@@ -63,10 +52,6 @@ export class LocalAuthenticationClient {
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>(
-      `${AUTH_API_PATH}/logout`,
-      {},
-      { withCredentials: true },
-    );
+    return this.http.post<void>(`${AUTH_API_PATH}/logout`, {}, { withCredentials: true });
   }
 }

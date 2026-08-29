@@ -11,7 +11,9 @@ import {
   PaymentTimelinePage,
 } from '../models/reporting';
 
-export function mapTimelinePageResponse(response: PaymentTimelinePageResponse): PaymentTimelinePage {
+export function mapTimelinePageResponse(
+  response: PaymentTimelinePageResponse,
+): PaymentTimelinePage {
   return {
     items: response.items.map((item) => ({
       timelineEntryId: item.timelineEntryId,
@@ -72,7 +74,9 @@ export function mapAuditPageResponse(response: PaymentAuditPageResponse): Paymen
   };
 }
 
-export function mapExportJobResponse(response: PaymentAuditExportJobResponse): PaymentAuditExportJob {
+export function mapExportJobResponse(
+  response: PaymentAuditExportJobResponse,
+): PaymentAuditExportJob {
   return {
     exportId: response.exportId,
     status: response.status,

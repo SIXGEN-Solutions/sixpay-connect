@@ -1,12 +1,6 @@
-import {
-  HttpErrorResponse,
-  HttpHeaders,
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
-import {
-  mapHttpErrorResponse,
-  parseRetryAfter,
-} from './api-error.interceptor';
+import { mapHttpErrorResponse, parseRetryAfter } from './api-error.interceptor';
 
 describe('API error mapping', () => {
   it('maps RFC 7807 details and field errors for forms', () => {
@@ -52,8 +46,7 @@ describe('API error mapping', () => {
       kind: 'not-found',
       status: 404,
       title: 'Ressource introuvable',
-      detail:
-        'La ressource demandée n’existe pas ou n’est plus disponible.',
+      detail: 'La ressource demandée n’existe pas ou n’est plus disponible.',
       fieldErrors: {},
       correlationId: null,
       retryAfterSeconds: null,
@@ -74,8 +67,7 @@ describe('API error mapping', () => {
       kind: 'rate-limit',
       status: 429,
       title: 'Trop de requêtes',
-      detail:
-        'Le service limite temporairement les requêtes. Réessayez après le délai indiqué.',
+      detail: 'Le service limite temporairement les requêtes. Réessayez après le délai indiqué.',
       fieldErrors: {},
       correlationId: 'corr-rate-limit',
       retryAfterSeconds: 30,
@@ -85,12 +77,7 @@ describe('API error mapping', () => {
   it('parses Retry-After HTTP dates', () => {
     const now = Date.parse('2026-08-09T03:00:00Z');
 
-    expect(
-      parseRetryAfter(
-        'Sun, 09 Aug 2026 03:00:45 GMT',
-        now,
-      ),
-    ).toBe(45);
+    expect(parseRetryAfter('Sun, 09 Aug 2026 03:00:45 GMT', now)).toBe(45);
   });
 
   it('maps network failures separately', () => {
@@ -103,8 +90,7 @@ describe('API error mapping', () => {
       kind: 'network',
       status: 0,
       title: 'Service indisponible',
-      detail:
-        'Impossible de joindre le serveur SIXPAY. Vérifiez la connectivité puis réessayez.',
+      detail: 'Impossible de joindre le serveur SIXPAY. Vérifiez la connectivité puis réessayez.',
       fieldErrors: {},
       correlationId: null,
       retryAfterSeconds: null,

@@ -2,10 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import {
-  PaymentAuditQuery,
-  PaymentTimelineQuery,
-} from '../models/reporting-query';
+import { PaymentAuditQuery, PaymentTimelineQuery } from '../models/reporting-query';
 import {
   PaymentAuditExportJobResponse,
   PaymentAuditExportRequest,
@@ -14,10 +11,8 @@ import {
   PaymentTimelinePageResponse,
 } from '../models/reporting.response';
 
-const PAYMENT_AUDIT_RECORDS_PATH =
-  '/internal/api/v1/payment-audit-records';
-const PAYMENT_AUDIT_EXPORTS_PATH =
-  '/internal/api/v1/payment-audit-exports';
+const PAYMENT_AUDIT_RECORDS_PATH = '/internal/api/v1/payment-audit-records';
+const PAYMENT_AUDIT_EXPORTS_PATH = '/internal/api/v1/payment-audit-exports';
 
 @Injectable({ providedIn: 'root' })
 export class ReportingApiClient {
@@ -33,13 +28,10 @@ export class ReportingApiClient {
     );
   }
 
-  searchAudit(
-    query: PaymentAuditQuery,
-  ): Observable<PaymentAuditPageResponse> {
-    return this.http.get<PaymentAuditPageResponse>(
-      PAYMENT_AUDIT_RECORDS_PATH,
-      { params: this.auditParams(query) },
-    );
+  searchAudit(query: PaymentAuditQuery): Observable<PaymentAuditPageResponse> {
+    return this.http.get<PaymentAuditPageResponse>(PAYMENT_AUDIT_RECORDS_PATH, {
+      params: this.auditParams(query),
+    });
   }
 
   getAudit(auditId: string): Observable<PaymentAuditRecordResponse> {
@@ -48,13 +40,8 @@ export class ReportingApiClient {
     );
   }
 
-  requestExport(
-    request: PaymentAuditExportRequest,
-  ): Observable<PaymentAuditExportJobResponse> {
-    return this.http.post<PaymentAuditExportJobResponse>(
-      PAYMENT_AUDIT_EXPORTS_PATH,
-      request,
-    );
+  requestExport(request: PaymentAuditExportRequest): Observable<PaymentAuditExportJobResponse> {
+    return this.http.post<PaymentAuditExportJobResponse>(PAYMENT_AUDIT_EXPORTS_PATH, request);
   }
 
   getExport(exportId: string): Observable<PaymentAuditExportJobResponse> {

@@ -93,9 +93,7 @@ function findBootstrapJar() {
   }
   const jars = readdirSync(bootstrapTarget).filter(
     (name) =>
-      name.endsWith('.jar') &&
-      !name.endsWith('.jar.original') &&
-      !name.startsWith('original-'),
+      name.endsWith('.jar') && !name.endsWith('.jar.original') && !name.startsWith('original-'),
   );
   if (jars.length !== 1) {
     throw new Error(`Expected one bootstrap jar, found ${jars.join(', ')}`);
@@ -116,12 +114,19 @@ function terminate(child) {
 
 async function main() {
   run(docker, [
-    'run', '--detach', '--rm',
-    '--name', postgresContainer,
-    '--publish', '127.0.0.1::5432',
-    '--env', 'POSTGRES_DB=sixpay',
-    '--env', 'POSTGRES_USER=sixpay',
-    '--env', 'POSTGRES_PASSWORD=sixpay-test',
+    'run',
+    '--detach',
+    '--rm',
+    '--name',
+    postgresContainer,
+    '--publish',
+    '127.0.0.1::5432',
+    '--env',
+    'POSTGRES_DB=sixpay',
+    '--env',
+    'POSTGRES_USER=sixpay',
+    '--env',
+    'POSTGRES_PASSWORD=sixpay-test',
     'postgres:15-alpine',
   ]);
 
@@ -140,21 +145,11 @@ async function main() {
     stdio: 'inherit',
   });
 
-  await waitForUrl(
-    `${amplitudeBaseUrl}/__health`,
-    30000,
-    'Amplitude stub',
-  );
+  await waitForUrl(`${amplitudeBaseUrl}/__health`, 30000, 'Amplitude stub');
 
   run(
     maven,
-    [
-      '-f', join(backendDir, 'pom.xml'),
-      '-pl', 'bootstrap',
-      '-am',
-      '-DskipTests',
-      'package',
-    ],
+    ['-f', join(backendDir, 'pom.xml'), '-pl', 'bootstrap', '-am', '-DskipTests', 'package'],
     { cwd: repositoryRoot },
   );
 
@@ -163,8 +158,7 @@ async function main() {
     env: {
       ...process.env,
       SPRING_PROFILES_ACTIVE: 'integration',
-      SPRING_DATASOURCE_URL:
-        `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
+      SPRING_DATASOURCE_URL: `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
       SPRING_DATASOURCE_USERNAME: 'sixpay',
       SPRING_DATASOURCE_PASSWORD: 'sixpay-test',
       SIXPAY_LOCAL_ADMIN_PASSWORD: 'admin-dev-2026',
@@ -175,18 +169,16 @@ async function main() {
     stdio: 'inherit',
   });
 
-  await waitForUrl(
-    'http://127.0.0.1:8080/actuator/health',
-    120000,
-    'SIXPAY backend',
-  );
+  await waitForUrl('http://127.0.0.1:8080/actuator/health', 120000, 'SIXPAY backend');
 
   run(
     npx,
     [
-      'playwright', 'test',
+      'playwright',
+      'test',
       'e2e/fullstack-customer-postgresql.spec.ts',
-      '--config', 'playwright.fullstack.config.ts',
+      '--config',
+      'playwright.fullstack.config.ts',
     ],
     { cwd: frontendDir, env: process.env },
   );

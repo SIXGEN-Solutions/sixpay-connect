@@ -17,19 +17,14 @@ export const localPasswordChangeGuard: CanActivateFn = () => {
   return authentication.ready$.pipe(
     map(() => {
       if (!authentication.isAuthenticated()) {
-        return router.createUrlTree(
-          ['/login'],
-          {
-            queryParams: {
-              returnUrl: '/change-password',
-            },
+        return router.createUrlTree(['/login'], {
+          queryParams: {
+            returnUrl: '/change-password',
           },
-        );
+        });
       }
 
-      if (
-        authentication.activeAuthenticationMethod() !== 'local'
-      ) {
+      if (authentication.activeAuthenticationMethod() !== 'local') {
         return router.createUrlTree(['/']);
       }
 

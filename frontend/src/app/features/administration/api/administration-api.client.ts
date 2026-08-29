@@ -8,31 +8,22 @@ import {
   IntegrationStatusResponse,
 } from '../models/administration.response';
 
-const ADMINISTRATION_API_PATH =
-  '/internal/api/v1/administration';
+const ADMINISTRATION_API_PATH = '/internal/api/v1/administration';
 
 @Injectable({ providedIn: 'root' })
 export class AdministrationApiClient {
   private readonly http = inject(HttpClient);
 
   overview(): Observable<AdministrationOverviewResponse> {
-    return this.http.get<AdministrationOverviewResponse>(
-      `${ADMINISTRATION_API_PATH}/overview`,
-    );
+    return this.http.get<AdministrationOverviewResponse>(`${ADMINISTRATION_API_PATH}/overview`);
   }
 
   settings(): Observable<AdministrationSettingsResponse> {
-    return this.http.get<AdministrationSettingsResponse>(
-      `${ADMINISTRATION_API_PATH}/settings`,
-    );
+    return this.http.get<AdministrationSettingsResponse>(`${ADMINISTRATION_API_PATH}/settings`);
   }
 
-  integrations(): Observable<
-    readonly IntegrationStatusResponse[]
-  > {
-    return this.http.get<
-      readonly IntegrationStatusResponse[]
-    >(
+  integrations(): Observable<readonly IntegrationStatusResponse[]> {
+    return this.http.get<readonly IntegrationStatusResponse[]>(
       `${ADMINISTRATION_API_PATH}/integrations`,
     );
   }

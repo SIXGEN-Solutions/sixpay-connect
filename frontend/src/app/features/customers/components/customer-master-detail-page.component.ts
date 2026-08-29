@@ -11,10 +11,7 @@ import { SpButtonComponent } from '../../../shared/components/button/sp-button.c
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
-import {
-  CustomerMaster,
-  CustomerSubscription,
-} from '../models/customer-management';
+import { CustomerMaster, CustomerSubscription } from '../models/customer-management';
 import { CustomerManagementService } from '../services/customer-management.service';
 
 @Component({
@@ -68,28 +65,16 @@ import { CustomerManagementService } from '../services/customer-management.servi
 
             <mat-form-field appearance="outline">
               <mat-label>Courriel</mat-label>
-              <input
-                matInput
-                type="email"
-                formControlName="email"
-              />
+              <input matInput type="email" formControlName="email" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Téléphone</mat-label>
-              <input
-                matInput
-                formControlName="phoneNumber"
-              />
+              <input matInput formControlName="phoneNumber" />
             </mat-form-field>
 
             <div class="customer-form__actions">
-              <sp-button
-                type="submit"
-                icon="save"
-              >
-                Enregistrer
-              </sp-button>
+              <sp-button type="submit" icon="save"> Enregistrer </sp-button>
             </div>
           </form>
         }
@@ -107,11 +92,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
           }
 
           @if (item.status === 'SUSPENDED' && canUpdate()) {
-            <sp-button
-              type="button"
-              icon="play_circle"
-              (buttonClick)="reactivate()"
-            >
+            <sp-button type="button" icon="play_circle" (buttonClick)="reactivate()">
               Réactiver
             </sp-button>
           }
@@ -161,19 +142,11 @@ import { CustomerManagementService } from '../services/customer-management.servi
           >
             <mat-form-field appearance="outline">
               <mat-label>Référence du nouveau compte</mat-label>
-              <input
-                matInput
-                formControlName="accountReference"
-              />
+              <input matInput formControlName="accountReference" />
             </mat-form-field>
 
             <div class="customer-form__actions">
-              <sp-button
-                type="submit"
-                icon="add_card"
-              >
-                Vérifier et ajouter
-              </sp-button>
+              <sp-button type="submit" icon="add_card"> Vérifier et ajouter </sp-button>
             </div>
           </form>
         }
@@ -188,10 +161,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
               <span>{{ subscription.updatedAt | date: 'short' }}</span>
 
               <div class="customer-row__actions">
-                @if (
-                  subscription.status === 'PENDING_ACTIVATION'
-                  && canSubscriptionUpdate()
-                ) {
+                @if (subscription.status === 'PENDING_ACTIVATION' && canSubscriptionUpdate()) {
                   <sp-button
                     type="button"
                     icon="check_circle"
@@ -201,10 +171,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
                   </sp-button>
                 }
 
-                @if (
-                  subscription.status === 'ACTIVE'
-                  && canSubscriptionSuspend()
-                ) {
+                @if (subscription.status === 'ACTIVE' && canSubscriptionSuspend()) {
                   <sp-button
                     type="button"
                     variant="danger"
@@ -228,115 +195,106 @@ import { CustomerManagementService } from '../services/customer-management.servi
           >
             <mat-form-field appearance="outline">
               <mat-label>Partner ID</mat-label>
-              <input
-                matInput
-                formControlName="partnerId"
-              />
+              <input matInput formControlName="partnerId" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Bank account ID</mat-label>
-              <input
-                matInput
-                formControlName="bankAccountId"
-              />
+              <input matInput formControlName="bankAccountId" />
             </mat-form-field>
 
             <div class="customer-form__actions">
-              <sp-button
-                type="submit"
-                icon="add"
-              >
-                Créer
-              </sp-button>
+              <sp-button type="submit" icon="add"> Créer </sp-button>
             </div>
           </form>
         }
       </sp-card>
     }
   `,
-  styles: [`
-    .customer-summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+  styles: [
+    `
+      .customer-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
 
-    .customer-summary > div {
-      display: grid;
-      gap: 0.25rem;
-    }
+      .customer-summary > div {
+        display: grid;
+        gap: 0.25rem;
+      }
 
-    .customer-summary__label {
-      font-size: 0.875rem;
-      opacity: 0.75;
-    }
+      .customer-summary__label {
+        font-size: 0.875rem;
+        opacity: 0.75;
+      }
 
-    .customer-form {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-      align-items: start;
-      margin-top: 1rem;
-    }
+      .customer-form {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: start;
+        margin-top: 1rem;
+      }
 
-    .customer-form--compact {
-      grid-template-columns: minmax(0, 2fr) auto;
-    }
-
-    .customer-form__actions {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .customer-section-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    .customer-rows {
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    .customer-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--mat-sys-outline-variant, #ddd);
-    }
-
-    .customer-row:last-child {
-      border-bottom: 0;
-    }
-
-    .customer-row__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-left: auto;
-    }
-
-    @media (max-width: 900px) {
-      .customer-summary,
-      .customer-form,
       .customer-form--compact {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 2fr) auto;
+      }
+
+      .customer-form__actions {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .customer-section-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .customer-rows {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .customer-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--mat-sys-outline-variant, #ddd);
+      }
+
+      .customer-row:last-child {
+        border-bottom: 0;
       }
 
       .customer-row__actions {
-        width: 100%;
-        margin-left: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-left: auto;
       }
-    }
-  `],
+
+      @media (max-width: 900px) {
+        .customer-summary,
+        .customer-form,
+        .customer-form--compact {
+          grid-template-columns: 1fr;
+        }
+
+        .customer-row__actions {
+          width: 100%;
+          margin-left: 0;
+        }
+      }
+    `,
+  ],
 })
 export class CustomerMasterDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
@@ -344,8 +302,7 @@ export class CustomerMasterDetailPageComponent {
   private readonly auth = inject(AuthenticationService);
   private readonly fb = inject(FormBuilder);
 
-  private readonly customerId =
-    this.route.snapshot.paramMap.get('customerId') ?? '';
+  private readonly customerId = this.route.snapshot.paramMap.get('customerId') ?? '';
 
   protected readonly loading = signal(true);
   protected readonly customer = signal<CustomerMaster | null>(null);
@@ -408,13 +365,9 @@ export class CustomerMasterDetailPageComponent {
           email: customer.email ?? '',
           phoneNumber: customer.phoneNumber ?? '',
         });
-        const defaultAccount = customer.bankAccounts.find(
-          (account) => account.defaultAccount,
-        );
+        const defaultAccount = customer.bankAccounts.find((account) => account.defaultAccount);
         if (defaultAccount) {
-          this.subscriptionForm.controls.bankAccountId.setValue(
-            defaultAccount.id,
-          );
+          this.subscriptionForm.controls.bankAccountId.setValue(defaultAccount.id);
         }
       });
   }
@@ -447,9 +400,7 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected reactivate(): void {
-    this.service
-      .reactivate(this.customerId)
-      .subscribe((customer) => this.customer.set(customer));
+    this.service.reactivate(this.customerId).subscribe((customer) => this.customer.set(customer));
   }
 
   protected addAccount(): void {
@@ -457,15 +408,12 @@ export class CustomerMasterDetailPageComponent {
       return;
     }
 
-    const accountReference =
-      this.accountForm.getRawValue().accountReference.trim();
+    const accountReference = this.accountForm.getRawValue().accountReference.trim();
 
-    this.service
-      .addAccount(this.customerId, { accountReference })
-      .subscribe((customer) => {
-        this.customer.set(customer);
-        this.accountForm.reset();
-      });
+    this.service.addAccount(this.customerId, { accountReference }).subscribe((customer) => {
+      this.customer.set(customer);
+      this.accountForm.reset();
+    });
   }
 
   protected makeDefault(accountId: string): void {
@@ -497,25 +445,18 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected activate(subscriptionId: string): void {
-    this.service
-      .activateSubscription(subscriptionId)
-      .subscribe(() => this.reload());
+    this.service.activateSubscription(subscriptionId).subscribe(() => this.reload());
   }
 
   protected suspendSubscription(subscriptionId: string): void {
-    const reason = window.prompt(
-      'Motif de suspension de la subscription',
-    );
+    const reason = window.prompt('Motif de suspension de la subscription');
 
     if (!reason?.trim()) {
       return;
     }
 
     this.service
-      .suspendSubscription(
-        subscriptionId,
-        { reason: reason.trim() },
-      )
+      .suspendSubscription(subscriptionId, { reason: reason.trim() })
       .subscribe(() => this.reload());
   }
 }
