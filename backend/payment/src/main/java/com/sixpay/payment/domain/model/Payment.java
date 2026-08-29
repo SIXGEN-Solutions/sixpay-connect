@@ -154,6 +154,11 @@ public final class Payment {
         );
     }
 
+    /**
+     * Advances a newly received Payment to {@code PENDING_CONFIRMATION} and
+     * emits the request event consumed by the asynchronous confirmation flow.
+     * Reapplying the transition in that target state is an idempotent no-op.
+     */
     public void requestCustomerConfirmation(
             Instant requestedAt
     ) {

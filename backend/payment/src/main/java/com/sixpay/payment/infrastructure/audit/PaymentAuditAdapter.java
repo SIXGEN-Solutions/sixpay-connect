@@ -10,6 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Appends immutable Payment domain-event metadata to the audit timeline.
+ *
+ * <p>Insertion is idempotent by event ID. The mandatory transaction ensures
+ * audit entries cannot commit independently from the Payment state and outbox
+ * records produced by the same mutation.</p>
+ */
 @Repository
 public class PaymentAuditAdapter {
 

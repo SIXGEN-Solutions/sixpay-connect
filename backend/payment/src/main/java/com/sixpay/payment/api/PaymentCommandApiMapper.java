@@ -18,6 +18,14 @@ import java.util.Objects;
 @Component
 public final class PaymentCommandApiMapper {
 
+    /**
+     * Creates the application command while keeping authentication and
+     * transport metadata outside the public request body.
+     *
+     * <p>{@code authenticatedPartnerLoginName}, the idempotency key and the
+     * correlation ID come from trusted request processing components. The
+     * command validates their relationship with the partner-provided data.</p>
+     */
     public InitiateDebitCommand toCommand(
             InitiateDebitRequest request,
             String authenticatedPartnerLoginName,
@@ -52,6 +60,13 @@ public final class PaymentCommandApiMapper {
         );
     }
 
+    /**
+     * Maps the stable application result to the partner contract.
+     *
+     * <p>Bank challenge fields remain {@code null} until an authoritative
+     * core-banking response supplies them; SIXPAY does not synthesize bank
+     * operation IDs, fees, validity periods or QR data.</p>
+     */
     public InitiateDebitResponse toResponse(
             InitiateDebitResult result
     ) {

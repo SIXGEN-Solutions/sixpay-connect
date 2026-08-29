@@ -15,6 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * JPA adapter shared by the domain repository and application lookup port.
+ *
+ * <p>The relational entity keeps searchable identity/status columns alongside
+ * a versioned JSON document containing the complete aggregate state. The
+ * persistence mapper verifies both representations agree on every read.</p>
+ */
 @Repository
 @Transactional(readOnly = true)
 public class PaymentRepositoryAdapter implements PaymentRepository, PaymentLookupPort {

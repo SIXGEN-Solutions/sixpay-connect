@@ -15,7 +15,7 @@ sixpay:
     local:
       seed-enabled: true
       seed:
-        admin-password: ${SIXPAY_LOCAL_ADMIN_PASSWORD:admin-dev-2026}
+        admin-password: ${SIXPAY_LOCAL_ADMIN_PASSWORD:@dmin-dev-2026}
         manager-password: ${SIXPAY_LOCAL_MANAGER_PASSWORD:M@nager-dev-2027}
         auditor-password: ${SIXPAY_LOCAL_AUDITOR_PASSWORD:@uditor-dev-2026}
         partner-password: ${SIXPAY_LOCAL_PARTNER_PASSWORD:partner-dev-2026}

@@ -14,6 +14,15 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * Coordinates the synchronous portion of {@code POST /v1/payments/initiate}.
+ *
+ * <p>The service first enters the idempotency boundary. Only a new request is
+ * prepared and received by the Payment aggregate; a completed request is
+ * returned from the durable replay store. A successful new call finishes in
+ * {@link PaymentStatus#PENDING_CONFIRMATION}; later authorization, banking and
+ * posting stages are handled by separate workflow services.</p>
+ */
 @Service
 public class PaymentInitiationOrchestrationService
         implements PaymentInitiationUseCase {
@@ -35,6 +44,13 @@ public class PaymentInitiationOrchestrationService
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
 
+    /**
+     * Initiates or replays a debit request under its idempotency key.
+     *
+     * @param command validated command containing partner, business and
+     *                request-control data
+     * @return the stable accepted result for this idempotency key
+     */
     @Override
     public InitiateDebitResult initiateDebit(
             InitiateDebitCommand command
@@ -47,6 +63,11 @@ public class PaymentInitiationOrchestrationService
         );
     }
 
+    /**
+     * Performs the new-request path. The supplied hash is the exact
+     * fingerprint already registered by the idempotency adapter and becomes
+     * part of the Payment request identity.
+     */
     private InitiateDebitResult initiateNew(
             InitiateDebitCommand command,
             String requestHash

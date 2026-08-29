@@ -14,6 +14,15 @@ import java.util.Objects;
 @Component
 public final class PaymentInitiationCanonicalizer {
 
+    /**
+     * Builds an unambiguous, order-independent representation of the business
+     * request.
+     *
+     * <p>Beneficiaries are sorted so equivalent allocations produce the same
+     * fingerprint. Length prefixes prevent delimiter ambiguity. Correlation
+     * and idempotency keys are intentionally excluded because they identify
+     * transport/execution context rather than the requested debit itself.</p>
+     */
     public String canonicalize(InitiateDebitCommand command) {
         Objects.requireNonNull(command, "InitiateDebit command");
 
