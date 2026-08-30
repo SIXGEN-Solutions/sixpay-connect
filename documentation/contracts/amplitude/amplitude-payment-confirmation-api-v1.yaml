@@ -18,18 +18,24 @@ info:
     Payment only. It does not establish funds availability, successful debit,
     CUT credit or financial finality.
 
-    Provider-native status values, provider-native business codes, final wire
-    field names and remaining operational parameters must not be invented while
-    La Regionale has not supplied them.
+    The target status values, business codes and wire schemas are contract
+    decisions owned by the SIXPAY/Core Banking programme under
+    D00-CB-OWNERSHIP. They must be explicitly closed in this contract before
+    client generation; they are no longer treated as unknown pre-existing
+    provider semantics.
+
+    Bank business-policy values and runtime/environment parameters remain
+    external where they genuinely depend on La Regionale policy or deployment.
 
   x-sixpay-contract:
     registryId: "amplitude-payment-confirmation-api-v1"
     gate: "PAYMENT_COMPLETION"
     phaseStep: "0.4.3"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     businessOwner: "payment"
     deliveryOwner: "integration"
@@ -53,9 +59,9 @@ info:
         - "MUTUAL_TLS"
     openDecisions:
       - "REVOKE_IDEMPOTENCY"
-      - "PROVIDER_STATUS_VOCABULARY"
-      - "PROVIDER_BUSINESS_CODE_VOCABULARY"
-      - "FINAL_PROVIDER_WIRE_FIELD_NAMES_AND_SCHEMAS"
+      - "TARGET_STATUS_VOCABULARY"
+      - "TARGET_BUSINESS_CODE_VOCABULARY"
+      - "FINAL_TARGET_WIRE_FIELD_NAMES_AND_SCHEMAS"
       - "RESEND_MAXIMUM_AND_COOLDOWN"
       - "DELIVERY_FAILURE_SEMANTICS"
       - "TIMEOUT_RATE_LIMIT_AND_RETRY_PARAMETERS"

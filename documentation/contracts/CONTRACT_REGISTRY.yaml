@@ -204,9 +204,10 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     gate: "PAYMENT_COMPLETION"
     phaseStep: "0.4.3"
     security:
@@ -234,15 +235,13 @@ contracts:
         - "Unknown outcomes require authoritative lookup before retry"
         - "Recovery by original idempotency key is part of the approved contract surface"
         - "Revoke idempotency remains OPEN_DECISION"
-        - "Provider-native status and business-code vocabularies remain unspecified"
+        - "Target challenge statuses, business codes and wire schemas are SIXPAY/Core Banking contract decisions, not provider-discovery blockers"
         - "OTP success does not establish funds availability or posting success"
     approvalPrerequisite:
-      - "La Regionale supplies provider-native challenge statuses and business codes"
-      - "La Regionale confirms final provider wire field names and schemas"
-      - "La Regionale supplies resend maximum and cooldown"
-      - "La Regionale confirms delivery-failure semantics"
-      - "La Regionale resolves revoke idempotency"
-      - "Security and La Regionale supply environment-specific OAuth2/mTLS operational parameters"
+      - "SIXPAY Payment, Integration and Core Banking contract owners approve the target wire schemas and normalized semantics"
+      - "SIXPAY Security approves the confirmation security and confidentiality model"
+      - "Bank business owner supplies resend maximum/cooldown and any intentionally external business-policy constraints"
+      - "Operations supplies environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits during environment certification"
 
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
@@ -251,9 +250,10 @@ contracts:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
@@ -285,16 +285,17 @@ contracts:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.4"
     mvpUsage:
       included: true
       purpose:
         - "Perform a fresh execution-time account, funds, restriction and limit check"
-        - "Optionally reserve and release funds when the bank approves the capability"
+        - "Optionally reserve and release funds when the programme enables the capability"
         - "Atomically debit the customer and credit the configured CUT"
         - "Return stable bank references and leg-level outcomes"
         - "Recover uncertain posting outcomes by idempotency key or bank reference"
@@ -311,10 +312,9 @@ contracts:
         dedicated customer/account/KYC verification defined by
         amplitude-customer-verification-api-v1.
     approvalPrerequisite:
-      - "Amplitude approves atomic posting and partial-outcome semantics"
-      - "Amplitude approves bank idempotency and authoritative lookup"
-      - "Amplitude confirms reservation and reversal capabilities"
-      - "SIXPAY Accounting, Payment, Integration, Security and Operations approve the contract"
+      - "SIXPAY Accounting, Payment and Integration approve the target posting semantics"
+      - "SIXPAY Security approves the target security, idempotency and recovery semantics"
+      - "Optional reservation and reversal capabilities are explicitly classified as enabled, deferred or outside the current MVP scope"
 
   - id: "tresorpay-payment-status-webhook-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
@@ -368,9 +368,10 @@ contracts:
     fallbackDirection: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.6"
     mvpUsage:
@@ -390,7 +391,7 @@ contracts:
         - "A missing result keeps Payment pending and triggers the fallback query"
         - "TFJ delay alone never authorizes automatic reversal"
     approvalPrerequisite:
-      - "Amplitude approves callback, lookup and business status semantics"
+      - "SIXPAY Accounting and Integration approve the target callback, lookup and business-status semantics"
       - "Security approves mTLS plus HMAC for callback and OAuth2 plus mTLS for lookup"
       - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
 

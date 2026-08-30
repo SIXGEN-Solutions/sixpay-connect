@@ -8,8 +8,9 @@ info:
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
+    governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
     direction: "SIXPAY_TO_AMPLITUDE"
@@ -53,8 +54,9 @@ info:
     verification only after durable persistence of the Payment request.
 
     Connection timeout, response timeout, retry limits, circuit-breaker values
-    and SLA objectives are intentionally configurable. No definitive numeric
-    value is frozen in version 1 until the bank supplies and approves it.
+    and SLA objectives are intentionally environment/configuration concerns.
+    Their numeric values are validated with the target runtime environment and
+    do not block approval of this logical Core Banking target contract.
 servers:
   - url: https://amplitude-api.example
     description: Environment-specific Amplitude integration endpoint
