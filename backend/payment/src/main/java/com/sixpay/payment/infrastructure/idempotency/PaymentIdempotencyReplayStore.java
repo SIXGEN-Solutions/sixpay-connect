@@ -76,12 +76,43 @@ public class PaymentIdempotencyReplayStore {
                     PaymentIdempotencyDecision.replay(entity);
             case IN_PROGRESS ->
                     PaymentIdempotencyDecision.inProgress();
+            case OUTCOME_UNKNOWN ->
+                    PaymentIdempotencyDecision.outcomeUnknown(entity);
             case FAILED -> {
                 entity.restart(startedAt);
                 repository.saveAndFlush(entity);
                 yield PaymentIdempotencyDecision.newRequest();
             }
         };
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void markOutcomeUnknown(
+            String operation,
+            String idempotencyKey,
+            String requestHash,
+            UUID paymentId,
+            String recoveryReference,
+            String recoveryReason,
+            Instant unknownOutcomeAt
+    ) {
+        PaymentIdempotencyEntity entity =
+                requireExisting(operation, idempotencyKey);
+
+        requireSameHash(
+                entity,
+                operation,
+                idempotencyKey,
+                requestHash
+        );
+
+        entity.markOutcomeUnknown(
+                paymentId,
+                recoveryReference,
+                recoveryReason,
+                unknownOutcomeAt
+        );
+        repository.saveAndFlush(entity);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -156,10 +187,14 @@ public class PaymentIdempotencyReplayStore {
                             requestHash
                     );
 
-                    return entity.status()
-                            == PaymentIdempotencyEntity.Status.COMPLETED
-                            ? PaymentIdempotencyDecision.replay(entity)
-                            : PaymentIdempotencyDecision.inProgress();
+                    return switch (entity.status()) {
+                        case COMPLETED ->
+                                PaymentIdempotencyDecision.replay(entity);
+                        case OUTCOME_UNKNOWN ->
+                                PaymentIdempotencyDecision.outcomeUnknown(entity);
+                        case IN_PROGRESS, FAILED ->
+                                PaymentIdempotencyDecision.inProgress();
+                    };
                 });
     }
 
