@@ -4,12 +4,14 @@ info:
   version: 1.0.0
   x-sixpay-contract:
     registryId: "amplitude-customer-verification-api-v1"
-    gate: "IA-0R"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "1.R1"
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
-    lifecycleStatus: "REFERENCE_MVP"
+    lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "REFERENCE_ONLY"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
@@ -18,8 +20,10 @@ info:
     mvpIncluded: true
     paymentUsage:
       confirmed: true
-      role: "CUSTOMER_AND_ACCOUNT_VERIFICATION_ONLY"
+      role: "CUSTOMER_AND_ACCOUNT_VERIFICATION_BEFORE_PAYMENT_CONFIRMATION"
       invokedAfter: "PAYMENT_REQUEST_DURABLY_PERSISTED"
+      requiredBefore: "PAYMENT_CONFIRMATION_CHALLENGE_CREATION"
+      progressionRule: "ONLY_VERIFIED_MAY_PROGRESS_TO_PAYMENT_CONFIRMATION"
       consumedBy:
         - "customer"
         - "payment"
@@ -51,7 +55,15 @@ info:
     Payment usage is confirmed for the read-only verification of the banking
     customer, NIU, claimed identity, debtor account ownership, account status,
     blocks, oppositions and required KYC facts. SIXPAY invokes the composite
-    verification only after durable persistence of the Payment request.
+    verification only after durable persistence of the Payment request and before
+    any Payment confirmation challenge is created or sent.
+
+    Only a VERIFIED outcome may authorize progression to Payment confirmation.
+    A REJECTED or INDETERMINATE outcome must not create or send an OTP challenge.
+    The verified result supplies the canonical banking customer/account identity
+    and the authoritative KYC/contact facts needed by the subsequent bank-owned
+    confirmation capability. Funds control remains a later, separate
+    execution-time capability.
 
     Connection timeout, response timeout, retry limits, circuit-breaker values
     and SLA objectives are intentionally environment/configuration concerns.

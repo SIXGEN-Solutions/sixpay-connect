@@ -8,8 +8,14 @@ info:
     Inbound contract used by TRESOR PAY to interact with the customer
     confirmation phase of an already initiated SIXPAY Payment.
 
-    Payment initiation, confirmation challenge creation, OTP verification,
-    banking verification, funds control and posting are distinct steps.
+    Payment initiation, banking customer/account/KYC verification,
+    confirmation challenge creation, OTP verification, funds control and posting
+    are distinct ordered steps.
+
+    The Payment request is durably persisted first. Banking customer/account/KYC
+    verification must then complete with outcome VERIFIED before any confirmation
+    challenge may be created or sent. A REJECTED or INDETERMINATE banking
+    verification outcome must not produce an OTP challenge.
 
     La Regionale remains authoritative for OTP generation, storage, delivery
     and verification. SIXPAY never persists the OTP value.
@@ -62,6 +68,9 @@ info:
       postOtpExecutionWindow: PT1M
       postOtpExecutionWindowConfigurable: true
       postOtpWindowExceeded: INVALIDATE_CONFIRMATION_AND_REQUIRE_NEW_CHALLENGE
+      bankingVerificationRequiredBeforeChallenge: true
+      bankingVerificationRequiredOutcome: VERIFIED
+      bankingVerificationRejectedOrIndeterminateOtpAction: FORBIDDEN
     externalDecisionsStillRequired: []
 
 servers:
@@ -84,10 +93,14 @@ paths:
       summary: Create and send a confirmation challenge
       description: |
         Requests creation and delivery of a confirmation challenge for an
-        existing Payment. TRESOR PAY does not resend customer, account, amount,
-        currency, phone number or email data in this operation. SIXPAY derives
-        the bound context from Payment; La Regionale chooses the active contact
-        and delivery channel.
+        existing Payment whose banking customer/account/KYC verification has
+        already completed with outcome VERIFIED. TRESOR PAY does not resend
+        customer, account, amount, currency, phone number or email data in this
+        operation. SIXPAY derives the bound context from the Payment and its
+        verified banking evidence; La Regionale chooses the active contact and
+        delivery channel. If the prerequisite banking verification is absent,
+        REJECTED or INDETERMINATE, SIXPAY must not request OTP creation or
+        delivery.
       parameters:
         - $ref: '#/components/parameters/PaymentReference'
         - $ref: '#/components/parameters/IdempotencyKey'

@@ -56,13 +56,48 @@ runtime parameters.
 |---|---|---|---|---|
 | Customer discovery | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
 | Customer/KYC/account verification | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
-| Payment confirmation / OTP challenge | `amplitude-payment-confirmation-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `REQUIRED` |
+| Payment confirmation / OTP challenge | `amplitude-payment-confirmation-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Payment execution/funds check | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Fund reservation/lookup/release | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
 | Atomic debit + CUT credit posting | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Posting lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
 | TFJ/EOD callback + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `APPROVED` | `REQUIRED` |
+
+## Payment execution ordering
+
+For the MVP Payment flow, Core Banking capabilities are ordered as follows:
+
+```text
+TRESOR PAY payment request
+        ↓
+SIXPAY durable Payment persistence
+        ↓
+RECEIVED
+        ↓
+Amplitude customer/account/KYC verification
+        ↓
+VERIFIED only
+        ↓
+Payment confirmation challenge / OTP
+        ↓
+successful customer confirmation
+        ↓
+later execution-time funds control and posting
+```
+
+The Customer Verification capability is a mandatory prerequisite of Payment
+Confirmation. A `REJECTED` or `INDETERMINATE` customer/account/KYC verification
+must not create or send an OTP challenge.
+
+The canonical `customerReference` and debtor `accountReference` used by Payment
+Confirmation come from the completed VERIFIED Amplitude verification result.
+They are not inferred from NIU, TRESOR PAY subscription references or other
+non-authoritative identifiers.
+
+This ordering does not merge Customer Verification with funds control. Funds
+availability and execution-time restrictions remain defense-in-depth checks
+owned by the Payment posting contract and occur later in the payment lifecycle.
 
 ## Target Core Banking signatures
 

@@ -257,11 +257,13 @@ contracts:
     capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
-    lifecycleStatus: "REFERENCE_MVP"
+    lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "1.R1"
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
@@ -271,15 +273,21 @@ contracts:
       invocationPoint: "AFTER_PAYMENT_REQUEST_DURABLY_PERSISTED"
       purpose:
         - "Verify the banking customer and NIU"
-        - "Retrieve banking identity and required KYC facts"
+        - "Retrieve canonical banking customer/account references, banking identity and required KYC facts"
         - "Find accounts and verify account ownership and status"
         - "Detect blocks or oppositions"
+        - "Provide the verified banking identity/contact facts required before Payment confirmation challenge creation"
       limitations:
         - "Does not authorize or manage a SIXPAY Customer subscription"
         - "Does not define funds-availability controls"
         - "Does not define debit or CUT-credit posting"
         - "Does not define end-of-day Treasury confirmation"
-      progressionRule: "Only a VERIFIED outcome may authorize progression to funds control"
+      progressionRule: >-
+        After durable Payment persistence, only a VERIFIED banking customer,
+        account and required-KYC outcome may authorize progression to Payment
+        confirmation/OTP challenge creation. REJECTED or INDETERMINATE outcomes
+        must not create or send an OTP challenge. Funds control remains a later,
+        distinct execution-time capability after successful customer confirmation.
     configurable:
       - "timeout"
       - "retry"

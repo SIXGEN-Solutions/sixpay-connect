@@ -232,7 +232,7 @@ temporary files from being reintroduced.
 
 | Contrat | Classement | Usage MVP | Génération |
 | --- | --- | --- | --- |
-| `amplitude-customer-verification-api-v1.yaml` | `REFERENCE_MVP` | Vérification bancaire en support du paiement | Référence uniquement |
+| `amplitude-customer-verification-api-v1.yaml` | `ACTIVE_MVP` | Vérification bancaire obligatoire avant le challenge OTP | Génération active |
 | `tresorpay-authorization-request-api-v1.yaml` | `DEFERRED_FUTURE` | Aucun | Exclue |
 | `tresorpay-authorization-decision-webhook-v1.yaml` | `DEFERRED_FUTURE` | Aucun | Exclue |
 

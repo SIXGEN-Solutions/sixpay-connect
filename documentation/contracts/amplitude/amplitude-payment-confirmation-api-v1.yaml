@@ -14,6 +14,12 @@ info:
 
     SIXPAY never persists the OTP value.
 
+    A confirmation challenge may be created only after the Payment has a
+    completed VERIFIED banking customer/account/KYC verification. The canonical
+    customerReference and debtorAccountReference used to bind the challenge are
+    obtained from that verified banking result; they must not be inferred from
+    NIU, subscriptionReference or another non-authoritative Payment identifier.
+
     Successful OTP verification proves customer confirmation for the bound
     Payment only. It does not establish funds availability, successful debit,
     CUT credit or financial finality.
@@ -87,6 +93,7 @@ info:
       - "NO_CUT_CREDIT"
       - "NO_TFJ_FINALITY"
       - "NO_OTP_PERSISTENCE_BY_SIXPAY"
+      - "NO_CHALLENGE_CREATION_BEFORE_VERIFIED_BANKING_CUSTOMER_ACCOUNT_KYC"
 
 servers:
   - url: https://amplitude-api.example
@@ -112,7 +119,12 @@ paths:
       description: |
         Creates and sends a bank-owned confirmation challenge bound to the
         supplied SIXPAY Payment, customer, debtor account and financial context.
-        La Regionale selects the active contact and delivery channel.
+        SIXPAY may invoke this operation only after the banking
+        customer/account/KYC verification has completed with outcome VERIFIED.
+        customerReference and debtorAccountReference are the canonical Amplitude
+        references obtained from that verified result. They must not be derived
+        from NIU or subscription identifiers. La Regionale selects the active
+        contact and delivery channel.
         Same Idempotency-Key plus the same logical request returns the same
         result without generating another OTP. Same key plus a different
         logical request is a conflict.
@@ -405,7 +417,11 @@ components:
         customerReference: { $ref: '#/components/schemas/CustomerReference' }
         debtorAccountReference: { $ref: '#/components/schemas/AccountReference' }
         amount: { $ref: '#/components/schemas/Money' }
-      description: Approved target Core Banking create/send wire schema and logical binding context.
+      description: >-
+        Approved target Core Banking create/send wire schema and logical binding
+        context. customerReference and debtorAccountReference must come from a
+        completed VERIFIED banking customer/account/KYC verification for the
+        Payment.
 
     VerifyPaymentConfirmationChallengeRequest:
       type: object
