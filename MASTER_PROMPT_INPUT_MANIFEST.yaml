@@ -157,6 +157,8 @@ activeContractCapabilities:
       path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
     - id: "tresorpay-payment-confirmation-api-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    - id: "amplitude-payment-confirmation-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
     - id: "amplitude-customer-verification-api-v1"
       path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     - id: "amplitude-payment-posting-api-v1"

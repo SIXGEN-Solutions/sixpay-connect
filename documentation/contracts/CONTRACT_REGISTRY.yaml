@@ -194,6 +194,56 @@ contracts:
       - "La Regionale confirms delivery-failure and recovery semantics"
       - "La Regionale provides resend maximum and cooldown"
 
+  - id: "amplitude-payment-confirmation-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_CONFIRMATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_BANK_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.3"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a bank-owned Payment confirmation challenge"
+        - "Synchronously verify the customer OTP"
+        - "Replace the active challenge and send a new OTP"
+        - "Read authoritative challenge status"
+        - "Recover an uncertain create or replacement outcome by original idempotency key"
+        - "Revoke an active challenge when Payment is cancelled or rejected before valid confirmation"
+      constraints:
+        - "Payment is the business owner of confirmation orchestration"
+        - "Amplitude / La Regionale is system of record for OTP and bank challenge state"
+        - "SIXPAY never persists OTP"
+        - "At most one challenge is active per Payment"
+        - "Create, verify and replacement are idempotent"
+        - "Same key and different logical request is HTTP 409 conflict"
+        - "Unknown outcomes require authoritative lookup before retry"
+        - "Recovery by original idempotency key is part of the approved contract surface"
+        - "Revoke idempotency remains OPEN_DECISION"
+        - "Provider-native status and business-code vocabularies remain unspecified"
+        - "OTP success does not establish funds availability or posting success"
+    approvalPrerequisite:
+      - "La Regionale supplies provider-native challenge statuses and business codes"
+      - "La Regionale confirms final provider wire field names and schemas"
+      - "La Regionale supplies resend maximum and cooldown"
+      - "La Regionale confirms delivery-failure semantics"
+      - "La Regionale resolves revoke idempotency"
+      - "Security and La Regionale supply environment-specific OAuth2/mTLS operational parameters"
+
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     domain: "integration"

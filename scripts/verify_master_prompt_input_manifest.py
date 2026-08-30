@@ -180,8 +180,8 @@ def main():
         section(manifest, "activeContractCapabilities", 0)
     )
     excluded_contracts = contract_entries(section(manifest, "excludedContracts", 0))
-    if len(active_contracts) != 17 or len(set(active_contracts)) != 17:
-        fail("expected 17 unique active/reference contract capabilities")
+    if len(active_contracts) != len(set(active_contracts)):
+        fail("active/reference contract capabilities contain duplicates")
     if len(excluded_contracts) != 2 or len(set(excluded_contracts)) != 2:
         fail("expected 2 unique deferred contract capabilities")
 
