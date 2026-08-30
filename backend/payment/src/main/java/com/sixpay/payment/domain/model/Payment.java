@@ -193,6 +193,61 @@ public final class Payment {
         );
     }
 
+    /**
+     * Records the latest authoritative confirmation-challenge snapshot.
+     *
+     * <p>The challenge remains subordinate to this Payment. A different
+     * challenge reference replaces the previously current snapshot, which
+     * guarantees that SIXPAY retains at most one current ACTIVE challenge
+     * for a Payment. Lifecycle status itself is supplied authoritatively by
+     * Core Banking; SIXPAY does not calculate expiry or lockout locally.</p>
+     *
+     * <p>Every replacement must preserve the original Payment/customer/account/
+     * amount binding. No OTP material enters this operation.</p>
+     */
+    public void recordConfirmationChallenge(
+            ConfirmationChallenge challenge,
+            Instant observedAt
+    ) {
+        Objects.requireNonNull(
+                challenge,
+                "Confirmation challenge"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "Confirmation challenge observation instant"
+        );
+
+        requireStatus(
+                "recordConfirmationChallenge",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        ConfirmationChallenge current =
+                state.confirmationChallenge().orElse(null);
+
+        if (challenge.equals(current)) {
+            return;
+        }
+
+        if (current != null
+                && !current.binding().equals(challenge.binding())) {
+            throw PaymentDomainException.conflict(
+                    "Confirmation challenge binding cannot change"
+            );
+        }
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.PENDING_CONFIRMATION,
+                observedAt
+        )
+                .confirmationChallenge(challenge)
+                .failure(null)
+                .build();
+
+        commit(next, List.of());
+    }
+
     public void recordCustomerConfirmation(
             CustomerConfirmationEvidence evidence
     ) {

@@ -30,6 +30,7 @@ record PaymentStateDocument(
         EvidenceFingerprint allocationIntentFingerprint,
         PaymentInitiationContext initiationContext,
         CustomerConfirmationEvidence customerConfirmationEvidence,
+        ConfirmationChallenge confirmationChallenge,
         PaymentStatus status,
         AuthorizationEvidenceSnapshot authorizationEvidence,
         BankingVerificationSnapshot bankingVerificationEvidence,
@@ -50,7 +51,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 2;
+    static final int CURRENT_SCHEMA_VERSION = 3;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -68,6 +69,7 @@ record PaymentStateDocument(
                 state.allocationIntentFingerprint(),
                 state.initiationContext().orElse(null),
                 state.customerConfirmationEvidence().orElse(null),
+                state.confirmationChallenge().orElse(null),
                 state.status(),
                 state.authorizationEvidence().orElse(null),
                 state.bankingVerificationEvidence().orElse(null),
@@ -100,30 +102,43 @@ record PaymentStateDocument(
 
         if (schemaVersion == 1
                 && (initiationContext != null
-                || customerConfirmationEvidence != null)) {
+                || customerConfirmationEvidence != null
+                || confirmationChallenge != null)) {
             throw new PaymentPersistenceException(
                     "Legacy Payment state payload must not contain "
-                            + "initiation context or confirmation evidence"
+                            + "initiation, confirmation evidence or challenge"
             );
         }
 
-        if (schemaVersion == CURRENT_SCHEMA_VERSION
+        if (schemaVersion == 2
+                && confirmationChallenge != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version 2 must not contain "
+                            + "confirmation challenge state"
+            );
+        }
+
+        if (schemaVersion >= 2
                 && status == PaymentStatus.PENDING_CONFIRMATION
                 && initiationContext == null) {
             throw new PaymentPersistenceException(
-                    "Payment state schema version 2 requires "
-                            + "initiation context for PENDING_CONFIRMATION"
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires initiation context for "
+                            + "PENDING_CONFIRMATION"
             );
         }
 
-        if (schemaVersion == CURRENT_SCHEMA_VERSION
+        if (schemaVersion >= 2
                 && initiationContext != null
                 && status != PaymentStatus.RECEIVED
                 && status != PaymentStatus.PENDING_CONFIRMATION
                 && customerConfirmationEvidence == null) {
             throw new PaymentPersistenceException(
-                    "Payment state schema version 2 requires "
-                            + "confirmation evidence after confirmation"
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires confirmation evidence after "
+                            + "confirmation"
             );
         }
     }
@@ -151,6 +166,7 @@ record PaymentStateDocument(
                 .customerConfirmationEvidence(
                         customerConfirmationEvidence
                 )
+                .confirmationChallenge(confirmationChallenge)
                 .status(status)
                 .authorizationEvidence(authorizationEvidence)
                 .bankingVerificationEvidence(

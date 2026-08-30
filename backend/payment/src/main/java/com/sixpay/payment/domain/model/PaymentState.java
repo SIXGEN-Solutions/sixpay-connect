@@ -30,6 +30,7 @@ public final class PaymentState implements ValueObject {
     private final EvidenceFingerprint allocationIntentFingerprint;
     private final PaymentInitiationContext initiationContext;
     private final CustomerConfirmationEvidence customerConfirmationEvidence;
+    private final ConfirmationChallenge confirmationChallenge;
     private final PaymentStatus status;
     private final AuthorizationEvidenceSnapshot authorizationEvidence;
     private final BankingVerificationSnapshot bankingVerificationEvidence;
@@ -91,6 +92,7 @@ public final class PaymentState implements ValueObject {
         initiationContext = builder.initiationContext;
         customerConfirmationEvidence =
                 builder.customerConfirmationEvidence;
+        confirmationChallenge = builder.confirmationChallenge;
         status = Objects.requireNonNull(builder.status, "Payment status");
         authorizationEvidence = builder.authorizationEvidence;
         bankingVerificationEvidence = builder.bankingVerificationEvidence;
@@ -225,6 +227,7 @@ public final class PaymentState implements ValueObject {
         }
 
         validateInitiationAndConfirmationCoherence();
+        validateConfirmationChallengeCoherence();
         validateLifecycleCoherence();
     }
 
@@ -284,6 +287,41 @@ public final class PaymentState implements ValueObject {
                 && customerConfirmationEvidence == null) {
             throw new IllegalArgumentException(
                     "Confirmed initiated Payment requires customer confirmation evidence"
+            );
+        }
+    }
+
+    private void validateConfirmationChallengeCoherence() {
+        if (confirmationChallenge == null) {
+            return;
+        }
+
+        if (status == PaymentStatus.RECEIVED) {
+            throw new IllegalArgumentException(
+                    "RECEIVED Payment must not contain a confirmation challenge"
+            );
+        }
+
+        ConfirmationChallengeBinding binding =
+                confirmationChallenge.binding();
+
+        if (!publicPaymentReference.equals(binding.paymentReference())) {
+            throw new IllegalArgumentException(
+                    "Confirmation challenge is not bound to Payment reference"
+            );
+        }
+
+        if (!debtorAccountReference.integrationAccountToken().equals(
+                binding.debtorAccountReference()
+        )) {
+            throw new IllegalArgumentException(
+                    "Confirmation challenge is not bound to debtor account"
+            );
+        }
+
+        if (!requestedAmount.equals(binding.amount())) {
+            throw new IllegalArgumentException(
+                    "Confirmation challenge is not bound to Payment amount"
             );
         }
     }
@@ -543,6 +581,10 @@ public final class PaymentState implements ValueObject {
         return Optional.ofNullable(customerConfirmationEvidence);
     }
 
+    public Optional<ConfirmationChallenge> confirmationChallenge() {
+        return Optional.ofNullable(confirmationChallenge);
+    }
+
     public PaymentStatus status() {
         return status;
     }
@@ -662,6 +704,10 @@ public final class PaymentState implements ValueObject {
                         customerConfirmationEvidence,
                         that.customerConfirmationEvidence
                 )
+                && Objects.equals(
+                        confirmationChallenge,
+                        that.confirmationChallenge
+                )
                 && status == that.status
                 && Objects.equals(
                         authorizationEvidence,
@@ -733,6 +779,7 @@ public final class PaymentState implements ValueObject {
                 allocationIntentFingerprint,
                 initiationContext,
                 customerConfirmationEvidence,
+                confirmationChallenge,
                 status,
                 authorizationEvidence,
                 bankingVerificationEvidence,
@@ -780,6 +827,7 @@ public final class PaymentState implements ValueObject {
         private EvidenceFingerprint allocationIntentFingerprint;
         private PaymentInitiationContext initiationContext;
         private CustomerConfirmationEvidence customerConfirmationEvidence;
+        private ConfirmationChallenge confirmationChallenge;
         private PaymentStatus status;
         private AuthorizationEvidenceSnapshot authorizationEvidence;
         private BankingVerificationSnapshot bankingVerificationEvidence;
@@ -819,6 +867,7 @@ public final class PaymentState implements ValueObject {
             initiationContext = state.initiationContext;
             customerConfirmationEvidence =
                     state.customerConfirmationEvidence;
+            confirmationChallenge = state.confirmationChallenge;
             status = state.status;
             authorizationEvidence = state.authorizationEvidence;
             bankingVerificationEvidence =
@@ -923,6 +972,13 @@ public final class PaymentState implements ValueObject {
                 CustomerConfirmationEvidence value
         ) {
             customerConfirmationEvidence = value;
+            return this;
+        }
+
+        public Builder confirmationChallenge(
+                ConfirmationChallenge value
+        ) {
+            confirmationChallenge = value;
             return this;
         }
 
