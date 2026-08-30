@@ -34,7 +34,7 @@ classificationModel:
     accounting: "Accounting domain owner."
     reporting: "Reporting domain owner."
     administration: "Administration domain owner."
-    security: "Security, identity and authorization owner."
+    security: "Security domain owner."
     notification: "Notification domain owner."
     integration: "Integration delivery/transport owner."
     subscription: "Subscription domain owner."
