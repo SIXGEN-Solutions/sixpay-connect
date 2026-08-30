@@ -25,9 +25,9 @@ info:
   x-sixpay-contract:
     registryId: "tresorpay-payment-confirmation-api-v1"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     domain: "payment"
     capability: "PAYMENT_CONFIRMATION"
     direction: "TRESOR_PAY_TO_SIXPAY"
@@ -37,11 +37,24 @@ info:
     paymentSystemOfRecord: "SIXPAY"
     otpSystemOfRecord: "LA_REGIONALE"
     bankChallengeSystemOfRecord: "LA_REGIONALE"
-    securityDecision: "PENDING_RECONCILIATION"
+    securityDecision: "APPROVED_OAUTH2_JWT_MTLS"
+    securityProfile:
+      authentication:
+        - "OAUTH2_BEARER_JWT"
+        - "MUTUAL_TLS"
+      requiredScopes:
+        createPaymentConfirmationChallenge: "payment.confirmation.create"
+        verifyPaymentConfirmationChallenge: "payment.confirmation.verify"
+        resendPaymentConfirmationChallenge: "payment.confirmation.resend"
+        getPaymentConfirmationChallenge: "payment.confirmation.read"
+      oauth2TokenEndpoint: "EXTERNAL_CONFIGURATION"
+      certificatesAndTrustMaterial: "EXTERNAL_CONFIGURATION"
     approvals:
       tresorPayContractOwner: APPROVED
-      securityPrinciples: APPROVED
+      paymentAndIntegration: APPROVED
+      security: APPROVED
       architecture: APPROVED
+      codeGeneration: APPROVED
     decisions:
       resendMaximum: 3
       resendCooldown: PT3M
@@ -49,12 +62,15 @@ info:
       postOtpExecutionWindow: PT1M
       postOtpExecutionWindowConfigurable: true
       postOtpWindowExceeded: INVALIDATE_CONFIRMATION_AND_REQUIRE_NEW_CHALLENGE
-    externalDecisionsStillRequired:
-      - "Select and encode the concrete public authentication profile and reconcile it with the existing Payment Request contract and runtime"
+    externalDecisionsStillRequired: []
 
 servers:
   - url: https://api.sixpay.example
     description: Environment-specific SIXPAY endpoint
+
+security:
+  - bearerAuth: []
+    mutualTLS: []
 
 tags:
   - name: Payment Confirmation
@@ -205,6 +221,21 @@ paths:
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        OAuth2 access token encoded as a signed JWT. SIXPAY validates the token
+        according to the approved runtime issuer/trust configuration. Token
+        issuance endpoints and trust values remain external configuration.
+    mutualTLS:
+      type: mutualTLS
+      description: >-
+        Mutual TLS is mandatory in addition to the OAuth2 Bearer JWT.
+        Certificates and trust material remain external configuration.
+
   parameters:
     PaymentReference:
       name: paymentReference
@@ -584,18 +615,18 @@ x-sixpay-sensitive-data:
     suppliedByTresorPay: false
     publicExposureRequired: false
 
-x-sixpay-external-dependencies:
-  - id: "EXT-CONF-001"
-    owner: "TRESOR_PAY_SECURITY"
-    requirement: "Select and encode the concrete public authentication profile and reconcile it with the existing Payment Request contract and runtime."
+x-sixpay-external-dependencies: []
 
 x-sixpay-approvals:
-  lot: "0.4.7"
+  lot: "0.4.8"
   tresorPayContractOwner: APPROVED
-  securityPrinciples: APPROVED
+  paymentAndIntegration: APPROVED
+  security: APPROVED
   architecture: APPROVED
+  codeGeneration: APPROVED
   note: >-
-    These approvals close the Payment Confirmation semantics decided in LOT
-    0.4.7. The public contract remains PENDING_APPROVAL until its concrete
-    authentication mechanism is explicitly selected and encoded; this script
-    does not infer that mechanism from another contract.
+    LOT 0.4.8 closes the remaining public-security decision with OAuth2 Bearer
+    JWT plus mandatory mutual TLS and dedicated Payment Confirmation scopes.
+    TRESOR PAY Payment Confirmation is approved and authorized for code
+    generation. OAuth2 issuer/token endpoints, certificates and trust material
+    remain environment-specific external configuration.

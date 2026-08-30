@@ -23,8 +23,8 @@ info:
     D046-02 and D046-03. They are not provider-discovery dependencies.
 
     The contract is approved for its Payment-confirmation semantics under
-    LOT 0.4.7. Approval does not permit client generation while generationPolicy
-    remains REFERENCE_ONLY and codeGenerationAllowed remains false.
+    LOT 0.4.7. LOT 0.4.8 explicitly authorizes code generation from this
+    approved Core Banking Payment Confirmation contract.
 
     Bank business-policy values and runtime/environment parameters remain
     external where they genuinely depend on La Regionale policy or deployment.
@@ -35,8 +35,8 @@ info:
     phaseStep: "0.4.3"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     businessOwner: "payment"

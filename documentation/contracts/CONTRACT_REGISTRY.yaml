@@ -160,14 +160,20 @@ contracts:
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     gate: "PAYMENT_COMPLETION"
     phaseStep: "0.4.2"
     security:
-      status: "PENDING_RECONCILIATION"
-      reason: "Existing TRESOR PAY Payment Request contract and current Payment runtime use different active security profiles."
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
+      requiredScopes:
+        create: "payment.confirmation.create"
+        verify: "payment.confirmation.verify"
+        resend: "payment.confirmation.resend"
+        read: "payment.confirmation.read"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
     mvpUsage:
       included: true
       purpose:
@@ -190,9 +196,7 @@ contracts:
         - "If the configurable one-minute post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is required"
         - "TRESOR PAY approved the public Payment Confirmation API surface in LOT 0.4.7"
         - "Security and Architecture approved the Payment Confirmation security/architecture principles in LOT 0.4.7"
-    approvalPrerequisite:
-      - "SIXPAY Payment and Integration approval"
-      - "Select and encode the concrete public authentication profile, then reconcile it with the existing Payment Request contract and runtime"
+    approvalPrerequisite: []
 
   - id: "amplitude-payment-confirmation-api-v1"
     path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
@@ -205,8 +209,8 @@ contracts:
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     gate: "PAYMENT_COMPLETION"
     phaseStep: "0.4.7"
