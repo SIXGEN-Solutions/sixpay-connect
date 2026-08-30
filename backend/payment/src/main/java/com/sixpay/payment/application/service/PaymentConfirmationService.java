@@ -12,6 +12,7 @@ import com.sixpay.payment.application.port.output.banking.BankingIdempotencyKey;
 import com.sixpay.payment.application.port.output.banking.BankingRequestContext;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
+import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyPort;
 import com.sixpay.payment.application.query.ReadPaymentConfirmationQuery;
 import com.sixpay.payment.application.view.PaymentConfirmationView;
 import com.sixpay.payment.domain.model.ConfirmationChallenge;
@@ -34,7 +35,10 @@ import java.util.Objects;
  * idempotency lots.</p>
  */
 @Service
-@ConditionalOnBean(PaymentConfirmationGateway.class)
+@ConditionalOnBean({
+        PaymentConfirmationGateway.class,
+        PaymentConfirmationIdempotencyPort.class
+})
 public class PaymentConfirmationService
         implements CreatePaymentConfirmationUseCase,
         ReadPaymentConfirmationUseCase,
@@ -43,10 +47,12 @@ public class PaymentConfirmationService
 
     private final PaymentLookupPort paymentLookupPort;
     private final PaymentConfirmationGateway confirmationGateway;
+    private final PaymentConfirmationIdempotencyPort idempotencyPort;
 
     public PaymentConfirmationService(
             PaymentLookupPort paymentLookupPort,
-            PaymentConfirmationGateway confirmationGateway
+            PaymentConfirmationGateway confirmationGateway,
+            PaymentConfirmationIdempotencyPort idempotencyPort
     ) {
         this.paymentLookupPort = Objects.requireNonNull(
                 paymentLookupPort,
@@ -55,6 +61,10 @@ public class PaymentConfirmationService
         this.confirmationGateway = Objects.requireNonNull(
                 confirmationGateway,
                 "Payment confirmation gateway"
+        );
+        this.idempotencyPort = Objects.requireNonNull(
+                idempotencyPort,
+                "Payment confirmation idempotency port"
         );
     }
 
@@ -81,13 +91,27 @@ public class PaymentConfirmationService
                 command.correlationId()
         );
 
+        BankingIdempotencyKey bankKey =
+                bankingIdempotencyKey(
+                        command.idempotencyKey().value()
+                );
+
         PaymentConfirmationBankResult result =
-                confirmationGateway.create(
-                        new PaymentConfirmationGateway.CreateRequest(
-                                payment,
-                                context,
-                                bankingIdempotencyKey(
-                                        command.idempotencyKey().value()
+                idempotencyPort.executeCreate(
+                        payment.id(),
+                        payment.publicPaymentReference(),
+                        command.idempotencyKey(),
+                        () -> confirmationGateway.create(
+                                new PaymentConfirmationGateway.CreateRequest(
+                                        payment,
+                                        context,
+                                        bankKey
+                                )
+                        ),
+                        () -> confirmationGateway.recover(
+                                new PaymentConfirmationGateway.RecoveryRequest(
+                                        context,
+                                        bankKey
                                 )
                         )
                 );
@@ -140,20 +164,31 @@ public class PaymentConfirmationService
 
         char[] otp = command.otp();
         try {
+            BankingRequestContext context =
+                    bankingContext(
+                            payment,
+                            command.correlationId()
+                    );
+            BankingIdempotencyKey bankKey =
+                    bankingIdempotencyKey(
+                            command.idempotencyKey().value()
+                    );
+
             PaymentConfirmationBankResult result =
-                    confirmationGateway.verify(
-                            new PaymentConfirmationGateway.VerifyRequest(
-                                    payment.id(),
-                                    payment.publicPaymentReference(),
-                                    challenge.challengeReference(),
-                                    bankingContext(
-                                            payment,
-                                            command.correlationId()
-                                    ),
-                                    bankingIdempotencyKey(
-                                            command.idempotencyKey().value()
-                                    ),
-                                    otp
+                    idempotencyPort.executeVerify(
+                            payment.id(),
+                            payment.publicPaymentReference(),
+                            command.idempotencyKey(),
+                            otp,
+                            () -> confirmationGateway.verify(
+                                    new PaymentConfirmationGateway.VerifyRequest(
+                                            payment.id(),
+                                            payment.publicPaymentReference(),
+                                            challenge.challengeReference(),
+                                            context,
+                                            bankKey,
+                                            otp
+                                    )
                             )
                     );
 
@@ -177,18 +212,35 @@ public class PaymentConfirmationService
         ConfirmationChallenge challenge =
                 requireCurrentChallenge(payment);
 
+        BankingRequestContext context =
+                bankingContext(
+                        payment,
+                        command.correlationId()
+                );
+        BankingIdempotencyKey bankKey =
+                bankingIdempotencyKey(
+                        command.idempotencyKey().value()
+                );
+
         PaymentConfirmationBankResult result =
-                confirmationGateway.replace(
-                        new PaymentConfirmationGateway.ReplaceRequest(
-                                payment.id(),
-                                payment.publicPaymentReference(),
-                                challenge.challengeReference(),
-                                bankingContext(
-                                        payment,
-                                        command.correlationId()
-                                ),
-                                bankingIdempotencyKey(
-                                        command.idempotencyKey().value()
+                idempotencyPort.executeReplace(
+                        payment.id(),
+                        payment.publicPaymentReference(),
+                        challenge.challengeReference(),
+                        command.idempotencyKey(),
+                        () -> confirmationGateway.replace(
+                                new PaymentConfirmationGateway.ReplaceRequest(
+                                        payment.id(),
+                                        payment.publicPaymentReference(),
+                                        challenge.challengeReference(),
+                                        context,
+                                        bankKey
+                                )
+                        ),
+                        () -> confirmationGateway.recover(
+                                new PaymentConfirmationGateway.RecoveryRequest(
+                                        context,
+                                        bankKey
                                 )
                         )
                 );

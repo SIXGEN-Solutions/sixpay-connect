@@ -30,6 +30,33 @@ public interface PaymentConfirmationGateway {
 
     PaymentConfirmationBankResult revoke(RevokeRequest request);
 
+    final class OutcomeUnknownException extends RuntimeException {
+
+        private final String recoveryReference;
+
+        public OutcomeUnknownException(
+                String message,
+                String recoveryReference,
+                Throwable cause
+        ) {
+            super(
+                    message == null || message.isBlank()
+                            ? "Payment confirmation outcome is unknown"
+                            : message,
+                    cause
+            );
+            this.recoveryReference =
+                    recoveryReference == null
+                            || recoveryReference.isBlank()
+                            ? null
+                            : recoveryReference;
+        }
+
+        public String recoveryReference() {
+            return recoveryReference;
+        }
+    }
+
     /**
      * Create deliberately receives the existing Payment aggregate rather than
      * an invented TRESOR PAY payload. Provider mapping is deferred to the
