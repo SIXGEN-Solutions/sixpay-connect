@@ -51,6 +51,8 @@ class PaymentBankingAdaptersArchitectureTest {
                 "FundsReleaseGateway.java",
                 "FundsReservationGateway.java",
                 "LookupGateway.java",
+                "PaymentConfirmationBankResult.java",
+                "PaymentConfirmationGateway.java",
                 "PostingGateway.java",
                 "ReversalGateway.java",
                 "VerificationGateway.java",

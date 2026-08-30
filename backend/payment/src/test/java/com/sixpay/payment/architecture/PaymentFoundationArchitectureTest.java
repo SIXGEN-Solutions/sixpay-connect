@@ -31,6 +31,7 @@ class PaymentFoundationArchitectureTest {
         Set<String> authorizedServices = Set.of(
                 "CustomerVerificationFailureMapper.java",
                 "PaymentAuthorizationService.java",
+                "PaymentConfirmationService.java",
                 "PaymentCustomerVerificationRequestFactory.java",
                 "PaymentCustomerVerificationService.java",
                 "PaymentFinalizationService.java",
