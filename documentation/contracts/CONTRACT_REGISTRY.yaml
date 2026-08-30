@@ -34,7 +34,7 @@ classificationModel:
     accounting: "Accounting domain owner."
     reporting: "Reporting domain owner."
     administration: "Administration domain owner."
-    security: "Security domain owner."
+    security: "Security, identity and authorization owner."
     notification: "Notification domain owner."
     integration: "Integration delivery/transport owner."
     subscription: "Subscription domain owner."
@@ -149,6 +149,50 @@ contracts:
       - "SIXPAY Payment and Integration approval"
       - "Security approval"
       - "Completion and approval of the full IA-0.5P Payment Contract Pack"
+
+  - id: "tresorpay-payment-confirmation-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "PAYMENT_CONFIRMATION"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.2"
+    security:
+      status: "PENDING_RECONCILIATION"
+      reason: "Existing TRESOR PAY Payment Request contract and current Payment runtime use different active security profiles."
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a customer confirmation challenge for an existing Payment"
+        - "Synchronously verify the customer OTP"
+        - "Replace and resend the current challenge"
+        - "Read the current normalized challenge state"
+        - "Enforce idempotency and authoritative recovery semantics"
+      constraints:
+        - "Payment remains the aggregate root"
+        - "At most one challenge is active per Payment"
+        - "La Regionale owns OTP generation, storage, delivery and verification"
+        - "SIXPAY never persists OTP"
+        - "challengeReference remains internal to SIXPAY"
+        - "Create and resend have no public request body"
+        - "GET returns the current challenge only"
+        - "No public revoke endpoint"
+        - "OTP success does not establish funds availability or posting success"
+        - "Resend maximum and cooldown remain bank-controlled and are not invented"
+    approvalPrerequisite:
+      - "TRESOR PAY contract owner approval"
+      - "SIXPAY Payment and Integration approval"
+      - "Security approval of the reconciled public authentication profile"
+      - "La Regionale confirms delivery-failure and recovery semantics"
+      - "La Regionale provides resend maximum and cooldown"
 
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
@@ -805,4 +849,5 @@ rules:
   - "Internal Payment, ObservedCustomer and audit APIs are read-only and use stable cursor pagination."
   - "Payment audit is separated from Payment query and requires dedicated privileged scopes."
   - "Every privileged audit consultation, denial and export is itself audited."
-
+  - "Payment confirmation is Payment-owned; OTP and authoritative bank challenge state remain bank-owned."
+  - "TRESOR PAY Payment confirmation exposes only the current normalized challenge and never the OTP or bank challengeReference."
