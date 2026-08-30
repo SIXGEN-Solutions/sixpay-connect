@@ -33,17 +33,6 @@ Before writing files:
   requests immutable revision validation.
 
 A synthetic branch name used by Codex Cloud is not, by itself, a failure when
-the checked-out commit corresponds to the requested revision.
-
-Before writing files:
-
-- inspect the current branch, commit and worktree;
-- confirm that the manifest baseline commit is an ancestor of `HEAD`;
-- preserve unrelated and pre-existing changes;
-- do not require `HEAD` to equal a hard-coded commit unless the user explicitly
-  requests validation of an exact revision.
-
-A synthetic branch name used by Codex Cloud is not, by itself, a failure when
 the checked-out commit corresponds to the requested authoritative revision.
 
 ## Engineering rules
