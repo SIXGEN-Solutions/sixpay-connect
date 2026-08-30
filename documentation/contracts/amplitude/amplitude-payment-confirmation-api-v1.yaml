@@ -18,11 +18,14 @@ info:
     Payment only. It does not establish funds availability, successful debit,
     CUT credit or financial finality.
 
-    The target status values, business codes and wire schemas are contract
-    decisions owned by the SIXPAY/Core Banking programme under
-    D00-CB-OWNERSHIP. They must be explicitly closed in this contract before
-    client generation; they are no longer treated as unknown pre-existing
-    provider semantics.
+    The target status vocabulary, business-code vocabulary and current wire
+    schemas are programme-approved contract decisions under D00-CB-OWNERSHIP,
+    D046-02 and D046-03. They are not provider-discovery dependencies.
+
+    The contract remains PENDING_APPROVAL because specifically identified
+    Payment-confirmation decisions are still open. This approval state does not
+    permit client generation while generationPolicy remains REFERENCE_ONLY and
+    codeGenerationAllowed remains false.
 
     Bank business-policy values and runtime/environment parameters remain
     external where they genuinely depend on La Regionale policy or deployment.
@@ -57,16 +60,23 @@ info:
       securityProfile:
         - "OAUTH2_CLIENT_CREDENTIALS"
         - "MUTUAL_TLS"
+    decisions:
+      - "D00-CB-OWNERSHIP"
+      - "D046-01_REVOKE_IDEMPOTENCY"
+      - "D046-02_TARGET_STATUS_VOCABULARY"
+      - "D046-03_BUSINESS_CODES_AND_WIRE_SCHEMAS"
+      - "D046-04_CONFIRMED_DELIVERY_FAILURE_REPLACED"
+      - "S05-01_VERIFY_IDEMPOTENCY_HMAC_SHA256"
     openDecisions:
-      - "REVOKE_IDEMPOTENCY"
-      - "TARGET_STATUS_VOCABULARY"
-      - "TARGET_BUSINESS_CODE_VOCABULARY"
-      - "FINAL_TARGET_WIRE_FIELD_NAMES_AND_SCHEMAS"
       - "RESEND_MAXIMUM_AND_COOLDOWN"
-      - "DELIVERY_FAILURE_SEMANTICS"
-      - "TIMEOUT_RATE_LIMIT_AND_RETRY_PARAMETERS"
-      - "SAFE_VERIFY_IDEMPOTENCY_FINGERPRINT"
       - "POST_OTP_ONE_MINUTE_WINDOW_EXPIRY_BEHAVIOR"
+    externalRuntimeParameters:
+      - "CONNECTION_TIMEOUT"
+      - "RESPONSE_TIMEOUT"
+      - "RATE_LIMIT_VALUES"
+      - "RETRY_BACKOFF_VALUES"
+      - "OAUTH2_ENDPOINTS"
+      - "CERTIFICATES_AND_TRUST_MATERIAL"
     limitations:
       - "NO_FUNDS_AVAILABILITY_DECISION"
       - "NO_PAYMENT_POSTING"
@@ -95,7 +105,6 @@ paths:
       tags: [Payment confirmation challenges]
       operationId: createAmplitudePaymentConfirmationChallenge
       summary: Create and send a Payment confirmation challenge
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
       description: |
         Creates and sends a bank-owned confirmation challenge bound to the
         supplied SIXPAY Payment, customer, debtor account and financial context.
@@ -135,7 +144,6 @@ paths:
       tags: [Payment confirmation challenges]
       operationId: verifyAmplitudePaymentConfirmationChallenge
       summary: Verify the OTP for a confirmation challenge
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
       description: |
         Synchronously verifies the transient OTP against the bank-owned challenge.
         SIXPAY never persists or reproduces the OTP. Replaying the same
@@ -174,7 +182,6 @@ paths:
       tags: [Payment confirmation challenges]
       operationId: replaceAmplitudePaymentConfirmationChallenge
       summary: Replace the current challenge and send a new OTP
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
       description: |
         Creates a new logical challenge and a new OTP and permanently invalidates
         the previous challenge. La Regionale controls resend maximum and cooldown.
@@ -211,7 +218,6 @@ paths:
       tags: [Payment confirmation challenges]
       operationId: getAmplitudePaymentConfirmationChallenge
       summary: Read the authoritative challenge status
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -236,7 +242,6 @@ paths:
       tags: [Payment confirmation recovery]
       operationId: getAmplitudePaymentConfirmationByIdempotencyKey
       summary: Recover a confirmation operation by original idempotency key
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
       description: |
         Authoritative recovery when create or replacement may have succeeded but
         SIXPAY did not receive challengeReference. Lookup is mandatory before
@@ -265,15 +270,17 @@ paths:
       tags: [Payment confirmation challenges]
       operationId: revokeAmplitudePaymentConfirmationChallenge
       summary: Revoke an active confirmation challenge
-      x-sixpay-bank-approval: PENDING_BANK_APPROVAL
-      x-sixpay-idempotency-status: OPEN_DECISION
+      x-sixpay-idempotency-status: APPROVED
       description: |
         Revokes an active challenge when Payment is cancelled or rejected before
         successful OTP confirmation. A VERIFIED challenge is not revocable.
-        Revoke idempotency remains OPEN_DECISION.
+        Revoke is idempotent: same Idempotency-Key plus the same logical request
+        returns the original result without another revocation; the same key plus
+        a different logical request returns HTTP 409.
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/ChallengeReference'
       requestBody:
         required: true
@@ -394,7 +401,7 @@ components:
         customerReference: { $ref: '#/components/schemas/CustomerReference' }
         debtorAccountReference: { $ref: '#/components/schemas/AccountReference' }
         amount: { $ref: '#/components/schemas/Money' }
-      description: Approved SIXPAY logical binding context; provider-native wire names remain pending.
+      description: Approved target Core Banking create/send wire schema and logical binding context.
 
     VerifyPaymentConfirmationChallengeRequest:
       type: object
@@ -426,21 +433,39 @@ components:
           minLength: 1
           maxLength: 64
           pattern: '^[A-Z][A-Z0-9_]{0,63}$'
-          description: Final provider-accepted vocabulary remains an external decision.
+          description: |
+            Approved target wire field. The reasonCode value is a SIXPAY-owned
+            cancellation/rejection reason supplied to Core Banking; no additional
+            provider-native vocabulary is required by this contract.
 
     BankChallengeStatus:
       type: string
-      minLength: 1
-      maxLength: 64
-      description: |
-        Native authoritative Amplitude state. No enum is frozen while La
-        Regionale has not supplied wire values. SIXPAY maps these values to its
-        normalized ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED and REVOKED states.
+      description: Approved target Core Banking confirmation-challenge state.
+      enum:
+        - ACTIVE
+        - VERIFIED
+        - EXPIRED
+        - LOCKED
+        - REPLACED
+        - REVOKED
     BankConfirmationBusinessCode:
       type: string
-      minLength: 1
-      maxLength: 100
-      description: Native provider business code; vocabulary not frozen.
+      description: |
+        Approved target Core Banking functional result vocabulary. These values
+        intentionally reuse the stable SIXPAY Payment-confirmation vocabulary;
+        no second provider-native vocabulary is introduced.
+      enum:
+        - CHALLENGE_ACTIVE
+        - OTP_VERIFIED
+        - OTP_INVALID
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_LOCKED
+        - CHALLENGE_REPLACED
+        - CHALLENGE_REVOKED
+        - RESEND_NOT_ALLOWED
+        - CONFIRMATION_NOT_AVAILABLE
+        - DEPENDENCY_RESULT_UNKNOWN
+        - DELIVERY_FAILED
     DeliveryChannel:
       type: string
       enum: [SMS, EMAIL]
@@ -505,9 +530,15 @@ x-sixpay-idempotency-policy:
     required: true
     duplicateReplayConsumesAdditionalOtpAttempt: false
     otpPersistence: FORBIDDEN
-    secureRequestEquivalenceStrategy: OPEN_DECISION_SECURITY
+    secureRequestEquivalenceStrategy: HMAC_SHA_256_DEDICATED_EXTERNAL_KEY
+    rawOtpHashPersistence: FORBIDDEN
+    hmacKeySource: EXTERNAL_SECRET_MANAGER
   replace: { required: true }
-  revoke: { status: OPEN_DECISION }
+  revoke:
+    required: true
+    sameKeySameRequest: RETURN_ORIGINAL_RESULT
+    sameKeyDifferentRequest: CONFLICT
+    conflictHttpStatus: 409
   sameKeySameRequest:
     result: RETURN_ORIGINAL_RESULT
     duplicateBankAction: FORBIDDEN
@@ -520,6 +551,29 @@ x-sixpay-idempotency-policy:
     lookupBeforeRetry: REQUIRED
     lookupByOriginalIdempotencyKey: REQUIRED
     retryWithNewKey: FORBIDDEN
+
+x-sixpay-delivery-failure-policy:
+  confirmedFailure:
+    challengeStatus: REPLACED
+    businessCode: DELIVERY_FAILED
+    challengeUsable: false
+    resendOrReplacementAllowed: true
+    subjectToBankResendMaximumAndCooldown: true
+    previousChallengeReuse: FORBIDDEN
+    newOtpRequired: true
+    newChallengeReferenceRequired: true
+  uncertainOutcome:
+    classifyAsDeliveryFailed: false
+    recoveryState: OUTCOME_UNKNOWN
+    authoritativeLookupBeforeRetry: REQUIRED
+    retryWithNewIdempotencyKey: FORBIDDEN
+  note: >-
+    D046-04 distinguishes a confirmed delivery failure from an uncertain
+    transport outcome. A confirmed delivery failure invalidates the current
+    challenge as REPLACED with businessCode DELIVERY_FAILED and permits
+    resend/replacement subject to La Regionale resend limits and cooldown.
+    A timeout or uncertain delivery outcome never implies DELIVERY_FAILED and
+    follows the authoritative recovery semantics defined by P10/P11.
 
 x-sixpay-sensitive-data:
   otp:
@@ -536,11 +590,22 @@ x-sixpay-sensitive-data:
     suppliedBySixpay: false
 
 x-sixpay-open-decisions:
-  - { id: AMP-CONF-OD01, owner: [LA_REGIONALE], topic: PROVIDER_STATUS_AND_BUSINESS_CODE_VOCABULARY }
-  - { id: AMP-CONF-OD02, owner: [LA_REGIONALE], topic: FINAL_PROVIDER_WIRE_FIELD_NAMES_AND_SCHEMAS }
-  - { id: AMP-CONF-OD03, owner: [LA_REGIONALE], topic: RESEND_MAXIMUM_AND_COOLDOWN }
-  - { id: AMP-CONF-OD04, owner: [LA_REGIONALE], topic: DELIVERY_FAILURE_SEMANTICS }
-  - { id: AMP-CONF-OD05, owner: [LA_REGIONALE], topic: REVOKE_IDEMPOTENCY }
-  - { id: AMP-CONF-OD06, owner: [LA_REGIONALE, SECURITY], topic: TIMEOUT_RATE_LIMIT_RETRY_AND_OPERATIONAL_SECURITY_PARAMETERS }
-  - { id: AMP-CONF-OD07, owner: [SECURITY], topic: SAFE_VERIFY_IDEMPOTENCY_FINGERPRINT }
-  - { id: AMP-CONF-OD08, owner: [PAYMENT, ARCHITECTURE, LA_REGIONALE], topic: POST_OTP_ONE_MINUTE_WINDOW_EXPIRY_BEHAVIOR }
+  - id: AMP-CONF-OD03
+    owner: [LA_REGIONALE]
+    topic: RESEND_MAXIMUM_AND_COOLDOWN
+    classification: BANK_BUSINESS_POLICY
+  - id: AMP-CONF-OD08
+    owner: [PAYMENT, ARCHITECTURE, LA_REGIONALE]
+    topic: POST_OTP_ONE_MINUTE_WINDOW_EXPIRY_BEHAVIOR
+    classification: PROGRAMME_AND_BANK_POLICY_DECISION
+
+x-sixpay-external-runtime-parameters:
+  owner: [OPERATIONS, SECURITY]
+  values:
+    - CONNECTION_TIMEOUT
+    - RESPONSE_TIMEOUT
+    - RATE_LIMIT_VALUES
+    - RETRY_BACKOFF_VALUES
+    - OAUTH2_ENDPOINTS
+    - CERTIFICATES_AND_TRUST_MATERIAL
+  contractApprovalBlocking: false
