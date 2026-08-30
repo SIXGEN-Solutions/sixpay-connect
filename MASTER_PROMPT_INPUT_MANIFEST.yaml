@@ -273,6 +273,8 @@ readinessEvidence:
       status: "PASSED"
     - command: "py scripts/verify_configuration_final.py"
       status: "PASSED"
+    - command: "py scripts/verify_documentation_final.py"
+      status: "PASSED"
     - command: "npm run verify:contract-consolidation"
       workingDirectory: "frontend"
       status: "PASSED"
