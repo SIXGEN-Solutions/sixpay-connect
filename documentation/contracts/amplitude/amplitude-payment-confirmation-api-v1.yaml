@@ -22,10 +22,9 @@ info:
     schemas are programme-approved contract decisions under D00-CB-OWNERSHIP,
     D046-02 and D046-03. They are not provider-discovery dependencies.
 
-    The contract remains PENDING_APPROVAL because specifically identified
-    Payment-confirmation decisions are still open. This approval state does not
-    permit client generation while generationPolicy remains REFERENCE_ONLY and
-    codeGenerationAllowed remains false.
+    The contract is approved for its Payment-confirmation semantics under
+    LOT 0.4.7. Approval does not permit client generation while generationPolicy
+    remains REFERENCE_ONLY and codeGenerationAllowed remains false.
 
     Bank business-policy values and runtime/environment parameters remain
     external where they genuinely depend on La Regionale policy or deployment.
@@ -35,7 +34,7 @@ info:
     gate: "PAYMENT_COMPLETION"
     phaseStep: "0.4.3"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     governanceDecision: "D00-CB-OWNERSHIP"
@@ -67,9 +66,14 @@ info:
       - "D046-03_BUSINESS_CODES_AND_WIRE_SCHEMAS"
       - "D046-04_CONFIRMED_DELIVERY_FAILURE_REPLACED"
       - "S05-01_VERIFY_IDEMPOTENCY_HMAC_SHA256"
-    openDecisions:
-      - "RESEND_MAXIMUM_AND_COOLDOWN"
-      - "POST_OTP_ONE_MINUTE_WINDOW_EXPIRY_BEHAVIOR"
+      - "D047-01_RESEND_MAXIMUM_3"
+      - "D047-02_RESEND_COOLDOWN_3_MINUTES_CONFIGURABLE"
+      - "D047-03_POST_OTP_WINDOW_EXPIRY_INVALIDATES_CONFIRMATION"
+      - "D047-04_HMAC_PREVIOUS_KEYS_AVAILABLE_FOR_REPLAY_VERIFICATION"
+      - "D047-05_LA_REGIONALE_CORE_BANKING_CONTRACT_APPROVAL"
+      - "D047-07_SECURITY_APPROVAL"
+      - "D047-08_ARCHITECTURE_APPROVAL"
+    openDecisions: []
     externalRuntimeParameters:
       - "CONNECTION_TIMEOUT"
       - "RESPONSE_TIMEOUT"
@@ -552,6 +556,44 @@ x-sixpay-idempotency-policy:
     lookupByOriginalIdempotencyKey: REQUIRED
     retryWithNewKey: FORBIDDEN
 
+x-sixpay-resend-policy:
+  maximum: 3
+  cooldown: PT3M
+  cooldownConfigurable: true
+  owner: LA_REGIONALE
+  note: >-
+    LOT 0.4.7 fixes a maximum of three resend/replacement operations and a
+    three-minute cooldown. The cooldown may be changed by runtime configuration
+    when La Regionale policy requires it; changing the configured value does not
+    change the ownership of the policy.
+
+x-sixpay-post-otp-execution-window-policy:
+  maximumWindow: PT1M
+  configurable: true
+  onExceeded:
+    customerConfirmationValid: false
+    newOtpChallengeRequired: true
+  note: >-
+    LOT 0.4.7 closes P19: when the configured post-OTP execution window is
+    exceeded before the engaging financial operation, the customer confirmation
+    is invalidated and a new OTP challenge is mandatory. No additional
+    PaymentStatus or challenge status is invented by this contract decision.
+
+x-sixpay-hmac-key-rotation-policy:
+  previousKeysAvailableForReplayVerification: true
+  retentionDuration: NOT_DEFINED_BY_LOT_0_4_7
+  note: >-
+    Security approved keeping previous HMAC keys available for verification of
+    idempotency replays/fingerprints that still require them. LOT 0.4.7 does not
+    define an indefinite retention period, a secret path, key encoding, key
+    version persistence schema or rotation schedule.
+
+x-sixpay-approvals:
+  lot: "0.4.7"
+  laRegionaleCoreBankingContract: APPROVED
+  security: APPROVED
+  architecture: APPROVED
+
 x-sixpay-delivery-failure-policy:
   confirmedFailure:
     challengeStatus: REPLACED
@@ -589,15 +631,7 @@ x-sixpay-sensitive-data:
     selectedBy: LA_REGIONALE
     suppliedBySixpay: false
 
-x-sixpay-open-decisions:
-  - id: AMP-CONF-OD03
-    owner: [LA_REGIONALE]
-    topic: RESEND_MAXIMUM_AND_COOLDOWN
-    classification: BANK_BUSINESS_POLICY
-  - id: AMP-CONF-OD08
-    owner: [PAYMENT, ARCHITECTURE, LA_REGIONALE]
-    topic: POST_OTP_ONE_MINUTE_WINDOW_EXPIRY_BEHAVIOR
-    classification: PROGRAMME_AND_BANK_POLICY_DECISION
+x-sixpay-open-decisions: []
 
 x-sixpay-external-runtime-parameters:
   owner: [OPERATIONS, SECURITY]

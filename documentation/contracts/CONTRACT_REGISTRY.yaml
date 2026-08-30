@@ -186,13 +186,13 @@ contracts:
         - "GET returns the current challenge only"
         - "No public revoke endpoint"
         - "OTP success does not establish funds availability or posting success"
-        - "Resend maximum and cooldown remain bank-controlled and are not invented"
+        - "La Regionale resend maximum is 3; cooldown is 3 minutes and remains runtime-configurable if bank policy requires"
+        - "If the configurable one-minute post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is required"
+        - "TRESOR PAY approved the public Payment Confirmation API surface in LOT 0.4.7"
+        - "Security and Architecture approved the Payment Confirmation security/architecture principles in LOT 0.4.7"
     approvalPrerequisite:
-      - "TRESOR PAY contract owner approval"
       - "SIXPAY Payment and Integration approval"
-      - "Security approval of the reconciled public authentication profile"
-      - "La Regionale confirms delivery-failure and recovery semantics"
-      - "La Regionale provides resend maximum and cooldown"
+      - "Select and encode the concrete public authentication profile, then reconcile it with the existing Payment Request contract and runtime"
 
   - id: "amplitude-payment-confirmation-api-v1"
     path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
@@ -204,12 +204,12 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     governanceDecision: "D00-CB-OWNERSHIP"
     gate: "PAYMENT_COMPLETION"
-    phaseStep: "0.4.3"
+    phaseStep: "0.4.7"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
@@ -238,13 +238,14 @@ contracts:
         - "Target challenge statuses are approved by D046-02 as ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED and REVOKED"
         - "Target business codes and the current wire schemas are approved by D046-03"
         - "Verify request equivalence uses the S05-01 HMAC-SHA-256 keyed fingerprint without persisting OTP or a raw OTP hash"
-        - "D046-04 defines confirmed delivery failure as REPLACED + DELIVERY_FAILED; resend/replacement creates a new OTP and challengeReference subject to bank resend/cooldown policy"
+        - "D046-04 defines confirmed delivery failure as REPLACED + DELIVERY_FAILED; resend/replacement creates a new OTP and challengeReference"
         - "An uncertain delivery outcome is never DELIVERY_FAILED and follows OUTCOME_UNKNOWN plus authoritative lookup under P10/P11"
+        - "LOT 0.4.7 fixes the bank resend maximum at 3 and the resend cooldown at 3 minutes, with cooldown runtime-configurable when bank policy requires"
+        - "LOT 0.4.7 invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
+        - "LOT 0.4.7 Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
+        - "LOT 0.4.7 records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation contract"
+        - "Environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
         - "OTP success does not establish funds availability or posting success"
-    approvalPrerequisite:
-      - "Programme closes the exact behavior when the configurable post-OTP one-minute window is exceeded"
-      - "Bank business owner supplies resend maximum/cooldown and any intentionally external business-policy constraints"
-      - "Operations supplies environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits during environment certification; these runtime values do not by themselves authorize generation"
 
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"

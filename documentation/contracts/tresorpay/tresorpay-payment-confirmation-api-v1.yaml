@@ -38,11 +38,19 @@ info:
     otpSystemOfRecord: "LA_REGIONALE"
     bankChallengeSystemOfRecord: "LA_REGIONALE"
     securityDecision: "PENDING_RECONCILIATION"
+    approvals:
+      tresorPayContractOwner: APPROVED
+      securityPrinciples: APPROVED
+      architecture: APPROVED
+    decisions:
+      resendMaximum: 3
+      resendCooldown: PT3M
+      resendCooldownConfigurable: true
+      postOtpExecutionWindow: PT1M
+      postOtpExecutionWindowConfigurable: true
+      postOtpWindowExceeded: INVALIDATE_CONFIRMATION_AND_REQUIRE_NEW_CHALLENGE
     externalDecisionsStillRequired:
-      - "TRESOR PAY and Security reconcile the public authentication profile"
-      - "La Regionale confirms delivery-failure semantics"
-      - "La Regionale provides resend maximum and cooldown"
-      - "La Regionale confirms authoritative challenge lookup/recovery details"
+      - "Select and encode the concrete public authentication profile and reconcile it with the existing Payment Request contract and runtime"
 
 servers:
   - url: https://api.sixpay.example
@@ -519,7 +527,11 @@ x-sixpay-business-rules:
   - id: "PAY-CONF-024"
     rule: "HTTP 200 carries a stable business result and must be interpreted with challengeStatus and businessCode."
   - id: "PAY-CONF-025"
-    rule: "Funds/posting must be engaged no later than one configurable minute after OTP verification; behavior after expiry of that window remains subject to bank/workflow approval."
+    rule: "Funds/posting must be engaged no later than one configurable minute after OTP verification."
+  - id: "PAY-CONF-026"
+    rule: "If the configured post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is mandatory."
+  - id: "PAY-CONF-027"
+    rule: "La Regionale permits at most three resend/replacement operations, with a three-minute cooldown that remains runtime-configurable when bank policy requires."
 
 x-sixpay-idempotency-policy:
   requiredHeader: "Idempotency-Key"
@@ -537,7 +549,9 @@ x-sixpay-idempotency-policy:
   verify:
     rawOtpPersistence: "FORBIDDEN"
     repeatedBankAttemptOnReplay: "FORBIDDEN"
-    requestEquivalenceStrategy: "SECURITY_APPROVED_NON_RECOVERABLE_FINGERPRINT_REQUIRED"
+    requestEquivalenceStrategy: "HMAC_SHA_256_DEDICATED_EXTERNAL_KEY"
+    rawOtpHashPersistence: "FORBIDDEN"
+    previousHmacKeysAvailableForReplayVerification: true
   uncertainOutcome:
     assumeSuccess: "FORBIDDEN"
     assumeFailure: "FORBIDDEN"
@@ -573,19 +587,15 @@ x-sixpay-sensitive-data:
 x-sixpay-external-dependencies:
   - id: "EXT-CONF-001"
     owner: "TRESOR_PAY_SECURITY"
-    requirement: "Approve the final public authentication profile and reconcile it with the existing Payment Request contract and runtime."
-  - id: "EXT-CONF-002"
-    owner: "LA_REGIONALE"
-    requirement: "Confirm delivery-failure semantics and resulting normalized SIXPAY behavior."
-  - id: "EXT-CONF-003"
-    owner: "LA_REGIONALE"
-    requirement: "Provide resend maximum and cooldown values."
-  - id: "EXT-CONF-004"
-    owner: "LA_REGIONALE"
-    requirement: "Confirm authoritative lookup/recovery inputs and outputs for create, verify and resend."
-  - id: "EXT-CONF-005"
-    owner: "SECURITY"
-    requirement: "Approve the non-recoverable verify-request equivalence/fingerprint mechanism."
-  - id: "EXT-CONF-006"
-    owner: "PAYMENT_ARCHITECTURE"
-    requirement: "Approve the behavior when the configurable one-minute post-OTP execution window expires."
+    requirement: "Select and encode the concrete public authentication profile and reconcile it with the existing Payment Request contract and runtime."
+
+x-sixpay-approvals:
+  lot: "0.4.7"
+  tresorPayContractOwner: APPROVED
+  securityPrinciples: APPROVED
+  architecture: APPROVED
+  note: >-
+    These approvals close the Payment Confirmation semantics decided in LOT
+    0.4.7. The public contract remains PENDING_APPROVAL until its concrete
+    authentication mechanism is explicitly selected and encoded; this script
+    does not infer that mechanism from another contract.
