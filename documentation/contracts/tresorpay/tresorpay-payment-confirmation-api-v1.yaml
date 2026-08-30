@@ -1,0 +1,591 @@
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Payment Confirmation API
+  version: 1.0.0
+  summary: Manage customer confirmation challenges for an existing SIXPAY Payment.
+  description: |
+    Inbound contract used by TRESOR PAY to interact with the customer
+    confirmation phase of an already initiated SIXPAY Payment.
+
+    Payment initiation, confirmation challenge creation, OTP verification,
+    banking verification, funds control and posting are distinct steps.
+
+    La Regionale remains authoritative for OTP generation, storage, delivery
+    and verification. SIXPAY never persists the OTP value.
+
+    A successful HTTP response means that SIXPAY reached a stable result for
+    the requested confirmation operation. The caller must still interpret
+    `challengeStatus` and `businessCode`; HTTP success alone never establishes
+    successful OTP verification.
+
+    Successful OTP verification confirms customer confirmation only. It does
+    not establish sufficient funds, successful debit, CUT credit or financial
+    finality.
+  x-sixpay-contract:
+    registryId: "tresorpay-payment-confirmation-api-v1"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "payment"
+    capability: "PAYMENT_CONFIRMATION"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    transportOwner: "integration"
+    businessOwner: "payment"
+    sourceSystem: "TRESOR_PAY"
+    paymentSystemOfRecord: "SIXPAY"
+    otpSystemOfRecord: "LA_REGIONALE"
+    bankChallengeSystemOfRecord: "LA_REGIONALE"
+    securityDecision: "PENDING_RECONCILIATION"
+    externalDecisionsStillRequired:
+      - "TRESOR PAY and Security reconcile the public authentication profile"
+      - "La Regionale confirms delivery-failure semantics"
+      - "La Regionale provides resend maximum and cooldown"
+      - "La Regionale confirms authoritative challenge lookup/recovery details"
+
+servers:
+  - url: https://api.sixpay.example
+    description: Environment-specific SIXPAY endpoint
+
+tags:
+  - name: Payment Confirmation
+    description: Customer confirmation operations for an existing SIXPAY Payment.
+
+paths:
+  /v1/payments/{paymentReference}/confirmation-challenge:
+    post:
+      tags: [Payment Confirmation]
+      operationId: createPaymentConfirmationChallenge
+      summary: Create and send a confirmation challenge
+      description: |
+        Requests creation and delivery of a confirmation challenge for an
+        existing Payment. TRESOR PAY does not resend customer, account, amount,
+        currency, phone number or email data in this operation. SIXPAY derives
+        the bound context from Payment; La Regionale chooses the active contact
+        and delivery channel.
+      parameters:
+        - $ref: '#/components/parameters/PaymentReference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Stable functional create/send result.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+    get:
+      tags: [Payment Confirmation]
+      operationId: getPaymentConfirmationChallenge
+      summary: Read the current confirmation challenge
+      description: |
+        Returns the current confirmation challenge view useful to TRESOR PAY.
+        Challenge history and the bank `challengeReference` are not exposed.
+      parameters:
+        - $ref: '#/components/parameters/PaymentReference'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Current confirmation challenge.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /v1/payments/{paymentReference}/confirmation-challenge/verify:
+    post:
+      tags: [Payment Confirmation]
+      operationId: verifyPaymentConfirmationChallenge
+      summary: Verify the customer OTP
+      description: |
+        Accepts the OTP collected by TRESOR PAY and synchronously obtains a
+        functional verification result through the SIXPAY confirmation flow.
+        SIXPAY transports the OTP only for verification and never persists or
+        returns it. Replaying the same idempotent verify operation must not
+        count as another OTP attempt.
+      parameters:
+        - $ref: '#/components/parameters/PaymentReference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPaymentConfirmationChallengeRequest'
+      responses:
+        '200':
+          description: |
+            Stable synchronous verification result. `challengeStatus` and
+            `businessCode` determine the business outcome.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyPaymentConfirmationChallengeResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /v1/payments/{paymentReference}/confirmation-challenge/resend:
+    post:
+      tags: [Payment Confirmation]
+      operationId: resendPaymentConfirmationChallenge
+      summary: Replace and resend the confirmation challenge
+      description: |
+        Requests replacement of the current challenge. A resend creates a new
+        logical challenge and a new OTP and permanently invalidates the previous
+        challenge. TRESOR PAY does not select the destination or channel.
+        Resend maximum and cooldown remain controlled by La Regionale.
+      parameters:
+        - $ref: '#/components/parameters/PaymentReference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Stable resend/replacement result.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+components:
+  parameters:
+    PaymentReference:
+      name: paymentReference
+      in: path
+      required: true
+      description: Stable SIXPAY public Payment reference.
+      schema:
+        $ref: '#/components/schemas/PaymentReference'
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Opaque identifier for one logical create, verify or resend operation.
+        Same key plus same logical request returns the original result. Same key
+        plus a different logical request is a conflict. The value must not carry
+        OTP, customer, bank-account or credential data.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: |
+        Caller-supplied end-to-end correlation UUID. SIXPAY returns the effective
+        correlation identifier in the response. Requiredness remains aligned to
+        runtime behavior until the existing Payment Request/runtime discrepancy
+        is reconciled.
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    CorrelationId:
+      description: Effective end-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    IdempotencyReplayed:
+      description: |
+        `true` when the response is the replay of a previously completed logical
+        operation and no duplicate banking action was requested.
+      required: true
+      schema:
+        type: boolean
+
+  schemas:
+    PaymentReference:
+      type: string
+      minLength: 30
+      maxLength: 30
+      pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+
+    PaymentConfirmationChallengeStatus:
+      type: string
+      description: Normalized SIXPAY confirmation-challenge state.
+      enum:
+        - ACTIVE
+        - VERIFIED
+        - EXPIRED
+        - LOCKED
+        - REPLACED
+        - REVOKED
+
+    PaymentConfirmationBusinessCode:
+      type: string
+      description: Stable functional result code independent from HTTP transport status.
+      enum:
+        - CHALLENGE_ACTIVE
+        - OTP_VERIFIED
+        - OTP_INVALID
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_LOCKED
+        - CHALLENGE_REPLACED
+        - CHALLENGE_REVOKED
+        - RESEND_NOT_ALLOWED
+        - CONFIRMATION_NOT_AVAILABLE
+        - DEPENDENCY_RESULT_UNKNOWN
+
+    DeliveryChannel:
+      type: string
+      enum: [SMS, EMAIL]
+
+    VerifyPaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [otp]
+      properties:
+        otp:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: |
+            Transient OTP supplied by TRESOR PAY. SIXPAY must not persist or
+            reproduce it in responses, errors, audits, events, logs, metrics or traces.
+
+    PaymentConfirmationChallengeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - challengeStatus
+        - businessCode
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        challengeStatus:
+          $ref: '#/components/schemas/PaymentConfirmationChallengeStatus'
+        businessCode:
+          $ref: '#/components/schemas/PaymentConfirmationBusinessCode'
+        deliveryChannel:
+          $ref: '#/components/schemas/DeliveryChannel'
+        sentAt:
+          type: string
+          format: date-time
+          description: Effective OTP delivery time when authoritatively known.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Effective challenge expiry time; TTL is five minutes from effective delivery.
+        verifiedAt:
+          type: string
+          format: date-time
+          description: Authoritative customer-confirmation verification time when successful.
+
+    VerifyPaymentConfirmationChallengeResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaymentConfirmationChallengeResponse'
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, correlationId]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          maxLength: 1000
+          description: Safe detail without OTP, credentials or full bank-account identifiers.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          enum:
+            - PAYMENT_REFERENCE_INVALID
+            - PAYMENT_NOT_FOUND
+            - CONFIRMATION_CHALLENGE_NOT_FOUND
+            - AUTHENTICATION_FAILED
+            - AUTHORIZATION_DENIED
+            - IDEMPOTENCY_CONFLICT
+            - PAYMENT_STATE_CONFLICT
+            - CONTENT_TYPE_UNSUPPORTED
+            - RATE_LIMIT_EXCEEDED
+            - INTERNAL_ERROR
+            - SERVICE_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+        retryAfter:
+          type: integer
+          minimum: 1
+        violations:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/InvalidParameter'
+
+    InvalidParameter:
+      type: object
+      additionalProperties: false
+      required: [name, reason]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        reason:
+          type: string
+          maxLength: 500
+
+  responses:
+    BadRequest:
+      description: Malformed path, headers or JSON.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    Unauthorized:
+      description: Authentication failed.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    Forbidden:
+      description: Authenticated TRESOR PAY caller is not authorized for this Payment.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    NotFound:
+      description: Payment or current confirmation challenge not found.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    Conflict:
+      description: Idempotency conflict or incompatible Payment/challenge state.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    TooManyRequests:
+      description: Rate or authoritative resend policy prevents processing.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+        Retry-After:
+          description: Safe retry delay when authoritatively available.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    InternalServerError:
+      description: Unexpected SIXPAY failure before a stable result is available.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+    ServiceUnavailable:
+      description: Confirmation processing is unavailable or the authoritative result is not yet recoverable.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+        Retry-After:
+          description: Safe retry delay when retry is explicitly allowed.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+
+x-sixpay-business-rules:
+  - id: "PAY-CONF-001"
+    rule: "Confirmation challenge creation is separate from Payment initiation."
+  - id: "PAY-CONF-002"
+    rule: "La Regionale generates, stores, delivers and verifies OTP."
+  - id: "PAY-CONF-003"
+    rule: "SIXPAY never persists OTP."
+  - id: "PAY-CONF-004"
+    rule: "At most one challenge is active for a Payment."
+  - id: "PAY-CONF-005"
+    rule: "Resend creates a new logical challenge and permanently invalidates the previous challenge."
+  - id: "PAY-CONF-006"
+    rule: "After three invalid OTP attempts La Regionale locks the current challenge."
+  - id: "PAY-CONF-007"
+    rule: "A locked or expired challenge may be followed by a new challenge; the old challenge never reactivates."
+  - id: "PAY-CONF-008"
+    rule: "La Regionale selects the active destination contact and delivery channel; MVP channels are SMS and EMAIL."
+  - id: "PAY-CONF-009"
+    rule: "TRESOR PAY never chooses or supplies the OTP destination contact."
+  - id: "PAY-CONF-010"
+    rule: "Challenge TTL is five minutes from effective OTP delivery."
+  - id: "PAY-CONF-011"
+    rule: "A verified challenge is consumed and cannot be reused."
+  - id: "PAY-CONF-012"
+    rule: "Successful OTP verification confirms customer confirmation only; volatile execution conditions are checked freshly before posting."
+  - id: "PAY-CONF-013"
+    rule: "Amount, currency or debtor-account changes invalidate the current challenge."
+  - id: "PAY-CONF-014"
+    rule: "Payment rejection or cancellation before valid OTP confirmation triggers internal challenge revocation."
+  - id: "PAY-CONF-015"
+    rule: "No public TRESOR PAY revoke endpoint exists."
+  - id: "PAY-CONF-016"
+    rule: "Create, verify and resend are idempotent."
+  - id: "PAY-CONF-017"
+    rule: "Same Idempotency-Key plus same logical request returns the original result."
+  - id: "PAY-CONF-018"
+    rule: "Same Idempotency-Key plus different logical request returns HTTP 409 IDEMPOTENCY_CONFLICT."
+  - id: "PAY-CONF-019"
+    rule: "An idempotent verify replay never represents a second OTP attempt."
+  - id: "PAY-CONF-020"
+    rule: "A downstream timeout proves neither success nor failure; authoritative recovery is required."
+  - id: "PAY-CONF-021"
+    rule: "The bank challengeReference remains internal to SIXPAY and is not exposed to TRESOR PAY."
+  - id: "PAY-CONF-022"
+    rule: "Create and resend have no public request body; bound Payment context is reused."
+  - id: "PAY-CONF-023"
+    rule: "GET returns the current confirmation challenge only, not challenge history."
+  - id: "PAY-CONF-024"
+    rule: "HTTP 200 carries a stable business result and must be interpreted with challengeStatus and businessCode."
+  - id: "PAY-CONF-025"
+    rule: "Funds/posting must be engaged no later than one configurable minute after OTP verification; behavior after expiry of that window remains subject to bank/workflow approval."
+
+x-sixpay-idempotency-policy:
+  requiredHeader: "Idempotency-Key"
+  applicableOperations:
+    - "createPaymentConfirmationChallenge"
+    - "verifyPaymentConfirmationChallenge"
+    - "resendPaymentConfirmationChallenge"
+  sameKeySameLogicalRequest:
+    httpStatus: 200
+    returnOriginalResult: true
+    duplicateBankingAction: "FORBIDDEN"
+  sameKeyDifferentLogicalRequest:
+    httpStatus: 409
+    errorCode: "IDEMPOTENCY_CONFLICT"
+  verify:
+    rawOtpPersistence: "FORBIDDEN"
+    repeatedBankAttemptOnReplay: "FORBIDDEN"
+    requestEquivalenceStrategy: "SECURITY_APPROVED_NON_RECOVERABLE_FINGERPRINT_REQUIRED"
+  uncertainOutcome:
+    assumeSuccess: "FORBIDDEN"
+    assumeFailure: "FORBIDDEN"
+    authoritativeRecoveryRequired: true
+    blindNewKeyRetry: "FORBIDDEN"
+
+x-sixpay-recovery-policy:
+  create:
+    authoritativeLookupRequiredAfterUnknownOutcome: true
+  verify:
+    authoritativeLookupRequiredAfterUnknownOutcome: true
+  resend:
+    authoritativeLookupRequiredAfterUnknownOutcome: true
+  note: |
+    This public contract does not define the La Regionale lookup endpoint or
+    payload. Those details belong to the separate bank-facing contract.
+
+x-sixpay-sensitive-data:
+  otp:
+    classification: "SECRET_TRANSIENT"
+    requestOnly: true
+    persistentStorageAllowedBySixpay: false
+    responseAllowed: false
+    auditAllowed: false
+    eventAllowed: false
+    loggingAllowed: false
+    tracingAllowed: false
+    metricsAllowed: false
+  destinationContact:
+    suppliedByTresorPay: false
+    publicExposureRequired: false
+
+x-sixpay-external-dependencies:
+  - id: "EXT-CONF-001"
+    owner: "TRESOR_PAY_SECURITY"
+    requirement: "Approve the final public authentication profile and reconcile it with the existing Payment Request contract and runtime."
+  - id: "EXT-CONF-002"
+    owner: "LA_REGIONALE"
+    requirement: "Confirm delivery-failure semantics and resulting normalized SIXPAY behavior."
+  - id: "EXT-CONF-003"
+    owner: "LA_REGIONALE"
+    requirement: "Provide resend maximum and cooldown values."
+  - id: "EXT-CONF-004"
+    owner: "LA_REGIONALE"
+    requirement: "Confirm authoritative lookup/recovery inputs and outputs for create, verify and resend."
+  - id: "EXT-CONF-005"
+    owner: "SECURITY"
+    requirement: "Approve the non-recoverable verify-request equivalence/fingerprint mechanism."
+  - id: "EXT-CONF-006"
+    owner: "PAYMENT_ARCHITECTURE"
+    requirement: "Approve the behavior when the configurable one-minute post-OTP execution window expires."
