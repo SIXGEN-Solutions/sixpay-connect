@@ -5,7 +5,7 @@ metadata:
   project: "SIXPAY CONNECT"
   repository: "SIXGEN-Solutions/sixpay-connect"
   baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
-  generatedOn: "2026-08-26"
+  generatedOn: "2026-08-30"
   status: "ACTIVE"
   purpose: >-
     Deterministic input selection for Master Prompt generation. This manifest
@@ -155,6 +155,8 @@ activeContractCapabilities:
   entries:
     - id: "tresorpay-payment-request-api-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    - id: "tresorpay-payment-confirmation-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
     - id: "amplitude-customer-verification-api-v1"
       path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     - id: "amplitude-payment-posting-api-v1"
@@ -270,8 +272,6 @@ readinessEvidence:
     - command: "py scripts/verify_configuration_consolidation.py"
       status: "PASSED"
     - command: "py scripts/verify_configuration_final.py"
-      status: "PASSED"
-    - command: "py scripts/verify_documentation_final.py"
       status: "PASSED"
     - command: "npm run verify:contract-consolidation"
       workingDirectory: "frontend"
