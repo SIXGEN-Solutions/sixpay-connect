@@ -326,6 +326,12 @@ class CustomerVerificationPaymentMapperTest {
                 checks,
                 "v1:sha256:" + "b".repeat(64),
                 "v1:" + "a".repeat(64),
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "CUSTOMER-VERIFIED-001"
+                        : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "ACCOUNT-VERIFIED-001"
+                        : null,
                 OBSERVED_AT,
                 OBSERVED_AT.plusSeconds(300),
                 COMPLETED_AT

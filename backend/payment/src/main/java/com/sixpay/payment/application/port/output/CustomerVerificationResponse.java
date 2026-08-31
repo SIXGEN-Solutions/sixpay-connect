@@ -21,6 +21,8 @@ public record CustomerVerificationResponse(
         List<Check> checks,
         String evidenceFingerprint,
         String accountBindingFingerprint,
+        String customerReference,
+        String accountReference,
         Instant observedAt,
         Instant validUntil,
         Instant completedAt
@@ -49,6 +51,20 @@ public record CustomerVerificationResponse(
                 accountBindingFingerprint,
                 "accountBindingFingerprint"
         );
+        customerReference = normalizeOptional(
+                customerReference
+        );
+        accountReference = normalizeOptional(
+                accountReference
+        );
+        if (outcome == Outcome.VERIFIED
+                && (customerReference == null
+                || accountReference == null)) {
+            throw new IllegalArgumentException(
+                    "VERIFIED customer verification requires canonical "
+                            + "customerReference and accountReference"
+            );
+        }
         observedAt = Objects.requireNonNull(
                 observedAt,
                 "observedAt is required"
@@ -72,6 +88,14 @@ public record CustomerVerificationResponse(
                     "completedAt must not be before observedAt"
             );
         }
+    }
+
+    public Optional<String> customerReferenceOptional() {
+        return Optional.ofNullable(customerReference);
+    }
+
+    public Optional<String> accountReferenceOptional() {
+        return Optional.ofNullable(accountReference);
     }
 
     public Optional<Instant> validUntilOptional() {
@@ -128,6 +152,14 @@ public record CustomerVerificationResponse(
         }
     }
 
+    private static String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.strip();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
     private static String requireText(
             String value,
             String name
@@ -155,6 +187,8 @@ public record CustomerVerificationResponse(
                 + checks
                 + ", evidenceFingerprint=[PROTECTED]"
                 + ", accountBindingFingerprint=[PROTECTED]"
+                + ", customerReference=[PROTECTED]"
+                + ", accountReference=[PROTECTED]"
                 + ", observedAt="
                 + observedAt
                 + ", validUntil="

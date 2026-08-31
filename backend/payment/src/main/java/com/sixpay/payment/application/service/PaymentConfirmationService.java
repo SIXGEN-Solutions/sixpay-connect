@@ -2,6 +2,7 @@ package com.sixpay.payment.application.service;
 import com.sixpay.payment.application.command.CreatePaymentConfirmationCommand;
 import com.sixpay.payment.application.command.ResendPaymentConfirmationCommand;
 import com.sixpay.payment.application.command.VerifyPaymentConfirmationCommand;
+import com.sixpay.payment.application.confirmation.PaymentConfirmationChallengeFactory;
 import com.sixpay.payment.application.port.input.CreatePaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ReadPaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ResendPaymentConfirmationUseCase;
@@ -101,6 +102,18 @@ public class PaymentConfirmationService
                                 )
                         )
                 );
+
+        ConfirmationChallenge createdChallenge =
+                PaymentConfirmationChallengeFactory.fromBankResult(
+                        result,
+                        PaymentConfirmationChallengeFactory.requireBinding(payment)
+                );
+        authorizationService.attachConfirmationChallenge(
+                payment.id(),
+                createdChallenge,
+                PaymentConfirmationChallengeFactory.observationInstant(payment, result)
+        );
+
         return PaymentConfirmationView.from(
                 payment.publicPaymentReference(),
                 result
@@ -243,6 +256,18 @@ public class PaymentConfirmationService
                                 )
                         )
                 );
+
+        ConfirmationChallenge replacementChallenge =
+                PaymentConfirmationChallengeFactory.fromBankResult(
+                        result,
+                        challenge.binding()
+                );
+        authorizationService.attachConfirmationChallenge(
+                payment.id(),
+                replacementChallenge,
+                PaymentConfirmationChallengeFactory.observationInstant(payment, result)
+        );
+
         return PaymentConfirmationView.from(
                 payment.publicPaymentReference(),
                 result

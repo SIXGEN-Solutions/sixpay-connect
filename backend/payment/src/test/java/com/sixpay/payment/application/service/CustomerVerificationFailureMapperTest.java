@@ -110,6 +110,12 @@ class CustomerVerificationFailureMapperTest {
                 checks,
                 "v1:sha256:" + "b".repeat(64),
                 "v1:" + "a".repeat(64),
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "CUSTOMER-VERIFIED-001"
+                        : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "ACCOUNT-VERIFIED-001"
+                        : null,
                 Instant.parse("2026-08-03T19:59:59Z"),
                 Instant.parse("2026-08-03T20:04:59Z"),
                 Instant.parse("2026-08-03T20:00:00Z")

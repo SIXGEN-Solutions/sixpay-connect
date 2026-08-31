@@ -348,12 +348,37 @@ public final class PaymentState implements ValueObject {
             );
         }
 
-        if (!debtorAccountReference.integrationAccountToken().equals(
+        String expectedAccountReference =
+                bankingVerificationEvidence == null
+                        ? debtorAccountReference.integrationAccountToken()
+                        : bankingVerificationEvidence
+                                .accountReferenceOptional()
+                                .orElse(
+                                        debtorAccountReference
+                                                .integrationAccountToken()
+                                );
+
+        if (!expectedAccountReference.equals(
                 binding.debtorAccountReference()
         )) {
             throw new IllegalArgumentException(
-                    "Confirmation challenge is not bound to debtor account"
+                    "Confirmation challenge is not bound to verified debtor account"
             );
+        }
+
+        if (bankingVerificationEvidence != null) {
+            bankingVerificationEvidence
+                    .customerReferenceOptional()
+                    .ifPresent(expectedCustomerReference -> {
+                        if (!expectedCustomerReference.equals(
+                                binding.customerReference()
+                        )) {
+                            throw new IllegalArgumentException(
+                                    "Confirmation challenge is not bound "
+                                            + "to verified customer"
+                            );
+                        }
+                    });
         }
 
         if (!requestedAmount.equals(binding.amount())) {

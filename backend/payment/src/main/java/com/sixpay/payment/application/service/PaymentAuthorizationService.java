@@ -28,6 +28,32 @@ public class PaymentAuthorizationService {
         );
     }
 
+    /**
+     * Persists the current bank-issued confirmation challenge while the
+     * Payment remains PENDING_CONFIRMATION.
+     */
+    public PaymentWorkflowResult attachConfirmationChallenge(
+            PaymentId paymentId,
+            ConfirmationChallenge challenge,
+            Instant observedAt
+    ) {
+        Objects.requireNonNull(
+                challenge,
+                "Confirmation challenge"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "Confirmation challenge observation instant"
+        );
+        return coordinator.mutate(
+                paymentId,
+                payment -> payment.recordConfirmationChallenge(
+                        challenge,
+                        observedAt
+                )
+        );
+    }
+
     public PaymentWorkflowResult startAuthorization(
             PaymentId paymentId,
             ConfirmationChallenge verifiedChallenge
