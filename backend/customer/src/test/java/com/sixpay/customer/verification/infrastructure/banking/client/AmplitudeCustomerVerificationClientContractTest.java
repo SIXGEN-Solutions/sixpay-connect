@@ -65,7 +65,7 @@ class AmplitudeCustomerVerificationClientContractTest {
                         once(),
                         requestTo(
                                 "https://core-banking.test"
-                                        + "/v1/accounts/verify"
+                                        + "/api/v1/customer-verifications"
                         )
                 )
                 .andExpect(method(HttpMethod.POST))
@@ -80,12 +80,6 @@ class AmplitudeCustomerVerificationClientContractTest {
                                 "X-Correlation-ID",
                                 BankingVerificationHttpTestSupport
                                         .CORRELATION_ID
-                        )
-                )
-                .andExpect(
-                        header(
-                                "X-Request-ID",
-                                REQUEST_ID.toString()
                         )
                 )
                 .andExpect(
@@ -109,7 +103,7 @@ class AmplitudeCustomerVerificationClientContractTest {
                         REQUEST_ID
                 );
 
-        assertEquals("SUCCESS", response.result());
+        assertEquals("VERIFIED", response.outcome());
         assertEquals(11, response.checks().size());
         server.verify();
     }
@@ -118,7 +112,7 @@ class AmplitudeCustomerVerificationClientContractTest {
     void http400IsCapturedAsStructuredClientError() {
         server.expect(once(), requestTo(
                         "https://core-banking.test"
-                                + "/v1/accounts/verify"
+                                + "/api/v1/customer-verifications"
                 ))
                 .andRespond(
                         withBadRequest()
@@ -129,7 +123,7 @@ class AmplitudeCustomerVerificationClientContractTest {
                                         BankingVerificationHttpTestSupport
                                                 .problemJson(
                                                         400,
-                                                        "INVALID_REQUEST",
+                                                        "REQUEST_INVALID",
                                                         false
                                                 )
                                 )
@@ -146,7 +140,7 @@ class AmplitudeCustomerVerificationClientContractTest {
         );
 
         assertEquals(400, failure.httpStatus());
-        assertEquals("INVALID_REQUEST", failure.error().code());
+        assertEquals("REQUEST_INVALID", failure.error().code());
         server.verify();
     }
 
@@ -154,7 +148,7 @@ class AmplitudeCustomerVerificationClientContractTest {
     void http401IsCapturedAsStructuredClientError() {
         server.expect(once(), requestTo(
                         "https://core-banking.test"
-                                + "/v1/accounts/verify"
+                                + "/api/v1/customer-verifications"
                 ))
                 .andRespond(
                         withUnauthorizedRequest()
@@ -165,7 +159,7 @@ class AmplitudeCustomerVerificationClientContractTest {
                                         BankingVerificationHttpTestSupport
                                                 .problemJson(
                                                         401,
-                                                        "INVALID_TOKEN",
+                                                        "AUTHENTICATION_REQUIRED",
                                                         false
                                                 )
                                 )
@@ -182,7 +176,7 @@ class AmplitudeCustomerVerificationClientContractTest {
         );
 
         assertEquals(401, failure.httpStatus());
-        assertEquals("INVALID_TOKEN", failure.error().code());
+        assertEquals("AUTHENTICATION_REQUIRED", failure.error().code());
         server.verify();
     }
 

@@ -65,15 +65,31 @@ class VerifyCustomerResultTest {
             VerificationOutcome outcome,
             List<VerificationCheck> checks
     ) {
+        if (outcome != VerificationOutcome.VERIFIED) {
+            return VerifyCustomerResult.of(
+                    new CustomerVerificationId(UUID.fromString("7ed75090-8af7-4dfa-9b62-8e4dca73501a")),
+                    outcome, checks,
+                    VerificationEvidenceFingerprint.of("v1:sha256:" + "b".repeat(64)),
+                    AccountBindingFingerprint.of("v1:" + "a".repeat(64)),
+                    OBSERVED, OBSERVED.plusSeconds(300), COMPLETED,
+                    null, null, null, null
+            );
+        }
         return VerifyCustomerResult.of(
                 new CustomerVerificationId(UUID.fromString("7ed75090-8af7-4dfa-9b62-8e4dca73501a")),
-                outcome,
-                checks,
+                outcome, checks,
                 VerificationEvidenceFingerprint.of("v1:sha256:" + "b".repeat(64)),
                 AccountBindingFingerprint.of("v1:" + "a".repeat(64)),
-                OBSERVED,
-                OBSERVED.plusSeconds(300),
-                COMPLETED
+                OBSERVED, OBSERVED.plusSeconds(300), COMPLETED,
+                "CUST-0001", "ACC-0001",
+                new com.sixpay.customer.verification.application.port.output.VerifiedBankingIdentity(
+                        "CUST-0001", "000001", "AMPLITUDE", "M0123456", "Ada Lovelace",
+                        "+237690000001", "ada@example.test", "COMPLETE", List.of(), OBSERVED, OBSERVED
+                ),
+                new com.sixpay.customer.verification.application.port.output.VerifiedBankingAccount(
+                        "ACC-0001", "CUST-0001", "AMPLITUDE", "****0001",
+                        "XAF", "CURRENT", "ACTIVE", List.of(), OBSERVED
+                )
         );
     }
 

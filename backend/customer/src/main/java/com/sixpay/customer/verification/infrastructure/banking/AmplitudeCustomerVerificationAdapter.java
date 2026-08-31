@@ -9,7 +9,6 @@ import com.sixpay.customer.verification.infrastructure.banking.error.BankingVeri
 import com.sixpay.customer.verification.infrastructure.banking.mapper.AmplitudeCustomerVerificationMapper;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public final class AmplitudeCustomerVerificationAdapter
         implements BankingCustomerVerificationPort {
@@ -48,8 +47,7 @@ public final class AmplitudeCustomerVerificationAdapter
                                     mapper.toExternalRequest(query),
                                     query.context()
                                             .correlationId()
-                                            .value(),
-                                    UUID.randomUUID()
+                                            .value()
                             )
                     )
             );

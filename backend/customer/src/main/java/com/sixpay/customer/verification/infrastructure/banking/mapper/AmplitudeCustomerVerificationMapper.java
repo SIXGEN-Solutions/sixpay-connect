@@ -2,15 +2,15 @@ package com.sixpay.customer.verification.infrastructure.banking.mapper;
 
 import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
 import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingAccount;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingIdentity;
 import com.sixpay.customer.verification.domain.exception.CustomerVerificationDomainException;
 import com.sixpay.customer.verification.domain.model.VerificationCheck;
 import com.sixpay.customer.verification.domain.model.VerificationCheckResult;
 import com.sixpay.customer.verification.domain.model.VerificationCheckType;
 import com.sixpay.customer.verification.domain.model.VerificationEvidenceFingerprint;
 import com.sixpay.customer.verification.domain.model.VerificationFailureCode;
-import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationRequest;
-import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
-import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeVerificationCheckResponse;
+import com.sixpay.customer.verification.infrastructure.banking.dto.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -20,10 +20,16 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public final class AmplitudeCustomerVerificationMapper {
+
+    private static final List<String> REQUIRED_KYC_FIELDS = List.of(
+            "niu",
+            "legalName",
+            "phoneNumber",
+            "email"
+    );
 
     private final Duration defaultEvidenceTtl;
 
@@ -46,10 +52,22 @@ public final class AmplitudeCustomerVerificationMapper {
         Objects.requireNonNull(query, "query is required");
 
         return new AmplitudeCustomerVerificationRequest(
-                query.bankingAccountAccessReference().value(),
-                query.subject().identity().niu().value(),
-                query.subject().identity().legalName(),
-                query.financialInstitutionCode().value()
+                query.financialInstitutionCode().value(),
+                new AmplitudeCustomerVerificationSubject(
+                        null,
+                        null,
+                        query.subject().identity().niu().value(),
+                        query.subject().identity().legalName(),
+                        null,
+                        null
+                ),
+                new AmplitudeAccountVerificationSubject(
+                        query.bankingAccountAccessReference().value(),
+                        null,
+                        null
+                ),
+                REQUIRED_KYC_FIELDS,
+                query.requestedAt()
         );
     }
 
@@ -59,12 +77,17 @@ public final class AmplitudeCustomerVerificationMapper {
         Objects.requireNonNull(response, "response is required");
 
         Instant observedAt = Objects.requireNonNull(
-                response.observedAt(),
-                "Amplitude observedAt is required"
+                response.verifiedAt(),
+                "Amplitude verifiedAt is required"
         );
 
         List<AmplitudeVerificationCheckResponse> externalChecks =
-                normalizeChecks(response.checks());
+                List.copyOf(
+                        Objects.requireNonNull(
+                                response.checks(),
+                                "Amplitude checks are required"
+                        )
+                );
 
         List<VerificationCheck> checks =
                 externalChecks.stream()
@@ -76,36 +99,19 @@ public final class AmplitudeCustomerVerificationMapper {
                         )
                         .toList();
 
-        Instant validUntil = response.validUntil() != null
-                ? response.validUntil()
-                : observedAt.plus(defaultEvidenceTtl);
+        Instant validUntil =
+                observedAt.plus(defaultEvidenceTtl);
 
         return BankingVerificationResponse.of(
                 checks,
                 fingerprint(response, externalChecks),
                 observedAt,
-                validUntil
+                validUntil,
+                response.customerReference(),
+                response.accountReference(),
+                toInternalIdentity(response.identity()),
+                toInternalAccount(response.account())
         );
-    }
-
-    private List<AmplitudeVerificationCheckResponse> normalizeChecks(
-            Map<String, String> rawChecks
-    ) {
-        if (rawChecks == null) {
-            throw new CustomerVerificationDomainException(
-                    "Amplitude checks are required"
-            );
-        }
-
-        return rawChecks.entrySet().stream()
-                .map(
-                        entry ->
-                                new AmplitudeVerificationCheckResponse(
-                                        entry.getKey(),
-                                        entry.getValue()
-                                )
-                )
-                .toList();
     }
 
     private VerificationCheck toInternalCheck(
@@ -138,6 +144,65 @@ public final class AmplitudeCustomerVerificationMapper {
                     VerificationFailureCode.TECHNICAL_RESULT_UNKNOWN
             );
         };
+    }
+
+    private static VerifiedBankingIdentity toInternalIdentity(
+            AmplitudeCustomerIdentityResponse identity
+    ) {
+        if (identity == null) {
+            return null;
+        }
+
+        List<VerifiedBankingIdentity.KycField> kycFields =
+                identity.kycFields() == null
+                        ? List.of()
+                        : identity.kycFields().stream()
+                        .map(field ->
+                                new VerifiedBankingIdentity.KycField(
+                                        field.code(),
+                                        field.value(),
+                                        Boolean.TRUE.equals(field.present()),
+                                        Boolean.TRUE.equals(field.verified()),
+                                        field.verifiedAt()
+                                )
+                        )
+                        .toList();
+
+        return new VerifiedBankingIdentity(
+                identity.customerReference(),
+                identity.customerNumber(),
+                identity.financialInstitutionCode(),
+                identity.niu(),
+                identity.legalName(),
+                identity.phoneNumber(),
+                identity.email(),
+                identity.kycStatus(),
+                kycFields,
+                identity.kycLastUpdatedAt(),
+                identity.retrievedAt()
+        );
+    }
+
+    private static VerifiedBankingAccount toInternalAccount(
+            AmplitudeBankAccountResponse account
+    ) {
+        if (account == null) {
+            return null;
+        }
+
+        return new VerifiedBankingAccount(
+                account.accountReference(),
+                account.customerReference(),
+                account.financialInstitutionCode(),
+                account.maskedAccountIdentifier(),
+                account.currency(),
+                account.accountType(),
+                account.status(),
+                account.restrictions() == null
+                        ? List.of()
+                        : account.restrictions(),
+                account.retrievedAt()
+        );
     }
 
     private static VerificationFailureCode businessFailureCode(
@@ -173,18 +238,14 @@ public final class AmplitudeCustomerVerificationMapper {
             AmplitudeCustomerVerificationResponse response,
             List<AmplitudeVerificationCheckResponse> checks
     ) {
-        String canonical = response.code()
-                + "|" + response.accountFound()
-                + "|" + response.accountStatus()
-                + "|" + response.accountHolder()
-                + "|" + response.accountReferenceMasked()
-                + "|" + response.currency()
-                + "|" + response.availableBalance()
-                + "|" + response.accountBalance()
-                + "|" + response.canDebit()
-                + "|" + response.result()
-                + "|" + response.observedAt()
-                + "|" + response.validUntil()
+        String canonical = response.verificationId()
+                + "|" + response.verifiedAt()
+                + "|" + response.source()
+                + "|" + response.outcome()
+                + "|" + response.customerReference()
+                + "|" + response.accountReference()
+                + "|" + canonicalIdentity(response.identity())
+                + "|" + canonicalAccount(response.account())
                 + "|"
                 + checks.stream()
                         .sorted(
@@ -196,6 +257,10 @@ public final class AmplitudeCustomerVerificationMapper {
                                 check -> check.type()
                                         + "="
                                         + check.result()
+                                        + ":"
+                                        + check.reasonCode()
+                                        + ":"
+                                        + check.checkedAt()
                         )
                         .reduce(
                                 "",
@@ -226,6 +291,76 @@ public final class AmplitudeCustomerVerificationMapper {
         }
     }
 
+    private static String canonicalIdentity(
+            AmplitudeCustomerIdentityResponse identity
+    ) {
+        if (identity == null) {
+            return "null";
+        }
+
+        return identity.customerReference()
+                + "|" + identity.customerNumber()
+                + "|" + identity.financialInstitutionCode()
+                + "|" + identity.niu()
+                + "|" + identity.legalName()
+                + "|" + identity.phoneNumber()
+                + "|" + identity.email()
+                + "|" + identity.kycStatus()
+                + "|" + identity.kycLastUpdatedAt()
+                + "|" + identity.retrievedAt()
+                + "|"
+                + (identity.kycFields() == null
+                ? ""
+                : identity.kycFields().stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        AmplitudeKycFieldResponse::code
+                                )
+                        )
+                        .map(field ->
+                                field.code()
+                                        + ":" + field.present()
+                                        + ":" + field.verified()
+                                        + ":" + field.verifiedAt()
+                        )
+                        .reduce(
+                                "",
+                                (left, right) ->
+                                        left.isEmpty()
+                                                ? right
+                                                : left + "," + right
+                        ));
+    }
+
+    private static String canonicalAccount(
+            AmplitudeBankAccountResponse account
+    ) {
+        if (account == null) {
+            return "null";
+        }
+
+        return account.accountReference()
+                + "|" + account.customerReference()
+                + "|" + account.financialInstitutionCode()
+                + "|" + account.maskedAccountIdentifier()
+                + "|" + account.currency()
+                + "|" + account.accountType()
+                + "|" + account.status()
+                + "|" + account.retrievedAt()
+                + "|"
+                + (account.restrictions() == null
+                ? ""
+                : account.restrictions().stream()
+                        .sorted()
+                        .reduce(
+                                "",
+                                (left, right) ->
+                                        left.isEmpty()
+                                                ? right
+                                                : left + "," + right
+                        ));
+    }
+
     private static String required(
             String value,
             String name
@@ -235,6 +370,6 @@ public final class AmplitudeCustomerVerificationMapper {
                     name + " is required"
             );
         }
-        return value.strip();
+        return value.strip().toUpperCase(java.util.Locale.ROOT);
     }
 }

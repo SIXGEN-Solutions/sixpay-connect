@@ -1,13 +1,16 @@
 package com.sixpay.customer.verification.infrastructure.banking.error;
 
+import java.util.List;
+
 public record AmplitudeErrorResponse(
         String type,
         String title,
         Integer status,
-        String code,
         String detail,
+        String instance,
+        String code,
         String correlationId,
-        Boolean retryable
+        List<InvalidParameter> invalidParams
 ) {
     public static AmplitudeErrorResponse unknown(
             int status,
@@ -17,10 +20,11 @@ public record AmplitudeErrorResponse(
                 "about:blank",
                 "Core Banking error",
                 status,
-                "CORE_BANKING_UNCLASSIFIED_ERROR",
                 "Core Banking returned an unreadable error response",
+                null,
+                "AMPLITUDE_INTERNAL_ERROR",
                 correlationId,
-                null
+                List.of()
         );
     }
 
@@ -31,7 +35,11 @@ public record AmplitudeErrorResponse(
                 + ", status=" + status
                 + ", code=" + code
                 + ", correlationId=" + correlationId
-                + ", retryable=" + retryable
                 + "]";
     }
+
+    public record InvalidParameter(
+            String name,
+            String reason
+    ) { }
 }

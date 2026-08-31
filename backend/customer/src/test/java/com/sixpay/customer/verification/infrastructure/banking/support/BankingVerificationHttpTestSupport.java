@@ -1,9 +1,7 @@
 package com.sixpay.customer.verification.infrastructure.banking.support;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.customer.verification.application.port.output.BankingAccountAccessReference;
-import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
-import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.*;
 import com.sixpay.customer.verification.domain.model.AccountBindingFingerprint;
 import com.sixpay.customer.verification.domain.model.CustomerIdentity;
 import com.sixpay.customer.verification.domain.model.CustomerNiu;
@@ -79,7 +77,7 @@ public final class BankingVerificationHttpTestSupport {
     ) {
         return new BankingVerificationProperties(
                 baseUrl,
-                "/v1/accounts/verify",
+                "/api/v1/customer-verifications",
                 Duration.ofMillis(10),
                 readTimeout,
                 maxAttempts,
@@ -150,9 +148,7 @@ public final class BankingVerificationHttpTestSupport {
                 );
 
         AmplitudeResponseValidator responseValidator =
-                new AmplitudeResponseValidator(
-                        properties
-                );
+                new AmplitudeResponseValidator();
 
         AmplitudeCustomerVerificationAdapter rawAdapter =
                 new AmplitudeCustomerVerificationAdapter(
@@ -176,49 +172,48 @@ public final class BankingVerificationHttpTestSupport {
                         .map(VerificationCheck::passed)
                         .toList();
 
+        Instant observed = Instant.parse("2026-08-03T17:00:01Z");
         return BankingVerificationResponse.of(
                 checks,
                 VerificationEvidenceFingerprint.of(
                         "v1:sha256:" + "f".repeat(64)
                 ),
-                Instant.parse("2026-08-03T17:00:01Z"),
-                Instant.parse("2026-08-03T17:05:01Z")
+                observed,
+                Instant.parse("2026-08-03T17:05:01Z"),
+                "CUST-0001",
+                ACCOUNT_REFERENCE,
+                new VerifiedBankingIdentity(
+                        "CUST-0001", "000001", "AMPLITUDE", NIU, LEGAL_NAME,
+                        "+237690000001", "customer@example.test", "COMPLETE", List.of(), observed, observed
+                ),
+                new VerifiedBankingAccount(
+                        ACCOUNT_REFERENCE, "CUST-0001", "AMPLITUDE", "****8901",
+                        "XAF", "CURRENT", "ACTIVE", List.of(), observed
+                )
         );
     }
 
     public static String successJson() {
-        return responseJson(checksJson("PASS"), "SUCCESS", true);
+        return responseJson("VERIFIED", checksJson("PASS"), true);
     }
 
     public static String businessFailureJson() {
-        String checks = checksJson("PASS")
-                .replace(
-                        "\"ACCOUNT_EXISTS\":\"PASS\"",
-                        "\"ACCOUNT_EXISTS\":\"FAIL\""
-                );
-
-        return responseJson(
-                checks,
-                "FAILURE",
-                false
+        String checks = checksJson("PASS").replace(
+                "{\"type\":\"ACCOUNT_EXISTS\",\"result\":\"PASS\"}",
+                "{\"type\":\"ACCOUNT_EXISTS\",\"result\":\"FAIL\"}"
         );
+        return responseJson("REJECTED", checks, false);
     }
 
     public static String partialJson() {
-        String checks = checksJson("PASS")
-                .replace(
-                        ",\"REQUIRED_KYC_VERIFIED\":\"PASS\"",
-                        ""
-                );
-
-        return responseJson(checks, "INDETERMINATE", true);
+        String checks = checksJson("PASS").replace(
+                ",{\"type\":\"REQUIRED_KYC_VERIFIED\",\"result\":\"PASS\"}",
+                ""
+        );
+        return responseJson("INDETERMINATE", checks, false);
     }
 
-    public static String problemJson(
-            int status,
-            String code,
-            boolean retryable
-    ) {
+    public static String problemJson(int status, String code, boolean ignoredRetryable) {
         return """
                 {
                   "type":"about:blank",
@@ -226,67 +221,68 @@ public final class BankingVerificationHttpTestSupport {
                   "status":%d,
                   "code":"%s",
                   "detail":"Technical failure",
-                  "correlationId":"%s",
-                  "retryable":%s
+                  "correlationId":"%s"
                 }
-                """.formatted(
-                status,
-                code,
-                CORRELATION_ID,
-                retryable
-        );
+                """.formatted(status, code, CORRELATION_ID);
     }
 
-    private static String responseJson(
-            String checks,
-            String result,
-            boolean found
-    ) {
+    private static String responseJson(String outcome, String checks, boolean verified) {
+        String customerReference = verified ? "\"CUST-0001\"" : "null";
+        String accountReference = verified ? "\"" + ACCOUNT_REFERENCE + "\"" : "null";
+        String identity = verified ? """
+                {
+                  "customerReference":"CUST-0001",
+                  "customerNumber":"000001",
+                  "financialInstitutionCode":"AMPLITUDE",
+                  "niu":"%s",
+                  "legalName":"%s",
+                  "phoneNumber":"+237690000001",
+                  "email":"customer@example.test",
+                  "kycStatus":"COMPLETE",
+                  "kycFields":[
+                    {"code":"niu","present":true,"verified":true},
+                    {"code":"legalName","present":true,"verified":true},
+                    {"code":"phoneNumber","present":true,"verified":true},
+                    {"code":"email","present":true,"verified":true}
+                  ],
+                  "source":"AMPLITUDE",
+                  "retrievedAt":"2026-08-03T17:00:01Z"
+                }
+                """.formatted(NIU, LEGAL_NAME) : "null";
+        String account = verified ? """
+                {
+                  "accountReference":"%s",
+                  "customerReference":"CUST-0001",
+                  "financialInstitutionCode":"AMPLITUDE",
+                  "maskedAccountIdentifier":"****8901",
+                  "currency":"XAF",
+                  "accountType":"CURRENT",
+                  "status":"ACTIVE",
+                  "restrictions":[],
+                  "source":"AMPLITUDE",
+                  "retrievedAt":"2026-08-03T17:00:01Z"
+                }
+                """.formatted(ACCOUNT_REFERENCE) : "null";
         return """
                 {
-                  "code":"200",
-                  "accountFound":%s,
-                  "accountStatus":"%s",
-                  "accountHolder":"%s",
-                  "accountReferenceMasked":"10005-*****-*******8901-12",
-                  "currency":"XAF",
-                  "availableBalance":1000000,
-                  "accountBalance":100000,
-                  "canDebit":%s,
-                  "description":"Account verification completed",
-                  "result":"%s",
-                  "observedAt":"2026-08-03T17:00:01Z",
-                  "validUntil":"2026-08-03T17:05:01Z",
-                  "checks":%s
+                  "verificationId":"7ed75090-8af7-4dfa-9b62-8e4dca73501a",
+                  "verifiedAt":"2026-08-03T17:00:01Z",
+                  "source":"AMPLITUDE",
+                  "outcome":"%s",
+                  "customerReference":%s,
+                  "accountReference":%s,
+                  "checks":%s,
+                  "identity":%s,
+                  "account":%s
                 }
-                """.formatted(
-                found,
-                found ? "ACTIVE" : "UNKNOWN",
-                LEGAL_NAME,
-                found,
-                result,
-                checks
-        );
+                """.formatted(outcome, customerReference, accountReference, checks, identity, account);
     }
 
     private static String checksJson(String result) {
-        return """
-                {
-                  "CUSTOMER_EXISTS":"%s",
-                  "FINANCIAL_INSTITUTION_MATCHES":"%s",
-                  "NIU_MATCHES":"%s",
-                  "IDENTITY_MATCHES":"%s",
-                  "ACCOUNT_EXISTS":"%s",
-                  "ACCOUNT_BELONGS_TO_CUSTOMER":"%s",
-                  "ACCOUNT_IS_ACTIVE":"%s",
-                  "ACCOUNT_NOT_BLOCKED":"%s",
-                  "ACCOUNT_NOT_OPPOSED":"%s",
-                  "REQUIRED_KYC_PRESENT":"%s",
-                  "REQUIRED_KYC_VERIFIED":"%s"
-                }
-                """.formatted(
-                result, result, result, result, result, result,
-                result, result, result, result, result
-        ).replaceAll("\\s+", "");
+        return Arrays.stream(VerificationCheckType.values())
+                .map(type -> "{\"type\":\"" + type.name() + "\",\"result\":\"" + result + "\"}")
+                .reduce("[", (left, right) -> "[".equals(left) ? left + right : left + "," + right)
+                + "]";
     }
+
 }

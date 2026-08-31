@@ -235,7 +235,17 @@ class CustomerVerificationServiceTest {
                         "v1:sha256:" + "b".repeat(64)
                 ),
                 OBSERVED_AT,
-                OBSERVED_AT.plusSeconds(300)
+                OBSERVED_AT.plusSeconds(300),
+                "CUST-0001",
+                "AMP-ACC-000123",
+                new VerifiedBankingIdentity(
+                        "CUST-0001", "000001", "AMPLITUDE", "M0123456", "Ada Lovelace",
+                        "+237690000001", "ada@example.test", "COMPLETE", List.of(), OBSERVED_AT, OBSERVED_AT
+                ),
+                new VerifiedBankingAccount(
+                        "AMP-ACC-000123", "CUST-0001", "AMPLITUDE", "****0123",
+                        "XAF", "CURRENT", "ACTIVE", List.of(), OBSERVED_AT
+                )
         );
     }
 

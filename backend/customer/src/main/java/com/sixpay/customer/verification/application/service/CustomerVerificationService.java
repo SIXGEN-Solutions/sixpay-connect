@@ -110,7 +110,8 @@ public final class CustomerVerificationService
         return VerifyCustomerResult.from(
                 verification.id(),
                 result,
-                command.accountBindingFingerprint()
+                command.accountBindingFingerprint(),
+                bankingResponse
         );
     }
 

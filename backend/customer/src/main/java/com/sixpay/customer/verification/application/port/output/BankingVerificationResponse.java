@@ -18,7 +18,11 @@ public record BankingVerificationResponse(
         List<VerificationCheck> checks,
         VerificationEvidenceFingerprint evidenceFingerprint,
         Instant observedAt,
-        Instant validUntil
+        Instant validUntil,
+        String customerReference,
+        String accountReference,
+        VerifiedBankingIdentity identity,
+        VerifiedBankingAccount account
 ) {
 
     public BankingVerificationResponse {
@@ -34,6 +38,24 @@ public record BankingVerificationResponse(
                     "validUntil must not be before observedAt"
             );
         }
+
+        if (customerReference != null) {
+            customerReference = customerReference.strip();
+            if (customerReference.isBlank()) {
+                throw new IllegalArgumentException(
+                        "customerReference must not be blank"
+                );
+            }
+        }
+
+        if (accountReference != null) {
+            accountReference = accountReference.strip();
+            if (accountReference.isBlank()) {
+                throw new IllegalArgumentException(
+                        "accountReference must not be blank"
+                );
+            }
+        }
     }
 
     public static BankingVerificationResponse of(
@@ -46,12 +68,54 @@ public record BankingVerificationResponse(
                 List.copyOf(Objects.requireNonNull(checks, "checks are required")),
                 evidenceFingerprint,
                 observedAt,
-                validUntil
+                validUntil,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    public static BankingVerificationResponse of(
+            Collection<VerificationCheck> checks,
+            VerificationEvidenceFingerprint evidenceFingerprint,
+            Instant observedAt,
+            Instant validUntil,
+            String customerReference,
+            String accountReference,
+            VerifiedBankingIdentity identity,
+            VerifiedBankingAccount account
+    ) {
+        return new BankingVerificationResponse(
+                List.copyOf(Objects.requireNonNull(checks, "checks are required")),
+                evidenceFingerprint,
+                observedAt,
+                validUntil,
+                customerReference,
+                accountReference,
+                identity,
+                account
         );
     }
 
     public Optional<Instant> validUntilOptional() {
         return Optional.ofNullable(validUntil);
+    }
+
+    public Optional<String> customerReferenceOptional() {
+        return Optional.ofNullable(customerReference);
+    }
+
+    public Optional<String> accountReferenceOptional() {
+        return Optional.ofNullable(accountReference);
+    }
+
+    public Optional<VerifiedBankingIdentity> identityOptional() {
+        return Optional.ofNullable(identity);
+    }
+
+    public Optional<VerifiedBankingAccount> accountOptional() {
+        return Optional.ofNullable(account);
     }
 
     public VerificationEvidence toEvidence() {
