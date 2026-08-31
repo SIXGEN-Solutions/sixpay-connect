@@ -82,6 +82,18 @@ public final class PaymentCustomerVerificationService {
                     if (payment.status()
                             != PaymentStatus
                                     .BANKING_VERIFICATION_PENDING) {
+                        /*
+                         * A relayed outbox message may be replayed when the
+                         * business mutation succeeded but publication
+                         * acknowledgement failed. Once banking evidence is
+                         * already durable, the replay has no additional effect.
+                         */
+                        if (payment.toState()
+                                .bankingVerificationEvidence()
+                                .isPresent()) {
+                            return;
+                        }
+
                         throw new IllegalStateException(
                                 "Customer verification requires "
                                         + "BANKING_VERIFICATION_PENDING, actual="
