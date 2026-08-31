@@ -147,18 +147,75 @@ record PaymentStateDocument(
             );
         }
 
-        if (schemaVersion >= 2
+        /*
+         * Schema v2 predates ConfirmationChallenge. Preserve its historical
+         * representation exactly: any state beyond RECEIVED or
+         * PENDING_CONFIRMATION requires CustomerConfirmationEvidence.
+         */
+        if (schemaVersion == 2
                 && initiationContext != null
                 && status != PaymentStatus.RECEIVED
                 && status != PaymentStatus.PENDING_CONFIRMATION
                 && customerConfirmationEvidence == null) {
             throw new PaymentPersistenceException(
+                    "Payment state schema version 2 requires confirmation "
+                            + "evidence after confirmation"
+            );
+        }
+
+        /*
+         * Starting with schema v3, ConfirmationChallenge is persisted and a
+         * verified challenge is a valid replacement for the legacy
+         * CustomerConfirmationEvidence. Banking verification may legitimately
+         * be pending before customer confirmation.
+         *
+         * REJECTED and FAILED are intentionally excluded because both can be
+         * reached before successful OTP confirmation.
+         */
+        if (schemaVersion >= 3
+                && initiationContext != null
+                && requiresVerifiedConfirmation(status)
+                && customerConfirmationEvidence == null
+                && !hasVerifiedConfirmationChallenge()) {
+            throw new PaymentPersistenceException(
                     "Payment state schema version "
                             + schemaVersion
-                            + " requires confirmation evidence after "
+                            + " requires verified confirmation after "
                             + "confirmation"
             );
         }
+    }
+
+    private static boolean requiresVerifiedConfirmation(
+            PaymentStatus status
+    ) {
+        return switch (status) {
+            case AUTHORIZATION_CHECKING,
+                    FUNDS_CONTROL_PENDING,
+                    TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                    APPROVED_FOR_POSTING,
+                    POSTING_PENDING,
+                    POSTING_OUTCOME_UNKNOWN,
+                    DEBIT_CONFIRMED,
+                    POSTED_PENDING_TFJ,
+                    REVERSAL_REQUIRED,
+                    REVERSAL_PENDING,
+                    REVERSAL_OUTCOME_UNKNOWN,
+                    TREASURY_INTEGRATED,
+                    REVERSED -> true;
+            case RECEIVED,
+                    BANKING_VERIFICATION_PENDING,
+                    PENDING_CONFIRMATION,
+                    REJECTED,
+                    FAILED -> false;
+        };
+    }
+
+    private boolean hasVerifiedConfirmationChallenge() {
+        return confirmationChallenge != null
+                && confirmationChallenge.status()
+                        == ConfirmationChallengeStatus.VERIFIED
+                && confirmationChallenge.verifiedAt() != null;
     }
 
     PaymentState toState() {

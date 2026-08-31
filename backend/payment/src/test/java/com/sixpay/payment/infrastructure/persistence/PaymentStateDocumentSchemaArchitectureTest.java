@@ -55,11 +55,10 @@ class PaymentStateDocumentSchemaArchitectureTest {
         ));
 
         /*
-         * Validation shared by schemas v2 and v3 must remain present
-         * without hard-coding a version-specific error message.
+         * Schema v2 preserves the legacy confirmation representation.
          */
         assertTrue(source.contains(
-                "schemaVersion >= 2"
+                "schemaVersion == 2"
         ));
 
         assertTrue(source.contains(
@@ -67,7 +66,32 @@ class PaymentStateDocumentSchemaArchitectureTest {
         ));
 
         assertTrue(source.contains(
-                "requires confirmation evidence after"
+                "Payment state schema version 2 requires confirmation"
+        ));
+
+        /*
+         * Starting with schema v3, a VERIFIED ConfirmationChallenge is a
+         * valid post-confirmation proof and BANKING_VERIFICATION_PENDING
+         * remains a legitimate pre-confirmation state.
+         */
+        assertTrue(source.contains(
+                "schemaVersion >= 3"
+        ));
+
+        assertTrue(source.contains(
+                "requiresVerifiedConfirmation(status)"
+        ));
+
+        assertTrue(source.contains(
+                "BANKING_VERIFICATION_PENDING"
+        ));
+
+        assertTrue(source.contains(
+                "ConfirmationChallengeStatus.VERIFIED"
+        ));
+
+        assertTrue(source.contains(
+                "confirmationChallenge.verifiedAt() != null"
         ));
 
         assertTrue(source.contains(
