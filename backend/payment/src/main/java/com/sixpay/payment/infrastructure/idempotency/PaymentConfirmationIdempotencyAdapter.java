@@ -27,6 +27,8 @@ public class PaymentConfirmationIdempotencyAdapter
             "PAYMENT_CONFIRMATION_VERIFY";
     static final String REPLACE_OPERATION =
             "PAYMENT_CONFIRMATION_REPLACE";
+    static final String REVOKE_OPERATION =
+            "PAYMENT_CONFIRMATION_REVOKE";
 
     private final PaymentConfirmationCanonicalizer canonicalizer;
     private final PaymentIdempotencyHasher hasher;
@@ -145,6 +147,36 @@ public class PaymentConfirmationIdempotencyAdapter
 
         return executeRecoverable(
                 REPLACE_OPERATION,
+                paymentId,
+                idempotencyKey,
+                requestHash,
+                List.of(requestHash),
+                newRequest,
+                recovery
+        );
+    }
+
+    @Override
+    public PaymentConfirmationIdempotencyResult executeRevoke(
+            PaymentId paymentId,
+            PublicPaymentReference paymentReference,
+            ConfirmationChallengeReference challengeReference,
+            IdempotencyKey idempotencyKey,
+            String reasonCode,
+            Supplier<PaymentConfirmationBankResult> newRequest,
+            Supplier<PaymentConfirmationBankResult> recovery
+    ) {
+        String requestHash = hasher.hash(
+                canonicalizer.revoke(
+                        paymentId,
+                        paymentReference,
+                        challengeReference,
+                        reasonCode
+                )
+        );
+
+        return executeRecoverable(
+                REVOKE_OPERATION,
                 paymentId,
                 idempotencyKey,
                 requestHash,

@@ -226,6 +226,236 @@ class PaymentConfirmationIdempotencyAdapterTest {
         );
     }
 
+    @Test
+    void completedRevokeReplayNeverInvokesBankRevocation() {
+        PaymentId paymentId =
+                new PaymentId(
+                        UUID.fromString(
+                                "55555555-5555-4555-8555-555555555555"
+                        )
+                );
+        IdempotencyKey key =
+                IdempotencyKey.of("revoke-key-0001");
+        ConfirmationChallengeReference challengeReference =
+                new ConfirmationChallengeReference(
+                        "challenge-revoke"
+                );
+
+        PaymentConfirmationCanonicalizer canonicalizer =
+                new PaymentConfirmationCanonicalizer();
+        PaymentIdempotencyHasher hasher =
+                new PaymentIdempotencyHasher();
+
+        String requestHash =
+                hasher.hash(
+                        canonicalizer.revoke(
+                                paymentId,
+                                PAYMENT_REFERENCE,
+                                challengeReference,
+                                "PAYMENT_REJECTED"
+                        )
+                );
+
+        PaymentConfirmationBankResult completed =
+                resultWithStatus(
+                        "challenge-revoke",
+                        ConfirmationChallengeStatus.REVOKED,
+                        ConfirmationBusinessCode.CHALLENGE_REVOKED
+                );
+
+        PaymentConfirmationReplayCodec codec =
+                new PaymentConfirmationReplayCodec();
+
+        PaymentIdempotencyDecision replay =
+                new PaymentIdempotencyDecision(
+                        PaymentIdempotencyDecision.Kind.REPLAY,
+                        paymentId.value(),
+                        completed.status().name(),
+                        codec.encode(completed),
+                        null,
+                        null,
+                        null
+                );
+
+        PaymentConfirmationIdempotencyTransactions transactions =
+                mock(PaymentConfirmationIdempotencyTransactions.class);
+
+        when(transactions.begin(
+                eq(PaymentConfirmationIdempotencyAdapter.REVOKE_OPERATION),
+                eq(key.value()),
+                eq(requestHash),
+                eq(List.of(requestHash)),
+                any(Instant.class)
+        )).thenReturn(
+                new PaymentConfirmationIdempotencyTransactions.BeginResult(
+                        replay,
+                        requestHash
+                )
+        );
+
+        TimeProvider timeProvider = mock(TimeProvider.class);
+        when(timeProvider.now()).thenReturn(
+                Instant.parse("2026-08-31T22:00:00Z")
+        );
+
+        PaymentConfirmationIdempotencyAdapter adapter =
+                new PaymentConfirmationIdempotencyAdapter(
+                        canonicalizer,
+                        hasher,
+                        new PaymentOtpIdempotencyFingerprintSet(
+                                List.of(
+                                        fingerprint(
+                                                "unused-revoke-key-material"
+                                        )
+                                )
+                        ),
+                        transactions,
+                        codec,
+                        timeProvider
+                );
+
+        AtomicInteger revokeCalls = new AtomicInteger();
+
+        PaymentConfirmationIdempotencyResult actual =
+                adapter.executeRevoke(
+                        paymentId,
+                        PAYMENT_REFERENCE,
+                        challengeReference,
+                        key,
+                        "PAYMENT_REJECTED",
+                        () -> {
+                            revokeCalls.incrementAndGet();
+                            return completed;
+                        },
+                        () -> {
+                            throw new AssertionError(
+                                    "Recovery must not run on completed replay"
+                            );
+                        }
+                );
+
+        assertThat(actual.result()).isEqualTo(completed);
+        assertThat(actual.replayed()).isTrue();
+        assertThat(revokeCalls.get()).isZero();
+    }
+
+    @Test
+    void uncertainRevokeMarksUnknownThenRecoversWithoutBlindRetry() {
+        PaymentId paymentId =
+                new PaymentId(
+                        UUID.fromString(
+                                "66666666-6666-4666-8666-666666666666"
+                        )
+                );
+        IdempotencyKey key =
+                IdempotencyKey.of("revoke-key-0002");
+        ConfirmationChallengeReference challengeReference =
+                new ConfirmationChallengeReference(
+                        "challenge-revoke-unknown"
+                );
+
+        PaymentConfirmationCanonicalizer canonicalizer =
+                new PaymentConfirmationCanonicalizer();
+        PaymentIdempotencyHasher hasher =
+                new PaymentIdempotencyHasher();
+
+        String requestHash =
+                hasher.hash(
+                        canonicalizer.revoke(
+                                paymentId,
+                                PAYMENT_REFERENCE,
+                                challengeReference,
+                                "PAYMENT_FAILED"
+                        )
+                );
+
+        PaymentConfirmationIdempotencyTransactions transactions =
+                mock(PaymentConfirmationIdempotencyTransactions.class);
+
+        when(transactions.begin(
+                eq(PaymentConfirmationIdempotencyAdapter.REVOKE_OPERATION),
+                eq(key.value()),
+                eq(requestHash),
+                eq(List.of(requestHash)),
+                any(Instant.class)
+        )).thenReturn(
+                new PaymentConfirmationIdempotencyTransactions.BeginResult(
+                        PaymentIdempotencyDecision.newRequest(),
+                        requestHash
+                )
+        );
+
+        TimeProvider timeProvider = mock(TimeProvider.class);
+        when(timeProvider.now()).thenReturn(
+                Instant.parse("2026-08-31T22:10:00Z"),
+                Instant.parse("2026-08-31T22:10:01Z"),
+                Instant.parse("2026-08-31T22:10:02Z")
+        );
+
+        PaymentConfirmationBankResult recovered =
+                resultWithStatus(
+                        "challenge-revoke-unknown",
+                        ConfirmationChallengeStatus.REVOKED,
+                        ConfirmationBusinessCode.CHALLENGE_REVOKED
+                );
+
+        PaymentConfirmationIdempotencyAdapter adapter =
+                new PaymentConfirmationIdempotencyAdapter(
+                        canonicalizer,
+                        hasher,
+                        new PaymentOtpIdempotencyFingerprintSet(
+                                List.of(
+                                        fingerprint(
+                                                "unused-revoke-key-material"
+                                        )
+                                )
+                        ),
+                        transactions,
+                        new PaymentConfirmationReplayCodec(),
+                        timeProvider
+                );
+
+        AtomicInteger revokeCalls = new AtomicInteger();
+        AtomicInteger recoveryCalls = new AtomicInteger();
+
+        PaymentConfirmationIdempotencyResult actual =
+                adapter.executeRevoke(
+                        paymentId,
+                        PAYMENT_REFERENCE,
+                        challengeReference,
+                        key,
+                        "PAYMENT_FAILED",
+                        () -> {
+                            revokeCalls.incrementAndGet();
+                            throw new PaymentConfirmationGateway
+                                    .OutcomeUnknownException(
+                                            "revoke response timeout",
+                                            key.value(),
+                                            null
+                                    );
+                        },
+                        () -> {
+                            recoveryCalls.incrementAndGet();
+                            return recovered;
+                        }
+                );
+
+        assertThat(actual.result()).isEqualTo(recovered);
+        assertThat(actual.replayed()).isFalse();
+        assertThat(revokeCalls.get()).isEqualTo(1);
+        assertThat(recoveryCalls.get()).isEqualTo(1);
+
+        verify(transactions).markOutcomeUnknown(
+                eq(PaymentConfirmationIdempotencyAdapter.REVOKE_OPERATION),
+                eq(key.value()),
+                eq(requestHash),
+                eq(paymentId.value()),
+                eq(key.value()),
+                eq("revoke response timeout"),
+                any(Instant.class)
+        );
+    }
+
     private static PaymentOtpIdempotencyFingerprint fingerprint(
             String key
     ) {
@@ -240,12 +470,24 @@ class PaymentConfirmationIdempotencyAdapterTest {
     private static PaymentConfirmationBankResult result(
             String challengeReference
     ) {
+        return resultWithStatus(
+                challengeReference,
+                ConfirmationChallengeStatus.ACTIVE,
+                ConfirmationBusinessCode.CHALLENGE_ACTIVE
+        );
+    }
+
+    private static PaymentConfirmationBankResult resultWithStatus(
+            String challengeReference,
+            ConfirmationChallengeStatus status,
+            ConfirmationBusinessCode businessCode
+    ) {
         return new PaymentConfirmationBankResult(
                 new ConfirmationChallengeReference(
                         challengeReference
                 ),
-                ConfirmationChallengeStatus.ACTIVE,
-                ConfirmationBusinessCode.CHALLENGE_ACTIVE,
+                status,
+                businessCode,
                 null,
                 null,
                 null,

@@ -48,4 +48,37 @@ public final class PaymentConfirmationCanonicalizer {
                 ).value()
         );
     }
+
+    public String revoke(
+            PaymentId paymentId,
+            PublicPaymentReference paymentReference,
+            ConfirmationChallengeReference challengeReference,
+            String reasonCode
+    ) {
+        String canonicalReason = Objects.requireNonNull(
+                reasonCode,
+                "Revocation reason code"
+        );
+        if (canonicalReason.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Revocation reason code must not be blank"
+            );
+        }
+
+        return String.join(
+                "|",
+                VERSION,
+                "REVOKE",
+                Objects.requireNonNull(paymentId, "Payment ID").toString(),
+                Objects.requireNonNull(
+                        paymentReference,
+                        "Payment reference"
+                ).value(),
+                Objects.requireNonNull(
+                        challengeReference,
+                        "Challenge reference"
+                ).value(),
+                canonicalReason
+        );
+    }
 }

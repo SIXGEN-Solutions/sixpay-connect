@@ -34,4 +34,14 @@ public interface PaymentConfirmationIdempotencyPort {
             Supplier<PaymentConfirmationBankResult> newRequest,
             Supplier<PaymentConfirmationBankResult> recovery
     );
+
+    PaymentConfirmationIdempotencyResult executeRevoke(
+            PaymentId paymentId,
+            PublicPaymentReference paymentReference,
+            ConfirmationChallengeReference challengeReference,
+            IdempotencyKey idempotencyKey,
+            String reasonCode,
+            Supplier<PaymentConfirmationBankResult> newRequest,
+            Supplier<PaymentConfirmationBankResult> recovery
+    );
 }
