@@ -2,6 +2,8 @@ package com.sixpay.bootstrap.integration.customer;
 
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingAccount;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingIdentity;
 import com.sixpay.customer.verification.domain.model.VerificationCheck;
 import com.sixpay.customer.verification.domain.model.VerificationCheckType;
 import com.sixpay.customer.verification.domain.model.VerificationEvidenceFingerprint;
@@ -39,7 +41,11 @@ class CustomerVerificationModuleAdapterTest {
                     command.accountBindingFingerprint(),
                     Instant.parse("2026-08-03T18:30:01Z"),
                     Instant.parse("2026-08-03T18:35:01Z"),
-                    Instant.parse("2026-08-03T18:30:02Z")
+                    Instant.parse("2026-08-03T18:30:02Z"),
+                    "AMPLITUDE-CUSTOMER-001",
+                    "AMPLITUDE-ACCOUNT-001",
+                    verifiedIdentity(),
+                    verifiedAccount()
             );
         };
 
@@ -78,6 +84,36 @@ class CustomerVerificationModuleAdapterTest {
                 response.outcome()
         );
         assertEquals(11, response.checks().size());
+    }
+
+    private static VerifiedBankingIdentity verifiedIdentity() {
+        return new VerifiedBankingIdentity(
+                "AMPLITUDE-CUSTOMER-001",
+                "CUSTOMER-001",
+                "AMPLITUDE",
+                "M0123456",
+                "Ada Lovelace",
+                "+237600000001",
+                "ada.lovelace@example.test",
+                "COMPLETE",
+                java.util.List.of(),
+                Instant.parse("2026-08-03T18:00:00Z"),
+                Instant.parse("2026-08-03T18:30:01Z")
+        );
+    }
+
+    private static VerifiedBankingAccount verifiedAccount() {
+        return new VerifiedBankingAccount(
+                "AMPLITUDE-ACCOUNT-001",
+                "AMPLITUDE-CUSTOMER-001",
+                "AMPLITUDE",
+                "****************0123",
+                "XAF",
+                "CURRENT",
+                "ACTIVE",
+                java.util.List.of(),
+                Instant.parse("2026-08-03T18:30:01Z")
+        );
     }
 
     private static CustomerVerificationRequest request() {

@@ -24,6 +24,10 @@ info:
       invokedAfter: "PAYMENT_REQUEST_DURABLY_PERSISTED"
       requiredBefore: "PAYMENT_CONFIRMATION_CHALLENGE_CREATION"
       progressionRule: "ONLY_VERIFIED_MAY_PROGRESS_TO_PAYMENT_CONFIRMATION"
+      paymentPolicyBaseline:
+        id: "payment-mvp/v1"
+        path: "documentation/domains/payment/PAYMENT_POLICY_BASELINE.md"
+        role: "SIXPAY_POLICY_CONSUMING_BANKING_FACTS"
       consumedBy:
         - "customer"
         - "payment"

@@ -83,7 +83,7 @@ public final class PaymentCustomerVerificationService {
                             != PaymentStatus
                                     .BANKING_VERIFICATION_PENDING) {
                         /*
-                         * A relayed outbox message may be replayed when the
+                         * A relayed integration message may be replayed when the
                          * business mutation succeeded but publication
                          * acknowledgement failed. Once banking evidence is
                          * already durable, the replay has no additional effect.

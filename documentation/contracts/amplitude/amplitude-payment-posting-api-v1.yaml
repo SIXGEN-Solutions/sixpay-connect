@@ -50,6 +50,10 @@ info:
       - "NO_TRESOR_PAY_SUBSCRIPTION_AUTHORIZATION"
       - "NO_TFJ_FINALITY"
       - "NO_BLIND_FINANCIAL_REPLAY"
+    paymentPolicyBaseline:
+      id: "payment-mvp/v1"
+      path: "documentation/domains/payment/PAYMENT_POLICY_BASELINE.md"
+      fundsControlRole: "CORE_BANKING_FACTS_FOR_SIXPAY_POLICY_EVALUATION"
 
 servers:
   - url: https://amplitude-api.example

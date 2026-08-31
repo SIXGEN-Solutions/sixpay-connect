@@ -64,18 +64,19 @@ knowledge worth maintaining as an independent current-state artifact.
 
 ## FS-2.9 hygiene decision
 
-Current tracked domain tree:
+Current tracked domain tree includes validated current-state Payment policy
+documentation:
 
 ```text
 documentation/domains/
-└── README.md
+├── README.md
+└── payment/
+    └── PAYMENT_POLICY_BASELINE.md
 ```
 
-Decision:
+`payment/PAYMENT_POLICY_BASELINE.md` is the canonical `payment-mvp/v1`
+business-policy reference used to align Payment runtime policy and future Core
+Banking API implementation.
 
-```text
-NO_EMPTY_PLACEHOLDER
-```
-
-The `customer/` directory will be recreated only when validated current-state
-domain documentation is explicitly produced.
+Empty domain placeholders remain forbidden. A domain directory is created only
+when validated current-state domain documentation is explicitly produced.

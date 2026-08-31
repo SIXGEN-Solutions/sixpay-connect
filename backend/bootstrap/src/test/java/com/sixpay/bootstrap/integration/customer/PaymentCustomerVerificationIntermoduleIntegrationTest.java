@@ -4,6 +4,8 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.customer.verification.application.exception.BankingVerificationTimeoutException;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingAccount;
+import com.sixpay.customer.verification.application.port.output.VerifiedBankingIdentity;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
 import com.sixpay.customer.verification.domain.model.AccountBindingFingerprint;
 import com.sixpay.customer.verification.domain.model.CustomerVerificationId;
@@ -295,7 +297,49 @@ class PaymentCustomerVerificationIntermoduleIntegrationTest {
                 command.accountBindingFingerprint(),
                 OBSERVED_AT,
                 OBSERVED_AT.plusSeconds(300),
-                COMPLETED_AT
+                COMPLETED_AT,
+                outcome == VerificationOutcome.VERIFIED
+                        ? "AMPLITUDE-CUSTOMER-001"
+                        : null,
+                outcome == VerificationOutcome.VERIFIED
+                        ? "AMPLITUDE-ACCOUNT-001"
+                        : null,
+                outcome == VerificationOutcome.VERIFIED
+                        ? verifiedIdentity()
+                        : null,
+                outcome == VerificationOutcome.VERIFIED
+                        ? verifiedAccount()
+                        : null
+        );
+    }
+
+    private static VerifiedBankingIdentity verifiedIdentity() {
+        return new VerifiedBankingIdentity(
+                "AMPLITUDE-CUSTOMER-001",
+                "CUSTOMER-001",
+                "AMPLITUDE",
+                "M0123456",
+                "Ada Lovelace",
+                "+237600000001",
+                "ada.lovelace@example.test",
+                "COMPLETE",
+                java.util.List.of(),
+                OBSERVED_AT.minusSeconds(60),
+                OBSERVED_AT
+        );
+    }
+
+    private static VerifiedBankingAccount verifiedAccount() {
+        return new VerifiedBankingAccount(
+                "AMPLITUDE-ACCOUNT-001",
+                "AMPLITUDE-CUSTOMER-001",
+                "AMPLITUDE",
+                "****************0123",
+                "XAF",
+                "CURRENT",
+                "ACTIVE",
+                java.util.List.of(),
+                OBSERVED_AT
         );
     }
 
