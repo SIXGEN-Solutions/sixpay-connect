@@ -51,7 +51,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 3;
+    static final int CURRENT_SCHEMA_VERSION = 4;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -115,6 +115,24 @@ record PaymentStateDocument(
             throw new PaymentPersistenceException(
                     "Payment state schema version 2 must not contain "
                             + "confirmation challenge state"
+            );
+        }
+
+        if (schemaVersion >= 4
+                && bankingVerificationEvidence != null
+                && bankingVerificationEvidence.outcome()
+                        == BankingVerificationOutcome.VERIFIED
+                && (bankingVerificationEvidence
+                                .customerReferenceOptional()
+                                .isEmpty()
+                        || bankingVerificationEvidence
+                                .accountReferenceOptional()
+                                .isEmpty())) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires canonical banking customer/account "
+                            + "references for VERIFIED banking evidence"
             );
         }
 

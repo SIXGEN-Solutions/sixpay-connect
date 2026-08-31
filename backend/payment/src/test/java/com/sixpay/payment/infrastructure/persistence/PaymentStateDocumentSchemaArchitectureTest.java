@@ -17,13 +17,13 @@ class PaymentStateDocumentSchemaArchitectureTest {
             );
 
     @Test
-    void stateDocumentUsesVersionThreeAndGuardsLegacyPayloads()
+    void stateDocumentUsesVersionFourAndGuardsLegacyPayloads()
             throws Exception {
 
         String source = Files.readString(DOCUMENT);
 
         assertTrue(source.contains(
-                "CURRENT_SCHEMA_VERSION = 3"
+                "CURRENT_SCHEMA_VERSION = 4"
         ));
 
         assertTrue(source.contains(
@@ -88,6 +88,26 @@ class PaymentStateDocumentSchemaArchitectureTest {
 
         assertTrue(source.contains(
                 ".confirmationChallenge(confirmationChallenge)"
+        ));
+
+        /*
+         * LOT 1.R4 — schema v4 persists the canonical Customer Verification
+         * banking references as part of BankingVerificationSnapshot.
+         */
+        assertTrue(source.contains(
+                "schemaVersion >= 4"
+        ));
+
+        assertTrue(source.contains(
+                "customerReferenceOptional()"
+        ));
+
+        assertTrue(source.contains(
+                "accountReferenceOptional()"
+        ));
+
+        assertTrue(source.contains(
+                "requires canonical banking customer/account"
         ));
     }
 }
