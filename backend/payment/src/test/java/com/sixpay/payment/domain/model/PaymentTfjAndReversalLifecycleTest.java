@@ -31,7 +31,7 @@ class PaymentTfjAndReversalLifecycleTest {
                 PaymentStatus.TREASURY_INTEGRATED,
                 payment.status()
         );
-        assertEquals(9L, payment.businessVersion());
+        assertEquals(10L, payment.businessVersion());
         assertTrue(payment.toState().finalizedAt().isPresent());
 
         List<PaymentDomainEvent> events =

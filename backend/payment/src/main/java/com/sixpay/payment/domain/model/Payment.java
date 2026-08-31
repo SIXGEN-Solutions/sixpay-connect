@@ -155,29 +155,28 @@ public final class Payment {
     }
 
     /**
-     * Advances a newly received Payment to {@code PENDING_CONFIRMATION} and
-     * emits the request event consumed by the asynchronous confirmation flow.
-     * Reapplying the transition input that target state is an idempotent no-op.
+     * Starts banking customer/account verification after durable reception.
      */
-    public void requestCustomerConfirmation(
+    public void startBankingVerification(
             Instant requestedAt
     ) {
         Objects.requireNonNull(
                 requestedAt,
-                "Confirmation-request instant"
+                "Banking-verification request instant"
         );
 
         if (state.status()
-                == PaymentStatus.PENDING_CONFIRMATION) {
+                == PaymentStatus.BANKING_VERIFICATION_PENDING) {
             return;
         }
+
         requireStatus(
-                "requestCustomerConfirmation",
+                "startBankingVerification",
                 PaymentStatus.RECEIVED
         );
 
         PaymentState next = nextBuilder(
-                PaymentStatus.PENDING_CONFIRMATION,
+                PaymentStatus.BANKING_VERIFICATION_PENDING,
                 requestedAt
         ).failure(null).build();
 
@@ -185,8 +184,11 @@ public final class Payment {
         commit(
                 next,
                 List.of(
-                        new PaymentCustomerConfirmationRequested(
+                        new PaymentBankingVerificationRequested(
                                 batch.metadata(),
+                                next.financialInstitutionCode(),
+                                next.debtorAccountReference()
+                                        .bindingFingerprint(),
                                 requestedAt
                         )
                 )
@@ -246,6 +248,77 @@ public final class Payment {
                 .build();
 
         commit(next, List.of());
+    }
+
+    public void recordCustomerConfirmation(
+            ConfirmationChallenge verifiedChallenge
+    ) {
+        Objects.requireNonNull(
+                verifiedChallenge,
+                "Verified confirmation challenge"
+        );
+
+        if (verifiedChallenge.status()
+                != ConfirmationChallengeStatus.VERIFIED) {
+            throw PaymentDomainException.conflict(
+                    "Customer confirmation requires a VERIFIED challenge"
+            );
+        }
+
+        Instant confirmedAt = verifiedChallenge.optionalVerifiedAt()
+                .orElseThrow(() -> PaymentDomainException.conflict(
+                        "VERIFIED confirmation challenge requires verifiedAt"
+                ));
+
+        if (state.status()
+                == PaymentStatus.AUTHORIZATION_CHECKING) {
+            if (state.confirmationChallenge()
+                    .filter(verifiedChallenge::equals)
+                    .isPresent()) {
+                return;
+            }
+            throw PaymentDomainException.conflict(
+                    "Conflicting verified confirmation challenge"
+            );
+        }
+
+        requireStatus(
+                "recordCustomerConfirmation",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        ConfirmationChallenge current =
+                state.confirmationChallenge().orElse(null);
+
+        if (current != null
+                && !current.binding().equals(verifiedChallenge.binding())) {
+            throw PaymentDomainException.conflict(
+                    "Confirmation challenge binding cannot change"
+            );
+        }
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                confirmedAt
+        )
+                .confirmationChallenge(verifiedChallenge)
+                .failure(null)
+                .build();
+
+        EventBatch batch = new EventBatch(next, confirmedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentCustomerConfirmationRecorded(
+                                batch.metadata(),
+                                confirmedAt
+                        ),
+                        new PaymentAuthorizationCheckingStarted(
+                                batch.metadata(),
+                                confirmedAt
+                        )
+                )
+        );
     }
 
     public void recordCustomerConfirmation(
@@ -343,37 +416,12 @@ public final class Payment {
         if (state.status() == PaymentStatus.AUTHORIZATION_CHECKING) {
             return;
         }
-        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
-            recordCustomerConfirmation(startedAt);
-            return;
-        }
-
-        /*
-         * Backward-compatible domain entry for existing internal workflows and
-         * test fixtures. New externally received payments are persisted by
-         * PaymentReceptionService input PENDING_CONFIRMATION, so the TresorPay
-         * command path cannot bypass customer confirmation.
-         */
         requireStatus(
                 "startAuthorizationChecking",
-                PaymentStatus.RECEIVED
+                PaymentStatus.PENDING_CONFIRMATION
         );
 
-        PaymentState next = nextBuilder(
-                PaymentStatus.AUTHORIZATION_CHECKING,
-                startedAt
-        ).failure(null).build();
-
-        EventBatch batch = new EventBatch(next, startedAt);
-        commit(
-                next,
-                List.of(
-                        new PaymentAuthorizationCheckingStarted(
-                                batch.metadata(),
-                                startedAt
-                        )
-                )
-        );
+        recordCustomerConfirmation(startedAt);
     }
 
     public void recordAuthorizationDecision(
@@ -435,7 +483,7 @@ public final class Payment {
             );
 
             PaymentState next = nextBuilder(
-                    PaymentStatus.BANKING_VERIFICATION_PENDING,
+                    PaymentStatus.FUNDS_CONTROL_PENDING,
                     decisionAt
             ).authorizationEvidence(evidence)
                     .failure(null)
@@ -450,9 +498,12 @@ public final class Payment {
                                     evidence,
                                     rejectionFailure
                             ),
-                            new PaymentBankingVerificationRequested(
+                            new PaymentFundsControlRequested(
                                     batch.metadata(),
                                     next.financialInstitutionCode(),
+                                    MoneyPayload.from(
+                                            next.requestedAmount()
+                                    ),
                                     next.debtorAccountReference()
                                             .bindingFingerprint(),
                                     decisionAt
@@ -538,7 +589,7 @@ public final class Payment {
             );
 
             PaymentState next = nextBuilder(
-                    PaymentStatus.FUNDS_CONTROL_PENDING,
+                    PaymentStatus.PENDING_CONFIRMATION,
                     decisionAt
             ).bankingVerificationEvidence(evidence)
                     .failure(null)
@@ -549,14 +600,8 @@ public final class Payment {
                     next,
                     List.of(
                             bankingRecorded(batch, evidence),
-                            new PaymentFundsControlRequested(
+                            new PaymentCustomerConfirmationRequested(
                                     batch.metadata(),
-                                    next.financialInstitutionCode(),
-                                    MoneyPayload.from(
-                                            next.requestedAmount()
-                                    ),
-                                    next.debtorAccountReference()
-                                            .bindingFingerprint(),
                                     decisionAt
                             )
                     )

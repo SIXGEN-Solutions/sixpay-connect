@@ -278,17 +278,54 @@ public final class PaymentState implements ValueObject {
 
         /*
          * A state without initiationContext is a legacy pre-command-API state.
-         * Once the new context exists, every state after confirmation must
-         * retain the accepted bank evidence.
+         * With the banking-first lifecycle, initiation context may legitimately
+         * exist before customer confirmation while the Payment is RECEIVED,
+         * BANKING_VERIFICATION_PENDING or PENDING_CONFIRMATION.
+         *
+         * REJECTED and FAILED are deliberately excluded because they can be
+         * reached before OTP confirmation. Confirmation evidence is mandatory
+         * only for states that are semantically downstream of a successful OTP.
          */
         if (initiationContext != null
-                && status != PaymentStatus.RECEIVED
-                && status != PaymentStatus.PENDING_CONFIRMATION
-                && customerConfirmationEvidence == null) {
+                && requiresVerifiedConfirmation(status)
+                && customerConfirmationEvidence == null
+                && !hasVerifiedConfirmationChallenge()) {
             throw new IllegalArgumentException(
-                    "Confirmed initiated Payment requires customer confirmation evidence"
+                    "Post-confirmation Payment requires verified confirmation challenge"
             );
         }
+    }
+
+    private static boolean requiresVerifiedConfirmation(
+            PaymentStatus status
+    ) {
+        return switch (status) {
+            case AUTHORIZATION_CHECKING,
+                    FUNDS_CONTROL_PENDING,
+                    TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                    APPROVED_FOR_POSTING,
+                    POSTING_PENDING,
+                    POSTING_OUTCOME_UNKNOWN,
+                    DEBIT_CONFIRMED,
+                    POSTED_PENDING_TFJ,
+                    REVERSAL_REQUIRED,
+                    REVERSAL_PENDING,
+                    REVERSAL_OUTCOME_UNKNOWN,
+                    TREASURY_INTEGRATED,
+                    REVERSED -> true;
+            case RECEIVED,
+                    BANKING_VERIFICATION_PENDING,
+                    PENDING_CONFIRMATION,
+                    REJECTED,
+                    FAILED -> false;
+        };
+    }
+
+    private boolean hasVerifiedConfirmationChallenge() {
+        return confirmationChallenge != null
+                && confirmationChallenge.status()
+                == ConfirmationChallengeStatus.VERIFIED
+                && confirmationChallenge.verifiedAt() != null;
     }
 
     private void validateConfirmationChallengeCoherence() {
@@ -328,20 +365,14 @@ public final class PaymentState implements ValueObject {
 
     private void validateLifecycleCoherence() {
         switch (status) {
-            case RECEIVED, PENDING_CONFIRMATION -> {
-                // Confirmation evidence is not required yet.
+            case RECEIVED, BANKING_VERIFICATION_PENDING -> {
+                // Banking verification has not completed yet.
             }
-            case AUTHORIZATION_CHECKING -> {
-                /*
-                 * Legacy reconstituted states may not yet contain evidence.
-                 * New command flows persist confirmation evidence before
-                 * entering AUTHORIZATION_CHECKING.
-                 */
-            }
-            case BANKING_VERIFICATION_PENDING -> requireAuthorizationApproved();
+            case PENDING_CONFIRMATION -> requireBankingVerified();
+            case AUTHORIZATION_CHECKING -> requireBankingVerified();
             case FUNDS_CONTROL_PENDING -> {
-                requireAuthorizationApproved();
                 requireBankingVerified();
+                requireAuthorizationApproved();
             }
             case TREASURY_ACCOUNT_RESOLUTION_PENDING -> {
                 requireAuthorizationApproved();

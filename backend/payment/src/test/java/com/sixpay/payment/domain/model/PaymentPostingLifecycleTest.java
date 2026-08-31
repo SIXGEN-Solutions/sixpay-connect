@@ -36,7 +36,7 @@ class PaymentPostingLifecycleTest {
                 PaymentStatus.POSTED_PENDING_TFJ,
                 payment.status()
         );
-        assertEquals(8L, payment.businessVersion());
+        assertEquals(9L, payment.businessVersion());
 
         List<PaymentDomainEvent> events = payment.domainEvents();
         List<PaymentDomainEvent> mutation =
@@ -56,7 +56,7 @@ class PaymentPostingLifecycleTest {
         );
 
         for (int index = 0; index < mutation.size(); index++) {
-            assertEquals(8L, mutation.get(index).aggregateVersion());
+            assertEquals(9L, mutation.get(index).aggregateVersion());
             assertEquals(index + 1, mutation.get(index).eventSequence());
             assertEquals(
                     PaymentStatus.POSTED_PENDING_TFJ,
@@ -85,7 +85,7 @@ class PaymentPostingLifecycleTest {
                 PaymentStatus.POSTING_OUTCOME_UNKNOWN,
                 payment.status()
         );
-        assertEquals(8L, payment.businessVersion());
+        assertEquals(9L, payment.businessVersion());
 
         List<PaymentDomainEvent> firstMutation =
                 payment.domainEvents().subList(
@@ -123,7 +123,7 @@ class PaymentPostingLifecycleTest {
                 PaymentStatus.POSTED_PENDING_TFJ,
                 payment.status()
         );
-        assertEquals(9L, payment.businessVersion());
+        assertEquals(10L, payment.businessVersion());
 
         List<PaymentDomainEvent> resolution =
                 payment.domainEvents().subList(

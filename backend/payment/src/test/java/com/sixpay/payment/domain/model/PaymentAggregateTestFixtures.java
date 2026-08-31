@@ -46,33 +46,63 @@ public final class PaymentAggregateTestFixtures {
     }
 
 
-    static Payment approvedPayment() {
+    static Payment authorizationCheckingPayment() {
         Payment payment = newPayment();
-        PaymentPolicyBundle profiles = profiles();
-        payment.startAuthorizationChecking(T0.plusSeconds(1));
-        payment.recordAuthorizationDecision(
-                authorizationApproved("3"),
-                null,
-                T0.plusSeconds(2),
-                profiles
-        );
+        payment.startBankingVerification(T0.plusSeconds(1));
         payment.recordBankingVerification(
                 bankingVerified("4"),
                 null,
-                T0.plusSeconds(3),
+                T0.plusSeconds(2),
+                profiles()
+        );
+        payment.recordCustomerConfirmation(
+                verifiedConfirmationChallenge(payment)
+        );
+        return payment;
+    }
+
+    static ConfirmationChallenge verifiedConfirmationChallenge(
+            Payment payment
+    ) {
+        return new ConfirmationChallenge(
+                new ConfirmationChallengeReference(
+                        "CHALLENGE-VERIFIED-001"
+                ),
+                new ConfirmationChallengeBinding(
+                        payment.publicPaymentReference(),
+                        "CUSTOMER-001",
+                        "vault:debtor:0001",
+                        AMOUNT
+                ),
+                ConfirmationChallengeStatus.VERIFIED,
+                ConfirmationBusinessCode.OTP_VERIFIED,
+                null,
+                null,
+                null,
+                T0.plusSeconds(3)
+        );
+    }
+
+    static Payment approvedPayment() {
+        Payment payment = authorizationCheckingPayment();
+        PaymentPolicyBundle profiles = profiles();
+        payment.recordAuthorizationDecision(
+                authorizationApproved("3"),
+                null,
+                T0.plusSeconds(4),
                 profiles
         );
         payment.recordFundsControl(
                 fundsVerified("5"),
                 null,
-                T0.plusSeconds(4),
+                T0.plusSeconds(5),
                 profiles
         );
         payment.recordTreasuryAccountResolution(
                 treasuryResolved("6"),
                 treasuryAccount(),
                 null,
-                T0.plusSeconds(5),
+                T0.plusSeconds(6),
                 profiles
         );
         return payment;
@@ -133,7 +163,18 @@ public final class PaymentAggregateTestFixtures {
                         ),
                         AMOUNT
                 ),
-                fingerprint("c")
+                fingerprint("c"),
+                new PaymentInitiationContext(
+                        "TRESOR_PAY",
+                        "TP_APP_001",
+                        "TEST CUSTOMER",
+                        ClaimType.AVI,
+                        "NIU-TEST-001",
+                        T0,
+                        CallbackEndpoint.of(
+                                "https://tresorpay.example.test/callback"
+                        )
+                )
         );
     }
 

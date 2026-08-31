@@ -23,11 +23,11 @@ class PaymentPreFinancialLifecycleTest {
                 PaymentStatus.APPROVED_FOR_POSTING,
                 payment.status()
         );
-        assertEquals(6L, payment.businessVersion());
-        assertEquals(10, payment.domainEvents().size());
+        assertEquals(7L, payment.businessVersion());
+        assertEquals(12, payment.domainEvents().size());
 
         List<PaymentDomainEvent> lastMutation =
-                payment.domainEvents().subList(8, 10);
+                payment.domainEvents().subList(10, 12);
 
         assertTrue(
                 lastMutation.get(0)
@@ -37,25 +37,23 @@ class PaymentPreFinancialLifecycleTest {
                 lastMutation.get(1)
                         instanceof PaymentApprovedForPosting
         );
-        assertEquals(6L, lastMutation.get(0).aggregateVersion());
-        assertEquals(6L, lastMutation.get(1).aggregateVersion());
+        assertEquals(7L, lastMutation.get(0).aggregateVersion());
+        assertEquals(7L, lastMutation.get(1).aggregateVersion());
         assertEquals(1, lastMutation.get(0).eventSequence());
         assertEquals(2, lastMutation.get(1).eventSequence());
     }
 
     @Test
     void identicalAuthorizationReplayIsStrictNoOp() {
-        Payment payment = PaymentAggregateTestFixtures.newPayment();
-        payment.startAuthorizationChecking(
-                PaymentAggregateTestFixtures.T0.plusSeconds(1)
-        );
+        Payment payment =
+                PaymentAggregateTestFixtures.authorizationCheckingPayment();
         AuthorizationEvidenceSnapshot evidence =
                 PaymentAggregateTestFixtures.authorizationApproved("3");
 
         payment.recordAuthorizationDecision(
                 evidence,
                 null,
-                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.T0.plusSeconds(4),
                 PaymentAggregateTestFixtures.profiles()
         );
 
@@ -66,7 +64,7 @@ class PaymentPreFinancialLifecycleTest {
                 PaymentAggregateTestFixtures
                         .authorizationApproved("3"),
                 null,
-                PaymentAggregateTestFixtures.T0.plusSeconds(3),
+                PaymentAggregateTestFixtures.T0.plusSeconds(5),
                 PaymentAggregateTestFixtures.profiles()
         );
 
@@ -76,15 +74,13 @@ class PaymentPreFinancialLifecycleTest {
 
     @Test
     void conflictingAuthorizationLeavesAggregateUntouched() {
-        Payment payment = PaymentAggregateTestFixtures.newPayment();
-        payment.startAuthorizationChecking(
-                PaymentAggregateTestFixtures.T0.plusSeconds(1)
-        );
+        Payment payment =
+                PaymentAggregateTestFixtures.authorizationCheckingPayment();
         payment.recordAuthorizationDecision(
                 PaymentAggregateTestFixtures
                         .authorizationApproved("3"),
                 null,
-                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.T0.plusSeconds(4),
                 PaymentAggregateTestFixtures.profiles()
         );
 
@@ -98,7 +94,7 @@ class PaymentPreFinancialLifecycleTest {
                                 .authorizationApproved("9"),
                         null,
                         PaymentAggregateTestFixtures.T0
-                                .plusSeconds(3),
+                                .plusSeconds(5),
                         PaymentAggregateTestFixtures.profiles()
                 )
         );
@@ -138,21 +134,19 @@ class PaymentPreFinancialLifecycleTest {
 
     @Test
     void recoverableFailureKeepsConcreteStateAndIncrementsOnce() {
-        Payment payment = PaymentAggregateTestFixtures.newPayment();
-        payment.startAuthorizationChecking(
-                PaymentAggregateTestFixtures.T0.plusSeconds(1)
-        );
+        Payment payment =
+                PaymentAggregateTestFixtures.authorizationCheckingPayment();
 
         PaymentFailure failure =
                 PaymentAggregateTestFixtures.technicalFailure(
                         "JWKS_TEMPORARILY_UNAVAILABLE",
                         FailureStage.AUTHORIZATION,
-                        PaymentAggregateTestFixtures.T0.plusSeconds(2)
+                        PaymentAggregateTestFixtures.T0.plusSeconds(4)
                 );
 
         payment.recordRecoverableFailure(
                 failure,
-                PaymentAggregateTestFixtures.T0.plusSeconds(2),
+                PaymentAggregateTestFixtures.T0.plusSeconds(4),
                 PaymentAggregateTestFixtures.profiles()
         );
 
@@ -160,7 +154,7 @@ class PaymentPreFinancialLifecycleTest {
                 PaymentStatus.AUTHORIZATION_CHECKING,
                 payment.status()
         );
-        assertEquals(3L, payment.businessVersion());
+        assertEquals(5L, payment.businessVersion());
 
         List<PaymentDomainEvent> events =
                 payment.domainEvents().subList(
