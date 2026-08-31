@@ -4,6 +4,7 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
 import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyPort;
+import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyResult;
 import com.sixpay.payment.domain.model.ConfirmationChallengeReference;
 import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -51,7 +52,7 @@ public class PaymentConfirmationIdempotencyAdapter
     }
 
     @Override
-    public PaymentConfirmationBankResult executeCreate(
+    public PaymentConfirmationIdempotencyResult executeCreate(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             IdempotencyKey idempotencyKey,
@@ -74,7 +75,7 @@ public class PaymentConfirmationIdempotencyAdapter
     }
 
     @Override
-    public PaymentConfirmationBankResult executeVerify(
+    public PaymentConfirmationIdempotencyResult executeVerify(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             IdempotencyKey idempotencyKey,
@@ -98,7 +99,9 @@ public class PaymentConfirmationIdempotencyAdapter
 
         return switch (begin.decision().kind()) {
             case REPLAY ->
-                    replay(paymentId, begin.decision());
+                    PaymentConfirmationIdempotencyResult.replayed(
+                            replay(paymentId, begin.decision())
+                    );
 
             case IN_PROGRESS ->
                     throw new IllegalStateException(
@@ -111,18 +114,20 @@ public class PaymentConfirmationIdempotencyAdapter
                     );
 
             case NEW ->
-                    completeNew(
-                            VERIFY_OPERATION,
-                            paymentId,
-                            idempotencyKey.value(),
-                            begin.requestHash(),
-                            newRequest
+                    PaymentConfirmationIdempotencyResult.executed(
+                            completeNew(
+                                    VERIFY_OPERATION,
+                                    paymentId,
+                                    idempotencyKey.value(),
+                                    begin.requestHash(),
+                                    newRequest
+                            )
                     );
         };
     }
 
     @Override
-    public PaymentConfirmationBankResult executeReplace(
+    public PaymentConfirmationIdempotencyResult executeReplace(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             ConfirmationChallengeReference challengeReference,
@@ -149,7 +154,7 @@ public class PaymentConfirmationIdempotencyAdapter
         );
     }
 
-    private PaymentConfirmationBankResult executeRecoverable(
+    private PaymentConfirmationIdempotencyResult executeRecoverable(
             String operation,
             PaymentId paymentId,
             IdempotencyKey idempotencyKey,
@@ -169,7 +174,9 @@ public class PaymentConfirmationIdempotencyAdapter
 
         return switch (begin.decision().kind()) {
             case REPLAY ->
-                    replay(paymentId, begin.decision());
+                    PaymentConfirmationIdempotencyResult.replayed(
+                            replay(paymentId, begin.decision())
+                    );
 
             case IN_PROGRESS ->
                     throw new IllegalStateException(
@@ -177,22 +184,26 @@ public class PaymentConfirmationIdempotencyAdapter
                     );
 
             case OUTCOME_UNKNOWN ->
-                    recover(
-                            operation,
-                            paymentId,
-                            idempotencyKey.value(),
-                            begin.requestHash(),
-                            recovery
+                    PaymentConfirmationIdempotencyResult.executed(
+                            recover(
+                                    operation,
+                                    paymentId,
+                                    idempotencyKey.value(),
+                                    begin.requestHash(),
+                                    recovery
+                            )
                     );
 
             case NEW ->
-                    completeNewRecoverable(
-                            operation,
-                            paymentId,
-                            idempotencyKey.value(),
-                            begin.requestHash(),
-                            newRequest,
-                            recovery
+                    PaymentConfirmationIdempotencyResult.executed(
+                            completeNewRecoverable(
+                                    operation,
+                                    paymentId,
+                                    idempotencyKey.value(),
+                                    begin.requestHash(),
+                                    newRequest,
+                                    recovery
+                            )
                     );
         };
     }

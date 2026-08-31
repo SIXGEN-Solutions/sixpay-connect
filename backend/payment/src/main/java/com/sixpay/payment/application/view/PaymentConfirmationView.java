@@ -22,7 +22,8 @@ public record PaymentConfirmationView(
         ConfirmationDeliveryChannel deliveryChannel,
         Instant sentAt,
         Instant expiresAt,
-        Instant verifiedAt
+        Instant verifiedAt,
+        boolean replayed
 ) {
     public PaymentConfirmationView {
         paymentReference = Objects.requireNonNull(
@@ -39,9 +40,38 @@ public record PaymentConfirmationView(
         );
     }
 
+    public PaymentConfirmationView(
+            PublicPaymentReference paymentReference,
+            ConfirmationChallengeStatus status,
+            ConfirmationBusinessCode businessCode,
+            ConfirmationDeliveryChannel deliveryChannel,
+            Instant sentAt,
+            Instant expiresAt,
+            Instant verifiedAt
+    ) {
+        this(
+                paymentReference,
+                status,
+                businessCode,
+                deliveryChannel,
+                sentAt,
+                expiresAt,
+                verifiedAt,
+                false
+        );
+    }
+
     public static PaymentConfirmationView from(
             PublicPaymentReference paymentReference,
             PaymentConfirmationBankResult result
+    ) {
+        return from(paymentReference, result, false);
+    }
+
+    public static PaymentConfirmationView from(
+            PublicPaymentReference paymentReference,
+            PaymentConfirmationBankResult result,
+            boolean replayed
     ) {
         Objects.requireNonNull(result, "Bank confirmation result");
 
@@ -52,7 +82,8 @@ public record PaymentConfirmationView(
                 result.deliveryChannel(),
                 result.sentAt(),
                 result.expiresAt(),
-                result.verifiedAt()
+                result.verifiedAt(),
+                replayed
         );
     }
 

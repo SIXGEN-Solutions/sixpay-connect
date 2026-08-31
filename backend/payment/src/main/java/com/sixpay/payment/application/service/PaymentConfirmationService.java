@@ -13,6 +13,7 @@ import com.sixpay.payment.application.port.output.banking.BankingRequestContext;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
 import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyPort;
+import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyResult;
 import com.sixpay.payment.application.query.ReadPaymentConfirmationQuery;
 import com.sixpay.payment.application.view.PaymentConfirmationView;
 import com.sixpay.payment.domain.model.ConfirmationChallenge;
@@ -83,7 +84,7 @@ public class PaymentConfirmationService
                 bankingIdempotencyKey(
                         command.idempotencyKey().value()
                 );
-        PaymentConfirmationBankResult result =
+        PaymentConfirmationIdempotencyResult idempotencyResult =
                 idempotencyPort.executeCreate(
                         payment.id(),
                         payment.publicPaymentReference(),
@@ -102,6 +103,8 @@ public class PaymentConfirmationService
                                 )
                         )
                 );
+        PaymentConfirmationBankResult result =
+                idempotencyResult.result();
 
         ConfirmationChallenge createdChallenge =
                 PaymentConfirmationChallengeFactory.fromBankResult(
@@ -116,7 +119,8 @@ public class PaymentConfirmationService
 
         return PaymentConfirmationView.from(
                 payment.publicPaymentReference(),
-                result
+                result,
+                idempotencyResult.replayed()
         );
     }
     @Override
@@ -164,7 +168,7 @@ public class PaymentConfirmationService
                     bankingIdempotencyKey(
                             command.idempotencyKey().value()
                     );
-            PaymentConfirmationBankResult result =
+            PaymentConfirmationIdempotencyResult idempotencyResult =
                     idempotencyPort.executeVerify(
                             payment.id(),
                             payment.publicPaymentReference(),
@@ -181,6 +185,9 @@ public class PaymentConfirmationService
                                     )
                             )
                     );
+            PaymentConfirmationBankResult result =
+                    idempotencyResult.result();
+
             if (result.status()
                     == com.sixpay.payment.domain.model
                             .ConfirmationChallengeStatus.VERIFIED) {
@@ -210,7 +217,8 @@ public class PaymentConfirmationService
             }
             return PaymentConfirmationView.from(
                     payment.publicPaymentReference(),
-                    result
+                    result,
+                    idempotencyResult.replayed()
             );
         } finally {
             java.util.Arrays.fill(otp, '\0');
@@ -234,7 +242,7 @@ public class PaymentConfirmationService
                 bankingIdempotencyKey(
                         command.idempotencyKey().value()
                 );
-        PaymentConfirmationBankResult result =
+        PaymentConfirmationIdempotencyResult idempotencyResult =
                 idempotencyPort.executeReplace(
                         payment.id(),
                         payment.publicPaymentReference(),
@@ -256,6 +264,8 @@ public class PaymentConfirmationService
                                 )
                         )
                 );
+        PaymentConfirmationBankResult result =
+                idempotencyResult.result();
 
         ConfirmationChallenge replacementChallenge =
                 PaymentConfirmationChallengeFactory.fromBankResult(
@@ -270,7 +280,8 @@ public class PaymentConfirmationService
 
         return PaymentConfirmationView.from(
                 payment.publicPaymentReference(),
-                result
+                result,
+                idempotencyResult.replayed()
         );
     }
     private Payment requirePayment(

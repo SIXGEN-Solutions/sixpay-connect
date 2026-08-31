@@ -1,5 +1,6 @@
 package com.sixpay.payment.api;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +13,17 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PaymentConfirmationControllerTest {
+
+    @Test
+    void usesApprovedPublicSecuritySchemes() {
+        assertThat(
+                Arrays.stream(
+                        PaymentConfirmationController.class
+                                .getAnnotationsByType(SecurityRequirement.class)
+                ).map(SecurityRequirement::name)
+                 .toList()
+        ).containsExactlyInAnyOrder("bearerAuth", "mutualTLS");
+    }
 
     @Test
     void exposesOnlyApprovedPublicConfirmationRoutesAndScopes() {

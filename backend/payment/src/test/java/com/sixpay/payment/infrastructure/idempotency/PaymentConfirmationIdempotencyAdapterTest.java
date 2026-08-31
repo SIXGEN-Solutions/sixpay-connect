@@ -3,6 +3,7 @@ package com.sixpay.payment.infrastructure.idempotency;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
+import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyResult;
 import com.sixpay.payment.domain.model.ConfirmationBusinessCode;
 import com.sixpay.payment.domain.model.ConfirmationChallengeReference;
 import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
@@ -103,7 +104,7 @@ class PaymentConfirmationIdempotencyAdapterTest {
 
         AtomicInteger bankCalls = new AtomicInteger();
 
-        PaymentConfirmationBankResult actual =
+        PaymentConfirmationIdempotencyResult actual =
                 adapter.executeVerify(
                         paymentId,
                         PAYMENT_REFERENCE,
@@ -115,7 +116,8 @@ class PaymentConfirmationIdempotencyAdapterTest {
                         }
                 );
 
-        assertThat(actual).isEqualTo(completed);
+        assertThat(actual.result()).isEqualTo(completed);
+        assertThat(actual.replayed()).isTrue();
         assertThat(bankCalls.get()).isZero();
     }
 
@@ -188,7 +190,7 @@ class PaymentConfirmationIdempotencyAdapterTest {
         AtomicInteger createCalls = new AtomicInteger();
         AtomicInteger recoveryCalls = new AtomicInteger();
 
-        PaymentConfirmationBankResult actual =
+        PaymentConfirmationIdempotencyResult actual =
                 adapter.executeCreate(
                         paymentId,
                         PAYMENT_REFERENCE,
@@ -208,7 +210,8 @@ class PaymentConfirmationIdempotencyAdapterTest {
                         }
                 );
 
-        assertThat(actual).isEqualTo(recovered);
+        assertThat(actual.result()).isEqualTo(recovered);
+        assertThat(actual.replayed()).isFalse();
         assertThat(createCalls.get()).isEqualTo(1);
         assertThat(recoveryCalls.get()).isEqualTo(1);
 

@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public interface PaymentConfirmationIdempotencyPort {
 
-    PaymentConfirmationBankResult executeCreate(
+    PaymentConfirmationIdempotencyResult executeCreate(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             IdempotencyKey idempotencyKey,
@@ -18,7 +18,7 @@ public interface PaymentConfirmationIdempotencyPort {
             Supplier<PaymentConfirmationBankResult> recovery
     );
 
-    PaymentConfirmationBankResult executeVerify(
+    PaymentConfirmationIdempotencyResult executeVerify(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             IdempotencyKey idempotencyKey,
@@ -26,7 +26,7 @@ public interface PaymentConfirmationIdempotencyPort {
             Supplier<PaymentConfirmationBankResult> newRequest
     );
 
-    PaymentConfirmationBankResult executeReplace(
+    PaymentConfirmationIdempotencyResult executeReplace(
             PaymentId paymentId,
             PublicPaymentReference paymentReference,
             ConfirmationChallengeReference challengeReference,

@@ -33,8 +33,10 @@ import org.springframework.web.bind.annotation.*;
         description = "TRESOR PAY customer confirmation operations"
 )
 @SecurityRequirement(name = "mutualTLS")
-@SecurityRequirement(name = "oauth2")
+@SecurityRequirement(name = "bearerAuth")
 public class PaymentConfirmationController {
+
+    private static final String IDEMPOTENCY_REPLAYED = "Idempotency-Replayed";
 
     private final CreatePaymentConfirmationUseCase createUseCase;
     private final ReadPaymentConfirmationUseCase readUseCase;
@@ -84,7 +86,7 @@ public class PaymentConfirmationController {
                         idempotencyKey
                 )
         );
-        return ok(correlationId, mapper.toResponse(view));
+        return okMutation(correlationId, view.replayed(), mapper.toResponse(view));
     }
 
     @GetMapping
@@ -136,7 +138,7 @@ public class PaymentConfirmationController {
                         request
                 )
         );
-        return ok(correlationId, mapper.toResponse(view));
+        return okMutation(correlationId, view.replayed(), mapper.toResponse(view));
     }
 
     @PostMapping("/resend")
@@ -164,7 +166,7 @@ public class PaymentConfirmationController {
                         idempotencyKey
                 )
         );
-        return ok(correlationId, mapper.toResponse(view));
+        return okMutation(correlationId, view.replayed(), mapper.toResponse(view));
     }
 
     private static ResponseEntity<PaymentConfirmationResponse> ok(
@@ -175,6 +177,23 @@ public class PaymentConfirmationController {
                 .header(
                         IntegrationHttpHeaders.CORRELATION_ID,
                         correlationId.value()
+                )
+                .body(response);
+    }
+
+    private static ResponseEntity<PaymentConfirmationResponse> okMutation(
+            CorrelationId correlationId,
+            boolean replayed,
+            PaymentConfirmationResponse response
+    ) {
+        return ResponseEntity.ok()
+                .header(
+                        IntegrationHttpHeaders.CORRELATION_ID,
+                        correlationId.value()
+                )
+                .header(
+                        IDEMPOTENCY_REPLAYED,
+                        Boolean.toString(replayed)
                 )
                 .body(response);
     }
