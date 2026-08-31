@@ -1,0 +1,22 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        confirmation:
+          enabled: ${AMPLITUDE_CONFIRMATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          create-path: ${AMPLITUDE_CONFIRMATION_CREATE_PATH:/api/v1/payment-confirmation-challenges}
+          challenge-path: ${AMPLITUDE_CONFIRMATION_CHALLENGE_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}}
+          verification-path: ${AMPLITUDE_CONFIRMATION_VERIFICATION_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/verifications}
+          replacement-path: ${AMPLITUDE_CONFIRMATION_REPLACEMENT_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/replacements}
+          lookup-by-idempotency-path: ${AMPLITUDE_CONFIRMATION_LOOKUP_BY_IDEMPOTENCY_PATH:/api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}}
+          revocation-path: ${AMPLITUDE_CONFIRMATION_REVOCATION_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/revocations}
+          connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT}
+          read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            idempotency-header: ${AMPLITUDE_CONFIRMATION_IDEMPOTENCY_HEADER:Idempotency-Key}
+            correlation-header: ${AMPLITUDE_CONFIRMATION_CORRELATION_HEADER:X-Correlation-ID}
+            institution-header: ${AMPLITUDE_CONFIRMATION_INSTITUTION_HEADER:X-Financial-Institution-Code}
