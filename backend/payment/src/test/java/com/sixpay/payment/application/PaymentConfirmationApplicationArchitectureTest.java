@@ -5,10 +5,38 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PaymentConfirmationApplicationArchitectureTest {
+
+    @Test
+    void publicInputPortsDoNotExposeConfirmationRevocation()
+            throws Exception {
+
+        Path inputPorts = Path.of(
+                "src/main/java/com/sixpay/payment/application/port/input"
+        );
+
+        try (var paths = Files.list(inputPorts)) {
+            var revocationPorts = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> {
+                        try {
+                            String source = Files.readString(path);
+                            return source.contains("revoke")
+                                    || source.contains("Revocation");
+                        } catch (Exception exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .toList();
+
+            assertThat(revocationPorts).isEmpty();
+        }
+    }
 
     private static final Path MAIN =
             Path.of("src/main/java/com/sixpay/payment");

@@ -1,6 +1,8 @@
 package com.sixpay.payment.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.sixpay.payment.api.request.VerifyPaymentConfirmationRequest;
 import com.sixpay.payment.api.response.PaymentConfirmationResponse;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,23 @@ class PaymentConfirmationSecretSafetyTest {
         assertThat(property.value()).isEqualTo("otp");
         assertThat(property.access())
                 .isEqualTo(JsonProperty.Access.WRITE_ONLY);
+    }
+
+    @Test
+    void verifyRequestDoesNotSerializeOtpBackToJson() throws Exception {
+        ObjectMapper mapper = new ObjectMapper()
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        VerifyPaymentConfirmationRequest request =
+                new VerifyPaymentConfirmationRequest(
+                        "654321".toCharArray()
+                );
+
+        String json = mapper.writeValueAsString(request);
+
+        assertThat(json).isEqualTo("{}");
+        assertThat(json)
+                .doesNotContain("654321")
+                .doesNotContain("otp");
     }
 
     @Test

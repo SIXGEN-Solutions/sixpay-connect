@@ -53,6 +53,16 @@ class PaymentConfirmationControllerTest {
                                 .getDeclaredMethods()
                 ).map(Method::getName)
         ).doesNotContain("revoke");
+
+        assertThat(
+                Arrays.stream(
+                        PaymentConfirmationController.class
+                                .getDeclaredMethods()
+                ).filter(method ->
+                        method.getAnnotation(PostMapping.class) != null
+                                || method.getAnnotation(GetMapping.class) != null
+                ).count()
+        ).isEqualTo(4);
     }
 
     private static void assertScopeAndPost(
