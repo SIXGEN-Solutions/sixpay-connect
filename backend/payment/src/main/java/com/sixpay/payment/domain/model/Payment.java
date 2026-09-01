@@ -1390,6 +1390,33 @@ public final class Payment {
             Instant finalizedAt,
             PaymentPolicyBundle profiles
     ) {
+        rejectInternal(
+                rejection,
+                finalizedAt,
+                profiles,
+                false
+        );
+    }
+
+    public void rejectAfterPreConfirmationRevocation(
+            PaymentFailure rejection,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles
+    ) {
+        rejectInternal(
+                rejection,
+                finalizedAt,
+                profiles,
+                true
+        );
+    }
+
+    private void rejectInternal(
+            PaymentFailure rejection,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles,
+            boolean preConfirmationRevocationCompleted
+    ) {
         Objects.requireNonNull(rejection, "Payment rejection");
         Objects.requireNonNull(finalizedAt, "Finalized instant");
         Objects.requireNonNull(profiles, "Policy bundle");
@@ -1398,7 +1425,17 @@ public final class Payment {
                 && state.failure().filter(rejection::equals).isPresent()) {
             return;
         }
-        requireStatus("reject", PaymentStatus.RECEIVED);
+
+        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
+            if (!preConfirmationRevocationCompleted) {
+                throw PaymentDomainException.conflict(
+                        "PENDING_CONFIRMATION rejection requires stable challenge revocation"
+                );
+            }
+        } else {
+            requireStatus("reject", PaymentStatus.RECEIVED);
+        }
+
         requireRejectionFailure(rejection, "Payment rejection");
 
         PolicyDecision<FailureDispositionDecision> disposition =
@@ -1421,6 +1458,7 @@ public final class Payment {
                 finalizedAt
         ).failure(rejection).build();
 
+        PaymentStatus previous = state.status();
         EventBatch batch = new EventBatch(next, finalizedAt);
         commit(
                 next,
@@ -1428,7 +1466,7 @@ public final class Payment {
                         rejected(batch, rejection, finalizedAt),
                         immediateResult(
                                 batch,
-                                PaymentStatus.RECEIVED,
+                                previous,
                                 next.status(),
                                 rejection,
                                 finalizedAt,
@@ -1508,6 +1546,33 @@ public final class Payment {
             Instant finalizedAt,
             PaymentPolicyBundle profiles
     ) {
+        failWithoutFinancialEffectInternal(
+                failure,
+                finalizedAt,
+                profiles,
+                false
+        );
+    }
+
+    public void failWithoutFinancialEffectAfterPreConfirmationRevocation(
+            PaymentFailure failure,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles
+    ) {
+        failWithoutFinancialEffectInternal(
+                failure,
+                finalizedAt,
+                profiles,
+                true
+        );
+    }
+
+    private void failWithoutFinancialEffectInternal(
+            PaymentFailure failure,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles,
+            boolean preConfirmationRevocationCompleted
+    ) {
         Objects.requireNonNull(failure, "Technical failure");
         Objects.requireNonNull(finalizedAt, "Finalized instant");
         Objects.requireNonNull(profiles, "Policy bundle");
@@ -1516,15 +1581,24 @@ public final class Payment {
                 && state.failure().filter(failure::equals).isPresent()) {
             return;
         }
-        requireStatus(
-                "failWithoutFinancialEffect",
-                PaymentStatus.RECEIVED,
-                PaymentStatus.AUTHORIZATION_CHECKING,
-                PaymentStatus.BANKING_VERIFICATION_PENDING,
-                PaymentStatus.FUNDS_CONTROL_PENDING,
-                PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING,
-                PaymentStatus.APPROVED_FOR_POSTING
-        );
+
+        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
+            if (!preConfirmationRevocationCompleted) {
+                throw PaymentDomainException.conflict(
+                        "PENDING_CONFIRMATION failure requires stable challenge revocation"
+                );
+            }
+        } else {
+            requireStatus(
+                    "failWithoutFinancialEffect",
+                    PaymentStatus.RECEIVED,
+                    PaymentStatus.AUTHORIZATION_CHECKING,
+                    PaymentStatus.BANKING_VERIFICATION_PENDING,
+                    PaymentStatus.FUNDS_CONTROL_PENDING,
+                    PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                    PaymentStatus.APPROVED_FOR_POSTING
+            );
+        }
         if (failure.failureCategory()
                 != FailureCategory.TECHNICAL_FAILURE) {
             throw PaymentDomainException.rejected(

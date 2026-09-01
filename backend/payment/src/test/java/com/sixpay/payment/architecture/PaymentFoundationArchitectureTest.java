@@ -44,6 +44,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentObservedCustomerProjectionRequestFactory.java",
                 "PaymentObservedCustomerProjectionService.java",
                 "PaymentPostPersistenceOrchestrationService.java",
+                "PaymentPreConfirmationTerminationService.java",
                 "PaymentPostingPreparationService.java",
                 "PaymentReceptionService.java",
                 "PaymentReconciliationService.java",

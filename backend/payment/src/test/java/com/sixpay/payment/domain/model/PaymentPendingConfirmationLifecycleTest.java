@@ -123,4 +123,112 @@ class PaymentPendingConfirmationLifecycleTest {
 
         assertThat(payment.status()).isEqualTo(PaymentStatus.RECEIVED);
     }
+    @Test
+    void genericRejectCannotTerminatePendingConfirmation() {
+        Payment payment = newPayment();
+        payment.startBankingVerification(T0.plusSeconds(1));
+        payment.recordBankingVerification(
+                bankingVerified("a"),
+                null,
+                T0.plusSeconds(2),
+                profiles()
+        );
+
+        assertThatThrownBy(() ->
+                payment.reject(
+                        businessFailure(
+                                "PRE_CONFIRMATION_REJECTED",
+                                FailureStage.AUTHORIZATION,
+                                T0.plusSeconds(3)
+                        ),
+                        T0.plusSeconds(3),
+                        profiles()
+                )
+        )
+                .isInstanceOf(PaymentDomainException.class)
+                .hasMessageContaining("stable challenge revocation");
+
+        assertThat(payment.status())
+                .isEqualTo(PaymentStatus.PENDING_CONFIRMATION);
+    }
+
+    @Test
+    void revocationAwareRejectCanTerminatePendingConfirmation() {
+        Payment payment = newPayment();
+        payment.startBankingVerification(T0.plusSeconds(1));
+        payment.recordBankingVerification(
+                bankingVerified("b"),
+                null,
+                T0.plusSeconds(2),
+                profiles()
+        );
+
+        payment.rejectAfterPreConfirmationRevocation(
+                businessFailure(
+                                "PRE_CONFIRMATION_REJECTED",
+                                FailureStage.AUTHORIZATION,
+                                T0.plusSeconds(3)
+                        ),
+                T0.plusSeconds(3),
+                profiles()
+        );
+
+        assertThat(payment.status())
+                .isEqualTo(PaymentStatus.REJECTED);
+    }
+
+    @Test
+    void genericTechnicalFailureCannotTerminatePendingConfirmation() {
+        Payment payment = newPayment();
+        payment.startBankingVerification(T0.plusSeconds(1));
+        payment.recordBankingVerification(
+                bankingVerified("c"),
+                null,
+                T0.plusSeconds(2),
+                profiles()
+        );
+
+        assertThatThrownBy(() ->
+                payment.failWithoutFinancialEffect(
+                        technicalFailure(
+                                "PRE_CONFIRMATION_FAILED",
+                                FailureStage.AUTHORIZATION,
+                                T0.plusSeconds(3)
+                        ),
+                        T0.plusSeconds(3),
+                        profiles()
+                )
+        )
+                .isInstanceOf(PaymentDomainException.class)
+                .hasMessageContaining("stable challenge revocation");
+
+        assertThat(payment.status())
+                .isEqualTo(PaymentStatus.PENDING_CONFIRMATION);
+    }
+
+    @Test
+    void revocationAwareTechnicalFailureCanTerminatePendingConfirmation() {
+        Payment payment = newPayment();
+        payment.startBankingVerification(T0.plusSeconds(1));
+        payment.recordBankingVerification(
+                bankingVerified("d"),
+                null,
+                T0.plusSeconds(2),
+                profiles()
+        );
+
+        payment.failWithoutFinancialEffectAfterPreConfirmationRevocation(
+                technicalFailure(
+                                "PRE_CONFIRMATION_FAILED",
+                                FailureStage.AUTHORIZATION,
+                                T0.plusSeconds(3)
+                        ),
+                T0.plusSeconds(3),
+                profiles()
+        );
+
+        assertThat(payment.status())
+                .isEqualTo(PaymentStatus.FAILED);
+    }
+
 }
