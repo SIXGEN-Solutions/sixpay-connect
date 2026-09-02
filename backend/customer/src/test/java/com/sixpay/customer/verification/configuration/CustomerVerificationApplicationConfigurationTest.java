@@ -4,7 +4,6 @@ import com.sixpay.customer.configuration.CustomerCapabilityUnavailableException;
 import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
-import com.sixpay.customer.verification.application.port.output.CustomerVerificationRepository;
 import com.sixpay.customer.verification.application.service.CustomerVerificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -37,12 +36,6 @@ class CustomerVerificationApplicationConfigurationTest {
             assertThat(
                     context.getBean(
                             BankingCustomerVerificationPort.class
-                    )
-            ).isNotNull();
-
-            assertThat(
-                    context.getBean(
-                            CustomerVerificationRepository.class
                     )
             ).isNotNull();
 

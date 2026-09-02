@@ -45,7 +45,6 @@ class CustomerVerificationServiceArchitectureTest {
         for (String required : List.of(
                 "implements VerifyCustomerUseCase",
                 "BankingCustomerVerificationPort",
-                "CustomerVerificationRepository",
                 "CustomerVerificationDomainEventPublisher",
                 "CustomerVerificationEventIdGenerator",
                 "CustomerVerificationTimeProvider"
@@ -59,22 +58,18 @@ class CustomerVerificationServiceArchitectureTest {
     }
 
     @Test
-    void eventPublicationOccursAfterCompletedPersistence()
+    void eventPublicationOccursAfterDomainCompletion()
             throws Exception {
 
         String source = Files.readString(SERVICE);
 
         int complete = source.indexOf("verification.complete(");
-        int completedSave = source.indexOf(
-                "repository.save(verification);",
-                complete
-        );
         int publish = source.indexOf(
                 "eventPublisher.publish(events);"
         );
 
         assertTrue(complete >= 0);
-        assertTrue(completedSave > complete);
-        assertTrue(publish > completedSave);
+        assertTrue(publish > complete);
+        assertFalse(source.contains("repository.save("));
     }
 }

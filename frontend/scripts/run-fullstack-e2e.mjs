@@ -15,7 +15,15 @@ const java = process.platform === 'win32' ? 'java.exe' : 'java';
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 const postgresContainer = `sixpay-fullstack-postgres-${process.pid}`;
+const amplitudeStubPort = 18081;
 let backendProcess;
+
+const backendStartupTimeoutMs = Number.parseInt(
+  process.env.SIXPAY_E2E_BACKEND_STARTUP_TIMEOUT_MS ?? '240000',
+  10,
+);
+
+let amplitudeStubProcess;
 
 function run(command, args, options = {}) {
   const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
@@ -58,8 +66,33 @@ async function waitForPostgres() {
   throw new Error('PostgreSQL did not become ready within 60 seconds.');
 }
 
+async function waitForAmplitudeStub() {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (amplitudeStubProcess && amplitudeStubProcess.exitCode !== null) {
+      throw new Error(
+        `CM-9 Amplitude stub exited before becoming healthy (exit code ${amplitudeStubProcess.exitCode}).`,
+      );
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:${amplitudeStubPort}/__health`);
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload.status === 'UP') return;
+      }
+    } catch {
+      // Still starting.
+    }
+
+    await sleep(250);
+  }
+
+  throw new Error('CM-9 Amplitude stub did not become healthy within 30 seconds.');
+}
+
 async function waitForBackend() {
-  const deadline = Date.now() + 120_000;
+  const deadline = Date.now() + backendStartupTimeoutMs;
   while (Date.now() < deadline) {
     if (backendProcess && backendProcess.exitCode !== null) {
       throw new Error(
@@ -80,7 +113,9 @@ async function waitForBackend() {
     await sleep(750);
   }
 
-  throw new Error('SIXPAY backend did not become healthy within 120 seconds.');
+  throw new Error(
+    `SIXPAY backend did not become healthy within ${Math.round(backendStartupTimeoutMs / 1000)} seconds.`,
+  );
 }
 
 function findBootstrapJar() {
@@ -157,6 +192,21 @@ async function main() {
 
   const bootstrapJar = findBootstrapJar();
 
+  amplitudeStubProcess = spawn(
+    process.execPath,
+    [join(frontendDir, 'scripts', 'cm9-amplitude-stub.mjs')],
+    {
+      cwd: frontendDir,
+      env: {
+        ...process.env,
+        AMPLITUDE_STUB_PORT: String(amplitudeStubPort),
+      },
+      stdio: 'inherit',
+    },
+  );
+
+  await waitForAmplitudeStub();
+
   backendProcess = spawn(java, ['-jar', bootstrapJar], {
     cwd: backendDir,
     env: {
@@ -167,6 +217,8 @@ async function main() {
       SPRING_DATASOURCE_PASSWORD: 'sixpay-test',
       SIXPAY_LOCAL_ADMIN_PASSWORD: 'admin-dev-2026',
       SIXPAY_MESSAGING_OUTBOX_ENABLED: 'false',
+      SIXPAY_E2E_CUSTOMER_ENABLED: 'true',
+      SIXPAY_E2E_CUSTOMER_AMPLITUDE_BASE_URL: `http://127.0.0.1:${amplitudeStubPort}`,
     },
     stdio: 'inherit',
   });
@@ -183,5 +235,6 @@ try {
   await main();
 } finally {
   terminateProcessTree(backendProcess);
+  terminateProcessTree(amplitudeStubProcess);
   removePostgresContainer();
 }

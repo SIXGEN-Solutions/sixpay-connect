@@ -37,6 +37,8 @@ import com.sixpay.customer.observation.domain.model
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition
+        .ConditionalOnProperty;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +54,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 @RestController
+@ConditionalOnProperty(
+        prefix = "sixpay.customer.observation.query",
+        name = "enabled",
+        havingValue = "true"
+)
 @Tag(
         name = "Customers",
         description = "Customers verification and observation"

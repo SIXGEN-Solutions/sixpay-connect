@@ -5,7 +5,7 @@ import com.sixpay.customer.verification.domain.event.CustomerVerificationDomainE
 import java.util.List;
 
 /**
- * Publishes Customer Verification domain events after persistence.
+ * Publishes Customer Verification domain events.
  */
 public interface CustomerVerificationDomainEventPublisher {
 
