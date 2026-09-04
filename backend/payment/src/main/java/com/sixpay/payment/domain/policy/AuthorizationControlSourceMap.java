@@ -53,10 +53,14 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.PARTNER_AUTHORIZED,
                         AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
                         "partner",
-                        "PaymentInitiationContext.partnerLoginName is persisted; "
-                                + "PartnerStatus.ACTIVE is owned by partner, but no "
-                                + "approved Payment runtime lookup by partnerLoginName "
-                                + "is demonstrated.",
+                        "Resolved business authority: Partner accepts new "
+                                + "transactions only when PartnerStatus.ACTIVE and "
+                                + "AuthorizedPerimeter allows the transaction type. "
+                                + "PaymentInitiationContext.partnerLoginName is durably "
+                                + "retained, but Payment cannot access partner "
+                                + "repositories directly and no approved cross-module "
+                                + "runtime port keyed by partnerLoginName is demonstrated "
+                                + "at this baseline.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
@@ -69,11 +73,16 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
                         AuthorizationSourceKind.TRUSTED_INTAKE_ATTESTATION,
                         "TRESOR_PAY",
-                        "Short-lived signed JWT validated locally at payment intake "
-                                + "attests the external subscription; "
-                                + "CustomerSubscription is not the source and no "
-                                + "synchronous TRESOR PAY subscription verification "
-                                + "is allowed in MVP.",
+                        "Resolved source: the short-lived asymmetric TRESOR PAY "
+                                + "signed JWT/JWS validated locally at payment intake "
+                                + "attests subscription_status=ACTIVE and binds "
+                                + "the subscription, client, financial institution, "
+                                + "debtor account and payment. "
+                                + "CustomerSubscription is not the source; "
+                                + "no synchronous TRESOR PAY subscription verification "
+                                + "call is allowed in MVP. "
+                                + "Implementation remains gated by the "
+                                + "tresorpay-payment-request-api-v1 contract approval.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
@@ -86,10 +95,14 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.APPLICATION_AUTHORIZED,
                         AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
                         "security / TRESOR_PAY intake profile",
-                        "PaymentInitiationContext.applicationId is persisted and "
-                                + "originates from the authenticated TRESOR PAY request; "
-                                + "no approved post-OTP runtime "
-                                + "application-authorization source is demonstrated.",
+                        "Resolved source: PaymentInitiationContext.applicationId "
+                                + "comes from X-TresorPay-App-Id and the signed "
+                                + "authorization token client_id is required to match "
+                                + "that application identity and the Subscription Key "
+                                + "owner at intake. Re-evaluation after OTP requires "
+                                + "durable canonical acceptance evidence; current "
+                                + "PaymentInitiationContext alone proves the identifier "
+                                + "but not the prior authorization decision.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
@@ -102,10 +115,12 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.CLAIM_TYPE_AUTHORIZED,
                         AuthorizationSourceKind.PAYMENT_STATE,
                         "payment",
-                        "PaymentInitiationContext.claimType retains normalized "
-                                + "Payment ClaimType (AVI, IM7, RNF); any "
-                                + "partner/application-specific entitlement rule "
-                                + "remains unresolved.",
+                        "Resolved data source: PaymentInitiationContext.claimType "
+                                + "durably retains the normalized Payment ClaimType. "
+                                + "No active authoritative source at this baseline "
+                                + "defines a partner/application-specific entitlement "
+                                + "rule for AVI, IM7 or RNF, so the decision rule "
+                                + "remains unresolved and must not be invented.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
@@ -118,9 +133,12 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.EXECUTION_DATE_VALID,
                         AuthorizationSourceKind.PAYMENT_STATE,
                         "payment",
-                        "PaymentInitiationContext.requestedExecutionAt is durably "
-                                + "retained; the concrete execution-date policy is "
-                                + "not yet defined by active sources.",
+                        "Resolved data source: "
+                                + "PaymentInitiationContext.requestedExecutionAt is "
+                                + "durably retained. No active authoritative source "
+                                + "at this baseline defines the allowable execution "
+                                + "date/window policy, so the decision rule remains "
+                                + "unresolved and must not be invented.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
