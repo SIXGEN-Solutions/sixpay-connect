@@ -7,7 +7,6 @@ import com.sixpay.customer.verification.application.port.output.BankingCustomerV
 import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationDomainEventPublisher;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationEventIdGenerator;
-import com.sixpay.customer.verification.application.port.output.CustomerVerificationRepository;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationTimeProvider;
 import com.sixpay.customer.verification.domain.event.CustomerVerificationDomainEvent;
 import com.sixpay.customer.verification.domain.model.CustomerVerification;
@@ -22,21 +21,19 @@ import java.util.Objects;
  * Framework-free Customer Verification application service.
  *
  * <p>The service owns orchestration only. It delegates banking communication,
- * persistence, event publication, time and event-ID generation to output
- * ports. It contains no HTTP, retry or Payment-specific logic.</p>
+ * event publication, time and event-ID generation to output ports. It contains
+ * no HTTP, retry, persistence or Payment-specific logic.</p>
  */
 public final class CustomerVerificationService
         implements VerifyCustomerUseCase {
 
     private final BankingCustomerVerificationPort bankingPort;
-    private final CustomerVerificationRepository repository;
     private final CustomerVerificationDomainEventPublisher eventPublisher;
     private final CustomerVerificationEventIdGenerator eventIdGenerator;
     private final CustomerVerificationTimeProvider timeProvider;
 
     public CustomerVerificationService(
             BankingCustomerVerificationPort bankingPort,
-            CustomerVerificationRepository repository,
             CustomerVerificationDomainEventPublisher eventPublisher,
             CustomerVerificationEventIdGenerator eventIdGenerator,
             CustomerVerificationTimeProvider timeProvider
@@ -44,10 +41,6 @@ public final class CustomerVerificationService
         this.bankingPort = Objects.requireNonNull(
                 bankingPort,
                 "bankingPort is required"
-        );
-        this.repository = Objects.requireNonNull(
-                repository,
-                "repository is required"
         );
         this.eventPublisher = Objects.requireNonNull(
                 eventPublisher,
@@ -74,12 +67,6 @@ public final class CustomerVerificationService
                         toDomainRequest(command)
                 );
 
-        /*
-         * Persist REQUESTED first so an exhausted technical call leaves a
-         * traceable verification that may be resumed by application policy.
-         */
-        repository.save(verification);
-
         BankingVerificationResponse bankingResponse =
                 bankingPort.verify(command.toBankingQuery());
 
@@ -98,8 +85,6 @@ public final class CustomerVerificationService
                         completedAt
                 );
 
-        repository.save(verification);
-
         List<CustomerVerificationDomainEvent> events =
                 verification.pullDomainEvents();
 
@@ -110,7 +95,8 @@ public final class CustomerVerificationService
         return VerifyCustomerResult.from(
                 verification.id(),
                 result,
-                command.accountBindingFingerprint()
+                command.accountBindingFingerprint(),
+                bankingResponse
         );
     }
 

@@ -5,8 +5,6 @@ import sys
 
 ROOT = Path.cwd()
 
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
-
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
 REQUIRED_DOCS = [
@@ -80,10 +78,10 @@ def main():
 
     engineering = ENGINEERING.read_text(encoding="utf-8")
 
-    if EXPECTED_BRANCH not in engineering:
+    if "**Authoritative implementation revision:**" not in engineering:
         fail(
-            "ENGINEERING_CONTEXT.md does not declare the authoritative "
-            f"branch {EXPECTED_BRANCH}"
+            "ENGINEERING_CONTEXT.md does not declare the "
+            "authoritative revision policy"
         )
 
     for path in REQUIRED_DOCS:

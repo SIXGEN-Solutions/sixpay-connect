@@ -6,10 +6,10 @@ This document formalizes the existing SIXPAY CONNECT authentication baseline and
 
 DA-0 is intentionally documentation-only. It defines architecture, ownership, invariants, conformance rules and no-change boundaries before any implementation change.
 
-The authoritative implementation branch for this phase is:
+The authoritative revision policy for this capability is:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 The repository entry point remains:

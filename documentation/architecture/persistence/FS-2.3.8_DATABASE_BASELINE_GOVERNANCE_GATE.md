@@ -1,6 +1,6 @@
 # FS-2.3.8 — Database Baseline Governance Gate
 
-**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Revision policy:** Task-selected authoritative revision
 **Gate:** `FS-2.3 — Database baseline consolidation`
 **Status:** Non-regression gate
 **Golden module:** Partner

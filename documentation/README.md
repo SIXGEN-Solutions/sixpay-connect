@@ -10,7 +10,7 @@ for each kind of information and which specialized index is authoritative.
 
 When sources conflict, use the precedence defined by `ENGINEERING_CONTEXT.md`:
 
-1. authoritative implementation branch;
+1. authoritative implementation revision;
 2. `documentation/architecture/`;
 3. `documentation/requirements/`;
 4. `documentation/contracts/`;

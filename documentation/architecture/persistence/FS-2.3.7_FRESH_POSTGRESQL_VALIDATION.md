@@ -1,6 +1,6 @@
 # FS-2.3.7 — Fresh PostgreSQL From-Scratch Validation
 
-**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Revision policy:** Task-selected authoritative revision
 **Gate:** `FS-2.3 — Database baseline consolidation`
 **Status:** From-scratch runtime proof
 **Golden module:** Partner

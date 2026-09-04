@@ -20,8 +20,8 @@ import java.util.Objects;
  * <p>The service first enters the idempotency boundary. Only a new request is
  * prepared and received by the Payment aggregate; a completed request is
  * returned from the durable replay store. A successful new call finishes input
- * {@link PaymentStatus#PENDING_CONFIRMATION}; later authorization, banking and
- * posting stages are handled by separate workflow services.</p>
+ * {@link PaymentStatus#RECEIVED}; banking verification, confirmation,
+ * authorization and posting are handled by separate workflow services.</p>
  */
 @Service
 public class PaymentInitiationOrchestrationService
@@ -90,9 +90,9 @@ public class PaymentInitiationOrchestrationService
                 );
 
         if (workflow.status()
-                != PaymentStatus.PENDING_CONFIRMATION) {
+                != PaymentStatus.RECEIVED) {
             throw new IllegalStateException(
-                    "InitiateDebit must persist Payment input PENDING_CONFIRMATION"
+                    "InitiateDebit must durably persist Payment in RECEIVED"
             );
         }
 

@@ -7,7 +7,6 @@ import sys
 
 
 ROOT = Path.cwd()
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 
 REQUIRED = [
     "ENGINEERING_CONTEXT.md",
@@ -152,14 +151,11 @@ def main():
             encoding="utf-8",
             errors="ignore",
         )
-        expected_declaration = (
-            "**Primary implementation branch:** "
-            f"`'{EXPECTED_BRANCH}'`"
-        )
+        expected_declaration = "**Authoritative implementation revision:**"
         if expected_declaration not in engineering_text:
             errors.append(
-                "ENGINEERING_CONTEXT.md does not declare the exact "
-                "authoritative branch " + EXPECTED_BRANCH
+                "ENGINEERING_CONTEXT.md does not declare the "
+                "authoritative revision policy"
             )
 
     duplicate_candidates = defaultdict(list)

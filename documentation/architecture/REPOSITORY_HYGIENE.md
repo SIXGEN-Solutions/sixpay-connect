@@ -6,8 +6,8 @@ This document defines the canonical FS-2.9 repository-hygiene policy. The
 authoritative branch must describe the current system, not local build output,
 empty future structure or superseded delivery scaffolding.
 
-The authoritative implementation branch is
-`feat/repository-baseline-consolidation-cleanup`.
+The authoritative implementation revision is selected through
+`TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT`.
 
 ## Retention rules
 

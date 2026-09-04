@@ -16,7 +16,7 @@ REQUIRED_AREAS = {
 }
 
 HIGHER_PRIORITY_WORDING = [
-    "authoritative implementation branch",
+    "authoritative implementation revision",
     "documentation/architecture/",
     "documentation/requirements/",
     "documentation/contracts/",

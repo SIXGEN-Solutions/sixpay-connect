@@ -144,6 +144,40 @@ public class PaymentFinalizationService {
         );
     }
 
+    PaymentWorkflowResult rejectAfterPreConfirmationRevocation(
+            PaymentId paymentId,
+            PaymentFailure rejection,
+            Instant finalizedAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.rejectAfterPreConfirmationRevocation(
+                                rejection,
+                                finalizedAt,
+                                policies
+                        )
+        );
+    }
+
+    PaymentWorkflowResult failAfterPreConfirmationRevocation(
+            PaymentId paymentId,
+            PaymentFailure failure,
+            Instant finalizedAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.failWithoutFinancialEffectAfterPreConfirmationRevocation(
+                                failure,
+                                finalizedAt,
+                                policies
+                        )
+        );
+    }
+
     public PaymentWorkflowResult recordRecoverableFailure(
             PaymentId paymentId,
             PaymentFailure failure,

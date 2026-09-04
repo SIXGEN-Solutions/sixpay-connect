@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+import org.springframework.boot.autoconfigure.condition
+        .ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,11 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@ConditionalOnProperty(
+        prefix = "sixpay.customer.observation.query",
+        name = "enabled",
+        havingValue = "true"
+)
 @RequestMapping("/internal/api/v1/observed-customers")
 @Tag(
         name = "Observed Customer Linking",

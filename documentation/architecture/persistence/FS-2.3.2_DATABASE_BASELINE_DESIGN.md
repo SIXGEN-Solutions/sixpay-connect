@@ -1,6 +1,6 @@
 # FS-2.3.2 — Database Baseline Design Matrix
 
-**Branch:** `feat/repository-baseline-consolidation-cleanup`
+**Revision policy:** Task-selected authoritative revision
 **Gate:** `FS-2.3 — Database baseline consolidation`
 **Status:** Design / no SQL deletion yet
 **Golden module:** Partner

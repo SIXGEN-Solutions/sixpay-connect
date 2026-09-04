@@ -1,19 +1,17 @@
 package com.sixpay.customer.verification.infrastructure.banking.mapper;
 
-import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
-import com.sixpay.customer.verification.domain.model.VerificationCheckResult;
-import com.sixpay.customer.verification.domain.model.VerificationCheckType;
-import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
+import com.sixpay.customer.verification.application.port.output.*;
+import com.sixpay.customer.verification.domain.model.*;
+import com.sixpay.customer.verification.infrastructure.banking.dto.*;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class AmplitudeCustomerVerificationMapperTest {
 
@@ -23,96 +21,175 @@ class AmplitudeCustomerVerificationMapperTest {
             );
 
     @Test
-    void mapsAllElevenChecksAndDefaultTtl() {
-        Instant observedAt =
-                Instant.parse("2026-08-03T16:00:00Z");
+    void mapsApprovedRequestShape() {
+        Instant requestedAt =
+                Instant.parse("2026-08-30T20:00:00Z");
 
-        BankingVerificationResponse response =
-                mapper.toInternalResponse(
-                        response(
-                                observedAt,
-                                allChecks("PASS")
-                        )
+        BankingVerificationQuery query =
+                new BankingVerificationQuery(
+                        new CustomerVerificationId(
+                                UUID.fromString(
+                                        "2c65ae19-c8a7-4db7-a617-0769f3c9e7ec"
+                                )
+                        ),
+                        CustomerVerificationSubject.of(
+                                CustomerIdentity.of(
+                                        CustomerNiu.of("M012345678901"),
+                                        "Ada Lovelace"
+                                )
+                        ),
+                        FinancialInstitutionCode.of("AMPLITUDE"),
+                        AccountBindingFingerprint.of(
+                                "v1:"
+                                        + "a".repeat(64)
+                        ),
+                        BankingAccountAccessReference.of(
+                                "ACCOUNT-CANONICAL-001"
+                        ),
+                        CustomerVerificationContext.of(
+                                com.sixpay.common.context.CorrelationId.of(
+                                        "f7316f4e-bb10-43b0-a78c-663a3eb79df3"
+                                ),
+                                null
+                        ),
+                        requestedAt
                 );
 
-        assertEquals(11, response.checks().size());
-        assertEquals(
-                observedAt.plus(Duration.ofMinutes(5)),
-                response.validUntil()
-        );
+        AmplitudeCustomerVerificationRequest request =
+                mapper.toExternalRequest(query);
+
+        assertThat(request.financialInstitutionCode())
+                .isEqualTo("AMPLITUDE");
+        assertThat(request.customer().niu())
+                .isEqualTo("M012345678901");
+        assertThat(request.customer().legalName())
+                .isEqualTo("Ada Lovelace");
+        assertThat(request.account().accountReference())
+                .isEqualTo("ACCOUNT-CANONICAL-001");
+        assertThat(request.requiredKycFields())
+                .containsExactly(
+                        "niu",
+                        "legalName",
+                        "phoneNumber",
+                        "email"
+                );
+        assertThat(request.requestedAt()).isEqualTo(requestedAt);
     }
 
     @Test
-    void mapsFailAndUnknownWithoutComputingGlobalOutcome() {
-        Map<String, String> checks = allChecks("PASS");
-        checks.put("ACCOUNT_EXISTS", "FAIL");
-        checks.put("NIU_MATCHES", "UNKNOWN");
+    void exposesCanonicalReferencesAndKycContactEvidence() {
+        Instant verifiedAt =
+                Instant.parse("2026-08-30T20:01:00Z");
 
         BankingVerificationResponse response =
                 mapper.toInternalResponse(
-                        response(
-                                Instant.parse(
-                                        "2026-08-03T16:00:00Z"
-                                ),
-                                checks
-                        )
+                        approvedResponse(verifiedAt)
                 );
 
-        assertEquals(
-                VerificationCheckResult.FAIL,
-                response.checks().stream()
-                        .filter(
-                                check -> check.type()
-                                        == VerificationCheckType.ACCOUNT_EXISTS
-                        )
-                        .findFirst()
-                        .orElseThrow()
-                        .result()
-        );
-        assertEquals(
-                VerificationCheckResult.UNKNOWN,
-                response.checks().stream()
-                        .filter(
-                                check -> check.type()
-                                        == VerificationCheckType.NIU_MATCHES
-                        )
-                        .findFirst()
-                        .orElseThrow()
-                        .result()
-        );
+        assertThat(response.checks()).hasSize(11);
+        assertThat(response.customerReference())
+                .isEqualTo("CUST-0001");
+        assertThat(response.accountReference())
+                .isEqualTo("ACC-0001");
+        assertThat(response.identity().phoneNumber())
+                .isEqualTo("+237690000001");
+        assertThat(response.identity().email())
+                .isEqualTo("ada@example.test");
+        assertThat(response.identity().kycStatus())
+                .isEqualTo("COMPLETE");
+        assertThat(response.identity().kycFields())
+                .allMatch(
+                        field -> field.present()
+                                && field.verified()
+                );
+        assertThat(response.account().accountReference())
+                .isEqualTo("ACC-0001");
+        assertThat(response.validUntil())
+                .isEqualTo(verifiedAt.plus(Duration.ofMinutes(5)));
     }
 
-    private static AmplitudeCustomerVerificationResponse response(
-            Instant observedAt,
-            Map<String, String> checks
+    private static AmplitudeCustomerVerificationResponse approvedResponse(
+            Instant verifiedAt
     ) {
+        List<AmplitudeVerificationCheckResponse> checks =
+                Arrays.stream(VerificationCheckType.values())
+                        .map(type ->
+                                new AmplitudeVerificationCheckResponse(
+                                        type.name(),
+                                        "PASS",
+                                        null,
+                                        verifiedAt
+                                )
+                        )
+                        .toList();
+
+        List<AmplitudeKycFieldResponse> kycFields = List.of(
+                new AmplitudeKycFieldResponse(
+                        "niu",
+                        null,
+                        true,
+                        true,
+                        verifiedAt
+                ),
+                new AmplitudeKycFieldResponse(
+                        "legalName",
+                        null,
+                        true,
+                        true,
+                        verifiedAt
+                ),
+                new AmplitudeKycFieldResponse(
+                        "phoneNumber",
+                        null,
+                        true,
+                        true,
+                        verifiedAt
+                ),
+                new AmplitudeKycFieldResponse(
+                        "email",
+                        null,
+                        true,
+                        true,
+                        verifiedAt
+                )
+        );
+
         return new AmplitudeCustomerVerificationResponse(
-                "200",
-                true,
-                "ACTIVE",
-                "Ada Lovelace",
-                "10005-*****-*******8901-12",
-                "XAF",
-                BigDecimal.valueOf(1_000_000),
-                BigDecimal.valueOf(100_000),
-                true,
-                "Account verified",
-                "SUCCESS",
-                observedAt,
-                null,
-                checks
+                UUID.fromString(
+                        "2c65ae19-c8a7-4db7-a617-0769f3c9e7ec"
+                ),
+                verifiedAt,
+                "AMPLITUDE",
+                "VERIFIED",
+                "CUST-0001",
+                "ACC-0001",
+                checks,
+                new AmplitudeCustomerIdentityResponse(
+                        "CUST-0001",
+                        "000001",
+                        "AMPLITUDE",
+                        "M012345678901",
+                        "Ada Lovelace",
+                        "+237690000001",
+                        "ada@example.test",
+                        "COMPLETE",
+                        kycFields,
+                        verifiedAt,
+                        "AMPLITUDE",
+                        verifiedAt
+                ),
+                new AmplitudeBankAccountResponse(
+                        "ACC-0001",
+                        "CUST-0001",
+                        "AMPLITUDE",
+                        "****0001",
+                        "XAF",
+                        "CURRENT",
+                        "ACTIVE",
+                        List.of(),
+                        "AMPLITUDE",
+                        verifiedAt
+                )
         );
-    }
-
-    private static Map<String, String> allChecks(
-            String result
-    ) {
-        return Arrays.stream(VerificationCheckType.values())
-                .collect(
-                        Collectors.toMap(
-                                Enum::name,
-                                ignored -> result
-                        )
-                );
     }
 }

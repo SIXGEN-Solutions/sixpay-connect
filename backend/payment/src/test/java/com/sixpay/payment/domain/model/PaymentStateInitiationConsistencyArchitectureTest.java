@@ -34,7 +34,7 @@ class PaymentStateInitiationConsistencyArchitectureTest {
                 "Customer confirmation evidence must not precede receipt"
         ));
         assertTrue(source.contains(
-                "Confirmed initiated Payment requires customer confirmation evidence"
+                "Post-confirmation Payment requires verified confirmation challenge"
         ));
     }
 }

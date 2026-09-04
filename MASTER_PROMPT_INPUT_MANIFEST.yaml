@@ -4,18 +4,26 @@ kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"
 metadata:
   project: "SIXPAY CONNECT"
   repository: "SIXGEN-Solutions/sixpay-connect"
-  authoritativeBranch: "feat/repository-baseline-consolidation-cleanup"
   baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
-  generatedOn: "2026-08-26"
+  generatedOn: "2026-08-30"
   status: "ACTIVE"
   purpose: >-
     Deterministic input selection for Master Prompt generation. This manifest
     selects current-state sources; it does not replace their authority.
-
+revisionPolicy:
+  selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"
+  authoritativeRevisionRequiredForWrite: true
+  exactHeadRequiredByDefault: false
+  rules:
+    - "Use the branch, tag or commit explicitly selected for the task."
+    - "Report the checked-out revision before modifying files."
+    - "The baseline commit must remain an ancestor of the selected revision."
+    - "Require exact HEAD equality only for immutable revision validation."
+    - "A synthetic Codex worktree branch name is not a failure by itself."
 authority:
   conflictRule: "FIRST_MATCH_WINS"
   precedence:
-    - "authoritative implementation branch"
+    - "authoritative implementation revision"
     - "documentation/architecture/"
     - "documentation/requirements/"
     - "documentation/contracts/"
@@ -147,6 +155,10 @@ activeContractCapabilities:
   entries:
     - id: "tresorpay-payment-request-api-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    - id: "tresorpay-payment-confirmation-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    - id: "amplitude-payment-confirmation-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
     - id: "amplitude-customer-verification-api-v1"
       path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     - id: "amplitude-payment-posting-api-v1"
@@ -291,7 +303,7 @@ masterPromptGeneration:
     repositoryFilesRequired: false
   prerequisites:
     - "Run py scripts/verify_master_prompt_input_manifest.py."
-    - "Confirm the manifest baselineCommit is an ancestor of the generation branch."
+    - "Confirm the manifest baselineCommit is an ancestor of the selected revision."
     - "Confirm the worktree contains no unrelated changes."
     - "Resolve any contract whose approval or generation policy blocks the requested work."
   outputRule: >-

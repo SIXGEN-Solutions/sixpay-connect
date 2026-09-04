@@ -29,7 +29,10 @@ class PaymentPendingConfirmationArchitectureTest {
                 "PENDING_CONFIRMATION(false)"
         ));
         assertTrue(payment.contains(
-                "requestCustomerConfirmation"
+                "startBankingVerification"
+        ));
+        assertTrue(payment.contains(
+                "recordBankingVerification"
         ));
         assertTrue(payment.contains(
                 "recordCustomerConfirmation"

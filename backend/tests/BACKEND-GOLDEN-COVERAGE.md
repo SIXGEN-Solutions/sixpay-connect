@@ -13,10 +13,10 @@ Lot 8.2 — Backend Golden Test Coverage
 This document records the evidence-backed backend test coverage inventory for
 SIXPAY CONNECT against the `partner` golden-module reference.
 
-Authoritative implementation branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 The goal of 8.2.0 is classification and gap identification.

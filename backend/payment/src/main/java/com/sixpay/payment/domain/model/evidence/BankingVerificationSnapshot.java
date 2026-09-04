@@ -14,6 +14,8 @@ public final class BankingVerificationSnapshot implements ValueObject {
     private final BankingVerificationId verificationId;
     private final BankingVerificationOutcome outcome;
     private final String accountBindingFingerprint;
+    private final String customerReference;
+    private final String accountReference;
     private final List<BankingVerificationCheckEvidence> checks;
     private final EvidenceMetadata metadata;
 
@@ -21,6 +23,26 @@ public final class BankingVerificationSnapshot implements ValueObject {
             BankingVerificationId verificationId,
             BankingVerificationOutcome outcome,
             String accountBindingFingerprint,
+            List<BankingVerificationCheckEvidence> checks,
+            EvidenceMetadata metadata
+    ) {
+        this(
+                verificationId,
+                outcome,
+                accountBindingFingerprint,
+                null,
+                null,
+                checks,
+                metadata
+        );
+    }
+
+    public BankingVerificationSnapshot(
+            BankingVerificationId verificationId,
+            BankingVerificationOutcome outcome,
+            String accountBindingFingerprint,
+            String customerReference,
+            String accountReference,
             List<BankingVerificationCheckEvidence> checks,
             EvidenceMetadata metadata
     ) {
@@ -36,6 +58,15 @@ public final class BankingVerificationSnapshot implements ValueObject {
                 EvidenceValueObjectRules.requireAccountBindingFingerprint(
                         accountBindingFingerprint
                 );
+        this.customerReference = normalizeOptional(customerReference);
+        this.accountReference = normalizeOptional(accountReference);
+        if (outcome == BankingVerificationOutcome.VERIFIED
+                && ((this.customerReference == null)
+                != (this.accountReference == null))) {
+            throw new IllegalArgumentException(
+                    "Canonical customer/account references must be supplied together"
+            );
+        }
         this.checks = canonicalChecks(checks);
         this.metadata = EvidenceValueObjectRules.requireNonNull(
                 metadata,
@@ -48,6 +79,14 @@ public final class BankingVerificationSnapshot implements ValueObject {
             );
         }
         validateOutcome();
+    }
+
+    private static String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.strip();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private static List<BankingVerificationCheckEvidence> canonicalChecks(
@@ -144,6 +183,14 @@ public final class BankingVerificationSnapshot implements ValueObject {
         return accountBindingFingerprint;
     }
 
+    public java.util.Optional<String> customerReferenceOptional() {
+        return java.util.Optional.ofNullable(customerReference);
+    }
+
+    public java.util.Optional<String> accountReferenceOptional() {
+        return java.util.Optional.ofNullable(accountReference);
+    }
+
     public List<BankingVerificationCheckEvidence> checks() {
         return checks;
     }
@@ -165,6 +212,8 @@ public final class BankingVerificationSnapshot implements ValueObject {
                 && accountBindingFingerprint.equals(
                         that.accountBindingFingerprint
                 )
+                && Objects.equals(customerReference, that.customerReference)
+                && Objects.equals(accountReference, that.accountReference)
                 && checks.equals(that.checks)
                 && metadata.equals(that.metadata);
     }
@@ -175,6 +224,8 @@ public final class BankingVerificationSnapshot implements ValueObject {
                 verificationId,
                 outcome,
                 accountBindingFingerprint,
+                customerReference,
+                accountReference,
                 checks,
                 metadata
         );

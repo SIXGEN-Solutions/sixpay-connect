@@ -16,10 +16,10 @@ DA-11.6 — Golden closure
 
 ## Repository rule
 
-The authoritative implementation branch is:
+The authoritative implementation revision is selected through:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 `ENGINEERING_CONTEXT.md` remains the mandatory repository entry point.

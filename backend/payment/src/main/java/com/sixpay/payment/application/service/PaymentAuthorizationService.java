@@ -1,6 +1,7 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.domain.model.PaymentFailure;
+import com.sixpay.payment.domain.model.ConfirmationChallenge;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.evidence.AuthorizationEvidenceSnapshot;
 import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
@@ -24,6 +25,48 @@ public class PaymentAuthorizationService {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
                 "Payment mutation coordinator"
+        );
+    }
+
+    /**
+     * Persists the current bank-issued confirmation challenge while the
+     * Payment remains PENDING_CONFIRMATION.
+     */
+    public PaymentWorkflowResult attachConfirmationChallenge(
+            PaymentId paymentId,
+            ConfirmationChallenge challenge,
+            Instant observedAt
+    ) {
+        Objects.requireNonNull(
+                challenge,
+                "Confirmation challenge"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "Confirmation challenge observation instant"
+        );
+        return coordinator.mutate(
+                paymentId,
+                payment -> payment.recordConfirmationChallenge(
+                        challenge,
+                        observedAt
+                )
+        );
+    }
+
+    public PaymentWorkflowResult startAuthorization(
+            PaymentId paymentId,
+            ConfirmationChallenge verifiedChallenge
+    ) {
+        Objects.requireNonNull(
+                verifiedChallenge,
+                "Verified confirmation challenge"
+        );
+        return coordinator.mutate(
+                paymentId,
+                payment -> payment.recordCustomerConfirmation(
+                        verifiedChallenge
+                )
         );
     }
 

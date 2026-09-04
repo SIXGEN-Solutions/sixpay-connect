@@ -76,12 +76,147 @@ public class PaymentIdempotencyReplayStore {
                     PaymentIdempotencyDecision.replay(entity);
             case IN_PROGRESS ->
                     PaymentIdempotencyDecision.inProgress();
+            case OUTCOME_UNKNOWN ->
+                    PaymentIdempotencyDecision.outcomeUnknown(entity);
             case FAILED -> {
                 entity.restart(startedAt);
                 repository.saveAndFlush(entity);
                 yield PaymentIdempotencyDecision.newRequest();
             }
         };
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public MatchingBeginResult beginMatchingHashes(
+            String operation,
+            String idempotencyKey,
+            String preferredRequestHash,
+            java.util.List<String> acceptedRequestHashes,
+            Instant startedAt
+    ) {
+        validate(operation, idempotencyKey, preferredRequestHash);
+        Objects.requireNonNull(startedAt, "Idempotency start instant");
+
+        if (acceptedRequestHashes == null
+                || acceptedRequestHashes.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Accepted request hashes must not be empty"
+            );
+        }
+
+        java.util.LinkedHashSet<String> accepted =
+                new java.util.LinkedHashSet<>();
+
+        for (String hash : acceptedRequestHashes) {
+            if (hash == null
+                    || !hash.matches("^[0-9a-f]{64}$")) {
+                throw new IllegalArgumentException(
+                        "Accepted request hash is invalid"
+                );
+            }
+            accepted.add(hash);
+        }
+
+        if (!accepted.contains(preferredRequestHash)) {
+            throw new IllegalArgumentException(
+                    "Preferred request hash must be accepted"
+            );
+        }
+
+        Optional<PaymentIdempotencyEntity> existing =
+                repository.findByOperationAndIdempotencyKey(
+                        operation,
+                        idempotencyKey
+                );
+
+        if (existing.isEmpty()) {
+            repository.saveAndFlush(
+                    PaymentIdempotencyEntity.start(
+                            operation,
+                            idempotencyKey,
+                            preferredRequestHash,
+                            startedAt
+                    )
+            );
+
+            return new MatchingBeginResult(
+                    PaymentIdempotencyDecision.newRequest(),
+                    preferredRequestHash
+            );
+        }
+
+        PaymentIdempotencyEntity entity = existing.orElseThrow();
+
+        if (!accepted.contains(entity.requestHash())) {
+            throw new PaymentIdempotencyConflictException(
+                    operation,
+                    idempotencyKey
+            );
+        }
+
+        PaymentIdempotencyDecision decision =
+                switch (entity.status()) {
+                    case COMPLETED ->
+                            PaymentIdempotencyDecision.replay(entity);
+                    case IN_PROGRESS ->
+                            PaymentIdempotencyDecision.inProgress();
+                    case OUTCOME_UNKNOWN ->
+                            PaymentIdempotencyDecision.outcomeUnknown(entity);
+                    case FAILED -> {
+                        entity.restart(startedAt);
+                        repository.saveAndFlush(entity);
+                        yield PaymentIdempotencyDecision.newRequest();
+                    }
+                };
+
+        return new MatchingBeginResult(
+                decision,
+                entity.requestHash()
+        );
+    }
+
+    public record MatchingBeginResult(
+            PaymentIdempotencyDecision decision,
+            String requestHash
+    ) {
+        public MatchingBeginResult {
+            Objects.requireNonNull(decision, "Idempotency decision");
+            if (requestHash == null
+                    || !requestHash.matches("^[0-9a-f]{64}$")) {
+                throw new IllegalArgumentException(
+                        "Effective request hash is invalid"
+                );
+            }
+        }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void markOutcomeUnknown(
+            String operation,
+            String idempotencyKey,
+            String requestHash,
+            UUID paymentId,
+            String recoveryReference,
+            String recoveryReason,
+            Instant unknownOutcomeAt
+    ) {
+        PaymentIdempotencyEntity entity =
+                requireExisting(operation, idempotencyKey);
+
+        requireSameHash(
+                entity,
+                operation,
+                idempotencyKey,
+                requestHash
+        );
+
+        entity.markOutcomeUnknown(
+                paymentId,
+                recoveryReference,
+                recoveryReason,
+                unknownOutcomeAt
+        );
+        repository.saveAndFlush(entity);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -156,10 +291,14 @@ public class PaymentIdempotencyReplayStore {
                             requestHash
                     );
 
-                    return entity.status()
-                            == PaymentIdempotencyEntity.Status.COMPLETED
-                            ? PaymentIdempotencyDecision.replay(entity)
-                            : PaymentIdempotencyDecision.inProgress();
+                    return switch (entity.status()) {
+                        case COMPLETED ->
+                                PaymentIdempotencyDecision.replay(entity);
+                        case OUTCOME_UNKNOWN ->
+                                PaymentIdempotencyDecision.outcomeUnknown(entity);
+                        case IN_PROGRESS, FAILED ->
+                                PaymentIdempotencyDecision.inProgress();
+                    };
                 });
     }
 

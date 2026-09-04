@@ -155,29 +155,28 @@ public final class Payment {
     }
 
     /**
-     * Advances a newly received Payment to {@code PENDING_CONFIRMATION} and
-     * emits the request event consumed by the asynchronous confirmation flow.
-     * Reapplying the transition input that target state is an idempotent no-op.
+     * Starts banking customer/account verification after durable reception.
      */
-    public void requestCustomerConfirmation(
+    public void startBankingVerification(
             Instant requestedAt
     ) {
         Objects.requireNonNull(
                 requestedAt,
-                "Confirmation-request instant"
+                "Banking-verification request instant"
         );
 
         if (state.status()
-                == PaymentStatus.PENDING_CONFIRMATION) {
+                == PaymentStatus.BANKING_VERIFICATION_PENDING) {
             return;
         }
+
         requireStatus(
-                "requestCustomerConfirmation",
+                "startBankingVerification",
                 PaymentStatus.RECEIVED
         );
 
         PaymentState next = nextBuilder(
-                PaymentStatus.PENDING_CONFIRMATION,
+                PaymentStatus.BANKING_VERIFICATION_PENDING,
                 requestedAt
         ).failure(null).build();
 
@@ -185,9 +184,138 @@ public final class Payment {
         commit(
                 next,
                 List.of(
-                        new PaymentCustomerConfirmationRequested(
+                        new PaymentBankingVerificationRequested(
                                 batch.metadata(),
+                                next.financialInstitutionCode(),
+                                next.debtorAccountReference()
+                                        .bindingFingerprint(),
                                 requestedAt
+                        )
+                )
+        );
+    }
+
+    /**
+     * Records the latest authoritative confirmation-challenge snapshot.
+     *
+     * <p>The challenge remains subordinate to this Payment. A different
+     * challenge reference replaces the previously current snapshot, which
+     * guarantees that SIXPAY retains at most one current ACTIVE challenge
+     * for a Payment. Lifecycle status itself is supplied authoritatively by
+     * Core Banking; SIXPAY does not calculate expiry or lockout locally.</p>
+     *
+     * <p>Every replacement must preserve the original Payment/customer/account/
+     * amount binding. No OTP material enters this operation.</p>
+     */
+    public void recordConfirmationChallenge(
+            ConfirmationChallenge challenge,
+            Instant observedAt
+    ) {
+        Objects.requireNonNull(
+                challenge,
+                "Confirmation challenge"
+        );
+        Objects.requireNonNull(
+                observedAt,
+                "Confirmation challenge observation instant"
+        );
+
+        requireStatus(
+                "recordConfirmationChallenge",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        ConfirmationChallenge current =
+                state.confirmationChallenge().orElse(null);
+
+        if (challenge.equals(current)) {
+            return;
+        }
+
+        if (current != null
+                && !current.binding().equals(challenge.binding())) {
+            throw PaymentDomainException.conflict(
+                    "Confirmation challenge binding cannot change"
+            );
+        }
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.PENDING_CONFIRMATION,
+                observedAt
+        )
+                .confirmationChallenge(challenge)
+                .failure(null)
+                .build();
+
+        commit(next, List.of());
+    }
+
+    public void recordCustomerConfirmation(
+            ConfirmationChallenge verifiedChallenge
+    ) {
+        Objects.requireNonNull(
+                verifiedChallenge,
+                "Verified confirmation challenge"
+        );
+
+        if (verifiedChallenge.status()
+                != ConfirmationChallengeStatus.VERIFIED) {
+            throw PaymentDomainException.conflict(
+                    "Customer confirmation requires a VERIFIED challenge"
+            );
+        }
+
+        Instant confirmedAt = verifiedChallenge.optionalVerifiedAt()
+                .orElseThrow(() -> PaymentDomainException.conflict(
+                        "VERIFIED confirmation challenge requires verifiedAt"
+                ));
+
+        if (state.status()
+                == PaymentStatus.AUTHORIZATION_CHECKING) {
+            if (state.confirmationChallenge()
+                    .filter(verifiedChallenge::equals)
+                    .isPresent()) {
+                return;
+            }
+            throw PaymentDomainException.conflict(
+                    "Conflicting verified confirmation challenge"
+            );
+        }
+
+        requireStatus(
+                "recordCustomerConfirmation",
+                PaymentStatus.PENDING_CONFIRMATION
+        );
+
+        ConfirmationChallenge current =
+                state.confirmationChallenge().orElse(null);
+
+        if (current != null
+                && !current.binding().equals(verifiedChallenge.binding())) {
+            throw PaymentDomainException.conflict(
+                    "Confirmation challenge binding cannot change"
+            );
+        }
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.AUTHORIZATION_CHECKING,
+                confirmedAt
+        )
+                .confirmationChallenge(verifiedChallenge)
+                .failure(null)
+                .build();
+
+        EventBatch batch = new EventBatch(next, confirmedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentCustomerConfirmationRecorded(
+                                batch.metadata(),
+                                confirmedAt
+                        ),
+                        new PaymentAuthorizationCheckingStarted(
+                                batch.metadata(),
+                                confirmedAt
                         )
                 )
         );
@@ -288,37 +416,12 @@ public final class Payment {
         if (state.status() == PaymentStatus.AUTHORIZATION_CHECKING) {
             return;
         }
-        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
-            recordCustomerConfirmation(startedAt);
-            return;
-        }
-
-        /*
-         * Backward-compatible domain entry for existing internal workflows and
-         * test fixtures. New externally received payments are persisted by
-         * PaymentReceptionService input PENDING_CONFIRMATION, so the TresorPay
-         * command path cannot bypass customer confirmation.
-         */
         requireStatus(
                 "startAuthorizationChecking",
-                PaymentStatus.RECEIVED
+                PaymentStatus.PENDING_CONFIRMATION
         );
 
-        PaymentState next = nextBuilder(
-                PaymentStatus.AUTHORIZATION_CHECKING,
-                startedAt
-        ).failure(null).build();
-
-        EventBatch batch = new EventBatch(next, startedAt);
-        commit(
-                next,
-                List.of(
-                        new PaymentAuthorizationCheckingStarted(
-                                batch.metadata(),
-                                startedAt
-                        )
-                )
-        );
+        recordCustomerConfirmation(startedAt);
     }
 
     public void recordAuthorizationDecision(
@@ -380,7 +483,7 @@ public final class Payment {
             );
 
             PaymentState next = nextBuilder(
-                    PaymentStatus.BANKING_VERIFICATION_PENDING,
+                    PaymentStatus.FUNDS_CONTROL_PENDING,
                     decisionAt
             ).authorizationEvidence(evidence)
                     .failure(null)
@@ -395,9 +498,12 @@ public final class Payment {
                                     evidence,
                                     rejectionFailure
                             ),
-                            new PaymentBankingVerificationRequested(
+                            new PaymentFundsControlRequested(
                                     batch.metadata(),
                                     next.financialInstitutionCode(),
+                                    MoneyPayload.from(
+                                            next.requestedAmount()
+                                    ),
                                     next.debtorAccountReference()
                                             .bindingFingerprint(),
                                     decisionAt
@@ -483,7 +589,7 @@ public final class Payment {
             );
 
             PaymentState next = nextBuilder(
-                    PaymentStatus.FUNDS_CONTROL_PENDING,
+                    PaymentStatus.PENDING_CONFIRMATION,
                     decisionAt
             ).bankingVerificationEvidence(evidence)
                     .failure(null)
@@ -494,14 +600,8 @@ public final class Payment {
                     next,
                     List.of(
                             bankingRecorded(batch, evidence),
-                            new PaymentFundsControlRequested(
+                            new PaymentCustomerConfirmationRequested(
                                     batch.metadata(),
-                                    next.financialInstitutionCode(),
-                                    MoneyPayload.from(
-                                            next.requestedAmount()
-                                    ),
-                                    next.debtorAccountReference()
-                                            .bindingFingerprint(),
                                     decisionAt
                             )
                     )
@@ -1290,6 +1390,33 @@ public final class Payment {
             Instant finalizedAt,
             PaymentPolicyBundle profiles
     ) {
+        rejectInternal(
+                rejection,
+                finalizedAt,
+                profiles,
+                false
+        );
+    }
+
+    public void rejectAfterPreConfirmationRevocation(
+            PaymentFailure rejection,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles
+    ) {
+        rejectInternal(
+                rejection,
+                finalizedAt,
+                profiles,
+                true
+        );
+    }
+
+    private void rejectInternal(
+            PaymentFailure rejection,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles,
+            boolean preConfirmationRevocationCompleted
+    ) {
         Objects.requireNonNull(rejection, "Payment rejection");
         Objects.requireNonNull(finalizedAt, "Finalized instant");
         Objects.requireNonNull(profiles, "Policy bundle");
@@ -1298,7 +1425,17 @@ public final class Payment {
                 && state.failure().filter(rejection::equals).isPresent()) {
             return;
         }
-        requireStatus("reject", PaymentStatus.RECEIVED);
+
+        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
+            if (!preConfirmationRevocationCompleted) {
+                throw PaymentDomainException.conflict(
+                        "PENDING_CONFIRMATION rejection requires stable challenge revocation"
+                );
+            }
+        } else {
+            requireStatus("reject", PaymentStatus.RECEIVED);
+        }
+
         requireRejectionFailure(rejection, "Payment rejection");
 
         PolicyDecision<FailureDispositionDecision> disposition =
@@ -1321,6 +1458,7 @@ public final class Payment {
                 finalizedAt
         ).failure(rejection).build();
 
+        PaymentStatus previous = state.status();
         EventBatch batch = new EventBatch(next, finalizedAt);
         commit(
                 next,
@@ -1328,7 +1466,7 @@ public final class Payment {
                         rejected(batch, rejection, finalizedAt),
                         immediateResult(
                                 batch,
-                                PaymentStatus.RECEIVED,
+                                previous,
                                 next.status(),
                                 rejection,
                                 finalizedAt,
@@ -1408,6 +1546,33 @@ public final class Payment {
             Instant finalizedAt,
             PaymentPolicyBundle profiles
     ) {
+        failWithoutFinancialEffectInternal(
+                failure,
+                finalizedAt,
+                profiles,
+                false
+        );
+    }
+
+    public void failWithoutFinancialEffectAfterPreConfirmationRevocation(
+            PaymentFailure failure,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles
+    ) {
+        failWithoutFinancialEffectInternal(
+                failure,
+                finalizedAt,
+                profiles,
+                true
+        );
+    }
+
+    private void failWithoutFinancialEffectInternal(
+            PaymentFailure failure,
+            Instant finalizedAt,
+            PaymentPolicyBundle profiles,
+            boolean preConfirmationRevocationCompleted
+    ) {
         Objects.requireNonNull(failure, "Technical failure");
         Objects.requireNonNull(finalizedAt, "Finalized instant");
         Objects.requireNonNull(profiles, "Policy bundle");
@@ -1416,15 +1581,24 @@ public final class Payment {
                 && state.failure().filter(failure::equals).isPresent()) {
             return;
         }
-        requireStatus(
-                "failWithoutFinancialEffect",
-                PaymentStatus.RECEIVED,
-                PaymentStatus.AUTHORIZATION_CHECKING,
-                PaymentStatus.BANKING_VERIFICATION_PENDING,
-                PaymentStatus.FUNDS_CONTROL_PENDING,
-                PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING,
-                PaymentStatus.APPROVED_FOR_POSTING
-        );
+
+        if (state.status() == PaymentStatus.PENDING_CONFIRMATION) {
+            if (!preConfirmationRevocationCompleted) {
+                throw PaymentDomainException.conflict(
+                        "PENDING_CONFIRMATION failure requires stable challenge revocation"
+                );
+            }
+        } else {
+            requireStatus(
+                    "failWithoutFinancialEffect",
+                    PaymentStatus.RECEIVED,
+                    PaymentStatus.AUTHORIZATION_CHECKING,
+                    PaymentStatus.BANKING_VERIFICATION_PENDING,
+                    PaymentStatus.FUNDS_CONTROL_PENDING,
+                    PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                    PaymentStatus.APPROVED_FOR_POSTING
+            );
+        }
         if (failure.failureCategory()
                 != FailureCategory.TECHNICAL_FAILURE) {
             throw PaymentDomainException.rejected(

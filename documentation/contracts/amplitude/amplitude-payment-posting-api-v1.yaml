@@ -8,10 +8,15 @@ info:
     atomically debit the customer account and credit the configured CUT account,
     recover an uncertain outcome and request an explicit reversal.
 
+    Under D00-CB-OWNERSHIP this file defines the target Core Banking contract
+    to be implemented by the Core Banking team; it is not a reverse-engineered
+    description of a pre-existing provider API.
+
     Amplitude remains authoritative for accounts, available funds, restrictions,
     limits, reservations and financial entries. The preferred operation is an
-    atomic debit and CUT credit. A reservation flow is usable only when the bank
-    declares and approves that capability.
+    atomic debit and CUT credit. A reservation flow is usable only when the
+    programme explicitly enables the capability and its business semantics have
+    been approved.
 
     A timeout or connection loss after a financial command is an UNKNOWN
     outcome. SIXPAY must query the operation with the original idempotency key
@@ -24,9 +29,10 @@ info:
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.4"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     businessOwner: "accounting"
     capability: "FUNDS_CONTROL_PAYMENT_POSTING_AND_REVERSAL"
@@ -34,8 +40,8 @@ info:
     systemOfRecord: "AMPLITUDE"
     preferredPostingMode: "ATOMIC_DEBIT_AND_CUT_CREDIT"
     optionalCapabilities:
-      fundReservation: "PENDING_BANK_CONFIRMATION"
-      reversal: "PENDING_BANK_CONFIRMATION"
+      fundReservation: "PENDING_PROGRAMME_ENABLEMENT"
+      reversal: "PENDING_PROGRAMME_ENABLEMENT"
     decisions:
       - "IA0R-D06"
       - "IA0R-D07"
@@ -44,6 +50,10 @@ info:
       - "NO_TRESOR_PAY_SUBSCRIPTION_AUTHORIZATION"
       - "NO_TFJ_FINALITY"
       - "NO_BLIND_FINANCIAL_REPLAY"
+    paymentPolicyBaseline:
+      id: "payment-mvp/v1"
+      path: "documentation/domains/payment/PAYMENT_POLICY_BASELINE.md"
+      fundsControlRole: "CORE_BANKING_FACTS_FOR_SIXPAY_POLICY_EVALUATION"
 
 servers:
   - url: https://amplitude-api.example

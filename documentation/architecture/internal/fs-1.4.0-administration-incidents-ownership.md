@@ -4,10 +4,10 @@ Status: **DECIDED**
 
 Scope: documentation and ownership only.
 
-Implementation branch:
+Authoritative revision policy:
 
 ```text
-feat/repository-baseline-consolidation-cleanup
+TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT
 ```
 
 Golden business-module reference:

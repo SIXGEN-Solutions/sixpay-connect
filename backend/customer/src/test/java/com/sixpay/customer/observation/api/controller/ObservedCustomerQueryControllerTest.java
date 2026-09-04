@@ -32,6 +32,7 @@ import org.springframework.security.config.annotation.method.configuration
         .EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -67,6 +68,9 @@ import static org.springframework.test.web.servlet.result
         ObservedCustomerQueryExceptionHandler.class,
         ObservedCustomerQueryControllerTest.MethodSecurityConfiguration.class,
         ObservedCustomerQueryControllerTest.ClockConfiguration.class
+})
+@TestPropertySource(properties = {
+        "sixpay.customer.observation.query.enabled=true"
 })
 class ObservedCustomerQueryControllerTest {
 

@@ -11,8 +11,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Creates the Payment aggregate for a prepared initiation and advances it to
- * the customer-confirmation waiting state.
+ * Creates and durably persists the Payment aggregate in {@code RECEIVED}.
  *
  * <p>The external payment reference is checked before creation for a clearer
  * application error; the database unique constraint remains the final guard
@@ -75,7 +74,6 @@ public class PaymentReceptionService {
                 intent,
                 receivedAt
         );
-        payment.requestCustomerConfirmation(receivedAt);
 
         return coordinator.persistNew(payment);
     }

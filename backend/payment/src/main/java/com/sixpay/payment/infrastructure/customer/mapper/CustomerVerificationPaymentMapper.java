@@ -37,6 +37,8 @@ public final class CustomerVerificationPaymentMapper
                 new BankingVerificationId(response.verificationId()),
                 mapOutcome(response.outcome()),
                 response.accountBindingFingerprint(),
+                response.customerReferenceOptional().orElse(null),
+                response.accountReferenceOptional().orElse(null),
                 response.checks().stream()
                         .map(check ->
                                 mapCheck(check, response.observedAt())

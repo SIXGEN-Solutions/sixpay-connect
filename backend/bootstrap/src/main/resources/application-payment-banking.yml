@@ -11,7 +11,7 @@ spring:
             authorization-grant-type: client_credentials
             client-id: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_ID}
             client-secret: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_SECRET}
-            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:account.verify,funds.read,payment.post}
+            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:account.verify,funds.read,payment.post,amplitude.payment.confirmation}
 
   ssl:
     bundle:

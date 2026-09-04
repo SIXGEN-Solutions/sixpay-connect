@@ -82,9 +82,12 @@ public class PaymentInitiationIdempotencyAdapter
 
     /**
      * Fingerprints canonical business content, serializes competing requests
-     * for the key, then selects one of three outcomes: replay a completed
-     * response, reject a still-running request, or execute and store a new
-     * response.
+     * for the key, then either replays a completed response, rejects a
+     * still-running request, or executes and stores a new response.
+     *
+     * <p>An {@code OUTCOME_UNKNOWN} decision is not valid for the local
+     * PAYMENT_INITIATE_DEBIT operation. That state is reserved for external
+     * operations requiring authoritative recovery.</p>
      */
     @Override
     @Transactional
@@ -136,6 +139,11 @@ public class PaymentInitiationIdempotencyAdapter
 
             case IN_PROGRESS ->
                     throw new PaymentInitiationInProgressException();
+
+            case OUTCOME_UNKNOWN ->
+                    throw new IllegalStateException(
+                            "PAYMENT_INITIATE_DEBIT cannot have an unknown external outcome"
+                    );
 
             case NEW ->
                     completeNew(

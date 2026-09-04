@@ -51,10 +51,9 @@ public record InitiateDebitResult(
                 "Payment status"
         );
 
-        if (status != PaymentStatus.PENDING_CONFIRMATION) {
+        if (status != PaymentStatus.RECEIVED) {
             throw new IllegalArgumentException(
-                    "InitiateDebit result must be "
-                            + "PENDING_CONFIRMATION"
+                    "InitiateDebit result must be RECEIVED"
             );
         }
     }
@@ -72,7 +71,7 @@ public record InitiateDebitResult(
                 endToEndId,
                 totalAmount,
                 initiatedAt,
-                PaymentStatus.PENDING_CONFIRMATION,
+                PaymentStatus.RECEIVED,
                 null
         );
     }

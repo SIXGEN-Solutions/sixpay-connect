@@ -3,10 +3,7 @@ package com.sixpay.customer.verification.infrastructure.banking.client;
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationRequest;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
-import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeClientException;
-import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeErrorResponse;
-import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeInvalidResponseException;
-import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeRateLimitException;
+import com.sixpay.customer.verification.infrastructure.banking.error.*;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,7 +14,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.UUID;
 
 public final class AmplitudeCustomerVerificationClient {
 
@@ -43,7 +39,15 @@ public final class AmplitudeCustomerVerificationClient {
     public AmplitudeCustomerVerificationResponse verify(
             AmplitudeCustomerVerificationRequest request,
             String correlationId,
-            UUID requestId
+            java.util.UUID ignoredRequestId
+    ) {
+        Objects.requireNonNull(ignoredRequestId, "requestId is required");
+        return verify(request, correlationId);
+    }
+
+    public AmplitudeCustomerVerificationResponse verify(
+            AmplitudeCustomerVerificationRequest request,
+            String correlationId
     ) {
         Objects.requireNonNull(request, "request is required");
         if (correlationId == null || correlationId.isBlank()) {
@@ -51,7 +55,6 @@ public final class AmplitudeCustomerVerificationClient {
                     "correlationId is required"
             );
         }
-        Objects.requireNonNull(requestId, "requestId is required");
 
         try {
             AmplitudeCustomerVerificationResponse response =
@@ -67,10 +70,6 @@ public final class AmplitudeCustomerVerificationClient {
                             .header(
                                     IntegrationHttpHeaders.CORRELATION_ID,
                                     correlationId
-                            )
-                            .header(
-                                    IntegrationHttpHeaders.REQUEST_ID,
-                                    requestId.toString()
                             )
                             .body(request)
                             .retrieve()

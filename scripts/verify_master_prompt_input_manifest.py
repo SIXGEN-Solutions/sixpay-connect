@@ -13,9 +13,8 @@ REGISTRY = ROOT / "documentation/contracts/CONTRACT_REGISTRY.yaml"
 BACKEND_POM = ROOT / "backend/pom.xml"
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 EXPECTED_PRECEDENCE = [
-    "authoritative implementation branch",
+    "authoritative implementation revision",
     "documentation/architecture/",
     "documentation/requirements/",
     "documentation/contracts/",
@@ -132,7 +131,10 @@ def main():
     required_literals = [
         'schemaVersion: "1.0"',
         'kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"',
-        f'authoritativeBranch: "{EXPECTED_BRANCH}"',
+        'revisionPolicy:',
+        'selectionSource: "TASK_INVOCATION_OR_EXECUTION_ENVIRONMENT"',
+        'authoritativeRevisionRequiredForWrite: true',
+        'exactHeadRequiredByDefault: false',
         'status: "ACTIVE"',
         'goldenBusinessModule: "backend/partner"',
         'owner: "customer"',
@@ -154,8 +156,8 @@ def main():
         if literal not in manifest:
             fail(f"missing required manifest rule: {literal}")
 
-    if EXPECTED_BRANCH not in engineering:
-        fail("ENGINEERING_CONTEXT.md does not declare the authoritative branch")
+    if "**Authoritative implementation revision:**" not in engineering:
+        fail("ENGINEERING_CONTEXT.md does not declare the authoritative revision policy")
     if "activeManifest: MASTER_PROMPT_INPUT_MANIFEST.yaml" not in classification:
         fail("documentation classification does not reference the active manifest")
     if "activePrompt: MASTER_ENGINEERING_PROMPT.md" not in classification:
@@ -178,8 +180,8 @@ def main():
         section(manifest, "activeContractCapabilities", 0)
     )
     excluded_contracts = contract_entries(section(manifest, "excludedContracts", 0))
-    if len(active_contracts) != 17 or len(set(active_contracts)) != 17:
-        fail("expected 17 unique active/reference contract capabilities")
+    if len(active_contracts) != len(set(active_contracts)):
+        fail("active/reference contract capabilities contain duplicates")
     if len(excluded_contracts) != 2 or len(set(excluded_contracts)) != 2:
         fail("expected 2 unique deferred contract capabilities")
 

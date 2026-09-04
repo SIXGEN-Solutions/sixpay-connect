@@ -4,7 +4,6 @@ import subprocess
 import sys
 
 ROOT = Path.cwd()
-EXPECTED_BRANCH = "feat/repository-baseline-consolidation-cleanup"
 
 ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 
@@ -70,10 +69,10 @@ def main():
         errors="ignore",
     )
 
-    if EXPECTED_BRANCH not in engineering:
+    if "**Authoritative implementation revision:**" not in engineering:
         fail(
             "ENGINEERING_CONTEXT.md does not declare "
-            + EXPECTED_BRANCH
+            "the authoritative revision policy"
         )
 
     for relative in REQUIRED:

@@ -4,7 +4,7 @@ registry:
   baseline: "REPOSITORY_BASELINE_CONSOLIDATION"
   gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
   step: "FS-2.1.0_CONTRACT_REGISTRY_NORMALIZATION"
-  branch: "feat/repository-baseline-consolidation-cleanup"
+  repository: "SIXGEN-Solutions/sixpay-connect"
   classificationDate: "2026-08-23"
   gateSemantics: "GLOBAL_REGISTRY_GOVERNANCE"
   historicalContractGatesPreserved: true
@@ -150,16 +150,120 @@ contracts:
       - "Security approval"
       - "Completion and approval of the full IA-0.5P Payment Contract Pack"
 
+  - id: "tresorpay-payment-confirmation-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "PAYMENT_CONFIRMATION"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.2"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
+      requiredScopes:
+        create: "payment.confirmation.create"
+        verify: "payment.confirmation.verify"
+        resend: "payment.confirmation.resend"
+        read: "payment.confirmation.read"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a customer confirmation challenge for an existing Payment"
+        - "Synchronously verify the customer OTP"
+        - "Replace and resend the current challenge"
+        - "Read the current normalized challenge state"
+        - "Enforce idempotency and authoritative recovery semantics"
+      constraints:
+        - "Payment remains the aggregate root"
+        - "At most one challenge is active per Payment"
+        - "La Regionale owns OTP generation, storage, delivery and verification"
+        - "SIXPAY never persists OTP"
+        - "challengeReference remains internal to SIXPAY"
+        - "Create and resend have no public request body"
+        - "GET returns the current challenge only"
+        - "No public revoke endpoint"
+        - "OTP success does not establish funds availability or posting success"
+        - "La Regionale resend maximum is 3; cooldown is 3 minutes and remains runtime-configurable if bank policy requires"
+        - "If the configurable one-minute post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is required"
+        - "TRESOR PAY approved the public Payment Confirmation API surface in LOT 0.4.7"
+        - "Security and Architecture approved the Payment Confirmation security/architecture principles in LOT 0.4.7"
+    approvalPrerequisite: []
+
+  - id: "amplitude-payment-confirmation-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_CONFIRMATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.7"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a bank-owned Payment confirmation challenge"
+        - "Synchronously verify the customer OTP"
+        - "Replace the active challenge and send a new OTP"
+        - "Read authoritative challenge status"
+        - "Recover an uncertain create or replacement outcome by original idempotency key"
+        - "Revoke an active challenge when Payment is cancelled or rejected before valid confirmation"
+      constraints:
+        - "Payment is the business owner of confirmation orchestration"
+        - "Amplitude / La Regionale is system of record for OTP and bank challenge state"
+        - "SIXPAY never persists OTP"
+        - "At most one challenge is active per Payment"
+        - "Create, verify and replacement are idempotent"
+        - "Same key and different logical request is HTTP 409 conflict"
+        - "Unknown outcomes require authoritative lookup before retry"
+        - "Recovery by original idempotency key is part of the approved contract surface"
+        - "Revoke is idempotent under D046-01 with same-key replay and HTTP 409 on same-key/different-request conflict"
+        - "Target challenge statuses are approved by D046-02 as ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED and REVOKED"
+        - "Target business codes and the current wire schemas are approved by D046-03"
+        - "Verify request equivalence uses the S05-01 HMAC-SHA-256 keyed fingerprint without persisting OTP or a raw OTP hash"
+        - "D046-04 defines confirmed delivery failure as REPLACED + DELIVERY_FAILED; resend/replacement creates a new OTP and challengeReference"
+        - "An uncertain delivery outcome is never DELIVERY_FAILED and follows OUTCOME_UNKNOWN plus authoritative lookup under P10/P11"
+        - "LOT 0.4.7 fixes the bank resend maximum at 3 and the resend cooldown at 3 minutes, with cooldown runtime-configurable when bank policy requires"
+        - "LOT 0.4.7 invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
+        - "LOT 0.4.7 Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
+        - "LOT 0.4.7 records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation contract"
+        - "Environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
+        - "OTP success does not establish funds availability or posting success"
+
   - id: "amplitude-customer-verification-api-v1"
     path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
     domain: "integration"
     capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
-    lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "1.R1"
     reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
@@ -169,15 +273,21 @@ contracts:
       invocationPoint: "AFTER_PAYMENT_REQUEST_DURABLY_PERSISTED"
       purpose:
         - "Verify the banking customer and NIU"
-        - "Retrieve banking identity and required KYC facts"
+        - "Retrieve canonical banking customer/account references, banking identity and required KYC facts"
         - "Find accounts and verify account ownership and status"
         - "Detect blocks or oppositions"
+        - "Provide the verified banking identity/contact facts required before Payment confirmation challenge creation"
       limitations:
         - "Does not authorize or manage a SIXPAY Customer subscription"
         - "Does not define funds-availability controls"
         - "Does not define debit or CUT-credit posting"
         - "Does not define end-of-day Treasury confirmation"
-      progressionRule: "Only a VERIFIED outcome may authorize progression to funds control"
+      progressionRule: >-
+        After durable Payment persistence, only a VERIFIED banking customer,
+        account and required-KYC outcome may authorize progression to Payment
+        confirmation/OTP challenge creation. REJECTED or INDETERMINATE outcomes
+        must not create or send an OTP challenge. Funds control remains a later,
+        distinct execution-time capability after successful customer confirmation.
     configurable:
       - "timeout"
       - "retry"
@@ -191,16 +301,17 @@ contracts:
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.4"
     mvpUsage:
       included: true
       purpose:
         - "Perform a fresh execution-time account, funds, restriction and limit check"
-        - "Optionally reserve and release funds when the bank approves the capability"
+        - "Optionally reserve and release funds when the programme enables the capability"
         - "Atomically debit the customer and credit the configured CUT"
         - "Return stable bank references and leg-level outcomes"
         - "Recover uncertain posting outcomes by idempotency key or bank reference"
@@ -217,10 +328,9 @@ contracts:
         dedicated customer/account/KYC verification defined by
         amplitude-customer-verification-api-v1.
     approvalPrerequisite:
-      - "Amplitude approves atomic posting and partial-outcome semantics"
-      - "Amplitude approves bank idempotency and authoritative lookup"
-      - "Amplitude confirms reservation and reversal capabilities"
-      - "SIXPAY Accounting, Payment, Integration, Security and Operations approve the contract"
+      - "SIXPAY Accounting, Payment and Integration approve the target posting semantics"
+      - "SIXPAY Security approves the target security, idempotency and recovery semantics"
+      - "Optional reservation and reversal capabilities are explicitly classified as enabled, deferred or outside the current MVP scope"
 
   - id: "tresorpay-payment-status-webhook-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
@@ -274,9 +384,10 @@ contracts:
     fallbackDirection: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_BANK_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
+    governanceDecision: "D00-CB-OWNERSHIP"
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.6"
     mvpUsage:
@@ -296,7 +407,7 @@ contracts:
         - "A missing result keeps Payment pending and triggers the fallback query"
         - "TFJ delay alone never authorizes automatic reversal"
     approvalPrerequisite:
-      - "Amplitude approves callback, lookup and business status semantics"
+      - "SIXPAY Accounting and Integration approve the target callback, lookup and business-status semantics"
       - "Security approves mTLS plus HMAC for callback and OAuth2 plus mTLS for lookup"
       - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
 
@@ -805,4 +916,5 @@ rules:
   - "Internal Payment, ObservedCustomer and audit APIs are read-only and use stable cursor pagination."
   - "Payment audit is separated from Payment query and requires dedicated privileged scopes."
   - "Every privileged audit consultation, denial and export is itself audited."
-
+  - "Payment confirmation is Payment-owned; OTP and authoritative bank challenge state remain bank-owned."
+  - "TRESOR PAY Payment confirmation exposes only the current normalized challenge and never the OTP or bank challengeReference."

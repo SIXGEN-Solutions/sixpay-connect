@@ -11,7 +11,7 @@ AI documentation is **not** an independent source of truth.
 Repository precedence remains:
 
 ```text
-authoritative implementation branch
+authoritative implementation revision
         ↓
 documentation/architecture/
         ↓

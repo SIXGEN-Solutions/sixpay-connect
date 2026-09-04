@@ -40,6 +40,9 @@ class PaymentBankingAdaptersArchitectureTest {
     private static final Path STATUS_ROOT =
             AMPLITUDE_ROOT.resolve("status");
 
+    private static final Path CONFIRMATION_ROOT =
+            AMPLITUDE_ROOT.resolve("confirmation");
+
     @Test
     void exposesOnlyApprovedBankingGateways()
             throws IOException {
@@ -51,6 +54,8 @@ class PaymentBankingAdaptersArchitectureTest {
                 "FundsReleaseGateway.java",
                 "FundsReservationGateway.java",
                 "LookupGateway.java",
+                "PaymentConfirmationBankResult.java",
+                "PaymentConfirmationGateway.java",
                 "PostingGateway.java",
                 "ReversalGateway.java",
                 "VerificationGateway.java",
@@ -170,6 +175,15 @@ class PaymentBankingAdaptersArchitectureTest {
                 ),
                 "LookupGateway",
                 "AmplitudePostingStatusClient",
+                true
+        );
+
+        assertDedicatedAdapter(
+                CONFIRMATION_ROOT.resolve(
+                        "DedicatedAmplitudePaymentConfirmationAdapter.java"
+                ),
+                "PaymentConfirmationGateway",
+                "AmplitudePaymentConfirmationClient",
                 true
         );
     }
@@ -408,6 +422,12 @@ class PaymentBankingAdaptersArchitectureTest {
         )
                 || normalized.contains(
                 "/amplitude/status/configuration/"
+        )
+                || normalized.contains(
+                "/amplitude/confirmation/client/"
+        )
+                || normalized.contains(
+                "/amplitude/confirmation/configuration/"
         );
     }
 

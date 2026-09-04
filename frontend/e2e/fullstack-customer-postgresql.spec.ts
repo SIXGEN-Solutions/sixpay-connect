@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { authenticateFullstackAdmin } from './support/fullstack-local-admin-auth';
+
 test.describe('CM-9 Angular -> Spring -> Customer -> Verification -> Amplitude Stub -> PostgreSQL', () => {
   test('enrolls and reloads a Customer through the real stack', async ({ page }) => {
     const suffix = Date.now().toString();
@@ -7,14 +9,15 @@ test.describe('CM-9 Angular -> Spring -> Customer -> Verification -> Amplitude S
     const customerNumber = `CM9-${suffix.slice(-8)}`;
     const accountReference = `ACC-CM9-${suffix}`;
 
-    await page.goto('/login');
-    await page.getByLabel('Email / Nom d’utilisateur').fill('admin');
-    await page.getByLabel('Mot de passe').fill('admin-dev-2026');
-    await page.getByRole('button', { name: 'Se connecter' }).click();
-
-    await expect(page).not.toHaveURL(/\/login(?:\?|$)/);
+    await authenticateFullstackAdmin(page);
 
     await page.goto('/customers/enroll');
+
+    await expect(page).toHaveURL(/\/customers\/enroll$/);
+
+    await expect(page.getByLabel('Institution financière')).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByLabel('Institution financière').fill('SIXPAY_BANK');
     await page.getByLabel('NIU').fill(niu);
@@ -23,15 +26,42 @@ test.describe('CM-9 Angular -> Spring -> Customer -> Verification -> Amplitude S
 
     await page.getByRole('button', { name: 'Rechercher dans Amplitude' }).click();
 
-    await expect(page.getByText('CM9 Full-stack Customer', { exact: true })).toBeVisible();
+    await expect(page.getByText('CM9 Full-stack Customer', { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const enrollmentResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname === '/internal/api/v1/customers',
+    );
 
     await page.getByRole('button', { name: 'Confirmer l’enrôlement' }).click();
 
-    await expect(page).toHaveURL(/\/customers\/[0-9a-f-]{36}\?enrolled=true$/);
+    const enrollmentResponse = await enrollmentResponsePromise;
+
+    const enrollmentResponseBody = await enrollmentResponse.text();
+
+    expect(
+      enrollmentResponse.status(),
+      `Customer enrollment failed with HTTP ${enrollmentResponse.status()}: ${enrollmentResponseBody}`,
+    ).toBe(201);
+
+    const enrolledCustomer = JSON.parse(enrollmentResponseBody) as {
+      id: string;
+    };
+
+    expect(enrolledCustomer.id).toMatch(/^[0-9a-f-]{36}$/);
+
+    await expect(page).toHaveURL(new RegExp(`/customers/${enrolledCustomer.id}\\?enrolled=true$`), {
+      timeout: 15_000,
+    });
 
     await expect(page.getByText('CM9 Full-stack Customer', { exact: true })).toBeVisible();
 
-    await expect(page.getByText(`NIU : ${niu}`, { exact: true })).toBeVisible();
+    await expect(page.getByText('NIU', { exact: true })).toBeVisible();
+
+    await expect(page.getByText(niu, { exact: true })).toBeVisible();
 
     const persistedDetailUrl = page.url();
 

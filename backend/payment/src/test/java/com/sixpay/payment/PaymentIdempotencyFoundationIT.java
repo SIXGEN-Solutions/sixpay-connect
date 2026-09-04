@@ -235,6 +235,119 @@ class PaymentIdempotencyFoundationIT {
                 .hasMessageContaining(key);
     }
 
+
+    @Test
+    void preservesUnknownOutcomeUntilAuthoritativeRecovery() {
+        String operation = "PAYMENT_CONFIRMATION_CREATE";
+        String key = "unknown-" + UUID.randomUUID();
+        String requestHash = hasher.hash(
+                "{\"paymentReference\":\"PAY-UNKNOWN\"}"
+        );
+
+        UUID paymentId = UUID.randomUUID();
+        String paymentReference = publicReference(paymentId);
+        Instant unknownAt = now().plusSeconds(1);
+
+        inTransaction(() ->
+                coordinator.executeLocked(
+                        operation,
+                        key,
+                        () -> {
+                            insertPayment(
+                                    paymentId,
+                                    paymentReference
+                            );
+
+                            PaymentIdempotencyDecision started =
+                                    replayStore.begin(
+                                            operation,
+                                            key,
+                                            requestHash,
+                                            now()
+                                    );
+
+                            assertThat(started.kind())
+                                    .isEqualTo(
+                                            PaymentIdempotencyDecision.Kind.NEW
+                                    );
+
+                            replayStore.markOutcomeUnknown(
+                                    operation,
+                                    key,
+                                    requestHash,
+                                    paymentId,
+                                    null,
+                                    "timeout after request dispatch",
+                                    unknownAt
+                            );
+                            return null;
+                        }
+                )
+        );
+
+        PaymentIdempotencyDecision unknown =
+                inTransactionWithResult(() ->
+                        coordinator.executeLocked(
+                                operation,
+                                key,
+                                () -> replayStore.begin(
+                                        operation,
+                                        key,
+                                        requestHash,
+                                        now().plusSeconds(2)
+                                )
+                        )
+                );
+
+        assertThat(unknown.kind())
+                .isEqualTo(
+                        PaymentIdempotencyDecision.Kind.OUTCOME_UNKNOWN
+                );
+        assertThat(unknown.paymentId()).isEqualTo(paymentId);
+        assertThat(unknown.recoveryReference()).isNull();
+        assertThat(unknown.recoveryReason())
+                .isEqualTo("timeout after request dispatch");
+        assertThat(unknown.unknownOutcomeAt()).isEqualTo(unknownAt);
+
+        inTransaction(() ->
+                coordinator.executeLocked(
+                        operation,
+                        key,
+                        () -> {
+                            replayStore.complete(
+                                    operation,
+                                    key,
+                                    requestHash,
+                                    paymentId,
+                                    "CHALLENGE_ACTIVE",
+                                    "{\"challenge\":\"recovered\"}",
+                                    now().plusSeconds(3)
+                            );
+                            return null;
+                        }
+                )
+        );
+
+        PaymentIdempotencyDecision replay =
+                inTransactionWithResult(() ->
+                        coordinator.executeLocked(
+                                operation,
+                                key,
+                                () -> replayStore.begin(
+                                        operation,
+                                        key,
+                                        requestHash,
+                                        now().plusSeconds(4)
+                                )
+                        )
+                );
+
+        assertThat(replay.kind())
+                .isEqualTo(PaymentIdempotencyDecision.Kind.REPLAY);
+        assertThat(replay.responseStatus())
+                .isEqualTo("CHALLENGE_ACTIVE");
+    }
+
     @Test
     void serializesConcurrentTransactionsForSameKey()
             throws Exception {

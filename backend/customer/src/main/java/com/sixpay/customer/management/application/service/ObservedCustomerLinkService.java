@@ -9,6 +9,8 @@ import com.sixpay.customer.management.domain.repository.ObservedCustomerLinkRepo
 import com.sixpay.customer.observation.application.port.input.query.GetObservedCustomerUseCase;
 import com.sixpay.customer.observation.application.query.GetObservedCustomerQuery;
 import com.sixpay.customer.observation.domain.model.ObservedCustomerId;
+import org.springframework.boot.autoconfigure.condition
+        .ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@ConditionalOnProperty(
+        prefix = "sixpay.customer.observation.query",
+        name = "enabled",
+        havingValue = "true"
+)
 @Transactional
 public class ObservedCustomerLinkService
         implements ObservedCustomerLinkUseCase {

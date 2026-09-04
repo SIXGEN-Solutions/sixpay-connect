@@ -60,10 +60,8 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    AmplitudeResponseValidator amplitudeResponseValidator(
-            BankingVerificationProperties properties
-    ) {
-        return new AmplitudeResponseValidator(properties);
+    AmplitudeResponseValidator amplitudeResponseValidator() {
+        return new AmplitudeResponseValidator();
     }
 
     @Bean

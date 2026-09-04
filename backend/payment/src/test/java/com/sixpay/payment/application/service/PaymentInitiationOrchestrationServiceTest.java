@@ -32,7 +32,7 @@ class PaymentInitiationOrchestrationServiceTest {
             Instant.parse("2026-08-03T10:30:00Z");
 
     @Test
-    void persistsOneNewPaymentInPendingConfirmation() {
+    void persistsOneNewPaymentInReceived() {
         PaymentInitiationIdempotencyPort idempotencyPort =
                 Mockito.mock(
                         PaymentInitiationIdempotencyPort.class
@@ -88,8 +88,8 @@ class PaymentInitiationOrchestrationServiceTest {
                 new PaymentWorkflowResult(
                         paymentId,
                         reference,
-                        PaymentStatus.PENDING_CONFIRMATION,
-                        2L,
+                        PaymentStatus.RECEIVED,
+                        1L,
                         true
                 )
         );
@@ -109,7 +109,7 @@ class PaymentInitiationOrchestrationServiceTest {
                 .isEqualTo(paymentId);
         assertThat(result.status())
                 .isEqualTo(
-                        PaymentStatus.PENDING_CONFIRMATION
+                        PaymentStatus.RECEIVED
                 );
         assertThat(result.optionalConfirmationChallenge())
                 .isEmpty();

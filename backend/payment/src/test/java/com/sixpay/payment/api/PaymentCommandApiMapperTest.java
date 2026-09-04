@@ -64,7 +64,7 @@ class PaymentCommandApiMapperTest {
         var response = mapper.toResponse(result);
 
         assertThat(response.status().name())
-                .isEqualTo("PENDING_CONFIRMATION");
+                .isEqualTo("RECEIVED");
         assertThat(response.bankOperationId()).isNull();
         assertThat(response.fees()).isNull();
         assertThat(response.transactionQrCode()).isNull();

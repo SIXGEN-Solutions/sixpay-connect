@@ -131,6 +131,8 @@ public final class CustomerVerificationModuleAdapter
                         .toList(),
                 result.evidenceFingerprint().value(),
                 result.accountBindingFingerprint().value(),
+                result.customerReference(),
+                result.accountReference(),
                 result.observedAt(),
                 result.validUntil(),
                 result.completedAt()

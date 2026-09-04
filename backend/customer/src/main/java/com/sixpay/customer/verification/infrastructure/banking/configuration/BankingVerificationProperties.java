@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Set;
 
 @Validated
@@ -31,7 +32,7 @@ public record BankingVerificationProperties(
             "sixpay.customer.verification.banking";
 
     public static final String DEFAULT_ENDPOINT_PATH =
-            "/v1/accounts/verify";
+            "/api/v1/customer-verifications";
 
     public BankingVerificationProperties {
         endpointPath = required(endpointPath, "endpointPath");
@@ -84,15 +85,15 @@ public record BankingVerificationProperties(
     ) {
         public Contract {
             version = required(version, "version");
-            successCodes = Set.copyOf(successCodes);
-            businessFailureCodes =
-                    Set.copyOf(businessFailureCodes);
-
+            successCodes = Set.copyOf(Objects.requireNonNull(successCodes, "successCodes are required"));
+            businessFailureCodes = Set.copyOf(Objects.requireNonNull(businessFailureCodes, "businessFailureCodes are required"));
             if (successCodes.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "At least one Amplitude success code is required"
-                );
+                throw new IllegalArgumentException("At least one Amplitude success code is required");
             }
+        }
+
+        public Contract(String version) {
+            this(version, Set.of("LEGACY"), Set.of());
         }
     }
 

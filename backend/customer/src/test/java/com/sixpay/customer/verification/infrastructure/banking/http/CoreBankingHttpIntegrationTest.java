@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CoreBankingHttpIntegrationTest {
 
     private static final String VERIFICATION_PATH =
-            "/v1/accounts/verify";
+            "/api/v1/customer-verifications";
 
     private HttpServer server;
     private URI baseUrl;

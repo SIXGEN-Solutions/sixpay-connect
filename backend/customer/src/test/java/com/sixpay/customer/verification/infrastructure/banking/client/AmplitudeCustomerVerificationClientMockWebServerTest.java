@@ -33,7 +33,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
         BankingVerificationProperties properties =
                 new BankingVerificationProperties(
                         URI.create("https://amplitude.test"),
-                        "/v1/accounts/verify",
+                        "/api/v1/customer-verifications",
                         Duration.ofSeconds(1),
                         Duration.ofSeconds(2),
                         3,
@@ -81,15 +81,13 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
 
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath())
-                .isEqualTo("/v1/accounts/verify");
+                .isEqualTo("/api/v1/customer-verifications");
         assertThat(recorded.getHeader("Authorization"))
                 .isEqualTo("Bearer sandbox-token");
         assertThat(recorded.getHeader("X-Correlation-ID"))
                 .isEqualTo("corr-001");
         assertThat(recorded.getHeader("X-Request-ID"))
-                .isEqualTo(
-                        "00000000-0000-0000-0000-000000000001"
-                );
+                .isNull();
     }
 
     @Test
@@ -190,23 +188,41 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
     private static String successBody() {
         return """
                 {
-                  "code": "00",
-                  "accountFound": true,
-                  "accountStatus": "ACTIVE",
-                  "accountHolder": "Customer Test",
-                  "accountReferenceMasked": "****0001",
-                  "currency": "XAF",
-                  "availableBalance": 100000,
-                  "accountBalance": 100000,
-                  "canDebit": true,
-                  "description": "Verified",
-                  "result": "SUCCESS",
-                  "observedAt": "2026-08-06T14:00:00Z",
-                  "validUntil": "2026-08-06T14:05:00Z",
-                  "checks": {
-                    "CUSTOMER_EXISTS": "PASS",
-                    "ACCOUNT_EXISTS": "PASS",
-                    "ACCOUNT_IS_ACTIVE": "PASS"
+                  "verificationId":"00000000-0000-0000-0000-000000000001",
+                  "verifiedAt":"2026-08-06T14:00:00Z",
+                  "source":"AMPLITUDE",
+                  "outcome":"VERIFIED",
+                  "customerReference":"CUST-001",
+                  "accountReference":"ACC-001",
+                  "checks":[
+                    {"type":"CUSTOMER_EXISTS","result":"PASS"},
+                    {"type":"ACCOUNT_EXISTS","result":"PASS"},
+                    {"type":"ACCOUNT_IS_ACTIVE","result":"PASS"}
+                  ],
+                  "identity":{
+                    "customerReference":"CUST-001",
+                    "customerNumber":"000001",
+                    "financialInstitutionCode":"LRB",
+                    "niu":"NIU-001",
+                    "legalName":"Customer Test",
+                    "phoneNumber":"+237690000001",
+                    "email":"customer@example.test",
+                    "kycStatus":"COMPLETE",
+                    "kycFields":[],
+                    "source":"AMPLITUDE",
+                    "retrievedAt":"2026-08-06T14:00:00Z"
+                  },
+                  "account":{
+                    "accountReference":"ACC-001",
+                    "customerReference":"CUST-001",
+                    "financialInstitutionCode":"LRB",
+                    "maskedAccountIdentifier":"****0001",
+                    "currency":"XAF",
+                    "accountType":"CURRENT",
+                    "status":"ACTIVE",
+                    "restrictions":[],
+                    "source":"AMPLITUDE",
+                    "retrievedAt":"2026-08-06T14:00:00Z"
                   }
                 }
                 """;

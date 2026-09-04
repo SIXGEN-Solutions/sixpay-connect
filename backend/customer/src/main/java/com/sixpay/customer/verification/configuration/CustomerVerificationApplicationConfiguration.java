@@ -8,12 +8,9 @@ import com.sixpay.customer.verification.application.port.output.BankingVerificat
 import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationDomainEventPublisher;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationEventIdGenerator;
-import com.sixpay.customer.verification.application.port.output.CustomerVerificationRepository;
 import com.sixpay.customer.verification.application.port.output.CustomerVerificationTimeProvider;
 import com.sixpay.customer.verification.application.service.CustomerVerificationService;
 import com.sixpay.customer.verification.domain.event.CustomerVerificationDomainEvent;
-import com.sixpay.customer.verification.domain.model.CustomerVerification;
-import com.sixpay.customer.verification.domain.model.CustomerVerificationId;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -39,14 +35,12 @@ public class CustomerVerificationApplicationConfiguration {
     @Bean
     VerifyCustomerUseCase verifyCustomerUseCase(
             BankingCustomerVerificationPort bankingPort,
-            CustomerVerificationRepository repository,
             CustomerVerificationDomainEventPublisher eventPublisher,
             CustomerVerificationEventIdGenerator eventIdGenerator,
             CustomerVerificationTimeProvider timeProvider
     ) {
         return new CustomerVerificationService(
                 bankingPort,
-                repository,
                 eventPublisher,
                 eventIdGenerator,
                 timeProvider
@@ -73,39 +67,6 @@ public class CustomerVerificationApplicationConfiguration {
                     ApplicationEventPublisher publisher
             ) {
         return events -> publishAll(publisher, events);
-    }
-
-    /**
-     * Fail-closed persistence boundary.
-     *
-     * <p>The authoritative branch defines the repository port but does not
-     * yet contain a runtime persistence adapter for Customer Verification.
-     * Refusing writes is safer than silently using volatile memory.</p>
-     */
-    @Bean
-    @ConditionalOnMissingBean(CustomerVerificationRepository.class)
-    CustomerVerificationRepository
-            unavailableCustomerVerificationRepository() {
-
-        return new CustomerVerificationRepository() {
-            @Override
-            public CustomerVerification save(
-                    CustomerVerification verification
-            ) {
-                throw unavailable(
-                        "Customer Verification persistence is not configured"
-                );
-            }
-
-            @Override
-            public Optional<CustomerVerification> findById(
-                    CustomerVerificationId verificationId
-            ) {
-                throw unavailable(
-                        "Customer Verification persistence is not configured"
-                );
-            }
-        };
     }
 
     /**

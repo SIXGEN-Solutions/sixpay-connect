@@ -41,6 +41,7 @@ public class PaymentIdempotencyEntity {
 
     public enum Status {
         IN_PROGRESS,
+        OUTCOME_UNKNOWN,
         COMPLETED,
         FAILED
     }
@@ -106,6 +107,21 @@ public class PaymentIdempotencyEntity {
             length = 1000
     )
     private String failureReason;
+
+    @Column(
+            name = "recovery_reference",
+            length = 150
+    )
+    private String recoveryReference;
+
+    @Column(
+            name = "recovery_reason",
+            length = 1000
+    )
+    private String recoveryReason;
+
+    @Column(name = "unknown_outcome_at")
+    private Instant unknownOutcomeAt;
 
     @Column(
             name = "created_at",
@@ -176,6 +192,9 @@ public class PaymentIdempotencyEntity {
         responseStatus = null;
         responsePayload = null;
         failureReason = null;
+        recoveryReference = null;
+        recoveryReason = null;
+        unknownOutcomeAt = null;
         completedAt = null;
         updatedAt = Objects.requireNonNull(
                 restartedAt,
@@ -189,7 +208,7 @@ public class PaymentIdempotencyEntity {
             String responsePayload,
             Instant completedAt
     ) {
-        requireInProgress();
+        requireCompletable();
 
         this.paymentId = Objects.requireNonNull(
                 paymentId,
@@ -209,14 +228,47 @@ public class PaymentIdempotencyEntity {
         );
         this.updatedAt = completedAt;
         this.failureReason = null;
+        this.recoveryReference = null;
+        this.recoveryReason = null;
+        this.unknownOutcomeAt = null;
         this.status = Status.COMPLETED;
+    }
+
+    void markOutcomeUnknown(
+            UUID paymentId,
+            String recoveryReference,
+            String recoveryReason,
+            Instant unknownOutcomeAt
+    ) {
+        requireInProgress();
+
+        this.paymentId = Objects.requireNonNull(
+                paymentId,
+                "Unknown-outcome Payment ID"
+        );
+        this.recoveryReference = normalizeRecoveryReference(
+                recoveryReference
+        );
+        this.recoveryReason = normalizeRecoveryReason(
+                recoveryReason
+        );
+        this.unknownOutcomeAt = Objects.requireNonNull(
+                unknownOutcomeAt,
+                "Unknown-outcome instant"
+        );
+        this.updatedAt = unknownOutcomeAt;
+        this.responseStatus = null;
+        this.responsePayload = null;
+        this.failureReason = null;
+        this.completedAt = null;
+        this.status = Status.OUTCOME_UNKNOWN;
     }
 
     void fail(
             String failureReason,
             Instant failedAt
     ) {
-        requireInProgress();
+        requireFailable();
 
         this.failureReason = normalizeFailureReason(
                 failureReason
@@ -225,15 +277,62 @@ public class PaymentIdempotencyEntity {
                 failedAt,
                 "Idempotency failure instant"
         );
+        this.recoveryReference = null;
+        this.recoveryReason = null;
+        this.unknownOutcomeAt = null;
         this.status = Status.FAILED;
     }
 
     private void requireInProgress() {
         if (status != Status.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Idempotency record is not input progress"
+                    "Idempotency record is not in progress"
             );
         }
+    }
+
+    private void requireCompletable() {
+        if (status != Status.IN_PROGRESS
+                && status != Status.OUTCOME_UNKNOWN) {
+            throw new IllegalStateException(
+                    "Idempotency record cannot be completed"
+            );
+        }
+    }
+
+    private void requireFailable() {
+        if (status != Status.IN_PROGRESS
+                && status != Status.OUTCOME_UNKNOWN) {
+            throw new IllegalStateException(
+                    "Idempotency record cannot fail"
+            );
+        }
+    }
+
+    private static String normalizeRecoveryReference(
+            String value
+    ) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > 150) {
+            throw new IllegalArgumentException(
+                    "Recovery reference must be at most 150 characters"
+            );
+        }
+        return normalized;
+    }
+
+    private static String normalizeRecoveryReason(
+            String value
+    ) {
+        if (value == null || value.isBlank()) {
+            return "external operation outcome unknown";
+        }
+        return value.length() <= 1000
+                ? value
+                : value.substring(0, 1000);
     }
 
     private static String requireHash(String value) {
@@ -315,6 +414,18 @@ public class PaymentIdempotencyEntity {
 
     public String failureReason() {
         return failureReason;
+    }
+
+    public String recoveryReference() {
+        return recoveryReference;
+    }
+
+    public String recoveryReason() {
+        return recoveryReason;
+    }
+
+    public Instant unknownOutcomeAt() {
+        return unknownOutcomeAt;
     }
 
     public Instant createdAt() {

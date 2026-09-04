@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,8 +32,7 @@ class CustomerVerificationServiceTest {
     );
 
     @Test
-    void orchestratesRequestBankingCompletionPersistenceAndPublication() {
-        RecordingRepository repository = new RecordingRepository();
+    void orchestratesRequestBankingCompletionAndPublication() {
         RecordingPublisher publisher = new RecordingPublisher();
         AtomicReference<BankingVerificationQuery> capturedQuery =
                 new AtomicReference<>();
@@ -47,22 +45,12 @@ class CustomerVerificationServiceTest {
         CustomerVerificationService service =
                 service(
                         bankingPort,
-                        repository,
                         publisher
                 );
 
         VerifyCustomerCommand command = command();
         VerifyCustomerResult result = service.verify(command);
 
-        assertEquals(2, repository.saved.size());
-        assertEquals(
-                VerificationStatus.REQUESTED,
-                repository.saved.get(0).status()
-        );
-        assertEquals(
-                VerificationStatus.COMPLETED,
-                repository.saved.get(1).status()
-        );
         assertEquals(1, publisher.events.size());
         assertEquals(VerificationOutcome.VERIFIED, result.outcome());
         assertEquals(COMPLETED_AT, result.completedAt());
@@ -81,8 +69,7 @@ class CustomerVerificationServiceTest {
     }
 
     @Test
-    void persistsRequestedStateButDoesNotPublishWhenBankingFails() {
-        RecordingRepository repository = new RecordingRepository();
+    void doesNotPublishWhenBankingFails() {
         RecordingPublisher publisher = new RecordingPublisher();
 
         BankingCustomerVerificationPort bankingPort = query -> {
@@ -95,7 +82,6 @@ class CustomerVerificationServiceTest {
         CustomerVerificationService service =
                 service(
                         bankingPort,
-                        repository,
                         publisher
                 );
 
@@ -104,55 +90,21 @@ class CustomerVerificationServiceTest {
                 () -> service.verify(command())
         );
 
-        assertEquals(1, repository.saved.size());
-        assertEquals(
-                VerificationStatus.REQUESTED,
-                repository.saved.getFirst().status()
-        );
         assertTrue(publisher.events.isEmpty());
     }
 
     @Test
-    void neverPublishesBeforeCompletedAggregateIsSaved() {
-        List<String> operations = new ArrayList<>();
+    void publishesCompletedDomainEvent() {
+        RecordingPublisher publisher = new RecordingPublisher();
 
-        CustomerVerificationRepository repository =
-                new CustomerVerificationRepository() {
-                    @Override
-                    public CustomerVerification save(
-                            CustomerVerification verification
-                    ) {
-                        operations.add(
-                                "save-" + verification.status()
-                        );
-                        return verification;
-                    }
+        VerifyCustomerResult result =
+                service(
+                        query -> successfulBankingResponse(),
+                        publisher
+                ).verify(command());
 
-                    @Override
-                    public Optional<CustomerVerification> findById(
-                            CustomerVerificationId verificationId
-                    ) {
-                        return Optional.empty();
-                    }
-                };
-
-        CustomerVerificationDomainEventPublisher publisher =
-                events -> operations.add("publish");
-
-        service(
-                query -> successfulBankingResponse(),
-                repository,
-                publisher
-        ).verify(command());
-
-        assertEquals(
-                List.of(
-                        "save-REQUESTED",
-                        "save-COMPLETED",
-                        "publish"
-                ),
-                operations
-        );
+        assertEquals(VerificationOutcome.VERIFIED, result.outcome());
+        assertEquals(1, publisher.events.size());
     }
 
     @Test
@@ -163,7 +115,6 @@ class CustomerVerificationServiceTest {
         CustomerVerificationService service =
                 new CustomerVerificationService(
                         query -> successfulBankingResponse(),
-                        new RecordingRepository(),
                         events -> {
                         },
                         () -> {
@@ -185,12 +136,10 @@ class CustomerVerificationServiceTest {
 
     private static CustomerVerificationService service(
             BankingCustomerVerificationPort bankingPort,
-            CustomerVerificationRepository repository,
             CustomerVerificationDomainEventPublisher publisher
     ) {
         return new CustomerVerificationService(
                 bankingPort,
-                repository,
                 publisher,
                 () -> EVENT_ID,
                 () -> COMPLETED_AT
@@ -235,43 +184,18 @@ class CustomerVerificationServiceTest {
                         "v1:sha256:" + "b".repeat(64)
                 ),
                 OBSERVED_AT,
-                OBSERVED_AT.plusSeconds(300)
+                OBSERVED_AT.plusSeconds(300),
+                "CUST-0001",
+                "AMP-ACC-000123",
+                new VerifiedBankingIdentity(
+                        "CUST-0001", "000001", "AMPLITUDE", "M0123456", "Ada Lovelace",
+                        "+237690000001", "ada@example.test", "COMPLETE", List.of(), OBSERVED_AT, OBSERVED_AT
+                ),
+                new VerifiedBankingAccount(
+                        "AMP-ACC-000123", "CUST-0001", "AMPLITUDE", "****0123",
+                        "XAF", "CURRENT", "ACTIVE", List.of(), OBSERVED_AT
+                )
         );
-    }
-
-    private static final class RecordingRepository
-            implements CustomerVerificationRepository {
-
-        private final List<CustomerVerification> saved =
-                new ArrayList<>();
-
-        @Override
-        public CustomerVerification save(
-                CustomerVerification verification
-        ) {
-            /*
-             * Snapshot the aggregate state through reconstitution so the
-             * first saved entry remains REQUESTED after later mutation.
-             */
-            saved.add(
-                    CustomerVerification.reconstitute(
-                            verification.request(),
-                            verification.status(),
-                            verification.result().orElse(null),
-                            verification.updatedAt()
-                    )
-            );
-            return verification;
-        }
-
-        @Override
-        public Optional<CustomerVerification> findById(
-                CustomerVerificationId verificationId
-        ) {
-            return saved.stream()
-                    .filter(value -> value.id().equals(verificationId))
-                    .reduce((first, second) -> second);
-        }
     }
 
     private static final class RecordingPublisher

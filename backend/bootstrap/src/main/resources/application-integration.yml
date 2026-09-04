@@ -21,6 +21,15 @@ sixpay:
         partner-password: ${SIXPAY_LOCAL_PARTNER_PASSWORD:partner-dev-2026}
         partner-subject: ${SIXPAY_LOCAL_PARTNER_SUBJECT:f88166d1-39df-4900-bb31-1700d25c3bfa}
 
+  reporting:
+    audit-query:
+      cursor-hmac-key: ${SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
+    audit-export:
+      storage-directory: ${SIXPAY_REPORTING_AUDIT_EXPORT_STORAGE_DIRECTORY:target/integration-audit-exports}
+      retrieval-base-uri: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI:https://audit-artifacts.integration.local/}
+      retention: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION:PT1H}
+
 server:
   servlet:
     session:

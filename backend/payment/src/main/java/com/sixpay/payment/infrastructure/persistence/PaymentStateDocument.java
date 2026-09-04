@@ -30,6 +30,7 @@ record PaymentStateDocument(
         EvidenceFingerprint allocationIntentFingerprint,
         PaymentInitiationContext initiationContext,
         CustomerConfirmationEvidence customerConfirmationEvidence,
+        ConfirmationChallenge confirmationChallenge,
         PaymentStatus status,
         AuthorizationEvidenceSnapshot authorizationEvidence,
         BankingVerificationSnapshot bankingVerificationEvidence,
@@ -50,7 +51,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 2;
+    static final int CURRENT_SCHEMA_VERSION = 4;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -68,6 +69,7 @@ record PaymentStateDocument(
                 state.allocationIntentFingerprint(),
                 state.initiationContext().orElse(null),
                 state.customerConfirmationEvidence().orElse(null),
+                state.confirmationChallenge().orElse(null),
                 state.status(),
                 state.authorizationEvidence().orElse(null),
                 state.bankingVerificationEvidence().orElse(null),
@@ -100,32 +102,120 @@ record PaymentStateDocument(
 
         if (schemaVersion == 1
                 && (initiationContext != null
-                || customerConfirmationEvidence != null)) {
+                || customerConfirmationEvidence != null
+                || confirmationChallenge != null)) {
             throw new PaymentPersistenceException(
                     "Legacy Payment state payload must not contain "
-                            + "initiation context or confirmation evidence"
+                            + "initiation, confirmation evidence or challenge"
             );
         }
 
-        if (schemaVersion == CURRENT_SCHEMA_VERSION
+        if (schemaVersion == 2
+                && confirmationChallenge != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version 2 must not contain "
+                            + "confirmation challenge state"
+            );
+        }
+
+        if (schemaVersion >= 4
+                && bankingVerificationEvidence != null
+                && bankingVerificationEvidence.outcome()
+                        == BankingVerificationOutcome.VERIFIED
+                && (bankingVerificationEvidence
+                                .customerReferenceOptional()
+                                .isEmpty()
+                        || bankingVerificationEvidence
+                                .accountReferenceOptional()
+                                .isEmpty())) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires canonical banking customer/account "
+                            + "references for VERIFIED banking evidence"
+            );
+        }
+
+        if (schemaVersion >= 2
                 && status == PaymentStatus.PENDING_CONFIRMATION
                 && initiationContext == null) {
             throw new PaymentPersistenceException(
-                    "Payment state schema version 2 requires "
-                            + "initiation context for PENDING_CONFIRMATION"
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires initiation context for "
+                            + "PENDING_CONFIRMATION"
             );
         }
 
-        if (schemaVersion == CURRENT_SCHEMA_VERSION
+        /*
+         * Schema v2 predates ConfirmationChallenge. Preserve its historical
+         * representation exactly: any state beyond RECEIVED or
+         * PENDING_CONFIRMATION requires CustomerConfirmationEvidence.
+         */
+        if (schemaVersion == 2
                 && initiationContext != null
                 && status != PaymentStatus.RECEIVED
                 && status != PaymentStatus.PENDING_CONFIRMATION
                 && customerConfirmationEvidence == null) {
             throw new PaymentPersistenceException(
-                    "Payment state schema version 2 requires "
-                            + "confirmation evidence after confirmation"
+                    "Payment state schema version 2 requires confirmation "
+                            + "evidence after confirmation"
             );
         }
+
+        /*
+         * Starting with schema v3, ConfirmationChallenge is persisted and a
+         * verified challenge is a valid replacement for the legacy
+         * CustomerConfirmationEvidence. Banking verification may legitimately
+         * be pending before customer confirmation.
+         *
+         * REJECTED and FAILED are intentionally excluded because both can be
+         * reached before successful OTP confirmation.
+         */
+        if (schemaVersion >= 3
+                && initiationContext != null
+                && requiresVerifiedConfirmation(status)
+                && customerConfirmationEvidence == null
+                && !hasVerifiedConfirmationChallenge()) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " requires verified confirmation after "
+                            + "confirmation"
+            );
+        }
+    }
+
+    private static boolean requiresVerifiedConfirmation(
+            PaymentStatus status
+    ) {
+        return switch (status) {
+            case AUTHORIZATION_CHECKING,
+                    FUNDS_CONTROL_PENDING,
+                    TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                    APPROVED_FOR_POSTING,
+                    POSTING_PENDING,
+                    POSTING_OUTCOME_UNKNOWN,
+                    DEBIT_CONFIRMED,
+                    POSTED_PENDING_TFJ,
+                    REVERSAL_REQUIRED,
+                    REVERSAL_PENDING,
+                    REVERSAL_OUTCOME_UNKNOWN,
+                    TREASURY_INTEGRATED,
+                    REVERSED -> true;
+            case RECEIVED,
+                    BANKING_VERIFICATION_PENDING,
+                    PENDING_CONFIRMATION,
+                    REJECTED,
+                    FAILED -> false;
+        };
+    }
+
+    private boolean hasVerifiedConfirmationChallenge() {
+        return confirmationChallenge != null
+                && confirmationChallenge.status()
+                        == ConfirmationChallengeStatus.VERIFIED
+                && confirmationChallenge.verifiedAt() != null;
     }
 
     PaymentState toState() {
@@ -151,6 +241,7 @@ record PaymentStateDocument(
                 .customerConfirmationEvidence(
                         customerConfirmationEvidence
                 )
+                .confirmationChallenge(confirmationChallenge)
                 .status(status)
                 .authorizationEvidence(authorizationEvidence)
                 .bankingVerificationEvidence(
