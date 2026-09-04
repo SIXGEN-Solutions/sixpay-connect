@@ -15,6 +15,14 @@ import java.util.Objects;
 public final class SixpayAuthorizationGate {
 
     public SixpayAuthorizationGateResult evaluate(PaymentState state) {
+        return evaluate(state, null);
+    }
+
+    public SixpayAuthorizationGateResult evaluate(
+            PaymentState state,
+            PartnerAuthorizationView
+                    partnerAuthorization
+    ) {
         Objects.requireNonNull(state, "Payment state");
 
         EnumMap<
@@ -23,7 +31,14 @@ public final class SixpayAuthorizationGate {
         > results = new EnumMap<>(AuthorizationControl.class);
 
         for (AuthorizationControl control : AuthorizationControl.values()) {
-            results.put(control, evaluateControl(control, state));
+            results.put(
+                    control,
+                    evaluateControl(
+                            control,
+                            state,
+                            partnerAuthorization
+                    )
+            );
         }
 
         return new SixpayAuthorizationGateResult(results);
@@ -31,10 +46,68 @@ public final class SixpayAuthorizationGate {
 
     private AuthorizationControlResult evaluateControl(
             AuthorizationControl control,
-            PaymentState state
+            PaymentState state,
+            PartnerAuthorizationView
+                    partnerAuthorization
     ) {
         AuthorizationControlSource source =
                 AuthorizationControlSourceMap.sourceFor(control);
+
+        if (control == AuthorizationControl.PARTNER_AUTHORIZED) {
+            if (partnerAuthorization == null) {
+                return new AuthorizationControlResult(
+                        control,
+                        AuthorizationControlOutcome.UNRESOLVED,
+                        "Partner authorization view is not available"
+                );
+            }
+            if (!partnerAuthorization.active()) {
+                return fail(
+                        control,
+                        "SIXPAY Partner is not ACTIVE"
+                );
+            }
+            return new AuthorizationControlResult(
+                    control,
+                    AuthorizationControlOutcome.PASS,
+                    "SIXPAY Partner is ACTIVE"
+            );
+        }
+
+        if (control == AuthorizationControl.CLAIM_TYPE_AUTHORIZED) {
+            if (state.initiationContext().isEmpty()) {
+                return fail(
+                        control,
+                        "Payment initiation context is required"
+                );
+            }
+            if (partnerAuthorization == null) {
+                return new AuthorizationControlResult(
+                        control,
+                        AuthorizationControlOutcome.UNRESOLVED,
+                        "Partner authorization view is not available"
+                );
+            }
+            if (!partnerAuthorization.authorizes(
+                    state.initiationContext()
+                            .orElseThrow()
+                            .claimType()
+            )) {
+                return fail(
+                        control,
+                        "Claim type is outside the Partner authorized perimeter"
+                );
+            }
+            return new AuthorizationControlResult(
+                    control,
+                    AuthorizationControlOutcome.PASS,
+                    "Claim type is authorized by Partner perimeter"
+            );
+        }
+
+        if (control == AuthorizationControl.EXECUTION_DATE_VALID) {
+            return evaluateExecutionDate(state);
+        }
 
         if (control == AuthorizationControl.SUBSCRIPTION_AUTHORIZED) {
             return evaluateTrustedIntakeBinding(
@@ -130,6 +203,27 @@ public final class SixpayAuthorizationGate {
                 control,
                 AuthorizationControlOutcome.PASS,
                 successReason
+        );
+    }
+
+    private AuthorizationControlResult evaluateExecutionDate(
+            PaymentState state
+    ) {
+        AuthorizationControl control =
+                AuthorizationControl.EXECUTION_DATE_VALID;
+
+        if (state.status() != PaymentStatus.AUTHORIZATION_CHECKING) {
+            return fail(control, "Payment must be AUTHORIZATION_CHECKING");
+        }
+
+        if (state.initiationContext().isEmpty()) {
+            return fail(control, "Payment initiation context is required");
+        }
+
+        return new AuthorizationControlResult(
+                control,
+                AuthorizationControlOutcome.PASS,
+                "Direct payment has no SIXPAY banking-calendar restriction"
         );
     }
 

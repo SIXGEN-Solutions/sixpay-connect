@@ -8,11 +8,14 @@ import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
+import com.sixpay.payment.application.port.PartnerAuthorizationPort;
+import com.sixpay.payment.domain.policy.PartnerAuthorizationView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Coordinates authorization and banking-verification evidence.
@@ -22,20 +25,41 @@ public class PaymentAuthorizationService {
 
     private final PaymentMutationCoordinator coordinator;
     private final SixpayAuthorizationGate authorizationGate;
+    private final Optional<PartnerAuthorizationPort> partnerAuthorizationPort;
 
     @Autowired
     public PaymentAuthorizationService(
-            PaymentMutationCoordinator coordinator
+            PaymentMutationCoordinator coordinator,
+            Optional<PartnerAuthorizationPort> partnerAuthorizationPort
     ) {
         this(
                 coordinator,
-                new SixpayAuthorizationGate()
+                new SixpayAuthorizationGate(),
+                partnerAuthorizationPort
         );
     }
 
     PaymentAuthorizationService(
             PaymentMutationCoordinator coordinator,
-            SixpayAuthorizationGate authorizationGate
+            SixpayAuthorizationGate authorizationGate,
+            PartnerAuthorizationPort partnerAuthorizationPort
+    ) {
+        this(
+                coordinator,
+                authorizationGate,
+                Optional.of(
+                        Objects.requireNonNull(
+                                partnerAuthorizationPort,
+                                "Partner authorization port"
+                        )
+                )
+        );
+    }
+
+    PaymentAuthorizationService(
+            PaymentMutationCoordinator coordinator,
+            SixpayAuthorizationGate authorizationGate,
+            Optional<PartnerAuthorizationPort> partnerAuthorizationPort
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -44,6 +68,10 @@ public class PaymentAuthorizationService {
         this.authorizationGate = Objects.requireNonNull(
                 authorizationGate,
                 "SIXPAY authorization gate"
+        );
+        this.partnerAuthorizationPort = Objects.requireNonNull(
+                partnerAuthorizationPort,
+                "Partner authorization port"
         );
     }
 
@@ -85,9 +113,19 @@ public class PaymentAuthorizationService {
                             verifiedChallenge
                     );
 
+                    var state = payment.toState();
+                    PartnerAuthorizationView partnerAuthorization =
+                            partnerAuthorizationPort
+                                    .map(port -> port.resolve(
+                                            state.initiationContext()
+                                                    .orElseThrow()
+                                    ))
+                                    .orElse(null);
+
                     SixpayAuthorizationGateResult result =
                             authorizationGate.evaluate(
-                                    payment.toState()
+                                    state,
+                                    partnerAuthorization
                             );
 
                     if (result.rejected()) {

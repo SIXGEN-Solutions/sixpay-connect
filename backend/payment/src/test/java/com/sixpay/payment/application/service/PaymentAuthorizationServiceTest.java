@@ -6,11 +6,15 @@ import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
+import com.sixpay.payment.domain.model.PaymentInitiationContext;
+import com.sixpay.payment.application.port.PartnerAuthorizationPort;
+import com.sixpay.payment.domain.policy.PartnerAuthorizationView;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,6 +32,12 @@ class PaymentAuthorizationServiceTest {
                 mock(SixpayAuthorizationGate.class);
         SixpayAuthorizationGateResult gateResult =
                 mock(SixpayAuthorizationGateResult.class);
+        PartnerAuthorizationPort partnerAuthorizationPort =
+                mock(PartnerAuthorizationPort.class);
+        PartnerAuthorizationView partnerAuthorization =
+                mock(PartnerAuthorizationView.class);
+        PaymentInitiationContext initiationContext =
+                mock(PaymentInitiationContext.class);
 
         Payment payment = mock(Payment.class);
         PaymentState state = mock(PaymentState.class);
@@ -45,8 +55,13 @@ class PaymentAuthorizationServiceTest {
                 .thenReturn(PaymentStatus.AUTHORIZATION_CHECKING);
         when(payment.businessVersion()).thenReturn(7L);
         when(payment.toState()).thenReturn(state);
+        when(state.initiationContext())
+                .thenReturn(Optional.of(initiationContext));
+        when(partnerAuthorizationPort.resolve(initiationContext))
+                .thenReturn(partnerAuthorization);
 
-        when(gate.evaluate(state)).thenReturn(gateResult);
+        when(gate.evaluate(state, partnerAuthorization))
+                .thenReturn(gateResult);
         when(gateResult.rejected()).thenReturn(false);
 
         when(coordinator.mutate(eq(paymentId), any()))
@@ -69,7 +84,8 @@ class PaymentAuthorizationServiceTest {
         PaymentAuthorizationService service =
                 new PaymentAuthorizationService(
                         coordinator,
-                        gate
+                        gate,
+                        partnerAuthorizationPort
                 );
 
         PaymentWorkflowResult result =
@@ -83,11 +99,18 @@ class PaymentAuthorizationServiceTest {
                 result.status()
         );
 
-        InOrder order = inOrder(payment, gate);
+        InOrder order = inOrder(
+                payment,
+                partnerAuthorizationPort,
+                gate
+        );
         order.verify(payment)
                 .recordCustomerConfirmation(verifiedChallenge);
         order.verify(payment).toState();
-        order.verify(gate).evaluate(state);
+        order.verify(partnerAuthorizationPort)
+                .resolve(initiationContext);
+        order.verify(gate)
+                .evaluate(state, partnerAuthorization);
     }
 
     @Test
@@ -98,6 +121,12 @@ class PaymentAuthorizationServiceTest {
                 mock(SixpayAuthorizationGate.class);
         SixpayAuthorizationGateResult gateResult =
                 mock(SixpayAuthorizationGateResult.class);
+        PartnerAuthorizationPort partnerAuthorizationPort =
+                mock(PartnerAuthorizationPort.class);
+        PartnerAuthorizationView partnerAuthorization =
+                mock(PartnerAuthorizationView.class);
+        PaymentInitiationContext initiationContext =
+                mock(PaymentInitiationContext.class);
 
         Payment payment = mock(Payment.class);
         PaymentState state = mock(PaymentState.class);
@@ -106,7 +135,12 @@ class PaymentAuthorizationServiceTest {
         PaymentId paymentId = mock(PaymentId.class);
 
         when(payment.toState()).thenReturn(state);
-        when(gate.evaluate(state)).thenReturn(gateResult);
+        when(state.initiationContext())
+                .thenReturn(Optional.of(initiationContext));
+        when(partnerAuthorizationPort.resolve(initiationContext))
+                .thenReturn(partnerAuthorization);
+        when(gate.evaluate(state, partnerAuthorization))
+                .thenReturn(gateResult);
         when(gateResult.rejected()).thenReturn(true);
 
         when(coordinator.mutate(eq(paymentId), any()))
@@ -124,7 +158,8 @@ class PaymentAuthorizationServiceTest {
         PaymentAuthorizationService service =
                 new PaymentAuthorizationService(
                         coordinator,
-                        gate
+                        gate,
+                        partnerAuthorizationPort
                 );
 
         org.junit.jupiter.api.Assertions.assertThrows(
@@ -135,10 +170,17 @@ class PaymentAuthorizationServiceTest {
                 )
         );
 
-        InOrder order = inOrder(payment, gate);
+        InOrder order = inOrder(
+                payment,
+                partnerAuthorizationPort,
+                gate
+        );
         order.verify(payment)
                 .recordCustomerConfirmation(verifiedChallenge);
         order.verify(payment).toState();
-        order.verify(gate).evaluate(state);
+        order.verify(partnerAuthorizationPort)
+                .resolve(initiationContext);
+        order.verify(gate)
+                .evaluate(state, partnerAuthorization);
     }
 }

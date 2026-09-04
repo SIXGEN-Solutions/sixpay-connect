@@ -5,6 +5,7 @@ import com.sixpay.payment.domain.policy.AuthorizationControlOutcome;
 import com.sixpay.payment.domain.policy.AuthorizationControlResult;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
+import com.sixpay.payment.domain.policy.PartnerAuthorizationView;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumMap;
@@ -19,7 +20,7 @@ class SixpayAuthorizationGateTest {
             new SixpayAuthorizationGate();
 
     @Test
-    void validPostOtpStateEvaluatesTrustedIntakeBindingsAndKeepsUnknownPoliciesUnresolved() {
+    void validPostOtpStateApprovesWhenAllSixAuthorizationControlsPass() {
         PaymentState state =
                 authorizationCheckingPayment()
                         .toState()
@@ -30,10 +31,20 @@ class SixpayAuthorizationGateTest {
                         .build();
 
         SixpayAuthorizationGateResult result =
-                gate.evaluate(state);
+                gate.evaluate(
+                        state,
+                        new PartnerAuthorizationView(
+                                true,
+                                java.util.Set.of(
+                                        ClaimType.AVI,
+                                        ClaimType.IM7,
+                                        ClaimType.RNF
+                                )
+                        )
+                );
 
         assertEquals(
-                SixpayAuthorizationGateResult.Outcome.INCOMPLETE,
+                SixpayAuthorizationGateResult.Outcome.APPROVED,
                 result.outcome()
         );
 
@@ -63,15 +74,86 @@ class SixpayAuthorizationGateTest {
                 AuthorizationControl.EXECUTION_DATE_VALID
         )) {
             assertEquals(
-                    AuthorizationControlOutcome.UNRESOLVED,
+                    AuthorizationControlOutcome.PASS,
                     result.resultFor(control).outcome(),
                     control.name()
             );
         }
 
-        assertFalse(result.approved());
+        assertTrue(result.approved());
         assertFalse(result.rejected());
-        assertTrue(result.incomplete());
+        assertFalse(result.incomplete());
+    }
+
+    @Test
+    void inactivePartnerRejectsAuthorization() {
+        PaymentState state = authorizationCheckingPayment().toState();
+
+        SixpayAuthorizationGateResult result =
+                gate.evaluate(
+                        state,
+                        new PartnerAuthorizationView(
+                                false,
+                                java.util.Set.of(
+                                        ClaimType.AVI,
+                                        ClaimType.IM7,
+                                        ClaimType.RNF
+                                )
+                        )
+                );
+
+        assertEquals(
+                AuthorizationControlOutcome.FAIL,
+                result.resultFor(
+                        AuthorizationControl.PARTNER_AUTHORIZED
+                ).outcome()
+        );
+    }
+
+    @Test
+    void claimOutsideConfiguredPartnerPerimeterIsRejected() {
+        PaymentState state = authorizationCheckingPayment().toState();
+
+        SixpayAuthorizationGateResult result =
+                gate.evaluate(
+                        state,
+                        new PartnerAuthorizationView(
+                                true,
+                                java.util.Set.of(ClaimType.IM7, ClaimType.RNF)
+                        )
+                );
+
+        assertEquals(
+                AuthorizationControlOutcome.FAIL,
+                result.resultFor(
+                        AuthorizationControl.CLAIM_TYPE_AUTHORIZED
+                ).outcome()
+        );
+    }
+
+    @Test
+    void directPaymentExecutionDateHasNoLocalBankingCalendarRestriction() {
+        PaymentState state = authorizationCheckingPayment().toState();
+
+        SixpayAuthorizationGateResult result =
+                gate.evaluate(
+                        state,
+                        new PartnerAuthorizationView(
+                                true,
+                                java.util.Set.of(
+                                        ClaimType.AVI,
+                                        ClaimType.IM7,
+                                        ClaimType.RNF
+                                )
+                        )
+                );
+
+        assertEquals(
+                AuthorizationControlOutcome.PASS,
+                result.resultFor(
+                        AuthorizationControl.EXECUTION_DATE_VALID
+                ).outcome()
+        );
     }
 
     @Test
