@@ -6,6 +6,9 @@ import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.evidence.AuthorizationEvidenceSnapshot;
 import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
+import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -18,20 +21,32 @@ import java.util.Objects;
 public class PaymentAuthorizationService {
 
     private final PaymentMutationCoordinator coordinator;
+    private final SixpayAuthorizationGate authorizationGate;
 
+    @Autowired
     public PaymentAuthorizationService(
             PaymentMutationCoordinator coordinator
+    ) {
+        this(
+                coordinator,
+                new SixpayAuthorizationGate()
+        );
+    }
+
+    PaymentAuthorizationService(
+            PaymentMutationCoordinator coordinator,
+            SixpayAuthorizationGate authorizationGate
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
                 "Payment mutation coordinator"
         );
+        this.authorizationGate = Objects.requireNonNull(
+                authorizationGate,
+                "SIXPAY authorization gate"
+        );
     }
 
-    /**
-     * Persists the current bank-issued confirmation challenge while the
-     * Payment remains PENDING_CONFIRMATION.
-     */
     public PaymentWorkflowResult attachConfirmationChallenge(
             PaymentId paymentId,
             ConfirmationChallenge challenge,
@@ -62,11 +77,35 @@ public class PaymentAuthorizationService {
                 verifiedChallenge,
                 "Verified confirmation challenge"
         );
+
         return coordinator.mutate(
                 paymentId,
-                payment -> payment.recordCustomerConfirmation(
-                        verifiedChallenge
-                )
+                payment -> {
+                    payment.recordCustomerConfirmation(
+                            verifiedChallenge
+                    );
+
+                    SixpayAuthorizationGateResult result =
+                            authorizationGate.evaluate(
+                                    payment.toState()
+                            );
+
+                    if (result.rejected()) {
+                        throw new IllegalStateException(
+                                "SIXPAY authorization gate rejected "
+                                        + "the Payment after OTP verification"
+                        );
+                    }
+
+                    /*
+                     * APPROVED is intentionally not translated here into
+                     * FUNDS_CONTROL_PENDING yet. The aggregate transition is
+                     * part of the next approved lifecycle integration step.
+                     *
+                     * INCOMPLETE is the expected current result because LOT
+                     * 2.1.1 deliberately left five controls unresolved.
+                     */
+                }
         );
     }
 
