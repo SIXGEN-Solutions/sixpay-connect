@@ -3,6 +3,10 @@ package com.sixpay.payment.domain.policy;
 import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.model.evidence.AuthorizationBindingResult;
+import com.sixpay.payment.domain.model.evidence.AuthorizationBindingType;
+import com.sixpay.payment.domain.model.evidence.AuthorizationDecisionOutcome;
+import com.sixpay.payment.domain.model.evidence.AuthorizationEvidenceSnapshot;
 import com.sixpay.payment.domain.model.evidence.BankingVerificationOutcome;
 
 import java.util.EnumMap;
@@ -32,6 +36,28 @@ public final class SixpayAuthorizationGate {
         AuthorizationControlSource source =
                 AuthorizationControlSourceMap.sourceFor(control);
 
+        if (control == AuthorizationControl.SUBSCRIPTION_AUTHORIZED) {
+            return evaluateTrustedIntakeBinding(
+                    control,
+                    state,
+                    AuthorizationBindingType.SUBSCRIPTION_REFERENCE,
+                    "Trusted TRESOR PAY subscription authorization evidence"
+            );
+        }
+
+        if (control == AuthorizationControl.APPLICATION_AUTHORIZED) {
+            return evaluateTrustedIntakeBinding(
+                    control,
+                    state,
+                    AuthorizationBindingType.CLIENT_APPLICATION,
+                    "Trusted TRESOR PAY application authorization evidence"
+            );
+        }
+
+        if (control == AuthorizationControl.REQUEST_DATA_CONSISTENT) {
+            return evaluateRequestDataConsistency(state);
+        }
+
         if (source.implementationStatus()
                 == AuthorizationControlSource
                 .ImplementationStatus
@@ -43,14 +69,67 @@ public final class SixpayAuthorizationGate {
             );
         }
 
-        if (control == AuthorizationControl.REQUEST_DATA_CONSISTENT) {
-            return evaluateRequestDataConsistency(state);
-        }
-
         return new AuthorizationControlResult(
                 control,
                 AuthorizationControlOutcome.UNRESOLVED,
                 source.evidence()
+        );
+    }
+
+    private AuthorizationControlResult evaluateTrustedIntakeBinding(
+            AuthorizationControl control,
+            PaymentState state,
+            AuthorizationBindingType bindingType,
+            String successReason
+    ) {
+        if (state.status() != PaymentStatus.AUTHORIZATION_CHECKING) {
+            return fail(control, "Payment must be AUTHORIZATION_CHECKING");
+        }
+
+        AuthorizationEvidenceSnapshot evidence =
+                state.authorizationEvidence().orElse(null);
+
+        if (evidence == null) {
+            return new AuthorizationControlResult(
+                    control,
+                    AuthorizationControlOutcome.UNRESOLVED,
+                    "Trusted TRESOR PAY authorization evidence is not durably available"
+            );
+        }
+
+        if (evidence.outcome() != AuthorizationDecisionOutcome.APPROVED) {
+            return fail(
+                    control,
+                    "Trusted TRESOR PAY authorization evidence is not APPROVED"
+            );
+        }
+
+        AuthorizationBindingResult bindingResult =
+                evidence.bindingResults().stream()
+                        .filter(binding -> binding.type() == bindingType)
+                        .map(binding -> binding.result())
+                        .findFirst()
+                        .orElse(AuthorizationBindingResult.NOT_EVALUATED);
+
+        if (bindingResult == AuthorizationBindingResult.MISMATCH) {
+            return fail(
+                    control,
+                    "Trusted TRESOR PAY authorization binding does not match"
+            );
+        }
+
+        if (bindingResult != AuthorizationBindingResult.MATCH) {
+            return new AuthorizationControlResult(
+                    control,
+                    AuthorizationControlOutcome.UNRESOLVED,
+                    "Trusted TRESOR PAY authorization binding was not evaluated"
+            );
+        }
+
+        return new AuthorizationControlResult(
+                control,
+                AuthorizationControlOutcome.PASS,
+                successReason
         );
     }
 

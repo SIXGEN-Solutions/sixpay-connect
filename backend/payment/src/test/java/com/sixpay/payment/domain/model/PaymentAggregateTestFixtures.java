@@ -193,6 +193,14 @@ public final class PaymentAggregateTestFixtures {
                 "payment:initiate",
                 List.of(
                         new AuthorizationBindingEvidence(
+                                AuthorizationBindingType.SUBSCRIPTION_REFERENCE,
+                                AuthorizationBindingResult.MATCH
+                        ),
+                        new AuthorizationBindingEvidence(
+                                AuthorizationBindingType.CLIENT_APPLICATION,
+                                AuthorizationBindingResult.MATCH
+                        ),
+                        new AuthorizationBindingEvidence(
                                 AuthorizationBindingType.PAYMENT_SCOPE,
                                 AuthorizationBindingResult.MATCH
                         ),

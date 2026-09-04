@@ -19,11 +19,18 @@ class SixpayAuthorizationGateTest {
             new SixpayAuthorizationGate();
 
     @Test
-    void validPostOtpStateRemainsIncompleteUntilUnresolvedSourcesExist() {
-        Payment payment = authorizationCheckingPayment();
+    void validPostOtpStateEvaluatesTrustedIntakeBindingsAndKeepsUnknownPoliciesUnresolved() {
+        PaymentState state =
+                authorizationCheckingPayment()
+                        .toState()
+                        .toBuilder()
+                        .authorizationEvidence(
+                                authorizationApproved("3")
+                        )
+                        .build();
 
         SixpayAuthorizationGateResult result =
-                gate.evaluate(payment.toState());
+                gate.evaluate(state);
 
         assertEquals(
                 SixpayAuthorizationGateResult.Outcome.INCOMPLETE,
@@ -37,10 +44,21 @@ class SixpayAuthorizationGateTest {
                 ).outcome()
         );
 
+        assertEquals(
+                AuthorizationControlOutcome.PASS,
+                result.resultFor(
+                        AuthorizationControl.SUBSCRIPTION_AUTHORIZED
+                ).outcome()
+        );
+        assertEquals(
+                AuthorizationControlOutcome.PASS,
+                result.resultFor(
+                        AuthorizationControl.APPLICATION_AUTHORIZED
+                ).outcome()
+        );
+
         for (AuthorizationControl control : EnumSet.of(
                 AuthorizationControl.PARTNER_AUTHORIZED,
-                AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
-                AuthorizationControl.APPLICATION_AUTHORIZED,
                 AuthorizationControl.CLAIM_TYPE_AUTHORIZED,
                 AuthorizationControl.EXECUTION_DATE_VALID
         )) {
