@@ -424,6 +424,51 @@ public final class Payment {
         recordCustomerConfirmation(startedAt);
     }
 
+    public void approveSixpayAuthorization(
+            Instant decisionAt
+    ) {
+        Objects.requireNonNull(decisionAt, "Decision instant");
+
+        if (state.status() == PaymentStatus.FUNDS_CONTROL_PENDING) {
+            return;
+        }
+
+        requireStatus(
+                "approveSixpayAuthorization",
+                PaymentStatus.AUTHORIZATION_CHECKING
+        );
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.FUNDS_CONTROL_PENDING,
+                decisionAt
+        )
+                .sixpayAuthorizationDecision(
+                        new SixpayAuthorizationDecisionSnapshot(
+                                AuthorizationDecisionOutcome.APPROVED,
+                                decisionAt
+                        )
+                )
+                .failure(null)
+                .build();
+
+        EventBatch batch = new EventBatch(next, decisionAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentFundsControlRequested(
+                                batch.metadata(),
+                                next.financialInstitutionCode(),
+                                MoneyPayload.from(
+                                        next.requestedAmount()
+                                ),
+                                next.debtorAccountReference()
+                                        .bindingFingerprint(),
+                                decisionAt
+                        )
+                )
+        );
+    }
+
     public void recordAuthorizationDecision(
             AuthorizationEvidenceSnapshot evidence,
             PaymentFailure rejectionFailure,

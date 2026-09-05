@@ -17,13 +17,13 @@ class PaymentStateDocumentSchemaArchitectureTest {
             );
 
     @Test
-    void stateDocumentUsesVersionFourAndGuardsLegacyPayloads()
+    void stateDocumentUsesVersionFiveAndGuardsLegacyPayloads()
             throws Exception {
 
         String source = Files.readString(DOCUMENT);
 
         assertTrue(source.contains(
-                "CURRENT_SCHEMA_VERSION = 4"
+                "CURRENT_SCHEMA_VERSION = 5"
         ));
 
         assertTrue(source.contains(
@@ -132,6 +132,26 @@ class PaymentStateDocumentSchemaArchitectureTest {
 
         assertTrue(source.contains(
                 "requires canonical banking customer/account"
+        ));
+
+        /*
+         * LOT 2.1.6 - schema v5 persists the Payment-owned local SIXPAY
+         * authorization decision while preserving legacy external evidence.
+         */
+        assertTrue(source.contains(
+                "SixpayAuthorizationDecisionSnapshot sixpayAuthorizationDecision"
+        ));
+
+        assertTrue(source.contains(
+                "schemaVersion < 5"
+        ));
+
+        assertTrue(source.contains(
+                "must not contain a SIXPAY authorization decision"
+        ));
+
+        assertTrue(source.contains(
+                ".sixpayAuthorizationDecision(sixpayAuthorizationDecision)"
         ));
     }
 }

@@ -33,6 +33,7 @@ public final class PaymentState implements ValueObject {
     private final ConfirmationChallenge confirmationChallenge;
     private final PaymentStatus status;
     private final AuthorizationEvidenceSnapshot authorizationEvidence;
+    private final SixpayAuthorizationDecisionSnapshot sixpayAuthorizationDecision;
     private final BankingVerificationSnapshot bankingVerificationEvidence;
     private final FundsControlSnapshot fundsControlEvidence;
     private final TreasuryAccountResolutionSnapshot treasuryResolutionEvidence;
@@ -95,6 +96,7 @@ public final class PaymentState implements ValueObject {
         confirmationChallenge = builder.confirmationChallenge;
         status = Objects.requireNonNull(builder.status, "Payment status");
         authorizationEvidence = builder.authorizationEvidence;
+        sixpayAuthorizationDecision = builder.sixpayAuthorizationDecision;
         bankingVerificationEvidence = builder.bankingVerificationEvidence;
         fundsControlEvidence = builder.fundsControlEvidence;
         treasuryResolutionEvidence = builder.treasuryResolutionEvidence;
@@ -222,6 +224,19 @@ public final class PaymentState implements ValueObject {
                     )) {
                 throw new IllegalArgumentException(
                         "Reversal state is structurally inconsistent"
+                );
+            }
+        }
+
+        if (sixpayAuthorizationDecision != null) {
+            if (sixpayAuthorizationDecision.decidedAt().isBefore(receivedAt)) {
+                throw new IllegalArgumentException(
+                        "SIXPAY authorization decision must not precede receipt"
+                );
+            }
+            if (sixpayAuthorizationDecision.decidedAt().isAfter(updatedAt)) {
+                throw new IllegalArgumentException(
+                        "SIXPAY authorization decision must not follow updatedAt"
                 );
             }
         }
@@ -495,11 +510,19 @@ public final class PaymentState implements ValueObject {
     }
 
     private void requireAuthorizationApproved() {
-        if (authorizationEvidence == null
-                || authorizationEvidence.outcome()
-                        != AuthorizationDecisionOutcome.APPROVED) {
+        boolean externalAuthorizationApproved =
+                authorizationEvidence != null
+                        && authorizationEvidence.outcome()
+                        == AuthorizationDecisionOutcome.APPROVED;
+
+        boolean sixpayAuthorizationApproved =
+                sixpayAuthorizationDecision != null
+                        && sixpayAuthorizationDecision.approved();
+
+        if (!externalAuthorizationApproved
+                && !sixpayAuthorizationApproved) {
             throw new IllegalArgumentException(
-                    "Approved authorization evidence is required"
+                    "Approved authorization decision is required"
             );
         }
     }
@@ -649,6 +672,11 @@ public final class PaymentState implements ValueObject {
         return Optional.ofNullable(authorizationEvidence);
     }
 
+    public Optional<SixpayAuthorizationDecisionSnapshot>
+            sixpayAuthorizationDecision() {
+        return Optional.ofNullable(sixpayAuthorizationDecision);
+    }
+
     public Optional<BankingVerificationSnapshot>
             bankingVerificationEvidence() {
         return Optional.ofNullable(bankingVerificationEvidence);
@@ -770,6 +798,10 @@ public final class PaymentState implements ValueObject {
                         that.authorizationEvidence
                 )
                 && Objects.equals(
+                        sixpayAuthorizationDecision,
+                        that.sixpayAuthorizationDecision
+                )
+                && Objects.equals(
                         bankingVerificationEvidence,
                         that.bankingVerificationEvidence
                 )
@@ -886,6 +918,7 @@ public final class PaymentState implements ValueObject {
         private ConfirmationChallenge confirmationChallenge;
         private PaymentStatus status;
         private AuthorizationEvidenceSnapshot authorizationEvidence;
+        private SixpayAuthorizationDecisionSnapshot sixpayAuthorizationDecision;
         private BankingVerificationSnapshot bankingVerificationEvidence;
         private FundsControlSnapshot fundsControlEvidence;
         private TreasuryAccountResolutionSnapshot treasuryResolutionEvidence;
@@ -926,6 +959,7 @@ public final class PaymentState implements ValueObject {
             confirmationChallenge = state.confirmationChallenge;
             status = state.status;
             authorizationEvidence = state.authorizationEvidence;
+            sixpayAuthorizationDecision = state.sixpayAuthorizationDecision;
             bankingVerificationEvidence =
                     state.bankingVerificationEvidence;
             fundsControlEvidence = state.fundsControlEvidence;
@@ -1047,6 +1081,13 @@ public final class PaymentState implements ValueObject {
                 AuthorizationEvidenceSnapshot value
         ) {
             authorizationEvidence = value;
+            return this;
+        }
+
+        public Builder sixpayAuthorizationDecision(
+                SixpayAuthorizationDecisionSnapshot value
+        ) {
+            sixpayAuthorizationDecision = value;
             return this;
         }
 

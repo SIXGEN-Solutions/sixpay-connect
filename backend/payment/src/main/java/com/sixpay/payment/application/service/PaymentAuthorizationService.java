@@ -135,14 +135,15 @@ public class PaymentAuthorizationService {
                         );
                     }
 
-                    /*
-                     * APPROVED is intentionally not translated here into
-                     * FUNDS_CONTROL_PENDING yet. The aggregate transition is
-                     * part of the next approved lifecycle integration step.
-                     *
-                     * INCOMPLETE is the expected current result because LOT
-                     * 2.1.1 deliberately left five controls unresolved.
-                     */
+                    if (result.incomplete()) {
+                        return;
+                    }
+
+                    payment.approveSixpayAuthorization(
+                            verifiedChallenge
+                                    .optionalVerifiedAt()
+                                    .orElseThrow()
+                    );
                 }
         );
     }

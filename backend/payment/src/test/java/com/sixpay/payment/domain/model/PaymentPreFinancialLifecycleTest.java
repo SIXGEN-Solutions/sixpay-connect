@@ -16,6 +16,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaymentPreFinancialLifecycleTest {
 
     @Test
+    void approvedSixpayAuthorizationMovesToFundsControlPending() {
+        Payment payment =
+                PaymentAggregateTestFixtures.authorizationCheckingPayment();
+        Instant decisionAt =
+                PaymentAggregateTestFixtures.T0.plusSeconds(4);
+
+        int previousEventCount = payment.domainEvents().size();
+
+        payment.approveSixpayAuthorization(decisionAt);
+
+        assertEquals(
+                PaymentStatus.FUNDS_CONTROL_PENDING,
+                payment.status()
+        );
+        assertEquals(
+                previousEventCount + 1,
+                payment.domainEvents().size()
+        );
+        assertTrue(
+                payment.domainEvents().get(
+                        payment.domainEvents().size() - 1
+                ) instanceof PaymentFundsControlRequested
+        );
+    }
+
+    @Test
+    void replayedSixpayAuthorizationApprovalIsStrictNoOp() {
+        Payment payment =
+                PaymentAggregateTestFixtures.authorizationCheckingPayment();
+        Instant decisionAt =
+                PaymentAggregateTestFixtures.T0.plusSeconds(4);
+
+        payment.approveSixpayAuthorization(decisionAt);
+
+        long version = payment.businessVersion();
+        int eventCount = payment.domainEvents().size();
+
+        payment.approveSixpayAuthorization(
+                PaymentAggregateTestFixtures.T0.plusSeconds(5)
+        );
+
+        assertEquals(version, payment.businessVersion());
+        assertEquals(eventCount, payment.domainEvents().size());
+    }
+
+    @Test
     void favorableEvidenceProgressesToApprovedForPosting() {
         Payment payment = PaymentAggregateTestFixtures.approvedPayment();
 

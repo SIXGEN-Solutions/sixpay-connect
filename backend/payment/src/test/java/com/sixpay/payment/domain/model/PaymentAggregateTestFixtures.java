@@ -61,6 +61,60 @@ public final class PaymentAggregateTestFixtures {
         return payment;
     }
 
+    public static Payment sixpayAuthorizedPayment() {
+        Payment payment = newPayment();
+
+        payment.startBankingVerification(
+                T0.plusSeconds(1)
+        );
+
+        BankingVerificationSnapshot canonicalBankingEvidence =
+                new BankingVerificationSnapshot(
+                        new BankingVerificationId(
+                                UUID.fromString(
+                                        "0e30f18e-45d8-4c4d-8f18-3114d81fc60e"
+                                )
+                        ),
+                        BankingVerificationOutcome.VERIFIED,
+                        ACCOUNT_FINGERPRINT,
+                        "CUSTOMER-001",
+                        "vault:debtor:0001",
+                        List.of(
+                                bankingCheck(
+                                        BankingVerificationCheckType
+                                                .CUSTOMER_EXISTS
+                                ),
+                                bankingCheck(
+                                        BankingVerificationCheckType
+                                                .ACCOUNT_EXISTS
+                                )
+                        ),
+                        metadata(
+                                ExternalSystem.AMPLITUDE,
+                                EvidenceObservationChannel.DIRECT_RESPONSE,
+                                "4",
+                                T0.plusSeconds(2)
+                        )
+                );
+
+        payment.recordBankingVerification(
+                canonicalBankingEvidence,
+                null,
+                T0.plusSeconds(2),
+                profiles()
+        );
+
+        payment.recordCustomerConfirmation(
+                verifiedConfirmationChallenge(payment)
+        );
+
+        payment.approveSixpayAuthorization(
+                T0.plusSeconds(4)
+        );
+
+        return payment;
+    }
+
     static ConfirmationChallenge verifiedConfirmationChallenge(
             Payment payment
     ) {

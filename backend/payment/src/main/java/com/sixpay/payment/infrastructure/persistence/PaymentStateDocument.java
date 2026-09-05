@@ -33,6 +33,7 @@ record PaymentStateDocument(
         ConfirmationChallenge confirmationChallenge,
         PaymentStatus status,
         AuthorizationEvidenceSnapshot authorizationEvidence,
+        SixpayAuthorizationDecisionSnapshot sixpayAuthorizationDecision,
         BankingVerificationSnapshot bankingVerificationEvidence,
         FundsControlSnapshot fundsControlEvidence,
         TreasuryAccountResolutionSnapshot treasuryResolutionEvidence,
@@ -51,7 +52,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 4;
+    static final int CURRENT_SCHEMA_VERSION = 5;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -72,6 +73,7 @@ record PaymentStateDocument(
                 state.confirmationChallenge().orElse(null),
                 state.status(),
                 state.authorizationEvidence().orElse(null),
+                state.sixpayAuthorizationDecision().orElse(null),
                 state.bankingVerificationEvidence().orElse(null),
                 state.fundsControlEvidence().orElse(null),
                 state.treasuryResolutionEvidence().orElse(null),
@@ -115,6 +117,15 @@ record PaymentStateDocument(
             throw new PaymentPersistenceException(
                     "Payment state schema version 2 must not contain "
                             + "confirmation challenge state"
+            );
+        }
+
+        if (schemaVersion < 5
+                && sixpayAuthorizationDecision != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " must not contain a SIXPAY authorization decision"
             );
         }
 
@@ -244,6 +255,7 @@ record PaymentStateDocument(
                 .confirmationChallenge(confirmationChallenge)
                 .status(status)
                 .authorizationEvidence(authorizationEvidence)
+                .sixpayAuthorizationDecision(sixpayAuthorizationDecision)
                 .bankingVerificationEvidence(
                         bankingVerificationEvidence
                 )
