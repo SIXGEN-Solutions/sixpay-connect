@@ -17,6 +17,29 @@ Provider-specific DTOs, mappings and OAuth2 client configuration remain inside
 Accounting. Provider-neutral HTTP and resilience support belongs to
 backend/integration.
 
+## MVP end-of-day flow
+
+The Accounting module is the owner of the T+1 accounting lifecycle after a
+Payment has already completed its T0 financial execution.
+
+The target MVP flow is:
+
+1. select successful, unbatched Payment candidates for the applicable cut-off;
+2. obtain/use authoritative TRESOR PAY status evidence for each candidate;
+3. retain accounting-eligible candidates;
+4. constitute and persist an Accounting batch;
+5. submit the payment batch through `AccountingBatchGateway`;
+6. use the Core Banking Accounting API in the MVP;
+7. let Core Banking generate and post its own accounting entries;
+8. reconcile acknowledged, rejected and unknown outcomes.
+
+SIXPAY does not generate Core Banking journal lines for the MVP.
+
+CSV/file submission is a deferred transport option. It requires a separate
+approved file-layout, integrity, transport, acknowledgement and reconciliation
+contract before implementation.
+
+
 ## API
 
 Base path: /internal/api/v1/accounting-batches

@@ -89,14 +89,26 @@ Funds Control is distinct from Customer Verification and occurs later, after
 successful customer confirmation. Customer Verification is not proof of
 sufficient funds.
 
+For the MVP, Funds Control is a logical Payment gate, not a standalone read-only
+Core Banking request. The eight mandatory checks are evaluated atomically by the
+same protected T0 Core Banking financial command that resolves/uses the configured
+Treasury destination and executes customer debit plus Treasury credit.
+
+A previous positive funds check cannot be treated as a reservation because other
+banking channels may change the same customer account concurrently.
+
 Target contract:
 `documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml`.
 Its registry lifecycle, approval and generation-policy fields remain authoritative.
 
 ## Posting authorization profile
 
-Posting is allowed only from `APPROVED_FOR_POSTING`. SIXPAY requires fresh Funds
-Control evidence and a resolved Treasury account before posting.
+The existing `APPROVED_FOR_POSTING` and `POSTING_PENDING` lifecycle names are
+retained. In the aligned MVP semantics, they prepare and track the T0 financial
+execution command rather than a separate post-Funds-Control banking transaction.
+
+No successful T0 outcome may be inferred before Core Banking confirms the
+financial effect or an authoritative lookup resolves an uncertain outcome.
 
 ## Financial outcome evidence hierarchy
 
@@ -119,10 +131,19 @@ Recovery uses authoritative lookup; blind financial replay is forbidden.
 
 ## TFJ and reversal policy
 
-TFJ terminal statuses modeled for the MVP are `INTEGRATED` and `FAILED`.
-A failed TFJ outcome may require `REVERSAL_REQUIRED`. Reversal requires
-`APPROVED_RUNBOOK` authorization and remains subject to the active Core Banking
-contract and programme enablement.
+The end-of-day Accounting/TFJ lifecycle is distinct from T0 financial success.
+
+Accounting selects eligible financially successful Payments, uses authoritative
+TRESOR PAY status evidence, constitutes a batch, and submits it to the Core
+Banking accounting capability. Core Banking owns generation and posting of the
+accounting entries.
+
+TFJ/accounting statuses may be `INTEGRATED` or `FAILED`, but an Accounting/T+1
+failure does not retroactively make a successfully executed T0 Payment unpaid.
+
+No automatic reversal is inferred solely from an Accounting/T+1 failure.
+Reversal of the financial T0 effect remains a separate explicitly authorized
+financial capability.
 
 ## Failure classification policy
 

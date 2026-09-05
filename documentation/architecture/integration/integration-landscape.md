@@ -32,12 +32,12 @@ The authoritative implementation revision is provided by the task invocation or 
 | INT-03 | Payment → Customer Verification | internal | synchronous Java port | implemented | `CustomerVerificationModuleAdapter`, composition configuration and intermodule integration tests | Java application port; no external transport contract required while co-deployed |
 | INT-04 | Customer Verification → Amplitude | outbound | synchronous REST | technically implemented | Amplitude mapper/client, OAuth2 token provider, mTLS SSL bundle, retry and observations | provider contract must be validated against authoritative Amplitude specification |
 | INT-05 | Payment → Core Banking verification | outbound | synchronous provider call | adapter foundation only | `VerificationGateway`, `AmplitudeVerificationAdapter`, `AmplitudeBankingClient` | `TO_DEFINE` |
-| INT-06 | Payment → Core Banking funds control | outbound | synchronous provider call | adapter foundation only | `FundsGateway`, `AmplitudeFundsAdapter`, `AmplitudeBankingClient` | `TO_DEFINE` |
-| INT-07 | Payment → Core Banking posting | outbound | synchronous provider call | adapter foundation only | `PostingGateway`, `AmplitudePostingAdapter`, `AmplitudeBankingClient` | `TO_DEFINE` |
-| INT-08 | Payment → Core Banking posting lookup | outbound | synchronous provider query | interface only | lookup by idempotency key and bank reference on `AmplitudeBankingClient` | `TO_DEFINE` |
+| INT-06 | Payment Funds Control | internal logical T0 gate | no standalone provider call in MVP | domain/application foundation exists | `FundsControlCheckType`, `FundsControlSnapshot`, Funds Control policy | fulfilled inside INT-07 T0 command |
+| INT-07 | Payment → Core Banking T0 financial execution | outbound | one protected synchronous financial command | adapter/domain foundation only | existing posting/funds/lookup foundations; physical transport still blocked | revised `amplitude-payment-posting-api-v1.yaml`, `PENDING_APPROVAL`, `REFERENCE_ONLY` |
+| INT-08 | Payment → Core Banking T0 outcome lookup | outbound | synchronous provider query | interface only | lookup by idempotency key and bank reference | same T0 contract; required for uncertain outcomes |
 | INT-09 | Payment → Core Banking reversal | outbound | synchronous provider call | adapter foundation only | `ReversalGateway`, `AmplitudeReversalAdapter`, `AmplitudeBankingClient` | `TO_DEFINE` |
 | INT-10 | Payment → Observed Customer | internal asynchronous projection | transactional outbox + scheduled in-process dispatch | implemented | Payment outbox, dispatcher, scheduler, mapper, replay tests and projection adapter | canonical mapping exists in code; distributed event contract not published |
-| INT-11 | Payment → Accounting | internal/outbound asynchronous | planned | Payment reconciliation and TFJ command model exist; Accounting consumer not found | `TO_DEFINE` event and/or file/API contract |
+| INT-11 | Payment → Accounting | internal Accounting-owned candidate source / scheduled T+1 constitution | planned but domain/application foundations exist | `PaymentAccountingCandidateSource`, `AccountingBatchConstitutionService`, `AccountingBatchGateway`; production candidate source not wired | internal Payment→Accounting contract `TO_DEFINE`; Core Banking Accounting API contract `TO_DEFINE`; CSV deferred |
 | INT-12 | Payment → Notification | internal/outbound asynchronous | planned | Notification module exists; Payment notification consumer/adapter not found | `TO_DEFINE` event and channel-provider contracts |
 | INT-13 | Internal Payment query API | inbound | synchronous REST | implemented | query controller, security policy and projection adapters | `documentation/contracts/internal/payment-query-api-v1.yaml` |
 | INT-14 | Internal Observed Customer query API | inbound | synchronous REST | implemented | query controller, masking, cursor, audit and health | `documentation/contracts/internal/observed-customer-query-api-v1.yaml` |
@@ -165,7 +165,7 @@ Kafka dependencies and abstractions are foundations only. They do not prove that
 
 ### Lot 5.4
 
-- provider operations for verification, funds control, posting, lookup and reversal;
+- one T0 financial execution operation covering mandatory Funds Control checks, protected Treasury resolution/use, debit and credit; plus authoritative outcome lookup and optional reversal;
 - schemas and code mappings;
 - amount, currency and value-date rules;
 - bank references and reconciliation keys;
@@ -187,13 +187,13 @@ Kafka dependencies and abstractions are foundations only. They do not prove that
 
 ### Lot 5.6
 
-- accounting event/command schema;
-- TFJ format, encoding, naming and totals;
+- Payment→Accounting candidate-source contract and eligibility semantics;
+- authoritative TRESOR PAY status verification contract used for T+1 eligibility;
+- Core Banking Accounting API batch submission/result contract for the MVP;
 - cut-off calendar/timezone;
-- SFTP hosts, keys, directories and allow lists;
-- checksum/signature rules;
-- acknowledgement/rejection formats;
-- reconciliation and deduplication keys.
+- acknowledgement/rejection/unknown-outcome formats;
+- reconciliation and deduplication keys;
+- CSV/file layout, encoding, naming, totals, checksum/signature and SFTP details only for the deferred file mode.
 
 ### Lot 5.7
 

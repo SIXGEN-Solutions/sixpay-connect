@@ -296,12 +296,12 @@ contracts:
   - id: "amplitude-payment-posting-api-v1"
     path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
     domain: "integration"
-    businessOwner: "accounting"
+    businessOwner: "payment"
     capability: "FUNDS_CONTROL_PAYMENT_POSTING_AND_REVERSAL"
     direction: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "APPROVED"
+    approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     governanceDecision: "D00-CB-OWNERSHIP"
@@ -310,14 +310,14 @@ contracts:
     mvpUsage:
       included: true
       purpose:
-        - "Perform a fresh execution-time account, funds, restriction and limit check"
-        - "Optionally reserve and release funds when the programme enables the capability"
-        - "Atomically debit the customer and credit the configured CUT"
+        - "Execute one protected synchronous T0 financial command containing all mandatory execution-time account, funds, restriction and limit controls"
+        - "Resolve/use the protected configured Treasury/CUT destination inside the T0 execution boundary"
+        - "Debit the customer and credit the configured Treasury/CUT only when every mandatory control passes"
         - "Return stable bank references and leg-level outcomes"
         - "Recover uncertain posting outcomes by idempotency key or bank reference"
         - "Request and track an explicit authorized reversal"
       constraints:
-        - "Atomic debit and CUT credit is the preferred posting mode"
+        - "The MVP has no standalone read-only Funds Control call before a later debit; mandatory checks and debit/credit belong to one T0 financial execution command"
         - "CUT reference comes from protected bank configuration"
         - "A write timeout never proves failure"
         - "Unknown outcomes permit lookup only, never blind resubmission"
@@ -384,7 +384,7 @@ contracts:
     fallbackDirection: "SIXPAY_TO_AMPLITUDE"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "APPROVED"
+    approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     governanceDecision: "D00-CB-OWNERSHIP"

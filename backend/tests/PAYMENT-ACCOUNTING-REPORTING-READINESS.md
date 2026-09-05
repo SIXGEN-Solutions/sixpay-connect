@@ -4,7 +4,7 @@
 
 ```text
 8.3.3 readiness gate                    IMPLEMENTED
-Payment -> Accounting production flow   BLOCKED BY INT-11
+Payment -> Accounting production flow   SEMANTICS DECIDED / PHYSICAL CONTRACT + WIRING STILL BLOCKED BY INT-11
 Accounting -> Reporting event flow       NOT DEFINED / MUST NOT BE INVENTED
 ```
 
@@ -15,9 +15,11 @@ The repository integration architecture classifies INT-11 as:
 ```text
 Producer: Payment
 Consumer: Accounting
-Mode: async event and/or TFJ/SFTP
-Contract: TO_DEFINE
-Status: PLANNED
+Mode: Accounting-owned candidate source + scheduled T+1 batch constitution
+MVP provider transport: Core Banking Accounting API
+Deferred provider transport: CSV/file
+Contract: TO_DEFINE for Payment->Accounting production boundary and Core Banking Accounting API
+Status: PLANNED / FOUNDATIONS PRESENT
 ```
 
 A `TO_DEFINE` contract is explicitly a blocking prerequisite for implementation.

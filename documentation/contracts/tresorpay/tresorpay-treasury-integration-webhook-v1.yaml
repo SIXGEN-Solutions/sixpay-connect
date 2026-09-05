@@ -4,13 +4,14 @@ info:
   version: 1.0.0
   description: |
     Dedicated at-least-once webhook for the end-of-day Treasury lifecycle.
-    It distinguishes immediate posting completion from Amplitude TFJ finality.
+    It distinguishes successful T0 financial execution from the later Accounting/TFJ end-of-day lifecycle.
 
-    `PENDING_END_OF_DAY_CONFIRMATION` means debit and CUT credit are known but
-    TFJ finality is still pending. `TREASURY_INTEGRATED` is emitted only after
+    `PENDING_END_OF_DAY_CONFIRMATION` means the T0 financial execution is known
+    successful while Accounting/TFJ end-of-day treatment is still pending. `TREASURY_INTEGRATED` is emitted only after
     a successful Amplitude TFJ result is durably persisted and uniquely matched.
-    `TREASURY_INTEGRATION_FAILED` reports a matched adverse result; it is not an
-    instruction to execute a reversal.
+    `TREASURY_INTEGRATION_FAILED` reports a matched adverse T+1 accounting/TFJ
+    result. It does not retroactively invalidate the successful T0 payment and
+    it is not by itself an instruction to execute a financial reversal.
 
     Delivery failure never changes financial truth. Operational replay preserves
     the immutable `eventId` and payload and never replays a bank operation.

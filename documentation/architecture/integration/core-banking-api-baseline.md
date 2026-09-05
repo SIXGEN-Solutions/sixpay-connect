@@ -57,12 +57,12 @@ runtime parameters.
 | Customer discovery | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
 | Customer/KYC/account verification | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
 | Payment confirmation / OTP challenge | `amplitude-payment-confirmation-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
-| Payment execution/funds check | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
-| Fund reservation/lookup/release | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
-| Atomic debit + CUT credit posting | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
-| Posting lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
-| Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
-| TFJ/EOD callback + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `APPROVED` | `REQUIRED` |
+| Atomic T0 financial execution: mandatory controls + Treasury resolution/use + customer debit + Treasury credit | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `REQUIRED` |
+| T0 financial outcome lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `REQUIRED` |
+| Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
+| T+1 accounting batch submission | physical provider contract `TO_DEFINE`; implementation shape already exists behind `AccountingBatchGateway` | Accounting | `TO_DEFINE` | `REQUIRED — API MVP` |
+| T+1 accounting/TFJ result confirmation + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `PENDING_APPROVAL` | `REQUIRED` |
+| T+1 CSV/file accounting submission | contract `TO_DEFINE` | Accounting | `TO_DEFINE` | `DEFERRED_FUTURE` |
 
 ## Payment execution ordering
 
@@ -95,9 +95,19 @@ Confirmation come from the completed VERIFIED Amplitude verification result.
 They are not inferred from NIU, TRESOR PAY subscription references or other
 non-authoritative identifiers.
 
-This ordering does not merge Customer Verification with funds control. Funds
-availability and execution-time restrictions remain defense-in-depth checks
-owned by the Payment posting contract and occur later in the payment lifecycle.
+Customer Verification remains distinct from execution-time Funds Control.
+
+After successful OTP/customer confirmation, the eight mandatory Funds Control
+checks are evaluated inside the same protected synchronous T0 Core Banking
+financial command that resolves/uses the configured Treasury destination,
+debits the customer account and credits the Treasury account.
+
+The MVP does not perform a standalone read-only funds check followed by a later
+debit. Other banking channels may change the same account concurrently, so
+financial availability must be decided by Core Banking at execution time.
+
+The canonical detailed baseline is:
+`documentation/architecture/integration/payment-financial-execution-and-accounting-eod-baseline.md`.
 
 ## Target Core Banking signatures
 
@@ -110,13 +120,15 @@ Customer discovery:
 - `GET /api/v1/customers/{customerReference}`
 - `GET /api/v1/customers/{customerReference}/accounts`
 
-### Funds check
+### T0 financial execution
 
-`POST /api/v1/payment-checks`
+The existing target path remains `POST /api/v1/payment-postings` until the
+revised physical contract is approved. For the MVP this is one financial command,
+not a prior `/payment-checks` call followed by a later posting call.
 
-### Posting
-
-`POST /api/v1/payment-postings`
+The command must cover all eight mandatory execution-time controls and, only if
+all pass, the protected Treasury resolution/use plus customer debit and Treasury
+credit.
 
 A financial command with an uncertain transport outcome is never blindly retried.
 
@@ -135,16 +147,22 @@ At least one authoritative lookup mechanism is mandatory before posting sandbox 
 Reversal is `OPTIONAL` until the programme explicitly enables it and its
 business/operational prerequisites are approved.
 
-### TFJ / EOD
+### Accounting T+1 / TFJ / EOD
 
-Primary proposal:
-`POST <SIXPAY>/webhooks/v1/amplitude/end-of-day-confirmations`
+Accounting first constitutes a batch from financially successful Payments whose
+TRESOR PAY status evidence satisfies the accounting-eligibility rule.
 
-Fallback proposal:
-`GET <AMPLITUDE>/api/v1/end-of-day-confirmations`
+For the MVP, Accounting submits the payment batch through the Core Banking API
+integration behind `AccountingBatchGateway`. Core Banking owns generation and
+posting of the accounting entries. The final provider endpoint/path and complete
+wire contract remain `TO_DEFINE` and must not be invented.
 
-The callback-plus-lookup model is the approved target contract. Runtime
-deployment details remain environment-specific.
+`amplitude-end-of-day-confirmation-api-v1.yaml` remains the result-confirmation /
+reconciliation contract, not the batch-submission contract. Its revised target
+semantics require review.
+
+CSV/file submission is explicitly deferred until a separate approved file
+contract exists.
 
 ## Resolved documentary drift
 
