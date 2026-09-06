@@ -26,6 +26,19 @@ public class PaymentFundsControlService {
         );
     }
 
+    public PaymentWorkflowResult completeFundsControlPreparation(
+            PaymentId paymentId,
+            Instant completedAt
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.completeFundsControlPreparation(
+                                completedAt
+                        )
+        );
+    }
+
     public PaymentWorkflowResult recordFundsControl(
             PaymentId paymentId,
             FundsControlSnapshot evidence,

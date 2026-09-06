@@ -2,6 +2,7 @@ package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.domain.model.PaymentFailure;
 import com.sixpay.payment.domain.model.PaymentId;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.ReversalAuthorizationEvidence;
 import com.sixpay.payment.domain.model.evidence.ReversalSnapshot;
@@ -29,6 +30,44 @@ public class PaymentFinalizationService {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
                 "Payment mutation coordinator"
+        );
+    }
+
+    public PaymentWorkflowResult recordPaymentEventOutcome(
+            PaymentId paymentId,
+            PaymentEventOutcomeSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.recordPaymentEventOutcome(
+                                evidence,
+                                failure,
+                                decisionAt,
+                                policies
+                        )
+        );
+    }
+
+    public PaymentWorkflowResult resolvePaymentEventOutcome(
+            PaymentId paymentId,
+            PaymentEventOutcomeSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle policies
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.resolvePaymentEventOutcome(
+                                evidence,
+                                failure,
+                                decisionAt,
+                                policies
+                        )
         );
     }
 

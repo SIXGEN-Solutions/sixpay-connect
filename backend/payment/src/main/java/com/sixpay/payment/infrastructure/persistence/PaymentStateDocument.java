@@ -40,6 +40,7 @@ record PaymentStateDocument(
         TreasuryAccountReference treasuryAccountReference,
         PostingInstructionIdentity postingInstruction,
         PostingOutcomeSnapshot postingOutcomeEvidence,
+        PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence,
         BankPostingReference bankPostingReference,
         EndOfDayConfirmationSnapshot endOfDayConfirmationEvidence,
         ReversalInstructionIdentity reversalInstruction,
@@ -52,7 +53,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 5;
+    static final int CURRENT_SCHEMA_VERSION = 6;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -80,6 +81,7 @@ record PaymentStateDocument(
                 state.treasuryAccountReference().orElse(null),
                 state.postingInstruction().orElse(null),
                 state.postingOutcomeEvidence().orElse(null),
+                state.paymentEventOutcomeEvidence().orElse(null),
                 state.bankPostingReference().orElse(null),
                 state.endOfDayConfirmationEvidence().orElse(null),
                 state.reversalInstruction().orElse(null),
@@ -126,6 +128,15 @@ record PaymentStateDocument(
                     "Payment state schema version "
                             + schemaVersion
                             + " must not contain a SIXPAY authorization decision"
+            );
+        }
+
+        if (schemaVersion < 6
+                && paymentEventOutcomeEvidence != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " must not contain atomic Payment event evidence"
             );
         }
 
@@ -266,6 +277,9 @@ record PaymentStateDocument(
                 .treasuryAccountReference(treasuryAccountReference)
                 .postingInstruction(postingInstruction)
                 .postingOutcomeEvidence(postingOutcomeEvidence)
+                .paymentEventOutcomeEvidence(
+                        paymentEventOutcomeEvidence
+                )
                 .bankPostingReference(bankPostingReference)
                 .endOfDayConfirmationEvidence(
                         endOfDayConfirmationEvidence

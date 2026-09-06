@@ -40,6 +40,7 @@ public final class PaymentState implements ValueObject {
     private final TreasuryAccountReference treasuryAccountReference;
     private final PostingInstructionIdentity postingInstruction;
     private final PostingOutcomeSnapshot postingOutcomeEvidence;
+    private final PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence;
     private final BankPostingReference bankPostingReference;
     private final EndOfDayConfirmationSnapshot endOfDayConfirmationEvidence;
     private final ReversalInstructionIdentity reversalInstruction;
@@ -103,6 +104,8 @@ public final class PaymentState implements ValueObject {
         treasuryAccountReference = builder.treasuryAccountReference;
         postingInstruction = builder.postingInstruction;
         postingOutcomeEvidence = builder.postingOutcomeEvidence;
+        paymentEventOutcomeEvidence =
+                builder.paymentEventOutcomeEvidence;
         bankPostingReference = builder.bankPostingReference;
         endOfDayConfirmationEvidence =
                 builder.endOfDayConfirmationEvidence;
@@ -206,6 +209,32 @@ public final class PaymentState implements ValueObject {
                                 && !bankPostingReference.equals(reference)) {
                             throw new IllegalArgumentException(
                                     "Original bank posting reference is immutable"
+                            );
+                        }
+                    }
+            );
+        }
+
+        if (paymentEventOutcomeEvidence != null) {
+            if (postingInstruction == null
+                    || !postingInstruction.instructionId().equals(
+                            paymentEventOutcomeEvidence
+                                    .postingInstructionId()
+                    )
+                    || !postingInstruction.idempotencyKey().equals(
+                            paymentEventOutcomeEvidence
+                                    .postingCommandIdempotencyKey()
+                    )) {
+                throw new IllegalArgumentException(
+                        "Payment event outcome is not bound to the authorized instruction"
+                );
+            }
+            paymentEventOutcomeEvidence.bankPostingReference().ifPresent(
+                    reference -> {
+                        if (bankPostingReference != null
+                                && !bankPostingReference.equals(reference)) {
+                            throw new IllegalArgumentException(
+                                    "Atomic bank posting reference is immutable"
                             );
                         }
                     }
@@ -417,7 +446,6 @@ public final class PaymentState implements ValueObject {
             case TREASURY_ACCOUNT_RESOLUTION_PENDING -> {
                 requireAuthorizationApproved();
                 requireBankingVerified();
-                requireFundsVerified();
             }
             case APPROVED_FOR_POSTING -> {
                 requireFavorablePrePostingEvidence();
@@ -430,7 +458,13 @@ public final class PaymentState implements ValueObject {
             }
             case POSTING_OUTCOME_UNKNOWN -> {
                 requirePostingInstruction();
-                requirePostingOutcome(PostingOutcome.UNKNOWN);
+                if (paymentEventOutcomeEvidence != null) {
+                    requirePaymentEventOutcome(
+                            PaymentEventOutcome.UNKNOWN
+                    );
+                } else {
+                    requirePostingOutcome(PostingOutcome.UNKNOWN);
+                }
             }
             case DEBIT_CONFIRMED -> {
                 requirePostingInstruction();
@@ -442,7 +476,13 @@ public final class PaymentState implements ValueObject {
             }
             case POSTED_PENDING_TFJ -> {
                 requirePostingInstruction();
-                requirePostingOutcome(PostingOutcome.COMPLETED);
+                if (paymentEventOutcomeEvidence != null) {
+                    requirePaymentEventOutcome(
+                            PaymentEventOutcome.COMPLETED
+                    );
+                } else {
+                    requirePostingOutcome(PostingOutcome.COMPLETED);
+                }
                 requireBankPostingReference();
             }
             case REVERSAL_REQUIRED -> requireBankPostingReference();
@@ -484,7 +524,13 @@ public final class PaymentState implements ValueObject {
                 }
             }
             case TREASURY_INTEGRATED -> {
-                requirePostingOutcome(PostingOutcome.COMPLETED);
+                if (paymentEventOutcomeEvidence != null) {
+                    requirePaymentEventOutcome(
+                            PaymentEventOutcome.COMPLETED
+                    );
+                } else {
+                    requirePostingOutcome(PostingOutcome.COMPLETED);
+                }
                 if (endOfDayConfirmationEvidence == null
                         || endOfDayConfirmationEvidence.tfjStatus()
                                 != TfjStatus.INTEGRATED) {
@@ -561,7 +607,6 @@ public final class PaymentState implements ValueObject {
     private void requireFavorablePrePostingEvidence() {
         requireAuthorizationApproved();
         requireBankingVerified();
-        requireFundsVerified();
     }
 
     private void requirePostingInstruction() {
@@ -577,6 +622,17 @@ public final class PaymentState implements ValueObject {
                 || postingOutcomeEvidence.outcome() != expected) {
             throw new IllegalArgumentException(
                     "Posting outcome " + expected + " is required"
+            );
+        }
+    }
+
+    private void requirePaymentEventOutcome(
+            PaymentEventOutcome expected
+    ) {
+        if (paymentEventOutcomeEvidence == null
+                || paymentEventOutcomeEvidence.outcome() != expected) {
+            throw new IllegalArgumentException(
+                    "Payment event outcome " + expected + " is required"
             );
         }
     }
@@ -703,6 +759,11 @@ public final class PaymentState implements ValueObject {
         return Optional.ofNullable(postingOutcomeEvidence);
     }
 
+    public Optional<PaymentEventOutcomeSnapshot>
+            paymentEventOutcomeEvidence() {
+        return Optional.ofNullable(paymentEventOutcomeEvidence);
+    }
+
     public Optional<BankPostingReference> bankPostingReference() {
         return Optional.ofNullable(bankPostingReference);
     }
@@ -826,6 +887,10 @@ public final class PaymentState implements ValueObject {
                         that.postingOutcomeEvidence
                 )
                 && Objects.equals(
+                        paymentEventOutcomeEvidence,
+                        that.paymentEventOutcomeEvidence
+                )
+                && Objects.equals(
                         bankPostingReference,
                         that.bankPostingReference
                 )
@@ -876,6 +941,7 @@ public final class PaymentState implements ValueObject {
                 treasuryAccountReference,
                 postingInstruction,
                 postingOutcomeEvidence,
+                paymentEventOutcomeEvidence,
                 bankPostingReference,
                 endOfDayConfirmationEvidence,
                 reversalInstruction,
@@ -925,6 +991,7 @@ public final class PaymentState implements ValueObject {
         private TreasuryAccountReference treasuryAccountReference;
         private PostingInstructionIdentity postingInstruction;
         private PostingOutcomeSnapshot postingOutcomeEvidence;
+        private PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence;
         private BankPostingReference bankPostingReference;
         private EndOfDayConfirmationSnapshot endOfDayConfirmationEvidence;
         private ReversalInstructionIdentity reversalInstruction;
@@ -968,6 +1035,8 @@ public final class PaymentState implements ValueObject {
             treasuryAccountReference = state.treasuryAccountReference;
             postingInstruction = state.postingInstruction;
             postingOutcomeEvidence = state.postingOutcomeEvidence;
+            paymentEventOutcomeEvidence =
+                    state.paymentEventOutcomeEvidence;
             bankPostingReference = state.bankPostingReference;
             endOfDayConfirmationEvidence =
                     state.endOfDayConfirmationEvidence;
@@ -1130,6 +1199,13 @@ public final class PaymentState implements ValueObject {
                 PostingOutcomeSnapshot value
         ) {
             postingOutcomeEvidence = value;
+            return this;
+        }
+
+        public Builder paymentEventOutcomeEvidence(
+                PaymentEventOutcomeSnapshot value
+        ) {
+            paymentEventOutcomeEvidence = value;
             return this;
         }
 

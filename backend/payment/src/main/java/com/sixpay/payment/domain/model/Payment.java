@@ -730,6 +730,50 @@ public final class Payment {
         );
     }
 
+    /**
+     * Completes the conceptual pre-execution funds-control stage.
+     *
+     * <p>Execution-time funds and limit checks are authoritative in the atomic
+     * Core Banking Payment event. This transition therefore does not fabricate
+     * a VERIFIED bank funds snapshot.</p>
+     */
+    public void completeFundsControlPreparation(
+            Instant completedAt
+    ) {
+        Objects.requireNonNull(
+                completedAt,
+                "Funds-control preparation completion instant"
+        );
+
+        if (state.status()
+                == PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING) {
+            return;
+        }
+
+        requireStatus(
+                "completeFundsControlPreparation",
+                PaymentStatus.FUNDS_CONTROL_PENDING
+        );
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING,
+                completedAt
+        ).failure(null).build();
+
+        EventBatch batch = new EventBatch(next, completedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentTreasuryAccountResolutionRequested(
+                                batch.metadata(),
+                                next.financialInstitutionCode(),
+                                next.allocationIntentFingerprint(),
+                                completedAt
+                        )
+                )
+        );
+    }
+
     public void recordFundsControl(
             FundsControlSnapshot evidence,
             PaymentFailure failure,
@@ -1003,6 +1047,118 @@ public final class Payment {
         );
     }
 
+    /**
+     * Authorizes the sole logical atomic T0 Payment event.
+     *
+     * <p>Funds/limit checks are not required as pre-existing bank evidence:
+     * they are performed authoritatively by Core Banking during the submitted
+     * Payment event.</p>
+     */
+    public void authorizePaymentEventPosting(
+            PostingInstructionIdentity instruction,
+            Instant authorizedAt
+    ) {
+        Objects.requireNonNull(instruction, "Posting instruction");
+        Objects.requireNonNull(
+                authorizedAt,
+                "Posting authorization instant"
+        );
+
+        if (state.postingInstruction().isPresent()) {
+            PostingInstructionIdentity current =
+                    state.postingInstruction().orElseThrow();
+            if (current.equals(instruction)
+                    && state.status() == PaymentStatus.POSTING_PENDING) {
+                return;
+            }
+            throw PaymentDomainException.conflict(
+                    "A different posting instruction is already authorized"
+            );
+        }
+
+        requireStatus(
+                "authorizePaymentEventPosting",
+                PaymentStatus.APPROVED_FOR_POSTING
+        );
+
+        if (!instruction.amount().equals(state.requestedAmount())
+                || !instruction.accountBindingFingerprint().equals(
+                        state.debtorAccountReference()
+                                .bindingFingerprint()
+                )) {
+            throw PaymentDomainException.conflict(
+                    "Posting instruction is not bound to Payment"
+            );
+        }
+
+        boolean authorizationAccepted =
+                state.authorizationEvidence()
+                        .map(evidence ->
+                                evidence.outcome()
+                                        == AuthorizationDecisionOutcome.APPROVED
+                        )
+                        .orElse(false)
+                        || state.sixpayAuthorizationDecision()
+                        .map(SixpayAuthorizationDecisionSnapshot::approved)
+                        .orElse(false);
+
+        boolean bankingVerified =
+                state.bankingVerificationEvidence()
+                        .map(evidence ->
+                                evidence.outcome()
+                                        == BankingVerificationOutcome.VERIFIED
+                        )
+                        .orElse(false);
+
+        boolean treasuryResolved =
+                state.treasuryResolutionEvidence()
+                        .map(evidence ->
+                                evidence.resolutionOutcome()
+                                        == TreasuryResolutionOutcome.RESOLVED
+                        )
+                        .orElse(false)
+                        && state.treasuryAccountReference().isPresent();
+
+        requireDecision(
+                authorizationAccepted
+                        && bankingVerified
+                        && treasuryResolved,
+                "REQUIRED_PAYMENT_EVENT_PRECONDITIONS_NOT_SATISFIED"
+        );
+
+        PaymentState next = nextBuilder(
+                PaymentStatus.POSTING_PENDING,
+                authorizedAt
+        ).postingInstruction(instruction)
+                .failure(null)
+                .build();
+
+        EventBatch batch = new EventBatch(next, authorizedAt);
+        commit(
+                next,
+                List.of(
+                        new PaymentPostingAuthorized(
+                                batch.metadata(),
+                                instruction.instructionId(),
+                                instruction.idempotencyKey(),
+                                instruction.instructionFingerprint(),
+                                authorizedAt
+                        ),
+                        new PaymentPostingRequested(
+                                batch.metadata(),
+                                instruction.instructionId(),
+                                instruction.idempotencyKey(),
+                                instruction.instructionFingerprint(),
+                                next.financialInstitutionCode(),
+                                MoneyPayload.from(
+                                        next.requestedAmount()
+                                ),
+                                authorizedAt
+                        )
+                )
+        );
+    }
+
     public void authorizePosting(
             PostingInstructionIdentity instruction,
             Instant authorizedAt,
@@ -1096,6 +1252,36 @@ public final class Payment {
                                 authorizedAt
                         )
                 )
+        );
+    }
+
+    public void recordPaymentEventOutcome(
+            PaymentEventOutcomeSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle profiles
+    ) {
+        applyPaymentEventOutcome(
+                evidence,
+                failure,
+                decisionAt,
+                profiles,
+                false
+        );
+    }
+
+    public void resolvePaymentEventOutcome(
+            PaymentEventOutcomeSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle profiles
+    ) {
+        applyPaymentEventOutcome(
+                evidence,
+                failure,
+                decisionAt,
+                profiles,
+                true
         );
     }
 
@@ -1714,6 +1900,193 @@ public final class Payment {
 
     public long businessVersion() {
         return state.businessVersion();
+    }
+
+    private void applyPaymentEventOutcome(
+            PaymentEventOutcomeSnapshot evidence,
+            PaymentFailure failure,
+            Instant decisionAt,
+            PaymentPolicyBundle profiles,
+            boolean authoritativeResolution
+    ) {
+        Objects.requireNonNull(evidence, "Payment event evidence");
+        Objects.requireNonNull(decisionAt, "Decision instant");
+        Objects.requireNonNull(profiles, "Policy bundle");
+
+        if (state.paymentEventOutcomeEvidence()
+                .filter(evidence::equals)
+                .isPresent()) {
+            return;
+        }
+
+        if (authoritativeResolution) {
+            requireStatus(
+                    "resolvePaymentEventOutcome",
+                    PaymentStatus.POSTING_OUTCOME_UNKNOWN
+            );
+            if (evidence.observationSource()
+                    == PaymentEventObservationSource.DIRECT_RESPONSE) {
+                throw PaymentDomainException.rejected(
+                        "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED"
+                );
+            }
+        } else {
+            requireStatus(
+                    "recordPaymentEventOutcome",
+                    PaymentStatus.POSTING_PENDING
+            );
+            if (evidence.observationSource()
+                    != PaymentEventObservationSource.DIRECT_RESPONSE) {
+                throw PaymentDomainException.rejected(
+                        "DIRECT_PAYMENT_EVENT_RESPONSE_REQUIRED"
+                );
+            }
+        }
+
+        PostingInstructionIdentity instruction =
+                state.postingInstruction().orElseThrow();
+
+        if (!instruction.instructionId().equals(
+                evidence.postingInstructionId()
+        ) || !instruction.idempotencyKey().equals(
+                evidence.postingCommandIdempotencyKey()
+        )) {
+            throw PaymentDomainException.conflict(
+                    "Payment event evidence is not bound to posting instruction"
+            );
+        }
+
+        BankPostingReference bankReference =
+                evidence.bankPostingReference().orElse(null);
+
+        switch (evidence.outcome()) {
+            case COMPLETED -> {
+                PaymentState next = nextBuilder(
+                        PaymentStatus.POSTED_PENDING_TFJ,
+                        decisionAt
+                ).paymentEventOutcomeEvidence(evidence)
+                        .bankPostingReference(
+                                Objects.requireNonNull(
+                                        bankReference,
+                                        "Completed Payment event bank reference"
+                                )
+                        )
+                        .failure(null)
+                        .build();
+
+                EventBatch batch = new EventBatch(next, decisionAt);
+                commit(
+                        next,
+                        List.of(
+                                paymentEventOutcomeRecorded(
+                                        batch,
+                                        evidence
+                                ),
+                                immediateResult(
+                                        batch,
+                                        state.status(),
+                                        next.status(),
+                                        null,
+                                        decisionAt,
+                                        profiles
+                                ),
+                                new PaymentEndOfDayTrackingRequested(
+                                        batch.metadata(),
+                                        next.financialInstitutionCode(),
+                                        bankReference
+                                                .principalPostingReference(),
+                                        evidence.accountingDate(),
+                                        decisionAt
+                                )
+                        )
+                );
+            }
+            case REJECTED -> {
+                PaymentFailure rejection = requireRejectionFailure(
+                        failure,
+                        "Payment event business rejection"
+                );
+
+                PaymentState next = nextBuilder(
+                        PaymentStatus.REJECTED,
+                        decisionAt
+                ).paymentEventOutcomeEvidence(evidence)
+                        .bankPostingReference(bankReference)
+                        .failure(rejection)
+                        .build();
+
+                EventBatch batch = new EventBatch(next, decisionAt);
+                commit(
+                        next,
+                        List.of(
+                                paymentEventOutcomeRecorded(
+                                        batch,
+                                        evidence
+                                ),
+                                rejected(
+                                        batch,
+                                        rejection,
+                                        decisionAt
+                                ),
+                                immediateResult(
+                                        batch,
+                                        state.status(),
+                                        next.status(),
+                                        rejection,
+                                        decisionAt,
+                                        profiles
+                                )
+                        )
+                );
+            }
+            case UNKNOWN -> {
+                PaymentFailure uncertain = requireUncertainFailure(
+                        failure,
+                        "Unknown Payment event outcome"
+                );
+
+                PaymentState next = nextBuilder(
+                        PaymentStatus.POSTING_OUTCOME_UNKNOWN,
+                        decisionAt
+                ).paymentEventOutcomeEvidence(evidence)
+                        .bankPostingReference(bankReference)
+                        .failure(uncertain)
+                        .build();
+
+                EventBatch batch = new EventBatch(next, decisionAt);
+                commit(
+                        next,
+                        List.of(
+                                paymentEventOutcomeRecorded(
+                                        batch,
+                                        evidence
+                                ),
+                                new PaymentPostingOutcomeLookupRequested(
+                                        batch.metadata(),
+                                        instruction.instructionId(),
+                                        instruction.idempotencyKey(),
+                                        bankReference == null
+                                                ? null
+                                                : bankReference
+                                                .principalPostingReference(),
+                                        PostingLookupMode
+                                                .PAYMENT_REFERENCE_AND_IDEMPOTENCY_KEY,
+                                        evidence.observedAt(),
+                                        decisionAt
+                                ),
+                                immediateResult(
+                                        batch,
+                                        state.status(),
+                                        next.status(),
+                                        uncertain,
+                                        decisionAt,
+                                        profiles,
+                                        true
+                                )
+                        )
+                );
+            }
+        }
     }
 
     private void applyPostingOutcome(
@@ -2499,6 +2872,29 @@ public final class Payment {
         );
     }
 
+    private PaymentEventOutcomeRecorded
+    paymentEventOutcomeRecorded(
+            EventBatch batch,
+            PaymentEventOutcomeSnapshot evidence
+    ) {
+        return new PaymentEventOutcomeRecorded(
+                batch.metadata(),
+                evidence.postingInstructionId(),
+                evidence.postingCommandIdempotencyKey(),
+                evidence.outcome(),
+                evidence.bankPostingReference()
+                        .map(
+                                BankPostingReference
+                                        ::principalPostingReference
+                        )
+                        .orElse(null),
+                evidence.reasonCode().orElse(null),
+                evidence.observationSource(),
+                evidence.accountingDate(),
+                evidence.observedAt()
+        );
+    }
+
     private PaymentEndOfDayConfirmationRecorded tfjRecorded(
             EventBatch batch,
             EndOfDayConfirmationSnapshot evidence
@@ -2707,9 +3103,17 @@ public final class Payment {
         String principal = batch.state.bankPostingReference()
                 .map(BankPostingReference::principalPostingReference)
                 .orElse(null);
-        LocalDate businessDate = batch.state.postingOutcomeEvidence()
-                .flatMap(PostingOutcomeSnapshot::businessDate)
-                .orElse(null);
+        LocalDate businessDate = batch.state
+                .paymentEventOutcomeEvidence()
+                .map(PaymentEventOutcomeSnapshot::accountingDate)
+                .orElseGet(() ->
+                        batch.state.postingOutcomeEvidence()
+                                .flatMap(
+                                        PostingOutcomeSnapshot
+                                                ::businessDate
+                                )
+                                .orElse(null)
+                );
 
         return new PaymentImmediateResultAvailable(
                 batch.metadata(),

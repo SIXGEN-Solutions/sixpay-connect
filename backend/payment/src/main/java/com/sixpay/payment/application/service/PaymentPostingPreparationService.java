@@ -25,6 +25,21 @@ public class PaymentPostingPreparationService {
         );
     }
 
+    public PaymentWorkflowResult authorizePaymentEventPosting(
+            PaymentId paymentId,
+            PostingInstructionIdentity instruction,
+            Instant authorizedAt
+    ) {
+        return coordinator.mutate(
+                paymentId,
+                payment ->
+                        payment.authorizePaymentEventPosting(
+                                instruction,
+                                authorizedAt
+                        )
+        );
+    }
+
     public PaymentWorkflowResult authorizePosting(
             PaymentId paymentId,
             PostingInstructionIdentity instruction,
