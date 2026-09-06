@@ -16,25 +16,21 @@ All items remain `PENDING_BANK_APPROVAL` until traceable bank/provider evidence 
 - [ ] Confirm `GET /api/v1/customers/{customerReference}/accounts`.
 - [ ] Confirm supported search keys and masking/persistence rules.
 
-## Funds check
-- [ ] Confirm `POST /api/v1/payment-checks`.
-- [ ] Confirm available vs ledger balance.
-- [ ] Confirm restrictions/opposition/status codes.
-- [ ] Confirm limits and amount/currency precision.
+## T0 Payment event
+- [x] Confirm `POST /api/v1/payment-events`.
+- [x] Confirm SIXPAY prepares the provider Payment event and its accounting lines.
+- [x] Confirm SIXPAY persists reduced immutable snapshots, not the complete historical provider schema.
+- [x] Confirm Core Banking owns authoritative execution-time controls and debit/credit atomicity.
+- [x] Confirm both authoritative lookups: Payment reference and original Idempotency-Key.
+- [x] Confirm OAuth2 Client Credentials + mTLS application security.
+- [ ] Confirm the exact provider field subset/code tables required for the SIXPAY bkeve/bkmvti-equivalent payload.
+- [ ] Confirm amount/currency precision and provider date/code semantics.
 
-## Posting
-- [ ] Confirm `POST /api/v1/payment-postings`.
-- [ ] Confirm atomic debit + CUT credit.
-- [ ] Confirm `Idempotency-Key` semantics.
-- [ ] Confirm same-key replay/conflict behavior.
-- [ ] Confirm success/rejection/partial/unknown outcomes.
-- [ ] Confirm bank posting reference.
-
-## Posting lookup
-- [ ] Confirm lookup by idempotency key.
-- [ ] Confirm lookup by bank posting reference.
-- [ ] Identify authoritative lookup.
-- [ ] Confirm not-found/eventual-consistency semantics and retention.
+## T1 Accounting
+- [x] Confirm SIXPAY reuses immutable T0 financial-entry snapshots for T1.
+- [x] Confirm Core Banking validates and effectively posts/accounts submitted lines.
+- [ ] Confirm physical Accounting API endpoint and final batch/line wire schema.
+- [ ] Confirm cut-off/business-date and reconciliation semantics.
 
 ## Fund reservation — OPTIONAL
 - [ ] Confirm reservation support, expiry, lookup, capture and release.

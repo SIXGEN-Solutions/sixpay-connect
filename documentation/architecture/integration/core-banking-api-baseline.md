@@ -57,8 +57,8 @@ runtime parameters.
 | Customer discovery | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
 | Customer/KYC/account verification | `amplitude-customer-verification-api-v1.yaml` | Customer | `APPROVED` | `REQUIRED` |
 | Payment confirmation / OTP challenge | `amplitude-payment-confirmation-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
-| Atomic T0 financial execution: mandatory controls + Treasury resolution/use + customer debit + Treasury credit | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `REQUIRED` |
-| T0 financial outcome lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `REQUIRED` |
+| T0 Payment event execution: SIXPAY-built immutable event/entry snapshot + mandatory Core Banking controls + atomic debit/credit | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
+| T0 financial outcome lookup by Payment reference and Idempotency-Key | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
 | T+1 accounting batch submission | physical provider contract `TO_DEFINE`; implementation shape already exists behind `AccountingBatchGateway` | Accounting | `TO_DEFINE` | `REQUIRED — API MVP` |
 | T+1 accounting/TFJ result confirmation + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `PENDING_APPROVAL` | `REQUIRED` |
@@ -122,22 +122,32 @@ Customer discovery:
 
 ### T0 financial execution
 
-The existing target path remains `POST /api/v1/payment-postings` until the
-revised physical contract is approved. For the MVP this is one financial command,
-not a prior `/payment-checks` call followed by a later posting call.
+Approved physical contract:
 
-The command must cover all eight mandatory execution-time controls and, only if
-all pass, the protected Treasury resolution/use plus customer debit and Treasury
-credit.
+`POST /api/v1/payment-events`
+
+Payment freezes a reduced immutable financial-event snapshot and immutable
+financial-entry snapshots before submission. The Payment-owned Amplitude mapper
+converts those snapshots into the provider payload corresponding to `bkeve` plus
+`bkmvti[]`.
+
+The full historical Amplitude entity/table model is not imported into the
+SIXPAY domain or persisted as-is.
+
+Core Banking evaluates all eight mandatory execution-time banking controls and
+owns atomic execution of the submitted debit/credit event.
+
+Application integration security is OAuth2 Client Credentials plus mTLS.
+Network controls inside the bank SI remain defense in depth.
 
 A financial command with an uncertain transport outcome is never blindly retried.
 
-### Posting lookup
+### T0 authoritative lookup
 
-- `GET /api/v1/payment-posting-lookups/{idempotencyKey}`
-- `GET /api/v1/payment-postings/{bankPostingReference}`
+Both approved recovery mechanisms are retained:
 
-At least one authoritative lookup mechanism is mandatory before posting sandbox certification.
+- `GET /api/v1/payment-events/{paymentReference}`
+- `GET /api/v1/payment-events/idempotency/{idempotencyKey}`
 
 ### Reversal
 
@@ -152,14 +162,20 @@ business/operational prerequisites are approved.
 Accounting first constitutes a batch from financially successful Payments whose
 TRESOR PAY status evidence satisfies the accounting-eligibility rule.
 
-For the MVP, Accounting submits the payment batch through the Core Banking API
-integration behind `AccountingBatchGateway`. Core Banking owns generation and
-posting of the accounting entries. The final provider endpoint/path and complete
-wire contract remain `TO_DEFINE` and must not be invented.
+Payment exposes immutable financial-entry snapshot facts through an approved
+internal boundary. Accounting never reads Payment JPA repositories or provider
+entities directly.
+
+For the MVP, Accounting submits a batch of frozen SIXPAY-generated accounting
+lines through `AccountingBatchGateway` to the Core Banking Accounting API.
+Core Banking validates and effectively posts/accounts those submitted lines and
+returns authoritative results.
+
+The final physical Accounting API endpoint/path and complete wire schema remain
+`TO_DEFINE` until the dedicated T1 contract is formalized.
 
 `amplitude-end-of-day-confirmation-api-v1.yaml` remains the result-confirmation /
-reconciliation contract, not the batch-submission contract. Its revised target
-semantics require review.
+reconciliation contract, not the batch-submission contract.
 
 CSV/file submission is explicitly deferred until a separate approved file
 contract exists.

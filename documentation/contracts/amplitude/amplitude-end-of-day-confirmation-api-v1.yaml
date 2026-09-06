@@ -7,10 +7,15 @@ info:
     D00-CB-OWNERSHIP the Core Banking team implements the agreed
     result/reconciliation surface.
 
-    This contract does not describe Accounting batch submission and SIXPAY does
-    not generate the Core Banking accounting entries. The Core Banking
-    accounting capability owns entry generation/posting. Callback versus lookup
-    priority remains subject to the revised contract review.
+    This contract does not describe Accounting batch submission.
+
+    SIXPAY owns generation and durable freezing of the reduced accounting lines
+    derived from its T0 Payment financial-event snapshots. The future T1
+    Accounting submission reuses those immutable lines. Core Banking owns
+    validation, acceptance and effective accounting posting of the submitted
+    lines.
+
+    Callback versus lookup priority remains subject to the revised contract review.
 
     Amplitude is the sole source of TFJ truth. SIXPAY changes a Payment only
     after an authenticated result is durably persisted and uniquely matched on

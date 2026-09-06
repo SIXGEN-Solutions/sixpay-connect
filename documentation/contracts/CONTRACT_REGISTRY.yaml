@@ -297,40 +297,56 @@ contracts:
     path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
     domain: "integration"
     businessOwner: "payment"
-    capability: "FUNDS_CONTROL_PAYMENT_POSTING_AND_REVERSAL"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_EVENT_EXECUTION"
     direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
     systemOfRecord: "AMPLITUDE"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.4"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "2.3.T0"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      requiredScopes:
+        execute: "amplitude.payment.execution"
+        read: "amplitude.payment.execution.read"
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      idempotencyHeader: "Idempotency-Key"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
     mvpUsage:
       included: true
       purpose:
-        - "Execute one protected synchronous T0 financial command containing all mandatory execution-time account, funds, restriction and limit controls"
-        - "Resolve/use the protected configured Treasury/CUT destination inside the T0 execution boundary"
-        - "Debit the customer and credit the configured Treasury/CUT only when every mandatory control passes"
-        - "Return stable bank references and leg-level outcomes"
-        - "Recover uncertain posting outcomes by idempotency key or bank reference"
-        - "Request and track an explicit authorized reversal"
+        - "Freeze Payment-owned immutable reduced financial-event and financial-entry snapshots before provider submission"
+        - "Map those snapshots to the provider Payment event payload corresponding to bkeve plus bkmvti lines"
+        - "Execute POST /api/v1/payment-events as the single protected T0 Core Banking financial command"
+        - "Require all eight authoritative execution-time banking controls"
+        - "Require Core Banking atomic execution of debit and credit"
+        - "Recover an uncertain outcome by Payment reference"
+        - "Recover an uncertain outcome by original Idempotency-Key"
       constraints:
-        - "The MVP has no standalone read-only Funds Control call before a later debit; mandatory checks and debit/credit belong to one T0 financial execution command"
-        - "CUT reference comes from protected bank configuration"
-        - "A write timeout never proves failure"
-        - "Unknown outcomes permit lookup only, never blind resubmission"
-        - "Reversal requires a bank instruction or approved runbook"
-        - "Posting success does not establish TFJ finality"
-      relationshipToCustomerVerificationContract: >
-        Execution-time checks are defense in depth and do not replace the
-        dedicated customer/account/KYC verification defined by
-        amplitude-customer-verification-api-v1.
-    approvalPrerequisite:
-      - "SIXPAY Accounting, Payment and Integration approve the target posting semantics"
-      - "SIXPAY Security approves the target security, idempotency and recovery semantics"
-      - "Optional reservation and reversal capabilities are explicitly classified as enabled, deferred or outside the current MVP scope"
+        - "SIXPAY persists reduced immutable snapshots, not the complete historical Amplitude bkeve/bkmvti entity/table schema"
+        - "Provider-specific payloads and mappings remain in Payment infrastructure"
+        - "No standalone read-only Funds Control Core Banking call exists in the MVP"
+        - "The canonical debtor account reference comes from the earlier VERIFIED Customer Verification result"
+        - "The protected creditor account reference is resolved from Partner-owned data before snapshot finalization"
+        - "A finalized/submitted financial snapshot is immutable"
+        - "T1 consumes immutable financial-entry facts through an approved Payment-to-Accounting boundary"
+        - "Accounting never reads Payment infrastructure/JPA directly"
+        - "Same Idempotency-Key plus same logical request maps to the same financial operation/result"
+        - "Same Idempotency-Key plus a different logical request is a conflict"
+        - "Unknown financial outcomes permit authoritative lookup only, never blind replay"
+        - "OAuth2 Client Credentials and mTLS remain application-level security even inside the same bank SI"
+      approvedOperations:
+        execute: "POST /api/v1/payment-events"
+        lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
+        lookupByIdempotencyKey: "GET /api/v1/payment-events/idempotency/{idempotencyKey}"
+    approvalPrerequisite: []
 
   - id: "tresorpay-payment-status-webhook-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
@@ -401,6 +417,8 @@ contracts:
         - "PAYMENT_REFERENCE"
         - "BANK_POSTING_REFERENCE"
       constraints:
+        - "T1 batch submission uses immutable SIXPAY-generated financial-entry snapshots; this contract governs result/reconciliation only"
+        - "Core Banking validates and effectively posts/accounts the submitted T1 lines"
         - "Only a matched successful result establishes TREASURY_INTEGRATED"
         - "An unmatched, ambiguous or conflicting result is quarantined"
         - "A quarantined result never changes Payment"

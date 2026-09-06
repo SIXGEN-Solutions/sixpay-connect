@@ -150,62 +150,50 @@ execution-time account/funds checks remain owned by Payment.
 - masking and storage policy;
 - business-negative versus technical-failure mapping.
 
-## 6. Flow SYN-05 — Payment controls funds
+## 6. Flow SYN-05 — Payment prepares and executes the T0 Payment event
 
 ```text
 Payment
-  -> FundsGateway
-  -> AmplitudeFundsAdapter
-  -> AmplitudeAccountFundsClient
-  -> Core Banking
-```
-
-### Required contract decisions
-
-- whether the operation is balance inquiry, execution eligibility, reservation or a combination;
-- amount/currency precision;
-- available versus ledger balance;
-- opposition and account-state codes;
-- idempotency and concurrency behavior;
-- validity duration of evidence/reservation;
-- timeout budget.
-
-## 7. Flow SYN-06 — Payment posts the financial transaction
-
-```text
-Payment
-  -> PostingGateway
-  -> DedicatedAmplitudePostingAdapter
-  -> AmplitudePostingClient
-  -> RestAmplitudePostingClient
-  -> Core Banking
+  -> finalize immutable financial-event snapshot
+  -> finalize immutable financial-entry snapshots
+  -> Payment-owned Amplitude mapper
+  -> AmplitudePaymentEventClient
+  -> POST /api/v1/payment-events
+  -> Core Banking authoritative controls + atomic debit/credit
 ```
 
 ### Mandatory safety rules
 
-- every posting has a stable banking idempotency key;
-- timeout after request transmission creates `UNKNOWN`, not automatic failure;
-- blind retry is forbidden unless provider idempotency is certified;
-- lookup by idempotency key or bank reference resolves unknown outcomes;
-- bank reference is persisted atomically with Payment state and audit/outbox effects.
+- finalized/submitted financial snapshots are immutable;
+- provider-specific event/entry DTOs remain in Payment infrastructure;
+- SIXPAY persists reduced snapshots, not the full historical Amplitude schema;
+- every financial command has a stable idempotency key;
+- timeout after possible transmission creates `UNKNOWN`, not automatic failure;
+- blind retry is forbidden;
+- application security is OAuth2 Client Credentials plus mTLS.
 
-## 8. Flow SYN-07 — Payment resolves posting outcome
+## 7. Flow SYN-06 — Payment resolves T0 outcome
 
 ```text
 Payment reconciliation
-  -> capability-specific posting lookup adapter/client
-  -> lookup by original idempotency key or bank reference
+  -> Payment-event lookup adapter/client
+  -> lookup by Payment reference OR original Idempotency-Key
   -> resolve success / rejection / still unknown
 ```
 
 ### Tests
 
-- found by idempotency key;
-- found by bank reference;
+- found by Payment reference;
+- found by Idempotency-Key;
 - not found;
 - inconsistent provider response;
 - temporary unavailability;
 - repeated reconciliation is idempotent.
+
+## 8. Flow SYN-08 — Payment reversal
+
+Reversal remains outside the newly approved T0 Payment-event surface and
+requires a separate explicit contract/enablement decision before implementation.
 
 ## 9. Flow SYN-08 — Payment reverses a posting
 

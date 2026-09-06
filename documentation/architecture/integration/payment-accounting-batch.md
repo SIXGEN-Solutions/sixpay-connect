@@ -2,9 +2,15 @@
 
 ## Boundary
 
-Accounting does not depend on the Payment module and never receives the Payment
-aggregate. Payment facts are converted by a future composition adapter into the
-Accounting-owned `AccountingPaymentCandidate`.
+Accounting does not depend on Payment infrastructure and never receives the
+Payment aggregate or Payment JPA entities/repositories.
+
+Payment owns immutable T0 financial-event and financial-entry snapshot facts.
+An approved internal boundary/composition adapter projects the subset required
+by Accounting into Accounting-owned candidate/item models.
+
+Accounting therefore consumes frozen historical execution facts; it does not
+rebuild accounting lines from current Payment, Partner or provider configuration.
 
 ## Eligibility baseline
 
@@ -50,14 +56,26 @@ Item:
 - `REJECTED`;
 - `RECONCILIATION_REQUIRED`.
 
-## Explicitly outside Lot 5.6.1 / SIXPAY accounting-domain model
+## Financial-entry source
 
-- TFJ physical format;
-- accounting codes;
-- debit/credit rules;
+The debit/credit line instructions used by T1 originate from immutable T0
+financial-entry snapshots produced and frozen by Payment.
+
+Accounting may enrich them only with Accounting-owned batch metadata and
+eligibility/reconciliation evidence. It must not mutate the original financial
+meaning of the frozen lines.
+
+Core Banking validates and effectively posts/accounts the submitted lines. The
+physical Accounting API endpoint and final provider batch/line schema remain
+`TO_DEFINE`.
+
+## Explicitly outside the current formalisation
+
+- physical Accounting API endpoint;
+- exact final provider field/code subset for the T1 batch;
 - TFJ control totals;
 - file naming;
 - SFTP host/key/directories;
 - technical SFTP acknowledgement.
 
-Those remain responsibilities of the downstream Accounting/TFJ provider.
+These require the dedicated T1 implementation/contract lot.
