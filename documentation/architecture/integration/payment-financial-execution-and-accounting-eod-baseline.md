@@ -172,14 +172,39 @@ The existing names are not renamed by this documentation-only alignment.
 This decision changes the semantics previously associated with the physical
 `amplitude-payment-posting-api-v1` and end-of-day documentation.
 
-Until the revised wire contracts are reviewed:
+### T0 Payment Event
 
-- affected external Core Banking contracts remain `REFERENCE_ONLY`;
-- `codeGenerationAllowed` remains `false`;
-- no Core Banking client/server code may be generated from the revised target
-  semantics solely because this document exists;
-- unresolved provider endpoint, payload, code table and operational parameters
-  remain explicit contract work.
+The T0 Core Banking Payment Event contract is approved for implementation:
+
+- `amplitude-payment-posting-api-v1` remains the stable registry/file identity;
+- `lifecycleStatus` is `ACTIVE_MVP`;
+- `approvalStatus` is `APPROVED`;
+- `generationPolicy` is `ACTIVE`;
+- `codeGenerationAllowed` is `true`;
+- the approved physical operations are `POST /api/v1/payment-events`,
+  `GET /api/v1/payment-events/{paymentReference}` and
+  `GET /api/v1/payment-events/idempotency/{idempotencyKey}`.
+
+Implementation may therefore proceed against the approved T0 logical contract.
+
+The exact reduced provider field subset/code tables used to map SIXPAY
+financial-event and financial-entry snapshots to the `bkeve`/`bkmvti`-equivalent
+payload remain implementation mapping inputs. Their absence does not revert the
+approved T0 lifecycle/generation status, but no provider field or code may be
+invented.
+
+### T+1 Accounting
+
+The physical Core Banking Accounting batch-submission contract remains
+`TO_DEFINE`.
+
+Therefore:
+
+- no T+1 provider endpoint or wire schema is authorized by this T0 approval;
+- no T+1 provider client/server code may be generated from a nonexistent
+  physical contract;
+- `amplitude-end-of-day-confirmation-api-v1` remains a separate
+  result/reconciliation contract subject to its own approval state.
 
 ## 6. Non-goals
 

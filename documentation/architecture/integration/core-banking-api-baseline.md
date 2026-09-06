@@ -151,11 +151,14 @@ Both approved recovery mechanisms are retained:
 
 ### Reversal
 
-- `POST /api/v1/payment-postings/{bankPostingReference}/reversals`
-- `GET /api/v1/payment-postings/{bankPostingReference}/reversals/{reversalReference}`
+The physical reversal contract is `TO_DEFINE`.
 
-Reversal is `OPTIONAL` until the programme explicitly enables it and its
-business/operational prerequisites are approved.
+Reversal is `OPTIONAL` until the programme explicitly enables it and approves
+its endpoint, payload, authorization, idempotency, recovery and operational
+semantics.
+
+No legacy `/api/v1/payment-postings/...` reversal URL is part of the approved
+T0 Payment Event surface.
 
 ### Accounting T+1 / TFJ / EOD
 

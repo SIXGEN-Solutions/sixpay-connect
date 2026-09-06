@@ -42,8 +42,8 @@ The T1 Accounting submission endpoint remains `TO_DEFINE`.
 Read-only operations may use bounded retry according to the integration policy.
 
 Financial commands do not use blind retry after an uncertain transport outcome.
-Posting uncertainty is resolved through the approved lookup operations before
-any replay decision.
+Payment Event execution uncertainty is resolved through the approved lookup
+operations before any replay decision.
 
 ## Legacy removed
 
