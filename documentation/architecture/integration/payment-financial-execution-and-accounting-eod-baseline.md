@@ -7,7 +7,7 @@
 - Decision source: PAYMENT_COMPLETION / LOT 2.3 functional alignment
 - MVP accounting delivery mode: Core Banking API
 - Deferred accounting delivery mode: CSV/file exchange
-- Implementation status: documentation/contract alignment only; Java implementation is not changed by this decision
+- Implementation status: LOT 2.5 provider event mapping implemented in `backend/payment`; T0 submission/execution and recovery remain in subsequent lots
 
 ## 1. Fundamental separation
 
