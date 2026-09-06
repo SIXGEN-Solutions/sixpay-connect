@@ -4,9 +4,11 @@ import com.sixpay.integration.http.HttpTimeoutPolicy;
 import com.sixpay.integration.http.StandardRestClientFactory;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePostingClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventAdapter;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventRecoveryAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePostingMapper;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
+import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.validation.AmplitudePostingResponseValidator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -79,6 +81,26 @@ public class AmplitudePostingConfiguration {
         return new AmplitudePostingResponseValidator(
                 properties
         );
+    }
+
+    @Bean
+    AmplitudePaymentEventRecoveryClient amplitudePaymentEventRecoveryClient(
+            RestClient amplitudePostingRestClient,
+            PostingAccessTokenProvider tokenProvider,
+            AmplitudePostingProperties properties
+    ) {
+        return new RestAmplitudePaymentEventRecoveryClient(
+                amplitudePostingRestClient,
+                tokenProvider,
+                properties
+        );
+    }
+
+    @Bean
+    PaymentEventRecoveryPort paymentEventRecoveryPort(
+            AmplitudePaymentEventRecoveryClient client
+    ) {
+        return new AmplitudePaymentEventRecoveryAdapter(client);
     }
 
     @Bean
