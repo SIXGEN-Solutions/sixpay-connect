@@ -39,6 +39,9 @@ info:
       execute: "POST /api/v1/payment-events"
       lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
       lookupByIdempotencyKey: "GET /api/v1/payment-events/idempotency/{idempotencyKey}"
+      lastEventNumberByOperation: "GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}"
+      accountingDate: "GET /api/v1/nomenclature/getdatecomptable"
+      nightMode: "GET /api/v1/kyc/process/modenuit"
       applicationSecurity: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
       executeScope: "amplitude.payment.execution"
       readScope: "amplitude.payment.execution.read"
@@ -50,6 +53,8 @@ info:
       t1Reuse: "ACCOUNTING_CONSUMES_FROZEN_ENTRY_FACTS_THROUGH_APPROVED_BOUNDARY"
     providerMapping:
       exactFieldSubsetStatus: "TO_BE_DERIVED_FROM_APPROVED_BANK_EVIDENCE"
+      accountReferenceFormat: "age-ncp-clc"
+      accountReferenceExample: "00001-12345678901-42"
       fullHistoricalSchemaImportAllowed: false
     limitations:
       - "NO_STANDALONE_READ_ONLY_FUNDS_CONTROL_CALL"
@@ -150,6 +155,78 @@ paths:
         '404': { $ref: '#/components/responses/ProblemResponse' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
+  /api/v1/transactions/process/lastnumeroeveope/{operationCode}:
+    get:
+      tags: [Payment event context]
+      operationId: getLastPaymentEventNumberByOperation
+      summary: Read the last Core Banking event number for an operation code
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/OperationCodePath'
+      responses:
+        '200':
+          description: Historical Core Banking response carrying the last event number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingStringDataResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/nomenclature/getdatecomptable:
+    get:
+      tags: [Payment event context]
+      operationId: getCoreBankingAccountingDate
+      summary: Read the current Core Banking accounting date
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+      responses:
+        '200':
+          description: Historical Core Banking response carrying the accounting date.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingStringDataResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/kyc/process/modenuit:
+    get:
+      tags: [Payment event context]
+      operationId: getCoreBankingNightMode
+      summary: Read the Core Banking night-mode state using historical response semantics
+      description: |
+        Response body code "200" means night mode is active.
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+      responses:
+        '200':
+          description: Historical Core Banking night-mode response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingCodeResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
 components:
   securitySchemes:
     oauth2ClientCredentials:
@@ -190,12 +267,38 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/PaymentReference'
+    OperationCodePath:
+      name: operationCode
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 3
 
   schemas:
     PaymentReference:
       type: string
       minLength: 1
       maxLength: 100
+
+    CoreBankingStringDataResponse:
+      type: object
+      additionalProperties: true
+      required: [code, data]
+      properties:
+        code:
+          type: string
+        data:
+          type: string
+
+    CoreBankingCodeResponse:
+      type: object
+      additionalProperties: true
+      required: [code]
+      properties:
+        code:
+          type: string
 
     PaymentEventEnvelope:
       type: object

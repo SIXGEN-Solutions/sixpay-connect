@@ -69,6 +69,16 @@ Both authoritative recovery mechanisms are retained:
 - `GET /api/v1/payment-events/{paymentReference}`;
 - `GET /api/v1/payment-events/idempotency/{idempotencyKey}`.
 
+The preserved Core Banking event-construction flow also uses these read-only
+context operations:
+
+- `GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}`;
+- `GET /api/v1/nomenclature/getdatecomptable`;
+- `GET /api/v1/kyc/process/modenuit`.
+
+Debtor and creditor account references use the approved exchange format
+`age-ncp-clc`, for example `00001-12345678901-42`.
+
 T0 application integration security is OAuth2 Client Credentials plus mTLS.
 Bank-SI network controls remain defense in depth and do not replace application
 authentication and authorization.
@@ -182,8 +192,11 @@ The T0 Core Banking Payment Event contract is approved for implementation:
 - `generationPolicy` is `ACTIVE`;
 - `codeGenerationAllowed` is `true`;
 - the approved physical operations are `POST /api/v1/payment-events`,
-  `GET /api/v1/payment-events/{paymentReference}` and
-  `GET /api/v1/payment-events/idempotency/{idempotencyKey}`.
+  `GET /api/v1/payment-events/{paymentReference}`,
+  `GET /api/v1/payment-events/idempotency/{idempotencyKey}`,
+  `GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}`,
+  `GET /api/v1/nomenclature/getdatecomptable` and
+  `GET /api/v1/kyc/process/modenuit`.
 
 Implementation may therefore proceed against the approved T0 logical contract.
 
