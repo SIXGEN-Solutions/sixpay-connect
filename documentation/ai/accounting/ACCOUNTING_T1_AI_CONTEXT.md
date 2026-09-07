@@ -21,7 +21,11 @@ It does not replace architecture, requirements or physical contracts.
 
 ## TO_DEFINE / DEFERRED
 
-- Authoritative TRESOR PAY status contract for T1.1.
+- TRESOR PAY T1.1 status lookup is `GET /api/v1/payments/{reference}/status` using partner OAuth2.
+- TRESOR PAY status verification is an additional T1 eligibility/coherence fact; it never invalidates authoritative T0 `COMPLETED`.
+- Only TRESOR PAY `COMPLETED` evidence is accepted as paid for T1.1.
+- If TRESOR PAY is unavailable or not yet completed, exclude the transaction from the current T1 selection and retry verification for a later cutoff while continuing other verified transactions.
+- Verification may be performed by a periodic pre-cutoff worker or on-demand for unverified candidates; scheduler cadence remains TO_DEFINE.
 - Accounting candidate persistence schema for T1.2.
 - Physical Core Banking Accounting API for T1.4.
 - Provider DTOs/mappings for T1.5.

@@ -150,6 +150,40 @@ contracts:
       - "Security approval"
       - "Completion and approval of the full IA-0.5P Payment Contract Pack"
 
+  - id: "tresorpay-payment-status-query-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
+    domain: "accounting"
+    businessOwner: "accounting"
+    deliveryOwner: "integration"
+    capability: "TRESORPAY_PAYMENT_STATUS_QUERY"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "REFERENCE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "ACCOUNTING_T1"
+    phaseStep: "T1.1"
+    security:
+      status: "PARTNER_OAUTH2_SUPPLIED_PENDING_CONTRACT_APPROVAL"
+      authentication: ["OAUTH2"]
+      operationalParameters: "TO_DEFINE"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Verify that a T0-completed SIXPAY Payment is also recorded as paid/completed in TRESOR PAY before T1 selection"
+        - "Provide downstream coherence evidence for Accounting eligibility"
+      constraints:
+        - "TRESOR PAY status never invalidates authoritative T0 COMPLETED"
+        - "Only TRESOR PAY COMPLETED evidence is eligible for T1.1"
+        - "Unavailable or non-final status excludes the transaction from the current T1 selection without failing T0"
+        - "Provider adapter generation remains forbidden until approval"
+    approvalPrerequisite:
+      - "TRESOR PAY contract owner approval"
+      - "SIXPAY Accounting and Integration approval"
+      - "Security approval of OAuth2 profile"
+
   - id: "tresorpay-payment-confirmation-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
     domain: "payment"

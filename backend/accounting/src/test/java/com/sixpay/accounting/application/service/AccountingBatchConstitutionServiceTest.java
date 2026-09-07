@@ -162,9 +162,17 @@ class AccountingBatchConstitutionServiceTest {
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
                 new TresorPayPaymentStatusEvidence(
-                        "CONFIRMED",
+                        reference,
+                        "TX-" + reference,
+                        "COMPLETED",
+                        "BANK_TRANSFER",
+                        "AMP-" + reference,
+                        true,
+                        true,
+                        Instant.parse("2026-08-07T12:04:00Z"),
+                        null,
                         Instant.parse("2026-08-07T12:05:00Z"),
-                        "STATUS-" + reference,
+                        reference,
                         "corr-" + reference
                 )
         );

@@ -34,3 +34,15 @@ Le T0 Payment est fermé et n’est pas redéfini par ce programme.
 - Consumer technical deduplication key is `eventId`; business identity is `(paymentId, financialSnapshotId)`.
 - Payment owns T0 facts and snapshots. Accounting owns its local candidate projection, batches, submission and reconciliation lifecycle.
 - No provider adapter, external endpoint, provider DTO or physical T1 contract is generated in T1.0.
+
+
+## T1.1 decisions
+
+- SIXPAY consults TRESOR PAY through `GET /api/v1/payments/{reference}/status` using partner OAuth2.
+- The lookup verifies cross-system coherence before T1; it does not determine or rewrite T0 financial truth.
+- A transaction is T1-eligible only when TRESOR PAY confirms it as `COMPLETED`.
+- TRESOR PAY cannot invalidate an already-authoritative T0 `COMPLETED`.
+- When TRESOR PAY is unavailable or not yet completed, the transaction is skipped for the current T1 run and remains eligible for a later verification/cutoff.
+- Other verified transactions continue through T1/TFJ.
+- Verification may be anticipated by a periodic worker or performed on-demand for unverified candidates; the worker cadence is deferred.
+- Manual/export reconciliation processes remain external to SIXPAY until separately defined; SIXPAY may later expose extraction capability under an approved scope.

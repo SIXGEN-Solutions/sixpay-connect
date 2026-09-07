@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: TRESOR PAY Payment Status Query API
+  version: 1.0.0
+  description: >
+    T1.1 reference contract supplied for SIXPAY payment-status coherence lookup.
+    This contract is REFERENCE_MVP / PENDING_APPROVAL and MUST NOT trigger provider
+    adapter generation until registry approval and generation policy are updated.
+  x-sixpay-contract:
+    registryId: tresorpay-payment-status-query-api-v1
+    capability: TRESORPAY_PAYMENT_STATUS_QUERY
+    lifecycleStatus: REFERENCE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+paths:
+  /api/v1/payments/{reference}/status:
+    get:
+      summary: Read TRESOR PAY payment status
+      operationId: getTresorPayPaymentStatus
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authoritative TRESOR PAY payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+components:
+  schemas:
+    PaymentStatusResponse:
+      type: object
+      required:
+        - reference
+        - transaction_id
+        - status
+        - payment_method
+        - debit_effectue
+        - quittance_disponible
+        - updated_at
+      properties:
+        reference:
+          type: string
+        transaction_id:
+          type: string
+        status:
+          type: string
+          description: T1.1 accepts COMPLETED as the paid/completed eligibility state.
+        payment_method:
+          type: string
+        operator_reference:
+          type: string
+          nullable: true
+        debit_effectue:
+          type: boolean
+        quittance_disponible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        failure_reason:
+          type: string
+          nullable: true
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Partner OAuth2 profile supplied for T1.1; token endpoint/scopes remain TO_DEFINE.
+      flows:
+        clientCredentials:
+          tokenUrl: https://to-define.invalid/oauth2/token
+          scopes: {}
+security:
+  - oauth2: []

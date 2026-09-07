@@ -97,3 +97,5 @@ backend/accounting/src/main/resources/db/migration/V400__accounting_baseline.sql
 T1 consumes an Accounting-owned local projection populated from an approved durable internal Payment event. Accounting must not access Payment JPA entities, infrastructure adapters or repositories directly.
 
 Only Payments whose T0 is authoritatively `COMPLETED`, whose Payment status is `POSTED_PENDING_TFJ`, and whose Payment-owned financial snapshot is `FINALIZED` may produce the T1 input fact. The physical Core Banking Accounting API remains `TO_DEFINE`; existing `accountingapi` classes are not contract authority until T1.4.
+
+T1.1 adds the Accounting-owned provider-neutral boundary for TRESOR PAY payment-status verification. The supplied external operation is `GET /api/v1/payments/{reference}/status`; only `COMPLETED` evidence qualifies a candidate for T1. No provider adapter is introduced in T1.1.
