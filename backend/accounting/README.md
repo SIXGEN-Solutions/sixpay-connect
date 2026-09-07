@@ -91,3 +91,9 @@ Accounting owns these production tables:
 
 Schema:
 backend/accounting/src/main/resources/db/migration/V400__accounting_baseline.sql
+
+## ACCOUNTING_T1 boundary
+
+T1 consumes an Accounting-owned local projection populated from an approved durable internal Payment event. Accounting must not access Payment JPA entities, infrastructure adapters or repositories directly.
+
+Only Payments whose T0 is authoritatively `COMPLETED`, whose Payment status is `POSTED_PENDING_TFJ`, and whose Payment-owned financial snapshot is `FINALIZED` may produce the T1 input fact. The physical Core Banking Accounting API remains `TO_DEFINE`; existing `accountingapi` classes are not contract authority until T1.4.

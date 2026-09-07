@@ -66,3 +66,7 @@ possible instead of creating a new phase-specific document.
 
 Phase-specific audit evidence is acceptable during controlled consolidation,
 but it must not become the permanent navigation model.
+
+## Accounting T1 architecture
+
+See `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` for the approved Payment→Accounting internal boundary and T1 ownership model.

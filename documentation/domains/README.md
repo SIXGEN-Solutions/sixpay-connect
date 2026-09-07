@@ -80,3 +80,7 @@ Banking API implementation.
 
 Empty domain placeholders remain forbidden. A domain directory is created only
 when validated current-state domain documentation is explicitly produced.
+
+## Accounting T1
+
+Current T1 program documentation lives under `documentation/domains/accounting/`, starting with `ACCOUNTING_T1_PROGRAM.md` and `ACCOUNTING_T1_PAYMENT_INPUT_CONTRACT.md`.

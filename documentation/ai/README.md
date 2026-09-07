@@ -255,3 +255,7 @@ preflight-only working documents
 
 but only after verifying that no canonical registry, architecture, requirement,
 runbook or implementation asset still relies on them.
+
+## Accounting T1
+
+`documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md` is the active AI reference for ACCOUNTING_T1 after higher-authority sources are loaded. It must never be used to invent the still-undefined physical Core Banking T1 contract.

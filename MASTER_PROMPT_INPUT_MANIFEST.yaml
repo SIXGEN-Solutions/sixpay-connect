@@ -80,6 +80,7 @@ contextSelection:
       roots:
         - "documentation/ai/customer/"
         - "documentation/ai/payment/"
+        - "documentation/ai/accounting/"
       rule: >-
         Load only a specifically required, non-historical reference after
         higher-priority sources have been inspected.
