@@ -4,12 +4,17 @@ import com.sixpay.payment.application.port.output.banking.BankingRequestContext;
 import com.sixpay.payment.application.port.output.banking.PaymentEventContextPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.configuration.PaymentConfigurationParameterPort;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 
 @Service
+@ConditionalOnBean({
+        PaymentConfigurationParameterPort.class,
+        PaymentEventContextPort.class
+})
 public class PaymentEventContextService {
 
     public static final String OPERATION_CODE = "OPERATION_CODE";

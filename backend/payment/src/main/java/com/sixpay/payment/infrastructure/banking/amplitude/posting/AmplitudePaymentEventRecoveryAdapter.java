@@ -2,6 +2,7 @@ package com.sixpay.payment.infrastructure.banking.amplitude.posting;
 
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
+import com.sixpay.payment.domain.model.evidence.PaymentEventObservationSource;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventRecoveryClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 
@@ -40,7 +41,10 @@ public final class AmplitudePaymentEventRecoveryAdapter
                 );
 
         if (byReference.isPresent()) {
-            PaymentEventRecoveryResult result = classify(byReference.get());
+            PaymentEventRecoveryResult result = classify(
+                    byReference.get(),
+                    PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP
+            );
             if (result.status() != PaymentEventRecoveryStatus.UNKNOWN) {
                 return result;
             }
@@ -54,16 +58,23 @@ public final class AmplitudePaymentEventRecoveryAdapter
                 );
 
         if (byIdempotency.isPresent()) {
-            return classify(byIdempotency.get());
+            return classify(
+                    byIdempotency.get(),
+                    PaymentEventObservationSource.IDEMPOTENCY_LOOKUP
+            );
         }
 
         return byReference
-                .map(this::classify)
+                .map(result -> classify(
+                        result,
+                        PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP
+                ))
                 .orElseGet(PaymentEventRecoveryResult::notFound);
     }
 
     private PaymentEventRecoveryResult classify(
-            AmplitudePaymentEventResult providerResult
+            AmplitudePaymentEventResult providerResult,
+            PaymentEventObservationSource source
     ) {
         PaymentEventExecutionPort.PaymentEventExecutionResult result =
                 AmplitudePaymentEventAdapter.toApplicationResult(providerResult);
@@ -72,17 +83,20 @@ public final class AmplitudePaymentEventRecoveryAdapter
             case COMPLETED ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.COMPLETED,
-                            result
+                            result,
+                            source
                     );
             case REJECTED ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.REJECTED,
-                            result
+                            result,
+                            source
                     );
             case UNKNOWN ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.UNKNOWN,
-                            result
+                            result,
+                            source
                     );
         };
     }

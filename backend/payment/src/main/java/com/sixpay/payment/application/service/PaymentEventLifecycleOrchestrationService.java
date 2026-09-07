@@ -196,8 +196,10 @@ public class PaymentEventLifecycleOrchestrationService {
                 );
 
         PaymentEventObservationSource source =
-                PaymentEventObservationSource
-                        .IDEMPOTENCY_LOOKUP;
+                Objects.requireNonNull(
+                        recovery.source(),
+                        "Recovery observation source"
+                );
 
         return finalizationService.resolvePaymentEventOutcome(
                 paymentId,
