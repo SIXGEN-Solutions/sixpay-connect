@@ -7,6 +7,7 @@ import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPo
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort.PaymentEventRecoveryStatus;
 import com.sixpay.payment.domain.model.FinancialInstitutionCode;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
+import com.sixpay.payment.domain.model.evidence.PaymentEventObservationSource;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventRecoveryClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 import org.junit.jupiter.api.Test;
@@ -28,9 +29,14 @@ class AmplitudePaymentEventRecoveryAdapterTest {
         AmplitudePaymentEventRecoveryAdapter adapter =
                 new AmplitudePaymentEventRecoveryAdapter(client);
 
+        var recovery = adapter.recover(query());
         assertEquals(
                 PaymentEventRecoveryStatus.COMPLETED,
-                adapter.recover(query()).status()
+                recovery.status()
+        );
+        assertEquals(
+                PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP,
+                recovery.source()
         );
         assertEquals(1, client.paymentReferenceCalls);
         assertEquals(0, client.idempotencyCalls);
@@ -45,9 +51,14 @@ class AmplitudePaymentEventRecoveryAdapterTest {
         AmplitudePaymentEventRecoveryAdapter adapter =
                 new AmplitudePaymentEventRecoveryAdapter(client);
 
+        var recovery = adapter.recover(query());
         assertEquals(
                 PaymentEventRecoveryStatus.REJECTED,
-                adapter.recover(query()).status()
+                recovery.status()
+        );
+        assertEquals(
+                PaymentEventObservationSource.IDEMPOTENCY_LOOKUP,
+                recovery.source()
         );
         assertEquals(1, client.paymentReferenceCalls);
         assertEquals(1, client.idempotencyCalls);
