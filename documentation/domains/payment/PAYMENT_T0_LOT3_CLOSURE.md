@@ -41,6 +41,15 @@ Recovery:
 
 Recovery never invokes a new financial POST.
 
+## Single logical T0 execution guard
+
+The T0 execution path is at-most-once at SIXPAY orchestration level:
+
+- the finalized financial snapshot must match the persisted instruction fingerprint before any Core Banking context allocation;
+- `POSTING_PENDING` with the same persisted instruction returns idempotently without resolving a new banking context and without issuing another POST;
+- a stale concurrent caller that loses the durable posting-authorization mutation returns without issuing a POST;
+- the same idempotency key with a different financial request is a conflict before any banking call.
+
 ## Validation gates
 
 The final Payment gate is:

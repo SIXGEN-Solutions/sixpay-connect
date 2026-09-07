@@ -77,29 +77,61 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(requestedAt, "Requested at");
         Objects.requireNonNull(policies, "Payment policies");
 
-        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
-                contextService.resolve(
-                        bankingContext,
-                        requestedAt
-                );
-
         Payment payment = requirePayment(paymentId);
+        PaymentFinancialEventSnapshot snapshot =
+                requireFinalizedSnapshot(paymentId);
 
-        if (payment.status() == PaymentStatus.APPROVED_FOR_POSTING) {
-            postingPreparationService.authorizePaymentEventPosting(
-                    paymentId,
-                    instruction,
-                    mappingContext.requestedAt()
+        requireInstructionMatchesSnapshot(
+                instruction,
+                snapshot
+        );
+
+        if (payment.status() == PaymentStatus.POSTING_PENDING) {
+            PostingInstructionIdentity persistedInstruction =
+                    payment.toState()
+                            .postingInstruction()
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "POSTING_PENDING Payment requires "
+                                                    + "a persisted posting instruction"
+                                    )
+                            );
+
+            if (!persistedInstruction.equals(instruction)) {
+                throw PaymentDomainException.conflict(
+                        "A different posting instruction is already authorized"
+                );
+            }
+
+            return PaymentWorkflowResult.from(
+                    payment,
+                    false
             );
-        } else if (payment.status() != PaymentStatus.POSTING_PENDING) {
+        }
+
+        if (payment.status() != PaymentStatus.APPROVED_FOR_POSTING) {
             throw PaymentDomainException.invalidTransition(
                     payment.status(),
                     "executePaymentEvent"
             );
         }
 
-        PaymentFinancialEventSnapshot snapshot =
-                requireFinalizedSnapshot(paymentId);
+        PaymentWorkflowResult authorization =
+                postingPreparationService.authorizePaymentEventPosting(
+                        paymentId,
+                        instruction,
+                        requestedAt
+                );
+
+        if (!authorization.stateChanged()) {
+            return authorization;
+        }
+
+        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
+                contextService.resolve(
+                        bankingContext,
+                        requestedAt
+                );
 
         PaymentEventExecutionPort.PaymentEventExecutionResult providerResult;
         try {
@@ -137,6 +169,29 @@ public class PaymentEventLifecycleOrchestrationService {
                 providerResult.observedAt(),
                 policies
         );
+    }
+
+    private static void requireInstructionMatchesSnapshot(
+            PostingInstructionIdentity instruction,
+            PaymentFinancialEventSnapshot snapshot
+    ) {
+        if (!instruction.amount().equals(
+                snapshot.requestedAmount()
+        )) {
+            throw PaymentDomainException.conflict(
+                    "Posting instruction amount conflicts "
+                            + "with finalized financial snapshot"
+            );
+        }
+
+        if (!instruction.instructionFingerprint().equals(
+                PaymentT0FinancialRequestFingerprint.from(snapshot)
+        )) {
+            throw PaymentDomainException.conflict(
+                    "Posting instruction conflicts "
+                            + "with finalized financial snapshot"
+            );
+        }
     }
 
     public PaymentWorkflowResult recover(
