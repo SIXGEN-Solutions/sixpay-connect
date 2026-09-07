@@ -164,23 +164,31 @@ public final class PaymentAggregateTestFixtures {
 
     static Payment postingPendingPayment() {
         Payment payment = approvedPayment();
-        payment.authorizePosting(
+        payment.authorizePaymentEventPosting(
                 postingInstruction(),
-                T0.plusSeconds(6),
-                profiles()
+                T0.plusSeconds(6)
         );
         return payment;
     }
 
     static Payment postedPendingTfjPayment() {
         Payment payment = postingPendingPayment();
-        payment.recordPostingOutcome(
-                completedPosting(
-                        "7",
-                        EvidenceObservationChannel.DIRECT_RESPONSE
-                ),
+        payment.recordPaymentEventOutcome(
+                completedPaymentEvent(PaymentEventObservationSource.DIRECT_RESPONSE),
                 null,
                 T0.plusSeconds(7),
+                profiles()
+        );
+        return payment;
+    }
+
+    static Payment reversalRequiredPayment() {
+        Payment payment = postedPendingTfjPayment();
+        payment.recordMatchedEndOfDayConfirmation(
+                tfjReversalRequired("9"),
+                tfjProof(),
+                tfjReversalFailure(),
+                T0.plusSeconds(12),
                 profiles()
         );
         return payment;
@@ -374,129 +382,48 @@ public final class PaymentAggregateTestFixtures {
         );
     }
 
-    static PostingOutcomeSnapshot completedPosting(
-            String hex,
-            EvidenceObservationChannel channel
-    ) {
-        PostingInstructionIdentity instruction =
-                postingInstruction();
-        return new PostingOutcomeSnapshot(
-                instruction.instructionId(),
-                instruction.idempotencyKey(),
-                PostingOutcome.COMPLETED,
-                bankPostingReference(),
-                successfulLeg("DEBIT-001"),
-                successfulLeg("CUT-001"),
-                AMOUNT,
-                LocalDate.of(2026, 7, 31),
-                null,
-                PostingNextAction.NONE,
-                metadata(
-                        ExternalSystem.AMPLITUDE,
-                        channel,
-                        hex,
-                        T0.plusSeconds(6)
-                )
-        );
-    }
-
-    static PostingOutcomeSnapshot unknownPosting(String hex) {
-        PostingInstructionIdentity instruction =
-                postingInstruction();
-        return new PostingOutcomeSnapshot(
-                instruction.instructionId(),
-                instruction.idempotencyKey(),
-                PostingOutcome.UNKNOWN,
-                null,
-                new PostingLegEvidence(
-                        PostingLegStatus.UNKNOWN,
-                        null,
-                        null,
-                        null
-                ),
-                new PostingLegEvidence(
-                        PostingLegStatus.UNKNOWN,
-                        null,
-                        null,
-                        null
-                ),
-                AMOUNT,
-                LocalDate.of(2026, 7, 31),
-                null,
-                PostingNextAction.QUERY_OUTCOME,
-                metadata(
-                        ExternalSystem.AMPLITUDE,
-                        EvidenceObservationChannel.DIRECT_RESPONSE,
-                        hex,
-                        T0.plusSeconds(6)
-                )
-        );
-    }
-
-
-
-    static PostingOutcomeSnapshot debitConfirmedPosting(String hex) {
-        PostingInstructionIdentity instruction = postingInstruction();
-        return new PostingOutcomeSnapshot(
-                instruction.instructionId(),
-                instruction.idempotencyKey(),
-                PostingOutcome
-                        .DEBIT_CONFIRMED_CUT_CREDIT_PENDING,
-                bankPostingReference(),
-                successfulLeg("DEBIT-001"),
-                new PostingLegEvidence(
-                        PostingLegStatus.PENDING,
-                        null,
-                        null,
-                        null
-                ),
-                AMOUNT,
-                LocalDate.of(2026, 7, 31),
-                null,
-                PostingNextAction.WAIT_FOR_CUT_CREDIT,
-                metadata(
-                        ExternalSystem.AMPLITUDE,
-                        EvidenceObservationChannel.DIRECT_RESPONSE,
-                        hex,
-                        T0.plusSeconds(7)
-                )
-        );
-    }
-
-    static PostingOutcomeSnapshot rejectedPostingWithoutEffect(
-            String hex,
-            String failureCode
+    static PaymentEventOutcomeSnapshot completedPaymentEvent(
+            PaymentEventObservationSource source
     ) {
         PostingInstructionIdentity instruction = postingInstruction();
-        FailureCode code = FailureCode.of(failureCode);
-        return new PostingOutcomeSnapshot(
+        return new PaymentEventOutcomeSnapshot(
                 instruction.instructionId(),
                 instruction.idempotencyKey(),
-                PostingOutcome.REJECTED_NO_FINANCIAL_EFFECT,
+                PaymentEventOutcome.COMPLETED,
+                executionChecks(EvidenceCheckResult.PASS),
+                bankPostingReference(),
                 null,
-                new PostingLegEvidence(
-                        PostingLegStatus.FAILED,
-                        null,
-                        null,
-                        code
-                ),
-                new PostingLegEvidence(
-                        PostingLegStatus.NOT_STARTED,
-                        null,
-                        null,
-                        null
-                ),
-                AMOUNT,
                 LocalDate.of(2026, 7, 31),
-                code,
-                PostingNextAction.NONE,
-                metadata(
-                        ExternalSystem.AMPLITUDE,
-                        EvidenceObservationChannel.DIRECT_RESPONSE,
-                        hex,
-                        T0.plusSeconds(7)
-                )
+                T0.plusSeconds(7),
+                source
         );
+    }
+
+    static PaymentEventOutcomeSnapshot unknownPaymentEvent(
+            PaymentEventObservationSource source
+    ) {
+        PostingInstructionIdentity instruction = postingInstruction();
+        return new PaymentEventOutcomeSnapshot(
+                instruction.instructionId(),
+                instruction.idempotencyKey(),
+                PaymentEventOutcome.UNKNOWN,
+                executionChecks(EvidenceCheckResult.UNKNOWN),
+                null,
+                null,
+                LocalDate.of(2026, 7, 31),
+                T0.plusSeconds(7),
+                source
+        );
+    }
+
+    private static List<FundsControlCheckEvidence> executionChecks(
+            EvidenceCheckResult result
+    ) {
+        return java.util.Arrays.stream(FundsControlCheckType.values())
+                .map(type -> new FundsControlCheckEvidence(
+                        type, result, null, T0.plusSeconds(7)
+                ))
+                .toList();
     }
 
     static ReversalSnapshot unknownReversalSnapshot(String hex) {
@@ -546,46 +473,6 @@ public final class PaymentAggregateTestFixtures {
         );
     }
 
-    static PostingOutcomeSnapshot reversalRequiredPosting(String hex) {
-        PostingInstructionIdentity instruction = postingInstruction();
-        FailureCode code = FailureCode.of("CUT_CREDIT_FAILED");
-        return new PostingOutcomeSnapshot(
-                instruction.instructionId(),
-                instruction.idempotencyKey(),
-                PostingOutcome.REVERSAL_REQUIRED,
-                bankPostingReference(),
-                successfulLeg("DEBIT-001"),
-                new PostingLegEvidence(
-                        PostingLegStatus.FAILED,
-                        null,
-                        null,
-                        code
-                ),
-                AMOUNT,
-                LocalDate.of(2026, 7, 31),
-                code,
-                PostingNextAction.REQUEST_EXPLICIT_REVERSAL,
-                metadata(
-                        ExternalSystem.AMPLITUDE,
-                        EvidenceObservationChannel.DIRECT_RESPONSE,
-                        hex,
-                        T0.plusSeconds(7)
-                )
-        );
-    }
-
-    static PaymentFailure reversalRequiredFailure() {
-        return new PaymentFailure(
-                FailureCode.of("CUT_CREDIT_FAILED"),
-                FailureCategory.TECHNICAL_FAILURE,
-                FailureStage.POSTING,
-                RetryDisposition.RECOVERY_EVENT_REQUIRED,
-                "CUT credit requires reversal",
-                T0.plusSeconds(7),
-                ExternalSystem.AMPLITUDE
-        );
-    }
-
     static ReversalSnapshot reversedSnapshot(String hex) {
         ReversalInstructionIdentity instruction =
                 reversalInstruction();
@@ -609,6 +496,37 @@ public final class PaymentAggregateTestFixtures {
                                 T0.plusSeconds(15)
                         )
                 )
+        );
+    }
+
+    static EndOfDayConfirmationSnapshot tfjReversalRequired(String hex) {
+        return new EndOfDayConfirmationSnapshot(
+                new TfjConfirmationId(UUID.fromString("b257a2f4-4196-4e44-8fb3-061cc41fb6c4")),
+                BANK,
+                LocalDate.of(2026, 7, 31),
+                PublicPaymentReference.of("PAY-01J8YH6M6VT8EF3Z7Q4N9P2KDC"),
+                "POSTING-001",
+                "TFJ-BATCH-001",
+                TfjStatus.FAILED,
+                new TfjFailureEvidence(
+                        FailureCode.of("TFJ_REVERSAL_REQUIRED"),
+                        TfjRecoveryAction.REVERSAL_REQUIRED
+                ),
+                T0.plusSeconds(10),
+                T0.plusSeconds(11),
+                metadata(ExternalSystem.AMPLITUDE, EvidenceObservationChannel.ASYNC_CALLBACK, hex, T0.plusSeconds(11))
+        );
+    }
+
+    static PaymentFailure tfjReversalFailure() {
+        return new PaymentFailure(
+                FailureCode.of("TFJ_REVERSAL_REQUIRED"),
+                FailureCategory.TREASURY_RECONCILIATION_FAILURE,
+                FailureStage.END_OF_DAY_RECONCILIATION,
+                RetryDisposition.RECOVERY_EVENT_REQUIRED,
+                "TFJ requires explicit reversal review",
+                T0.plusSeconds(12),
+                ExternalSystem.AMPLITUDE
         );
     }
 
@@ -941,12 +859,4 @@ public final class PaymentAggregateTestFixtures {
         );
     }
 
-    private static PostingLegEvidence successfulLeg(String reference) {
-        return new PostingLegEvidence(
-                PostingLegStatus.SUCCEEDED,
-                reference,
-                T0.plusSeconds(6),
-                null
-        );
-    }
 }

@@ -29,9 +29,9 @@ class PaymentDomainKernelCatalogueTest {
                 "recordBankingVerification",
                 "recordFundsControl",
                 "recordTreasuryAccountResolution",
-                "authorizePosting",
-                "recordPostingOutcome",
-                "resolvePostingOutcome",
+                "authorizePaymentEventPosting",
+                "recordPaymentEventOutcome",
+                "resolvePaymentEventOutcome",
                 "recordMatchedEndOfDayConfirmation",
                 "authorizeReversal",
                 "recordReversalOutcome",
@@ -215,7 +215,7 @@ class PaymentDomainKernelCatalogueTest {
     }
 
     @Test
-    void aggregateExposesAllSeventeenNamedOperations() {
+    void aggregateExposesAllSeventeenAtomicNamedOperations() {
         Set<String> operations = Arrays.stream(
                         Payment.class.getDeclaredMethods()
                 )

@@ -17,13 +17,13 @@ class PaymentStateDocumentSchemaArchitectureTest {
             );
 
     @Test
-    void stateDocumentUsesVersionSixAndGuardsLegacyPayloads()
+    void stateDocumentUsesVersionSevenAndGuardsLegacyPayloads()
             throws Exception {
 
         String source = Files.readString(DOCUMENT);
 
         assertTrue(source.contains(
-                "CURRENT_SCHEMA_VERSION = 6"
+                "CURRENT_SCHEMA_VERSION = 7"
         ));
 
         assertTrue(source.contains(
@@ -152,6 +152,14 @@ class PaymentStateDocumentSchemaArchitectureTest {
 
         assertTrue(source.contains(
                 ".sixpayAuthorizationDecision(sixpayAuthorizationDecision)"
+        ));
+
+        assertTrue(source.contains(
+                "PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence"
+        ));
+
+        assertTrue(!source.contains(
+                "PostingOutcomeSnapshot postingOutcomeEvidence"
         ));
     }
 }

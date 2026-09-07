@@ -4,7 +4,7 @@ import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.configuration.AmplitudePostingProperties;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventRequest;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.PostingOutcomeUnknownException;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.ResourceAccessException;
@@ -79,7 +79,7 @@ public final class RestAmplitudePaymentEventClient
                             );
 
             if (response == null) {
-                throw new PostingOutcomeUnknownException(
+                throw new AmplitudePaymentEventOutcomeUnknownException(
                         "Payment event response is empty",
                         null
                 );
@@ -87,7 +87,7 @@ public final class RestAmplitudePaymentEventClient
 
             return response;
         } catch (ResourceAccessException exception) {
-            throw new PostingOutcomeUnknownException(
+            throw new AmplitudePaymentEventOutcomeUnknownException(
                     "Payment event outcome is unknown",
                     exception
             );
@@ -95,7 +95,7 @@ public final class RestAmplitudePaymentEventClient
             int status = exception.getStatusCode().value();
 
             if (status == 503 || status >= 500) {
-                throw new PostingOutcomeUnknownException(
+                throw new AmplitudePaymentEventOutcomeUnknownException(
                         "Payment event outcome is unknown",
                         exception
                 );

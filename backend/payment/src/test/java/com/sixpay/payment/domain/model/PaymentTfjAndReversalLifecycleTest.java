@@ -57,16 +57,7 @@ class PaymentTfjAndReversalLifecycleTest {
     @Test
     void postingReversalRequirementCanBeAuthorizedAndConfirmed() {
         Payment payment =
-                PaymentAggregateTestFixtures.postingPendingPayment();
-
-        payment.recordPostingOutcome(
-                PaymentAggregateTestFixtures
-                        .reversalRequiredPosting("7"),
-                PaymentAggregateTestFixtures
-                        .reversalRequiredFailure(),
-                PaymentAggregateTestFixtures.T0.plusSeconds(7),
-                PaymentAggregateTestFixtures.profiles()
-        );
+                PaymentAggregateTestFixtures.reversalRequiredPayment();
 
         assertEquals(
                 PaymentStatus.REVERSAL_REQUIRED,
@@ -139,15 +130,7 @@ class PaymentTfjAndReversalLifecycleTest {
     @Test
     void unknownReversalOutcomeRequiresAuthoritativeResolution() {
         Payment payment =
-                PaymentAggregateTestFixtures.postingPendingPayment();
-        payment.recordPostingOutcome(
-                PaymentAggregateTestFixtures
-                        .reversalRequiredPosting("7"),
-                PaymentAggregateTestFixtures
-                        .reversalRequiredFailure(),
-                PaymentAggregateTestFixtures.T0.plusSeconds(7),
-                PaymentAggregateTestFixtures.profiles()
-        );
+                PaymentAggregateTestFixtures.reversalRequiredPayment();
         payment.authorizeReversal(
                 PaymentAggregateTestFixtures.reversalInstruction(),
                 PaymentAggregateTestFixtures.reversalAuthorization(),

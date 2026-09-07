@@ -124,7 +124,7 @@ class PaymentProjectionAdaptersIT {
                 .outcome())
                 .isEqualTo("VERIFIED");
         assertThat(detail.posting().outcome())
-                .isEqualTo("CUT_CREDIT_CONFIRMED");
+                .isEqualTo("COMPLETED");
         assertThat(detail.tfj().status())
                 .isEqualTo("INTEGRATED");
         assertThat(detail.notifications()).isEmpty();
@@ -270,12 +270,10 @@ class PaymentProjectionAdaptersIT {
                     "principalPostingReference":
                       "BANK-POST-001"
                   },
-                  "postingOutcomeEvidence": {
+                  "paymentEventOutcomeEvidence": {
                     "outcome": "COMPLETED",
-                    "metadata": {
-                      "observedAt":
-                        "2026-08-01T10:00:02Z"
-                    }
+                    "observedAt":
+                      "2026-08-01T10:00:02Z"
                   },
                   "endOfDayConfirmationEvidence": {
                     "tfjStatus": "INTEGRATED",

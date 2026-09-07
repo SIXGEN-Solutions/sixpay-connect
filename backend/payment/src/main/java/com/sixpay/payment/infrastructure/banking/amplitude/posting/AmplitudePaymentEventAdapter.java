@@ -7,7 +7,7 @@ import com.sixpay.payment.domain.model.evidence.FundsControlCheckType;
 import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.PostingOutcomeUnknownException;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMappingContext;
 
@@ -59,7 +59,7 @@ public final class AmplitudePaymentEventAdapter
                     );
 
             return toApplicationResult(providerResult);
-        } catch (PostingOutcomeUnknownException exception) {
+        } catch (AmplitudePaymentEventOutcomeUnknownException exception) {
             throw new PaymentEventOutcomeUnknownException(
                     exception.getMessage(),
                     exception

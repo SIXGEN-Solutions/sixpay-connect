@@ -98,10 +98,10 @@ public final class PaymentProjectionReadAdapter
                 '{bankPostingReference,principalPostingReference}'
                 AS bank_posting_reference,
             p.state_payload #>>
-                '{postingOutcomeEvidence,outcome}'
+                '{paymentEventOutcomeEvidence,outcome}'
                 AS posting_outcome,
             p.state_payload #>>
-                '{postingOutcomeEvidence,metadata,observedAt}'
+                '{paymentEventOutcomeEvidence,observedAt}'
                 AS posting_observed_at,
             p.state_payload #>>
                 '{endOfDayConfirmationEvidence,tfjStatus}'
@@ -769,12 +769,9 @@ public final class PaymentProjectionReadAdapter
 
     private static String mapPostingOutcome(String outcome) {
         return switch (outcome) {
-            case "COMPLETED" -> "CUT_CREDIT_CONFIRMED";
-            case "DEBIT_CONFIRMED_CUT_CREDIT_PENDING" ->
-                    "DEBIT_CONFIRMED";
+            case "COMPLETED" -> "COMPLETED";
+            case "REJECTED" -> "REJECTED";
             case "UNKNOWN" -> "UNKNOWN";
-            case "REJECTED_NO_FINANCIAL_EFFECT" -> "FAILED";
-            case "REVERSAL_REQUIRED" -> "PARTIAL";
             default -> "FAILED";
         };
     }

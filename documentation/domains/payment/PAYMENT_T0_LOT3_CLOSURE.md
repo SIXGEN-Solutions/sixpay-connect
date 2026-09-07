@@ -76,3 +76,28 @@ commands have actually completed with exit code 0 on the selected revision.
 - new persistence schema or migration;
 - new Core Banking financial endpoint;
 - blind replay after unknown financial outcome.
+
+
+## LOT 3.5 state coherence closure
+
+The active T0 runtime uses only `PaymentEventOutcomeSnapshot`. The former
+split-leg posting model, its interpretation policy, gateways, status
+reconciliation path and dedicated Amplitude adapters are removed from active
+code.
+
+```text
+POSTING_PENDING + COMPLETED -> POSTED_PENDING_TFJ
+POSTING_PENDING + REJECTED  -> REJECTED
+POSTING_PENDING + UNKNOWN   -> POSTING_OUTCOME_UNKNOWN
+POSTING_OUTCOME_UNKNOWN + authoritative COMPLETED -> POSTED_PENDING_TFJ
+POSTING_OUTCOME_UNKNOWN + authoritative REJECTED  -> REJECTED
+POSTING_OUTCOME_UNKNOWN + still UNKNOWN            -> unchanged
+```
+
+`DEBIT_CONFIRMED` is vocabulary-only for the atomic MVP. `REVERSAL_REQUIRED`
+remains valid through an explicitly governed reversal decision such as TFJ
+reconciliation, not as a partial T0 outcome.
+
+Payment JSON state persistence is schema v7. New writes do not persist
+`postingOutcomeEvidence`. Older JSON may contain the removed field, but a
+legacy-only financial state is never silently translated into atomic evidence.

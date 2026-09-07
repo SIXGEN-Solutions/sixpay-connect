@@ -12,7 +12,7 @@ cd "${BACKEND_DIR}"
 echo
 echo "[1/4] Targeted T0 orchestration/recovery/architecture tests"
 mvn -pl payment -am \
-  -Dtest=PaymentPostPersistenceOrchestrationServiceTest,PaymentT0RecoveryServiceTest,AmplitudePaymentEventRecoveryAdapterTest,PaymentEventLifecycleExecutionGuardTest,PaymentT0ClosureArchitectureTest,PaymentFoundationArchitectureTest \
+  -Dtest=PaymentPostPersistenceOrchestrationServiceTest,PaymentT0RecoveryServiceTest,AmplitudePaymentEventRecoveryAdapterTest,PaymentEventLifecycleExecutionGuardTest,PaymentT0StateCoherenceTest,PaymentT0ClosureArchitectureTest,PaymentFoundationArchitectureTest \
   -Dsurefire.failIfNoSpecifiedTests=false \
   test
 

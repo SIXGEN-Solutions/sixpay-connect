@@ -110,6 +110,29 @@ execution command rather than a separate post-Funds-Control banking transaction.
 No successful T0 outcome may be inferred before Core Banking confirms the
 financial effect or an authoritative lookup resolves an uncertain outcome.
 
+## Atomic T0 state coherence
+
+The active MVP financial execution has exactly one outcome model:
+`PaymentEventOutcomeSnapshot`.
+
+The historical split-leg `PostingOutcomeSnapshot`, `PostingGateway`,
+`LookupGateway`, `PostingOutcomeInterpretationPolicy`, debit-only/CUT-pending
+semantics and their dedicated Amplitude adapters are not part of the active MVP
+implementation.
+
+The atomic T0 mapping is closed:
+
+- `COMPLETED` -> `POSTED_PENDING_TFJ`;
+- `REJECTED` -> `REJECTED`;
+- `UNKNOWN` -> `POSTING_OUTCOME_UNKNOWN`;
+- authoritative recovery resolves an unknown result to `POSTED_PENDING_TFJ` or
+  `REJECTED`, or retains `POSTING_OUTCOME_UNKNOWN` while unresolved.
+
+`DEBIT_CONFIRMED` remains preserved lifecycle vocabulary but is not reachable
+from the active atomic T0 command. An atomic T0 outcome never creates
+`REVERSAL_REQUIRED`; reversal remains an explicitly authorized capability and
+may be required by authoritative TFJ reconciliation.
+
 ## Financial outcome evidence hierarchy
 
 Increasing authority:

@@ -144,7 +144,6 @@ class PaymentStateDocumentV4Test {
                 base.treasuryResolutionEvidence(),
                 base.treasuryAccountReference(),
                 base.postingInstruction(),
-                base.postingOutcomeEvidence(),
                 base.paymentEventOutcomeEvidence(),
                 base.bankPostingReference(),
                 base.endOfDayConfirmationEvidence(),

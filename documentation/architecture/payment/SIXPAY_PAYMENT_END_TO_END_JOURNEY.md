@@ -627,8 +627,8 @@ Les frontières bancaires prévues sont :
 ```text
 VerificationGateway
 FundsGateway
-PostingGateway
-LookupGateway
+PaymentEventExecutionPort
+PaymentEventRecoveryPort
 ReversalGateway
 ```
 

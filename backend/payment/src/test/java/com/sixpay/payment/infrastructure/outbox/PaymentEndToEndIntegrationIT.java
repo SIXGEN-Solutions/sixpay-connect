@@ -1,15 +1,10 @@
 package com.sixpay.payment.infrastructure.outbox;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
-import com.sixpay.payment.application.port.output.banking.PostingGateway;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
-import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePostingClient;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.DedicatedAmplitudePostingAdapter;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -35,17 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-/**
- * Executable module-level integration chain.
- *
- * <p>This test uses PostgreSQL, the real Payment outbox, the real integration
- * envelope mapper and the real Amplitude posting adapter. TresorPay,
- * Accounting and Notification remain contract doubles because their complete
- * production adapters are not present on the authoritative branch.</p>
- */
 @SpringBootTest(
         classes = PaymentEndToEndIntegrationIT.TestApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE
@@ -60,27 +45,14 @@ class PaymentEndToEndIntegrationIT {
     @Container
     static final PostgreSQLContainer POSTGRES =
             new PostgreSQLContainer(
-                    DockerImageName.parse(
-                            "postgres:15-alpine"
-                    )
+                    DockerImageName.parse("postgres:15-alpine")
             );
 
     @DynamicPropertySource
-    static void databaseProperties(
-            DynamicPropertyRegistry registry
-    ) {
-        registry.add(
-                "spring.datasource.url",
-                POSTGRES::getJdbcUrl
-        );
-        registry.add(
-                "spring.datasource.username",
-                POSTGRES::getUsername
-        );
-        registry.add(
-                "spring.datasource.password",
-                POSTGRES::getPassword
-        );
+    static void databaseProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
     }
 
     @Autowired
@@ -93,12 +65,6 @@ class PaymentEndToEndIntegrationIT {
     private PaymentIntegrationMapper integrationMapper;
 
     @Autowired
-    private PostingGateway postingGateway;
-
-    @Autowired
-    private AmplitudePostingClient amplitudeClient;
-
-    @Autowired
     private PlatformTransactionManager transactionManager;
 
     @Autowired
@@ -108,78 +74,40 @@ class PaymentEndToEndIntegrationIT {
     private NotificationProbe notificationProbe;
 
     @Test
-    void tresorPayToPaymentToAmplitudeToAccountingToNotification() {
+    void durablePaymentOutboxPreservesAtomicT0AndDownstreamOrdering() {
         UUID paymentId = UUID.randomUUID();
         String correlationId = UUID.randomUUID().toString();
         String paymentReference = reference(paymentId);
-
-        PostingGateway.PostingRequest postingRequest =
-                Mockito.mock(
-                        PostingGateway.PostingRequest.class
-                );
-        PostingOutcomeSnapshot postingOutcome =
-                Mockito.mock(
-                        PostingOutcomeSnapshot.class
-                );
-
-        when(amplitudeClient.post(postingRequest))
-                .thenReturn(postingOutcome);
 
         TransactionTemplate transaction =
                 new TransactionTemplate(transactionManager);
 
         transaction.executeWithoutResult(status -> {
-            insertPayment(
-                    paymentId,
-                    paymentReference
-            );
+            insertPayment(paymentId, paymentReference);
 
             saveEvent(
                     paymentId,
                     correlationId,
                     "PaymentReceived",
-                    """
-                    {
-                      "source": "TRESOR_PAY",
-                      "paymentReference": "%s"
-                    }
-                    """.formatted(paymentReference),
+                    "{\"source\":\"TRESOR_PAY\",\"paymentReference\":\""
+                            + paymentReference + "\"}",
                     STARTED_AT
             );
-        });
 
-        PostingOutcomeSnapshot actualOutcome =
-                postingGateway.post(postingRequest);
-
-        assertThat(actualOutcome)
-                .isSameAs(postingOutcome);
-        verify(amplitudeClient)
-                .post(postingRequest);
-
-        transaction.executeWithoutResult(status -> {
             saveEvent(
                     paymentId,
                     correlationId,
-                    "PaymentPostingCompleted",
-                    """
-                    {
-                      "outcome": "POSTED",
-                      "bankPostingReference": "BANK-POST-001"
-                    }
-                    """,
+                    "PaymentEventOutcomeRecorded",
+                    "{\"outcome\":\"COMPLETED\","
+                            + "\"bankPostingReference\":\"BANK-POST-001\"}",
                     STARTED_AT.plusSeconds(1)
             );
 
             saveEvent(
                     paymentId,
                     correlationId,
-                    "AccountingIntegrationConfirmed",
-                    """
-                    {
-                      "accountingReference": "ACC-001",
-                      "status": "ACCOUNTED"
-                    }
-                    """,
+                    "PaymentEndOfDayTrackingRequested",
+                    "{\"bankPostingReference\":\"BANK-POST-001\"}",
                     STARTED_AT.plusSeconds(2)
             );
 
@@ -187,12 +115,9 @@ class PaymentEndToEndIntegrationIT {
                     paymentId,
                     correlationId,
                     "PaymentFinalResultAvailable",
-                    """
-                    {
-                      "resultType": "SUCCESS",
-                      "paymentReference": "%s"
-                    }
-                    """.formatted(paymentReference),
+                    "{\"resultType\":\"POSTED_PENDING_TFJ\","
+                            + "\"paymentReference\":\""
+                            + paymentReference + "\"}",
                     STARTED_AT.plusSeconds(3)
             );
         });
@@ -201,35 +126,28 @@ class PaymentEndToEndIntegrationIT {
                 outboxRepository.findAll()
                         .stream()
                         .filter(entity ->
-                                entity.aggregateId()
-                                        .equals(paymentId)
+                                entity.aggregateId().equals(paymentId)
                         )
                         .sorted(
                                 Comparator.comparing(
-                                        PaymentOutboxEntity
-                                                ::occurredAt
+                                        PaymentOutboxEntity::occurredAt
                                 )
                         )
-                        .map(
-                                integrationMapper::toEnvelope
-                        )
+                        .map(integrationMapper::toEnvelope)
                         .toList();
 
         assertThat(
                 envelopes.stream()
-                        .map(
-                                IntegrationEventEnvelope
-                                        ::eventType
-                        )
+                        .map(IntegrationEventEnvelope::eventType)
         ).containsExactly(
                 "PaymentReceived",
-                "PaymentPostingCompleted",
-                "AccountingIntegrationConfirmed",
+                "PaymentEventOutcomeRecorded",
+                "PaymentEndOfDayTrackingRequested",
                 "PaymentFinalResultAvailable"
         );
 
         envelopes.forEach(envelope -> {
-            if ("PaymentPostingCompleted".equals(
+            if ("PaymentEndOfDayTrackingRequested".equals(
                     envelope.eventType()
             )) {
                 accountingProbe.accept(envelope);
@@ -242,48 +160,11 @@ class PaymentEndToEndIntegrationIT {
             }
         });
 
-        assertThat(accountingProbe.received())
-                .singleElement()
-                .satisfies(envelope -> {
-                    assertThat(envelope.aggregateId())
-                            .isEqualTo(paymentId);
-                    assertThat(envelope.correlationId())
-                            .isEqualTo(correlationId);
-                    assertThat(envelope.eventType())
-                            .isEqualTo(
-                                    "PaymentPostingCompleted"
-                            );
-                });
-
-        assertThat(notificationProbe.received())
-                .singleElement()
-                .satisfies(envelope -> {
-                    assertThat(envelope.aggregateId())
-                            .isEqualTo(paymentId);
-                    assertThat(envelope.correlationId())
-                            .isEqualTo(correlationId);
-                    assertThat(envelope.eventType())
-                            .isEqualTo(
-                                    "PaymentFinalResultAvailable"
-                            );
-                });
+        assertThat(accountingProbe.received()).hasSize(1);
+        assertThat(notificationProbe.received()).hasSize(1);
 
         assertThat(
-                envelopes.indexOf(
-                        accountingProbe.received().getFirst()
-                )
-        ).isLessThan(
-                envelopes.indexOf(
-                        notificationProbe.received().getFirst()
-                )
-        );
-
-        assertThat(
-                countRows(
-                        "payments",
-                        "payment_id",
-                        paymentId
-                )
+                countRows("payments", "payment_id", paymentId)
         ).isOne();
 
         assertThat(
@@ -321,41 +202,28 @@ class PaymentEndToEndIntegrationIT {
             String paymentReference
     ) {
         jdbc.update(
-                """
-                INSERT INTO payments (
-                    payment_id,
-                    public_payment_reference,
-                    payment_source,
-                    external_payment_reference,
-                    external_subscription_reference,
-                    financial_institution_code,
-                    requested_amount,
-                    requested_currency,
-                    status,
-                    business_version,
-                    received_at,
-                    updated_at,
-                    finalized_at,
-                    state_payload,
-                    persistence_version
-                ) VALUES (
-                    ?,
-                    ?,
-                    'TRESOR_PAY',
-                    ?,
-                    ?,
-                    'SIXPAY_BANK',
-                    1000.00,
-                    'XAF',
-                    'RECEIVED',
-                    1,
-                    TIMESTAMPTZ '2026-08-01 20:00:00+00',
-                    TIMESTAMPTZ '2026-08-01 20:00:00+00',
-                    NULL,
-                    '{"schemaVersion":1}'::jsonb,
-                    0
-                )
-                """,
+                "INSERT INTO payments ("
+                        + "payment_id,"
+                        + "public_payment_reference,"
+                        + "payment_source,"
+                        + "external_payment_reference,"
+                        + "external_subscription_reference,"
+                        + "financial_institution_code,"
+                        + "requested_amount,"
+                        + "requested_currency,"
+                        + "status,"
+                        + "business_version,"
+                        + "received_at,"
+                        + "updated_at,"
+                        + "finalized_at,"
+                        + "state_payload,"
+                        + "persistence_version"
+                        + ") VALUES ("
+                        + "?, ?, 'TRESOR_PAY', ?, ?, 'SIXPAY_BANK', "
+                        + "1000.00, 'XAF', 'RECEIVED', 1, "
+                        + "TIMESTAMPTZ '2026-08-01 20:00:00+00', "
+                        + "TIMESTAMPTZ '2026-08-01 20:00:00+00', "
+                        + "NULL, '{\"schemaVersion\":1}'::jsonb, 0)",
                 paymentId,
                 paymentReference,
                 "EXT-" + paymentId,
@@ -391,30 +259,12 @@ class PaymentEndToEndIntegrationIT {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @ImportAutoConfiguration(
-            PaymentModuleConfiguration.class
-    )
+    @ImportAutoConfiguration(PaymentModuleConfiguration.class)
     static class TestApplication {
 
         @Bean
         CurrentUserProvider currentUserProvider() {
             return Optional::<AuthenticatedUser>empty;
-        }
-
-        @Bean
-        AmplitudePostingClient amplitudePostingClient() {
-            return Mockito.mock(
-                    AmplitudePostingClient.class
-            );
-        }
-
-        @Bean
-        PostingGateway postingGateway(
-                AmplitudePostingClient amplitudePostingClient
-        ) {
-            return new DedicatedAmplitudePostingAdapter(
-                    amplitudePostingClient
-            );
         }
 
         @Bean

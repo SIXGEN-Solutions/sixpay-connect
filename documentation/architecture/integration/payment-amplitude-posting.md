@@ -4,9 +4,9 @@
 
 The Payment module already owns:
 
-- `PostingGateway`;
+- `PaymentEventExecutionPort`;
 - `BankingIdempotencyKey`;
-- `PostingOutcomeSnapshot`;
+- `PaymentEventOutcomeSnapshot`;
 - posting lookup ports;
 - explicit `UNKNOWN` and reconciliation actions.
 
@@ -16,7 +16,7 @@ The Payment module already owns:
 Payment orchestration
   -> PostingGateway
   -> AmplitudePostingAdapter
-  -> RestAmplitudePostingClient
+  -> RestAmplitudePaymentEventClient
   -> OAuth2 client credentials
   -> HTTPS/mTLS
   -> Amplitude posting endpoint

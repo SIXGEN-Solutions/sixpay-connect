@@ -37,12 +37,6 @@ public final class Payment {
             new TreasuryResolutionAcceptancePolicy();
     private static final EvidenceReplayReplacementPolicy REPLAY_POLICY =
             new EvidenceReplayReplacementPolicy();
-    private static final PostingInstructionAuthorizationPolicy
-            POSTING_AUTHORIZATION_POLICY =
-            new PostingInstructionAuthorizationPolicy();
-    private static final PostingOutcomeDecisionService
-            POSTING_DECISION_SERVICE =
-            new PostingOutcomeDecisionService();
     private static final EndOfDayDecisionService TFJ_DECISION_SERVICE =
             new EndOfDayDecisionService();
     private static final ReversalDecisionService REVERSAL_DECISION_SERVICE =
@@ -1159,102 +1153,6 @@ public final class Payment {
         );
     }
 
-    public void authorizePosting(
-            PostingInstructionIdentity instruction,
-            Instant authorizedAt,
-            PaymentPolicyBundle profiles
-    ) {
-        Objects.requireNonNull(instruction, "Posting instruction");
-        Objects.requireNonNull(authorizedAt, "Posting authorization instant");
-        Objects.requireNonNull(profiles, "Policy bundle");
-
-        if (state.postingInstruction().isPresent()) {
-            PostingInstructionIdentity current =
-                    state.postingInstruction().orElseThrow();
-            if (current.equals(instruction)) {
-                return;
-            }
-            throw PaymentDomainException.conflict(
-                    "A different posting instruction is already authorized"
-            );
-        }
-        requireStatus(
-                "authorizePosting",
-                PaymentStatus.APPROVED_FOR_POSTING
-        );
-
-        if (!instruction.amount().equals(state.requestedAmount())
-                || !instruction.accountBindingFingerprint().equals(
-                        state.debtorAccountReference()
-                                .bindingFingerprint()
-                )) {
-            throw PaymentDomainException.conflict(
-                    "Posting instruction is not bound to Payment"
-            );
-        }
-
-        boolean fundsFresh = state.fundsControlEvidence()
-                .map(snapshot ->
-                        !authorizedAt.isAfter(snapshot.validUntil()))
-                .orElse(false);
-
-        PolicyDecision<PostingAuthorizationDecision> decision =
-                POSTING_AUTHORIZATION_POLICY.decide(
-                        new PaymentPostingAuthorizationContext(
-                                state.status(),
-                                state.authorizationEvidence().isPresent(),
-                                state.bankingVerificationEvidence()
-                                        .isPresent(),
-                                state.fundsControlEvidence().isPresent(),
-                                fundsFresh,
-                                state.treasuryAccountReference()
-                                        .isPresent(),
-                                null
-                        ),
-                        instruction,
-                        authorizedAt,
-                        profiles.postingAuthorizationPolicyProfile()
-                );
-
-        requireDecision(
-                decision.decision()
-                        == PostingAuthorizationDecision.AUTHORIZE,
-                decision.reasonCode()
-        );
-
-        PaymentState next = nextBuilder(
-                PaymentStatus.POSTING_PENDING,
-                authorizedAt
-        ).postingInstruction(instruction)
-                .failure(null)
-                .build();
-
-        EventBatch batch = new EventBatch(next, authorizedAt);
-        commit(
-                next,
-                List.of(
-                        new PaymentPostingAuthorized(
-                                batch.metadata(),
-                                instruction.instructionId(),
-                                instruction.idempotencyKey(),
-                                instruction.instructionFingerprint(),
-                                authorizedAt
-                        ),
-                        new PaymentPostingRequested(
-                                batch.metadata(),
-                                instruction.instructionId(),
-                                instruction.idempotencyKey(),
-                                instruction.instructionFingerprint(),
-                                next.financialInstitutionCode(),
-                                MoneyPayload.from(
-                                        next.requestedAmount()
-                                ),
-                                authorizedAt
-                        )
-                )
-        );
-    }
-
     public void recordPaymentEventOutcome(
             PaymentEventOutcomeSnapshot evidence,
             PaymentFailure failure,
@@ -1278,36 +1176,6 @@ public final class Payment {
     ) {
         applyPaymentEventOutcome(
                 evidence,
-                failure,
-                decisionAt,
-                profiles,
-                true
-        );
-    }
-
-    public void recordPostingOutcome(
-            PostingOutcomeSnapshot evidence,
-            PaymentFailure failure,
-            Instant decisionAt,
-            PaymentPolicyBundle profiles
-    ) {
-        applyPostingOutcome(
-                evidence,
-                failure,
-                decisionAt,
-                profiles,
-                false
-        );
-    }
-
-    public void resolvePostingOutcome(
-            PostingOutcomeSnapshot authoritativeEvidence,
-            PaymentFailure failure,
-            Instant decisionAt,
-            PaymentPolicyBundle profiles
-    ) {
-        applyPostingOutcome(
-                authoritativeEvidence,
                 failure,
                 decisionAt,
                 profiles,
@@ -2089,355 +1957,6 @@ public final class Payment {
         }
     }
 
-    private void applyPostingOutcome(
-            PostingOutcomeSnapshot evidence,
-            PaymentFailure failure,
-            Instant decisionAt,
-            PaymentPolicyBundle profiles,
-            boolean authoritativeResolution
-    ) {
-        Objects.requireNonNull(evidence, "Posting evidence");
-        Objects.requireNonNull(decisionAt, "Decision instant");
-        Objects.requireNonNull(profiles, "Policy bundle");
-
-        if (samePostingEvidence(evidence)) {
-            return;
-        }
-
-        if (authoritativeResolution) {
-            requireStatus(
-                    "resolvePostingOutcome",
-                    PaymentStatus.POSTING_OUTCOME_UNKNOWN
-            );
-            if (evidence.metadata().observationChannel()
-                    == EvidenceObservationChannel.DIRECT_RESPONSE) {
-                throw PaymentDomainException.rejected(
-                        "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED"
-                );
-            }
-        } else {
-            requireStatus(
-                    "recordPostingOutcome",
-                    PaymentStatus.POSTING_PENDING,
-                    PaymentStatus.DEBIT_CONFIRMED
-            );
-        }
-
-        PostingInstructionIdentity instruction =
-                state.postingInstruction().orElseThrow();
-
-        CurrentPostingEvidence current =
-                state.postingOutcomeEvidence()
-                        .map(existing -> new CurrentPostingEvidence(
-                                evidenceIdentity(
-                                        existing.postingInstructionId()
-                                                + ":"
-                                                + existing.metadata()
-                                                .observationChannel()
-                                                + ":"
-                                                + existing.metadata()
-                                                .acceptedAt(),
-                                        existing.metadata()
-                                                .evidenceFingerprint()
-                                ),
-                                authorityOf(
-                                        existing.metadata()
-                                                .observationChannel()
-                                ),
-                                postingConclusiveness(existing.outcome())
-                        ))
-                        .orElse(null);
-
-        PostingDecisionInput input = new PostingDecisionInput(
-                new PaymentPostingContext(
-                        state.status(),
-                        instruction.instructionId(),
-                        instruction.idempotencyKey(),
-                        state.requestedAmount()
-                ),
-                evidence,
-                failure,
-                current,
-                authorityOf(evidence.metadata().observationChannel()),
-                postingConclusiveness(evidence.outcome()),
-                PaymentLifecycleContext.of(state.status()),
-                decisionAt
-        );
-
-        PolicyDecision<PostingDecision> decision =
-                POSTING_DECISION_SERVICE.decide(input, profiles);
-
-        if (decision.decision() == PostingDecision.NO_OP) {
-            return;
-        }
-        if (decision.decision() == PostingDecision.CONFLICT) {
-            throw PaymentDomainException.conflict(
-                    decision.reasonCode()
-            );
-        }
-        if (authoritativeResolution
-                && decision.decision()
-                        == PostingDecision.POSTING_OUTCOME_UNKNOWN) {
-            return;
-        }
-
-        BankPostingReference bankReference =
-                mergeBankPostingReference(evidence);
-
-        switch (decision.decision()) {
-            case POSTED_PENDING_TFJ -> {
-                PaymentState next = nextBuilder(
-                        PaymentStatus.POSTED_PENDING_TFJ,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(bankReference)
-                        .failure(null)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                List<PaymentDomainEvent> events = new ArrayList<>();
-                events.add(
-                        authoritativeResolution
-                                ? postingResolved(batch, evidence, decisionAt)
-                                : postingRecorded(batch, evidence)
-                );
-                events.add(immediateResult(
-                        batch,
-                        state.status(),
-                        next.status(),
-                        null,
-                        decisionAt,
-                        profiles
-                ));
-                events.add(new PaymentEndOfDayTrackingRequested(
-                        batch.metadata(),
-                        next.financialInstitutionCode(),
-                        requirePrincipalPostingReference(bankReference),
-                        requireBusinessDate(evidence),
-                        decisionAt
-                ));
-                commit(next, events);
-            }
-            case DEBIT_CONFIRMED -> {
-                PaymentState next = nextBuilder(
-                        PaymentStatus.DEBIT_CONFIRMED,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(bankReference)
-                        .failure(failure)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                List<PaymentDomainEvent> events = new ArrayList<>();
-                events.add(
-                        authoritativeResolution
-                                ? postingResolved(batch, evidence, decisionAt)
-                                : postingRecorded(batch, evidence)
-                );
-                events.add(new PaymentDebitConfirmed(
-                        batch.metadata(),
-                        evidence.postingInstructionId(),
-                        requirePrincipalPostingReference(bankReference),
-                        evidence.debitLeg()
-                                .bankEntryReferenceOptional()
-                                .orElse(null),
-                        evidence.businessDate().orElse(null),
-                        evidence.debitLeg()
-                                .effectiveAtOptional()
-                                .orElse(null)
-                ));
-                events.add(immediateResult(
-                        batch,
-                        state.status(),
-                        next.status(),
-                        failure,
-                        decisionAt,
-                        profiles,
-                        true
-                ));
-                commit(next, events);
-            }
-            case POSTING_OUTCOME_UNKNOWN -> {
-                PaymentFailure uncertain = requireUncertainFailure(
-                        failure,
-                        "Unknown posting outcome"
-                );
-                PaymentState next = nextBuilder(
-                        PaymentStatus.POSTING_OUTCOME_UNKNOWN,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(bankReference)
-                        .failure(uncertain)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                commit(
-                        next,
-                        List.of(
-                                postingRecorded(batch, evidence),
-                                new PaymentPostingOutcomeLookupRequested(
-                                        batch.metadata(),
-                                        evidence.postingInstructionId(),
-                                        evidence
-                                                .postingCommandIdempotencyKey(),
-                                        bankReference == null
-                                                ? null
-                                                : bankReference
-                                                .principalPostingReference(),
-                                        lookupMode(evidence),
-                                        evidence.metadata().acceptedAt(),
-                                        decisionAt
-                                ),
-                                immediateResult(
-                                        batch,
-                                        state.status(),
-                                        next.status(),
-                                        uncertain,
-                                        decisionAt,
-                                        profiles,
-                                        true
-                                )
-                        )
-                );
-            }
-            case REJECTED_NO_EFFECT -> {
-                PaymentFailure rejection = requireRejectionFailure(
-                        failure,
-                        "Posting business rejection"
-                );
-                PaymentState next = nextBuilder(
-                        PaymentStatus.REJECTED,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(bankReference)
-                        .failure(rejection)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                commit(
-                        next,
-                        List.of(
-                                authoritativeResolution
-                                        ? postingResolved(
-                                                batch,
-                                                evidence,
-                                                decisionAt
-                                        )
-                                        : postingRecorded(
-                                                batch,
-                                                evidence
-                                        ),
-                                rejected(batch, rejection, decisionAt),
-                                immediateResult(
-                                        batch,
-                                        state.status(),
-                                        next.status(),
-                                        rejection,
-                                        decisionAt,
-                                        profiles
-                                )
-                        )
-                );
-            }
-            case FAILED_NO_EFFECT -> {
-                PaymentFailure technical = requireTechnicalFailure(
-                        failure,
-                        "Posting technical failure"
-                );
-                PaymentState next = nextBuilder(
-                        PaymentStatus.FAILED,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(bankReference)
-                        .failure(technical)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                commit(
-                        next,
-                        List.of(
-                                authoritativeResolution
-                                        ? postingResolved(
-                                                batch,
-                                                evidence,
-                                                decisionAt
-                                        )
-                                        : postingRecorded(
-                                                batch,
-                                                evidence
-                                        ),
-                                failedWithoutEffect(
-                                        batch,
-                                        technical,
-                                        decisionAt
-                                ),
-                                immediateResult(
-                                        batch,
-                                        state.status(),
-                                        next.status(),
-                                        technical,
-                                        decisionAt,
-                                        profiles
-                                )
-                        )
-                );
-            }
-            case REVERSAL_REQUIRED -> {
-                PaymentFailure reversalFailure =
-                        requireFinancialEffectFailure(
-                                failure,
-                                evidence
-                        );
-                PaymentState next = nextBuilder(
-                        PaymentStatus.REVERSAL_REQUIRED,
-                        decisionAt
-                ).postingOutcomeEvidence(evidence)
-                        .bankPostingReference(
-                                Objects.requireNonNull(
-                                        bankReference,
-                                        "Bank posting reference"
-                                )
-                        )
-                        .failure(reversalFailure)
-                        .build();
-
-                EventBatch batch = new EventBatch(next, decisionAt);
-                commit(
-                        next,
-                        List.of(
-                                authoritativeResolution
-                                        ? postingResolved(
-                                                batch,
-                                                evidence,
-                                                decisionAt
-                                        )
-                                        : postingRecorded(
-                                                batch,
-                                                evidence
-                                        ),
-                                reversalRequired(
-                                        batch,
-                                        reversalFailure.failureCode(),
-                                        ReversalSourceStage.POSTING,
-                                        decisionAt
-                                ),
-                                immediateResult(
-                                        batch,
-                                        state.status(),
-                                        next.status(),
-                                        reversalFailure,
-                                        decisionAt,
-                                        profiles
-                                )
-                        )
-                );
-            }
-            case NO_OP, CONFLICT -> throw new IllegalStateException(
-                    "Posting service terminal decision was already handled"
-            );
-        }
-    }
-
     private void applyReversalOutcome(
             ReversalSnapshot evidence,
             PaymentFailure failure,
@@ -2823,55 +2342,6 @@ public final class Payment {
         );
     }
 
-    private PaymentPostingOutcomeRecorded postingRecorded(
-            EventBatch batch,
-            PostingOutcomeSnapshot evidence
-    ) {
-        return new PaymentPostingOutcomeRecorded(
-                batch.metadata(),
-                evidence.postingInstructionId(),
-                evidence.outcome(),
-                evidence.bankPostingReference()
-                        .map(
-                                BankPostingReference
-                                        ::principalPostingReference
-                        )
-                        .orElse(null),
-                PostingLegPayload.from(evidence.debitLeg()),
-                PostingLegPayload.from(evidence.cutCreditLeg()),
-                evidence.businessDate().orElse(null),
-                evidence.rejectionCode().orElse(null),
-                evidence.nextAction(),
-                evidence.metadata().evidenceFingerprint(),
-                evidence.metadata().acceptedAt()
-        );
-    }
-
-    private PaymentPostingOutcomeResolved postingResolved(
-            EventBatch batch,
-            PostingOutcomeSnapshot evidence,
-            Instant resolvedAt
-    ) {
-        return new PaymentPostingOutcomeResolved(
-                batch.metadata(),
-                evidence.postingInstructionId(),
-                PostingOutcome.UNKNOWN,
-                evidence.outcome(),
-                evidence.bankPostingReference()
-                        .map(
-                                BankPostingReference
-                                        ::principalPostingReference
-                        )
-                        .orElse(null),
-                PostingLegPayload.from(evidence.debitLeg()),
-                PostingLegPayload.from(evidence.cutCreditLeg()),
-                evidence.businessDate().orElse(null),
-                evidence.rejectionCode().orElse(null),
-                evidence.metadata().evidenceFingerprint(),
-                resolvedAt
-        );
-    }
-
     private PaymentEventOutcomeRecorded
     paymentEventOutcomeRecorded(
             EventBatch batch,
@@ -3008,14 +2478,8 @@ public final class Payment {
             ReversalSourceStage sourceStage,
             Instant requiredAt
     ) {
-        PostingLegStatus debitStatus = batch.state
-                .postingOutcomeEvidence()
-                .map(snapshot -> snapshot.debitLeg().status())
-                .orElse(PostingLegStatus.UNKNOWN);
-        PostingLegStatus cutStatus = batch.state
-                .postingOutcomeEvidence()
-                .map(snapshot -> snapshot.cutCreditLeg().status())
-                .orElse(PostingLegStatus.UNKNOWN);
+        PostingLegStatus debitStatus = PostingLegStatus.UNKNOWN;
+        PostingLegStatus cutStatus = PostingLegStatus.UNKNOWN;
 
         String principal = batch.state.bankPostingReference()
                 .map(BankPostingReference::principalPostingReference)
@@ -3106,14 +2570,7 @@ public final class Payment {
         LocalDate businessDate = batch.state
                 .paymentEventOutcomeEvidence()
                 .map(PaymentEventOutcomeSnapshot::accountingDate)
-                .orElseGet(() ->
-                        batch.state.postingOutcomeEvidence()
-                                .flatMap(
-                                        PostingOutcomeSnapshot
-                                                ::businessDate
-                                )
-                                .orElse(null)
-                );
+                .orElse(null);
 
         return new PaymentImmediateResultAvailable(
                 batch.metadata(),
@@ -3278,22 +2735,6 @@ public final class Payment {
         return failure;
     }
 
-    private PaymentFailure requireFinancialEffectFailure(
-            PaymentFailure failure,
-            PostingOutcomeSnapshot evidence
-    ) {
-        Objects.requireNonNull(
-                failure,
-                "Reversal-required posting failure"
-        );
-        if (evidence.bankPostingReference().isEmpty()) {
-            throw PaymentDomainException.rejected(
-                    "REVERSAL_REQUIRES_POSTING_REFERENCE"
-            );
-        }
-        return failure;
-    }
-
     private PaymentFailure requireTfjFailure(
             PaymentFailure failure,
             EndOfDayConfirmationSnapshot evidence
@@ -3397,23 +2838,6 @@ public final class Payment {
                 .orElse(false);
     }
 
-    private boolean samePostingEvidence(
-            PostingOutcomeSnapshot candidate
-    ) {
-        return state.postingOutcomeEvidence()
-                .map(current ->
-                        current.postingInstructionId().equals(
-                                candidate.postingInstructionId()
-                        ) && current.metadata()
-                                .evidenceFingerprint()
-                                .equals(
-                                        candidate.metadata()
-                                                .evidenceFingerprint()
-                                )
-                )
-                .orElse(false);
-    }
-
     private boolean sameTfjEvidence(
             EndOfDayConfirmationSnapshot candidate
     ) {
@@ -3456,23 +2880,6 @@ public final class Payment {
                 .orElse(false);
     }
 
-    private BankPostingReference mergeBankPostingReference(
-            PostingOutcomeSnapshot evidence
-    ) {
-        BankPostingReference current =
-                state.bankPostingReference().orElse(null);
-        BankPostingReference candidate =
-                evidence.bankPostingReference().orElse(null);
-
-        if (current != null && candidate != null
-                && !current.equals(candidate)) {
-            throw PaymentDomainException.conflict(
-                    "Original bank posting reference cannot change"
-            );
-        }
-        return current == null ? candidate : current;
-    }
-
     private static EvidenceAuthority authorityOf(
             EvidenceObservationChannel channel
     ) {
@@ -3489,36 +2896,12 @@ public final class Payment {
         };
     }
 
-    private static EvidenceConclusiveness postingConclusiveness(
-            PostingOutcome outcome
-    ) {
-        return switch (outcome) {
-            case UNKNOWN -> EvidenceConclusiveness.INDETERMINATE;
-            case DEBIT_CONFIRMED_CUT_CREDIT_PENDING ->
-                    EvidenceConclusiveness.PARTIAL;
-            case COMPLETED, REJECTED_NO_FINANCIAL_EFFECT,
-                    REVERSAL_REQUIRED ->
-                    EvidenceConclusiveness.CONCLUSIVE;
-        };
-    }
-
     private static EvidenceConclusiveness reversalConclusiveness(
             ReversalOutcome outcome
     ) {
         return outcome == ReversalOutcome.UNKNOWN
                 ? EvidenceConclusiveness.INDETERMINATE
                 : EvidenceConclusiveness.CONCLUSIVE;
-    }
-
-    private static PostingLookupMode lookupMode(
-            PostingOutcomeSnapshot evidence
-    ) {
-        if (evidence.metadata().observationChannel()
-                == EvidenceObservationChannel.BANK_REFERENCE_LOOKUP
-                || evidence.bankPostingReference().isPresent()) {
-            return PostingLookupMode.BANK_REFERENCE;
-        }
-        return PostingLookupMode.IDEMPOTENCY_KEY;
     }
 
     private static EvidenceIdentity evidenceIdentity(
@@ -3548,19 +2931,10 @@ public final class Payment {
     }
 
     private LocalDate requireBusinessDate() {
-        return state.postingOutcomeEvidence()
-                .flatMap(PostingOutcomeSnapshot::businessDate)
+        return state.paymentEventOutcomeEvidence()
+                .map(PaymentEventOutcomeSnapshot::accountingDate)
                 .orElseThrow(() -> PaymentDomainException.rejected(
-                        "POSTING_BUSINESS_DATE_REQUIRED"
-                ));
-    }
-
-    private static LocalDate requireBusinessDate(
-            PostingOutcomeSnapshot evidence
-    ) {
-        return evidence.businessDate()
-                .orElseThrow(() -> PaymentDomainException.rejected(
-                        "POSTING_BUSINESS_DATE_REQUIRED"
+                        "PAYMENT_EVENT_ACCOUNTING_DATE_REQUIRED"
                 ));
     }
 

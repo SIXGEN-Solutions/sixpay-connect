@@ -1,5 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sixpay.payment.domain.model.*;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
@@ -15,6 +16,7 @@ import java.time.Instant;
  * representation is stored input the {@code payments.state_payload} JSONB column
  * and may only be read through {@link PaymentPersistenceMapper}.</p>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 record PaymentStateDocument(
         int schemaVersion,
         PaymentId paymentId,
@@ -39,7 +41,6 @@ record PaymentStateDocument(
         TreasuryAccountResolutionSnapshot treasuryResolutionEvidence,
         TreasuryAccountReference treasuryAccountReference,
         PostingInstructionIdentity postingInstruction,
-        PostingOutcomeSnapshot postingOutcomeEvidence,
         PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence,
         BankPostingReference bankPostingReference,
         EndOfDayConfirmationSnapshot endOfDayConfirmationEvidence,
@@ -53,7 +54,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 6;
+    static final int CURRENT_SCHEMA_VERSION = 7;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -80,7 +81,6 @@ record PaymentStateDocument(
                 state.treasuryResolutionEvidence().orElse(null),
                 state.treasuryAccountReference().orElse(null),
                 state.postingInstruction().orElse(null),
-                state.postingOutcomeEvidence().orElse(null),
                 state.paymentEventOutcomeEvidence().orElse(null),
                 state.bankPostingReference().orElse(null),
                 state.endOfDayConfirmationEvidence().orElse(null),
@@ -276,7 +276,6 @@ record PaymentStateDocument(
                 )
                 .treasuryAccountReference(treasuryAccountReference)
                 .postingInstruction(postingInstruction)
-                .postingOutcomeEvidence(postingOutcomeEvidence)
                 .paymentEventOutcomeEvidence(
                         paymentEventOutcomeEvidence
                 )
