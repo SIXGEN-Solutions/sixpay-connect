@@ -40,3 +40,17 @@ It does not replace architecture, requirements or physical contracts.
 - Reconstructing T1 financial lines from current Payment state when frozen T0 snapshots exist.
 - Blind replay after unknown provider submission outcome.
 - Reintroducing the removed split-leg T0 posting model or `DEBIT_CONFIRMED` as an active T0 state.
+
+## T1.2 active implementation context
+
+T1.2 persists an Accounting-owned candidate projection from the approved durable
+Payment -> Accounting semantic fact.
+
+- publication preconditions: `POSTED_PENDING_TFJ`, T0 `COMPLETED`, bank reference,
+  finalized financial snapshot and authoritative Core Banking accounting date;
+- frozen snapshot facts and ordered entries are copied into Accounting;
+- technical replay identity: `eventId`;
+- business identity: `(paymentId, financialSnapshotId)`;
+- TRESOR PAY `COMPLETED`, cutoff membership and `batchId == null` are selection-time criteria;
+- no Accounting access to Payment JPA/repositories/infrastructure;
+- physical Core Banking T1 API remains TO_DEFINE for T1.4.

@@ -61,3 +61,16 @@ T1.0 does not define or authorize:
 - a bkmvti persistence entity inside SIXPAY;
 - direct Payment repository access from Accounting;
 - a blind retry policy for an unknown external accounting submission.
+
+## T1.2 persistence realization
+
+T1.2 materializes the approved Payment -> Accounting fact into the Accounting-owned
+tables `accounting_payment_candidates` and `accounting_payment_candidate_entries`.
+
+Projection creation uses the T1.0 publication preconditions. TRESOR PAY `COMPLETED`,
+cutoff-window membership and absence of batch assignment are selection-time criteria,
+not projection-publication preconditions.
+
+Technical replay is protected by unique `event_id`; business convergence is protected
+by unique `(payment_id, financial_snapshot_id)`. Accounting never reads Payment JPA,
+repositories or infrastructure.
