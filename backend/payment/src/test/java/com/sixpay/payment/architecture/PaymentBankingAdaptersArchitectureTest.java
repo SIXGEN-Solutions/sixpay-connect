@@ -56,6 +56,8 @@ class PaymentBankingAdaptersArchitectureTest {
                 "LookupGateway.java",
                 "PaymentConfirmationBankResult.java",
                 "PaymentConfirmationGateway.java",
+                "PaymentEventExecutionPort.java",
+                "PaymentEventRecoveryPort.java",
                 "PostingGateway.java",
                 "ReversalGateway.java",
                 "VerificationGateway.java",

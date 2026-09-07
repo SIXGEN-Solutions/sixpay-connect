@@ -14,9 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PaymentStateDocumentV5Test {
 
     @Test
-    void currentPaymentStateSchemaIsVersionFive() {
+    void currentPaymentStateSchemaIsVersionSix() {
         assertEquals(
-                5,
+                6,
                 PaymentStateDocument.CURRENT_SCHEMA_VERSION
         );
     }

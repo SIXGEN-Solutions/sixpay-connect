@@ -17,13 +17,13 @@ class PaymentStateDocumentSchemaArchitectureTest {
             );
 
     @Test
-    void stateDocumentUsesVersionFiveAndGuardsLegacyPayloads()
+    void stateDocumentUsesVersionSixAndGuardsLegacyPayloads()
             throws Exception {
 
         String source = Files.readString(DOCUMENT);
 
         assertTrue(source.contains(
-                "CURRENT_SCHEMA_VERSION = 5"
+                "CURRENT_SCHEMA_VERSION = 6"
         ));
 
         assertTrue(source.contains(

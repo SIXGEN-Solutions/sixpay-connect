@@ -7,6 +7,7 @@ import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaym
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventRecoveryAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePostingMapper;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.validation.AmplitudePostingResponseValidator;
@@ -104,6 +105,11 @@ public class AmplitudePostingConfiguration {
     }
 
     @Bean
+    AmplitudePaymentEventMapper amplitudePaymentEventMapper() {
+        return new AmplitudePaymentEventMapper();
+    }
+
+    @Bean
     AmplitudePaymentEventClient amplitudePaymentEventClient(
             RestClient amplitudePostingRestClient,
             PostingAccessTokenProvider tokenProvider,
@@ -118,9 +124,10 @@ public class AmplitudePostingConfiguration {
 
     @Bean
     PaymentEventExecutionPort paymentEventExecutionPort(
-            AmplitudePaymentEventClient client
+            AmplitudePaymentEventClient client,
+            AmplitudePaymentEventMapper mapper
     ) {
-        return new AmplitudePaymentEventAdapter(client);
+        return new AmplitudePaymentEventAdapter(client, mapper);
     }
 
     @Bean

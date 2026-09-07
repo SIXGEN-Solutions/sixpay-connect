@@ -1,10 +1,10 @@
 package com.sixpay.payment.infrastructure.banking.amplitude.posting;
 
+import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventRecoveryClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -26,17 +26,11 @@ public final class AmplitudePaymentEventRecoveryAdapter
     public PaymentEventRecoveryResult recover(
             PaymentEventRecoveryQuery query
     ) {
-        Objects.requireNonNull(
-                query,
-                "Payment event recovery query"
-        );
+        Objects.requireNonNull(query, "Payment event recovery query");
 
-        String correlationId =
-                query.context().correlationId().value();
+        String correlationId = query.context().correlationId().value();
         String financialInstitutionCode =
-                query.context()
-                        .financialInstitutionCode()
-                        .value();
+                query.context().financialInstitutionCode().value();
 
         Optional<AmplitudePaymentEventResult> byReference =
                 client.findByPaymentReference(
@@ -46,10 +40,8 @@ public final class AmplitudePaymentEventRecoveryAdapter
                 );
 
         if (byReference.isPresent()) {
-            PaymentEventRecoveryResult result =
-                    classify(byReference.get());
-            if (result.status()
-                    != PaymentEventRecoveryStatus.UNKNOWN) {
+            PaymentEventRecoveryResult result = classify(byReference.get());
+            if (result.status() != PaymentEventRecoveryStatus.UNKNOWN) {
                 return result;
             }
         }
@@ -67,42 +59,27 @@ public final class AmplitudePaymentEventRecoveryAdapter
 
         return byReference
                 .map(this::classify)
-                .orElseGet(
-                        PaymentEventRecoveryResult::notFound
-                );
+                .orElseGet(PaymentEventRecoveryResult::notFound);
     }
 
     private PaymentEventRecoveryResult classify(
-            AmplitudePaymentEventResult result
+            AmplitudePaymentEventResult providerResult
     ) {
-        Objects.requireNonNull(
-                result,
-                "Amplitude Payment event result"
-        );
+        PaymentEventExecutionPort.PaymentEventExecutionResult result =
+                AmplitudePaymentEventAdapter.toApplicationResult(providerResult);
 
-        String outcome = result.outcome();
-        if (outcome == null || outcome.isBlank()) {
-            return new PaymentEventRecoveryResult(
-                    PaymentEventRecoveryStatus.UNKNOWN,
-                    result
-            );
-        }
-
-        return switch (
-                outcome.strip()
-                        .toUpperCase(Locale.ROOT)
-        ) {
-            case "COMPLETED" ->
+        return switch (result.outcome()) {
+            case COMPLETED ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.COMPLETED,
                             result
                     );
-            case "REJECTED" ->
+            case REJECTED ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.REJECTED,
                             result
                     );
-            default ->
+            case UNKNOWN ->
                     new PaymentEventRecoveryResult(
                             PaymentEventRecoveryStatus.UNKNOWN,
                             result
