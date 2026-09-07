@@ -37,6 +37,13 @@ class PaymentPostPersistenceOrchestrationServiceTest {
     private PaymentCustomerVerificationService customerVerificationService;
 
     @Mock
+    private ObjectProvider<PaymentT0OrchestrationService>
+            paymentT0OrchestrationServiceProvider;
+
+    @Mock
+    private PaymentT0OrchestrationService paymentT0OrchestrationService;
+
+    @Mock
     private PaymentPolicyBundle policies;
 
     @Mock
@@ -104,6 +111,89 @@ class PaymentPostPersistenceOrchestrationServiceTest {
     }
 
     @Test
+    void relayedFundsControlRequestContinuesT0Preparation() {
+        UUID aggregateId = UUID.randomUUID();
+
+        when(paymentT0OrchestrationServiceProvider.getIfAvailable())
+                .thenReturn(paymentT0OrchestrationService);
+
+        service().handle(event(
+                "PaymentFundsControlRequested",
+                "PAYMENT",
+                aggregateId
+        ));
+
+        verify(paymentT0OrchestrationService)
+                .onFundsControlRequested(
+                        new PaymentId(aggregateId)
+                );
+    }
+
+    @Test
+    void relayedTreasuryResolutionRequestContinuesT0Preparation() {
+        UUID aggregateId = UUID.randomUUID();
+
+        when(paymentT0OrchestrationServiceProvider.getIfAvailable())
+                .thenReturn(paymentT0OrchestrationService);
+
+        service().handle(event(
+                "PaymentTreasuryAccountResolutionRequested",
+                "PAYMENT",
+                aggregateId
+        ));
+
+        verify(paymentT0OrchestrationService)
+                .onTreasuryResolutionRequested(
+                        eq(new PaymentId(aggregateId)),
+                        org.mockito.ArgumentMatchers.any()
+                );
+    }
+
+    @Test
+    void relayedApprovedForPostingExecutesT0() {
+        UUID aggregateId = UUID.randomUUID();
+
+        when(paymentT0OrchestrationServiceProvider.getIfAvailable())
+                .thenReturn(paymentT0OrchestrationService);
+
+        service().handle(event(
+                "PaymentApprovedForPosting",
+                "PAYMENT",
+                aggregateId
+        ));
+
+        verify(paymentT0OrchestrationService)
+                .onApprovedForPosting(
+                        eq(new PaymentId(aggregateId)),
+                        org.mockito.ArgumentMatchers.any()
+                );
+    }
+
+    @Test
+    void unavailableT0BridgeFailsFinancialEventForOutboxRetry() {
+        UUID aggregateId = UUID.randomUUID();
+
+        when(paymentT0OrchestrationServiceProvider.getIfAvailable())
+                .thenReturn(null);
+
+        assertThatThrownBy(() -> service().handle(event(
+                "PaymentFundsControlRequested",
+                "PAYMENT",
+                aggregateId
+        )))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(
+                        "Payment T0 orchestration bridge is unavailable"
+                );
+
+        verifyNoInteractions(
+                coordinator,
+                customerVerificationService,
+                paymentT0OrchestrationService
+        );
+    }
+
+    @Test
     void ignoresUnrelatedEvents() {
         service().handle(event(
                 "PaymentCustomerConfirmationRequested",
@@ -120,6 +210,8 @@ class PaymentPostPersistenceOrchestrationServiceTest {
                 coordinator,
                 customerVerificationServiceProvider,
                 customerVerificationService,
+                paymentT0OrchestrationServiceProvider,
+                paymentT0OrchestrationService,
                 timeProvider
         );
     }
@@ -128,6 +220,7 @@ class PaymentPostPersistenceOrchestrationServiceTest {
         return new PaymentPostPersistenceOrchestrationService(
                 coordinator,
                 customerVerificationServiceProvider,
+                paymentT0OrchestrationServiceProvider,
                 policies,
                 timeProvider
         );

@@ -1,5 +1,6 @@
 package com.sixpay.payment.application.service;
 
+import com.sixpay.common.context.CorrelationId;
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.port.input.HandlePaymentPostPersistenceEventUseCase;
@@ -23,10 +24,18 @@ public final class PaymentPostPersistenceOrchestrationService
     static final String PAYMENT_RECEIVED_EVENT_TYPE = "PaymentReceived";
     static final String BANKING_VERIFICATION_REQUESTED_EVENT_TYPE =
             "PaymentBankingVerificationRequested";
+    static final String PAYMENT_FUNDS_CONTROL_REQUESTED_EVENT_TYPE =
+            "PaymentFundsControlRequested";
+    static final String TREASURY_RESOLUTION_REQUESTED_EVENT_TYPE =
+            "PaymentTreasuryAccountResolutionRequested";
+    static final String PAYMENT_APPROVED_FOR_POSTING_EVENT_TYPE =
+            "PaymentApprovedForPosting";
 
     private final PaymentMutationCoordinator coordinator;
     private final ObjectProvider<PaymentCustomerVerificationService>
             customerVerificationServiceProvider;
+    private final ObjectProvider<PaymentT0OrchestrationService>
+            paymentT0OrchestrationServiceProvider;
     private final PaymentPolicyBundle policies;
     private final TimeProvider timeProvider;
 
@@ -34,6 +43,8 @@ public final class PaymentPostPersistenceOrchestrationService
             PaymentMutationCoordinator coordinator,
             ObjectProvider<PaymentCustomerVerificationService>
                     customerVerificationServiceProvider,
+            ObjectProvider<PaymentT0OrchestrationService>
+                    paymentT0OrchestrationServiceProvider,
             PaymentPolicyBundle policies,
             TimeProvider timeProvider
     ) {
@@ -44,6 +55,10 @@ public final class PaymentPostPersistenceOrchestrationService
         this.customerVerificationServiceProvider = Objects.requireNonNull(
                 customerVerificationServiceProvider,
                 "Customer verification service provider is required"
+        );
+        this.paymentT0OrchestrationServiceProvider = Objects.requireNonNull(
+                paymentT0OrchestrationServiceProvider,
+                "Payment T0 orchestration service provider is required"
         );
         this.policies = Objects.requireNonNull(
                 policies,
@@ -74,7 +89,54 @@ public final class PaymentPostPersistenceOrchestrationService
                 event.eventType()
         )) {
             verifyCustomer(paymentId);
+            return;
         }
+
+        if (PAYMENT_FUNDS_CONTROL_REQUESTED_EVENT_TYPE.equals(
+                event.eventType()
+        )) {
+            paymentT0OrchestrationService()
+                    .onFundsControlRequested(paymentId);
+            return;
+        }
+
+        CorrelationId correlationId =
+                CorrelationId.of(event.correlationId());
+
+        if (TREASURY_RESOLUTION_REQUESTED_EVENT_TYPE.equals(
+                event.eventType()
+        )) {
+            paymentT0OrchestrationService()
+                    .onTreasuryResolutionRequested(
+                            paymentId,
+                            correlationId
+                    );
+            return;
+        }
+
+        if (PAYMENT_APPROVED_FOR_POSTING_EVENT_TYPE.equals(
+                event.eventType()
+        )) {
+            paymentT0OrchestrationService()
+                    .onApprovedForPosting(
+                            paymentId,
+                            correlationId
+                    );
+        }
+    }
+
+    private PaymentT0OrchestrationService
+            paymentT0OrchestrationService() {
+        PaymentT0OrchestrationService service =
+                paymentT0OrchestrationServiceProvider.getIfAvailable();
+
+        if (service == null) {
+            throw new IllegalStateException(
+                    "Payment T0 orchestration bridge is unavailable"
+            );
+        }
+
+        return service;
     }
 
     private void startBankingVerification(PaymentId paymentId) {
