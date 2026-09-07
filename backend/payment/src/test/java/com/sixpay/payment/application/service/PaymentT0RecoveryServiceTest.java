@@ -80,6 +80,48 @@ class PaymentT0RecoveryServiceTest {
     }
 
     @Test
+    void durableUnknownPaymentCanBeRecoveredByPublicReference() {
+        Payment payment = mock(Payment.class);
+        PaymentId paymentId = new PaymentId(UUID.randomUUID());
+        PublicPaymentReference reference =
+                PublicPaymentReference.of(
+                        "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                );
+        CorrelationId correlationId =
+                CorrelationId.of(UUID.randomUUID().toString());
+        Instant now = Instant.parse("2026-09-07T04:31:00Z");
+
+        com.sixpay.payment.domain.model.PaymentState state =
+                mock(com.sixpay.payment.domain.model.PaymentState.class);
+
+        when(paymentLookupPort.findByPublicPaymentReference(reference))
+                .thenReturn(Optional.of(payment));
+        when(payment.status())
+                .thenReturn(PaymentStatus.POSTING_OUTCOME_UNKNOWN);
+        when(payment.id()).thenReturn(paymentId);
+        when(state.financialInstitutionCode())
+                .thenReturn(
+                        com.sixpay.payment.domain.model
+                                .FinancialInstitutionCode.of("LRB")
+                );
+        when(payment.toState()).thenReturn(state);
+        when(lifecycleProvider.getIfAvailable()).thenReturn(lifecycle);
+        when(timeProvider.now()).thenReturn(now);
+
+        service().recoverByPaymentReference(
+                reference,
+                correlationId
+        );
+
+        verify(lifecycle).recover(
+                eq(paymentId),
+                any(),
+                eq(now),
+                eq(policies)
+        );
+    }
+
+    @Test
     void nonUnknownPaymentIsRejectedBeforeRecoveryLookup() {
         Payment payment = mock(Payment.class);
         PaymentId paymentId = new PaymentId(UUID.randomUUID());
