@@ -23,7 +23,8 @@ import java.util.Objects;
  * LOT 2.8.2 orchestration for the sole atomic T0 execution path.
  *
  * <p>The service consumes a finalized Payment financial snapshot and an already
- * resolved Amplitude mapping context. It never derives provider configuration
+ * Payment event context resolved by SIXPAY from Administration parameters
+ * and Core Banking allocated context.
  * or retries the financial POST after an uncertain outcome.</p>
  */
 @Service
@@ -37,6 +38,7 @@ public class PaymentEventLifecycleOrchestrationService {
     private final PaymentFinancialSnapshotRepository snapshotRepository;
     private final PaymentPostingPreparationService postingPreparationService;
     private final PaymentFinalizationService finalizationService;
+    private final PaymentEventContextService contextService;
     private final PaymentEventExecutionPort executionPort;
     private final PaymentEventRecoveryPort recoveryPort;
     private final PaymentEventOutcomeMapper outcomeMapper =
@@ -47,6 +49,7 @@ public class PaymentEventLifecycleOrchestrationService {
             PaymentFinancialSnapshotRepository snapshotRepository,
             PaymentPostingPreparationService postingPreparationService,
             PaymentFinalizationService finalizationService,
+            PaymentEventContextService contextService,
             PaymentEventExecutionPort executionPort,
             PaymentEventRecoveryPort recoveryPort
     ) {
@@ -56,6 +59,7 @@ public class PaymentEventLifecycleOrchestrationService {
                 Objects.requireNonNull(postingPreparationService);
         this.finalizationService =
                 Objects.requireNonNull(finalizationService);
+        this.contextService = Objects.requireNonNull(contextService);
         this.executionPort = Objects.requireNonNull(executionPort);
         this.recoveryPort = Objects.requireNonNull(recoveryPort);
     }
@@ -64,14 +68,20 @@ public class PaymentEventLifecycleOrchestrationService {
             PaymentId paymentId,
             PostingInstructionIdentity instruction,
             BankingRequestContext bankingContext,
-            PaymentEventExecutionPort.PaymentEventMappingContext mappingContext,
+            Instant requestedAt,
             PaymentPolicyBundle policies
     ) {
         Objects.requireNonNull(paymentId, "Payment ID");
         Objects.requireNonNull(instruction, "Posting instruction");
         Objects.requireNonNull(bankingContext, "Banking request context");
-        Objects.requireNonNull(mappingContext, "Mapping context");
+        Objects.requireNonNull(requestedAt, "Requested at");
         Objects.requireNonNull(policies, "Payment policies");
+
+        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
+                contextService.resolve(
+                        bankingContext,
+                        requestedAt
+                );
 
         Payment payment = requirePayment(paymentId);
 

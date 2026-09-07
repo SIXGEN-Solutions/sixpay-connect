@@ -39,7 +39,7 @@ info:
       execute: "POST /api/v1/payment-events"
       lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
       lookupByIdempotencyKey: "GET /api/v1/payment-events/idempotency/{idempotencyKey}"
-      lastEventNumberByOperation: "GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}"
+      allocateNextEventNumberByOperation: "GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}"
       accountingDate: "GET /api/v1/nomenclature/getdatecomptable"
       nightMode: "GET /api/v1/kyc/process/modenuit"
       applicationSecurity: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
@@ -158,8 +158,8 @@ paths:
   /api/v1/transactions/process/lastnumeroeveope/{operationCode}:
     get:
       tags: [Payment event context]
-      operationId: getLastPaymentEventNumberByOperation
-      summary: Read the last Core Banking event number for an operation code
+      operationId: allocateNextPaymentEventNumberByOperation
+      summary: Atomically allocate the next Core Banking event number for an operation code
       security:
         - oauth2ClientCredentials:
             - amplitude.payment.execution.read
@@ -170,7 +170,7 @@ paths:
         - $ref: '#/components/parameters/OperationCodePath'
       responses:
         '200':
-          description: Historical Core Banking response carrying the last event number.
+          description: Core Banking response carrying the atomically allocated next event number.
           content:
             application/json:
               schema:
