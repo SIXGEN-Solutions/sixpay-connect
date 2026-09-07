@@ -54,6 +54,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentReconciliationService.java",
                 "PaymentT0IdentityFactory.java",
                 "PaymentT0OrchestrationService.java",
+                "PaymentT0RecoveryService.java",
                 "PaymentT0SnapshotService.java",
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
