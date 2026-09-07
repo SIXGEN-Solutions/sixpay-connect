@@ -17,57 +17,31 @@ public final class AccountingBatchIdempotencyKeyFactory {
             LocalDate businessDate,
             List<AccountingPaymentCandidate> candidates
     ) {
-        if (financialInstitutionCode == null
-                || financialInstitutionCode.isBlank()) {
-            throw new IllegalArgumentException(
-                    "financialInstitutionCode is required"
-            );
+        if (financialInstitutionCode == null || financialInstitutionCode.isBlank()) {
+            throw new IllegalArgumentException("financialInstitutionCode is required");
         }
-
         Objects.requireNonNull(businessDate, "businessDate");
         Objects.requireNonNull(candidates, "candidates");
+        if (candidates.isEmpty()) throw new IllegalArgumentException("candidates must not be empty");
 
-        if (candidates.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "candidates must not be empty"
-            );
-        }
-
-        String paymentIds = candidates.stream()
-                .map(candidate ->
-                        candidate.paymentId().toString()
-                )
+        String businessIdentities = candidates.stream()
+                .map(candidate -> {
+                    if (!candidate.hasFinalizedFinancialSnapshot()) {
+                        throw new IllegalArgumentException("T1.3 idempotency requires finalized financial snapshot identity");
+                    }
+                    return candidate.paymentId() + ":" + candidate.financialSnapshotId();
+                })
                 .sorted()
-                .reduce(
-                        (left, right) ->
-                                left + "," + right
-                )
+                .reduce((left, right) -> left + "," + right)
                 .orElseThrow();
 
-        String canonical =
-                financialInstitutionCode.strip()
-                        + "|"
-                        + businessDate
-                        + "|"
-                        + paymentIds;
-
+        String canonical = financialInstitutionCode.strip() + "|" + businessDate + "|" + businessIdentities;
         try {
-            byte[] digest = MessageDigest
-                    .getInstance("SHA-256")
-                    .digest(
-                            canonical.getBytes(
-                                    StandardCharsets.UTF_8
-                            )
-                    );
-
-            return new AccountingBatchIdempotencyKey(
-                    HexFormat.of().formatHex(digest)
-            );
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(canonical.getBytes(StandardCharsets.UTF_8));
+            return new AccountingBatchIdempotencyKey(HexFormat.of().formatHex(digest));
         } catch (Exception exception) {
-            throw new IllegalStateException(
-                    "Cannot create accounting batch idempotency key",
-                    exception
-            );
+            throw new IllegalStateException("Cannot create accounting batch idempotency key", exception);
         }
     }
 }

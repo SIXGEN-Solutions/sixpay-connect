@@ -268,20 +268,10 @@ public final class AccountingBatchReconciliationService {
             return item;
         }
 
-        return new AccountingBatchItem(
-                item.paymentId(),
-                item.publicPaymentReference(),
-                item.partnerId(),
-                item.amount(),
-                item.currency(),
-                item.paymentOccurredAt(),
-                item.paymentBusinessDate(),
-                item.bankPostingReference(),
-                item.tresorPayStatus(),
-                item.tresorPayStatusCheckedAt(),
-                providerItem.status()
-        );
+        return item.withStatus(providerItem.status());
     }
+
+    
 
     private static AccountingSubmissionState
     resolveSubmissionState(

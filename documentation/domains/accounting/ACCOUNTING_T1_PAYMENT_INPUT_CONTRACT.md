@@ -74,3 +74,18 @@ not projection-publication preconditions.
 Technical replay is protected by unique `event_id`; business convergence is protected
 by unique `(payment_id, financial_snapshot_id)`. Accounting never reads Payment JPA,
 repositories or infrastructure.
+
+## T1.3 batch constitution realization
+
+T1.3 keeps the existing cutoff, eligibility, builder, idempotency and batch persistence flow,
+but freezes the T1.2 financial snapshot identity and ordered entries into each newly
+constituted Accounting batch item.
+
+Active rules:
+- candidates come only from the Accounting-owned T1.2 projection;
+- cutoff membership, financial institution, TRESOR PAY `COMPLETED` and no prior batch assignment are selection-time criteria;
+- a new T1.3 batch item requires a finalized financial snapshot identity and its two frozen entries;
+- batch idempotency binds to `(paymentId, financialSnapshotId)` identities;
+- after durable batch persistence, selected candidates are assigned to that batch transactionally;
+- historical pre-T1.3 batch rows are not backfilled by V402;
+- no Core Banking T1 provider mapping is defined before T1.4.

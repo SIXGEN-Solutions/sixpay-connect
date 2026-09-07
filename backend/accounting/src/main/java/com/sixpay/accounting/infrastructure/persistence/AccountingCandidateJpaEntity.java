@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -83,9 +84,18 @@ public class AccountingCandidateJpaEntity {
         tresorPayFailureReason=x.failureReason(); tresorPayCheckedAt=x.checkedAt();
         tresorPayRequestReference=x.requestReference(); tresorPayCorrelationId=x.correlationId();
     }
-
-    void assignToBatch(UUID id) { this.batchId=id; }
-
+    void assignToBatch(UUID batchId) {
+        Objects.requireNonNull(batchId, "batchId");
+        if (this.batchId == null) {
+            this.batchId = batchId;
+            return;
+        }
+        if (!this.batchId.equals(batchId)) {
+            throw new IllegalStateException(
+                    "Accounting candidate is already assigned to another batch"
+            );
+        }
+    }
     AccountingCandidateProjection toDomain() {
         TresorPayPaymentStatusEvidence x = null;
         if (tresorPayStatus != null) {

@@ -106,3 +106,12 @@ Accounting owns a durable local candidate projection populated from the approved
 Payment T0-finalized semantic fact. `PaymentAccountingCandidateSource` reads only
 this local projection. Replay is deduplicated by `eventId` and business identity
 `(paymentId, financialSnapshotId)`.
+
+### T1.3 cutoff and snapshot-backed batch constitution
+
+T1.3 reuses the existing cutoff/eligibility/builder/service flow. Newly constituted batch
+items are immutable copies of the T1.2 financial snapshot identity and frozen entries.
+Batch idempotency is derived from sorted `(paymentId, financialSnapshotId)` business
+identities, and selected local candidates are assigned to the persisted batch transactionally.
+Pre-T1.3 historical rows remain readable without an invented snapshot backfill. No physical
+Core Banking T1 mapping is authorized by this lot.

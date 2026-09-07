@@ -54,3 +54,12 @@ Payment -> Accounting semantic fact.
 - TRESOR PAY `COMPLETED`, cutoff membership and `batchId == null` are selection-time criteria;
 - no Accounting access to Payment JPA/repositories/infrastructure;
 - physical Core Banking T1 API remains TO_DEFINE for T1.4.
+
+## T1.3 active implementation context
+
+T1.3 freezes the candidate snapshot into the Accounting batch. Newly constituted
+`AccountingBatchItem` instances carry the finalized snapshot identity, debtor and creditor
+references and the two immutable DEBIT/CREDIT entries. Batch idempotency uses sorted
+`paymentId:financialSnapshotId` identities. Candidate `batchId` assignment occurs
+transactionally after durable batch persistence. Historical V400 rows are preserved without
+invented backfill. T1.4 remains owner of the physical Core Banking Accounting contract.

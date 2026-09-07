@@ -60,9 +60,26 @@ public class AccountingCandidateProjectionRepositoryAdapter
     @Override @Transactional(readOnly=true)
     public List<AccountingPaymentCandidate> findUnbatchedStatusVerifiedCandidates(AccountingSelectionWindow w) {
         return findEligibleUnbatched(w).stream().map(p -> new AccountingPaymentCandidate(
-                p.paymentId(),p.publicPaymentReference(),p.partnerId(),p.financialInstitutionCode(),
-                p.amount(),p.currency(),p.paymentOccurredAt(),p.accountingBusinessDate(),
-                p.bankReference(),p.tresorPayStatusEvidence()
+                p.paymentId(),
+                p.publicPaymentReference(),
+                p.partnerId(),
+                p.financialInstitutionCode(),
+                p.amount(),
+                p.currency(),
+                p.paymentOccurredAt(),
+                p.accountingBusinessDate(),
+                p.bankReference(),
+                p.financialSnapshotId(),
+                p.financialSnapshotVersion(),
+                p.financialSnapshotFinalizedAt(),
+                p.debtorAccountReference(),
+                p.creditorAccountReference(),
+                p.entries().stream()
+                        .map(e -> new AccountingPaymentCandidate.FrozenEntry(
+                                e.entrySnapshotId(), e.sequence(), e.direction(),
+                                e.accountReference(), e.amount(), e.currency(), e.createdAt()))
+                        .toList(),
+                p.tresorPayStatusEvidence()
         )).toList();
     }
 }

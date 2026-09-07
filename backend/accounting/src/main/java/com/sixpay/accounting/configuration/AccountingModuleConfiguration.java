@@ -2,6 +2,7 @@ package com.sixpay.accounting.configuration;
 
 import com.sixpay.accounting.AccountingModule;
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
+import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
 import com.sixpay.accounting.application.service.AccountingBatchConstitutionService;
@@ -125,13 +126,15 @@ public class AccountingModuleConfiguration {
             AccountingCutoffPolicy cutoffPolicy,
             PaymentAccountingCandidateSource candidateSource,
             AccountingBatchBuilder batchBuilder,
-            AccountingBatchRepository batchRepository
+            AccountingBatchRepository batchRepository,
+            AccountingCandidateProjectionRepository candidateRepository
     ) {
         return new AccountingBatchConstitutionService(
                 cutoffPolicy,
                 candidateSource,
                 batchBuilder,
-                batchRepository
+                batchRepository,
+                candidateRepository
         );
     }
 

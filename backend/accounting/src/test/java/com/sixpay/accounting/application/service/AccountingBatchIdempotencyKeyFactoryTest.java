@@ -58,6 +58,25 @@ class AccountingBatchIdempotencyKeyFactoryTest {
                 Instant.parse("2026-08-07T12:00:00Z"),
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
+                UUID.nameUUIDFromBytes(("snapshot-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                "v1",
+                Instant.parse("2026-08-07T12:03:00Z"),
+                "DEBTOR-" + reference,
+                "TREASURY-" + reference,
+                List.of(
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("debit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                1, "DEBIT", "DEBTOR-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:10Z")
+                        ),
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("credit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                2, "CREDIT", "TREASURY-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:11Z")
+                        )
+                ),
                 new TresorPayPaymentStatusEvidence(
                         reference,
                         "TX-" + reference,
