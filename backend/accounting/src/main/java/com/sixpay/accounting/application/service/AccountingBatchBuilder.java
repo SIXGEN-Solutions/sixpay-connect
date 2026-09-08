@@ -63,6 +63,11 @@ public final class AccountingBatchBuilder {
                 candidate.publicPaymentReference(),
                 candidate.partnerId(),
                 candidate.financialInstitutionCode(),
+                candidate.financialSnapshotId(),
+                candidate.financialSnapshotVersion(),
+                candidate.financialSnapshotFinalizedAt(),
+                candidate.debtorAccountReference(),
+                candidate.creditorAccountReference(),
                 candidate.amount(),
                 candidate.currency(),
                 candidate.paymentOccurredAt(),
@@ -71,7 +76,18 @@ public final class AccountingBatchBuilder {
                 Objects.requireNonNull(
                         candidate.tresorPayStatusEvidence(),
                         "tresorPayStatusEvidence"
-                )
+                ),
+                candidate.entries().stream()
+                        .map(entry -> new AccountingPaymentCandidate.FrozenEntry(
+                                entry.entrySnapshotId(),
+                                entry.sequence(),
+                                entry.direction(),
+                                entry.accountReference(),
+                                entry.amount(),
+                                entry.currency(),
+                                entry.createdAt()
+                        ))
+                        .toList()
         );
     }
 

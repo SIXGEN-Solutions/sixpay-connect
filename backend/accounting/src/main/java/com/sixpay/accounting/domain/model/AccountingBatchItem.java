@@ -95,12 +95,40 @@ public record AccountingBatchItem(
     }
 
     public static AccountingBatchItem from(AccountingPaymentCandidate candidate) {
+        Objects.requireNonNull(candidate, "candidate");
+        var evidence = Objects.requireNonNull(
+                candidate.tresorPayStatusEvidence(),
+                "tresorPayStatusEvidence"
+        );
         return new AccountingBatchItem(
-                candidate.paymentId(), candidate.publicPaymentReference(), candidate.partnerId(),
-                candidate.amount(), candidate.currency(), candidate.paymentOccurredAt(),
-                candidate.paymentBusinessDate(), candidate.bankPostingReference(),
-                candidate.tresorPayStatusEvidence().providerStatus(),
-                candidate.tresorPayStatusEvidence().checkedAt(), AccountingBatchItemStatus.PENDING);
+                candidate.paymentId(),
+                candidate.publicPaymentReference(),
+                candidate.partnerId(),
+                candidate.amount(),
+                candidate.currency(),
+                candidate.paymentOccurredAt(),
+                candidate.paymentBusinessDate(),
+                candidate.bankPostingReference(),
+                evidence.providerStatus(),
+                evidence.checkedAt(),
+                AccountingBatchItemStatus.PENDING,
+                candidate.financialSnapshotId(),
+                candidate.financialSnapshotVersion(),
+                candidate.financialSnapshotFinalizedAt(),
+                candidate.debtorAccountReference(),
+                candidate.creditorAccountReference(),
+                candidate.entries().stream()
+                        .map(entry -> new AccountingBatchItemEntry(
+                                entry.entrySnapshotId(),
+                                entry.sequence(),
+                                entry.direction(),
+                                entry.accountReference(),
+                                entry.amount(),
+                                entry.currency(),
+                                entry.createdAt()
+                        ))
+                        .toList()
+        );
     }
 
     public boolean hasFinancialSnapshotEvidence() { return financialSnapshotId != null; }

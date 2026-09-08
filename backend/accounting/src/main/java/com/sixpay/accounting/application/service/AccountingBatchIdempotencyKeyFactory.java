@@ -14,8 +14,13 @@ public final class AccountingBatchIdempotencyKeyFactory {
     public AccountingBatchIdempotencyKey create(
             String institution, LocalDate businessDate, List<AccountingPaymentCandidate> candidates) {
         Objects.requireNonNull(candidates, "candidates");
-        return createCanonical(institution, businessDate,
-                candidates.stream().map(c -> c.paymentId().toString()).toList());
+        return createCanonical(
+                institution,
+                businessDate,
+                candidates.stream()
+                        .map(candidate -> candidate.paymentId() + ":" + candidate.financialSnapshotId())
+                        .toList()
+        );
     }
 
     public AccountingBatchIdempotencyKey createFromProjections(

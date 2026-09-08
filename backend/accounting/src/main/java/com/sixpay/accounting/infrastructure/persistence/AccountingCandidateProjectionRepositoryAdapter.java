@@ -66,22 +66,22 @@ public class AccountingCandidateProjectionRepositoryAdapter
     ) {
         return findEligibleUnbatched(window).stream()
                 .map(projection -> new AccountingPaymentCandidate(
-                p.paymentId(),
-                p.publicPaymentReference(),
-                p.partnerId(),
-                p.financialInstitutionCode(),
-                p.financialSnapshotId(),
-                p.financialSnapshotVersion(),
-                p.financialSnapshotFinalizedAt(),
-                p.debtorAccountReference(),
-                p.creditorAccountReference(),
-                p.amount(),
-                p.currency(),
-                p.paymentOccurredAt(),
-                p.accountingBusinessDate(),
-                p.bankReference(),
-                p.tresorPayStatusEvidence(),
-                p.entries().stream()
+                projection.paymentId(),
+                projection.publicPaymentReference(),
+                projection.partnerId(),
+                projection.financialInstitutionCode(),
+                projection.financialSnapshotId(),
+                projection.financialSnapshotVersion(),
+                projection.financialSnapshotFinalizedAt(),
+                projection.debtorAccountReference(),
+                projection.creditorAccountReference(),
+                projection.amount(),
+                projection.currency(),
+                projection.paymentOccurredAt(),
+                projection.accountingBusinessDate(),
+                projection.bankReference(),
+                projection.tresorPayStatusEvidence(),
+                projection.entries().stream()
                         .map(entry -> new AccountingPaymentCandidate.FrozenEntry(
                                 entry.entrySnapshotId(),
                                 entry.sequence(),
