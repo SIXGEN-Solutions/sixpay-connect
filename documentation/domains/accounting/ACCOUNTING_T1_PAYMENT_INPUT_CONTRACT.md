@@ -89,3 +89,21 @@ Active rules:
 - after durable batch persistence, selected candidates are assigned to that batch transactionally;
 - historical pre-T1.3 batch rows are not backfilled by V402;
 - no Core Banking T1 provider mapping is defined before T1.4.
+
+## T1.3 cutoff and batch constitution
+
+T1.3 consumes only the Accounting-owned T1.2 projection. Selection applies
+cutoff membership, financial-institution match, TRESOR PAY `COMPLETED`, and
+absence of a previous batch assignment.
+
+Every newly constituted batch item copies the finalized financial snapshot
+identity, snapshot version/finalization timestamp, debtor and Treasury account
+references, and the two ordered frozen DEBIT/CREDIT entries. These facts are
+immutable batch evidence and are never reconstructed from Payment.
+
+Batch idempotency is based on the deterministic set of
+`(paymentId, financialSnapshotId)` identities. After successful batch
+persistence, selected candidates are assigned to the batch in the same
+transaction. Reassignment to another batch is rejected.
+
+The physical Core Banking Accounting API remains TO_DEFINE for T1.4.

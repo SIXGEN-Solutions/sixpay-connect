@@ -139,14 +139,13 @@ class AccountingBatchConstitutionServiceTest {
                         ZoneId.of("Africa/Douala"),
                         LocalTime.of(23, 0)
                 ),
-                source,
+                new FakeCandidateProjectionRepository(),
                 new AccountingBatchBuilder(
                         new VerifiedTresorPayStatusEligibilityPolicy(),
                         new AccountingBatchIdempotencyKeyFactory(),
                         clock
                 ),
-                repository,
-                new FakeCandidateProjectionRepository()
+                repository
         );
     }
 

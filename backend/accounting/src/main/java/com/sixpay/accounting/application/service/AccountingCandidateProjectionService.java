@@ -8,7 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 
-public final class AccountingCandidateProjectionService {
+public class AccountingCandidateProjectionService {
     private final AccountingCandidateProjectionRepository repository;
     private final Clock clock;
 

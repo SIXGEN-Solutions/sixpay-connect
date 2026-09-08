@@ -118,23 +118,21 @@ public class AccountingModuleConfiguration {
 
     @Bean
     @ConditionalOnBean(
-            PaymentAccountingCandidateSource.class
+            AccountingCandidateProjectionRepository.class
     )
     @ConditionalOnMissingBean
     AccountingBatchConstitutionService
     accountingBatchConstitutionService(
             AccountingCutoffPolicy cutoffPolicy,
-            PaymentAccountingCandidateSource candidateSource,
+            AccountingCandidateProjectionRepository projectionRepository,
             AccountingBatchBuilder batchBuilder,
-            AccountingBatchRepository batchRepository,
-            AccountingCandidateProjectionRepository candidateRepository
+            AccountingBatchRepository batchRepository
     ) {
         return new AccountingBatchConstitutionService(
                 cutoffPolicy,
-                candidateSource,
+                projectionRepository,
                 batchBuilder,
-                batchRepository,
-                candidateRepository
+                batchRepository
         );
     }
 

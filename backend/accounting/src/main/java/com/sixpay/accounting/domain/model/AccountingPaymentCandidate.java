@@ -13,78 +13,48 @@ public record AccountingPaymentCandidate(
         String publicPaymentReference,
         String partnerId,
         String financialInstitutionCode,
-        BigDecimal amount,
-        Currency currency,
-        Instant paymentOccurredAt,
-        LocalDate paymentBusinessDate,
-        String bankPostingReference,
         UUID financialSnapshotId,
         String financialSnapshotVersion,
         Instant financialSnapshotFinalizedAt,
         String debtorAccountReference,
         String creditorAccountReference,
-        List<FrozenEntry> frozenEntries,
-        TresorPayPaymentStatusEvidence tresorPayStatusEvidence
+        BigDecimal amount,
+        Currency currency,
+        Instant paymentOccurredAt,
+        LocalDate paymentBusinessDate,
+        String bankPostingReference,
+        TresorPayPaymentStatusEvidence tresorPayStatusEvidence,
+        List<FrozenEntry> entries
 ) {
     public AccountingPaymentCandidate {
-        paymentId = Objects.requireNonNull(paymentId, "paymentId");
-        if (paymentId.equals(new UUID(0L, 0L))) {
-            throw new IllegalArgumentException("paymentId must not be nil");
-        }
+        paymentId = nonNil(paymentId, "paymentId");
         publicPaymentReference = required(publicPaymentReference, "publicPaymentReference");
         partnerId = required(partnerId, "partnerId");
         financialInstitutionCode = required(financialInstitutionCode, "financialInstitutionCode");
+        financialSnapshotId = nonNil(financialSnapshotId, "financialSnapshotId");
+        financialSnapshotVersion = required(financialSnapshotVersion, "financialSnapshotVersion");
+        financialSnapshotFinalizedAt = Objects.requireNonNull(
+                financialSnapshotFinalizedAt,
+                "financialSnapshotFinalizedAt"
+        );
+        debtorAccountReference = required(debtorAccountReference, "debtorAccountReference");
+        creditorAccountReference = required(creditorAccountReference, "creditorAccountReference");
         amount = Objects.requireNonNull(amount, "amount");
-        if (amount.signum() <= 0) throw new IllegalArgumentException("amount must be positive");
+        if (amount.signum() <= 0) {
+            throw new IllegalArgumentException("amount must be positive");
+        }
         currency = Objects.requireNonNull(currency, "currency");
         paymentOccurredAt = Objects.requireNonNull(paymentOccurredAt, "paymentOccurredAt");
         paymentBusinessDate = Objects.requireNonNull(paymentBusinessDate, "paymentBusinessDate");
-        bankPostingReference = optional(bankPostingReference);
-
-        if (financialSnapshotId != null) {
-            financialSnapshotVersion = required(financialSnapshotVersion, "financialSnapshotVersion");
-            financialSnapshotFinalizedAt = Objects.requireNonNull(financialSnapshotFinalizedAt, "financialSnapshotFinalizedAt");
-            debtorAccountReference = required(debtorAccountReference, "debtorAccountReference");
-            creditorAccountReference = required(creditorAccountReference, "creditorAccountReference");
-            frozenEntries = List.copyOf(Objects.requireNonNull(frozenEntries, "frozenEntries"));
-            if (frozenEntries.size() != 2) {
-                throw new IllegalArgumentException("finalized financial snapshot must contain exactly two frozen entries");
-            }
-        } else {
-            financialSnapshotVersion = null;
-            financialSnapshotFinalizedAt = null;
-            debtorAccountReference = null;
-            creditorAccountReference = null;
-            frozenEntries = frozenEntries == null ? List.of() : List.copyOf(frozenEntries);
+        bankPostingReference = required(bankPostingReference, "bankPostingReference");
+        tresorPayStatusEvidence = Objects.requireNonNull(
+                tresorPayStatusEvidence,
+                "tresorPayStatusEvidence"
+        );
+        entries = List.copyOf(Objects.requireNonNull(entries, "entries"));
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("frozen financial entries must not be empty");
         }
-
-        tresorPayStatusEvidence = Objects.requireNonNull(tresorPayStatusEvidence, "tresorPayStatusEvidence");
-    }
-
-    public AccountingPaymentCandidate(
-            UUID paymentId,
-            String publicPaymentReference,
-            String partnerId,
-            String financialInstitutionCode,
-            BigDecimal amount,
-            Currency currency,
-            Instant paymentOccurredAt,
-            LocalDate paymentBusinessDate,
-            String bankPostingReference,
-            TresorPayPaymentStatusEvidence tresorPayStatusEvidence
-    ) {
-        this(paymentId, publicPaymentReference, partnerId, financialInstitutionCode,
-                amount, currency, paymentOccurredAt, paymentBusinessDate, bankPostingReference,
-                null, null, null, null, null, List.of(), tresorPayStatusEvidence);
-    }
-
-    public boolean hasFinalizedFinancialSnapshot() {
-        return financialSnapshotId != null
-                && financialSnapshotVersion != null
-                && financialSnapshotFinalizedAt != null
-                && debtorAccountReference != null
-                && creditorAccountReference != null
-                && frozenEntries.size() == 2;
     }
 
     public record FrozenEntry(
@@ -97,26 +67,36 @@ public record AccountingPaymentCandidate(
             Instant createdAt
     ) {
         public FrozenEntry {
-            entrySnapshotId = Objects.requireNonNull(entrySnapshotId, "entrySnapshotId");
-            if (sequence <= 0) throw new IllegalArgumentException("sequence must be positive");
+            entrySnapshotId = nonNil(entrySnapshotId, "entrySnapshotId");
+            if (sequence <= 0) {
+                throw new IllegalArgumentException("entry sequence must be positive");
+            }
             direction = required(direction, "direction");
             if (!"DEBIT".equals(direction) && !"CREDIT".equals(direction)) {
                 throw new IllegalArgumentException("direction must be DEBIT or CREDIT");
             }
             accountReference = required(accountReference, "accountReference");
             amount = Objects.requireNonNull(amount, "amount");
-            if (amount.signum() <= 0) throw new IllegalArgumentException("entry amount must be positive");
+            if (amount.signum() <= 0) {
+                throw new IllegalArgumentException("entry amount must be positive");
+            }
             currency = Objects.requireNonNull(currency, "currency");
             createdAt = Objects.requireNonNull(createdAt, "createdAt");
         }
     }
 
-    private static String required(String value, String name) {
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(name + " is required");
-        return value.strip();
+    private static UUID nonNil(UUID value, String name) {
+        value = Objects.requireNonNull(value, name);
+        if (value.equals(new UUID(0L, 0L))) {
+            throw new IllegalArgumentException(name + " must not be nil");
+        }
+        return value;
     }
 
-    private static String optional(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
+    private static String required(String value, String name) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(name + " is required");
+        }
+        return value.strip();
     }
 }

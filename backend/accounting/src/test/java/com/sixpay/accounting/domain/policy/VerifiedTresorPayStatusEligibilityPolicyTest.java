@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Currency;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +61,31 @@ class VerifiedTresorPayStatusEligibilityPolicyTest {
                 Instant.parse("2026-08-11T11:58:00Z"),
                 LocalDate.of(2026, 8, 11),
                 "RB-2026081100045",
+                UUID.fromString("5b72d5b1-2d1e-4f18-a8e0-1c8e19d31d01"),
+                "v1",
+                Instant.parse("2026-08-11T11:58:40Z"),
+                "DEBTOR-ACCOUNT-REF",
+                "TREASURY-ACCOUNT-REF",
+                List.of(
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.fromString("e011c0a1-b3b9-461c-a7ca-899c97cbf101"),
+                                1,
+                                "DEBIT",
+                                "DEBTOR-ACCOUNT-REF",
+                                new BigDecimal("1000.00"),
+                                Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-11T11:58:30Z")
+                        ),
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.fromString("e011c0a1-b3b9-461c-a7ca-899c97cbf102"),
+                                2,
+                                "CREDIT",
+                                "TREASURY-ACCOUNT-REF",
+                                new BigDecimal("1000.00"),
+                                Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-11T11:58:31Z")
+                        )
+                ),
                 new TresorPayPaymentStatusEvidence(
                         "REF-DGI-2026-0042",
                         "EXT_TRESORPAY-CM_D46J080300003",

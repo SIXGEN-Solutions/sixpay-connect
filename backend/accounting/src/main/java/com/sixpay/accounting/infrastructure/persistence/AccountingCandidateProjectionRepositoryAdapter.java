@@ -15,71 +15,84 @@ import java.util.UUID;
 @Repository
 public class AccountingCandidateProjectionRepositoryAdapter
         implements AccountingCandidateProjectionRepository, PaymentAccountingCandidateSource {
-
     private final AccountingCandidateSpringDataRepository repository;
 
     public AccountingCandidateProjectionRepositoryAdapter(AccountingCandidateSpringDataRepository repository) {
         this.repository = repository;
     }
 
-    @Override @Transactional(readOnly=true)
+    @Override @Transactional(readOnly = true)
     public Optional<AccountingCandidateProjection> findByEventId(UUID eventId) {
         return repository.findByEventId(eventId).map(AccountingCandidateJpaEntity::toDomain);
     }
 
-    @Override @Transactional(readOnly=true)
+    @Override @Transactional(readOnly = true)
     public Optional<AccountingCandidateProjection> findByBusinessIdentity(UUID paymentId, UUID snapshotId) {
-        return repository.findByPaymentIdAndFinancialSnapshotId(paymentId,snapshotId).map(AccountingCandidateJpaEntity::toDomain);
+        return repository.findByPaymentIdAndFinancialSnapshotId(paymentId, snapshotId)
+                .map(AccountingCandidateJpaEntity::toDomain);
     }
 
     @Override @Transactional
-    public AccountingCandidateProjection save(AccountingCandidateProjection p) {
-        return repository.save(AccountingCandidateJpaEntity.create(p)).toDomain();
+    public AccountingCandidateProjection save(AccountingCandidateProjection projection) {
+        return repository.save(AccountingCandidateJpaEntity.create(projection)).toDomain();
     }
 
-    @Override @Transactional(readOnly=true)
-    public List<AccountingCandidateProjection> findEligibleUnbatched(AccountingSelectionWindow w) {
-        return repository.findEligibleUnbatched(w.businessDate(),w.fromInclusive(),w.toExclusive())
+    @Override @Transactional(readOnly = true)
+    public List<AccountingCandidateProjection> findEligibleUnbatched(AccountingSelectionWindow window) {
+        return repository.findEligibleUnbatched(window.businessDate(), window.fromInclusive(), window.toExclusive())
                 .stream().map(AccountingCandidateJpaEntity::toDomain).toList();
     }
 
     @Override @Transactional
     public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {
-        var e = repository.findByPaymentId(paymentId).orElseThrow(() ->
+        var entity = repository.findByPaymentId(paymentId).orElseThrow(() ->
                 new IllegalArgumentException("Accounting candidate not found for paymentId=" + paymentId));
-        e.recordTresorPayEvidence(evidence);
+        entity.recordTresorPayEvidence(evidence);
     }
 
     @Override @Transactional
     public void assignToBatch(UUID paymentId, UUID batchId) {
-        var e = repository.findByPaymentId(paymentId).orElseThrow(() ->
-                new IllegalArgumentException("Accounting candidate not found for paymentId=" + paymentId));
-        e.assignToBatch(batchId);
+        int updated = repository.assignBatchIfUnassignedOrSame(paymentId, batchId);
+        if (updated != 1) {
+            throw new IllegalStateException("Accounting candidate already assigned to another batch: " + paymentId);
+        }
     }
 
-    @Override @Transactional(readOnly=true)
-    public List<AccountingPaymentCandidate> findUnbatchedStatusVerifiedCandidates(AccountingSelectionWindow w) {
-        return findEligibleUnbatched(w).stream().map(p -> new AccountingPaymentCandidate(
+        @Override
+    @Transactional(readOnly = true)
+    public List<AccountingPaymentCandidate>
+    findUnbatchedStatusVerifiedCandidates(
+            AccountingSelectionWindow window
+    ) {
+        return findEligibleUnbatched(window).stream()
+                .map(projection -> new AccountingPaymentCandidate(
                 p.paymentId(),
                 p.publicPaymentReference(),
                 p.partnerId(),
                 p.financialInstitutionCode(),
-                p.amount(),
-                p.currency(),
-                p.paymentOccurredAt(),
-                p.accountingBusinessDate(),
-                p.bankReference(),
                 p.financialSnapshotId(),
                 p.financialSnapshotVersion(),
                 p.financialSnapshotFinalizedAt(),
                 p.debtorAccountReference(),
                 p.creditorAccountReference(),
+                p.amount(),
+                p.currency(),
+                p.paymentOccurredAt(),
+                p.accountingBusinessDate(),
+                p.bankReference(),
+                p.tresorPayStatusEvidence(),
                 p.entries().stream()
-                        .map(e -> new AccountingPaymentCandidate.FrozenEntry(
-                                e.entrySnapshotId(), e.sequence(), e.direction(),
-                                e.accountReference(), e.amount(), e.currency(), e.createdAt()))
-                        .toList(),
-                p.tresorPayStatusEvidence()
-        )).toList();
+                        .map(entry -> new AccountingPaymentCandidate.FrozenEntry(
+                                entry.entrySnapshotId(),
+                                entry.sequence(),
+                                entry.direction(),
+                                entry.accountReference(),
+                                entry.amount(),
+                                entry.currency(),
+                                entry.createdAt()
+                        ))
+                        .toList()
+        ))
+                .toList();
     }
 }

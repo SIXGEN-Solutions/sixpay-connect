@@ -115,3 +115,11 @@ Batch idempotency is derived from sorted `(paymentId, financialSnapshotId)` busi
 identities, and selected local candidates are assigned to the persisted batch transactionally.
 Pre-T1.3 historical rows remain readable without an invented snapshot backfill. No physical
 Core Banking T1 mapping is authorized by this lot.
+
+### T1.3 cutoff and immutable batch snapshots
+
+Active batch constitution reads the Accounting-owned T1.2 projection,
+applies cutoff/TRESOR PAY/unassigned eligibility, and persists immutable
+financial snapshot identity plus ordered frozen entries in each new batch item.
+Idempotency uses `(paymentId, financialSnapshotId)` and candidate assignment
+to `batchId` occurs in the same transaction.

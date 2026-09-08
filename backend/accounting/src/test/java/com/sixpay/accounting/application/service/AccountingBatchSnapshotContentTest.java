@@ -42,9 +42,25 @@ class AccountingBatchSnapshotContentTest {
         assertEquals("v1", item.financialSnapshotVersion());
         assertEquals("DEBTOR-001", item.debtorAccountReference());
         assertEquals("TREASURY-001", item.creditorAccountReference());
-        assertEquals(2, item.frozenEntries().size());
-        assertEquals("DEBIT", item.frozenEntries().get(0).direction());
-        assertEquals("CREDIT", item.frozenEntries().get(1).direction());
-        assertNotSame(candidate.frozenEntries(), item.frozenEntries());
+        assertEquals(2, item.entries().size());
+        assertEquals("DEBIT", item.entries().get(0).direction());
+        assertEquals("CREDIT", item.entries().get(1).direction());
+
+        assertEquals(candidate.entries().size(), item.entries().size());
+
+        for (int index = 0; index < candidate.entries().size(); index++) {
+            var sourceEntry = candidate.entries().get(index);
+            var batchEntry = item.entries().get(index);
+
+            assertEquals(sourceEntry.entrySnapshotId(), batchEntry.entrySnapshotId());
+            assertEquals(sourceEntry.sequence(), batchEntry.sequence());
+            assertEquals(sourceEntry.direction(), batchEntry.direction());
+            assertEquals(sourceEntry.accountReference(), batchEntry.accountReference());
+            assertEquals(sourceEntry.amount(), batchEntry.amount());
+            assertEquals(sourceEntry.currency(), batchEntry.currency());
+            assertEquals(sourceEntry.createdAt(), batchEntry.createdAt());
+        }
+
+        assertNotSame(candidate.entries(), item.entries());
     }
 }

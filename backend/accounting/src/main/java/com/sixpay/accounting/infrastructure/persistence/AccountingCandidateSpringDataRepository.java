@@ -1,6 +1,7 @@
 package com.sixpay.accounting.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.time.Instant;
@@ -27,6 +28,15 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
     List<AccountingCandidateJpaEntity> findEligibleUnbatched(
             @Param("businessDate") LocalDate businessDate,
             @Param("fromInclusive") Instant fromInclusive,
-            @Param("toExclusive") Instant toExclusive
-    );
+            @Param("toExclusive") Instant toExclusive);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update AccountingCandidateJpaEntity c
+               set c.batchId = :batchId
+             where c.paymentId = :paymentId
+               and (c.batchId is null or c.batchId = :batchId)
+            """)
+    int assignBatchIfUnassignedOrSame(@Param("paymentId") UUID paymentId,
+                                      @Param("batchId") UUID batchId);
 }

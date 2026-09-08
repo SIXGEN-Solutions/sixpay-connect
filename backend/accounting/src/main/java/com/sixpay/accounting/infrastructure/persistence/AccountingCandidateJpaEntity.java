@@ -85,16 +85,13 @@ public class AccountingCandidateJpaEntity {
         tresorPayRequestReference=x.requestReference(); tresorPayCorrelationId=x.correlationId();
     }
     void assignToBatch(UUID batchId) {
-        Objects.requireNonNull(batchId, "batchId");
-        if (this.batchId == null) {
-            this.batchId = batchId;
-            return;
-        }
-        if (!this.batchId.equals(batchId)) {
+        UUID targetBatchId = Objects.requireNonNull(batchId, "batchId");
+        if (this.batchId != null && !this.batchId.equals(targetBatchId)) {
             throw new IllegalStateException(
                     "Accounting candidate is already assigned to another batch"
             );
         }
+        this.batchId = targetBatchId;
     }
     AccountingCandidateProjection toDomain() {
         TresorPayPaymentStatusEvidence x = null;
