@@ -2,28 +2,22 @@ package com.sixpay.accounting.infrastructure.accountingapi.validation;
 
 import com.sixpay.accounting.application.exception.AccountingProviderInvalidResponseException;
 import com.sixpay.accounting.domain.model.AccountingBatchId;
-import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 import com.sixpay.accounting.infrastructure.accountingapi.dto.AccountingBatchResponseDto;
 
+import java.util.HashSet;
 import java.util.Objects;
 
 public final class AccountingApiResponseValidator {
 
     public AccountingBatchResponseDto validate(
             AccountingBatchResponseDto response,
-            AccountingBatchId expectedBatchId,
-            AccountingBatchIdempotencyKey expectedIdempotencyKey
+            AccountingBatchId expectedBatchId
     ) {
         if (response == null
                 || response.batchId() == null
-                || response.idempotencyKey() == null
                 || response.status() == null
-                || response.processedAt() == null
                 || response.items() == null) {
-            throw new AccountingProviderInvalidResponseException(
-                    "Accounting API response is incomplete",
-                    null
-            );
+            throw invalid("Accounting API response is incomplete");
         }
 
         if (expectedBatchId != null
@@ -31,23 +25,52 @@ public final class AccountingApiResponseValidator {
                         expectedBatchId.value(),
                         response.batchId()
                 )) {
-            throw new AccountingProviderInvalidResponseException(
-                    "Accounting API response batchId mismatch",
-                    null
+            throw invalid("Accounting API response batchId mismatch");
+        }
+
+        if ("COMPLETED".equals(response.status())
+                && response.processedAt() == null) {
+            throw invalid(
+                    "Completed Accounting API response requires processedAt"
             );
         }
 
-        if (expectedIdempotencyKey != null
-                && !Objects.equals(
-                        expectedIdempotencyKey.value(),
-                        response.idempotencyKey()
-                )) {
-            throw new AccountingProviderInvalidResponseException(
-                    "Accounting API response idempotencyKey mismatch",
-                    null
-            );
+        var seen = new HashSet<String>();
+
+        for (AccountingBatchResponseDto.Item item : response.items()) {
+            if (item == null
+                    || item.paymentReference() == null
+                    || item.paymentReference().isBlank()
+                    || item.status() == null
+                    || item.status().isBlank()) {
+                throw invalid(
+                        "Accounting API item response is incomplete"
+                );
+            }
+
+            String paymentReference = item.paymentReference().strip();
+
+            if (!seen.add(paymentReference)) {
+                throw invalid(
+                        "Accounting API response contains duplicate paymentReference"
+                );
+            }
+
+            if ("FAILED".equals(item.status())
+                    && (item.rejectionCode() == null
+                    || item.rejectionCode().isBlank())) {
+                throw invalid(
+                        "Failed Accounting API item requires rejectionCode"
+                );
+            }
         }
 
         return response;
+    }
+
+    private static AccountingProviderInvalidResponseException invalid(
+            String message
+    ) {
+        return new AccountingProviderInvalidResponseException(message, null);
     }
 }

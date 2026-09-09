@@ -6,14 +6,13 @@ import java.util.UUID;
 
 public record AccountingBatchResponseDto(
         UUID batchId,
-        String idempotencyKey,
         String status,
         String providerBatchReference,
         Instant processedAt,
         List<Item> items
 ) {
     public record Item(
-            UUID paymentId,
+            String paymentReference,
             String status,
             String providerItemReference,
             String rejectionCode

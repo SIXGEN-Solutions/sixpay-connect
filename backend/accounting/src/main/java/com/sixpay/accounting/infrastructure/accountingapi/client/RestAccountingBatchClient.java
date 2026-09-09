@@ -23,8 +23,13 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 public final class RestAccountingBatchClient
         implements AccountingBatchGateway {
@@ -35,6 +40,12 @@ public final class RestAccountingBatchClient
     private final AccountingApiMapper mapper;
     private final AccountingApiResponseValidator validator;
     private final ObjectMapper objectMapper;
+
+    private final ConcurrentMap<UUID, Map<String, UUID>>
+            paymentIdsByBatch = new ConcurrentHashMap<>();
+
+    private final ConcurrentMap<UUID, AccountingBatchIdempotencyKey>
+            idempotencyKeysByBatch = new ConcurrentHashMap<>();
 
     public RestAccountingBatchClient(
             RestClient restClient,
@@ -61,6 +72,22 @@ public final class RestAccountingBatchClient
         Objects.requireNonNull(context, "context");
 
         var request = mapper.toRequest(batch);
+
+        paymentIdsByBatch.put(
+                batch.batchId().value(),
+                batch.items().stream()
+                        .collect(
+                                Collectors.toUnmodifiableMap(
+                                        item -> item.publicPaymentReference(),
+                                        item -> item.paymentId()
+                                )
+                        )
+        );
+        idempotencyKeysByBatch.put(
+                batch.batchId().value(),
+                batch.idempotencyKey()
+        );
+
         String accessToken = tokenProvider.accessToken();
 
         try {
@@ -81,8 +108,11 @@ public final class RestAccountingBatchClient
                             context.requestId().toString()
                     )
                     .header(
-                            properties.contract()
-                                    .idempotencyHeader(),
+                            "X-Financial-Institution-Code",
+                            batch.financialInstitutionCode()
+                    )
+                    .header(
+                            properties.contract().idempotencyHeader(),
                             batch.idempotencyKey().value()
                     )
                     .body(request)
@@ -106,9 +136,9 @@ public final class RestAccountingBatchClient
                 return mapper.toResult(
                         validator.validate(
                                 response,
-                                batch.batchId(),
-                                batch.idempotencyKey()
-                        )
+                                batch.batchId()
+                        ),
+                        batch
                 );
             } catch (RuntimeException exception) {
                 throw new AccountingSubmissionOutcomeUnknownException(
@@ -217,13 +247,32 @@ public final class RestAccountingBatchClient
                             AccountingBatchResponseDto.class
                     );
 
+            AccountingBatchResponseDto validated =
+                    validator.validate(
+                            response,
+                            expectedBatchId
+                    );
+
+            Map<String, UUID> paymentIds =
+                    paymentIdsByBatch.get(validated.batchId());
+
+            AccountingBatchIdempotencyKey resultIdempotencyKey =
+                    expectedIdempotencyKey != null
+                            ? expectedIdempotencyKey
+                            : idempotencyKeysByBatch.get(validated.batchId());
+
+            if (paymentIds == null || resultIdempotencyKey == null) {
+                throw new AccountingProviderInvalidResponseException(
+                        "Accounting lookup response cannot be correlated to the local submitted batch",
+                        null
+                );
+            }
+
             return Optional.of(
-                    mapper.toResult(
-                            validator.validate(
-                                    response,
-                                    expectedBatchId,
-                                    expectedIdempotencyKey
-                            )
+                    mapper.toLookupResult(
+                            validated,
+                            resultIdempotencyKey,
+                            paymentIds
                     )
             );
         } catch (org.springframework.web.client.HttpClientErrorException.NotFound exception) {

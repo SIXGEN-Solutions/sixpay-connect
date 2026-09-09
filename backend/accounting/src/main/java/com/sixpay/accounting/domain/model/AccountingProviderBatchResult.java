@@ -30,10 +30,12 @@ public record AccountingProviderBatchResult(
                         || providerBatchReference.isBlank()
                         ? null
                         : providerBatchReference.strip();
-        processedAt = Objects.requireNonNull(
-                processedAt,
-                "processedAt"
-        );
+        if (status == AccountingBatchStatus.COMPLETED
+                && processedAt == null) {
+            throw new IllegalArgumentException(
+                    "processedAt is required for a completed provider batch result"
+            );
+        }
         items = List.copyOf(
                 Objects.requireNonNull(
                         items,

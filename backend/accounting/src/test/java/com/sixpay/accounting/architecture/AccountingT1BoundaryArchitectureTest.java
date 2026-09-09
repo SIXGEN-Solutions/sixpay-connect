@@ -32,11 +32,29 @@ class AccountingT1BoundaryArchitectureTest {
     }
 
     @Test
-    void t1DocumentationKeepsProviderContractUndefined() throws Exception {
+    void t1DocumentationReflectsApprovedProviderContractAndT15Implementation() throws Exception {
         Path repoRoot = Path.of("..").toAbsolutePath().normalize().getParent();
-        Path ai = repoRoot.resolve("documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md");
+        Path ai = repoRoot.resolve(
+                "documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md"
+        );
         String text = Files.readString(ai);
-        assertTrue(text.contains("Physical Core Banking Accounting API for T1.4"));
+
+        assertTrue(
+                text.contains(
+                        "physical Core Banking T1 API is defined by the approved T1.4 contract"
+                )
+        );
+        assertTrue(
+                text.contains("## T1.5 active implementation context")
+        );
+        assertTrue(
+                text.contains("POST /api/v1/accounting-entries")
+        );
+        assertTrue(
+                text.contains(
+                        "Blind replay after unknown provider submission outcome"
+                )
+        );
         assertTrue(text.contains("FORBIDDEN"));
     }
 }

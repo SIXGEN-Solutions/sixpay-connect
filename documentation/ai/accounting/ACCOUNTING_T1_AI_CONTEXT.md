@@ -27,7 +27,6 @@ It does not replace architecture, requirements or physical contracts.
 - If TRESOR PAY is unavailable or not yet completed, exclude the transaction from the current T1 selection and retry verification for a later cutoff while continuing other verified transactions.
 - Verification may be performed by a periodic pre-cutoff worker or on-demand for unverified candidates; scheduler cadence remains TO_DEFINE.
 - Accounting candidate persistence schema for T1.2.
-- Provider DTOs/mappings for T1.5.
 - TFJ transport and final reconciliation rules for T1.6.
 
 ## FORBIDDEN
@@ -96,3 +95,31 @@ provider adapter owned by T1.5.
 - provider DTOs, mapping and HTTP client implementation remain T1.5;
 - detailed regularization of FAILED/UNKNOWN items and final TFJ reconciliation
   remain T1.6 / La Regionale and TRESOR PAY policy.
+
+## T1.5 active implementation context
+
+T1.5 implements the provider anti-corruption mapping, submission and recovery
+against the approved T1.4 Core Banking Accounting contract.
+
+- `AccountingBatchItem` and its two immutable `AccountingBatchItemEntry` values
+  are the only source for provider accounting lines;
+- legacy Payment-level provider payload fields are no longer the T1 submission contract;
+- the provider request is reduced to `batchId`, authoritative `businessDate`,
+  `paymentReference`, `financialSnapshotId`, T0 `bankReference`, and the two
+  ordered accounting entries;
+- account references are decomposed from canonical `age-ncp-clc`;
+- `DEBIT` maps to `D` and `CREDIT` maps to `C`;
+- ISO-4217 numeric currency code is used for the provider wire value;
+- the adapter rejects pre-T1.3 legacy batch items without finalized snapshot evidence;
+- physical batch states map as `COMPLETED -> COMPLETED` and
+  `ACCEPTED|PROCESSING -> NOT_COMPLETED`;
+- physical item states map as `SUCCESS -> COMPLETED`,
+  `FAILED -> REJECTED`, and `UNKNOWN -> RECONCILIATION_REQUIRED`;
+- submission reuses OAuth2/mTLS, correlation, request id, financial institution
+  header and `Idempotency-Key`;
+- transport timeout, 429 and 5xx during submission are outcome-unknown, never
+  blind retry signals;
+- reconciliation continues to lookup by original idempotency key first and then
+  batch id when appropriate;
+- detailed FAILED/UNKNOWN business regularization and final TFJ reconciliation
+  remain T1.6.
