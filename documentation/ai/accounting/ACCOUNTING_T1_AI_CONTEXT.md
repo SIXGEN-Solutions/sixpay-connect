@@ -1,156 +1,227 @@
-# ACCOUNTING_T1 — Active AI context
+# ACCOUNTING_T1 — Current-state AI context
 
-Status: ACTIVE PROGRAM CONTEXT
-Authority: derived from current architecture, approved Payment T0 implementation and T1.0 decisions.
-It does not replace architecture, requirements or physical contracts.
+Status: ACTIVE CURRENT-STATE REFERENCE  
+Program implementation status: IMPLEMENTED_PENDING_FINAL_VALIDATION  
+Authority: supporting AI context only. Higher-priority implementation,
+architecture, requirements and registered physical contracts prevail.
 
-## ACTIVE
+## Scope and ownership
 
-- Atomic Payment T0 is closed.
-- Payment owns finalized T0 financial snapshots.
-- Payment→Accounting boundary is an asynchronous durable internal event.
-- Push is used across the module boundary. Pull is local to Accounting's own projection.
-- Only `POSTED_PENDING_TFJ` + authoritative `PaymentEventOutcome.COMPLETED` may enter T1.
-- `PaymentFinancialEventSnapshot.FINALIZED` is mandatory.
-- T0 bank reference is mandatory.
-- T1 business/accounting date is the authoritative Core Banking accounting date fixed with T0.
-- Consumer deduplication uses `eventId`; business identity is `(paymentId, financialSnapshotId)`.
-- Accounting must not recreate financial entries from mutable Payment state.
-- Payment owns T0 facts. Accounting owns its local candidate projection and T1 batch/submission/reconciliation lifecycle.
-- Payment owns final states such as `TREASURY_INTEGRATED` and `REVERSAL_REQUIRED`.
-
-## TO_DEFINE / DEFERRED
-
-- TRESOR PAY T1.1 status lookup is `GET /api/v1/payments/{reference}/status` using partner OAuth2.
-- TRESOR PAY status verification is an additional T1 eligibility/coherence fact; it never invalidates authoritative T0 `COMPLETED`.
-- Only TRESOR PAY `COMPLETED` evidence is accepted as paid for T1.1.
-- If TRESOR PAY is unavailable or not yet completed, exclude the transaction from the current T1 selection and retry verification for a later cutoff while continuing other verified transactions.
-- Verification may be performed by a periodic pre-cutoff worker or on-demand for unverified candidates; scheduler cadence remains TO_DEFINE.
-- Accounting candidate persistence schema for T1.2.
-
-## FORBIDDEN
-
-- Direct Accounting access to Payment JPA entities, infrastructure or repositories.
-- Provider adapter generation in T1.0.
-- Treating current `accountingapi` paths/DTOs as contract authority.
-- Persisting full Amplitude bkmvti entities in SIXPAY.
-- Reconstructing T1 financial lines from current Payment state when frozen T0 snapshots exist.
-- Blind replay after unknown provider submission outcome.
-- Reintroducing the removed split-leg T0 posting model or `DEBIT_CONFIRMED` as an active T0 state.
-
-## T1.2 active implementation context
-
-T1.2 persists an Accounting-owned candidate projection from the approved durable
-Payment -> Accounting semantic fact.
-
-- publication preconditions: `POSTED_PENDING_TFJ`, T0 `COMPLETED`, bank reference,
-  finalized financial snapshot and authoritative Core Banking accounting date;
-- frozen snapshot facts and ordered entries are copied into Accounting;
-- technical replay identity: `eventId`;
-- business identity: `(paymentId, financialSnapshotId)`;
-- TRESOR PAY `COMPLETED`, cutoff membership and `batchId == null` are selection-time criteria;
-- no Accounting access to Payment JPA/repositories/infrastructure;
-- physical Core Banking T1 API is defined by the approved T1.4 contract.
-
-## T1.3 active implementation context
-
-T1.3 freezes the candidate snapshot into the Accounting batch. Newly constituted
-`AccountingBatchItem` instances carry the finalized snapshot identity, debtor and creditor
-references and the two immutable DEBIT/CREDIT entries. Batch idempotency uses sorted
-`paymentId:financialSnapshotId` identities. Candidate `batchId` assignment occurs
-transactionally after durable batch persistence. Historical V400 rows are preserved without
-invented backfill. T1.4 defines the physical Core Banking Accounting contract.
-
-## T1.4 active implementation context
-
-T1.4 defines the physical Core Banking Accounting contract without generating the
-provider adapter owned by T1.5.
-
-- contract: `documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml`;
-- submit operation: `POST /api/v1/accounting-entries`;
-- authoritative recovery:
-  `GET /api/v1/accounting-entries/batches/{batchId}` and
-  `GET /api/v1/accounting-entries/idempotency/{idempotencyKey}`;
-- the existing Core Banking security profile is reused: OAuth2 Client Credentials
-  plus mTLS, `X-Correlation-ID`, `X-Financial-Institution-Code` and
-  `Idempotency-Key`;
-- one contract supports immediate/conclusive (`200`) and accepted/asynchronous
-  (`202`) behavior;
-- canonical Accounting batches are mapped to a reduced provider payload; full
-  historical `bkmvti` persistence or schema reproduction in SIXPAY is forbidden;
-- provider account mapping uses `age-ncp-clc`;
-- canonical `DEBIT` maps to provider `D`; canonical `CREDIT` maps to provider `C`;
-- each newly constituted T1.3 batch item submits the two immutable frozen T0
-  accounting entries, identified by `paymentReference`, `financialSnapshotId`
-  and T0 `bankReference`;
-- provider batch statuses are `ACCEPTED`, `PROCESSING`, `COMPLETED`;
-- provider item results are independently `SUCCESS`, `FAILED`, `UNKNOWN`;
-- a `COMPLETED` batch does not imply that all items succeeded;
-- failed or unknown items do not block successful items and never invalidate T0;
-- unknown provider outcomes require authoritative lookup before retry; blind
-  financial replay is forbidden;
-- stable batch idempotency remains rooted in the T1.3 sorted
-  `paymentId:financialSnapshotId` identities;
-- provider DTOs, mapping and HTTP client implementation remain T1.5;
-- detailed regularization of FAILED/UNKNOWN items and final TFJ reconciliation
-  remain T1.6 / La Regionale and TRESOR PAY policy.
-
-## T1.5 active implementation context
-
-T1.5 implements the provider anti-corruption mapping, submission and recovery
-against the approved T1.4 Core Banking Accounting contract.
-
-- `AccountingBatchItem` and its two immutable `AccountingBatchItemEntry` values
-  are the only source for provider accounting lines;
-- legacy Payment-level provider payload fields are no longer the T1 submission contract;
-- the provider request is reduced to `batchId`, authoritative `businessDate`,
-  `paymentReference`, `financialSnapshotId`, T0 `bankReference`, and the two
-  ordered accounting entries;
-- account references are decomposed from canonical `age-ncp-clc`;
-- `DEBIT` maps to `D` and `CREDIT` maps to `C`;
-- ISO-4217 numeric currency code is used for the provider wire value;
-- the adapter rejects pre-T1.3 legacy batch items without finalized snapshot evidence;
-- physical batch states map as `COMPLETED -> COMPLETED` and
-  `ACCEPTED|PROCESSING -> NOT_COMPLETED`;
-- physical item states map as `SUCCESS -> COMPLETED`,
-  `FAILED -> REJECTED`, and `UNKNOWN -> RECONCILIATION_REQUIRED`;
-- submission reuses OAuth2/mTLS, correlation, request id, financial institution
-  header and `Idempotency-Key`;
-- transport timeout, 429 and 5xx during submission are outcome-unknown, never
-  blind retry signals;
-- reconciliation continues to lookup by original idempotency key first and then
-  batch id when appropriate;
-- detailed FAILED/UNKNOWN business regularization and final TFJ reconciliation
-  remain T1.6.
-
-## T1.6 active implementation context
-
-T1.6 closes TFJ ingestion, reconciliation and Payment finality against the
-approved `amplitude-end-of-day-confirmation-api-v1` contract.
-
-- Amplitude remains the sole TFJ system of record.
-- Primary ingestion is the authenticated callback
-  `POST /webhooks/v1/amplitude/end-of-day-confirmations`.
-- Read-only `GET /api/v1/end-of-day-confirmations` is the controlled fallback;
-  scheduler cadence remains external configuration.
-- Callback evidence is authenticated with mTLS at the transport boundary and
-  the approved HMAC-SHA256 signature contract; the timestamp window is exactly
-  five minutes.
-- TFJ confirmations are durably persisted before Payment finality publication.
-- Identical replays are no-ops; same identity with another logical payload is a
-  conflict and never changes Payment.
-- Matching uses exactly `financialInstitutionCode + businessDate +
-  paymentReference + bankPostingReference`.
-- Unmatched or ambiguous confirmations are quarantined and never change Payment.
-- `PENDING` is persisted but never establishes Payment finality.
-- A uniquely matched `INTEGRATED` result is published after commit through the
-  provider-neutral integration event transport and Payment reaches
-  `TREASURY_INTEGRATED` through its existing reconciliation use case.
-- A uniquely matched `FAILED` result is passed to Payment with the authoritative
-  recovery action; `REVERSAL_REQUIRED` is interpreted by the existing Payment
-  policy and may move Payment to `REVERSAL_REQUIRED`.
+- Payment owns atomic T0 execution, finalized T0 financial snapshots and final
+  Payment lifecycle states.
+- Accounting owns the local candidate projection, cutoff/eligibility,
+  Accounting batches, provider submission/recovery and TFJ reconciliation.
+- Amplitude / La Regionale is the system of record for Core Banking accounting
+  submission results and TFJ end-of-day confirmation.
 - Accounting never accesses Payment JPA entities, infrastructure or repositories.
-- Failed finality publication remains recoverable because matched terminal
-  confirmations remain with `finalityPublishedAt == null` until publication is
-  confirmed.
-- No blind financial replay is introduced.
+- `integration` remains provider-neutral; Accounting provider DTOs/mappers stay
+  in `backend/accounting`.
+
+## Payment -> Accounting input
+
+A T1 candidate may be created only from the approved durable semantic Payment
+fact satisfying all of the following:
+
+- Payment state `POSTED_PENDING_TFJ`;
+- authoritative T0 outcome `COMPLETED`;
+- finalized `PaymentFinancialEventSnapshot`;
+- mandatory T0 bank posting reference;
+- authoritative Core Banking accounting/business date.
+
+The frozen snapshot is copied into Accounting. Accounting never rebuilds T1
+entries from mutable Payment state.
+
+Technical replay identity is `eventId`. Business identity is
+`(paymentId, financialSnapshotId)`.
+
+## T1 eligibility and cutoff
+
+Candidate selection is Accounting-owned and uses frozen facts.
+
+The TRESOR PAY status-query capability is registered as `REFERENCE_MVP` and
+remains subject to its registry approval/generation policy. Its provider adapter
+must not be generated while `approvalStatus`, `generationPolicy` or
+`codeGenerationAllowed` prohibit generation.
+
+Only authoritative TRESOR PAY `COMPLETED` evidence is acceptable when that
+coherence check is available. Provider unavailability or a non-final status
+does not invalidate completed T0; the candidate is excluded from the current
+selection and may be reconsidered later.
+
+Cutoff timezone/time are runtime configuration. No new scheduler cadence is
+invented by this context.
+
+## Accounting batch
+
+A constituted Accounting batch freezes the candidate snapshot.
+
+Each new batch item contains:
+
+- `paymentId`;
+- public Payment reference;
+- finalized `financialSnapshotId`;
+- T0 bank posting reference;
+- debtor and creditor account references;
+- exactly two immutable DEBIT/CREDIT accounting entries.
+
+Stable batch idempotency is rooted in sorted
+`paymentId:financialSnapshotId` identities.
+
+Candidate `batchId` assignment occurs only after durable batch persistence.
+
+## Core Banking accounting submission
+
+Approved physical contract:
+
+`documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml`
+
+Submission:
+
+`POST /api/v1/accounting-entries`
+
+Authoritative recovery:
+
+- `GET /api/v1/accounting-entries/batches/{batchId}`;
+- `GET /api/v1/accounting-entries/idempotency/{idempotencyKey}`.
+
+Security remains OAuth2 Client Credentials plus mTLS and the approved
+correlation/institution/idempotency headers.
+
+Provider account mapping uses canonical `age-ncp-clc`.
+Canonical `DEBIT` maps to provider `D`; `CREDIT` maps to `C`.
+
+Provider batch states:
+
+- `ACCEPTED`;
+- `PROCESSING`;
+- `COMPLETED`.
+
+Provider item states:
+
+- `SUCCESS`;
+- `FAILED`;
+- `UNKNOWN`.
+
+A `COMPLETED` provider batch does not imply that every item succeeded.
+Unknown submission outcomes require authoritative lookup before any retry.
+Blind financial replay is forbidden.
+
+## TFJ ingestion and Payment finality
+
+Approved physical contract:
+
+`documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml`
+
+Primary path:
+
+`POST /webhooks/v1/amplitude/end-of-day-confirmations`
+
+Controlled fallback:
+
+`GET /api/v1/end-of-day-confirmations`
+
+Amplitude is the sole TFJ system of record.
+
+Callback evidence is authenticated by the approved transport/security profile
+and is durably persisted before any Payment finality publication.
+
+Matching uses exactly:
+
+- `financialInstitutionCode`;
+- `businessDate`;
+- `paymentReference`;
+- `bankPostingReference`.
+
+Rules:
+
+- zero matches -> `UNMATCHED`, quarantined, no Payment update;
+- more than one match -> `AMBIGUOUS`, quarantined, no Payment update;
+- one match -> `MATCHED`;
+- identical replay -> no-op;
+- same identity with different logical payload -> conflict, no Payment update;
+- `PENDING` -> persisted, never final;
+- uniquely matched `INTEGRATED` -> finality event after commit, Payment may reach
+  `TREASURY_INTEGRATED` through its existing reconciliation use case;
+- uniquely matched `FAILED` -> authoritative recovery evidence forwarded to
+  Payment; Payment policy remains owner of any `REVERSAL_REQUIRED` transition.
+
+Accounting does not directly mutate Payment.
+
+## Finality publication recovery
+
+A matched terminal TFJ confirmation is not marked published until the
+provider-neutral integration event has been emitted successfully.
+
+Rows with `finalityPublishedAt == null` remain recoverable through
+`TfjFinalityPublicationService.publishPending`.
+
+No public/internal HTTP recovery endpoint and no new scheduler cadence are
+invented by T1.
+
+## Observability baseline
+
+Low-cardinality metrics:
+
+- `sixpay.accounting.tfj.ingestion{tfj_status,receipt_status}`;
+- `sixpay.accounting.tfj.conflicts`;
+- `sixpay.accounting.tfj.finality.publication{outcome}`;
+- `sixpay.accounting.tfj.finality.pending`.
+
+High-cardinality business identifiers are forbidden as metric tags.
+
+Structured logs may carry the minimum operational identifiers needed for TFJ
+reconciliation. Secrets, tokens, OTP values and raw banking payloads are
+forbidden.
+
+Operational procedure:
+
+`documentation/runbooks/accounting/ACCOUNTING_TFJ_RECONCILIATION.md`
+
+## Validation and closure
+
+Targeted static gate:
+
+`py scripts/verify_accounting_t1_closure.py`
+
+Required broader evidence:
+
+```bash
+cd backend
+mvn -pl accounting,payment -am -DskipITs verify
+cd ..
+py scripts/verify_accounting_t1_closure.py
+py scripts/verify_master_prompt_input_manifest.py
+py scripts/verify_master_engineering_prompt.py
+py scripts/verify_documentation_final.py
+py scripts/verify_baseline.py
+```
+
+When the clean-room environment is available:
+
+`py scripts/verify_clean_room.py`
+
+ACCOUNTING_T1 may be reported `REPOSITORY_VALIDATED / CLOSED` only after the
+required commands actually finish successfully.
+
+## Explicit remaining external/operational constraints
+
+- TRESOR PAY T1 status-query generation remains governed by its registry entry;
+  this context does not upgrade its approval or generation policy.
+- Runtime OAuth2, mTLS, certificates, provider URLs and secrets remain external
+  configuration.
+- Scheduler cadence for periodic status/lookup/recovery work is not invented.
+- Previously persisted unmatched/ambiguous TFJ evidence has no automatic
+  rematching workflow in the current baseline; manual investigation must not
+  mutate Payment or use blind SQL/replay.
+- Provider submission recovery must continue to respect durable local
+  Accounting evidence and the no-blind-replay rule.
+
+## Forbidden
+
+- direct Accounting access to Payment JPA/repositories/infrastructure;
+- reconstruction of T1 entries from mutable Payment state;
+- full Amplitude legacy `bkmvti` schema reproduction;
+- blind replay after unknown banking outcome;
+- manual Payment finality updates from Accounting;
+- generation from a deferred, unapproved or generation-forbidden contract;
+- reintroduction of split-leg T0 posting or `DEBIT_CONFIRMED`.

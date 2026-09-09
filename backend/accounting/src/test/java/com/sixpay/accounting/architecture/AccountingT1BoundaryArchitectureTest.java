@@ -32,7 +32,7 @@ class AccountingT1BoundaryArchitectureTest {
     }
 
     @Test
-    void t1DocumentationReflectsApprovedProviderContractAndT15Implementation() throws Exception {
+    void t1DocumentationReflectsCurrentAccountingT1ClosureBaseline() throws Exception {
         Path repoRoot = Path.of("..").toAbsolutePath().normalize().getParent();
         Path ai = repoRoot.resolve(
                 "documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md"
@@ -41,20 +41,41 @@ class AccountingT1BoundaryArchitectureTest {
 
         assertTrue(
                 text.contains(
-                        "physical Core Banking T1 API is defined by the approved T1.4 contract"
+                        "documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml"
                 )
-        );
-        assertTrue(
-                text.contains("## T1.5 active implementation context")
-        );
-        assertTrue(
-                text.contains("POST /api/v1/accounting-entries")
         );
         assertTrue(
                 text.contains(
-                        "Blind replay after unknown provider submission outcome"
+                        "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
                 )
         );
-        assertTrue(text.contains("FORBIDDEN"));
+        assertTrue(text.contains("POST /api/v1/accounting-entries"));
+        assertTrue(
+                text.contains(
+                        "Unknown submission outcomes require authoritative lookup before any retry"
+                )
+        );
+        assertTrue(text.contains("PENDING` -> persisted, never final"));
+        assertTrue(
+                text.contains(
+                        "UNMATCHED`, quarantined, no Payment update"
+                )
+        );
+        assertTrue(
+                text.contains(
+                        "AMBIGUOUS`, quarantined, no Payment update"
+                )
+        );
+        assertTrue(
+                text.contains(
+                        "sixpay.accounting.tfj.finality.pending"
+                )
+        );
+        assertTrue(
+                text.contains(
+                        "ACCOUNTING_T1 may be reported `REPOSITORY_VALIDATED / CLOSED` only after"
+                )
+        );
+        assertTrue(text.contains("## Forbidden"));
     }
 }

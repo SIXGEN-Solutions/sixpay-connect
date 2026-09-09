@@ -5,6 +5,8 @@ import com.sixpay.accounting.application.port.output.TfjConfirmationRepository;
 import com.sixpay.accounting.domain.model.TfjConfirmation;
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.common.messaging.transport.IntegrationEventTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,6 +23,9 @@ import java.util.UUID;
 
 @Service
 public class TfjFinalityPublicationService {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(TfjFinalityPublicationService.class);
 
     public static final String EVENT_TYPE =
             "AccountingTfjFinalityResolved";
@@ -63,22 +68,46 @@ public class TfjFinalityPublicationService {
             return;
         }
 
-        transport.publish(
-                new IntegrationEventEnvelope(
-                        UUID.randomUUID(),
-                        EVENT_TYPE,
-                        1,
-                        "PAYMENT",
-                        confirmation.matchedPaymentId(),
-                        confirmation.correlationId(),
-                        confirmation.receivedAt(),
-                        payload(confirmation)
-                )
-        );
+        try {
+            transport.publish(
+                    new IntegrationEventEnvelope(
+                            UUID.randomUUID(),
+                            EVENT_TYPE,
+                            1,
+                            "PAYMENT",
+                            confirmation.matchedPaymentId(),
+                            confirmation.correlationId(),
+                            confirmation.receivedAt(),
+                            payload(confirmation)
+                    )
+            );
 
-        repository.save(
-                confirmation.markFinalityPublished(clock.instant())
-        );
+            repository.save(
+                    confirmation.markFinalityPublished(clock.instant())
+            );
+
+            LOGGER.info(
+                    "TFJ finality published: confirmationId={}, tfjStatus={}, "
+                            + "paymentReference={}, businessDate={}, correlationId={}",
+                    confirmation.confirmationId(),
+                    confirmation.status(),
+                    confirmation.paymentReference(),
+                    confirmation.businessDate(),
+                    confirmation.correlationId()
+            );
+        } catch (RuntimeException exception) {
+            LOGGER.error(
+                    "TFJ finality publication failed: confirmationId={}, tfjStatus={}, "
+                            + "paymentReference={}, businessDate={}, correlationId={}",
+                    confirmation.confirmationId(),
+                    confirmation.status(),
+                    confirmation.paymentReference(),
+                    confirmation.businessDate(),
+                    confirmation.correlationId(),
+                    exception
+            );
+            throw exception;
+        }
     }
 
     private String payload(TfjConfirmation confirmation) {

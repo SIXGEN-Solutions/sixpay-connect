@@ -88,9 +88,16 @@ public class TfjIngestionService {
 
         if (persisted.matchStatus() != TfjMatchStatus.MATCHED) {
             LOGGER.warn(
-                    "TFJ confirmation quarantined: confirmationId={}, matchStatus={}",
+                    "TFJ confirmation quarantined: confirmationId={}, matchStatus={}, "
+                            + "financialInstitutionCode={}, businessDate={}, "
+                            + "paymentReference={}, bankPostingReference={}, correlationId={}",
                     persisted.confirmationId(),
-                    persisted.matchStatus()
+                    persisted.matchStatus(),
+                    persisted.financialInstitutionCode(),
+                    persisted.businessDate(),
+                    persisted.paymentReference(),
+                    persisted.bankPostingReference(),
+                    persisted.correlationId()
             );
         }
 
@@ -121,8 +128,15 @@ public class TfjIngestionService {
                 candidate.logicalPayloadHash()
         )) {
             LOGGER.error(
-                    "TFJ confirmation conflict quarantined: confirmationId={}",
-                    existing.confirmationId()
+                    "TFJ confirmation conflict quarantined: confirmationId={}, "
+                            + "financialInstitutionCode={}, businessDate={}, "
+                            + "paymentReference={}, bankPostingReference={}, correlationId={}",
+                    existing.confirmationId(),
+                    existing.financialInstitutionCode(),
+                    existing.businessDate(),
+                    existing.paymentReference(),
+                    existing.bankPostingReference(),
+                    existing.correlationId()
             );
             throw new TfjConfirmationConflictException(
                     "TFJ confirmation replay conflicts with durably stored payload"

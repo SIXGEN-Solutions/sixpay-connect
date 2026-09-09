@@ -258,4 +258,4 @@ runbook or implementation asset still relies on them.
 
 ## Accounting T1
 
-`documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md` is the active AI reference for ACCOUNTING_T1 after higher-authority sources are loaded. It must never be used to invent the still-undefined physical Core Banking T1 contract.
+`documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md` is the consolidated current-state AI reference for ACCOUNTING_T1 after higher-authority sources are loaded. It summarizes the implemented candidate, cutoff, batch, approved Core Banking Accounting submission and TFJ finality baseline, while preserving registry restrictions such as the reference-only TRESOR PAY status-query capability. It never overrides implementation, architecture, requirements or registered physical contracts.

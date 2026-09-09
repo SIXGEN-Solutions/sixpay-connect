@@ -2,6 +2,7 @@ package com.sixpay.accounting.infrastructure.tfj.persistence;
 
 import com.sixpay.accounting.application.port.output.TfjConfirmationRepository;
 import com.sixpay.accounting.domain.model.TfjConfirmation;
+import com.sixpay.accounting.domain.model.TfjStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
@@ -63,6 +64,13 @@ public class AccountingTfjConfirmationRepositoryAdapter
         }
 
         return repository.save(entity).toDomain();
+    }
+
+    public long countPendingFinalityPublication() {
+        return repository
+                .countByMatchedPaymentIdIsNotNullAndFinalityPublishedAtIsNullAndStatusIn(
+                        List.of(TfjStatus.INTEGRATED, TfjStatus.FAILED)
+                );
     }
 
     @Override

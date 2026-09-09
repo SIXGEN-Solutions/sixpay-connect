@@ -134,6 +134,52 @@ class TfjIngestionServiceTest {
         );
     }
 
+
+    @Test
+    void ambiguousConfirmationIsQuarantinedWithoutFinalityIntent() {
+        FakeRepository repository = new FakeRepository();
+        List<Object> events = new ArrayList<>();
+
+        TfjIngestionService service =
+                new TfjIngestionService(
+                        repository,
+                        (bank, date, payment, posting) ->
+                                List.of(UUID.randomUUID(), UUID.randomUUID()),
+                        events::add
+                );
+
+        TfjIngestionResult result =
+                service.ingest(candidate(TfjStatus.INTEGRATED));
+
+        assertEquals(TfjReceiptStatus.QUARANTINED, result.receiptStatus());
+        assertEquals(TfjMatchStatus.AMBIGUOUS, repository.saved.matchStatus());
+        assertTrue(events.isEmpty());
+    }
+
+    @Test
+    void pendingUniqueMatchIsPersistedWithoutPaymentFinalityIntent() {
+        FakeRepository repository = new FakeRepository();
+        List<Object> events = new ArrayList<>();
+
+        TfjIngestionService service =
+                new TfjIngestionService(
+                        repository,
+                        (bank, date, payment, posting) ->
+                                List.of(UUID.randomUUID()),
+                        events::add
+                );
+
+        TfjIngestionResult result =
+                service.ingest(candidate(TfjStatus.PENDING));
+
+        assertEquals(
+                TfjReceiptStatus.ACCEPTED_FOR_MATCHING,
+                result.receiptStatus()
+        );
+        assertEquals(TfjMatchStatus.MATCHED, repository.saved.matchStatus());
+        assertTrue(events.isEmpty());
+    }
+
     private static TfjConfirmation candidate(
             TfjStatus status
     ) {
