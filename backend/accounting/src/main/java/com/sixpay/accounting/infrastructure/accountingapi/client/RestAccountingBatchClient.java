@@ -11,6 +11,7 @@ import com.sixpay.accounting.domain.model.AccountingBatch;
 import com.sixpay.accounting.domain.model.AccountingBatchId;
 import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 import com.sixpay.accounting.domain.model.AccountingProviderBatchResult;
+import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
 import com.sixpay.accounting.infrastructure.accountingapi.configuration.AccountingApiProperties;
 import com.sixpay.accounting.infrastructure.accountingapi.dto.AccountingBatchResponseDto;
 import com.sixpay.accounting.infrastructure.accountingapi.mapper.AccountingApiMapper;
@@ -27,8 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public final class RestAccountingBatchClient
@@ -40,12 +39,7 @@ public final class RestAccountingBatchClient
     private final AccountingApiMapper mapper;
     private final AccountingApiResponseValidator validator;
     private final ObjectMapper objectMapper;
-
-    private final ConcurrentMap<UUID, Map<String, UUID>>
-            paymentIdsByBatch = new ConcurrentHashMap<>();
-
-    private final ConcurrentMap<UUID, AccountingBatchIdempotencyKey>
-            idempotencyKeysByBatch = new ConcurrentHashMap<>();
+    private final AccountingBatchRepository batchRepository;
 
     public RestAccountingBatchClient(
             RestClient restClient,
@@ -53,7 +47,8 @@ public final class RestAccountingBatchClient
             AccountingApiProperties properties,
             AccountingApiMapper mapper,
             AccountingApiResponseValidator validator,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AccountingBatchRepository batchRepository
     ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.tokenProvider = Objects.requireNonNull(tokenProvider);
@@ -61,6 +56,7 @@ public final class RestAccountingBatchClient
         this.mapper = Objects.requireNonNull(mapper);
         this.validator = Objects.requireNonNull(validator);
         this.objectMapper = Objects.requireNonNull(objectMapper);
+        this.batchRepository = Objects.requireNonNull(batchRepository);
     }
 
     @Override
@@ -72,21 +68,6 @@ public final class RestAccountingBatchClient
         Objects.requireNonNull(context, "context");
 
         var request = mapper.toRequest(batch);
-
-        paymentIdsByBatch.put(
-                batch.batchId().value(),
-                batch.items().stream()
-                        .collect(
-                                Collectors.toUnmodifiableMap(
-                                        item -> item.publicPaymentReference(),
-                                        item -> item.paymentId()
-                                )
-                        )
-        );
-        idempotencyKeysByBatch.put(
-                batch.batchId().value(),
-                batch.idempotencyKey()
-        );
 
         String accessToken = tokenProvider.accessToken();
 
@@ -205,6 +186,32 @@ public final class RestAccountingBatchClient
         );
     }
 
+    private AccountingBatch resolveLocalBatch(
+            UUID providerBatchId,
+            AccountingBatchIdempotencyKey expectedIdempotencyKey
+    ) {
+        if (expectedIdempotencyKey != null) {
+            return batchRepository
+                    .findByIdempotencyKey(expectedIdempotencyKey)
+                    .filter(batch -> batch.batchId().value().equals(providerBatchId))
+                    .orElseThrow(() ->
+                            new AccountingProviderInvalidResponseException(
+                                    "Accounting lookup response cannot be correlated to the durable local batch",
+                                    null
+                            )
+                    );
+        }
+
+        return batchRepository
+                .findById(new AccountingBatchId(providerBatchId))
+                .orElseThrow(() ->
+                        new AccountingProviderInvalidResponseException(
+                                "Accounting lookup response cannot be correlated to the durable local batch",
+                                null
+                        )
+                );
+    }
+
     private Optional<AccountingProviderBatchResult> lookup(
             String path,
             String value,
@@ -253,25 +260,25 @@ public final class RestAccountingBatchClient
                             expectedBatchId
                     );
 
+            AccountingBatch localBatch =
+                    resolveLocalBatch(
+                            validated.batchId(),
+                            expectedIdempotencyKey
+                    );
+
             Map<String, UUID> paymentIds =
-                    paymentIdsByBatch.get(validated.batchId());
-
-            AccountingBatchIdempotencyKey resultIdempotencyKey =
-                    expectedIdempotencyKey != null
-                            ? expectedIdempotencyKey
-                            : idempotencyKeysByBatch.get(validated.batchId());
-
-            if (paymentIds == null || resultIdempotencyKey == null) {
-                throw new AccountingProviderInvalidResponseException(
-                        "Accounting lookup response cannot be correlated to the local submitted batch",
-                        null
-                );
-            }
+                    localBatch.items().stream()
+                            .collect(
+                                    Collectors.toUnmodifiableMap(
+                                            item -> item.publicPaymentReference(),
+                                            item -> item.paymentId()
+                                    )
+                            );
 
             return Optional.of(
                     mapper.toLookupResult(
                             validated,
-                            resultIdempotencyKey,
+                            localBatch.idempotencyKey(),
                             paymentIds
                     )
             );

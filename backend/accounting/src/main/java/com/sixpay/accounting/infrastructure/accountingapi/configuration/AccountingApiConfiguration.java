@@ -1,6 +1,7 @@
 package com.sixpay.accounting.infrastructure.accountingapi.configuration;
 
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
+import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
 import com.sixpay.accounting.infrastructure.accountingapi.client.AccountingApiAccessTokenProvider;
 import com.sixpay.accounting.infrastructure.accountingapi.client.OAuth2AccountingApiAccessTokenProvider;
 import com.sixpay.accounting.infrastructure.accountingapi.client.RestAccountingBatchClient;
@@ -81,7 +82,8 @@ public class AccountingApiConfiguration {
             AccountingApiProperties properties,
             AccountingApiMapper mapper,
             AccountingApiResponseValidator validator,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AccountingBatchRepository batchRepository
     ) {
         return new RestAccountingBatchClient(
                 accountingApiRestClient,
@@ -89,7 +91,8 @@ public class AccountingApiConfiguration {
                 properties,
                 mapper,
                 validator,
-                objectMapper
+                objectMapper,
+                batchRepository
         );
     }
 }
