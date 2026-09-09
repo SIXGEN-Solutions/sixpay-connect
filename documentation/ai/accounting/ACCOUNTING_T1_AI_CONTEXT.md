@@ -38,10 +38,17 @@ Technical replay identity is `eventId`. Business identity is
 
 Candidate selection is Accounting-owned and uses frozen facts.
 
-The TRESOR PAY status-query capability is registered as `REFERENCE_MVP` and
-remains subject to its registry approval/generation policy. Its provider adapter
-must not be generated while `approvalStatus`, `generationPolicy` or
-`codeGenerationAllowed` prohibit generation.
+The TRESOR PAY status-query capability is an approved `ACTIVE_MVP` T1.1
+contract and is eligible for provider-adapter generation.
+
+Approved physical operation:
+
+`GET /api/v1/payments/{reference}/status`
+
+Authentication uses OAuth2 Client Credentials. SIXPAY obtains a short-lived
+Bearer access token from `POST /oauth2/token` and sends it on every status
+query. Gateway source-IP allowlisting is required. mTLS may additionally be
+enabled when imposed by the deployed partner/Core Banking network profile.
 
 Only authoritative TRESOR PAY `COMPLETED` evidence is acceptable when that
 coherence check is available. Provider unavailability or a non-final status
@@ -205,8 +212,9 @@ required commands actually finish successfully.
 
 ## Explicit remaining external/operational constraints
 
-- TRESOR PAY T1 status-query generation remains governed by its registry entry;
-  this context does not upgrade its approval or generation policy.
+- TRESOR PAY T1.1 status-query contract is approved and generation-enabled; provider URLs,
+  OAuth2 client credentials, token TTL, allowlisted gateway IPs and optional mTLS remain
+  external deployment configuration.
 - Runtime OAuth2, mTLS, certificates, provider URLs and secrets remain external
   configuration.
 - Scheduler cadence for periodic status/lookup/recovery work is not invented.

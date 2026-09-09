@@ -53,7 +53,10 @@ def main():
         "amplitude-end-of-day-confirmation-api-v1.yaml",
         "sixpay.accounting.tfj.finality.pending",
         "IMPLEMENTED_PENDING_FINAL_VALIDATION",
-        "REFERENCE_MVP",
+        "ACTIVE_MVP",
+        "eligible for provider-adapter generation",
+        "POST /oauth2/token",
+        "GET /api/v1/payments/{reference}/status",
     ]
     for value in required_ai:
         if value not in ai:
@@ -121,7 +124,7 @@ def main():
     print(" - TFJ runbook: present")
     print(" - Accounting AI context: consolidated")
     print(" - Master Prompt source/rules: synchronized")
-    print(" - T1.1 reference-only restriction: preserved")
+    print(" - T1.1 TRESOR PAY contract activation: synchronized")
     print(" - dynamic Maven/baseline/clean-room validation remains separate evidence")
 
 if __name__ == "__main__":

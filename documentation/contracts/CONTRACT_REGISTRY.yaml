@@ -159,16 +159,16 @@ contracts:
     direction: "SIXPAY_TO_TRESOR_PAY"
     sourceSystem: "SIXPAY"
     systemOfRecord: "TRESOR_PAY"
-    lifecycleStatus: "REFERENCE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     gate: "ACCOUNTING_T1"
     phaseStep: "T1.1"
     security:
-      status: "PARTNER_OAUTH2_SUPPLIED_PENDING_CONTRACT_APPROVAL"
-      authentication: ["OAUTH2"]
-      operationalParameters: "TO_DEFINE"
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS"]
+      operationalParameters: "EXTERNAL_CONFIGURATION"
     mvpUsage:
       included: true
       purpose:
@@ -178,11 +178,15 @@ contracts:
         - "TRESOR PAY status never invalidates authoritative T0 COMPLETED"
         - "Only TRESOR PAY COMPLETED evidence is eligible for T1.1"
         - "Unavailable or non-final status excludes the transaction from the current T1 selection without failing T0"
-        - "Provider adapter generation remains forbidden until approval"
-    approvalPrerequisite:
-      - "TRESOR PAY contract owner approval"
-      - "SIXPAY Accounting and Integration approval"
-      - "Security approval of OAuth2 profile"
+        - "OAuth2 Client Credentials token is obtained from POST /oauth2/token and sent as Authorization: Bearer <token>"
+        - "Short-lived token TTL is provider-managed external configuration"
+        - "SIXPAY and TRESOR PAY gateway egress IP addresses are allowlisted"
+        - "mTLS may additionally be enabled when required by the deployed partner/Core Banking network profile"
+    approvalEvidence:
+      - "TRESOR PAY payment-status endpoint and response schema supplied for ACCOUNTING_T1 T1.1"
+      - "OAuth2 Client Credentials profile approved for the status-query capability"
+      - "Network source-IP allowlisting required for SIXPAY and TRESOR PAY gateways"
+      - "Callback HMAC-SHA256 rule retained for applicable inbound partner callback capabilities"
 
   - id: "tresorpay-payment-confirmation-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
