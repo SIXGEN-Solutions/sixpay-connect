@@ -27,7 +27,6 @@ It does not replace architecture, requirements or physical contracts.
 - If TRESOR PAY is unavailable or not yet completed, exclude the transaction from the current T1 selection and retry verification for a later cutoff while continuing other verified transactions.
 - Verification may be performed by a periodic pre-cutoff worker or on-demand for unverified candidates; scheduler cadence remains TO_DEFINE.
 - Accounting candidate persistence schema for T1.2.
-- Physical Core Banking Accounting API for T1.4.
 - Provider DTOs/mappings for T1.5.
 - TFJ transport and final reconciliation rules for T1.6.
 
@@ -53,7 +52,7 @@ Payment -> Accounting semantic fact.
 - business identity: `(paymentId, financialSnapshotId)`;
 - TRESOR PAY `COMPLETED`, cutoff membership and `batchId == null` are selection-time criteria;
 - no Accounting access to Payment JPA/repositories/infrastructure;
-- physical Core Banking T1 API remains TO_DEFINE for T1.4.
+- physical Core Banking T1 API is defined by the approved T1.4 contract.
 
 ## T1.3 active implementation context
 
@@ -62,4 +61,38 @@ T1.3 freezes the candidate snapshot into the Accounting batch. Newly constituted
 references and the two immutable DEBIT/CREDIT entries. Batch idempotency uses sorted
 `paymentId:financialSnapshotId` identities. Candidate `batchId` assignment occurs
 transactionally after durable batch persistence. Historical V400 rows are preserved without
-invented backfill. T1.4 remains owner of the physical Core Banking Accounting contract.
+invented backfill. T1.4 defines the physical Core Banking Accounting contract.
+
+## T1.4 active implementation context
+
+T1.4 defines the physical Core Banking Accounting contract without generating the
+provider adapter owned by T1.5.
+
+- contract: `documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml`;
+- submit operation: `POST /api/v1/accounting-entries`;
+- authoritative recovery:
+  `GET /api/v1/accounting-entries/batches/{batchId}` and
+  `GET /api/v1/accounting-entries/idempotency/{idempotencyKey}`;
+- the existing Core Banking security profile is reused: OAuth2 Client Credentials
+  plus mTLS, `X-Correlation-ID`, `X-Financial-Institution-Code` and
+  `Idempotency-Key`;
+- one contract supports immediate/conclusive (`200`) and accepted/asynchronous
+  (`202`) behavior;
+- canonical Accounting batches are mapped to a reduced provider payload; full
+  historical `bkmvti` persistence or schema reproduction in SIXPAY is forbidden;
+- provider account mapping uses `age-ncp-clc`;
+- canonical `DEBIT` maps to provider `D`; canonical `CREDIT` maps to provider `C`;
+- each newly constituted T1.3 batch item submits the two immutable frozen T0
+  accounting entries, identified by `paymentReference`, `financialSnapshotId`
+  and T0 `bankReference`;
+- provider batch statuses are `ACCEPTED`, `PROCESSING`, `COMPLETED`;
+- provider item results are independently `SUCCESS`, `FAILED`, `UNKNOWN`;
+- a `COMPLETED` batch does not imply that all items succeeded;
+- failed or unknown items do not block successful items and never invalidate T0;
+- unknown provider outcomes require authoritative lookup before retry; blind
+  financial replay is forbidden;
+- stable batch idempotency remains rooted in the T1.3 sorted
+  `paymentId:financialSnapshotId` identities;
+- provider DTOs, mapping and HTTP client implementation remain T1.5;
+- detailed regularization of FAILED/UNKNOWN items and final TFJ reconciliation
+  remain T1.6 / La Regionale and TRESOR PAY policy.
