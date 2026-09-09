@@ -17,6 +17,8 @@ import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository
 import com.sixpay.accounting.domain.repository.AccountingReconciliationRepository;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchJpaEntity;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchSpringDataRepository;
+import com.sixpay.accounting.infrastructure.tfj.persistence.AccountingTfjConfirmationJpaEntity;
+import com.sixpay.accounting.infrastructure.tfj.persistence.AccountingTfjConfirmationRepositoryAdapter;
 import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -57,11 +59,16 @@ import java.time.Clock;
         }
 )
 @EntityScan(
-        basePackageClasses = AccountingBatchJpaEntity.class
+        basePackageClasses = {
+                AccountingBatchJpaEntity.class,
+                AccountingTfjConfirmationJpaEntity.class
+        }
 )
 @EnableJpaRepositories(
-        basePackageClasses =
-                AccountingBatchSpringDataRepository.class
+        basePackageClasses = {
+                AccountingBatchSpringDataRepository.class,
+                AccountingTfjConfirmationRepositoryAdapter.class
+        }
 )
 public class AccountingModuleConfiguration {
 

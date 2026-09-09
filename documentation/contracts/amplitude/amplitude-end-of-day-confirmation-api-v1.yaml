@@ -15,7 +15,7 @@ info:
     validation, acceptance and effective accounting posting of the submitted
     lines.
 
-    Callback versus lookup priority remains subject to the revised contract review.
+    The authenticated callback is the primary ingestion path; the read-only lookup is the controlled fallback.
 
     Amplitude is the sole source of TFJ truth. SIXPAY changes a Payment only
     after an authenticated result is durably persisted and uniquely matched on
@@ -30,9 +30,9 @@ info:
     gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     phaseStep: "1.6"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     businessOwner: "accounting"

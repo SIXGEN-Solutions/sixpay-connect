@@ -27,7 +27,6 @@ It does not replace architecture, requirements or physical contracts.
 - If TRESOR PAY is unavailable or not yet completed, exclude the transaction from the current T1 selection and retry verification for a later cutoff while continuing other verified transactions.
 - Verification may be performed by a periodic pre-cutoff worker or on-demand for unverified candidates; scheduler cadence remains TO_DEFINE.
 - Accounting candidate persistence schema for T1.2.
-- TFJ transport and final reconciliation rules for T1.6.
 
 ## FORBIDDEN
 
@@ -123,3 +122,35 @@ against the approved T1.4 Core Banking Accounting contract.
   batch id when appropriate;
 - detailed FAILED/UNKNOWN business regularization and final TFJ reconciliation
   remain T1.6.
+
+## T1.6 active implementation context
+
+T1.6 closes TFJ ingestion, reconciliation and Payment finality against the
+approved `amplitude-end-of-day-confirmation-api-v1` contract.
+
+- Amplitude remains the sole TFJ system of record.
+- Primary ingestion is the authenticated callback
+  `POST /webhooks/v1/amplitude/end-of-day-confirmations`.
+- Read-only `GET /api/v1/end-of-day-confirmations` is the controlled fallback;
+  scheduler cadence remains external configuration.
+- Callback evidence is authenticated with mTLS at the transport boundary and
+  the approved HMAC-SHA256 signature contract; the timestamp window is exactly
+  five minutes.
+- TFJ confirmations are durably persisted before Payment finality publication.
+- Identical replays are no-ops; same identity with another logical payload is a
+  conflict and never changes Payment.
+- Matching uses exactly `financialInstitutionCode + businessDate +
+  paymentReference + bankPostingReference`.
+- Unmatched or ambiguous confirmations are quarantined and never change Payment.
+- `PENDING` is persisted but never establishes Payment finality.
+- A uniquely matched `INTEGRATED` result is published after commit through the
+  provider-neutral integration event transport and Payment reaches
+  `TREASURY_INTEGRATED` through its existing reconciliation use case.
+- A uniquely matched `FAILED` result is passed to Payment with the authoritative
+  recovery action; `REVERSAL_REQUIRED` is interpreted by the existing Payment
+  policy and may move Payment to `REVERSAL_REQUIRED`.
+- Accounting never accesses Payment JPA entities, infrastructure or repositories.
+- Failed finality publication remains recoverable because matched terminal
+  confirmations remain with `finalityPublishedAt == null` until publication is
+  confirmed.
+- No blind financial replay is introduced.
