@@ -6,7 +6,8 @@ import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
  * Accounting-owned provider-neutral boundary for the authoritative
  * TRESOR PAY payment-status lookup.
  *
- * <p>No provider implementation is authorized by T1.1.</p>
+ * <p>The T1.1 provider implementation is authorized by the active
+ * TRESOR PAY status-query contract.</p>
  */
 public interface TresorPayPaymentStatusGateway {
 
