@@ -62,7 +62,7 @@ export const CUSTOMER_ROUTES: Routes = [
     canActivate: [authorizationGuard],
     data: {
       roles: CUSTOMER_READ_ROLES,
-      permissions: ['customer.read', 'subscription.read'],
+      permissions: ['customer.read'],
       standaloneRoles: CUSTOMER_READ_ROLES,
     },
     loadComponent: () =>

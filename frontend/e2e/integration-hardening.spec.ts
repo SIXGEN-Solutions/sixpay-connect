@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 const CURRENT_USER = {
+  authenticated: true,
   subject: 'local-admin',
   username: 'admin',
   roles: ['ADMIN'],
+  permissions: [],
+  authenticationMethod: 'LOCAL',
+  passwordChangeRequired: false,
 };
 
 const PARTNER_PAGE = {
