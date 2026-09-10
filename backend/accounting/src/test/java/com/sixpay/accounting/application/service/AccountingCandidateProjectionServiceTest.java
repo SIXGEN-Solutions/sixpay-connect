@@ -61,6 +61,7 @@ class AccountingCandidateProjectionServiceTest {
         public Optional<AccountingCandidateProjection> findByBusinessIdentity(UUID p,UUID s){return saved.stream().filter(c->c.paymentId().equals(p)&&c.financialSnapshotId().equals(s)).findFirst();}
         public AccountingCandidateProjection save(AccountingCandidateProjection p){saved.add(p);return p;}
         public List<AccountingCandidateProjection> findEligibleUnbatched(AccountingSelectionWindow w){return List.of();}
+        public List<AccountingCandidateProjection> findUnbatchedForVerification(AccountingSelectionWindow w){return List.of();}
         public void recordTresorPayEvidence(UUID p,TresorPayPaymentStatusEvidence e){}
         public void assignToBatch(UUID p,UUID b){}
     }

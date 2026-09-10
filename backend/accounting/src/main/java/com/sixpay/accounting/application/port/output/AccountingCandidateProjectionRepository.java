@@ -12,6 +12,7 @@ public interface AccountingCandidateProjectionRepository {
     Optional<AccountingCandidateProjection> findByBusinessIdentity(UUID paymentId, UUID financialSnapshotId);
     AccountingCandidateProjection save(AccountingCandidateProjection projection);
     List<AccountingCandidateProjection> findEligibleUnbatched(AccountingSelectionWindow window);
+    List<AccountingCandidateProjection> findUnbatchedForVerification(AccountingSelectionWindow window);
     void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence);
     void assignToBatch(UUID paymentId, UUID batchId);
 }

@@ -220,6 +220,11 @@ class AccountingBatchConstitutionServiceTest {
             return List.of();
         }
         @Override
+        public List<AccountingCandidateProjection> findUnbatchedForVerification(
+                com.sixpay.accounting.domain.policy.AccountingSelectionWindow window) {
+            return List.of();
+        }
+        @Override
         public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {}
         @Override
         public void assignToBatch(UUID paymentId, UUID batchId) {}

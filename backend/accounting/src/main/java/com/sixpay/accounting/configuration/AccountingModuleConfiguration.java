@@ -4,7 +4,9 @@ import com.sixpay.accounting.AccountingModule;
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
 import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
+import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
+import com.sixpay.accounting.application.service.AccountingT1OrchestrationService;
 import com.sixpay.accounting.application.service.AccountingBatchConstitutionService;
 import com.sixpay.accounting.application.service.AccountingBatchIdempotencyKeyFactory;
 import com.sixpay.accounting.application.service.AccountingBatchReconciliationService;
@@ -140,6 +142,27 @@ public class AccountingModuleConfiguration {
                 projectionRepository,
                 batchBuilder,
                 batchRepository
+        );
+    }
+
+    @Bean
+    @ConditionalOnBean({
+            AccountingCandidateProjectionRepository.class,
+            TresorPayPaymentStatusGateway.class,
+            AccountingBatchConstitutionService.class
+    })
+    @ConditionalOnMissingBean
+    AccountingT1OrchestrationService accountingT1OrchestrationService(
+            AccountingCutoffPolicy cutoffPolicy,
+            AccountingCandidateProjectionRepository projectionRepository,
+            TresorPayPaymentStatusGateway tresorPayGateway,
+            AccountingBatchConstitutionService constitutionService
+    ) {
+        return new AccountingT1OrchestrationService(
+                cutoffPolicy,
+                projectionRepository,
+                tresorPayGateway,
+                constitutionService
         );
     }
 

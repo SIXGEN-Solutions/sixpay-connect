@@ -43,6 +43,18 @@ public class AccountingCandidateProjectionRepositoryAdapter
                 .stream().map(AccountingCandidateJpaEntity::toDomain).toList();
     }
 
+    @Override @Transactional(readOnly = true)
+    public List<AccountingCandidateProjection> findUnbatchedForVerification(AccountingSelectionWindow window) {
+        return repository.findUnbatchedForVerification(
+                        window.businessDate(),
+                        window.fromInclusive(),
+                        window.toExclusive()
+                )
+                .stream()
+                .map(AccountingCandidateJpaEntity::toDomain)
+                .toList();
+    }
+
     @Override @Transactional
     public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {
         var entity = repository.findByPaymentId(paymentId).orElseThrow(() ->

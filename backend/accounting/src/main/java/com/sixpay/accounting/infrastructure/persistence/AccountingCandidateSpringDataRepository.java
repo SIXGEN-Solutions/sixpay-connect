@@ -30,6 +30,24 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
             @Param("fromInclusive") Instant fromInclusive,
             @Param("toExclusive") Instant toExclusive);
 
+    @Query("""
+            select c from AccountingCandidateJpaEntity c
+            where c.batchId is null
+              and c.accountingBusinessDate = :businessDate
+              and c.paymentOccurredAt >= :fromInclusive
+              and c.paymentOccurredAt < :toExclusive
+              and (
+                    c.tresorPayStatus is null
+                    or c.tresorPayCheckedAt is null
+                    or c.tresorPayCheckedAt > :toExclusive
+                  )
+            order by c.paymentOccurredAt asc, c.publicPaymentReference asc
+            """)
+    List<AccountingCandidateJpaEntity> findUnbatchedForVerification(
+            @Param("businessDate") LocalDate businessDate,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toExclusive") Instant toExclusive);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update AccountingCandidateJpaEntity c
