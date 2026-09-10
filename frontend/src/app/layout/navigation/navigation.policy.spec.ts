@@ -3,34 +3,81 @@ import { NavigationItem } from './navigation.model';
 import { canSeeNavigationItem } from './navigation.policy';
 
 describe('canSeeNavigationItem', () => {
+  const roles = (...values: SixpayRole[]) => new Set<SixpayRole>(values);
+  const permissions = (...values: string[]) => new Set<string>(values);
+
   it('shows unrestricted entries', () => {
     const item: NavigationItem = { label: 'Dashboard', icon: 'dashboard', route: '/' };
-    const roles = new Set<SixpayRole>(['PARTNER']);
 
-    expect(canSeeNavigationItem(item, roles)).toBe(true);
+    expect(
+      canSeeNavigationItem(item, {
+        roles: roles('PARTNER'),
+        permissions: permissions(),
+        standalone: false,
+      }),
+    ).toBe(true);
   });
 
-  it('shows a restricted entry when one role matches', () => {
+  it('requires configured role and permission in API-backed mode', () => {
     const item: NavigationItem = {
       label: 'Payments',
       icon: 'payments',
       route: '/payments',
       roles: ['ADMIN', 'MANAGER', 'AUDITOR'],
+      permissions: ['payment.read'],
     };
-    const roles = new Set<SixpayRole>(['AUDITOR']);
 
-    expect(canSeeNavigationItem(item, roles)).toBe(true);
+    expect(
+      canSeeNavigationItem(item, {
+        roles: roles('AUDITOR'),
+        permissions: permissions('payment.read'),
+        standalone: false,
+      }),
+    ).toBe(true);
+
+    expect(
+      canSeeNavigationItem(item, {
+        roles: roles('AUDITOR'),
+        permissions: permissions(),
+        standalone: false,
+      }),
+    ).toBe(false);
   });
 
-  it('hides a restricted entry when no role matches', () => {
+  it('preserves explicit standalone role visibility without permissions', () => {
     const item: NavigationItem = {
-      label: 'Administration',
-      icon: 'settings',
-      route: '/administration',
-      roles: ['ADMIN'],
+      label: 'Payments',
+      icon: 'payments',
+      route: '/payments',
+      roles: ['ADMIN', 'MANAGER', 'AUDITOR'],
+      permissions: ['payment.read'],
+      standaloneRoles: ['ADMIN', 'MANAGER', 'AUDITOR'],
     };
-    const roles = new Set<SixpayRole>(['PARTNER']);
 
-    expect(canSeeNavigationItem(item, roles)).toBe(false);
+    expect(
+      canSeeNavigationItem(item, {
+        roles: roles('MANAGER'),
+        permissions: permissions(),
+        standalone: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not let a permission bypass the required role', () => {
+    const item: NavigationItem = {
+      label: 'Audit',
+      icon: 'fact_check',
+      route: '/reporting',
+      roles: ['AUDITOR'],
+      permissions: ['payment.audit.read'],
+    };
+
+    expect(
+      canSeeNavigationItem(item, {
+        roles: roles('ADMIN'),
+        permissions: permissions('payment.audit.read'),
+        standalone: false,
+      }),
+    ).toBe(false);
   });
 });

@@ -105,6 +105,14 @@ export class AuthenticationService {
     return this.permissions().has(permission);
   }
 
+  hasAnyPermission(permissions: readonly string[]): boolean {
+    return permissions.some((permission) => this.hasPermission(permission));
+  }
+
+  hasAllPermissions(permissions: readonly string[]): boolean {
+    return permissions.every((permission) => this.hasPermission(permission));
+  }
+
   simulateStandaloneRole(role: SixpayRole): void {
     if (!this.isStandaloneMode) {
       return;
