@@ -12,21 +12,18 @@ public final class VerifiedTresorPayStatusEligibilityPolicy
             AccountingPaymentCandidate candidate,
             AccountingSelectionWindow window
     ) {
-        Objects.requireNonNull(
-                candidate,
-                "candidate"
-        );
+        Objects.requireNonNull(candidate, "candidate");
+        Objects.requireNonNull(window, "window");
 
-        Objects.requireNonNull(
-                window,
-                "window"
-        );
-
-        if (!window.contains(
-                candidate.paymentOccurredAt()
-        )) {
+        if (!window.contains(candidate.paymentOccurredAt())) {
             return AccountingEligibilityDecision.rejected(
                     "PAYMENT_OUTSIDE_ACCOUNTING_WINDOW"
+            );
+        }
+
+        if (!candidate.tresorPayStatusEvidence().confirmsPaidPayment()) {
+            return AccountingEligibilityDecision.rejected(
+                    "TRESORPAY_PAYMENT_NOT_CONFIRMED_PAID"
             );
         }
 

@@ -6,7 +6,7 @@
 | Version | **2.0.0** |
 | Source de sélection | `MASTER_PROMPT_INPUT_MANIFEST.yaml` version `1.0` |
 | Stratégie | `AI_GENERATION_STRATEGY.md` version `1.0.0` |
-| Commit source | `6e42ae7e1d601a760ecb8d185f35c568a8eab77f` |
+| Commit source | `28b00d72c05d3b5cebc184d26d08486ba92925c5` |
 | Périmètre | Backend, frontend, contrats, données, intégrations, sécurité, tests, documentation, CI/CD et infrastructure |
 | Architecture | Monolithe modulaire |
 | Golden module | `backend/partner` |
@@ -363,6 +363,8 @@ Règles :
   réconciliation autorisée par le contrat ;
 - une compensation ou reversal exige une capacité et une autorisation explicites ;
 - une réussite technique ne prouve pas une finalité métier non confirmée ;
+- pour la finalité Accounting/TFJ, seule une confirmation Amplitude durable, authentifiée et appariée de manière unique peut produire une finalité Payment ; `PENDING`, `UNMATCHED` et `AMBIGUOUS` restent non finaux ;
+- Accounting construit et soumet T1 depuis les snapshots financiers T0 figés et ne reconstruit jamais les écritures depuis un état Payment mutable ;
 - correlation ID et clés d’idempotence traversent les frontières prévues ;
 - aucun secret, token ou payload sensible dans les logs.
 

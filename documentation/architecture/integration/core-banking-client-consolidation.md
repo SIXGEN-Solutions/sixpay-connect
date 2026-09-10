@@ -13,8 +13,8 @@ split by capability.
 |---|---|---|---|
 | Customer verification | Customer | `BankingCustomerVerificationPort` | `AmplitudeCustomerVerificationClient` |
 | Payment account/funds checks | Payment | `VerificationGateway`, `FundsGateway` | `AmplitudeAccountFundsClient` |
-| Posting | Payment | `PostingGateway` | `AmplitudePostingClient` |
-| Posting lookup | Payment | `LookupGateway` | `AmplitudePostingStatusClient` |
+| Payment event execution | Payment | existing posting/execution boundary to align | `AmplitudePaymentEventClient` |
+| Payment event lookup | Payment | existing lookup boundary to align | `AmplitudePaymentEventStatusClient` |
 | Reversal | Payment | `ReversalGateway` | `AmplitudeReversalClient` |
 | Fund reservation | Payment | reservation port | `AmplitudeFundsReservationClient` |
 | Fund release | Payment | release port | `AmplitudeFundsReleaseClient` |
@@ -25,28 +25,25 @@ contain Amplitude payloads, mappings or banking business semantics.
 
 ## Bank-approved endpoints
 
-Approved operations:
+Approved T0 operations:
 
-- `POST /api/v1/customer-verifications`
-- `POST /api/v1/payment-checks`
-- `POST /api/v1/payment-postings`
-- `GET /api/v1/payment-posting-lookups/{idempotencyKey}`
-- `GET /api/v1/payment-postings/{bankPostingReference}`
-- `POST /api/v1/payment-postings/{bankPostingReference}/reversals`
-- `POST <SIXPAY>/webhooks/v1/amplitude/end-of-day-confirmations`
-- `GET <AMPLITUDE>/api/v1/end-of-day-confirmations`
+- `POST /api/v1/payment-events`
+- `GET /api/v1/payment-events/{paymentReference}`
+- `GET /api/v1/payment-events/idempotency/{idempotencyKey}`
 
-Approval is recorded per OpenAPI operation. Optional reservation/release
-operations are not promoted by CB-2 because they are not part of the supplied
-bank-approved list.
+Payment owns the reduced immutable financial snapshot and the Amplitude-specific
+mapping used to construct the provider event. `backend/integration` remains
+provider-neutral.
+
+The T1 Accounting submission endpoint remains `TO_DEFINE`.
 
 ## Safety
 
 Read-only operations may use bounded retry according to the integration policy.
 
 Financial commands do not use blind retry after an uncertain transport outcome.
-Posting uncertainty is resolved through the approved lookup operations before
-any replay decision.
+Payment Event execution uncertainty is resolved through the approved lookup
+operations before any replay decision.
 
 ## Legacy removed
 

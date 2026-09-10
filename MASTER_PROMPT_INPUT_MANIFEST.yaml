@@ -5,7 +5,7 @@ metadata:
   project: "SIXPAY CONNECT"
   repository: "SIXGEN-Solutions/sixpay-connect"
   baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
-  generatedOn: "2026-08-30"
+  generatedOn: "2026-09-09"
   status: "ACTIVE"
   purpose: >-
     Deterministic input selection for Master Prompt generation. This manifest
@@ -80,6 +80,7 @@ contextSelection:
       roots:
         - "documentation/ai/customer/"
         - "documentation/ai/payment/"
+        - "documentation/ai/accounting/"
       rule: >-
         Load only a specifically required, non-historical reference after
         higher-priority sources have been inspected.
@@ -155,12 +156,16 @@ activeContractCapabilities:
   entries:
     - id: "tresorpay-payment-request-api-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    - id: "tresorpay-payment-status-query-api-v1"
+      path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
     - id: "tresorpay-payment-confirmation-api-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
     - id: "amplitude-payment-confirmation-api-v1"
       path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
     - id: "amplitude-customer-verification-api-v1"
       path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    - id: "amplitude-accounting-entries-api-v1"
+      path: "documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml"
     - id: "amplitude-payment-posting-api-v1"
       path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
     - id: "tresorpay-payment-status-webhook-v1"
@@ -295,7 +300,7 @@ masterPromptGeneration:
     path: "MASTER_ENGINEERING_PROMPT.md"
     version: "2.0.0"
     status: "ACTIVE"
-    sourceCommit: "6e42ae7e1d601a760ecb8d185f35c568a8eab77f"
+    sourceCommit: "28b00d72c05d3b5cebc184d26d08486ba92925c5"
     validationCommand: "py scripts/verify_master_engineering_prompt.py"
   supersededPromptHistory:
     retentionPolicy: "GIT_HISTORY_ONLY"

@@ -115,22 +115,7 @@ public class AccountingBatchQueryAdapter
                 entity.status(),
                 entity.items()
                         .stream()
-                        .map(
-                                item ->
-                                        new AccountingBatchItem(
-                                                item.paymentId(),
-                                                item.publicPaymentReference(),
-                                                item.partnerId(),
-                                                item.amount(),
-                                                item.currency(),
-                                                item.paymentOccurredAt(),
-                                                item.paymentBusinessDate(),
-                                                item.bankPostingReference(),
-                                                item.tresorPayStatus(),
-                                                item.tresorPayStatusCheckedAt(),
-                                                item.status()
-                                        )
-                        )
+                        .map(AccountingBatchItemJpaEntity::toDomain)
                         .toList()
         );
     }

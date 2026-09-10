@@ -1,6 +1,8 @@
 package com.sixpay.accounting.application.service;
 
+import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
+import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
 import com.sixpay.accounting.domain.model.AccountingBatch;
 import com.sixpay.accounting.domain.model.AccountingBatchId;
 import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
@@ -156,18 +158,76 @@ class AccountingBatchConstitutionServiceTest {
                 reference,
                 "TRESORPAY",
                 "LAREGIONALE",
+                UUID.nameUUIDFromBytes(("snapshot-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                "v1",
+                Instant.parse("2026-08-07T12:03:00Z"),
+                "DEBTOR-" + reference,
+                "TREASURY-" + reference,
                 new BigDecimal("10000"),
                 Currency.getInstance("XAF"),
                 Instant.parse("2026-08-07T12:00:00Z"),
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
                 new TresorPayPaymentStatusEvidence(
-                        "CONFIRMED",
+                        reference,
+                        "TX-" + reference,
+                        "COMPLETED",
+                        "BANK_TRANSFER",
+                        "AMP-" + reference,
+                        true,
+                        true,
+                        Instant.parse("2026-08-07T12:04:00Z"),
+                        null,
                         Instant.parse("2026-08-07T12:05:00Z"),
-                        "STATUS-" + reference,
+                        reference,
                         "corr-" + reference
+                ),
+                List.of(
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("debit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                1, "DEBIT", "DEBTOR-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:10Z")
+                        ),
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("credit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                2, "CREDIT", "TREASURY-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:11Z")
+                        )
                 )
         );
+    }
+
+
+    private static final class FakeCandidateProjectionRepository
+            implements AccountingCandidateProjectionRepository {
+        @Override
+        public Optional<AccountingCandidateProjection> findByEventId(UUID eventId) {
+            return Optional.empty();
+        }
+        @Override
+        public Optional<AccountingCandidateProjection> findByBusinessIdentity(UUID paymentId, UUID financialSnapshotId) {
+            return Optional.empty();
+        }
+        @Override
+        public AccountingCandidateProjection save(AccountingCandidateProjection projection) {
+            return projection;
+        }
+        @Override
+        public List<AccountingCandidateProjection> findEligibleUnbatched(
+                com.sixpay.accounting.domain.policy.AccountingSelectionWindow window) {
+            return List.of();
+        }
+        @Override
+        public List<AccountingCandidateProjection> findUnbatchedForVerification(
+                com.sixpay.accounting.domain.policy.AccountingSelectionWindow window) {
+            return List.of();
+        }
+        @Override
+        public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {}
+        @Override
+        public void assignToBatch(UUID paymentId, UUID batchId) {}
     }
 
     private static final class FakeRepository

@@ -2,12 +2,12 @@
 
 ## Existing contracts reused
 
-`LookupGateway` already supports:
+`PaymentEventRecoveryPort` already supports:
 
 - lookup by banking idempotency key;
 - lookup by bank posting reference.
 
-`PostingOutcomeSnapshot` already authorizes:
+`PaymentEventOutcomeSnapshot` already authorizes:
 
 - `IDEMPOTENCY_LOOKUP`;
 - `BANK_REFERENCE_LOOKUP`.

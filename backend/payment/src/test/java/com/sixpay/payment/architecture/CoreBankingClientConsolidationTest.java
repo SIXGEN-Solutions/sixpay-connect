@@ -1,9 +1,9 @@
 package com.sixpay.payment.architecture;
 
 import com.sixpay.payment.infrastructure.banking.amplitude.AmplitudeAccountFundsClient;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePostingClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventRecoveryClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.AmplitudeReversalClient;
-import com.sixpay.payment.infrastructure.banking.amplitude.status.AmplitudePostingStatusClient;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,8 +14,8 @@ class CoreBankingClientConsolidationTest {
     @Test
     void usesCapabilitySpecificAmplitudeClientsOnly() {
         assertNotNull(AmplitudeAccountFundsClient.class);
-        assertNotNull(AmplitudePostingClient.class);
-        assertNotNull(AmplitudePostingStatusClient.class);
+        assertNotNull(AmplitudePaymentEventClient.class);
+        assertNotNull(AmplitudePaymentEventRecoveryClient.class);
         assertNotNull(AmplitudeReversalClient.class);
 
         ClassLoader classLoader =

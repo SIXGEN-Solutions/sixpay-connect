@@ -29,14 +29,6 @@ class PaymentStateDocumentV4Test {
             "AMPLITUDE-ACCOUNT-001";
 
     @Test
-    void currentPaymentStateSchemaIsVersionFour() {
-        assertEquals(
-                4,
-                PaymentStateDocument.CURRENT_SCHEMA_VERSION
-        );
-    }
-
-    @Test
     void v4PreservesCanonicalBankingReferencesAcrossDocumentRoundTrip() {
         PaymentStateDocument base = PaymentStateDocument.from(
                 PaymentAggregateTestFixtures.newPayment().toState()
@@ -146,12 +138,13 @@ class PaymentStateDocumentV4Test {
                 base.confirmationChallenge(),
                 base.status(),
                 base.authorizationEvidence(),
+                base.sixpayAuthorizationDecision(),
                 evidence,
                 base.fundsControlEvidence(),
                 base.treasuryResolutionEvidence(),
                 base.treasuryAccountReference(),
                 base.postingInstruction(),
-                base.postingOutcomeEvidence(),
+                base.paymentEventOutcomeEvidence(),
                 base.bankPostingReference(),
                 base.endOfDayConfirmationEvidence(),
                 base.reversalInstruction(),

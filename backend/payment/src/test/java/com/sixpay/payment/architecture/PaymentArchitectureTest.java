@@ -70,12 +70,9 @@ class PaymentArchitectureTest {
                     "PaymentApprovedForPosting.java",
                     "PaymentPostingAuthorized.java",
                     "PaymentPostingRequested.java",
-                    "PaymentPostingOutcomeRecorded.java",
                     "PaymentEndOfDayTrackingRequested.java",
-                    "PaymentDebitConfirmed.java",
                     "PaymentPostingOutcomeLookupRequested.java",
                     "PaymentReversalRequired.java",
-                    "PaymentPostingOutcomeResolved.java",
                     "PaymentEndOfDayConfirmationRecorded.java",
                     "TreasuryIntegrationConfirmed.java",
                     "PaymentFinalResultAvailable.java",
@@ -98,9 +95,6 @@ class PaymentArchitectureTest {
                     "recordBankingVerification(",
                     "recordFundsControl(",
                     "recordTreasuryAccountResolution(",
-                    "authorizePosting(",
-                    "recordPostingOutcome(",
-                    "resolvePostingOutcome(",
                     "recordMatchedEndOfDayConfirmation(",
                     "authorizeReversal(",
                     "recordReversalOutcome(",
@@ -260,7 +254,7 @@ class PaymentArchitectureTest {
         }
 
         assertEquals(EVENT_RECORD_SOURCES, actualEvents);
-        assertEquals(33, actualEvents.size());
+        assertEquals(30, actualEvents.size());
     }
 
     @Test
@@ -268,7 +262,7 @@ class PaymentArchitectureTest {
             throws IOException {
 
         assertEquals(
-                14,
+                12,
                 countFilesEndingWith(
                         POLICY_ROOT,
                         "Policy.java"
@@ -282,7 +276,7 @@ class PaymentArchitectureTest {
                 )
         );
         assertEquals(
-                4,
+                3,
                 countFilesEndingWith(
                         SERVICE_ROOT,
                         "Service.java"
@@ -342,7 +336,7 @@ class PaymentArchitectureTest {
                 "BankingVerificationSnapshot ",
                 "FundsControlSnapshot ",
                 "TreasuryAccountResolutionSnapshot ",
-                "PostingOutcomeSnapshot ",
+                "PaymentEventOutcomeSnapshot ",
                 "EndOfDayConfirmationSnapshot ",
                 "ReversalSnapshot ",
                 "DebtorAccountReference ",

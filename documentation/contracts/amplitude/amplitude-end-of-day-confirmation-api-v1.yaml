@@ -3,11 +3,19 @@ info:
   title: SIXPAY CONNECT - Amplitude End-of-Day Confirmation API
   version: 1.0.0
   description: |
-    Bidirectional TFJ target contract between Amplitude and SIXPAY. Under
-    D00-CB-OWNERSHIP the Core Banking team implements this agreed
-    server/callback contract. The asynchronous callback is the primary
-    confirmation channel. The read-only lookup is the scheduled fallback when
-    a confirmation is missing at the configured cutoff.
+    End-of-day Accounting/TFJ result and reconciliation contract between Amplitude and SIXPAY. Under
+    D00-CB-OWNERSHIP the Core Banking team implements the agreed
+    result/reconciliation surface.
+
+    This contract does not describe Accounting batch submission.
+
+    SIXPAY owns generation and durable freezing of the reduced accounting lines
+    derived from its T0 Payment financial-event snapshots. The future T1
+    Accounting submission reuses those immutable lines. Core Banking owns
+    validation, acceptance and effective accounting posting of the submitted
+    lines.
+
+    The authenticated callback is the primary ingestion path; the read-only lookup is the controlled fallback.
 
     Amplitude is the sole source of TFJ truth. SIXPAY changes a Payment only
     after an authenticated result is durably persisted and uniquely matched on
@@ -23,8 +31,8 @@ info:
     phaseStep: "1.6"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     domain: "integration"
     businessOwner: "accounting"

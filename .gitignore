@@ -262,3 +262,9 @@ temp/
 # Python validation caches
 __pycache__/
 *.py[cod]
+
+# ============================================================
+# SIXPAY LOCAL ROLLBACK / PATCH BACKUPS
+# ============================================================
+
+.sixpay-local-backups/

@@ -135,20 +135,37 @@ business mutations remain inside the Payment transaction boundary.
 
 Partner business rules are not copied into Payment.
 
-## Next development boundary
+## Financial snapshot boundary
 
-The next Payment completion work starts from `AUTHORIZATION_CHECKING` after a
-successfully VERIFIED confirmation challenge.
+The approved T0 Payment Event contract is `ACTIVE_MVP`, `APPROVED`,
+`generationPolicy: ACTIVE` and `codeGenerationAllowed: true`.
 
-The canonical Payment policy requires a fresh execution-time Funds Control
-before posting. This capability is distinct from Customer Verification and must
-use the active contract registry entry for
-`amplitude-payment-posting-api-v1`.
+Before provider submission, Payment owns a reduced immutable financial-event
+snapshot and its immutable financial-entry snapshots. These records are
+separate from the `Payment` aggregate persistence and deliberately do not
+reproduce the historical Amplitude `bkeve` / `bkmvti` schema.
 
-That registry entry is currently `ACTIVE_MVP` and `APPROVED`, but its generation
-policy is `REFERENCE_ONLY` and `codeGenerationAllowed` is `false`. It therefore
-must not be used to generate or modify posting/Funds Control implementation until
-its governance status explicitly permits generation.
+The durable relationship is:
+
+```text
+payments
+    1
+    |
+    1
+payment_financial_event_snapshots
+    1
+    |
+    N
+payment_financial_entry_snapshots
+```
+
+`DRAFT` is an in-memory construction state. Only `FINALIZED` snapshots cross
+the persistence boundary. Once finalized, the aggregate rejects entry changes
+and a different snapshot cannot replace the durable snapshot for the same
+Payment.
+
+Provider-specific DTO construction and `/api/v1/payment-events` submission are
+separate later implementation lots.
 
 ## Validation
 
@@ -172,9 +189,14 @@ Payment owns these production tables:
 | payment_outbox_events | Payment integration events |
 | payment_idempotency | Command idempotency and replay data |
 | payment_observed_customer_link | Link to an ObservedCustomer projection |
+| payment_financial_event_snapshots | One immutable reduced T0 financial-event snapshot per Payment |
+| payment_financial_entry_snapshots | Immutable reduced financial-entry facts owned by a financial-event snapshot |
 
 Payment does not own Customer, CustomerSubscription, Accounting or Reporting
 tables.
 
-Schema:
-backend/payment/src/main/resources/db/migration/V300__payment_baseline.sql
+Schemas:
+
+- `backend/payment/src/main/resources/db/migration/V300__payment_baseline.sql`
+- `backend/payment/src/main/resources/db/migration/V301__payment_idempotency_unknown_outcome.sql`
+- `backend/payment/src/main/resources/db/migration/V302__payment_financial_snapshots.sql`

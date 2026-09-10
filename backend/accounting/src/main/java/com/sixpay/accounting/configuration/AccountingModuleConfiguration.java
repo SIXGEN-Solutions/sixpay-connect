@@ -2,8 +2,11 @@ package com.sixpay.accounting.configuration;
 
 import com.sixpay.accounting.AccountingModule;
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
+import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
+import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
+import com.sixpay.accounting.application.service.AccountingT1OrchestrationService;
 import com.sixpay.accounting.application.service.AccountingBatchConstitutionService;
 import com.sixpay.accounting.application.service.AccountingBatchIdempotencyKeyFactory;
 import com.sixpay.accounting.application.service.AccountingBatchReconciliationService;
@@ -16,6 +19,8 @@ import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository
 import com.sixpay.accounting.domain.repository.AccountingReconciliationRepository;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchJpaEntity;
 import com.sixpay.accounting.infrastructure.persistence.AccountingBatchSpringDataRepository;
+import com.sixpay.accounting.infrastructure.tfj.persistence.AccountingTfjConfirmationJpaEntity;
+import com.sixpay.accounting.infrastructure.tfj.persistence.AccountingTfjConfirmationRepositoryAdapter;
 import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -56,11 +61,16 @@ import java.time.Clock;
         }
 )
 @EntityScan(
-        basePackageClasses = AccountingBatchJpaEntity.class
+        basePackageClasses = {
+                AccountingBatchJpaEntity.class,
+                AccountingTfjConfirmationJpaEntity.class
+        }
 )
 @EnableJpaRepositories(
-        basePackageClasses =
-                AccountingBatchSpringDataRepository.class
+        basePackageClasses = {
+                AccountingBatchSpringDataRepository.class,
+                AccountingTfjConfirmationRepositoryAdapter.class
+        }
 )
 public class AccountingModuleConfiguration {
 
@@ -117,21 +127,42 @@ public class AccountingModuleConfiguration {
 
     @Bean
     @ConditionalOnBean(
-            PaymentAccountingCandidateSource.class
+            AccountingCandidateProjectionRepository.class
     )
     @ConditionalOnMissingBean
     AccountingBatchConstitutionService
     accountingBatchConstitutionService(
             AccountingCutoffPolicy cutoffPolicy,
-            PaymentAccountingCandidateSource candidateSource,
+            AccountingCandidateProjectionRepository projectionRepository,
             AccountingBatchBuilder batchBuilder,
             AccountingBatchRepository batchRepository
     ) {
         return new AccountingBatchConstitutionService(
                 cutoffPolicy,
-                candidateSource,
+                projectionRepository,
                 batchBuilder,
                 batchRepository
+        );
+    }
+
+    @Bean
+    @ConditionalOnBean({
+            AccountingCandidateProjectionRepository.class,
+            TresorPayPaymentStatusGateway.class,
+            AccountingBatchConstitutionService.class
+    })
+    @ConditionalOnMissingBean
+    AccountingT1OrchestrationService accountingT1OrchestrationService(
+            AccountingCutoffPolicy cutoffPolicy,
+            AccountingCandidateProjectionRepository projectionRepository,
+            TresorPayPaymentStatusGateway tresorPayGateway,
+            AccountingBatchConstitutionService constitutionService
+    ) {
+        return new AccountingT1OrchestrationService(
+                cutoffPolicy,
+                projectionRepository,
+                tresorPayGateway,
+                constitutionService
         );
     }
 

@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: TRESOR PAY Payment Status Query API
+  version: 1.0.0
+  description: >
+    Active ACCOUNTING_T1 T1.1 contract for SIXPAY payment-status coherence lookup.
+    TRESOR PAY is authoritative for the returned partner status. SIXPAY uses this
+    evidence only as an Accounting T1 eligibility condition; it never invalidates
+    an authoritative T0 COMPLETED Payment.
+  x-sixpay-contract:
+    registryId: tresorpay-payment-status-query-api-v1
+    capability: TRESORPAY_PAYMENT_STATUS_QUERY
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    gate: ACCOUNTING_T1
+    phaseStep: T1.1
+    domain: accounting
+    businessOwner: accounting
+    deliveryOwner: integration
+    direction: SIXPAY_TO_TRESOR_PAY
+    sourceSystem: SIXPAY
+    systemOfRecord: TRESOR_PAY
+  x-sixpay-network-security:
+    sourceIpAllowlisting:
+      required: true
+      description: >
+        TRESOR PAY and SIXPAY gateway egress IP addresses must be allowlisted
+        according to the mutually agreed network configuration.
+    callbackIntegrity:
+      algorithm: HMAC-SHA256
+      applicability: >
+        Required for partner callbacks when a TRESOR PAY callback capability is
+        used. This GET status-query operation is outbound and therefore does not
+        itself use an HMAC callback signature.
+paths:
+  /api/v1/payments/{reference}/status:
+    get:
+      summary: Read authoritative TRESOR PAY payment status
+      operationId: getTresorPayPaymentStatus
+      security:
+        - oauth2: []
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          description: Public/partner payment reference known to TRESOR PAY.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Authoritative TRESOR PAY payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+              example:
+                reference: REF-DGI-2026-0042
+                transaction_id: EXT_TRESORPAY-CM_D46J080300003
+                status: COMPLETED
+                payment_method: BANK_TRANSFER
+                operator_reference: RB-2026081100045
+                debit_effectue: true
+                quittance_disponible: true
+                updated_at: '2026-08-11T11:58:20Z'
+                failure_reason: null
+        '401':
+          description: Missing or invalid OAuth2 bearer access token
+        '403':
+          description: Authenticated client is not authorized or source IP is not allowlisted
+        '404':
+          description: Payment reference is unknown to TRESOR PAY
+        '429':
+          description: Provider rate limit reached
+        '500':
+          description: TRESOR PAY internal error
+        '503':
+          description: TRESOR PAY status service temporarily unavailable
+components:
+  schemas:
+    PaymentStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - reference
+        - transaction_id
+        - status
+        - payment_method
+        - debit_effectue
+        - quittance_disponible
+        - updated_at
+      properties:
+        reference:
+          type: string
+        transaction_id:
+          type: string
+        status:
+          type: string
+          description: >
+            Authoritative TRESOR PAY payment status. ACCOUNTING_T1 T1.1 accepts
+            only COMPLETED as eligible evidence for the current T1 selection.
+        payment_method:
+          type: string
+        operator_reference:
+          type: string
+          nullable: true
+        debit_effectue:
+          type: boolean
+        quittance_disponible:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        failure_reason:
+          type: string
+          nullable: true
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: >
+        OAuth2 Client Credentials. SIXPAY obtains a short-lived access_token from
+        POST /oauth2/token and sends Authorization: Bearer <token> on each status
+        query.
+      flows:
+        clientCredentials:
+          tokenUrl: /oauth2/token
+          scopes: {}
+security:
+  - oauth2: []

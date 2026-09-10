@@ -1,7 +1,6 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
 import org.springframework.stereotype.Service;
 
@@ -25,20 +24,19 @@ public class PaymentPostingPreparationService {
         );
     }
 
-    public PaymentWorkflowResult authorizePosting(
+    public PaymentWorkflowResult authorizePaymentEventPosting(
             PaymentId paymentId,
             PostingInstructionIdentity instruction,
-            Instant authorizedAt,
-            PaymentPolicyBundle policies
+            Instant authorizedAt
     ) {
         return coordinator.mutate(
                 paymentId,
                 payment ->
-                        payment.authorizePosting(
+                        payment.authorizePaymentEventPosting(
                                 instruction,
-                                authorizedAt,
-                                policies
+                                authorizedAt
                         )
         );
     }
+
 }

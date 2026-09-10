@@ -2,11 +2,9 @@ package com.sixpay.payment.application.port.input;
 
 import com.sixpay.payment.application.command.AuthorizeReversalCommand;
 import com.sixpay.payment.application.command.FailPaymentWithoutFinancialEffectCommand;
-import com.sixpay.payment.application.command.RecordPostingOutcomeCommand;
 import com.sixpay.payment.application.command.RecordRecoverableFailureCommand;
 import com.sixpay.payment.application.command.RecordReversalOutcomeCommand;
 import com.sixpay.payment.application.command.RejectPaymentCommand;
-import com.sixpay.payment.application.command.ResolvePostingOutcomeCommand;
 import com.sixpay.payment.application.command.ResolveReversalOutcomeCommand;
 import com.sixpay.payment.application.view.PaymentCommandResult;
 
@@ -18,13 +16,6 @@ import com.sixpay.payment.application.view.PaymentCommandResult;
  */
 public interface PaymentFinalizationUseCase {
 
-    PaymentCommandResult recordPostingOutcome(
-            RecordPostingOutcomeCommand command
-    );
-
-    PaymentCommandResult resolvePostingOutcome(
-            ResolvePostingOutcomeCommand command
-    );
 
     PaymentCommandResult authorizeReversal(
             AuthorizeReversalCommand command

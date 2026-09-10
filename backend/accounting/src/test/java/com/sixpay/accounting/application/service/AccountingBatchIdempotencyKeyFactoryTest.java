@@ -53,16 +53,43 @@ class AccountingBatchIdempotencyKeyFactoryTest {
                 reference,
                 "TRESORPAY",
                 "LAREGIONALE",
+                UUID.nameUUIDFromBytes(("snapshot-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                "v1",
+                Instant.parse("2026-08-07T12:03:00Z"),
+                "DEBTOR-" + reference,
+                "TREASURY-" + reference,
                 new BigDecimal("10000"),
                 Currency.getInstance("XAF"),
                 Instant.parse("2026-08-07T12:00:00Z"),
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
                 new TresorPayPaymentStatusEvidence(
-                        "CONFIRMED",
+                        reference,
+                        "TX-" + reference,
+                        "COMPLETED",
+                        "BANK_TRANSFER",
+                        "AMP-" + reference,
+                        true,
+                        true,
+                        Instant.parse("2026-08-07T12:04:00Z"),
+                        null,
                         Instant.parse("2026-08-07T12:05:00Z"),
-                        "STATUS-" + reference,
+                        reference,
                         "corr-" + reference
+                ),
+                List.of(
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("debit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                1, "DEBIT", "DEBTOR-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:10Z")
+                        ),
+                        new AccountingPaymentCandidate.FrozenEntry(
+                                UUID.nameUUIDFromBytes(("credit-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                                2, "CREDIT", "TREASURY-" + reference,
+                                new BigDecimal("10000"), Currency.getInstance("XAF"),
+                                Instant.parse("2026-08-07T12:03:11Z")
+                        )
                 )
         );
     }

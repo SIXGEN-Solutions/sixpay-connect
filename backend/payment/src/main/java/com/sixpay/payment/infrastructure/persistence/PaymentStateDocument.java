@@ -1,5 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sixpay.payment.domain.model.*;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
@@ -15,6 +16,7 @@ import java.time.Instant;
  * representation is stored input the {@code payments.state_payload} JSONB column
  * and may only be read through {@link PaymentPersistenceMapper}.</p>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 record PaymentStateDocument(
         int schemaVersion,
         PaymentId paymentId,
@@ -33,12 +35,13 @@ record PaymentStateDocument(
         ConfirmationChallenge confirmationChallenge,
         PaymentStatus status,
         AuthorizationEvidenceSnapshot authorizationEvidence,
+        SixpayAuthorizationDecisionSnapshot sixpayAuthorizationDecision,
         BankingVerificationSnapshot bankingVerificationEvidence,
         FundsControlSnapshot fundsControlEvidence,
         TreasuryAccountResolutionSnapshot treasuryResolutionEvidence,
         TreasuryAccountReference treasuryAccountReference,
         PostingInstructionIdentity postingInstruction,
-        PostingOutcomeSnapshot postingOutcomeEvidence,
+        PaymentEventOutcomeSnapshot paymentEventOutcomeEvidence,
         BankPostingReference bankPostingReference,
         EndOfDayConfirmationSnapshot endOfDayConfirmationEvidence,
         ReversalInstructionIdentity reversalInstruction,
@@ -51,7 +54,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 4;
+    static final int CURRENT_SCHEMA_VERSION = 7;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
@@ -72,12 +75,13 @@ record PaymentStateDocument(
                 state.confirmationChallenge().orElse(null),
                 state.status(),
                 state.authorizationEvidence().orElse(null),
+                state.sixpayAuthorizationDecision().orElse(null),
                 state.bankingVerificationEvidence().orElse(null),
                 state.fundsControlEvidence().orElse(null),
                 state.treasuryResolutionEvidence().orElse(null),
                 state.treasuryAccountReference().orElse(null),
                 state.postingInstruction().orElse(null),
-                state.postingOutcomeEvidence().orElse(null),
+                state.paymentEventOutcomeEvidence().orElse(null),
                 state.bankPostingReference().orElse(null),
                 state.endOfDayConfirmationEvidence().orElse(null),
                 state.reversalInstruction().orElse(null),
@@ -115,6 +119,24 @@ record PaymentStateDocument(
             throw new PaymentPersistenceException(
                     "Payment state schema version 2 must not contain "
                             + "confirmation challenge state"
+            );
+        }
+
+        if (schemaVersion < 5
+                && sixpayAuthorizationDecision != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " must not contain a SIXPAY authorization decision"
+            );
+        }
+
+        if (schemaVersion < 6
+                && paymentEventOutcomeEvidence != null) {
+            throw new PaymentPersistenceException(
+                    "Payment state schema version "
+                            + schemaVersion
+                            + " must not contain atomic Payment event evidence"
             );
         }
 
@@ -244,6 +266,7 @@ record PaymentStateDocument(
                 .confirmationChallenge(confirmationChallenge)
                 .status(status)
                 .authorizationEvidence(authorizationEvidence)
+                .sixpayAuthorizationDecision(sixpayAuthorizationDecision)
                 .bankingVerificationEvidence(
                         bankingVerificationEvidence
                 )
@@ -253,7 +276,9 @@ record PaymentStateDocument(
                 )
                 .treasuryAccountReference(treasuryAccountReference)
                 .postingInstruction(postingInstruction)
-                .postingOutcomeEvidence(postingOutcomeEvidence)
+                .paymentEventOutcomeEvidence(
+                        paymentEventOutcomeEvidence
+                )
                 .bankPostingReference(bankPostingReference)
                 .endOfDayConfirmationEvidence(
                         endOfDayConfirmationEvidence

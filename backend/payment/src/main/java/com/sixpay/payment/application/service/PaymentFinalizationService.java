@@ -2,7 +2,7 @@ package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.domain.model.PaymentFailure;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.evidence.PostingOutcomeSnapshot;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.ReversalAuthorizationEvidence;
 import com.sixpay.payment.domain.model.evidence.ReversalSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Coordinates posting outcomes, reversal and terminal failures.
+ * Coordinates atomic Payment-event outcomes, reversal and terminal failures.
  *
  * <p>TFJ reconciliation is deliberately owned by
  * {@link PaymentReconciliationService}.</p>
@@ -32,9 +32,9 @@ public class PaymentFinalizationService {
         );
     }
 
-    public PaymentWorkflowResult recordPostingOutcome(
+    public PaymentWorkflowResult recordPaymentEventOutcome(
             PaymentId paymentId,
-            PostingOutcomeSnapshot evidence,
+            PaymentEventOutcomeSnapshot evidence,
             PaymentFailure failure,
             Instant decisionAt,
             PaymentPolicyBundle policies
@@ -42,7 +42,7 @@ public class PaymentFinalizationService {
         return coordinator.mutate(
                 paymentId,
                 payment ->
-                        payment.recordPostingOutcome(
+                        payment.recordPaymentEventOutcome(
                                 evidence,
                                 failure,
                                 decisionAt,
@@ -51,9 +51,9 @@ public class PaymentFinalizationService {
         );
     }
 
-    public PaymentWorkflowResult resolvePostingOutcome(
+    public PaymentWorkflowResult resolvePaymentEventOutcome(
             PaymentId paymentId,
-            PostingOutcomeSnapshot evidence,
+            PaymentEventOutcomeSnapshot evidence,
             PaymentFailure failure,
             Instant decisionAt,
             PaymentPolicyBundle policies
@@ -61,7 +61,7 @@ public class PaymentFinalizationService {
         return coordinator.mutate(
                 paymentId,
                 payment ->
-                        payment.resolvePostingOutcome(
+                        payment.resolvePaymentEventOutcome(
                                 evidence,
                                 failure,
                                 decisionAt,

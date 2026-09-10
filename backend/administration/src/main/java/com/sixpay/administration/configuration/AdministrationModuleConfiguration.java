@@ -1,6 +1,8 @@
 package com.sixpay.administration.configuration;
 
 import com.sixpay.administration.AdministrationModule;
+import com.sixpay.administration.infrastructure.persistence.GeneralParameterJpaEntity;
+import com.sixpay.administration.infrastructure.persistence.GeneralParameterSpringDataRepository;
 import com.sixpay.administration.infrastructure.persistence.IncidentTimelineJpaEntity;
 import com.sixpay.administration.infrastructure.persistence.OperationalIncidentJpaEntity;
 import com.sixpay.administration.infrastructure.persistence.OperationalIncidentSpringDataRepository;
@@ -43,12 +45,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(
         basePackageClasses = {
                 OperationalIncidentJpaEntity.class,
-                IncidentTimelineJpaEntity.class
+                IncidentTimelineJpaEntity.class,
+                GeneralParameterJpaEntity.class
         }
 )
 @EnableJpaRepositories(
         basePackageClasses = {
-                OperationalIncidentSpringDataRepository.class
+                OperationalIncidentSpringDataRepository.class,
+                GeneralParameterSpringDataRepository.class
         }
 )
 public class AdministrationModuleConfiguration {

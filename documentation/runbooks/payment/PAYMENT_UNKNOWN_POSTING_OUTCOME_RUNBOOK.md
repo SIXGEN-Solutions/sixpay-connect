@@ -14,9 +14,9 @@ Never blindly resubmit the financial command.
 
 1. Capture Payment reference, correlation ID and original banking idempotency
    key through protected operational tooling.
-2. Use the approved `LookupGateway`:
-   - lookup by original idempotency key first;
-   - lookup by bank posting reference when available.
+2. Use the approved `RecoverUnknownPaymentT0UseCase`:
+   - lookup by Payment reference first;
+   - fallback lookup by original idempotency key when required.
 3. Record the authoritative posting evidence through the Payment application
    workflow.
 4. If the outcome remains unknown, keep the Payment in the explicit unknown

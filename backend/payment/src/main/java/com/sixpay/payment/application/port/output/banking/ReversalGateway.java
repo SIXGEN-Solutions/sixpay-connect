@@ -24,8 +24,17 @@ public interface ReversalGateway {
                     idempotencyKey,
                     "Reversal idempotency key"
             );
-            bankPostingReference =
-                    LookupGateway.requireBankReference(bankPostingReference);
+            bankPostingReference = Objects.requireNonNull(
+                    bankPostingReference,
+                    "Bank posting reference"
+            );
+            if (bankPostingReference.isBlank()
+                    || bankPostingReference.length() > 150) {
+                throw new IllegalArgumentException(
+                        "Bank posting reference must be non-blank "
+                                + "and at most 150 characters"
+                );
+            }
             authorization = Objects.requireNonNull(
                     authorization,
                     "Reversal authorization evidence"
