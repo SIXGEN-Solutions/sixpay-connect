@@ -40,8 +40,13 @@ export class ReportingApiClient {
     );
   }
 
-  requestExport(request: PaymentAuditExportRequest): Observable<PaymentAuditExportJobResponse> {
-    return this.http.post<PaymentAuditExportJobResponse>(PAYMENT_AUDIT_EXPORTS_PATH, request);
+  requestExport(
+    request: PaymentAuditExportRequest,
+    idempotencyKey: string,
+  ): Observable<PaymentAuditExportJobResponse> {
+    return this.http.post<PaymentAuditExportJobResponse>(PAYMENT_AUDIT_EXPORTS_PATH, request, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
   }
 
   getExport(exportId: string): Observable<PaymentAuditExportJobResponse> {

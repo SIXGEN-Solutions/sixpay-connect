@@ -120,17 +120,21 @@ describe('ReportingApiClient', () => {
 
   it('requests a controlled audit export', () => {
     client
-      .requestExport({
-        occurredFrom: '2026-08-08T00:00:00Z',
-        occurredTo: '2026-08-09T00:00:00Z',
-        businessPurpose: 'Internal audit validation',
-        format: 'CSV',
-      })
+      .requestExport(
+        {
+          occurredFrom: '2026-08-08T00:00:00Z',
+          occurredTo: '2026-08-09T00:00:00Z',
+          businessPurpose: 'Internal audit validation',
+          format: 'CSV',
+        },
+        'audit-export-idempotency-key',
+      )
       .subscribe();
 
     const request = controller.expectOne('/internal/api/v1/payment-audit-exports');
 
     expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Idempotency-Key')).toBe('audit-export-idempotency-key');
     expect(request.request.body).toEqual({
       occurredFrom: '2026-08-08T00:00:00Z',
       occurredTo: '2026-08-09T00:00:00Z',

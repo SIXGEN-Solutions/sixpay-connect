@@ -4,7 +4,7 @@ import { authorizationGuard } from '../../core/auth/authorization.guard';
 
 const AUDIT_ROLES = ['AUDITOR'] as const;
 const AUDIT_READ = ['payment.audit.read'] as const;
-const AUDIT_EXPORT = ['payment.audit.export'] as const;
+const AUDIT_EXPORT = ['payment.audit.read', 'payment.audit.export'] as const;
 
 export const REPORTING_ROUTES: Routes = [
   {

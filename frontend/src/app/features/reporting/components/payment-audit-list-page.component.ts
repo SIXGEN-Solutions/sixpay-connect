@@ -139,6 +139,24 @@ import { ReportingService } from '../services/reporting.service';
                 </tbody>
               </table>
             </div>
+
+            <div class="sp-pagination">
+              <sp-button
+                icon="arrow_back"
+                [disabled]="cursorHistory().length === 0"
+                (buttonClick)="previous()"
+              >
+                Précédent
+              </sp-button>
+              <span>Snapshot {{ currentPage.snapshotAt | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+              <sp-button
+                icon="arrow_forward"
+                [disabled]="!currentPage.hasMore"
+                (buttonClick)="next()"
+              >
+                Suivant
+              </sp-button>
+            </div>
           }
         }
       </sp-card>
@@ -174,6 +192,13 @@ import { ReportingService } from '../services/reporting.service';
       border-bottom: 1px solid var(--mat-sys-outline-variant);
       white-space: nowrap;
     }
+    .sp-pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-space-3);
+      margin-top: var(--sp-space-3);
+    }
     @media (max-width: 900px) {
       .sp-filter-grid {
         grid-template-columns: 1fr;
@@ -186,6 +211,7 @@ export class PaymentAuditListPageComponent {
   private readonly reporting = inject(ReportingService);
 
   protected readonly page = signal<PaymentAuditPage | null>(null);
+  protected readonly cursorHistory = signal<(string | null)[]>([]);
 
   protected readonly form = this.formBuilder.nonNullable.group({
     paymentId: [''],
@@ -202,7 +228,7 @@ export class PaymentAuditListPageComponent {
     this.search();
   }
 
-  protected search(): void {
+  protected search(cursor?: string, preserveHistory = false): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -210,11 +236,16 @@ export class PaymentAuditListPageComponent {
 
     const value = this.form.getRawValue();
 
+    if (!preserveHistory) {
+      this.cursorHistory.set([]);
+    }
+
     const query: PaymentAuditQuery = {
       occurredFrom: new Date(value.occurredFrom),
       occurredTo: new Date(value.occurredTo),
       sort: 'OCCURRED_AT_DESC',
       size: 50,
+      ...(cursor ? { cursor } : {}),
       ...(value.paymentId.trim() ? { paymentId: value.paymentId.trim() } : {}),
       ...(value.paymentReference.trim() ? { paymentReference: value.paymentReference.trim() } : {}),
       ...(value.actorId.trim() ? { actorId: value.actorId.trim() } : {}),
@@ -226,6 +257,32 @@ export class PaymentAuditListPageComponent {
     };
 
     this.reporting.searchAudit(query).subscribe((page) => this.page.set(page));
+  }
+
+  protected next(): void {
+    const cursor = this.page()?.nextCursor;
+    if (!cursor) {
+      return;
+    }
+
+    const currentCursor =
+      this.cursorHistory().length === 0
+        ? null
+        : this.cursorHistory()[this.cursorHistory().length - 1] ?? null;
+
+    this.cursorHistory.update((history) => [...history, currentCursor]);
+    this.search(cursor, true);
+  }
+
+  protected previous(): void {
+    const history = this.cursorHistory();
+    if (history.length === 0) {
+      return;
+    }
+
+    const previousCursor = history[history.length - 1] ?? undefined;
+    this.cursorHistory.set(history.slice(0, -1));
+    this.search(previousCursor, true);
   }
 
   protected reset(): void {

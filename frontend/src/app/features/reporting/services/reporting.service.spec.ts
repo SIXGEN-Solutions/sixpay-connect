@@ -132,15 +132,21 @@ describe('ReportingService', () => {
     const { service, api, mock } = configure(true);
 
     await firstValueFrom(
-      service.requestExport({
-        occurredFrom: '2026-08-08T00:00:00Z',
-        occurredTo: '2026-08-09T00:00:00Z',
-        businessPurpose: 'Internal audit validation',
-        format: 'CSV',
-      }),
+      service.requestExport(
+        {
+          occurredFrom: '2026-08-08T00:00:00Z',
+          occurredTo: '2026-08-09T00:00:00Z',
+          businessPurpose: 'Internal audit validation',
+          format: 'CSV',
+        },
+        'audit-export-idempotency-key',
+      ),
     );
 
-    expect(api.requestExport).toHaveBeenCalledOnce();
+    expect(api.requestExport).toHaveBeenCalledWith(
+      expect.any(Object),
+      'audit-export-idempotency-key',
+    );
     expect(mock.requestExport).not.toHaveBeenCalled();
   });
 

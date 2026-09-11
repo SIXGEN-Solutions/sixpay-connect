@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
+import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
@@ -37,10 +38,12 @@ import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolba
           <a spCardActions routerLink="/reporting/audit-records">Rechercher</a>
         </sp-card>
 
-        <sp-card title="Export contrôlé">
-          <p>Créer un export borné avec justification métier.</p>
-          <a spCardActions routerLink="/reporting/exports">Créer un export</a>
-        </sp-card>
+        @if (canExportAudit()) {
+          <sp-card title="Export contrôlé">
+            <p>Créer un export borné avec justification métier.</p>
+            <a spCardActions routerLink="/reporting/exports">Créer un export</a>
+          </sp-card>
+        }
       </div>
     </section>
   `,
@@ -76,6 +79,11 @@ import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolba
 })
 export class ReportingHomePageComponent {
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthenticationService);
+
+  protected readonly canExportAudit = () =>
+    this.auth.hasAllPermissions(['payment.audit.read', 'payment.audit.export']) ||
+    (this.auth.isStandaloneMode && this.auth.hasRole('AUDITOR'));
 
   protected readonly paymentId = new FormControl('7fa85f64-5717-4562-b3fc-2c963f66afa1', {
     nonNullable: true,
