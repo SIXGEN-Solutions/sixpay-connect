@@ -20,6 +20,9 @@ for path in [
     "backend/accounting/src/main/java/com/sixpay/accounting/application/service/AccountingT1ManualExecutionService.java",
     "frontend/src/app/features/accounting/models/accounting-t1-execution.ts",
     "frontend/e2e/accounting-t1-manual-execution.spec.ts",
+    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status-sandbox.yml",
+    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status.yml",
+    "backend/accounting/src/test/java/com/sixpay/accounting/api/AccountingT1ManualExecutionControllerActivationTest.java",
 ]:
     if not (ROOT / path).is_file():
         fail(f"required file missing: {path}")
@@ -46,11 +49,32 @@ require_text(
     "backend/accounting/src/main/java/com/sixpay/accounting/api/AccountingT1ManualExecutionController.java",
     "hasAnyRole('ADMIN', 'MANAGER')",
     "SCOPE_accounting.t1.execute",
+    "@ConditionalOnProperty(",
+    'prefix = "sixpay.accounting"',
+    '"api.enabled"',
+    '"tresorpay-status.enabled"',
+    'havingValue = "true"',
 )
 require_text(
     "frontend/src/app/features/accounting/components/accounting-overview-page.component.ts",
     "Lancer le traitement T1",
     "accounting.t1.execute",
+)
+
+require_text(
+    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status.yml",
+    "SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED",
+    "/api/v1/payments/{reference}/status",
+)
+require_text(
+    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status-sandbox.yml",
+    "accounting-tresorpay-status-sandbox",
+    "enabled: true",
+)
+require_text(
+    "documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml",
+    "SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED",
+    'key: "sixpay.accounting.tresorpay-status.enabled"',
 )
 
 print("[PASS] Accounting T1 manual execution baseline")

@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: accounting-tresorpay-status-sandbox
+    import:
+      - classpath:application-accounting.yml
+      - classpath:application-accounting-tresorpay-status.yml
+
+sixpay:
+  accounting:
+    tresorpay-status:
+      enabled: true

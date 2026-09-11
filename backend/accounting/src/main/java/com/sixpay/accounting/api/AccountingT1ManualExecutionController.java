@@ -6,6 +6,7 @@ import com.sixpay.accounting.application.port.input.AccountingT1ManualExecutionU
 import com.sixpay.common.context.CorrelationId;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,14 @@ import java.net.URI;
 import java.util.UUID;
 
 @RestController
+@ConditionalOnProperty(
+        prefix = "sixpay.accounting",
+        name = {
+                "api.enabled",
+                "tresorpay-status.enabled"
+        },
+        havingValue = "true"
+)
 @RequestMapping("/internal/api/v1/accounting-t1-executions")
 @PreAuthorize(
         "hasAnyRole('ADMIN', 'MANAGER') "
