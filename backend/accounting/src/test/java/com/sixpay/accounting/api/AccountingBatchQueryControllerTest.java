@@ -63,7 +63,10 @@ class AccountingBatchQueryControllerTest {
     @Test
     @WithMockUser(
             username = "admin@sixpay",
-            roles = "ADMIN"
+            authorities = {
+                    "ROLE_ADMIN",
+                    "SCOPE_accounting.read"
+            }
     )
     void searchesAccountingBatchesForAuthorizedAdministrator()
             throws Exception {
@@ -126,7 +129,10 @@ class AccountingBatchQueryControllerTest {
     @Test
     @WithMockUser(
             username = "auditor@sixpay",
-            roles = "AUDITOR"
+            authorities = {
+                    "ROLE_AUDITOR",
+                    "SCOPE_accounting.read"
+            }
     )
     void readsAccountingBatchDetailForAuditor()
             throws Exception {
@@ -182,8 +188,30 @@ class AccountingBatchQueryControllerTest {
 
     @Test
     @WithMockUser(
+            username = "auditor-without-scope@sixpay",
+            roles = "AUDITOR"
+    )
+    void forbidsAccountingQueryWhenReadScopeIsMissing()
+            throws Exception {
+
+        mockMvc.perform(
+                        get(
+                                "/internal/api/v1/"
+                                        + "accounting-batches"
+                        )
+                )
+                .andExpect(
+                        status().isForbidden()
+                );
+    }
+
+    @Test
+    @WithMockUser(
             username = "partner@sixpay",
-            roles = "PARTNER"
+            authorities = {
+                    "ROLE_PARTNER",
+                    "SCOPE_accounting.read"
+            }
     )
     void forbidsAccountingQueryForPartnerRole()
             throws Exception {
@@ -217,7 +245,10 @@ class AccountingBatchQueryControllerTest {
     @Test
     @WithMockUser(
             username = "manager@sixpay",
-            roles = "MANAGER"
+            authorities = {
+                    "ROLE_MANAGER",
+                    "SCOPE_accounting.read"
+            }
     )
     void returns404ForUnknownAccountingBatch()
             throws Exception {

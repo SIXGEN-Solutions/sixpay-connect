@@ -168,3 +168,22 @@ selection window, bounded technical issue category and optional batch assignment
 No constitution-attempt field is introduced because no durable Accounting-owned
 model currently exists for that notion. Provider DTOs, raw exceptions, transport
 failures, stack traces and persistence internals remain outside the API surface.
+
+### LOT 5.6.3 — T1 operational query security
+
+Accounting read-only operational visibility follows the approved internal
+security profile of the LOT 5.6.2 contract.
+
+Access requires both:
+
+- one of the operator roles `ADMIN`, `MANAGER` or `AUDITOR`;
+- the `accounting.read` OAuth2/JWT scope, mapped at runtime to
+  `SCOPE_accounting.read`.
+
+The role check alone is insufficient, and the scope alone is insufficient.
+`AUDITOR` remains strictly read-only. No T1 execution permission is introduced
+by this lot; manual execution continues to require `accounting.t1.execute`.
+
+The existing Accounting batch query controller is aligned to the same read
+security rule so the Accounting read surface does not have two different
+authorization models.

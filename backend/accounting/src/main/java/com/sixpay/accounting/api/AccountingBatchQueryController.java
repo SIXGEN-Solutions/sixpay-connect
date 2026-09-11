@@ -27,7 +27,10 @@ import java.util.UUID;
 @Validated
 @Tag(name = "Accounting", description = "Internal Accounting batch query API")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR')")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR') "
+                + "and hasAuthority('SCOPE_accounting.read')"
+)
 public class AccountingBatchQueryController {
 
     private final AccountingBatchQueryUseCase query;
