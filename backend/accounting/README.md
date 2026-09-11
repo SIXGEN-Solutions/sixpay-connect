@@ -123,3 +123,29 @@ applies cutoff/TRESOR PAY/unassigned eligibility, and persists immutable
 financial snapshot identity plus ordered frozen entries in each new batch item.
 Idempotency uses `(paymentId, financialSnapshotId)` and candidate assignment
 to `batchId` occurs in the same transaction.
+
+### LOT 5.6.1 — T1 operational ownership model
+
+Accounting owns the normalized operational interpretation of T1 facts used for
+future operator visibility. Provider evidence remains source evidence, but the
+operator model must not expose provider DTOs, transport exceptions, stack traces
+or persistence internals directly.
+
+The approved O01-O07 decisions are represented by domain types under
+`com.sixpay.accounting.domain.model`:
+
+- `AccountingT1OperationalCandidateStatus` models the candidate lifecycle visible
+  to an operator before and after batch assignment;
+- `AccountingT1EligibilityReason` normalizes Accounting-owned ineligibility
+  reasons without exposing raw provider failure details;
+- `AccountingT1TechnicalIssue` exposes only bounded technical categories;
+- `AccountingT1OperationalSnapshot` combines Accounting-owned candidate facts,
+  TRESOR PAY status evidence, and the resolved Accounting selection window.
+
+No constitution-attempt model is introduced because no durable model exists for
+that notion. Recovery remains exposed only where Accounting already owns a durable
+state, notably `AccountingBatchTracking` and its submission/reconciliation state.
+
+LOT 5.6.1 does not add or modify an HTTP contract, endpoint, permission, database
+schema, migration or Angular model. Any operator API remains a subsequent,
+separately approved contract step.
