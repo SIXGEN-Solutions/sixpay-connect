@@ -63,6 +63,15 @@ export function normalizeSixpayRoles(values: readonly string[]): ReadonlySet<Six
   );
 }
 
+export function normalizeSixpayPermissions(values: readonly string[]): ReadonlySet<string> {
+  return new Set(
+    values
+      .map((permission) => permission.trim())
+      .filter((permission) => permission.length > 0)
+      .map((permission) => permission.replace(/^SCOPE_/i, '')),
+  );
+}
+
 /**
  * @deprecated Production authorization comes from SIXPAY /api/v1/auth/me.
  * Retained only for standalone/backward compatibility.

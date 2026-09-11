@@ -24,6 +24,7 @@ import {
   AuthenticationSessionResponse,
   LocalLoginRequest,
   LocalPasswordChangeRequest,
+  normalizeSixpayPermissions,
   normalizeSixpayRoles,
   SixpayRole,
 } from './authentication.model';
@@ -320,7 +321,7 @@ export class AuthenticationService {
     this.identityState.set({
       subject: session.subject,
       roles: normalizeSixpayRoles(session.roles),
-      permissions: new Set(session.permissions),
+      permissions: normalizeSixpayPermissions(session.permissions),
     });
 
     this.usernameState.set(session.username);
