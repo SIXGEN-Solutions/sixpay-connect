@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
 
 import { SpButtonComponent } from '../../../shared/components/button/sp-button.component';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
+import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { AccountingBatchStatus, AccountingBatchSummary } from '../models/accounting';
 import { AccountingBatchQuery } from '../models/accounting-query';
@@ -29,6 +30,37 @@ import { AccountingService } from '../services/accounting.service';
   template: `
     <section class="sp-page">
       <sp-toolbar title="Comptabilisation" description="Consultation des lots comptables." />
+
+      @if (canExecuteT1()) {
+        <sp-card title="Traitement T1 manuel">
+          <form class="sp-filter-grid" [formGroup]="executionForm" (ngSubmit)="executeT1()">
+            <mat-form-field appearance="outline">
+              <mat-label>Date métier T1</mat-label>
+              <input matInput formControlName="businessDate" placeholder="YYYY-MM-DD" />
+            </mat-form-field>
+
+            <div class="sp-actions">
+              <sp-button type="submit" icon="play_arrow">
+                {{ executing() ? 'Traitement en cours…' : 'Lancer le traitement T1' }}
+              </sp-button>
+            </div>
+          </form>
+
+          @if (executionResult(); as result) {
+            <p role="status">
+              Lot {{ result.batchId }} — état {{ result.submissionState }}
+              — statut {{ result.batchStatus }}.
+            </p>
+            <a [routerLink]="['/accounting/batches', result.batchId]">
+              Consulter le lot
+            </a>
+          }
+
+          @if (executionError()) {
+            <p role="alert">{{ executionError() }}</p>
+          }
+        </sp-card>
+      }
 
       <sp-card title="Filtres">
         <form class="sp-filter-grid" [formGroup]="form" (ngSubmit)="search()">
@@ -192,8 +224,15 @@ import { AccountingService } from '../services/accounting.service';
 export class AccountingOverviewPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly accounting = inject(AccountingService);
+  private readonly authentication = inject(AuthenticationService);
 
   protected readonly batches = signal<readonly AccountingBatchSummary[]>([]);
+  protected readonly executing = signal(false);
+  protected readonly executionResult =
+    signal<import('../models/accounting-t1-execution').AccountingT1ManualExecutionResponse | null>(
+      null,
+    );
+  protected readonly executionError = signal<string | null>(null);
 
   protected readonly statuses: readonly AccountingBatchStatus[] = ['NOT_COMPLETED', 'COMPLETED'];
 
@@ -202,8 +241,54 @@ export class AccountingOverviewPageComponent {
     status: [''],
   });
 
+  protected readonly executionForm = this.formBuilder.nonNullable.group({
+    businessDate: [''],
+  });
+
   constructor() {
     this.search();
+  }
+
+  protected canExecuteT1(): boolean {
+    return (
+      this.authentication.hasAnyRole(['ADMIN', 'MANAGER']) &&
+      this.authentication.hasPermission('accounting.t1.execute')
+    );
+  }
+
+  protected executeT1(): void {
+    const businessDate =
+      this.executionForm.controls.businessDate.value.trim();
+
+    if (!businessDate || this.executing()) {
+      return;
+    }
+
+    if (
+      !globalThis.confirm(
+        `Confirmer le lancement du traitement T1 pour la date métier ${businessDate} ?`,
+      )
+    ) {
+      return;
+    }
+
+    this.executing.set(true);
+    this.executionError.set(null);
+    this.executionResult.set(null);
+
+    this.accounting.executeT1Manually(businessDate).subscribe({
+      next: (result) => {
+        this.executionResult.set(result);
+        this.executing.set(false);
+        this.search();
+      },
+      error: () => {
+        this.executionError.set(
+          'Le traitement T1 n’a pas pu être lancé. Vérifiez l’état des lots avant toute nouvelle tentative.',
+        );
+        this.executing.set(false);
+      },
+    });
   }
 
   protected search(): void {

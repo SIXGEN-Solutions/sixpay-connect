@@ -10,7 +10,8 @@ Le T0 Payment est fermé et n’est pas redéfini par ce programme.
 - T0 baseline: `ce59e4dbafca0e68589f35c7df4f6d9da092352f`
 - T0 known-success state: `POSTED_PENDING_TFJ`
 - T0 authoritative outcome: `PaymentEventOutcome.COMPLETED`
-- Physical Core Banking T1 contract: `TO_DEFINE`
+- Physical Core Banking T1 contract: `documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml`
+- Internal manual execution contract: `documentation/contracts/internal/accounting-t1-manual-execution-api-v1.yaml`
 
 ## Lots
 
@@ -46,3 +47,17 @@ Le T0 Payment est fermé et n’est pas redéfini par ce programme.
 - Other verified transactions continue through T1/TFJ.
 - Verification may be anticipated by a periodic worker or performed on-demand for unverified candidates; the worker cadence is deferred.
 - Manual/export reconciliation processes remain external to SIXPAY until separately defined; SIXPAY may later expose extraction capability under an approved scope.
+
+
+## LOT 0.5.6 — Accounting T1 Operations / Manual Execution
+
+- The operator action launches the SIXPAY T1 treatment, not the bank-owned TFJ.
+- Manual execution accepts only `businessDate` from the UI.
+- The backend enforces `AccountingCutoffMode.MANUAL`.
+- `financialInstitutionCode` is derived from durable Accounting candidates.
+- Authorization requires `ADMIN` or `MANAGER` plus `accounting.t1.execute`.
+- `AUDITOR` remains read-only.
+- Existing deterministic Accounting batch idempotency remains authoritative.
+- Submission/recovery reuses the approved Core Banking Accounting boundary.
+- The provisional `documentation/contracts/external/accounting/accounting-batch-*`
+  pack is superseded and removed.

@@ -307,3 +307,14 @@ In particular:
 
 No endpoint, schema, capability, authorization rule or registry identity is
 changed by this preservation decision.
+
+
+## Accounting T1 manual execution
+
+`internal/accounting-t1-manual-execution-api-v1.yaml` is the approved internal
+operator command for launching SIXPAY T1 manually. It remains distinct from the
+read-only Accounting Query API, the approved Amplitude Accounting Entries
+provider contract and the bank-authoritative End-of-Day Confirmation contract.
+
+The provisional `external/accounting/accounting-batch-*` pack is superseded by
+the approved Amplitude Accounting Entries contract and is removed.

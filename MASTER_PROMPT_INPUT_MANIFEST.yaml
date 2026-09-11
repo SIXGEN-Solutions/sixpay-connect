@@ -182,6 +182,8 @@ activeContractCapabilities:
       path: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
     - id: "accounting-query-api-v1"
       path: "documentation/contracts/internal/accounting-query-api-v1.yaml"
+    - id: "accounting-t1-manual-execution-api-v1"
+      path: "documentation/contracts/internal/accounting-t1-manual-execution-api-v1.yaml"
     - id: "administration-query-api-v1"
       path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
     - id: "incident-query-api-v1"

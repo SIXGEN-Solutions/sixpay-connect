@@ -233,3 +233,16 @@ required commands actually finish successfully.
 - manual Payment finality updates from Accounting;
 - generation from a deferred, unapproved or generation-forbidden contract;
 - reintroduction of split-leg T0 posting or `DEBIT_CONFIRMED`.
+
+
+## Manual T1 operator execution
+
+Approved internal command contract:
+`documentation/contracts/internal/accounting-t1-manual-execution-api-v1.yaml`.
+
+`POST /internal/api/v1/accounting-t1-executions` requires `ADMIN` or `MANAGER`
+plus `accounting.t1.execute`; `AUDITOR` remains read-only. The UI supplies only
+`businessDate`. The backend uses MANUAL cutoff mode, derives the institution
+from durable Accounting evidence, reuses canonical batch idempotency and then
+submits or authoritatively reconciles through the approved provider boundary.
+This launches SIXPAY T1 and does not launch the bank-owned TFJ.

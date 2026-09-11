@@ -7,6 +7,7 @@ import {
   AccountingBatchDetailResponse,
   AccountingBatchPageResponse,
 } from '../models/accounting.response';
+import { AccountingT1ManualExecutionResponse } from '../models/accounting-t1-execution';
 
 const ACCOUNTING_BATCHES_API_PATH = '/internal/api/v1/accounting-batches';
 
@@ -31,6 +32,20 @@ export class AccountingApiClient {
   get(batchId: string): Observable<AccountingBatchDetailResponse> {
     return this.http.get<AccountingBatchDetailResponse>(
       `${ACCOUNTING_BATCHES_API_PATH}/${encodeURIComponent(batchId)}`,
+    );
+  }
+
+  executeT1Manually(
+    businessDate: string,
+  ): Observable<AccountingT1ManualExecutionResponse> {
+    return this.http.post<AccountingT1ManualExecutionResponse>(
+      '/internal/api/v1/accounting-t1-executions',
+      { businessDate },
+      {
+        headers: {
+          'X-Correlation-ID': crypto.randomUUID(),
+        },
+      },
     );
   }
 }

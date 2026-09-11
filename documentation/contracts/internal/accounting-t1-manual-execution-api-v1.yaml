@@ -1,0 +1,98 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Accounting T1 Manual Execution API
+  version: 1.0.0
+  description: |
+    Internal operator command for manually launching the existing Accounting T1
+    treatment for one accounting business date. It launches SIXPAY T1, not the
+    bank-owned TFJ.
+  x-sixpay-contract:
+    registryId: accounting-t1-manual-execution-api-v1
+    gate: ACCOUNTING_T1
+    phaseStep: "0.5.6"
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    domain: accounting
+    businessOwner: accounting
+    securityOwner: security
+    capability: ACCOUNTING_T1_MANUAL_EXECUTION
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: RESTRICTED
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+security:
+  - bearerAuth: []
+paths:
+  /internal/api/v1/accounting-t1-executions:
+    post:
+      operationId: executeAccountingT1Manually
+      summary: Launch the Accounting T1 treatment manually
+      description: |
+        Runs the existing T1 orchestration in MANUAL mode for the supplied
+        business date. financialInstitutionCode is derived from durable
+        Accounting candidates. Existing Accounting batch idempotency remains
+        authoritative; no second financial idempotency key is introduced.
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, MANAGER]
+        requiredPermissions: [accounting.t1.execute]
+      parameters:
+        - name: X-Correlation-ID
+          in: header
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountingT1ManualExecutionRequest'
+      responses:
+        '200':
+          description: Current execution/submission state
+          headers:
+            X-Correlation-ID:
+              schema: {type: string, format: uuid}
+            Location:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingT1ManualExecutionResponse'
+        '400': {description: Invalid request}
+        '401': {description: Authentication required}
+        '403': {description: ADMIN or MANAGER plus accounting.t1.execute is required}
+        '409': {description: Multiple financial institutions prevent one manual execution}
+        '422': {description: No eligible candidate or recoverable batch exists}
+        '502': {description: Core Banking response or authentication cannot be trusted}
+        '503': {description: Core Banking service unavailable}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AccountingT1ManualExecutionRequest:
+      type: object
+      additionalProperties: false
+      required: [businessDate]
+      properties:
+        businessDate: {type: string, format: date}
+    AccountingT1ManualExecutionResponse:
+      type: object
+      additionalProperties: false
+      required: [batchId, businessDate, financialInstitutionCode, batchStatus, submissionState]
+      properties:
+        batchId: {type: string, format: uuid}
+        businessDate: {type: string, format: date}
+        financialInstitutionCode: {type: string}
+        batchStatus:
+          type: string
+          enum: [COMPLETED, NOT_COMPLETED]
+        submissionState:
+          type: string
+          enum: [READY, SUBMITTING, SUBMITTED, OUTCOME_UNKNOWN, RECONCILIATION_REQUIRED, COMPLETED, REJECTED]
+        providerBatchReference:
+          type: [string, 'null']

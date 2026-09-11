@@ -9,7 +9,10 @@ Payment T0 COMPLETED
   -> durable internal Payment→Accounting event
   -> Accounting-owned local candidate projection
   -> local cutoff / eligibility / batch selection
-  -> future T1 provider boundary (TO_DEFINE)
+  -> approved Core Banking Accounting submission
+  -> authoritative submission recovery/reconciliation
+  -> Amplitude TFJ confirmation
+  -> Payment finality event
 ```
 
 ## Rules
@@ -21,7 +24,9 @@ Payment T0 COMPLETED
 - Accounting never reconstructs financial entries from mutable Payment state.
 - Frozen `PaymentFinancialEntrySnapshot` facts are copied into an Accounting-owned projection in T1.2.
 - Provider-compatible bkmvti payloads, if approved later, are mapping outputs and not SIXPAY domain persistence entities.
-- Existing `accountingapi` code is implementation skeleton only until T1.4 approves the physical provider contract.
+- `amplitude-accounting-entries-api-v1` is the approved provider contract for T1 submission/recovery.
+- `amplitude-end-of-day-confirmation-api-v1` remains the bank-owned TFJ confirmation boundary.
+- Manual operator execution launches SIXPAY T1; it never launches or emulates the bank-owned TFJ.
 
 ## Responsibility split
 
