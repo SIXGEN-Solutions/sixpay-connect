@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Accounting T1 Operational Query API
+  version: 1.0.0
+  description: |
+    Internal read-only operator query API for Accounting-owned T1 operational
+    visibility. It exposes normalized Accounting facts only and never provider
+    DTOs, raw transport failures, stack traces or persistence internals.
+  x-sixpay-contract:
+    registryId: accounting-t1-operational-query-api-v1
+    gate: ACCOUNTING_T1
+    phaseStep: "5.6.2"
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    domain: accounting
+    businessOwner: accounting
+    securityOwner: security
+    capability: ACCOUNTING_T1_OPERATIONAL_QUERY
+    direction: SIXPAY_TO_INTERNAL_CLIENT
+    dataClassification: RESTRICTED
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+
+security:
+  - bearerAuth: []
+
+paths:
+  /internal/api/v1/accounting-t1-operations:
+    get:
+      operationId: searchAccountingT1Operations
+      summary: Search Accounting T1 operational candidates
+      description: |
+        Returns normalized Accounting-owned T1 operational snapshots for
+        operator visibility. This operation is read-only.
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, MANAGER, AUDITOR]
+        requiredPermissions: [accounting.read]
+      parameters:
+        - name: businessDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AccountingT1OperationalCandidateStatus'
+        - name: paymentReference
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: Accounting T1 operational page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingT1OperationalPageResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+
+  /internal/api/v1/accounting-t1-operations/{candidateId}:
+    get:
+      operationId: getAccountingT1Operation
+      summary: Get one Accounting T1 operational candidate
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, MANAGER, AUDITOR]
+        requiredPermissions: [accounting.read]
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Accounting T1 operational candidate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingT1OperationalResponse'
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+        '404':
+          description: Accounting T1 candidate not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AccountingT1OperationalCandidateStatus:
+      type: string
+      enum:
+        - AWAITING_TRESORPAY_VERIFICATION
+        - ELIGIBLE_FOR_BATCH
+        - INELIGIBLE_FOR_CURRENT_SELECTION
+        - ASSIGNED_TO_BATCH
+
+    AccountingT1EligibilityReason:
+      type: string
+      enum:
+        - NONE
+        - TRESORPAY_STATUS_NOT_COMPLETED
+        - TRESORPAY_STATUS_UNAVAILABLE
+        - OUTSIDE_SELECTION_WINDOW
+
+    AccountingT1TechnicalIssue:
+      type: string
+      enum:
+        - NONE
+        - TRESORPAY_STATUS_LOOKUP_UNAVAILABLE
+        - ACCOUNTING_SUBMISSION_OUTCOME_UNKNOWN
+        - ACCOUNTING_RECONCILIATION_PENDING
+
+    AccountingT1OperationalResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - candidateId
+        - paymentId
+        - publicPaymentReference
+        - financialInstitutionCode
+        - accountingBusinessDate
+        - status
+        - eligibilityReason
+        - selectionBusinessDate
+        - selectionFromInclusive
+        - selectionToExclusive
+        - technicalIssue
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        publicPaymentReference:
+          type: string
+        financialInstitutionCode:
+          type: string
+        accountingBusinessDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/AccountingT1OperationalCandidateStatus'
+        tresorPayProviderStatus:
+          type: [string, 'null']
+        tresorPayCheckedAt:
+          type: [string, 'null']
+          format: date-time
+        eligibilityReason:
+          $ref: '#/components/schemas/AccountingT1EligibilityReason'
+        selectionBusinessDate:
+          type: string
+          format: date
+        selectionFromInclusive:
+          type: string
+          format: date-time
+        selectionToExclusive:
+          type: string
+          format: date-time
+        technicalIssue:
+          $ref: '#/components/schemas/AccountingT1TechnicalIssue'
+        batchId:
+          type: [string, 'null']
+          format: uuid
+
+    AccountingT1OperationalPageResponse:
+      type: object
+      additionalProperties: false
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountingT1OperationalResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer

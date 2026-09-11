@@ -149,3 +149,22 @@ state, notably `AccountingBatchTracking` and its submission/reconciliation state
 LOT 5.6.1 does not add or modify an HTTP contract, endpoint, permission, database
 schema, migration or Angular model. Any operator API remains a subsequent,
 separately approved contract step.
+
+### LOT 5.6.2 — T1 operational query contract
+
+The internal read-only contract
+`documentation/contracts/internal/accounting-t1-operational-query-api-v1.yaml`
+defines operator visibility over the Accounting-owned T1 operational model.
+
+The contract exposes search and detail queries only. It does not execute T1,
+invoke TRESOR PAY, constitute a batch, submit Accounting entries or trigger
+recovery. ADMIN, MANAGER and AUDITOR are read-only consumers through
+`accounting.read`.
+
+The contract mirrors the LOT 5.6.1 normalized model: candidate status, persisted
+TRESOR PAY status evidence, Accounting-owned eligibility reason, resolved
+selection window, bounded technical issue category and optional batch assignment.
+
+No constitution-attempt field is introduced because no durable Accounting-owned
+model currently exists for that notion. Provider DTOs, raw exceptions, transport
+failures, stack traces and persistence internals remain outside the API surface.

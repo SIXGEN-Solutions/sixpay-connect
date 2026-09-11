@@ -735,6 +735,43 @@ contracts:
         - "No provider command"
         - "No payment replay"
 
+  - id: "accounting-t1-operational-query-api-v1"
+    path: "documentation/contracts/internal/accounting-t1-operational-query-api-v1.yaml"
+    domain: "accounting"
+    businessOwner: "accounting"
+    capability: "ACCOUNTING_T1_OPERATIONAL_QUERY"
+    direction: "SIXPAY_TO_INTERNAL_CLIENT"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    gate: "ACCOUNTING_T1"
+    phaseStep: "5.6.2"
+    security:
+      status: "APPROVED_INTERNAL_PROFILE"
+      authentication: ["OAUTH2_BEARER_JWT"]
+      requiredRoles: ["ADMIN", "MANAGER", "AUDITOR"]
+      requiredPermissions: ["accounting.read"]
+    dataClassification: "RESTRICTED"
+    paginationMode: "OFFSET_PAGE"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Expose normalized Accounting-owned T1 operational candidate visibility"
+        - "Expose persisted TRESOR PAY verification state"
+        - "Expose Accounting-owned eligibility reason and resolved selection window"
+        - "Expose bounded technical issue categories"
+        - "Expose existing batch assignment and durable recovery state only when available"
+      constraints:
+        - "Read-only query capability"
+        - "Must not trigger T1 execution, provider verification, batch constitution, submission or recovery"
+        - "No provider DTO, raw transport failure, stack trace or persistence internals may be exposed"
+        - "No constitution-attempt field is exposed because no durable Accounting-owned model exists"
+        - "Recovery visibility is limited to durable Accounting-owned state"
+        - "The API is based on the LOT 5.6.1 Accounting-owned operational model"
+
   - id: "accounting-t1-manual-execution-api-v1"
     path: "documentation/contracts/internal/accounting-t1-manual-execution-api-v1.yaml"
     domain: "accounting"
