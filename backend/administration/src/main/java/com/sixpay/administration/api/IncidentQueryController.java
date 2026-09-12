@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public class IncidentQueryController {
     @Operation(
             summary = "Search operational incidents"
     )
-    public IncidentPageResponse search(
+    public ResponseEntity<IncidentPageResponse> search(
             @RequestHeader(CORRELATION_ID)
             UUID correlationId,
             @RequestParam(required = false)
@@ -71,33 +72,41 @@ public class IncidentQueryController {
             @Max(200)
             int size
     ) {
-        return IncidentPageResponse.from(
-                useCase.search(
-                        new IncidentSearchCriteria(
-                                severity,
-                                status,
-                                component,
-                                page,
-                                size
+        return ResponseEntity.ok()
+                .header(CORRELATION_ID, correlationId.toString())
+                .body(
+                        IncidentPageResponse.from(
+                                useCase.search(
+                                        new IncidentSearchCriteria(
+                                                severity,
+                                                status,
+                                                component,
+                                                page,
+                                                size
+                                        )
+                                )
                         )
-                )
-        );
+                );
     }
 
     @GetMapping("/{incidentId}")
     @Operation(
             summary = "Get operational Incident detail"
     )
-    public IncidentDetailResponse get(
+    public ResponseEntity<IncidentDetailResponse> get(
             @RequestHeader(CORRELATION_ID)
             UUID correlationId,
             @PathVariable
             String incidentId
     ) {
-        return IncidentDetailResponse.from(
-                useCase.get(
-                        new IncidentId(incidentId)
-                )
-        );
+        return ResponseEntity.ok()
+                .header(CORRELATION_ID, correlationId.toString())
+                .body(
+                        IncidentDetailResponse.from(
+                                useCase.get(
+                                        new IncidentId(incidentId)
+                                )
+                        )
+                );
     }
 }
