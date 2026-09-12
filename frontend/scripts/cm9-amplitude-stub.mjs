@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 
 const host = '127.0.0.1';
@@ -50,7 +50,14 @@ function validVerificationRequest(payload) {
 
 function verifiedResponse(payload) {
   const verifiedAt = new Date().toISOString();
-  const customerReference = 'AMPLITUDE-CUSTOMER-CM9';
+  const customerReferenceKey =
+    `${payload.financialInstitutionCode}|${payload.customer.niu}`;
+  const customerReferenceDigest = createHash('sha256')
+    .update(customerReferenceKey)
+    .digest('hex')
+    .slice(0, 16)
+    .toUpperCase();
+  const customerReference = `AMPLITUDE-CUSTOMER-${customerReferenceDigest}`;
   const accountReference = payload.account.accountReference;
   const financialInstitutionCode = payload.financialInstitutionCode;
 
