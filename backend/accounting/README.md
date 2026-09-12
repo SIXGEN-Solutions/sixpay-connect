@@ -298,3 +298,23 @@ Expected security coverage for the backend query sub-lot:
 
 This remains a read-only capability. No retry, replay, force-match, resolve,
 reverse or mark-integrated authorization is defined.
+
+### LOT 5.7.4 — TFJ operational backend query
+
+The internal TFJ/Reconciliation operational query is implemented as a read-only
+Accounting capability over the existing `accounting_tfj_confirmations`
+persistence.
+
+The query surface provides:
+
+- paginated search by `businessDate`, `paymentReference` and
+  `bankPostingReference`;
+- normalized operator-category filtering through `TfjOperationalSnapshot`;
+- detail lookup by `confirmationId`;
+- existing Accounting read security:
+  `ADMIN|MANAGER|AUDITOR` plus `SCOPE_accounting.read`.
+
+The implementation does not modify callback ingestion, scheduled fallback
+lookup, TFJ matching, quarantine processing, finality publication, persistence
+schema or provider-facing contracts. It defines no retry, replay, force-match,
+resolve, reverse or mark-integrated command.
