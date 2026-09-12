@@ -203,3 +203,25 @@ constitution, submission, reconciliation or recovery actions.
 
 Security remains the LOT 5.6.3 rule: `ADMIN`, `MANAGER` or `AUDITOR` plus
 `SCOPE_accounting.read`.
+
+### LOT 5.6.5 — T1 operational query tests
+
+The operational query test suite covers the approved read-only behavior across
+the HTTP and application layers.
+
+Coverage includes:
+
+- search filters and response pagination;
+- detail lookup and not-found mapping;
+- ADMIN/MANAGER/AUDITOR plus `SCOPE_accounting.read`;
+- rejection when the role or scope is missing;
+- unauthenticated access;
+- normalized operational states for missing, completed and non-completed
+  TRESOR PAY evidence;
+- normalized ineligibility reasons;
+- payment-reference normalization;
+- pagination guards.
+
+The tests do not invoke provider verification, batch constitution, submission,
+reconciliation or recovery. No database schema or contract change is introduced
+by this sub-lot.
