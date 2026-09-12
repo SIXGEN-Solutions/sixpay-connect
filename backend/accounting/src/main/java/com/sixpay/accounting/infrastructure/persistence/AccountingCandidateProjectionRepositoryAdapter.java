@@ -118,6 +118,21 @@ public class AccountingCandidateProjectionRepositoryAdapter
 
     @Override
     @Transactional(readOnly = true)
+    public List<AccountingCandidateProjection> searchAll(
+            java.time.LocalDate businessDate,
+            String paymentReference
+    ) {
+        return repository.searchOperationalCandidates(
+                        businessDate,
+                        paymentReference
+                )
+                .stream()
+                .map(AccountingCandidateJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<AccountingCandidateProjection> findByCandidateId(UUID candidateId) {
         return repository.findById(candidateId)
                 .map(AccountingCandidateJpaEntity::toDomain);

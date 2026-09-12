@@ -16,6 +16,11 @@ public interface AccountingT1OperationalQueryPort {
             int size
     );
 
+    List<AccountingCandidateProjection> searchAll(
+            LocalDate businessDate,
+            String paymentReference
+    );
+
     Optional<AccountingCandidateProjection> findByCandidateId(UUID candidateId);
 
     record Page(

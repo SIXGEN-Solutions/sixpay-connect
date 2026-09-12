@@ -225,3 +225,24 @@ Coverage includes:
 The tests do not invoke provider verification, batch constitution, submission,
 reconciliation or recovery. No database schema or contract change is introduced
 by this sub-lot.
+
+### LOT 5.6.7 — Operational observability closure
+
+LOT 5.6 closure fixes align the operational query with the Accounting-owned
+runtime model:
+
+- selection windows are resolved through the configured `AccountingCutoffPolicy`
+  instead of a synthetic UTC calendar day;
+- status-filtered queries compute pagination after normalized operational-state
+  derivation so `content`, `totalElements` and `totalPages` are coherent;
+- durable batch recovery state is exposed only through normalized
+  `AccountingT1TechnicalIssue` values:
+  `OUTCOME_UNKNOWN` maps to `ACCOUNTING_SUBMISSION_OUTCOME_UNKNOWN` and
+  `RECONCILIATION_REQUIRED` maps to `ACCOUNTING_RECONCILIATION_PENDING`;
+- no raw provider error or persistence detail is exposed;
+- `TRESORPAY_STATUS_LOOKUP_UNAVAILABLE` is not synthesized when no durable
+  Accounting-owned failure fact exists; an unverified candidate remains
+  `AWAITING_TRESORPAY_VERIFICATION` with `TRESORPAY_STATUS_UNAVAILABLE`.
+
+No contract, database schema, migration, provider integration or security rule
+is changed by this closure sub-lot.

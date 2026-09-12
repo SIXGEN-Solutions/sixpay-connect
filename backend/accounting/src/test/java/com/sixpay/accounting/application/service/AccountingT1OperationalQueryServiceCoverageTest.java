@@ -6,11 +6,15 @@ import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
 import com.sixpay.accounting.domain.model.AccountingT1EligibilityReason;
 import com.sixpay.accounting.domain.model.AccountingT1OperationalCandidateStatus;
 import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
+import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +31,17 @@ class AccountingT1OperationalQueryServiceCoverageTest {
     private final AccountingT1OperationalQueryPort port =
             mock(AccountingT1OperationalQueryPort.class);
 
+    private final AccountingBatchTrackingRepository trackingRepository =
+            mock(AccountingBatchTrackingRepository.class);
     private final AccountingT1OperationalQueryService service =
-            new AccountingT1OperationalQueryService(port);
+            new AccountingT1OperationalQueryService(
+                    port,
+                    new DailyAccountingCutoffPolicy(
+                            ZoneId.of("Africa/Douala"),
+                            LocalTime.of(23, 0)
+                    ),
+                    trackingRepository
+            );
 
     @Test
     void mapsMissingTresorPayEvidenceToAwaitingVerification() {
@@ -69,10 +82,8 @@ class AccountingT1OperationalQueryServiceCoverageTest {
         var eligible = candidate(null, evidence("COMPLETED"));
         var ineligible = candidate(null, evidence("PENDING"));
 
-        when(port.search(null, null, 0, 20))
-                .thenReturn(new AccountingT1OperationalQueryPort.Page(
-                        List.of(eligible, ineligible), 2
-                ));
+        when(port.searchAll(null, null))
+                .thenReturn(List.of(eligible, ineligible));
 
         var result = service.search(
                 null,
@@ -83,6 +94,8 @@ class AccountingT1OperationalQueryServiceCoverageTest {
         );
 
         assertThat(result.content()).hasSize(1);
+        assertThat(result.totalElements()).isEqualTo(1);
+        assertThat(result.totalPages()).isEqualTo(1);
         assertThat(result.content().getFirst().status())
                 .isEqualTo(AccountingT1OperationalCandidateStatus.ELIGIBLE_FOR_BATCH);
     }

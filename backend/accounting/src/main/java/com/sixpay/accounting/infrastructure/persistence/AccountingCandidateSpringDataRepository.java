@@ -35,6 +35,21 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
             org.springframework.data.domain.Pageable pageable
     );
 
+    @Query("""
+            select c from AccountingCandidateJpaEntity c
+            where (:businessDate is null or c.accountingBusinessDate = :businessDate)
+              and (
+                    :paymentReference is null
+                    or lower(c.publicPaymentReference)
+                       like lower(concat('%', :paymentReference, '%'))
+                  )
+            order by c.paymentOccurredAt asc, c.publicPaymentReference asc
+            """)
+    List<AccountingCandidateJpaEntity> searchOperationalCandidates(
+            @Param("businessDate") LocalDate businessDate,
+            @Param("paymentReference") String paymentReference
+    );
+
 
     @Query("""
             select c from AccountingCandidateJpaEntity c
