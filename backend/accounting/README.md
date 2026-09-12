@@ -246,3 +246,26 @@ runtime model:
 
 No contract, database schema, migration, provider integration or security rule
 is changed by this closure sub-lot.
+
+### LOT 5.7.1 — TFJ operational ownership and operator model
+
+Accounting owns the internal operator representation of persisted TFJ /
+reconciliation facts.
+
+The operator model is read-only. `TfjOperationalSnapshot` is derived from
+`TfjConfirmation` and exposes normalized Accounting-owned facts only. It does
+not expose provider transport payloads, persistence entities, raw exceptions or
+new operational commands.
+
+Operator categories are intentionally limited to facts already represented by
+the durable TFJ model:
+
+- `MATCHED`;
+- `QUARANTINED_UNMATCHED`;
+- `QUARANTINED_AMBIGUOUS`;
+- `FAILED`;
+- `FINALITY_PUBLICATION_PENDING`;
+- `COMPLETED`.
+
+No endpoint, database schema, migration, retry, replay, force-match, resolve,
+reverse or mark-integrated command is introduced by LOT 5.7.1.
