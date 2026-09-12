@@ -88,9 +88,7 @@ describe('AccountingService', () => {
     );
 
     const service = TestBed.inject(AccountingService);
-    const result = await firstValueFrom(
-      service.get('11111111-1111-4111-8111-111111111111'),
-    );
+    const result = await firstValueFrom(service.get('11111111-1111-4111-8111-111111111111'));
 
     expect(result?.items).toHaveLength(1);
     expect(result?.items[0]?.bankPostingReference).toBe('BANK-POST-001');
@@ -128,8 +126,6 @@ describe('AccountingService', () => {
 
     const service = TestBed.inject(AccountingService);
 
-    await expect(firstValueFrom(service.get('broken'))).rejects.toBeInstanceOf(
-      HttpErrorResponse,
-    );
+    await expect(firstValueFrom(service.get('broken'))).rejects.toBeInstanceOf(HttpErrorResponse);
   });
 });

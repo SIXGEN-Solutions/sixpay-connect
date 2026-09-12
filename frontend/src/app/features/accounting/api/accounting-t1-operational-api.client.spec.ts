@@ -53,9 +53,7 @@ describe('AccountingApiClient T1 operational query', () => {
   it('loads one T1 operational candidate', () => {
     client.getT1Operation('candidate/1').subscribe();
 
-    const request = http.expectOne(
-      '/internal/api/v1/accounting-t1-operations/candidate%2F1',
-    );
+    const request = http.expectOne('/internal/api/v1/accounting-t1-operations/candidate%2F1');
 
     expect(request.request.method).toBe('GET');
     request.flush({

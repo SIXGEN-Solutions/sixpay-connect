@@ -135,10 +135,7 @@ describe('authorizationGuard', () => {
     );
   });
 
-  function evaluate(
-    data: AuthorizationRouteData,
-    url: string,
-  ): Promise<boolean | UrlTree> {
+  function evaluate(data: AuthorizationRouteData, url: string): Promise<boolean | UrlTree> {
     return TestBed.runInInjectionContext(() => {
       const route = { data } as unknown as ActivatedRouteSnapshot;
       const state = { url } as RouterStateSnapshot;

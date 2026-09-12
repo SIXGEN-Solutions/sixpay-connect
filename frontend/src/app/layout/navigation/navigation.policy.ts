@@ -33,8 +33,5 @@ export function canSeeNavigationItem(
   }
 
   const standaloneRoles = item.standaloneRoles ?? item.roles ?? [];
-  return (
-    authorization.standalone &&
-    standaloneRoles.some((role) => authorization.roles.has(role))
-  );
+  return authorization.standalone && standaloneRoles.some((role) => authorization.roles.has(role));
 }

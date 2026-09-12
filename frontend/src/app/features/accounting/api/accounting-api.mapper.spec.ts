@@ -37,9 +37,7 @@ describe('Accounting API mapper', () => {
     expect(mapped.bankPostingReference).toBe('BANK-POST-001');
     expect(mapped.tresorPayStatus).toBe('SUCCESS');
     expect(mapped.status).toBe('PENDING');
-    expect(mapped.tresorPayStatusCheckedAt.toISOString()).toBe(
-      '2026-08-08T18:00:00.000Z',
-    );
+    expect(mapped.tresorPayStatusCheckedAt.toISOString()).toBe('2026-08-08T18:00:00.000Z');
   });
 
   it('maps detail and items without introducing internal T1 fields', () => {

@@ -19,52 +19,42 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(
-    /\/internal\/api\/v1\/accounting-batches(?:\?.*)?$/,
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          content: [],
-          page: 0,
-          size: 20,
-          totalElements: 0,
-          totalPages: 0,
-        }),
-      });
-    },
-  );
+  await page.route(/\/internal\/api\/v1\/accounting-batches(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        content: [],
+        page: 0,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+      }),
+    });
+  });
 });
 
-test('Accounting T1 manual execution is available to authorized ADMIN', async ({
-  page,
-}) => {
+test('Accounting T1 manual execution is available to authorized ADMIN', async ({ page }) => {
   let requestBody: unknown;
 
-  await page.route(
-    /\/internal\/api\/v1\/accounting-t1-executions$/,
-    async (route) => {
-      requestBody = route.request().postDataJSON();
+  await page.route(/\/internal\/api\/v1\/accounting-t1-executions$/, async (route) => {
+    requestBody = route.request().postDataJSON();
 
-      expect(
-        route.request().headers()['x-correlation-id'],
-      ).toBeTruthy();
+    expect(route.request().headers()['x-correlation-id']).toBeTruthy();
 
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          batchId: '11111111-1111-4111-8111-111111111111',
-          businessDate: '2026-09-10',
-          financialInstitutionCode: 'LAREGIONALE',
-          batchStatus: 'NOT_COMPLETED',
-          submissionState: 'SUBMITTED',
-          providerBatchReference: 'CB-20260910-001',
-        }),
-      });
-    },
-  );
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        batchId: '11111111-1111-4111-8111-111111111111',
+        businessDate: '2026-09-10',
+        financialInstitutionCode: 'LAREGIONALE',
+        batchStatus: 'NOT_COMPLETED',
+        submissionState: 'SUBMITTED',
+        providerBatchReference: 'CB-20260910-001',
+      }),
+    });
+  });
 
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain('2026-09-10');
@@ -73,23 +63,17 @@ test('Accounting T1 manual execution is available to authorized ADMIN', async ({
 
   await page.goto('/accounting');
   await page.getByLabel('Date métier T1').fill('2026-09-10');
-  await page
-    .getByRole('button', { name: 'Lancer le traitement T1' })
-    .click();
+  await page.getByRole('button', { name: 'Lancer le traitement T1' }).click();
 
   await expect(page.getByRole('status')).toContainText('SUBMITTED');
-  await expect(
-    page.getByRole('link', { name: 'Consulter le lot' }),
-  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Consulter le lot' })).toBeVisible();
 
   expect(requestBody).toEqual({
     businessDate: '2026-09-10',
   });
 });
 
-test('Accounting T1 manual execution remains hidden for AUDITOR', async ({
-  page,
-}) => {
+test('Accounting T1 manual execution remains hidden for AUDITOR', async ({ page }) => {
   await page.route(/\/api\/v1\/auth\/me(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       status: 200,

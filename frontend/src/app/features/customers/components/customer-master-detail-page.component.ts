@@ -1,7 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
@@ -25,7 +30,6 @@ type Feedback = {
   readonly title: string;
   readonly message: string;
 };
-
 
 interface CustomerReasonDialogData {
   readonly title: string;
@@ -59,13 +63,8 @@ interface CustomerReasonDialogData {
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <sp-button variant="secondary" (buttonClick)="close()">
-        Annuler
-      </sp-button>
-      <sp-button
-        [variant]="data.destructive ? 'danger' : 'primary'"
-        (buttonClick)="submit()"
-      >
+      <sp-button variant="secondary" (buttonClick)="close()"> Annuler </sp-button>
+      <sp-button [variant]="data.destructive ? 'danger' : 'primary'" (buttonClick)="submit()">
         {{ data.confirmLabel }}
       </sp-button>
     </mat-dialog-actions>
@@ -73,9 +72,7 @@ interface CustomerReasonDialogData {
 })
 class CustomerReasonDialogComponent {
   protected readonly data = inject<CustomerReasonDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(
-    MatDialogRef<CustomerReasonDialogComponent, string | null>,
-  );
+  private readonly dialogRef = inject(MatDialogRef<CustomerReasonDialogComponent, string | null>);
   private readonly fb = inject(FormBuilder);
 
   protected readonly form = this.fb.nonNullable.group({
@@ -185,9 +182,7 @@ class CustomerReasonDialogComponent {
             </mat-form-field>
 
             <div class="customer-form__actions">
-              <sp-button type="submit" icon="save" [disabled]="mutating()">
-                Enregistrer
-              </sp-button>
+              <sp-button type="submit" icon="save" [disabled]="mutating()"> Enregistrer </sp-button>
             </div>
           </form>
         }
@@ -285,10 +280,7 @@ class CustomerReasonDialogComponent {
                 <span>{{ subscription.updatedAt | date: 'short' }}</span>
 
                 <div class="customer-row__actions">
-                  @if (
-                    subscription.status === 'PENDING_ACTIVATION' &&
-                    canSubscriptionUpdate()
-                  ) {
+                  @if (subscription.status === 'PENDING_ACTIVATION' && canSubscriptionUpdate()) {
                     <sp-button
                       type="button"
                       icon="check_circle"
@@ -299,10 +291,7 @@ class CustomerReasonDialogComponent {
                     </sp-button>
                   }
 
-                  @if (
-                    subscription.status === 'ACTIVE' &&
-                    canSubscriptionSuspend()
-                  ) {
+                  @if (subscription.status === 'ACTIVE' && canSubscriptionSuspend()) {
                     <sp-button
                       type="button"
                       variant="danger"
@@ -314,10 +303,7 @@ class CustomerReasonDialogComponent {
                     </sp-button>
                   }
 
-                  @if (
-                    subscription.status !== 'CLOSED' &&
-                    canSubscriptionClose()
-                  ) {
+                  @if (subscription.status !== 'CLOSED' && canSubscriptionClose()) {
                     <sp-button
                       type="button"
                       variant="danger"
@@ -351,9 +337,7 @@ class CustomerReasonDialogComponent {
               </mat-form-field>
 
               <div class="customer-form__actions">
-                <sp-button type="submit" icon="add" [disabled]="mutating()">
-                  Créer
-                </sp-button>
+                <sp-button type="submit" icon="add" [disabled]="mutating()"> Créer </sp-button>
               </div>
             </form>
           }
@@ -658,11 +642,7 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected createSubscription(): void {
-    if (
-      !this.canSubscriptionCreate() ||
-      this.subscriptionForm.invalid ||
-      this.mutating()
-    ) {
+    if (!this.canSubscriptionCreate() || this.subscriptionForm.invalid || this.mutating()) {
       this.subscriptionForm.markAllAsTouched();
       return;
     }
@@ -701,11 +681,7 @@ export class CustomerMasterDetailPageComponent {
 
   protected openSubscriptionSuspension(subscriptionId: string): void {
     const subscription = this.findSubscription(subscriptionId);
-    if (
-      !this.canSubscriptionSuspend() ||
-      subscription?.status !== 'ACTIVE' ||
-      this.mutating()
-    ) {
+    if (!this.canSubscriptionSuspend() || subscription?.status !== 'ACTIVE' || this.mutating()) {
       return;
     }
 

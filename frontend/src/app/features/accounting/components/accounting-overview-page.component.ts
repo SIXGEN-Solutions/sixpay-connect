@@ -48,12 +48,10 @@ import { AccountingService } from '../services/accounting.service';
 
           @if (executionResult(); as result) {
             <p role="status">
-              Lot {{ result.batchId }} — état {{ result.submissionState }}
-              — statut {{ result.batchStatus }}.
+              Lot {{ result.batchId }} — état {{ result.submissionState }} — statut
+              {{ result.batchStatus }}.
             </p>
-            <a [routerLink]="['/accounting/batches', result.batchId]">
-              Consulter le lot
-            </a>
+            <a [routerLink]="['/accounting/batches', result.batchId]"> Consulter le lot </a>
           }
 
           @if (executionError()) {
@@ -228,10 +226,9 @@ export class AccountingOverviewPageComponent {
 
   protected readonly batches = signal<readonly AccountingBatchSummary[]>([]);
   protected readonly executing = signal(false);
-  protected readonly executionResult =
-    signal<import('../models/accounting-t1-execution').AccountingT1ManualExecutionResponse | null>(
-      null,
-    );
+  protected readonly executionResult = signal<
+    import('../models/accounting-t1-execution').AccountingT1ManualExecutionResponse | null
+  >(null);
   protected readonly executionError = signal<string | null>(null);
 
   protected readonly statuses: readonly AccountingBatchStatus[] = ['NOT_COMPLETED', 'COMPLETED'];
@@ -257,8 +254,7 @@ export class AccountingOverviewPageComponent {
   }
 
   protected executeT1(): void {
-    const businessDate =
-      this.executionForm.controls.businessDate.value.trim();
+    const businessDate = this.executionForm.controls.businessDate.value.trim();
 
     if (!businessDate || this.executing()) {
       return;

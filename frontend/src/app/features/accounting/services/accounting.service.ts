@@ -31,15 +31,9 @@ export class AccountingService {
       : this.mock.search(query);
   }
 
-  executeT1Manually(
-    businessDate: string,
-  ): Observable<AccountingT1ManualExecutionResponse> {
+  executeT1Manually(businessDate: string): Observable<AccountingT1ManualExecutionResponse> {
     if (!this.backendMode.usesApi) {
-      return throwError(
-        () => new Error(
-          'Manual T1 execution requires the SIXPAY API backend',
-        ),
-      );
+      return throwError(() => new Error('Manual T1 execution requires the SIXPAY API backend'));
     }
 
     return this.api.executeT1Manually(businessDate);

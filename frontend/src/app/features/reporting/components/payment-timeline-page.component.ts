@@ -193,7 +193,7 @@ export class PaymentTimelinePageComponent {
     const currentCursor =
       this.cursorHistory().length === 0
         ? null
-        : this.cursorHistory()[this.cursorHistory().length - 1] ?? null;
+        : (this.cursorHistory()[this.cursorHistory().length - 1] ?? null);
     this.cursorHistory.update((history) => [...history, currentCursor]);
     this.search(cursor, true);
   }

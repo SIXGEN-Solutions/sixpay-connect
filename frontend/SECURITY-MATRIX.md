@@ -85,7 +85,6 @@ Un utilisateur authentifié sans le rôle requis est redirigé vers `/forbidden`
 - Aucun secret ou token n'est journalisé.
 - Les contrôles objet, scopes, transitions métier et idempotence restent côté backend.
 
-
 ## Accounting T1 manual execution
 
 `/accounting` remains readable by `ADMIN`, `MANAGER` and `AUDITOR`.

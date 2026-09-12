@@ -17,10 +17,7 @@ describe('Reporting access conformance', () => {
       const route = REPORTING_ROUTES.find((candidate) => candidate.path === path);
 
       expect(route?.data?.['roles']).toEqual(['AUDITOR']);
-      expect(route?.data?.['permissions']).toEqual([
-        'payment.audit.read',
-        'payment.audit.export',
-      ]);
+      expect(route?.data?.['permissions']).toEqual(['payment.audit.read', 'payment.audit.export']);
     }
   });
 });

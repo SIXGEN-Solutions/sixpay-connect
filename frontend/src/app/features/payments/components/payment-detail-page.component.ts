@@ -46,8 +46,14 @@ import { PaymentsService } from '../services/payments.service';
         <div class="sp-summary-grid">
           <sp-card title="Paiement">
             <dl class="sp-details">
-              <div><dt>Payment ID</dt><dd>{{ currentPayment.paymentId }}</dd></div>
-              <div><dt>Statut</dt><dd>{{ currentPayment.status }}</dd></div>
+              <div>
+                <dt>Payment ID</dt>
+                <dd>{{ currentPayment.paymentId }}</dd>
+              </div>
+              <div>
+                <dt>Statut</dt>
+                <dd>{{ currentPayment.status }}</dd>
+              </div>
               <div>
                 <dt>Montant</dt>
                 <dd>
@@ -57,29 +63,74 @@ import { PaymentsService } from '../services/payments.service';
                   }}
                 </dd>
               </div>
-              <div><dt>Institution</dt><dd>{{ currentPayment.financialInstitutionCode }}</dd></div>
-              <div><dt>Compte débiteur</dt><dd>{{ currentPayment.debtorAccount?.maskedValue ?? '—' }}</dd></div>
-              <div><dt>TresorPay Request</dt><dd>{{ currentPayment.tresorPayRequestId }}</dd></div>
-              <div><dt>Observed Customer</dt><dd>{{ currentPayment.observedCustomerId ?? '—' }}</dd></div>
-              <div><dt>Reason code</dt><dd>{{ currentPayment.reasonCode ?? '—' }}</dd></div>
-              <div><dt>Créé</dt><dd>{{ currentPayment.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-              <div><dt>Mis à jour</dt><dd>{{ currentPayment.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+              <div>
+                <dt>Institution</dt>
+                <dd>{{ currentPayment.financialInstitutionCode }}</dd>
+              </div>
+              <div>
+                <dt>Compte débiteur</dt>
+                <dd>{{ currentPayment.debtorAccount?.maskedValue ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>TresorPay Request</dt>
+                <dd>{{ currentPayment.tresorPayRequestId }}</dd>
+              </div>
+              <div>
+                <dt>Observed Customer</dt>
+                <dd>{{ currentPayment.observedCustomerId ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Reason code</dt>
+                <dd>{{ currentPayment.reasonCode ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Créé</dt>
+                <dd>{{ currentPayment.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+              </div>
+              <div>
+                <dt>Mis à jour</dt>
+                <dd>{{ currentPayment.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+              </div>
               <div>
                 <dt>Finalisé</dt>
-                <dd>{{ currentPayment.finalizedAt ? (currentPayment.finalizedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}</dd>
+                <dd>
+                  {{
+                    currentPayment.finalizedAt
+                      ? (currentPayment.finalizedAt | date: 'dd/MM/yyyy HH:mm:ss')
+                      : '—'
+                  }}
+                </dd>
               </div>
-              <div><dt>Aggregate version</dt><dd>{{ currentPayment.aggregateVersion }}</dd></div>
-              <div><dt>Correlation ID</dt><dd>{{ currentPayment.correlationId }}</dd></div>
+              <div>
+                <dt>Aggregate version</dt>
+                <dd>{{ currentPayment.aggregateVersion }}</dd>
+              </div>
+              <div>
+                <dt>Correlation ID</dt>
+                <dd>{{ currentPayment.correlationId }}</dd>
+              </div>
             </dl>
           </sp-card>
 
           <sp-card title="Vérification bancaire">
             @if (currentPayment.bankingVerification; as verification) {
               <dl class="sp-details sp-details--single">
-                <div><dt>Résultat</dt><dd>{{ verification.outcome }}</dd></div>
-                <div><dt>Verification ID</dt><dd>{{ verification.verificationId }}</dd></div>
-                <div><dt>Observé</dt><dd>{{ verification.observedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
-                <div><dt>Codes</dt><dd>{{ verification.reasonCodes.join(', ') || '—' }}</dd></div>
+                <div>
+                  <dt>Résultat</dt>
+                  <dd>{{ verification.outcome }}</dd>
+                </div>
+                <div>
+                  <dt>Verification ID</dt>
+                  <dd>{{ verification.verificationId }}</dd>
+                </div>
+                <div>
+                  <dt>Observé</dt>
+                  <dd>{{ verification.observedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                </div>
+                <div>
+                  <dt>Codes</dt>
+                  <dd>{{ verification.reasonCodes.join(', ') || '—' }}</dd>
+                </div>
               </dl>
             } @else {
               <p>Aucune vérification bancaire projetée.</p>
@@ -90,7 +141,9 @@ import { PaymentsService } from '../services/payments.service';
         <div class="sp-operation-grid">
           <sp-card title="Posting">
             @if (currentPayment.posting; as posting) {
-              <p><strong>{{ posting.outcome }}</strong></p>
+              <p>
+                <strong>{{ posting.outcome }}</strong>
+              </p>
               <p>Référence : {{ posting.bankPostingReference ?? '—' }}</p>
               <p>
                 Observé :
@@ -103,7 +156,9 @@ import { PaymentsService } from '../services/payments.service';
 
           <sp-card title="TFJ">
             @if (currentPayment.tfj; as tfj) {
-              <p><strong>{{ tfj.status }}</strong></p>
+              <p>
+                <strong>{{ tfj.status }}</strong>
+              </p>
               <p>Business date : {{ tfj.businessDate ?? '—' }}</p>
               <p>
                 Confirmé :
@@ -116,11 +171,15 @@ import { PaymentsService } from '../services/payments.service';
 
           <sp-card title="Reversal">
             @if (currentPayment.reversal; as reversal) {
-              <p><strong>{{ reversal.status }}</strong></p>
+              <p>
+                <strong>{{ reversal.status }}</strong>
+              </p>
               <p>Référence : {{ reversal.reversalReference ?? '—' }}</p>
               <p>
                 Observé :
-                {{ reversal.observedAt ? (reversal.observedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
+                {{
+                  reversal.observedAt ? (reversal.observedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—'
+                }}
               </p>
             } @else {
               <p>Aucune projection de reversal disponible.</p>

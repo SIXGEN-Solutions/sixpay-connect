@@ -1,4 +1,3 @@
-import { NgFor, NgIf } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -10,9 +9,9 @@ import {
 } from '../models/accounting-t1-operational';
 
 @Component({
-  selector: 'app-accounting-t1-operational-page',
+  selector: 'sp-accounting-t1-operational-page',
   standalone: true,
-  imports: [FormsModule, NgIf, NgFor],
+  imports: [FormsModule],
   template: `
     <section>
       <header>
@@ -30,7 +29,9 @@ import {
           Statut
           <select name="status" [(ngModel)]="status">
             <option value="">Tous</option>
-            <option *ngFor="let value of statuses" [value]="value">{{ value }}</option>
+            @for (value of statuses; track value) {
+              <option [value]="value">{{ value }}</option>
+            }
           </select>
         </label>
 
@@ -47,41 +48,49 @@ import {
         <button type="submit" [disabled]="loading()">Rechercher</button>
       </form>
 
-      <p *ngIf="error()" role="alert">{{ error() }}</p>
-      <p *ngIf="loading()">Chargement...</p>
+      @if (error()) {
+        <p role="alert">{{ error() }}</p>
+      }
+      @if (loading()) {
+        <p>Chargement...</p>
+      }
 
-      <table *ngIf="!loading() && items().length > 0">
-        <thead>
-          <tr>
-            <th>Référence paiement</th>
-            <th>Date comptable</th>
-            <th>Statut</th>
-            <th>TRESOR PAY</th>
-            <th>Motif</th>
-            <th>Incident technique</th>
-            <th>Batch</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items()">
-            <td>{{ item.publicPaymentReference }}</td>
-            <td>{{ item.accountingBusinessDate }}</td>
-            <td>{{ item.status }}</td>
-            <td>{{ item.tresorPayProviderStatus || '—' }}</td>
-            <td>{{ item.eligibilityReason }}</td>
-            <td>{{ item.technicalIssue }}</td>
-            <td>{{ item.batchId || '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      @if (!loading() && items().length > 0) {
+        <table>
+          <thead>
+            <tr>
+              <th>Référence paiement</th>
+              <th>Date comptable</th>
+              <th>Statut</th>
+              <th>TRESOR PAY</th>
+              <th>Motif</th>
+              <th>Incident technique</th>
+              <th>Batch</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.publicPaymentReference) {
+              <tr>
+                <td>{{ item.publicPaymentReference }}</td>
+                <td>{{ item.accountingBusinessDate }}</td>
+                <td>{{ item.status }}</td>
+                <td>{{ item.tresorPayProviderStatus || '—' }}</td>
+                <td>{{ item.eligibilityReason }}</td>
+                <td>{{ item.technicalIssue }}</td>
+                <td>{{ item.batchId || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
 
-      <p *ngIf="!loading() && !error() && items().length === 0">
-        Aucun candidat opérationnel T1.
-      </p>
+      @if (!loading() && !error() && items().length === 0) {
+        <p>Aucun candidat opérationnel T1.</p>
+      }
 
-      <footer *ngIf="totalElements() > 0">
-        {{ totalElements() }} résultat(s)
-      </footer>
+      @if (totalElements() > 0) {
+        <footer>{{ totalElements() }} résultat(s)</footer>
+      }
     </section>
   `,
 })
@@ -113,9 +122,7 @@ export class AccountingT1OperationalPageComponent {
       size: 20,
       ...(this.businessDate ? { businessDate: this.businessDate } : {}),
       ...(this.status ? { status: this.status } : {}),
-      ...(this.paymentReference.trim()
-        ? { paymentReference: this.paymentReference.trim() }
-        : {}),
+      ...(this.paymentReference.trim() ? { paymentReference: this.paymentReference.trim() } : {}),
     };
 
     this.api
