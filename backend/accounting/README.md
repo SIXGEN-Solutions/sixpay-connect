@@ -318,3 +318,22 @@ The implementation does not modify callback ingestion, scheduled fallback
 lookup, TFJ matching, quarantine processing, finality publication, persistence
 schema or provider-facing contracts. It defines no retry, replay, force-match,
 resolve, reverse or mark-integrated command.
+
+### LOT 5.7.5 — TFJ operational query tests
+
+Coverage validates the read-only TFJ/Reconciliation operational surface for:
+
+- matched confirmations;
+- unmatched and ambiguous quarantine categories;
+- failed TFJ confirmation visibility;
+- terminal confirmation with finality publication still pending;
+- category-filtered pagination consistency;
+- invalid pagination and unknown confirmation handling;
+- ADMIN, MANAGER and AUDITOR access with `SCOPE_accounting.read`;
+- rejection of an approved role without the Accounting read scope;
+- rejection of the Accounting read scope without an approved operator role;
+- unauthenticated access rejection.
+
+The tests do not execute callback ingestion, scheduled fallback lookup,
+matching/reconciliation commands, finality publication, provider calls or any
+database write.

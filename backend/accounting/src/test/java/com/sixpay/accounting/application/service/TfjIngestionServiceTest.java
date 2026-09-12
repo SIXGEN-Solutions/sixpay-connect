@@ -246,6 +246,35 @@ class TfjIngestionServiceTest {
         }
 
         @Override
+        public TfjConfirmationRepository.OperationalPage searchOperational(
+                java.time.LocalDate businessDate,
+                String paymentReference,
+                String bankPostingReference,
+                int page,
+                int size
+        ) {
+            List<TfjConfirmation> content =
+                    saved == null
+                            ? List.of()
+                            : List.of(saved);
+            return new TfjConfirmationRepository.OperationalPage(
+                    content,
+                    content.size()
+            );
+        }
+
+        @Override
+        public List<TfjConfirmation> searchOperationalAll(
+                java.time.LocalDate businessDate,
+                String paymentReference,
+                String bankPostingReference
+        ) {
+            return saved == null
+                    ? List.of()
+                    : List.of(saved);
+        }
+
+        @Override
         public List<TfjConfirmation>
         findPendingFinalityPublication(int limit) {
             return List.of();
