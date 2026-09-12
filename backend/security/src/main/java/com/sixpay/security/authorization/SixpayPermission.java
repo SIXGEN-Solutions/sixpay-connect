@@ -37,6 +37,7 @@ public enum SixpayPermission {
     PAYMENT_AUDIT_READ("payment.audit.read"),
     PAYMENT_AUDIT_EXPORT("payment.audit.export"),
 
+    ACCOUNTING_READ("accounting.read"),
     ACCOUNTING_T1_EXECUTE("accounting.t1.execute");
 
     private static final String SCOPE_PREFIX = "SCOPE_";

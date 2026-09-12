@@ -276,6 +276,78 @@ ON CONFLICT (evidence_id) DO NOTHING;
   );
 }
 
+function seedAccountingVerticalFixture() {
+  const sql = `
+INSERT INTO accounting_batches (
+    id,
+    idempotency_key,
+    business_date,
+    financial_institution_code,
+    created_at,
+    status,
+    version
+) VALUES (
+    '59050000-0000-0000-0000-000000000001',
+    '9aa0a2f094d472d7aa4973054b98c5f00f96e50547f0df9ffda0504d8fc6001d',
+    '2026-09-12',
+    'SIXPAY',
+    '2026-09-12T15:00:00Z',
+    'COMPLETED',
+    0
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO accounting_batch_items (
+    id,
+    batch_id,
+    payment_id,
+    public_payment_reference,
+    partner_id,
+    amount,
+    currency,
+    payment_occurred_at,
+    payment_business_date,
+    bank_posting_reference,
+    tresorpay_status,
+    tresorpay_status_checked_at,
+    status
+) VALUES (
+    '59050000-0000-0000-0000-000000000002',
+    '59050000-0000-0000-0000-000000000001',
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    'L595-PARTNER',
+    12500.00,
+    'XAF',
+    '2026-09-12T12:00:00Z',
+    '2026-09-12',
+    'AMP-L595-POSTING-001',
+    'COMPLETED',
+    '2026-09-12T14:45:00Z',
+    'COMPLETED'
+)
+ON CONFLICT (id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
 function terminateProcessTree(child) {
   if (!child || child.exitCode !== null) return;
 
@@ -353,6 +425,7 @@ async function main() {
   await waitForBackend();
 
   seedPaymentVerticalFixture();
+  seedAccountingVerticalFixture();
 
   run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
     cwd: frontendDir,
