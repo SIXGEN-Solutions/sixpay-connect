@@ -147,6 +147,36 @@ class IncidentQueryControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
+    void requiresCorrelationId() throws Exception {
+        mockMvc.perform(
+                        get(API)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void rejectsInvalidPaginationBeforeUseCase()
+            throws Exception {
+
+        mockMvc.perform(
+                        get(API)
+                                .param("page", "-1")
+                                .param("size", "0")
+                                .header(
+                                        "X-Correlation-ID",
+                                        CORRELATION
+                                )
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
     @WithMockUser(roles = "USER")
     void rejectsUnauthorizedRole() throws Exception {
         mockMvc.perform(
