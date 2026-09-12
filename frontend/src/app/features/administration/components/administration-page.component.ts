@@ -44,9 +44,17 @@ import { AdministrationService } from '../services/administration.service';
             <a spCardActions routerLink="users"> Ouvrir </a>
           </sp-card>
 
-          <sp-card title="Paramètres généraux" subtitle="Configuration applicative">
-            <p>Configuration opérationnelle réellement exposée par SIXPAY.</p>
+          <sp-card title="Paramètres généraux" subtitle="Projection historique en lecture seule">
+            <p>
+              Consulter les paramètres opérationnels exposés par le contrat Administration
+              historique.
+            </p>
             <a spCardActions routerLink="settings"> Ouvrir </a>
+          </sp-card>
+
+          <sp-card title="Paramètres dynamiques" subtitle="Configuration opérationnelle modifiable">
+            <p>Consulter, modifier et restaurer les paramètres DYNAMIC_OPERATIONAL autorisés.</p>
+            <a spCardActions routerLink="dynamic-settings"> Ouvrir </a>
           </sp-card>
 
           <sp-card title="Intégrations" subtitle="État des dépendances">
