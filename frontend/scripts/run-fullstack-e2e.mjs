@@ -149,6 +149,133 @@ function mappedPostgresPort() {
   return match[1];
 }
 
+function seedPaymentVerticalFixture() {
+  const sql = `
+INSERT INTO payments (
+    payment_id,
+    public_payment_reference,
+    payment_source,
+    external_payment_reference,
+    external_subscription_reference,
+    financial_institution_code,
+    requested_amount,
+    requested_currency,
+    status,
+    business_version,
+    received_at,
+    updated_at,
+    finalized_at,
+    state_payload,
+    persistence_version
+) VALUES (
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    'TRESOR_PAY',
+    'L594-E2E-REQUEST-001',
+    'partner:L594',
+    'SIXPAY',
+    12500.00,
+    'XAF',
+    'RECEIVED',
+    1,
+    '2026-09-12T12:00:00Z',
+    '2026-09-12T12:00:00Z',
+    NULL,
+    '{
+      "schemaVersion": 1,
+      "requestIdentity": {
+        "correlationId": {
+          "value": "59040000-0000-0000-0000-000000000099"
+        }
+      },
+      "debtorAccountReference": {
+        "bindingFingerprint": "acct:v1:l594",
+        "maskedDisplay": "RIB-****-5940"
+      }
+    }'::jsonb,
+    0
+)
+ON CONFLICT (payment_id) DO NOTHING;
+
+INSERT INTO reporting_payment_audit_evidence (
+    evidence_id,
+    timeline_visible,
+    audit_visible,
+    payment_id,
+    payment_reference,
+    observed_customer_id,
+    category,
+    event_type,
+    timeline_result,
+    actor_type,
+    actor_id,
+    actor_roles,
+    action,
+    target_type,
+    target_id,
+    audit_result,
+    reason_code,
+    correlation_id,
+    trace_id,
+    source_system,
+    external_reference,
+    before_state,
+    after_state,
+    aggregate_version,
+    integrity_scheme,
+    integrity_value,
+    occurred_at
+) VALUES (
+    '59040000-0000-0000-0000-000000000002',
+    TRUE,
+    TRUE,
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    NULL,
+    'DOMAIN',
+    'PAYMENT_RECEIVED',
+    'SUCCESS',
+    'EXTERNAL_SYSTEM',
+    'TRESOR_PAY',
+    NULL,
+    'PAYMENT_RECEIVED',
+    'PAYMENT',
+    '59040000-0000-0000-0000-000000000001',
+    'SUCCESS',
+    'PAYMENT_RECEIVED',
+    '59040000-0000-0000-0000-000000000099',
+    NULL,
+    'TRESOR_PAY',
+    'L594-E2E-REQUEST-001',
+    NULL,
+    'RECEIVED',
+    1,
+    'WORM_REFERENCE',
+    'lot-5.9.4-e2e-proof',
+    '2026-09-12T12:00:00Z'
+)
+ON CONFLICT (evidence_id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
 function terminateProcessTree(child) {
   if (!child || child.exitCode !== null) return;
 
@@ -224,6 +351,8 @@ async function main() {
   });
 
   await waitForBackend();
+
+  seedPaymentVerticalFixture();
 
   run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
     cwd: frontendDir,

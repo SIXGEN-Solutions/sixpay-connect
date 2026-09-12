@@ -3,6 +3,7 @@ package com.sixpay.security.authentication;
 import com.sixpay.common.validation.Preconditions;
 import com.sixpay.security.authorization.SixpayRole;
 
+import java.security.Principal;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,7 @@ public record AuthenticatedUser(
         String username,
         Set<String> authorities,
         boolean passwordChangeRequired
-) implements SixpayPrincipal {
+) implements SixpayPrincipal, Principal {
 
     private static final String ROLE_PREFIX = "ROLE_";
 
@@ -60,6 +61,18 @@ public record AuthenticatedUser(
                         "Authorities must not be null"
                 )
         );
+    }
+
+    /**
+     * Standard security principal name.
+     *
+     * <p>The canonical SIXPAY account subject is exposed here so
+     * Spring Security Authentication#getName() does not fall back
+     * to the record toString(), which includes authorities.</p>
+     */
+    @Override
+    public String getName() {
+        return subject;
     }
 
     @Override
