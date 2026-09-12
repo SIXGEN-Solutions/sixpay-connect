@@ -12,6 +12,7 @@ const bootstrapTarget = join(backendDir, 'bootstrap', 'target');
 const docker = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const maven = process.platform === 'win32' ? 'mvn.cmd' : 'mvn';
 const java = process.platform === 'win32' ? 'java.exe' : 'java';
+const node = process.execPath;
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 const postgresContainer = `sixpay-fullstack-postgres-${process.pid}`;
@@ -24,6 +25,32 @@ const backendStartupTimeoutMs = Number.parseInt(
 );
 
 let amplitudeStubProcess;
+
+function phase(name) {
+  console.log(`\n=== SIXPAY full-stack: ${name} ===`);
+}
+
+function requireCommand(command, args) {
+  const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
+  const executable = isWindowsCmd ? process.env.ComSpec || 'cmd.exe' : command;
+  const executableArgs = isWindowsCmd ? ['/d', '/s', '/c', command, ...args] : args;
+
+  const result = spawnSync(executable, executableArgs, { stdio: 'ignore' });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(`Missing or unusable prerequisite: ${command} ${args.join(' ')}`);
+  }
+}
+
+function preflight() {
+  phase('preflight');
+  requireCommand(docker, ['version']);
+  requireCommand(maven, ['-version']);
+  requireCommand(java, ['-version']);
+  requireCommand(node, ['--version']);
+  requireCommand(npx, ['--version']);
+  console.log('Prerequisites available: Docker, Maven, Java, Node.js, npx.');
+}
 
 function run(command, args, options = {}) {
   const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
@@ -442,6 +469,9 @@ function removePostgresContainer() {
 }
 
 async function main() {
+  preflight();
+
+  phase('PostgreSQL');
   run(docker, [
     'run',
     '--detach',
@@ -462,6 +492,7 @@ async function main() {
   await waitForPostgres();
   const postgresPort = mappedPostgresPort();
 
+  phase('backend build');
   run(
     maven,
     ['-f', join(backendDir, 'pom.xml'), '-pl', 'bootstrap', '-am', '-DskipTests', 'package'],
@@ -470,6 +501,7 @@ async function main() {
 
   const bootstrapJar = findBootstrapJar();
 
+  phase('strictly required external stub: Amplitude customer verification');
   amplitudeStubProcess = spawn(
     process.execPath,
     [join(frontendDir, 'scripts', 'cm9-amplitude-stub.mjs')],
@@ -485,6 +517,7 @@ async function main() {
 
   await waitForAmplitudeStub();
 
+  phase('Spring Boot backend');
   backendProcess = spawn(java, ['-jar', bootstrapJar], {
     cwd: backendDir,
     env: {
@@ -503,10 +536,12 @@ async function main() {
 
   await waitForBackend();
 
+  phase('full-stack fixtures');
   seedPaymentVerticalFixture();
   seedAccountingVerticalFixture();
   seedAdministrationIdentityIncidentsFixture();
 
+  phase('Angular integration frontend + Playwright');
   run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
     cwd: frontendDir,
     env: process.env,
@@ -516,6 +551,7 @@ async function main() {
 try {
   await main();
 } finally {
+  phase('cleanup');
   terminateProcessTree(backendProcess);
   terminateProcessTree(amplitudeStubProcess);
   removePostgresContainer();

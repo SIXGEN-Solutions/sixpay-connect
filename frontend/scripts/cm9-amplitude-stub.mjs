@@ -49,7 +49,11 @@ function validVerificationRequest(payload) {
 }
 
 function verifiedResponse(payload) {
-  const verifiedAt = new Date().toISOString();
+  const requestedAtMillis = Date.parse(payload.requestedAt);
+  const verifiedAtMillis = Number.isNaN(requestedAtMillis)
+    ? Date.now()
+    : Math.max(Date.now(), requestedAtMillis + 1);
+  const verifiedAt = new Date(verifiedAtMillis).toISOString();
   const customerReferenceKey = `${payload.financialInstitutionCode}|${payload.customer.niu}`;
   const customerReferenceDigest = createHash('sha256')
     .update(customerReferenceKey)

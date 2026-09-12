@@ -65,11 +65,22 @@ test.describe('CM-9 Angular -> Spring -> Customer -> Verification -> Amplitude S
 
     const persistedDetailUrl = page.url();
 
+    const persistedDetailResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        new URL(response.url()).pathname === `/internal/api/v1/customers/${enrolledCustomer.id}`,
+    );
+
     await page.reload();
+
+    const persistedDetailResponse = await persistedDetailResponsePromise;
+    expect(persistedDetailResponse.status()).toBe(200);
 
     await expect(page).toHaveURL(persistedDetailUrl);
 
-    await expect(page.getByText('CM9 Full-stack Customer', { exact: true })).toBeVisible();
+    await expect(page.getByText('CM9 Full-stack Customer', { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.goto('/customers');
 

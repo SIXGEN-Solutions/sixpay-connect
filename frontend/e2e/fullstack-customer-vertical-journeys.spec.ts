@@ -122,13 +122,15 @@ test.describe('LOT 5.9.3 Customer vertical journeys', () => {
 
     await expect(page.getByText('Compte ajouté', { exact: true })).toBeVisible();
 
-    await page.reload();
-
-    const detailResponse = await page.waitForResponse(
+    const detailResponsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
         new URL(response.url()).pathname === `/internal/api/v1/customers/${customer.customerId}`,
     );
+
+    await page.reload();
+
+    const detailResponse = await detailResponsePromise;
 
     const persisted = (await detailResponse.json()) as {
       bankAccounts: Array<{ bankingAccountReference: string }>;
