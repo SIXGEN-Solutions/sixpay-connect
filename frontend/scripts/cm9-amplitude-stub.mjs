@@ -50,8 +50,7 @@ function validVerificationRequest(payload) {
 
 function verifiedResponse(payload) {
   const verifiedAt = new Date().toISOString();
-  const customerReferenceKey =
-    `${payload.financialInstitutionCode}|${payload.customer.niu}`;
+  const customerReferenceKey = `${payload.financialInstitutionCode}|${payload.customer.niu}`;
   const customerReferenceDigest = createHash('sha256')
     .update(customerReferenceKey)
     .digest('hex')

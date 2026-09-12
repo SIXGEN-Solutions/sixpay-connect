@@ -348,6 +348,85 @@ ON CONFLICT (id) DO NOTHING;
   );
 }
 
+function seedAdministrationIdentityIncidentsFixture() {
+  const sql = `
+INSERT INTO operational_incident (
+    incident_id,
+    severity,
+    component,
+    summary,
+    status,
+    description,
+    impact,
+    accounting_batch_id,
+    payment_id,
+    payment_reference,
+    correlation_id,
+    opened_at,
+    updated_at
+) VALUES (
+    'INC-L596-E2E-001',
+    'HIGH',
+    'PAYMENT',
+    'Dégradation contrôlée LOT 5.9.6',
+    'INVESTIGATING',
+    'Incident de preuve full-stack Administration / Identity / Incidents.',
+    'Validation E2E uniquement dans la base PostgreSQL jetable.',
+    '59050000-0000-0000-0000-000000000001',
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    '59060000-0000-0000-0000-000000000099',
+    '2026-09-12T16:00:00Z',
+    '2026-09-12T16:05:00Z'
+)
+ON CONFLICT (incident_id) DO NOTHING;
+
+INSERT INTO operational_incident_timeline (
+    event_id,
+    incident_id,
+    occurred_at,
+    message,
+    actor,
+    sequence_no
+) VALUES
+(
+    'EVT-L596-E2E-001',
+    'INC-L596-E2E-001',
+    '2026-09-12T16:00:00Z',
+    'Incident détecté par la supervision SIXPAY.',
+    'SYSTEM',
+    0
+),
+(
+    'EVT-L596-E2E-002',
+    'INC-L596-E2E-001',
+    '2026-09-12T16:05:00Z',
+    'Investigation opérationnelle démarrée.',
+    'admin',
+    1
+)
+ON CONFLICT (event_id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
 function terminateProcessTree(child) {
   if (!child || child.exitCode !== null) return;
 
@@ -426,6 +505,7 @@ async function main() {
 
   seedPaymentVerticalFixture();
   seedAccountingVerticalFixture();
+  seedAdministrationIdentityIncidentsFixture();
 
   run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
     cwd: frontendDir,
