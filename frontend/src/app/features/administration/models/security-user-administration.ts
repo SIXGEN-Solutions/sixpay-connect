@@ -14,9 +14,9 @@ export interface SecurityUserSummary {
 export interface SecurityIdentityView {
   readonly id: string;
   readonly identityType: AuthenticationIdentityType;
-  readonly provider: string;
-  readonly providerSubject: string;
-  readonly status: 'LINKED';
+  readonly provider: string | null;
+  readonly providerSubject: string | null;
+  readonly status: string;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
