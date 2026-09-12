@@ -109,6 +109,38 @@ classificationModel:
         - "The physical contract declares info.x-sixpay-contract.capabilities"
         - "Physical metadata exactly matches registry entries sharing the path"
 contracts:
+  - id: "dynamic-settings-management-api-v1"
+    path: "documentation/contracts/internal/dynamic-settings-management-api-v1.yaml"
+    domain: "administration"
+    businessOwner: "administration"
+    deliveryOwner: "administration"
+    capability: "DYNAMIC_SETTINGS_MANAGEMENT"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "LOT_5_8_DS"
+    phaseStep: "5.8.DS.2"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["BEARER_AUTHORIZATION_TOKEN"]
+      requiredRoles: ["ADMIN"]
+    mvpUsage:
+      included: true
+      purpose:
+        - "Manage allowlisted dynamic operational settings"
+        - "Persist durable value versions and audit history"
+        - "Rollback by creating a new version"
+        - "Publish normalized internal setting-change facts after commit"
+      constraints:
+        - "Administration operational contract remains read-only and unchanged"
+        - "Only DYNAMIC_OPERATIONAL allowlisted keys may be mutated"
+        - "Secrets, deployment configuration and contract-static values are excluded"
+        - "Domain-specific semantics remain owned by the setting domain"
+        - "Rollback never deletes prior history"
+
   - id: "tresorpay-payment-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
     domain: "payment"

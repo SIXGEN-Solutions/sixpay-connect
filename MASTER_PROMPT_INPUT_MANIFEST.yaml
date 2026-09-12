@@ -196,6 +196,8 @@ activeContractCapabilities:
       path: "documentation/contracts/internal/customer-management-query-api-v1.yaml"
     - id: "security-user-administration-api-v1"
       path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
+    - id: "dynamic-settings-management-api-v1"
+      path: "documentation/contracts/internal/dynamic-settings-management-api-v1.yaml"
     - id: "notification-operational-trigger-v1"
       path: "documentation/contracts/internal/notification-operational-trigger-v1.md"
     - id: "notification-operational-email-v1"
