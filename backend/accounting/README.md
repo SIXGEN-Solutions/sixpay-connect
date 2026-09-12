@@ -269,3 +269,32 @@ the durable TFJ model:
 
 No endpoint, database schema, migration, retry, replay, force-match, resolve,
 reverse or mark-integrated command is introduced by LOT 5.7.1.
+
+### LOT 5.7.3 — TFJ operational query security
+
+The TFJ/Reconciliation operational query reuses the existing Accounting
+read-only authorization profile.
+
+Required authorization:
+
+- roles: `ADMIN`, `MANAGER` or `AUDITOR`;
+- authority: `SCOPE_accounting.read`.
+
+No new permission, role or security scope is introduced by LOT 5.7.3.
+
+The future TFJ operational query controller must enforce the same conjunction
+already used by the Accounting T1 operational query:
+
+`hasAnyRole('ADMIN', 'MANAGER', 'AUDITOR') and hasAuthority('SCOPE_accounting.read')`
+
+Expected security coverage for the backend query sub-lot:
+
+- authorized ADMIN + `SCOPE_accounting.read`;
+- authorized MANAGER + `SCOPE_accounting.read`;
+- authorized AUDITOR + `SCOPE_accounting.read`;
+- approved role without `SCOPE_accounting.read` -> forbidden;
+- `SCOPE_accounting.read` without an approved operator role -> forbidden;
+- unauthenticated request -> unauthorized.
+
+This remains a read-only capability. No retry, replay, force-match, resolve,
+reverse or mark-integrated authorization is defined.
