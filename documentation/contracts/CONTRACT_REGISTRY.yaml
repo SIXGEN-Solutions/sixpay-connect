@@ -735,6 +735,40 @@ contracts:
         - "No provider command"
         - "No payment replay"
 
+  - id: "accounting-tfj-operational-query-api-v1"
+    path: "documentation/contracts/internal/accounting-tfj-operational-query-api-v1.yaml"
+    domain: "accounting"
+    businessOwner: "accounting"
+    capability: "ACCOUNTING_TFJ_OPERATIONAL_QUERY"
+    direction: "SIXPAY_TO_INTERNAL_CLIENT"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    gate: "ACCOUNTING_T1"
+    phaseStep: "5.7.2"
+    security:
+      authentication: ["OAUTH2_BEARER_JWT"]
+      requiredRoles: ["ADMIN", "MANAGER", "AUDITOR"]
+      requiredPermissions: ["accounting.read"]
+    mvpUsage:
+      included: true
+      purpose:
+        - "Provide read-only TFJ and reconciliation operational search"
+        - "Provide read-only TFJ confirmation detail"
+        - "Expose normalized Accounting-owned quarantine and finality visibility"
+      constraints:
+        - "Internal browser contract only"
+        - "Amplitude provider-facing contract is never exposed directly to the browser"
+        - "No retry command"
+        - "No replay command"
+        - "No force-match command"
+        - "No resolve command"
+        - "No reverse command"
+        - "No mark-integrated command"
+
   - id: "accounting-t1-operational-query-api-v1"
     path: "documentation/contracts/internal/accounting-t1-operational-query-api-v1.yaml"
     domain: "accounting"

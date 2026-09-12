@@ -318,3 +318,15 @@ provider contract and the bank-authoritative End-of-Day Confirmation contract.
 
 The provisional `external/accounting/accounting-batch-*` pack is superseded by
 the approved Amplitude Accounting Entries contract and is removed.
+
+### Accounting TFJ Operational Query
+
+`accounting-tfj-operational-query-api-v1` defines the internal read-only
+operator surface for TFJ and reconciliation visibility.
+
+The contract provides search and detail only. It exposes normalized
+Accounting-owned operational facts and is intentionally separate from the
+provider-facing `amplitude-end-of-day-confirmation-api-v1`.
+
+No retry, replay, force-match, resolve, reverse or mark-integrated command is
+defined by this contract.
