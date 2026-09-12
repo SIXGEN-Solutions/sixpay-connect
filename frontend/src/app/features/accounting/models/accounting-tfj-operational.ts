@@ -12,10 +12,7 @@ export type TfjObservationChannel = 'ASYNC_CALLBACK' | 'SCHEDULED_LOOKUP';
 
 export type TfjMatchStatus = 'MATCHED' | 'UNMATCHED' | 'AMBIGUOUS';
 
-export type TfjRecoveryAction =
-  | 'MANUAL_RECONCILIATION'
-  | 'REVERSAL_REVIEW'
-  | 'REVERSAL_REQUIRED';
+export type TfjRecoveryAction = 'MANUAL_RECONCILIATION' | 'REVERSAL_REVIEW' | 'REVERSAL_REQUIRED';
 
 export interface TfjOperationalQuery {
   businessDate?: string;

@@ -105,9 +105,7 @@ export class AccountingApiClient {
     );
   }
 
-  executeT1Manually(
-    businessDate: string,
-  ): Observable<AccountingT1ManualExecutionResponse> {
+  executeT1Manually(businessDate: string): Observable<AccountingT1ManualExecutionResponse> {
     return this.http.post<AccountingT1ManualExecutionResponse>(
       '/internal/api/v1/accounting-t1-executions',
       { businessDate },
