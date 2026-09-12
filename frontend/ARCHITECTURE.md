@@ -164,3 +164,19 @@ la Gate 3. Les rôles sont lus dans les claims JWT `roles`, `authorities` et
 réservé à `AUDITOR`.
 
 La Gate 4 s’exécute avec `npm run gate:4`.
+
+## LOT 5.6.6 — Accounting T1 operational query
+
+The Accounting feature consumes the approved internal T1 operational query API
+through `AccountingApiClient`.
+
+The Angular surface is read-only and exposes only the normalized fields defined
+by `accounting-t1-operational-query-api-v1`. It does not expose provider DTOs,
+raw transport errors, stack traces or persistence details.
+
+The feature reuses the existing Accounting read roles (`ADMIN`, `MANAGER`,
+`AUDITOR`) and relies on the existing authentication layer to carry the
+`accounting.read` scope required by the backend contract.
+
+No T1 execution, provider verification, batch constitution, submission,
+reconciliation or recovery action is introduced by this screen.
