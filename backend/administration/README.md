@@ -46,10 +46,27 @@ documentation/contracts/internal/administration-operational-api-v1.yaml
 
 ## Validation
 
-From backend:
+Focused backend validation:
 
     mvn -pl administration -am test
     mvn -pl administration -am clean verify
+
+Canonical repository gates:
+
+    cd ../../
+    py scripts/verify_master_prompt_input_manifest.py
+    py scripts/verify_master_engineering_prompt.py
+    py scripts/verify_baseline.py
+
+Frontend:
+
+    cd frontend
+    npm run verify:sixpay
+
+LOT 5.8 closure keeps dynamic-settings mutation outside the implemented
+Administration/Identity/Incidents scope. The current settings surface remains
+read-only until a separate approved dynamic-settings decision authorizes any
+mutation capability.
 
 ## Persistence ownership
 
