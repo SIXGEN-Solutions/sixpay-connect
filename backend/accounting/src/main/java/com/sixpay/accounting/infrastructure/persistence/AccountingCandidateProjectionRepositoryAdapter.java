@@ -14,7 +14,9 @@ import java.util.UUID;
 
 @Repository
 public class AccountingCandidateProjectionRepositoryAdapter
-        implements AccountingCandidateProjectionRepository, PaymentAccountingCandidateSource {
+        implements AccountingCandidateProjectionRepository,
+        PaymentAccountingCandidateSource,
+        com.sixpay.accounting.application.port.output.AccountingT1OperationalQueryPort {
     private final AccountingCandidateSpringDataRepository repository;
 
     public AccountingCandidateProjectionRepositoryAdapter(AccountingCandidateSpringDataRepository repository) {
@@ -68,6 +70,57 @@ public class AccountingCandidateProjectionRepositoryAdapter
         if (updated != 1) {
             throw new IllegalStateException("Accounting candidate already assigned to another batch: " + paymentId);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.sixpay.accounting.application.port.output.AccountingT1OperationalQueryPort.Page search(
+            java.time.LocalDate businessDate,
+            String paymentReference,
+            int page,
+            int size
+    ) {
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                page,
+                size,
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.asc("paymentOccurredAt"),
+                        org.springframework.data.domain.Sort.Order.asc("publicPaymentReference")
+                )
+        );
+
+        org.springframework.data.domain.Page<AccountingCandidateJpaEntity> result;
+
+        if (businessDate != null && paymentReference != null) {
+            result = repository.findByAccountingBusinessDateAndPublicPaymentReferenceContainingIgnoreCase(
+                    businessDate,
+                    paymentReference,
+                    pageable
+            );
+        } else if (businessDate != null) {
+            result = repository.findByAccountingBusinessDate(businessDate, pageable);
+        } else if (paymentReference != null) {
+            result = repository.findByPublicPaymentReferenceContainingIgnoreCase(
+                    paymentReference,
+                    pageable
+            );
+        } else {
+            result = repository.findAll(pageable);
+        }
+
+        return new com.sixpay.accounting.application.port.output.AccountingT1OperationalQueryPort.Page(
+                result.getContent().stream()
+                        .map(AccountingCandidateJpaEntity::toDomain)
+                        .toList(),
+                result.getTotalElements()
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<AccountingCandidateProjection> findByCandidateId(UUID candidateId) {
+        return repository.findById(candidateId)
+                .map(AccountingCandidateJpaEntity::toDomain);
     }
 
         @Override

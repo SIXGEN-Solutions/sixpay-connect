@@ -187,3 +187,19 @@ by this lot; manual execution continues to require `accounting.t1.execute`.
 The existing Accounting batch query controller is aligned to the same read
 security rule so the Accounting read surface does not have two different
 authorization models.
+
+### LOT 5.6.4 — T1 operational backend query
+
+The backend now exposes the approved read-only T1 operational query through the
+Accounting application boundary.
+
+The implementation adds a dedicated input use case, output query port,
+persistence adapter reuse over the existing Accounting candidate projection,
+HTTP controller and response DTOs aligned with the LOT 5.6.2 contract.
+
+No new database table or migration is introduced. Query execution is read-only,
+remains Accounting-owned, and does not trigger TRESOR PAY verification, batch
+constitution, submission, reconciliation or recovery actions.
+
+Security remains the LOT 5.6.3 rule: `ADMIN`, `MANAGER` or `AUDITOR` plus
+`SCOPE_accounting.read`.
