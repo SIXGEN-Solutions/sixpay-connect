@@ -79,6 +79,7 @@ describe('validateAuthenticationEnvironment', () => {
       production: false,
       apiBaseUrl: '',
       backend: { mode: 'mock' },
+      branding: { switcherEnabled: true },
       authentication: {
         standalone: true,
         local: { enabled: false },
@@ -95,6 +96,7 @@ function productionEnvironment(authentication: AuthenticationEnvironment): AppEn
     production: true,
     apiBaseUrl: '',
     backend: { mode: 'api' },
+    branding: { switcherEnabled: false },
     authentication,
   };
 }

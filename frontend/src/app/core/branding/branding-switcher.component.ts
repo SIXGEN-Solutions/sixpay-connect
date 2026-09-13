@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AuthenticationService } from '../auth/authentication.service';
+import { environment } from '../../../environments/environment';
+
 import { InstitutionBrandingId } from './branding.model';
 import { BrandingService } from './branding.service';
 
@@ -9,7 +10,7 @@ import { BrandingService } from './branding.service';
   selector: 'sp-branding-switcher',
   imports: [FormsModule],
   template: `
-    @if (authentication.isStandaloneMode) {
+    @if (switcherEnabled) {
       <label class="sp-branding-switcher">
         <span>Institution</span>
         <select
@@ -61,7 +62,7 @@ import { BrandingService } from './branding.service';
   `,
 })
 export class BrandingSwitcherComponent {
-  protected readonly authentication = inject(AuthenticationService);
+  protected readonly switcherEnabled = environment.branding.switcherEnabled;
   protected readonly branding = inject(BrandingService);
 
   protected select(id: InstitutionBrandingId): void {

@@ -24,9 +24,14 @@ export interface BackendEnvironment {
   readonly mode: BackendMode;
 }
 
+export interface BrandingEnvironment {
+  readonly switcherEnabled: boolean;
+}
+
 export interface AppEnvironment {
   readonly production: boolean;
   readonly apiBaseUrl: string;
   readonly backend: BackendEnvironment;
+  readonly branding: BrandingEnvironment;
   readonly authentication: AuthenticationEnvironment;
 }

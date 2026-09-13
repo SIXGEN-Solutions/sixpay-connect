@@ -44,6 +44,7 @@ for (const token of [
   'readonly production: boolean;',
   'readonly apiBaseUrl: string;',
   'readonly backend: BackendEnvironment;',
+  'readonly branding: BrandingEnvironment;',
   'readonly authentication: AuthenticationEnvironment;',
 ]) {
   if (!model.includes(token)) {
@@ -62,6 +63,11 @@ for (const [name, text] of Object.entries(source)) {
 requireToken('production', 'production: true', 'production flag must remain true');
 requireToken('production', "mode: 'api'", 'production must remain API-backed');
 requireToken('production', 'standalone: false', 'production standalone auth must remain disabled');
+requireToken(
+  'production',
+  'switcherEnabled: false',
+  'production branding switcher must remain disabled',
+);
 
 {
   const local = section(source.production, 'local:', 'oidc:');
@@ -91,6 +97,11 @@ requireToken(
   'standalone: false',
   'integration standalone auth must remain disabled',
 );
+requireToken(
+  'integration',
+  'switcherEnabled: true',
+  'integration branding switcher must remain enabled',
+);
 
 {
   const local = section(source.integration, 'local:', 'oidc:');
@@ -110,6 +121,11 @@ forbidToken('integration', "mode: 'mock'", 'integration must never use mock data
 requireToken('development', 'production: false', 'development production flag must remain false');
 requireToken('development', "mode: 'mock'", 'development must remain explicit mock mode');
 requireToken('development', 'standalone: true', 'development standalone auth must remain enabled');
+requireToken(
+  'development',
+  'switcherEnabled: true',
+  'development branding switcher must remain enabled',
+);
 
 {
   const local = section(source.development, 'local:', 'oidc:');
@@ -127,6 +143,7 @@ requireToken('development', 'standalone: true', 'development standalone auth mus
 requireToken('netlify', 'production: false', 'netlify production flag must remain false');
 requireToken('netlify', "mode: 'mock'", 'netlify must remain explicit mock mode');
 requireToken('netlify', 'standalone: true', 'netlify standalone auth must remain enabled');
+requireToken('netlify', 'switcherEnabled: false', 'netlify branding switcher must remain disabled');
 
 {
   const local = section(source.netlify, 'local:', 'oidc:');

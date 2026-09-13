@@ -13,8 +13,9 @@
 
   @if (authentication.isStandaloneMode) {
     <span class="sp-header__demo">MOCK FRAME</span>
-    <sp-branding-switcher />
   }
+
+  <sp-branding-switcher />
 
   @if (authentication.username(); as username) {
     <span class="sp-header__subject">{{ username }}</span>

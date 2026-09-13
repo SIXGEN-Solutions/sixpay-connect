@@ -3,6 +3,9 @@ import { AppEnvironment } from './environment.model';
 export const environment = {
   production: true,
   apiBaseUrl: '',
+  branding: {
+    switcherEnabled: false,
+  },
   backend: {
     mode: 'api',
   },
