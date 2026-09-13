@@ -1,10 +1,8 @@
 -- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
 -- This file represents current schema state; Git preserves prior migration history.
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V2026072601__create_partner_module.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE partners (
@@ -173,7 +171,6 @@ CREATE INDEX ix_partner_outbox_aggregate
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V2026072701__industrialize_partner_outbox.sql
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE partner_outbox_events

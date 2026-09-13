@@ -3,7 +3,6 @@
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608231130__create_operational_incident_tables.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS operational_incident (

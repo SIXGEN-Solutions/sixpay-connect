@@ -3,7 +3,7 @@
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: final Payment aggregate persistence
+-- final Payment aggregate persistence
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payments
@@ -120,7 +120,7 @@ COMMENT ON COLUMN payments.state_payload IS
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: payment audit
+-- payment audit
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payment_audit
@@ -174,7 +174,7 @@ CREATE TRIGGER trg_payment_audit_reject_delete
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: payment outbox
+-- payment outbox
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payment_outbox_events
@@ -268,7 +268,7 @@ COMMENT ON TABLE payment_outbox_events IS
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: payment idempotency
+-- payment idempotency
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payment_idempotency

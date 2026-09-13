@@ -3,7 +3,6 @@
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608071100__accounting_batches.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS accounting_batches (
@@ -74,7 +73,6 @@ CREATE INDEX IF NOT EXISTS idx_accounting_batch_items_status
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608071200__accounting_batch_tracking.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS accounting_batch_tracking (

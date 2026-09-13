@@ -1,10 +1,8 @@
 -- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
 -- This file represents current schema state; Git preserves prior migration history.
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608072058__create_reporting_payment_audit_projection.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE reporting_payment_audit_evidence (
@@ -65,7 +63,6 @@ CREATE INDEX idx_reporting_audit_correlation
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608072120__create_reporting_audit_export.sql
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE reporting_payment_audit_evidence

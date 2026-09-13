@@ -1,5 +1,4 @@
 -- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
 -- This file represents current schema state; Git preserves prior migration history.
 
 -- ---------------------------------------------------------------------------

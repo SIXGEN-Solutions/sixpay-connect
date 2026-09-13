@@ -1,19 +1,14 @@
 schemaVersion: "1.0"
 registry:
   id: "sixpay-contract-registry"
-  baseline: "REPOSITORY_BASELINE_CONSOLIDATION"
-  gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-  step: "FS-2.1.0_CONTRACT_REGISTRY_NORMALIZATION"
+  baseline: "CURRENT_REPOSITORY_BASELINE"
   repository: "SIXGEN-Solutions/sixpay-connect"
   classificationDate: "2026-08-23"
-  gateSemantics: "GLOBAL_REGISTRY_GOVERNANCE"
-  historicalContractGatesPreserved: true
   description: >-
-    Canonical cross-domain SIXPAY contract registry for the repository baseline.
-    The registry-level gate identifies the current repository consolidation
-    activity only. Contract-level gate and phaseStep fields preserve the
-    historical delivery gate under which each capability was defined or
-    approved and remain authoritative for contract traceability.
+    Canonical cross-domain SIXPAY contract registry for the current repository
+    baseline. Contract classification, ownership, lifecycle, approval,
+    generation policy, security and physical contract paths are current-state
+    governance. Historical delivery chronology belongs to Git history.
 
 classificationModel:
   domains:
@@ -25,7 +20,7 @@ classificationModel:
     security: "Security, identity and authorization capabilities."
     notification: "Operational notification capabilities."
     integration: "External integration contracts and integration-facing capabilities."
-    subscription: "Subscription lifecycle capabilities."
+    subscription: "External/deferred subscription contract classification; not a standalone SIXPAY backend module or bounded context."
     partner: "Partner bounded capability."
 
   ownershipValues:
@@ -37,7 +32,7 @@ classificationModel:
     security: "Security domain owner."
     notification: "Notification domain owner."
     integration: "Integration delivery/transport owner."
-    subscription: "Subscription domain owner."
+    subscription: "External/deferred subscription contract ownership classification only; CustomerSubscription remains owned by customer."
     partner: "Partner domain owner."
     bootstrap: "Composition/bootstrap delivery owner."
 
@@ -121,8 +116,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "LOT_5_8_DS"
-    phaseStep: "5.8.DS.2"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["BEARER_AUTHORIZATION_TOKEN"]
@@ -152,8 +145,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.1"
     security:
       active:
         - "BEARER_AUTHORIZATION_TOKEN"
@@ -180,7 +171,7 @@ contracts:
       - "TRESOR PAY contract owner approval"
       - "SIXPAY Payment and Integration approval"
       - "Security approval"
-      - "Completion and approval of the full IA-0.5P Payment Contract Pack"
+      - "Completion and approval of the full Payment Contract Pack"
 
   - id: "tresorpay-payment-status-query-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
@@ -195,8 +186,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
-    gate: "ACCOUNTING_T1"
-    phaseStep: "T1.1"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS"]
@@ -208,14 +197,14 @@ contracts:
         - "Provide downstream coherence evidence for Accounting eligibility"
       constraints:
         - "TRESOR PAY status never invalidates authoritative T0 COMPLETED"
-        - "Only TRESOR PAY COMPLETED evidence is eligible for T1.1"
+        - "Only TRESOR PAY COMPLETED evidence is eligible for T+1 selection"
         - "Unavailable or non-final status excludes the transaction from the current T1 selection without failing T0"
         - "OAuth2 Client Credentials token is obtained from POST /oauth2/token and sent as Authorization: Bearer <token>"
         - "Short-lived token TTL is provider-managed external configuration"
         - "SIXPAY and TRESOR PAY gateway egress IP addresses are allowlisted"
         - "mTLS may additionally be enabled when required by the deployed partner/Core Banking network profile"
     approvalEvidence:
-      - "TRESOR PAY payment-status endpoint and response schema supplied for ACCOUNTING_T1 T1.1"
+      - "TRESOR PAY payment-status endpoint and response schema supplied for Accounting T+1"
       - "OAuth2 Client Credentials profile approved for the status-query capability"
       - "Network source-IP allowlisting required for SIXPAY and TRESOR PAY gateways"
       - "Callback HMAC-SHA256 rule retained for applicable inbound partner callback capabilities"
@@ -233,8 +222,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
-    gate: "PAYMENT_COMPLETION"
-    phaseStep: "0.4.2"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
@@ -264,8 +251,8 @@ contracts:
         - "OTP success does not establish funds availability or posting success"
         - "La Regionale resend maximum is 3; cooldown is 3 minutes and remains runtime-configurable if bank policy requires"
         - "If the configurable one-minute post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is required"
-        - "TRESOR PAY approved the public Payment Confirmation API surface in LOT 0.4.7"
-        - "Security and Architecture approved the Payment Confirmation security/architecture principles in LOT 0.4.7"
+        - "TRESOR PAY approved the public Payment Confirmation API surface"
+        - "Security and Architecture approved the Payment Confirmation security/architecture principles"
     approvalPrerequisite: []
 
   - id: "amplitude-payment-confirmation-api-v1"
@@ -282,8 +269,6 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
-    gate: "PAYMENT_COMPLETION"
-    phaseStep: "0.4.7"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
@@ -314,10 +299,10 @@ contracts:
         - "Verify request equivalence uses the S05-01 HMAC-SHA-256 keyed fingerprint without persisting OTP or a raw OTP hash"
         - "D046-04 defines confirmed delivery failure as REPLACED + DELIVERY_FAILED; resend/replacement creates a new OTP and challengeReference"
         - "An uncertain delivery outcome is never DELIVERY_FAILED and follows OUTCOME_UNKNOWN plus authoritative lookup under P10/P11"
-        - "LOT 0.4.7 fixes the bank resend maximum at 3 and the resend cooldown at 3 minutes, with cooldown runtime-configurable when bank policy requires"
-        - "LOT 0.4.7 invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
-        - "LOT 0.4.7 Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
-        - "LOT 0.4.7 records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation contract"
+        - "The approved Payment Confirmation policy fixes the bank resend maximum at 3 and the resend cooldown at 3 minutes, with cooldown runtime-configurable when bank policy requires"
+        - "The approved Payment Confirmation policy invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
+        - "Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
+        - "The contract records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation capability"
         - "Environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
         - "OTP success does not establish funds availability or posting success"
 
@@ -332,9 +317,6 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
-    gate: "PAYMENT_COMPLETION"
-    phaseStep: "1.R1"
-    reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
     reviewStep: "1.3"
     reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
     mvpUsage:
@@ -378,8 +360,6 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     governanceDecision: "ACCOUNTING_T1_T1_4_APPROVED_DECISIONS"
-    gate: "ACCOUNTING_T1"
-    phaseStep: "T1.4"
     security:
       status: "APPROVED_CONTRACT_PROFILE_REUSED"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
@@ -423,8 +403,6 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
-    gate: "PAYMENT_COMPLETION"
-    phaseStep: "2.3.T0"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
@@ -482,8 +460,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.5"
     mvpUsage:
       included: true
       eventTypes:
@@ -525,8 +501,6 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.6"
     mvpUsage:
       included: true
       primaryMode: "AMPLITUDE_ASYNCHRONOUS_CONFIRMATION"
@@ -563,8 +537,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.6"
     mvpUsage:
       included: true
       eventTypes:
@@ -600,8 +572,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.7"
     security:
       authentication: "OIDC_OAUTH2_BEARER_JWT"
       scopes:
@@ -635,8 +605,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.7"
     security:
       authentication: "OIDC_OAUTH2_BEARER_JWT"
       scopes:
@@ -676,8 +644,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-    phaseStep: "1.7"
     security:
       authentication: "OIDC_OAUTH2_BEARER_JWT"
       scopes:
@@ -746,8 +712,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-1.3_ACCOUNTING_QUERY_CONTRACT"
-    phaseStep: "FS-1.3"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       roles:
@@ -779,8 +743,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
-    gate: "ACCOUNTING_T1"
-    phaseStep: "5.7.2"
     security:
       authentication: ["OAUTH2_BEARER_JWT"]
       requiredRoles: ["ADMIN", "MANAGER", "AUDITOR"]
@@ -813,8 +775,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
-    gate: "ACCOUNTING_T1"
-    phaseStep: "5.6.2"
     security:
       status: "APPROVED_INTERNAL_PROFILE"
       authentication: ["OAUTH2_BEARER_JWT"]
@@ -836,7 +796,7 @@ contracts:
         - "No provider DTO, raw transport failure, stack trace or persistence internals may be exposed"
         - "No constitution-attempt field is exposed because no durable Accounting-owned model exists"
         - "Recovery visibility is limited to durable Accounting-owned state"
-        - "The API is based on the LOT 5.6.1 Accounting-owned operational model"
+        - "The API is based on the the approved baseline Accounting-owned operational model"
 
   - id: "accounting-t1-manual-execution-api-v1"
     path: "documentation/contracts/internal/accounting-t1-manual-execution-api-v1.yaml"
@@ -851,8 +811,6 @@ contracts:
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
-    gate: "ACCOUNTING_T1"
-    phaseStep: "0.5.6"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       authorization: "RBAC_PLUS_PERMISSION"
@@ -887,8 +845,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-1.4_ADMINISTRATION_INCIDENTS_CONTRACT_GAP_CLOSURE"
-    phaseStep: "FS-1.4.1"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       authorization: "ROLE_BASED"
@@ -922,8 +878,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-1.4_ADMINISTRATION_INCIDENTS_CONTRACT_GAP_CLOSURE"
-    phaseStep: "FS-1.4.2"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       authorization: "ROLE_BASED"
@@ -960,8 +914,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-    phaseStep: "FS-2.1.3"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       scopes: ["customer.read", "customer.create", "customer.update", "customer.suspend"]
@@ -995,8 +947,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-    phaseStep: "FS-2.1.3"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       authorization: "ROLE_BASED"
@@ -1031,8 +981,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-    phaseStep: "FS-2.2.2"
     security:
       authentication: "IN_PROCESS_TRUST_BOUNDARY"
       dataClassification: "INTERNAL"
@@ -1063,8 +1011,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-    phaseStep: "FS-2.2.2"
     security:
       authentication: "DEPLOYMENT_SECRET_BACKED_PROVIDER_AUTHENTICATION"
       dataClassification: "INTERNAL"
@@ -1093,8 +1039,6 @@ contracts:
     approvalStatus: "PENDING_APPROVAL"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
-    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
-    phaseStep: "FS-2.1.4"
     security:
       authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
       scopes: ["subscription.read", "subscription.create", "subscription.update", "subscription.suspend", "subscription.close"]
@@ -1118,8 +1062,6 @@ missingMvpContracts:
     - "payment-audit-query-api-v1"
 
 mvpAuthorizationVerification:
-  gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
-  phaseStep: "1.2"
   decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
   decisionPath: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
   sourceSystem: "TRESOR_PAY"
