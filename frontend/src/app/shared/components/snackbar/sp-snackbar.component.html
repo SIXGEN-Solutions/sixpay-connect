@@ -1,0 +1,22 @@
+<div
+  class="sp-snackbar"
+  [class]="'sp-snackbar sp-snackbar--' + data.status"
+  [attr.role]="data.status === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="data.status === 'error' ? 'assertive' : 'polite'"
+>
+  <mat-icon class="sp-snackbar__icon" aria-hidden="true">{{ icon() }}</mat-icon>
+
+  <div class="sp-snackbar__content">
+    <strong>{{ data.title }}</strong>
+    <span>{{ data.message }}</span>
+  </div>
+
+  <button
+    class="sp-snackbar__dismiss"
+    type="button"
+    aria-label="Fermer la notification"
+    (click)="dismiss()"
+  >
+    <mat-icon aria-hidden="true">close</mat-icon>
+  </button>
+</div>

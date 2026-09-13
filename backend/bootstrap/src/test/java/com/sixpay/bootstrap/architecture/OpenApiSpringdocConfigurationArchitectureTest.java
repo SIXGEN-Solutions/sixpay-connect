@@ -41,6 +41,7 @@ class OpenApiSpringdocConfigurationArchitectureTest {
 
     private static final Set<String> EXPECTED_GROUPS =
             Set.of(
+                    "security",
                     "partner",
                     "customer",
                     "payment",
@@ -127,8 +128,7 @@ class OpenApiSpringdocConfigurationArchitectureTest {
         assertEquals(
                 EXPECTED_GROUPS,
                 groups,
-                "Runtime OpenAPI groups changed without "
-                        + "FS-2.5 architecture review"
+                "Runtime OpenAPI groups changed without architecture review"
         );
     }
 
@@ -197,6 +197,7 @@ class OpenApiSpringdocConfigurationArchitectureTest {
                         "/internal/api/v1/administration/overview",
                         "/internal/api/v1/administration/settings",
                         "/internal/api/v1/administration/integrations",
+                        "/internal/api/v1/administration/dynamic-settings",
                         "/internal/api/v1/incidents"
                 )) {
 
@@ -205,6 +206,82 @@ class OpenApiSpringdocConfigurationArchitectureTest {
                             path
                     ),
                     () -> "Administration OpenAPI group "
+                            + "lost canonical path: "
+                            + path
+            );
+        }
+    }
+
+    @Test
+    void securityGroupExposesAuthenticationSurface()
+            throws Exception {
+
+        String source =
+                Files.readString(
+                        OPENAPI_CONFIGURATION
+                );
+
+        String security =
+                beanSection(
+                        source,
+                        "GroupedOpenApi securityOpenApi()",
+                        "GroupedOpenApi partnerOpenApi()"
+                );
+
+        for (String path :
+                List.of(
+                        "/api/v1/auth",
+                        "/api/v1/auth/**"
+                )) {
+
+            assertTrue(
+                    security.contains(
+                            path
+                    ),
+                    () -> "Security OpenAPI group "
+                            + "lost canonical path: "
+                            + path
+            );
+        }
+    }
+
+    @Test
+    void accountingGroupExposesOperationalT1AndTfjSurface()
+            throws Exception {
+
+        String source =
+                Files.readString(
+                        OPENAPI_CONFIGURATION
+                );
+
+        int start =
+                source.indexOf(
+                        "GroupedOpenApi accountingOpenApi()"
+                );
+
+        assertTrue(
+                start >= 0,
+                "Missing OpenAPI bean: GroupedOpenApi accountingOpenApi()"
+        );
+
+        String accounting =
+                source.substring(
+                        start
+                );
+
+        for (String path :
+                List.of(
+                        "/internal/api/v1/accounting-batches",
+                        "/internal/api/v1/accounting-t1-executions",
+                        "/internal/api/v1/accounting-t1-operations",
+                        "/internal/api/v1/accounting-tfj-operations"
+                )) {
+
+            assertTrue(
+                    accounting.contains(
+                            path
+                    ),
+                    () -> "Accounting OpenAPI group "
                             + "lost canonical path: "
                             + path
             );
