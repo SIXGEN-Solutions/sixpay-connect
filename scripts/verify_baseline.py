@@ -157,7 +157,7 @@ def main():
     print(" - runtime datasource policy")
     print(" - full-stack static conformance")
     print(" - integration contract-backed policy")
-    print(" - fresh PostgreSQL V100..V802 bootstrap")
+    print(" - fresh PostgreSQL V100/V200/V300/V400/V500/V600/V700/V800 bootstrap")
     print()
     print("Canonical commands:")
     print(" - backend:  mvn verify")

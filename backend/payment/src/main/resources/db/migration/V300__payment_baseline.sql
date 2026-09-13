@@ -1,6 +1,5 @@
--- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
--- This file represents current schema state; Git preserves prior migration history.
+-- SIXPAY CONNECT canonical Payment Flyway baseline
+-- This file creates the complete current Payment schema from an empty database.
 
 
 -- ---------------------------------------------------------------------------
@@ -265,7 +264,7 @@ CREATE INDEX idx_payment_outbox_correlation
     ON payment_outbox_events (correlation_id);
 
 COMMENT ON TABLE payment_outbox_events IS
-    'Durable transport-neutral Payment outbox. Lot 3.4 performs no broker publication.';
+    'Durable transport-neutral Payment outbox.';
 
 
 -- ---------------------------------------------------------------------------
@@ -283,6 +282,9 @@ CREATE TABLE payment_idempotency
     response_status     VARCHAR(64),
     response_payload    JSONB,
     failure_reason      VARCHAR(1000),
+    recovery_reference  VARCHAR(150),
+    recovery_reason     VARCHAR(1000),
+    unknown_outcome_at  TIMESTAMPTZ,
     created_at          TIMESTAMPTZ   NOT NULL,
     updated_at          TIMESTAMPTZ   NOT NULL,
     completed_at        TIMESTAMPTZ,
@@ -313,6 +315,7 @@ CREATE TABLE payment_idempotency
         CHECK (
             status IN (
                 'IN_PROGRESS',
+                'OUTCOME_UNKNOWN',
                 'COMPLETED',
                 'FAILED'
             )
@@ -330,6 +333,9 @@ CREATE TABLE payment_idempotency
                 AND response_payload IS NOT NULL
                 AND completed_at IS NOT NULL
                 AND failure_reason IS NULL
+                AND recovery_reference IS NULL
+                AND recovery_reason IS NULL
+                AND unknown_outcome_at IS NULL
             )
             OR
             (
@@ -339,6 +345,20 @@ CREATE TABLE payment_idempotency
                 AND response_payload IS NULL
                 AND completed_at IS NULL
                 AND failure_reason IS NULL
+                AND recovery_reference IS NULL
+                AND recovery_reason IS NULL
+                AND unknown_outcome_at IS NULL
+            )
+            OR
+            (
+                status = 'OUTCOME_UNKNOWN'
+                AND payment_id IS NOT NULL
+                AND response_status IS NULL
+                AND response_payload IS NULL
+                AND completed_at IS NULL
+                AND failure_reason IS NULL
+                AND recovery_reason IS NOT NULL
+                AND unknown_outcome_at IS NOT NULL
             )
             OR
             (
@@ -348,6 +368,9 @@ CREATE TABLE payment_idempotency
                 AND response_payload IS NULL
                 AND completed_at IS NULL
                 AND failure_reason IS NOT NULL
+                AND recovery_reference IS NULL
+                AND recovery_reason IS NULL
+                AND unknown_outcome_at IS NULL
             )
         ),
 
@@ -367,6 +390,10 @@ CREATE INDEX idx_payment_idempotency_status_updated
 CREATE INDEX idx_payment_idempotency_payment
     ON payment_idempotency (payment_id);
 
+CREATE INDEX idx_payment_idempotency_unknown_recovery
+    ON payment_idempotency (status, unknown_outcome_at)
+    WHERE status = 'OUTCOME_UNKNOWN';
+
 COMMENT ON TABLE payment_idempotency IS
     'Durable Payment idempotency reservation and replay result.';
 
@@ -376,9 +403,18 @@ COMMENT ON COLUMN payment_idempotency.request_hash IS
 COMMENT ON COLUMN payment_idempotency.response_payload IS
     'Exact replayable application response persisted after successful completion.';
 
+COMMENT ON COLUMN payment_idempotency.recovery_reference IS
+    'Optional external reference known when an operation outcome becomes uncertain.';
+
+COMMENT ON COLUMN payment_idempotency.recovery_reason IS
+    'Sanitized technical reason requiring authoritative recovery; must contain no OTP or secret.';
+
+COMMENT ON COLUMN payment_idempotency.unknown_outcome_at IS
+    'Instant at which SIXPAY requires authoritative lookup before any retry decision.';
+
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: Payment-owned observed-customer association
+-- Payment-owned observed-customer association
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payment_observed_customer_link (
@@ -393,3 +429,134 @@ CREATE TABLE payment_observed_customer_link (
 
 CREATE INDEX idx_payment_observed_customer_link_customer
     ON payment_observed_customer_link(observed_customer_id, payment_id);
+
+
+-- ---------------------------------------------------------------------------
+-- Payment financial snapshots
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE payment_financial_event_snapshots
+(
+    snapshot_id                 UUID           NOT NULL,
+    payment_id                  UUID           NOT NULL,
+    public_payment_reference    VARCHAR(30)    NOT NULL,
+    financial_institution_code  VARCHAR(32)    NOT NULL,
+    debtor_account_reference    VARCHAR(256)   NOT NULL,
+    creditor_account_reference  VARCHAR(256)   NOT NULL,
+    requested_amount            NUMERIC(38,18) NOT NULL,
+    requested_currency          VARCHAR(3)     NOT NULL,
+    snapshot_version            VARCHAR(32)    NOT NULL,
+    snapshot_status             VARCHAR(16)    NOT NULL,
+    created_at                  TIMESTAMPTZ    NOT NULL,
+    finalized_at                TIMESTAMPTZ,
+
+    CONSTRAINT pk_payment_financial_event_snapshots
+        PRIMARY KEY (snapshot_id),
+
+    CONSTRAINT fk_payment_fin_event_payment
+        FOREIGN KEY (payment_id)
+        REFERENCES payments (payment_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uk_payment_fin_event_payment
+        UNIQUE (payment_id),
+
+    CONSTRAINT ck_payment_fin_event_public_reference
+        CHECK (
+            public_payment_reference
+                ~ '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        ),
+
+    CONSTRAINT ck_payment_fin_event_institution
+        CHECK (
+            financial_institution_code
+                ~ '^[A-Z0-9][A-Z0-9_-]{1,31}$'
+        ),
+
+    CONSTRAINT ck_payment_fin_event_debtor_reference
+        CHECK (btrim(debtor_account_reference) <> ''),
+
+    CONSTRAINT ck_payment_fin_event_creditor_reference
+        CHECK (btrim(creditor_account_reference) <> ''),
+
+    CONSTRAINT ck_payment_fin_event_amount_positive
+        CHECK (requested_amount > 0),
+
+    CONSTRAINT ck_payment_fin_event_currency
+        CHECK (requested_currency ~ '^[A-Z]{3}$'),
+
+    CONSTRAINT ck_payment_fin_event_snapshot_version
+        CHECK (btrim(snapshot_version) <> ''),
+
+    CONSTRAINT ck_payment_fin_event_status
+        CHECK (snapshot_status IN ('DRAFT', 'FINALIZED')),
+
+    CONSTRAINT ck_payment_fin_event_finalization
+        CHECK (
+            (
+                snapshot_status = 'DRAFT'
+                AND finalized_at IS NULL
+            )
+            OR
+            (
+                snapshot_status = 'FINALIZED'
+                AND finalized_at IS NOT NULL
+                AND finalized_at >= created_at
+            )
+        )
+);
+
+CREATE INDEX idx_payment_fin_event_public_reference
+    ON payment_financial_event_snapshots
+        (public_payment_reference);
+
+CREATE TABLE payment_financial_entry_snapshots
+(
+    entry_snapshot_id   UUID           NOT NULL,
+    event_snapshot_id   UUID           NOT NULL,
+    entry_sequence      INTEGER        NOT NULL,
+    direction           VARCHAR(16)    NOT NULL,
+    account_reference   VARCHAR(256)   NOT NULL,
+    amount              NUMERIC(38,18) NOT NULL,
+    currency            VARCHAR(3)     NOT NULL,
+    created_at          TIMESTAMPTZ    NOT NULL,
+
+    CONSTRAINT pk_payment_financial_entry_snapshots
+        PRIMARY KEY (entry_snapshot_id),
+
+    CONSTRAINT fk_payment_fin_entry_event
+        FOREIGN KEY (event_snapshot_id)
+        REFERENCES payment_financial_event_snapshots
+            (snapshot_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uk_payment_fin_entry_event_sequence
+        UNIQUE (event_snapshot_id, entry_sequence),
+
+    CONSTRAINT ck_payment_fin_entry_sequence
+        CHECK (entry_sequence > 0),
+
+    CONSTRAINT ck_payment_fin_entry_direction
+        CHECK (direction IN ('DEBIT', 'CREDIT')),
+
+    CONSTRAINT ck_payment_fin_entry_account_reference
+        CHECK (btrim(account_reference) <> ''),
+
+    CONSTRAINT ck_payment_fin_entry_amount_positive
+        CHECK (amount > 0),
+
+    CONSTRAINT ck_payment_fin_entry_currency
+        CHECK (currency ~ '^[A-Z]{3}$')
+);
+
+CREATE INDEX idx_payment_fin_entry_event
+    ON payment_financial_entry_snapshots
+        (event_snapshot_id);
+
+COMMENT ON TABLE payment_financial_event_snapshots IS
+    'Payment-owned immutable reduced financial-event snapshot. Not an Amplitude bkeve persistence model.';
+
+COMMENT ON TABLE payment_financial_entry_snapshots IS
+    'Payment-owned immutable reduced financial-entry facts. Not an Amplitude bkmvti persistence model.';

@@ -98,3 +98,12 @@ mvn -pl payment -am -Pfull-tests clean verify
 | `payment_observed_customer_link` | ObservedCustomer link |
 | `payment_financial_event_snapshots` | Immutable financial-event snapshot |
 | `payment_financial_entry_snapshots` | Immutable financial-entry facts |
+
+## Database baseline
+
+Current Flyway baseline:
+
+```text
+V300__payment_baseline.sql
+```
+

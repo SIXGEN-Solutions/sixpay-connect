@@ -72,3 +72,12 @@ mvn -pl administration -am clean verify
 | `dynamic_setting_history` | Versioned dynamic-setting history |
 
 Security-owned persistence is not duplicated by Administration.
+
+## Database baseline
+
+Current Flyway baseline:
+
+```text
+V800__administration_baseline.sql
+```
+

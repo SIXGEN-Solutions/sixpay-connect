@@ -76,3 +76,12 @@ mvn -pl accounting -am test
 mvn -pl accounting -am clean verify
 mvn -pl accounting -am -Pfull-tests clean verify
 ```
+
+## Database baseline
+
+Current Flyway baseline:
+
+```text
+V400__accounting_baseline.sql
+```
+
