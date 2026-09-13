@@ -8,7 +8,7 @@
 
 body {
   color-scheme: light;
-  background-color: var(--mat-sys-surface);
+  background-color: #f6f8fa;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   margin: 0;
@@ -28,6 +28,21 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--sp-brand-primary, var(--sp-color-primary)) 32%, transparent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--sp-brand-primary-container, var(--sp-color-primary-container));
+  color: var(--sp-brand-on-primary-container, var(--sp-color-text));
 }
 
 /* Custom SIXPAY transient notifications render their own modern surface. */

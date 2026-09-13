@@ -1,13 +1,13 @@
 <mat-toolbar class="sp-header">
-  <div class="sp-header__brand">
-    <span class="sp-header__mark" aria-hidden="true">
-      <mat-icon>account_balance</mat-icon>
-    </span>
-    <div class="sp-header__brand-copy">
-      <span class="sp-header__title">{{ branding.productName() }}</span>
-      <span class="sp-header__institution">{{ branding.institutionName() }}</span>
-    </div>
-  </div>
+  <button
+    mat-icon-button
+    type="button"
+    aria-label="Réduire ou ouvrir la navigation"
+    class="sp-header__menu"
+    (click)="menuToggle.emit()"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
 
   <span class="sp-header__spacer"></span>
 
@@ -15,13 +15,64 @@
     <span class="sp-header__demo">MOCK FRAME</span>
   }
 
-  <sp-branding-switcher />
+  <button
+    mat-icon-button
+    type="button"
+    class="sp-header__future-action"
+    aria-label="Recherche globale — bientôt disponible"
+    title="Recherche globale — bientôt disponible"
+    disabled
+  >
+    <mat-icon>search</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    type="button"
+    class="sp-header__future-action"
+    aria-label="Notifications — bientôt disponible"
+    title="Notifications — bientôt disponible"
+    disabled
+  >
+    <mat-icon>notifications_none</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    type="button"
+    class="sp-header__future-action"
+    aria-label="Aide — bientôt disponible"
+    title="Aide — bientôt disponible"
+    disabled
+  >
+    <mat-icon>help_outline</mat-icon>
+  </button>
 
   @if (authentication.username(); as username) {
-    <span class="sp-header__subject">{{ username }}</span>
-
-    <button type="button" class="sp-header__logout" (click)="authentication.logout()">
-      Déconnexion
+    <button
+      type="button"
+      class="sp-header__profile"
+      [matMenuTriggerFor]="profileMenu"
+      aria-label="Ouvrir le menu du profil"
+    >
+      <span class="sp-header__avatar" aria-hidden="true">{{ profileInitials(username) }}</span>
+      <span class="sp-header__profile-copy">
+        <strong>{{ username }}</strong>
+        <small>{{ roleLabel() }}</small>
+      </span>
+      <mat-icon aria-hidden="true">expand_more</mat-icon>
     </button>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before">
+      <div class="sp-profile-menu__identity">
+        <strong>{{ username }}</strong>
+        <span>{{ roleLabel() }}</span>
+      </div>
+
+      <button mat-menu-item type="button" (click)="authentication.logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Se déconnecter</span>
+      </button>
+    </mat-menu>
   }
 </mat-toolbar>

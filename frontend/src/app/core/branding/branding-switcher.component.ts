@@ -12,16 +12,20 @@ import { BrandingService } from './branding.service';
   template: `
     @if (switcherEnabled) {
       <label class="sp-branding-switcher">
-        <span>Institution</span>
-        <select
-          [ngModel]="branding.activeBrandingId()"
-          (ngModelChange)="select($event)"
-          aria-label="Institution de démonstration"
-        >
-          @for (profile of branding.availableBrandings; track profile.id) {
-            <option [value]="profile.id">{{ profile.institutionName }}</option>
-          }
-        </select>
+        <span class="sp-branding-switcher__label">Banque active</span>
+        <span class="sp-branding-switcher__control">
+          <span class="sp-branding-switcher__dot" aria-hidden="true"></span>
+          <select
+            [ngModel]="branding.activeBrandingId()"
+            (ngModelChange)="select($event)"
+            aria-label="Banque active"
+          >
+            @for (profile of branding.availableBrandings; track profile.id) {
+              <option [value]="profile.id">{{ profile.institutionName }}</option>
+            }
+          </select>
+          <span class="sp-branding-switcher__chevron" aria-hidden="true">⌄</span>
+        </span>
       </label>
     }
   `,
@@ -29,35 +33,69 @@ import { BrandingService } from './branding.service';
     :host {
       display: block;
     }
+
     .sp-branding-switcher {
-      display: flex;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .sp-branding-switcher__label {
+      color: var(--sp-color-text-muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .sp-branding-switcher__control {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
+      gap: 0.55rem;
+      min-height: 2.75rem;
+      padding: 0 0.75rem;
+      border: 1px solid var(--sp-brand-outline, var(--sp-color-border));
+      border-radius: 0.7rem;
+      background: #fff;
     }
-    .sp-branding-switcher span {
-      font-weight: 600;
+
+    .sp-branding-switcher__control:focus-within {
+      border-color: var(--sp-brand-primary, var(--sp-color-primary));
+      box-shadow: 0 0 0 3px
+        color-mix(in srgb, var(--sp-brand-primary, var(--sp-color-primary)) 14%, transparent);
     }
+
+    .sp-branding-switcher__dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--sp-brand-primary, var(--sp-color-primary));
+    }
+
     select {
-      min-width: 10rem;
-      padding: 0.4rem 0.6rem;
-      border: 1px solid color-mix(in srgb, var(--sp-brand-on-primary, #fff) 55%, transparent);
-      border-radius: 0.5rem;
-      background: color-mix(in srgb, var(--sp-brand-on-primary, #fff) 12%, transparent);
-      color: inherit;
+      width: 100%;
+      min-width: 0;
+      appearance: none;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--sp-color-text);
       font: inherit;
+      font-size: 0.82rem;
+      font-weight: 650;
+      cursor: pointer;
     }
+
     select option {
       color: #1b1b1b;
       background: #fff;
     }
-    @media (max-width: 58rem) {
-      .sp-branding-switcher span {
-        display: none;
-      }
-      select {
-        min-width: 8rem;
-      }
+
+    .sp-branding-switcher__chevron {
+      color: var(--sp-color-text-muted);
+      font-size: 1rem;
+      pointer-events: none;
     }
   `,
 })
