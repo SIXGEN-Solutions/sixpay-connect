@@ -93,6 +93,8 @@ empty PostgreSQL
     -> V600
     -> V700
     -> V800
+    -> V801
+    -> V802
     -> Hibernate validation
     -> application ready
 ```
@@ -131,7 +133,7 @@ It composes:
 repository baseline verification
     -> backend + frontend + canonical gates
     -> FreshPostgreSqlApplicationIT
-    -> empty PostgreSQL + V100..V800 + application context
+    -> empty PostgreSQL + V100..V802 + application context
 
 full-stack functional smoke
     -> new PostgreSQL container
