@@ -1,0 +1,88 @@
+sixpay:
+  payment:
+    banking:
+      amplitude:
+        reservation:
+          enabled: ${AMPLITUDE_FUNDS_RESERVATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          reservation-path: ${AMPLITUDE_FUNDS_RESERVATION_PATH:/v1/payment/funds/reservations}
+          connect-timeout: ${AMPLITUDE_FUNDS_RESERVATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_FUNDS_RESERVATION_READ_TIMEOUT:5s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_FUNDS_RESERVATION_CONTRACT_VERSION:provisional-v1}
+            reserved-codes:
+              - ${AMPLITUDE_FUNDS_RESERVED_CODE:00}
+            rejected-codes:
+              - ${AMPLITUDE_FUNDS_INSUFFICIENT_CODE:04}
+              - ${AMPLITUDE_FUNDS_ACCOUNT_BLOCKED_CODE:02}
+              - ${AMPLITUDE_FUNDS_ACCOUNT_OPPOSED_CODE:03}
+              - ${AMPLITUDE_FUNDS_LIMIT_EXCEEDED_CODE:05}
+            idempotency-header: ${AMPLITUDE_FUNDS_IDEMPOTENCY_HEADER:Idempotency-Key}
+        posting:
+          enabled: ${AMPLITUDE_POSTING_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          posting-path: ${AMPLITUDE_POSTING_PATH:/api/v1/payment-events}
+          payment-reference-lookup-path: ${AMPLITUDE_POSTING_PAYMENT_REFERENCE_LOOKUP_PATH:/api/v1/payment-events/{paymentReference}}
+          idempotency-lookup-path: ${AMPLITUDE_POSTING_IDEMPOTENCY_LOOKUP_PATH:/api/v1/payment-events/idempotency/{idempotencyKey}}
+          allocate-event-number-path: ${AMPLITUDE_POSTING_ALLOCATE_EVENT_NUMBER_PATH:/api/v1/transactions/process/lastnumeroeveope/{operationCode}}
+          accounting-date-path: ${AMPLITUDE_POSTING_ACCOUNTING_DATE_PATH:/api/v1/nomenclature/getdatecomptable}
+          night-mode-path: ${AMPLITUDE_POSTING_NIGHT_MODE_PATH:/api/v1/kyc/process/modenuit}
+          connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_POSTING_CONTRACT_VERSION:1.0.0}
+            idempotency-header: ${AMPLITUDE_POSTING_IDEMPOTENCY_HEADER:Idempotency-Key}
+            correlation-header: ${AMPLITUDE_POSTING_CORRELATION_HEADER:X-Correlation-ID}
+            institution-header: ${AMPLITUDE_POSTING_INSTITUTION_HEADER:X-Financial-Institution-Code}
+        compensation:
+          enabled: ${AMPLITUDE_COMPENSATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          release-path: ${AMPLITUDE_FUNDS_RELEASE_PATH:/v1/payment/funds/releases}
+          reversal-path: ${AMPLITUDE_REVERSAL_PATH:/v1/payment/reversals}
+          connect-timeout: ${AMPLITUDE_COMPENSATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_COMPENSATION_READ_TIMEOUT:10s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            version: ${AMPLITUDE_COMPENSATION_CONTRACT_VERSION:provisional-v1}
+            idempotency-header: ${AMPLITUDE_COMPENSATION_IDEMPOTENCY_HEADER:Idempotency-Key}
+            release-success-codes: ["00", "01"]
+            release-rejected-codes: ["10"]
+            reversal-success-codes: ["00"]
+            reversal-rejected-codes: ["10"]
+            reversal-not-allowed-codes: ["11"]
+        status:
+          enabled: ${AMPLITUDE_POSTING_STATUS_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          by-idempotency-path: ${AMPLITUDE_POSTING_STATUS_BY_IDEMPOTENCY_PATH:/v1/payment/postings/idempotency/{lookupValue}}
+          by-bank-reference-path: ${AMPLITUDE_POSTING_STATUS_BY_BANK_REFERENCE_PATH:/v1/payment/postings/reference/{lookupValue}}
+          connect-timeout: ${AMPLITUDE_POSTING_STATUS_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_POSTING_STATUS_READ_TIMEOUT:5s}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+        confirmation:
+          enabled: ${AMPLITUDE_CONFIRMATION_ENABLED:true}
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
+          create-path: ${AMPLITUDE_CONFIRMATION_CREATE_PATH:/api/v1/payment-confirmation-challenges}
+          challenge-path: ${AMPLITUDE_CONFIRMATION_CHALLENGE_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}}
+          verification-path: ${AMPLITUDE_CONFIRMATION_VERIFICATION_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/verifications}
+          replacement-path: ${AMPLITUDE_CONFIRMATION_REPLACEMENT_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/replacements}
+          lookup-by-idempotency-path: ${AMPLITUDE_CONFIRMATION_LOOKUP_BY_IDEMPOTENCY_PATH:/api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}}
+          revocation-path: ${AMPLITUDE_CONFIRMATION_REVOCATION_PATH:/api/v1/payment-confirmation-challenges/{challengeReference}/revocations}
+          connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT}
+          read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
+          security:
+            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
+            ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
+          contract:
+            idempotency-header: ${AMPLITUDE_CONFIRMATION_IDEMPOTENCY_HEADER:Idempotency-Key}
+            correlation-header: ${AMPLITUDE_CONFIRMATION_CORRELATION_HEADER:X-Correlation-ID}
+            institution-header: ${AMPLITUDE_CONFIRMATION_INSTITUTION_HEADER:X-Financial-Institution-Code}

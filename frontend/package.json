@@ -31,7 +31,6 @@
     "verify:contract-consolidation": "node scripts/verify-contract-consolidation.mjs",
     "verify:runtime-datasource-policy": "node scripts/verify-runtime-datasource-policy.mjs",
     "verify:angular-environments": "node scripts/verify-angular-environment-policy.mjs",
-    "verify:sixpay": "npm run verify:quality",
     "verify:e2e": "npm run test:e2e && npm run test:e2e:integration",
     "verify:quality": "npm run format:check && npm run contract:partner && npm run lint && npm run test:coverage && npm run build:all",
     "verify:ci": "npm run verify:quality && npm run dependencies:audit && npm run verify:e2e"

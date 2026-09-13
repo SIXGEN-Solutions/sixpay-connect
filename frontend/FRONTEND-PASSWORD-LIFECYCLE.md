@@ -1,9 +1,10 @@
-# DA-10.6 — Frontend password lifecycle
+# Frontend password lifecycle
 
 ## Scope
 
-DA-10.6 completes the frontend side of the LOCAL password lifecycle introduced
-by DA-10.1 through DA-10.5.
+This document describes the frontend behavior for the LOCAL password lifecycle,
+including mandatory password changes, route enforcement, administrative reset
+integration, and defense-in-depth handling.
 
 OIDC remains excluded because password lifecycle belongs to the IdP.
 
