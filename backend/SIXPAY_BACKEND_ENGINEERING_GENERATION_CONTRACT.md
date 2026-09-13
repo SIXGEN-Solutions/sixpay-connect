@@ -101,7 +101,6 @@ backend/
 ├── integration/
 ├── customer/
 ├── partner/
-├── subscription/
 ├── payment/
 ├── accounting/
 ├── reporting/
@@ -121,6 +120,7 @@ backend/
 6. `bootstrap` **PEUT** assembler les modules nécessaires à l'application exécutable.
 7. `tests` **PEUT** dépendre de plusieurs modules pour les tests transverses et end-to-end.
 8. Une dépendance entre modules **DOIT** être minimale, justifiée et orientée dans le sens défini par l'architecture.
+9. `CustomerSubscription` **DOIT** rester une capacité du module `customer`; aucun module autonome `subscription` ne doit être créé.
 
 ### 5.2 Responsabilités des modules transverses
 

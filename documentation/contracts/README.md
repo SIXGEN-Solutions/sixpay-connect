@@ -228,86 +228,24 @@ to specific retired filenames. This keeps the baseline independent from
 development-history artifacts while preventing equivalent patch, backup or
 temporary files from being reintroduced.
 
-## Classement au Gate IA-0R
+## Contract lifecycle and current usage
 
-| Contrat | Classement | Usage MVP | Génération |
-| --- | --- | --- | --- |
-| `amplitude-customer-verification-api-v1.yaml` | `ACTIVE_MVP` | Vérification bancaire obligatoire avant le challenge OTP | Génération active |
-| `tresorpay-authorization-request-api-v1.yaml` | `DEFERRED_FUTURE` | Aucun | Exclue |
-| `tresorpay-authorization-decision-webhook-v1.yaml` | `DEFERRED_FUTURE` | Aucun | Exclue |
+Current lifecycle, approval, MVP inclusion and generation permissions are defined
+by `CONTRACT_REGISTRY.yaml` and the governance metadata mirrored in each
+canonical physical contract.
 
-Le contrat Amplitude existant ne couvre ni le contrôle du solde disponible, ni
-le débit du client, ni le crédit du CUT, ni la confirmation après TFJ. Ces
-capacités doivent être définies dans le Contract Pack Payment.
+A retained or deferred contract is not automatically active and must not drive
+MVP implementation or code generation unless its registry status allows it.
 
-Les deux contrats TRESOR PAY d’autorisation sont conservés à leurs chemins
-actuels pour la traçabilité et une évolution future du parcours d’abonnement.
-Pour le MVP, TRESOR PAY reste maître de l’abonnement et SIXPAY ne gère aucun
-cycle de vie local d’abonnement.
+Internal read-only contracts remain separate where ownership, security, data
+classification or operational semantics differ. Payment Query remains distinct
+from privileged Payment Audit/export; ObservedCustomer remains distinct from
+authoritative Customer Management; Accounting Batch Query remains
+Accounting-owned; Notification inbound trigger and outbound delivery boundaries
+remain separate.
 
-## Contrats internes de consultation — étape 1.7
-
-| Contrat | Classement | Usage MVP | Génération |
-| --- | --- | --- | --- |
-| `internal/payment-query-api-v1.yaml` | `ACTIVE_MVP` | Consultation opérationnelle Payment masquée | Référence uniquement jusqu’à approbation |
-| `internal/observed-customer-query-api-v1.yaml` | `ACTIVE_MVP` | Consultation ObservedCustomer masquée | Référence uniquement jusqu’à approbation |
-| `internal/payment-audit-query-api-v1.yaml` | `ACTIVE_MVP` | Timeline, audit immuable et export contrôlé | Référence uniquement jusqu’à approbation |
-
-Ces trois contrats sont strictement en lecture seule. Le contrat d’audit est
-séparé du contrat de consultation Payment afin d’appliquer des scopes, une
-classification et une traçabilité renforcés. Les opérations d’export restent
-contrôlées et ne constituent ni une mutation métier ni une commande de replay.
-
-## Règle de gouvernance
-
-Toute évolution de classement doit mettre à jour dans le même changement :
-
-1. `CONTRACT_REGISTRY.yaml`;
-2. l’extension `info.x-sixpay-contract` du contrat;
-3. le manifeste IA du domaine concerné, notamment
-   `documentation/ai/payment/AI_CONTEXT_MANIFEST.yaml` pour le Payment Contract Pack;
-4. le document de Gate concerné.
-
-## FS-2.1 — Repository baseline consolidation decisions
-
-During `FS-2.1 — Contract consolidation`, the following internal contracts are
-explicitly classified as **KEEP**.
-
-`KEEP` is a repository-consolidation decision. It does not replace the
-normative lifecycle, approval, generation, security or ownership metadata in
-`CONTRACT_REGISTRY.yaml`.
-
-| Physical contract | Decision | Preserved boundary |
-| --- | --- | --- |
-| `internal/payment-query-api-v1.yaml` | `KEEP` | Operational masked Payment query capability |
-| `internal/payment-audit-query-api-v1.yaml` | `KEEP` | Privileged immutable Payment audit, timeline and controlled export boundary |
-| `internal/observed-customer-query-api-v1.yaml` | `KEEP` | Customer-owned non-authoritative ObservedCustomer query projection |
-| `internal/accounting-query-api-v1.yaml` | `KEEP` | Accounting batch query capability |
-| `internal/notification-operational-trigger-v1.md` | `KEEP` | Inbound semantic trigger contract consumed by Notification |
-| `internal/notification-operational-email-v1.md` | `KEEP` | Outbound operational email dispatch/provider boundary |
-
-### Preservation rationale
-
-These contracts must remain physically independent because they represent
-different ownership, security, data-classification, direction or operational
-semantics.
-
-In particular:
-
-- Payment Query and Payment Audit remain separate. Audit has stronger
-  confidentiality, traceability and export semantics and must not be folded
-  into the ordinary Payment query API.
-- ObservedCustomer remains separate from authoritative Customer Management.
-  It is a non-authoritative projection created from observed Payment facts.
-- Accounting Batch Query remains an Accounting-owned bounded query capability.
-- Notification Trigger and Notification Email remain separate because the
-  trigger contract describes semantic facts entering Notification, while the
-  email contract describes the provider-facing dispatch boundary leaving
-  Notification.
-
-No endpoint, schema, capability, authorization rule or registry identity is
-changed by this preservation decision.
-
+Any contract-classification change must update the registry and affected
+canonical contract metadata in the same change.
 
 ## Accounting T1 manual execution
 

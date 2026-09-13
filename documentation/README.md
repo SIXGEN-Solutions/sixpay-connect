@@ -45,96 +45,48 @@ The documentation map is a navigation layer, not a competing authority.
 | Active Master Engineering Prompt | `MASTER_ENGINEERING_PROMPT.md` | Canonical AI engineering orchestration for repository changes |
 | Stubs/reference fixtures | `documentation/stubs/` | Non-canonical reference/stub material |
 
-
 ## Formal documentation classification
 
 The complete classification is maintained in
-documentation/DOCUMENTATION_CLASSIFICATION.yaml.
+`documentation/DOCUMENTATION_CLASSIFICATION.yaml`.
 
-The four repository categories are:
+The repository categories are:
 
-- CANONICAL: current architecture, approved requirements, active contracts
-  and stable navigation/gates;
-- REFERENCE_SOURCE: external PDF/DOCX source material retained for
-  traceability;
-- HISTORICAL: phase and lot documents retained without active authority;
-- TEMPLATE: reusable models for future AI generation campaigns.
+- `CANONICAL`: current architecture, approved requirements, active contracts
+  and stable navigation/verification rules;
+- `REFERENCE_SOURCE`: external PDF/DOCX source material retained for traceability;
+- `HISTORICAL`: implementation-phase and delivery documents retained without
+  active authority;
+- `TEMPLATE`: reusable models for future generation work.
 
-The 38 historical AI documents are not deleted at this stage. They are
-explicitly excluded from the active Master Prompt by the classification index.
+Historical implementation documents are excluded from the active Master Prompt
+by the classification index and must not be used as current-state authority.
 
 ## Contractual special rule
 
 `documentation/contracts/CONTRACT_REGISTRY.yaml` is the canonical contractual
-table of contents.
-
-Physical OpenAPI/JSON Schema/event contracts describe interfaces.
-
-The registry describes their:
-
-- classification;
-- capability;
-- ownership;
-- direction;
-- source system;
-- system of record;
-- lifecycle;
-- approval;
-- generation policy;
-- security;
-- MVP usage.
-
-The documentation map must not duplicate the registry at contract-entry level.
+table of contents. Physical OpenAPI/JSON Schema/event contracts describe
+interfaces; the registry describes classification, capability, ownership,
+direction, lifecycle, approval, generation policy, security and MVP usage.
 
 ## Architecture special rule
 
-`documentation/architecture/` has higher precedence than requirements,
-contracts and AI documentation when architectural sources conflict, as defined
-by `ENGINEERING_CONTEXT.md`.
-
-Architecture documentation should describe the **current baseline**, not the
-history of how the baseline was built.
-
-FS-2.x inventory/audit documents are transitional consolidation evidence until
-FS-2.7 decides whether each one remains canonical, is merged, archived or
-deleted.
+Architecture documentation describes the **current baseline**, not the history
+of how the baseline was built. Intermediate audit, phase and delivery evidence
+belongs to Git history or explicitly classified `HISTORICAL` material.
 
 ## Binary source documents
 
 Binary files such as `.docx` or `.pdf` are not automatically canonical solely
-because they live under `documentation/architecture/`.
-
-They must receive an explicit FS-2.7 decision:
-
-```text
-KEEP_CANONICAL
-MERGE_INTO_CANONICAL
-KEEP_REFERENCE_SOURCE
-ARCHIVE_HISTORY
-DELETE_ABSORBED_HISTORY
-REVIEW_SEMANTIC_DUPLICATE
-```
-
-Until reviewed, a binary document must not silently override a higher-priority
-Markdown/YAML baseline.
+because of their directory. Their authority comes from explicit classification
+and source role. Reference-source documents do not silently override
+higher-priority current-state Markdown/YAML baselines.
 
 ## Domain implementation reference
 
-For business-module structure and implementation conventions:
-
-```text
-backend/partner
-```
-
-remains the golden module.
-
-Documentation describing another domain must not create a structural convention
-that contradicts the golden Partner module without an explicit architecture
-decision.
+`backend/partner` remains the golden business-module implementation reference.
 
 ## Developer / AI navigation
-
-Start here:
 
 ```text
 ENGINEERING_CONTEXT.md
@@ -146,61 +98,17 @@ specialized canonical location
 implementation / contracts / tests
 ```
 
-For contracts:
-
-```text
-ENGINEERING_CONTEXT.md
-        ↓
-documentation/README.md
-        ↓
-documentation/contracts/README.md
-        ↓
-CONTRACT_REGISTRY.yaml
-        ↓
-physical contract
-```
-
 ## Documentation maintenance rule
 
-A new document must have:
-
-- a clear owner or owning concern;
-- one canonical location;
-- a reason it does not duplicate an existing canonical document;
-- references updated when it supersedes another document.
+A new document must have a clear owner, one canonical location, a reason it does
+not duplicate an existing canonical document, and updated references when it
+supersedes another document.
 
 Temporary change artifacts must not become permanent baseline documentation.
 
-## FS-2.7 status
-
-This index is established by:
-
-```text
-FS-2.7.1 — Canonical documentation map/index
-```
-
-Subsequent FS-2.7 work may merge, archive or delete documents, but this file
-remains the stable navigation entry point for `documentation/`.
-
 ## Documentation verification
-
-Canonical documentation non-regression gate:
 
 ```bash
 py scripts/verify_documentation_baseline.py
-```
-
-This gate protects the canonical documentation topology, absorbed historical
-cleanup, contracts/runbooks references and AI documentation precedence.
-
-## Final documentation validation
-
-To validate the complete consolidated documentation baseline:
-
-```bash
 py scripts/verify_documentation_final.py
 ```
-
-This is the canonical FS-2.7 closure command. It composes the documentation
-non-regression gate, contract-registry integrity and configuration-documentation
-alignment without reimplementing their specialized rules.
