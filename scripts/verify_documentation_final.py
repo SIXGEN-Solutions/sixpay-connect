@@ -26,14 +26,19 @@ REQUIRED = [
     "scripts/verify_master_prompt_input_manifest.py",
     "scripts/verify_master_engineering_prompt.py",
     "scripts/verify_configuration_consolidation.py",
+    "frontend/FRONTEND-PASSWORD-LIFECYCLE.md",
     "frontend/scripts/verify-contract-consolidation.mjs",
+]
+
+ABSENT = [
+    "frontend/DA-10.6-FRONTEND-LIFECYCLE.md",
 ]
 
 
 def fail(message):
     print()
     print("=" * 78)
-    print("FS-2.7.8 FINAL DOCUMENTATION VALIDATION FAILED")
+    print("FINAL DOCUMENTATION VALIDATION FAILED")
     print("=" * 78)
     print()
     print(" -", message)
@@ -43,8 +48,14 @@ def fail(message):
 def require(relative):
     path = ROOT / relative
     if not path.is_file():
-        fail(f"required FS-2.7 asset is missing: {relative}")
+        fail(f"required canonical asset is missing: {relative}")
     return path
+
+
+def require_absent(relative):
+    path = ROOT / relative
+    if path.exists():
+        fail(f"obsolete implementation-stage asset remains present: {relative}")
 
 
 def executable(name):
@@ -92,10 +103,13 @@ def main():
     for relative in REQUIRED:
         require(relative)
 
+    for relative in ABSENT:
+        require_absent(relative)
+
     python = sys.executable
     npm = executable("npm")
 
-    print("FS-2.7.8 documentation final-validation prerequisites PASSED.")
+    print("Documentation final-validation prerequisites PASSED.")
     print(f"Required canonical assets: {len(REQUIRED)}.")
 
     run(
@@ -117,7 +131,7 @@ def main():
     )
 
     run(
-        "3/5 — Configuration documentation / gate alignment",
+        "3/5 — Configuration documentation / validation alignment",
         [
             python,
             "scripts/verify_configuration_consolidation.py",
@@ -142,7 +156,7 @@ def main():
 
     print()
     print("=" * 78)
-    print("FS-2.7.8 FINAL DOCUMENTATION VALIDATION PASSED")
+    print("FINAL DOCUMENTATION VALIDATION PASSED")
     print("=" * 78)
     print()
     print("Validated:")
@@ -151,13 +165,12 @@ def main():
     print(" - requirements/domain documentation ownership")
     print(" - contracts/runbooks reference integrity")
     print(" - AI documentation precedence and Partner golden-module rule")
-    print(" - absorbed historical FS documentation remains absent")
+    print(" - obsolete implementation-stage documentation remains absent")
+    print(" - frontend password lifecycle is documented as current state")
     print(" - contract registry remains structurally valid")
-    print(" - configuration gates no longer depend on deleted phase documents")
+    print(" - configuration validation no longer depends on deleted phase documents")
     print(" - active Master Prompt sources and exclusions remain synchronized")
     print(" - active Master Engineering Prompt remains complete and current")
-    print()
-    print("FS-2.7 — Documentation consolidation may be CLOSED.")
 
 
 if __name__ == "__main__":
