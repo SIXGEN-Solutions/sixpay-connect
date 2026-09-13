@@ -1,14 +1,23 @@
 <mat-toolbar class="sp-header">
-  <mat-icon aria-hidden="true">account_balance</mat-icon>
-
-  <span class="sp-header__title"> SIXPAY CONNECT </span>
+  <div class="sp-header__brand">
+    <span class="sp-header__mark" aria-hidden="true">
+      <mat-icon>account_balance</mat-icon>
+    </span>
+    <div class="sp-header__brand-copy">
+      <span class="sp-header__title">{{ branding.productName() }}</span>
+      <span class="sp-header__institution">{{ branding.institutionName() }}</span>
+    </div>
+  </div>
 
   <span class="sp-header__spacer"></span>
 
+  @if (authentication.isStandaloneMode) {
+    <span class="sp-header__demo">MOCK FRAME</span>
+    <sp-branding-switcher />
+  }
+
   @if (authentication.username(); as username) {
-    <span class="sp-header__subject">
-      {{ username }}
-    </span>
+    <span class="sp-header__subject">{{ username }}</span>
 
     <button type="button" class="sp-header__logout" (click)="authentication.logout()">
       Déconnexion
