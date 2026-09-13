@@ -3,6 +3,7 @@ package com.sixpay.payment.infrastructure.banking.amplitude.posting.client;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.CoreBankingCodeResponse;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.CoreBankingStringDataResponse;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.configuration.AmplitudePostingProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
@@ -12,28 +13,18 @@ import java.util.Objects;
 public final class RestAmplitudePaymentEventContextClient
         implements AmplitudePaymentEventContextClient {
 
-    private static final String FINANCIAL_INSTITUTION_HEADER =
-            "X-Financial-Institution-Code";
-
-    private static final String ALLOCATE_EVENT_NUMBER_PATH =
-            "/api/v1/transactions/process/"
-                    + "lastnumeroeveope/{operationCode}";
-
-    private static final String ACCOUNTING_DATE_PATH =
-            "/api/v1/nomenclature/getdatecomptable";
-
-    private static final String NIGHT_MODE_PATH =
-            "/api/v1/kyc/process/modenuit";
-
     private final RestClient restClient;
     private final PostingAccessTokenProvider tokenProvider;
+    private final AmplitudePostingProperties properties;
 
     public RestAmplitudePaymentEventContextClient(
             RestClient restClient,
-            PostingAccessTokenProvider tokenProvider
+            PostingAccessTokenProvider tokenProvider,
+            AmplitudePostingProperties properties
     ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.tokenProvider = Objects.requireNonNull(tokenProvider);
+        this.properties = Objects.requireNonNull(properties);
     }
 
     @Override
@@ -49,7 +40,7 @@ public final class RestAmplitudePaymentEventContextClient
         }
 
         return get(
-                ALLOCATE_EVENT_NUMBER_PATH,
+                properties.allocateEventNumberPath(),
                 CoreBankingStringDataResponse.class,
                 correlationId,
                 financialInstitutionCode,
@@ -63,7 +54,7 @@ public final class RestAmplitudePaymentEventContextClient
             String financialInstitutionCode
     ) {
         return get(
-                ACCOUNTING_DATE_PATH,
+                properties.accountingDatePath(),
                 CoreBankingStringDataResponse.class,
                 correlationId,
                 financialInstitutionCode
@@ -76,7 +67,7 @@ public final class RestAmplitudePaymentEventContextClient
             String financialInstitutionCode
     ) {
         return get(
-                NIGHT_MODE_PATH,
+                properties.nightModePath(),
                 CoreBankingCodeResponse.class,
                 correlationId,
                 financialInstitutionCode
@@ -110,11 +101,11 @@ public final class RestAmplitudePaymentEventContextClient
                         "Bearer " + tokenProvider.accessToken()
                 )
                 .header(
-                        IntegrationHttpHeaders.CORRELATION_ID,
+                        properties.contract().correlationHeader(),
                         correlationId
                 )
                 .header(
-                        FINANCIAL_INSTITUTION_HEADER,
+                        properties.contract().institutionHeader(),
                         financialInstitutionCode
                 )
                 .retrieve()

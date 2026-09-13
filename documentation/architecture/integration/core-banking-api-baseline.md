@@ -60,8 +60,8 @@ runtime parameters.
 | T0 Payment event execution: SIXPAY-built immutable event/entry snapshot + mandatory Core Banking controls + atomic debit/credit | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | T0 financial outcome lookup by Payment reference and Idempotency-Key | `amplitude-payment-posting-api-v1.yaml` | Payment | `APPROVED` | `REQUIRED` |
 | Reversal + reversal lookup | `amplitude-payment-posting-api-v1.yaml` | Payment | `PENDING_APPROVAL` | `OPTIONAL — PENDING_PROGRAMME_ENABLEMENT` |
-| T+1 accounting batch submission | physical provider contract `TO_DEFINE`; implementation shape already exists behind `AccountingBatchGateway` | Accounting | `TO_DEFINE` | `REQUIRED — API MVP` |
-| T+1 accounting/TFJ result confirmation + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `PENDING_APPROVAL` | `REQUIRED` |
+| T+1 accounting batch submission | `amplitude-accounting-entries-api-v1.yaml` | Accounting | `APPROVED` | `REQUIRED — API MVP` |
+| T+1 accounting/TFJ result confirmation + fallback lookup | `amplitude-end-of-day-confirmation-api-v1.yaml` | Accounting / Payment lifecycle | `APPROVED` | `REQUIRED` |
 | T+1 CSV/file accounting submission | contract `TO_DEFINE` | Accounting | `TO_DEFINE` | `DEFERRED_FUTURE` |
 
 ## Payment execution ordering
@@ -174,8 +174,9 @@ lines through `AccountingBatchGateway` to the Core Banking Accounting API.
 Core Banking validates and effectively posts/accounts those submitted lines and
 returns authoritative results.
 
-The final physical Accounting API endpoint/path and complete wire schema remain
-`TO_DEFINE` until the dedicated T1 contract is formalized.
+The approved physical Accounting API contract is
+`amplitude-accounting-entries-api-v1.yaml`, with `POST /api/v1/accounting-entries`
+and authoritative lookup by batch id or original idempotency key.
 
 `amplitude-end-of-day-confirmation-api-v1.yaml` remains the result-confirmation /
 reconciliation contract, not the batch-submission contract.

@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: accounting-tfj-sandbox
+    import:
+      - classpath:application-accounting.yml
+      - classpath:application-accounting-tfj.yml
+
+sixpay:
+  accounting:
+    tfj:
+      lookup:
+        enabled: true
+      webhook:
+        enabled: true
+        signature-keys-base64:
+          ${AMPLITUDE_TFJ_SIGNATURE_KEY_ID:default}: ${AMPLITUDE_TFJ_SIGNATURE_KEY_BASE64}

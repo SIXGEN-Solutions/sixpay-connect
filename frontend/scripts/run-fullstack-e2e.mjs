@@ -526,7 +526,13 @@ async function main() {
       SPRING_DATASOURCE_URL: `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
       SPRING_DATASOURCE_USERNAME: 'sixpay',
       SPRING_DATASOURCE_PASSWORD: 'sixpay-test',
+      // Keep full-stack authentication deterministic even when the host
+      // environment already defines SIXPAY_LOCAL_* credentials.
       SIXPAY_LOCAL_ADMIN_PASSWORD: 'admin-dev-2026',
+      SIXPAY_LOCAL_MANAGER_PASSWORD: 'M@nager-dev-2027',
+      SIXPAY_LOCAL_AUDITOR_PASSWORD: 'auditor-dev-2026',
+      SIXPAY_LOCAL_PARTNER_PASSWORD: 'partner-dev-2026',
+      SIXPAY_LOCAL_PARTNER_SUBJECT: 'f88166d1-39df-4900-bb31-1700d25c3bfa',
       SIXPAY_MESSAGING_OUTBOX_ENABLED: 'false',
       SIXPAY_E2E_CUSTOMER_ENABLED: 'true',
       SIXPAY_E2E_CUSTOMER_AMPLITUDE_BASE_URL: `http://127.0.0.1:${amplitudeStubPort}`,

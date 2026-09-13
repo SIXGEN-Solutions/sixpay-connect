@@ -1,13 +1,12 @@
 package com.sixpay.accounting.infrastructure.tfj.client;
 
-import com.sixpay.accounting.infrastructure.accountingapi.configuration.AccountingApiProperties;
+import com.sixpay.accounting.infrastructure.tfj.configuration.AccountingTfjLookupProperties;
 import com.sixpay.accounting.application.exception.AccountingProviderAuthenticationException;
 import com.sixpay.accounting.application.exception.AccountingProviderUnavailableException;
 import com.sixpay.accounting.application.port.output.AccountingIntegrationContext;
 import com.sixpay.accounting.application.port.output.TfjConfirmationLookupGateway;
 import com.sixpay.accounting.domain.model.TfjConfirmation;
 import com.sixpay.accounting.domain.model.TfjObservationChannel;
-import com.sixpay.accounting.infrastructure.accountingapi.client.AccountingApiAccessTokenProvider;
 import com.sixpay.accounting.infrastructure.tfj.dto.EndOfDayConfirmationDto;
 import com.sixpay.accounting.infrastructure.tfj.mapper.AmplitudeTfjMapper;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
@@ -26,7 +25,7 @@ import java.util.Optional;
 
 @Component
 @ConditionalOnProperty(
-        prefix = AccountingApiProperties.PREFIX,
+        prefix = AccountingTfjLookupProperties.PREFIX,
         name = "enabled",
         havingValue = "true"
 )
@@ -34,17 +33,20 @@ public final class AmplitudeTfjLookupClient
         implements TfjConfirmationLookupGateway {
 
     private final RestClient restClient;
-    private final AccountingApiAccessTokenProvider tokenProvider;
+    private final TfjLookupAccessTokenProvider tokenProvider;
+    private final AccountingTfjLookupProperties properties;
     private final AmplitudeTfjMapper mapper;
 
     public AmplitudeTfjLookupClient(
-            @Qualifier("accountingApiRestClient")
+            @Qualifier("tfjLookupRestClient")
             RestClient restClient,
-            AccountingApiAccessTokenProvider tokenProvider,
+            TfjLookupAccessTokenProvider tokenProvider,
+            AccountingTfjLookupProperties properties,
             AmplitudeTfjMapper mapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.tokenProvider = Objects.requireNonNull(tokenProvider);
+        this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
     }
 
@@ -61,7 +63,7 @@ public final class AmplitudeTfjLookupClient
                     restClient.get()
                             .uri(builder -> builder
                                     .path(
-                                            "/api/v1/end-of-day-confirmations"
+                                            properties.lookupPath()
                                     )
                                     .queryParam(
                                             "financialInstitutionCode",

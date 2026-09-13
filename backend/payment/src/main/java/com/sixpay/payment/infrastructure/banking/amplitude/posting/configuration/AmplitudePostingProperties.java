@@ -8,13 +8,17 @@ import org.springframework.validation.annotation.Validated;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Set;
 
 @Validated
 @ConfigurationProperties(prefix = AmplitudePostingProperties.PREFIX)
 public record AmplitudePostingProperties(
         @NotNull URI baseUrl,
         @NotBlank String postingPath,
+        @NotBlank String paymentReferenceLookupPath,
+        @NotBlank String idempotencyLookupPath,
+        @NotBlank String allocateEventNumberPath,
+        @NotBlank String accountingDatePath,
+        @NotBlank String nightModePath,
         @NotNull Duration connectTimeout,
         @NotNull Duration readTimeout,
         @NotNull @Valid Security security,
@@ -43,13 +47,12 @@ public record AmplitudePostingProperties(
                     "baseUrl must use HTTPS except for loopback tests"
             );
         }
-        if (postingPath == null
-                || postingPath.isBlank()
-                || !postingPath.startsWith("/")) {
-            throw new IllegalArgumentException(
-                    "postingPath must start with /"
-            );
-        }
+        postingPath = validatePath(postingPath, "postingPath");
+        paymentReferenceLookupPath = validatePath(paymentReferenceLookupPath, "paymentReferenceLookupPath");
+        idempotencyLookupPath = validatePath(idempotencyLookupPath, "idempotencyLookupPath");
+        allocateEventNumberPath = validatePath(allocateEventNumberPath, "allocateEventNumberPath");
+        accountingDatePath = validatePath(accountingDatePath, "accountingDatePath");
+        nightModePath = validatePath(nightModePath, "nightModePath");
         if (connectTimeout == null
                 || connectTimeout.isZero()
                 || connectTimeout.isNegative()
@@ -70,19 +73,14 @@ public record AmplitudePostingProperties(
     public record Contract(
             @NotBlank String version,
             @NotBlank String idempotencyHeader,
-            @NotNull Set<@NotBlank String> completedCodes,
-            @NotNull Set<@NotBlank String> rejectedCodes,
-            @NotNull Set<@NotBlank String> pendingCodes
-    ) {
-        public Contract {
-            completedCodes = Set.copyOf(completedCodes);
-            rejectedCodes = Set.copyOf(rejectedCodes);
-            pendingCodes = Set.copyOf(pendingCodes);
-            if (completedCodes.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "At least one completed code is required"
-                );
-            }
+            @NotBlank String correlationHeader,
+            @NotBlank String institutionHeader
+    ) { }
+
+    private static String validatePath(String value, String name) {
+        if (value == null || value.isBlank() || !value.startsWith("/")) {
+            throw new IllegalArgumentException(name + " must start with /");
         }
+        return value.strip();
     }
 }

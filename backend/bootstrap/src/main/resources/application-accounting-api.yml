@@ -1,11 +1,39 @@
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          amplitude-accounting:
+            token-uri: ${AMPLITUDE_ACCOUNTING_OAUTH2_TOKEN_URI}
+        registration:
+          accounting-api:
+            provider: amplitude-accounting
+            authorization-grant-type: client_credentials
+            client-id: ${AMPLITUDE_ACCOUNTING_OAUTH2_CLIENT_ID}
+            client-secret: ${AMPLITUDE_ACCOUNTING_OAUTH2_CLIENT_SECRET}
+            scope: ${AMPLITUDE_ACCOUNTING_OAUTH2_SCOPE:amplitude.accounting.write,amplitude.accounting.read}
+
+  ssl:
+    bundle:
+      jks:
+        accounting-api-client:
+          keystore:
+            location: ${AMPLITUDE_ACCOUNTING_KEYSTORE_LOCATION}
+            password: ${AMPLITUDE_ACCOUNTING_KEYSTORE_PASSWORD}
+            type: ${AMPLITUDE_ACCOUNTING_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${AMPLITUDE_ACCOUNTING_TRUSTSTORE_LOCATION}
+            password: ${AMPLITUDE_ACCOUNTING_TRUSTSTORE_PASSWORD}
+            type: ${AMPLITUDE_ACCOUNTING_TRUSTSTORE_TYPE:PKCS12}
+
 sixpay:
   accounting:
     api:
       enabled: ${SIXPAY_ACCOUNTING_API_ENABLED:false}
       base-url: ${ACCOUNTING_API_BASE_URL:https://accounting-api.invalid}
-      submit-path: ${ACCOUNTING_API_SUBMIT_PATH:/v1/accounting/batches}
-      batch-lookup-path: ${ACCOUNTING_API_BATCH_LOOKUP_PATH:/v1/accounting/batches/{batchId}}
-      idempotency-lookup-path: ${ACCOUNTING_API_IDEMPOTENCY_LOOKUP_PATH:/v1/accounting/batches/by-idempotency-key/{idempotencyKey}}
+      submit-path: ${ACCOUNTING_API_SUBMIT_PATH:/api/v1/accounting-entries}
+      batch-lookup-path: ${ACCOUNTING_API_BATCH_LOOKUP_PATH:/api/v1/accounting-entries/batches/{batchId}}
+      idempotency-lookup-path: ${ACCOUNTING_API_IDEMPOTENCY_LOOKUP_PATH:/api/v1/accounting-entries/idempotency/{idempotencyKey}}
       connect-timeout: ${ACCOUNTING_API_CONNECT_TIMEOUT:2s}
       read-timeout: ${ACCOUNTING_API_READ_TIMEOUT:5s}
       security:

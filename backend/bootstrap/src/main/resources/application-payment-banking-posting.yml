@@ -5,19 +5,19 @@ sixpay:
         posting:
           enabled: ${AMPLITUDE_POSTING_ENABLED:true}
           base-url: ${AMPLITUDE_PAYMENT_BASE_URL}
-          posting-path: ${AMPLITUDE_POSTING_PATH:/v1/payment/postings}
+          posting-path: ${AMPLITUDE_POSTING_PATH:/api/v1/payment-events}
+          payment-reference-lookup-path: ${AMPLITUDE_POSTING_PAYMENT_REFERENCE_LOOKUP_PATH:/api/v1/payment-events/{paymentReference}}
+          idempotency-lookup-path: ${AMPLITUDE_POSTING_IDEMPOTENCY_LOOKUP_PATH:/api/v1/payment-events/idempotency/{idempotencyKey}}
+          allocate-event-number-path: ${AMPLITUDE_POSTING_ALLOCATE_EVENT_NUMBER_PATH:/api/v1/transactions/process/lastnumeroeveope/{operationCode}}
+          accounting-date-path: ${AMPLITUDE_POSTING_ACCOUNTING_DATE_PATH:/api/v1/nomenclature/getdatecomptable}
+          night-mode-path: ${AMPLITUDE_POSTING_NIGHT_MODE_PATH:/api/v1/kyc/process/modenuit}
           connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
           security:
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
-            version: ${AMPLITUDE_POSTING_CONTRACT_VERSION:provisional-v1}
+            version: ${AMPLITUDE_POSTING_CONTRACT_VERSION:1.0.0}
             idempotency-header: ${AMPLITUDE_POSTING_IDEMPOTENCY_HEADER:Idempotency-Key}
-            completed-codes:
-              - ${AMPLITUDE_POSTING_COMPLETED_CODE:00}
-            rejected-codes:
-              - ${AMPLITUDE_POSTING_REJECTED_CODE:10}
-            pending-codes:
-              - ${AMPLITUDE_POSTING_PENDING_CODE:20}
-              - ${AMPLITUDE_POSTING_UNKNOWN_CODE:21}
+            correlation-header: ${AMPLITUDE_POSTING_CORRELATION_HEADER:X-Correlation-ID}
+            institution-header: ${AMPLITUDE_POSTING_INSTITUTION_HEADER:X-Financial-Institution-Code}

@@ -9,7 +9,6 @@ import org.springframework.web.client.RestClient;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -116,6 +115,11 @@ class RestAmplitudePaymentEventRecoveryClientTest {
         return new AmplitudePostingProperties(
                 URI.create("http://localhost"),
                 "/api/v1/payment-events",
+                "/api/v1/payment-events/{paymentReference}",
+                "/api/v1/payment-events/idempotency/{idempotencyKey}",
+                "/api/v1/transactions/process/lastnumeroeveope/{operationCode}",
+                "/api/v1/nomenclature/getdatecomptable",
+                "/api/v1/kyc/process/modenuit",
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(2),
                 new AmplitudePostingProperties.Security(
@@ -123,11 +127,10 @@ class RestAmplitudePaymentEventRecoveryClientTest {
                         "amplitude-mtls"
                 ),
                 new AmplitudePostingProperties.Contract(
-                        "v1",
+                        "1.0.0",
                         "Idempotency-Key",
-                        Set.of("200"),
-                        Set.of("REJECTED"),
-                        Set.of("202")
+                        "X-Correlation-ID",
+                        "X-Financial-Institution-Code"
                 )
         );
     }
