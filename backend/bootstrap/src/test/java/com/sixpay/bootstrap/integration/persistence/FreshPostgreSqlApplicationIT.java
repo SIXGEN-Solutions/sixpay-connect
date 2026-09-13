@@ -83,7 +83,7 @@ class FreshPostgreSqlApplicationIT {
     @Container
     static final PostgreSQLContainer POSTGRES =
             new PostgreSQLContainer("postgres:16-alpine")
-                    .withDatabaseName("sixpay_fs_2_3_7")
+                    .withDatabaseName("sixpay_fresh_baseline")
                     .withUsername("sixpay")
                     .withPassword("sixpay-test");
 
@@ -256,7 +256,7 @@ class FreshPostgreSqlApplicationIT {
             ) {
                 assertFalse(
                         schemas.next(),
-                        "FS-2.3.7 requires schema sixpay "
+                        "Fresh baseline validation requires schema sixpay "
                                 + "to be absent before "
                                 + "Spring/Flyway starts"
                 );

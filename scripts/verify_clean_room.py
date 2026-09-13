@@ -132,7 +132,7 @@ def main():
     print(" - backend Maven verification passes")
     print(" - frontend canonical verification passes")
     print(" - PostgreSQL starts from an empty disposable instance")
-    print(" - Flyway applies canonical V100..V800 baselines")
+    print(" - Flyway applies canonical V100/V200/V300/V400/V500/V600/V700/V800 baselines")
     print(" - Spring Boot application starts successfully")
     print(" - Angular integration frontend starts against the real backend")
     print(" - Partner can be created, persisted and reloaded")

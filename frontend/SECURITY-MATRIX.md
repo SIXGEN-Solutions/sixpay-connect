@@ -84,3 +84,10 @@ Un utilisateur authentifié sans le rôle requis est redirigé vers `/forbidden`
 - Les réponses `403` conduisent à `/forbidden`.
 - Aucun secret ou token n'est journalisé.
 - Les contrôles objet, scopes, transitions métier et idempotence restent côté backend.
+
+## Accounting T1 manual execution
+
+`/accounting` remains readable by `ADMIN`, `MANAGER` and `AUDITOR`.
+The action **Lancer le traitement T1** is available only to `ADMIN` or `MANAGER`
+holding `accounting.t1.execute`. `AUDITOR` remains read-only. Backend
+authorization is authoritative.

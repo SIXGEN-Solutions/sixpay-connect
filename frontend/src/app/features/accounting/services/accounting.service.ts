@@ -10,6 +10,7 @@ import {
 } from '../api/accounting-api.mapper';
 import { AccountingBatchDetail, AccountingBatchSummary } from '../models/accounting';
 import { AccountingBatchQuery } from '../models/accounting-query';
+import { AccountingT1ManualExecutionResponse } from '../models/accounting-t1-execution';
 import { AccountingMockService } from './accounting-mock.service';
 
 @Injectable({
@@ -28,6 +29,14 @@ export class AccountingService {
           .search(query)
           .pipe(map((page) => page.content.map(mapAccountingBatchSummaryResponse)))
       : this.mock.search(query);
+  }
+
+  executeT1Manually(businessDate: string): Observable<AccountingT1ManualExecutionResponse> {
+    if (!this.backendMode.usesApi) {
+      return throwError(() => new Error('Manual T1 execution requires the SIXPAY API backend'));
+    }
+
+    return this.api.executeT1Manually(businessDate);
   }
 
   get(batchId: string): Observable<AccountingBatchDetail | null> {

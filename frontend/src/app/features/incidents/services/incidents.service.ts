@@ -4,9 +4,10 @@ import { catchError, map, Observable, of, throwError } from 'rxjs';
 
 import { BackendModeService } from '../../../core/backend/backend-mode.service';
 import { IncidentsApiClient } from '../api/incidents-api.client';
-import { mapIncidentDetailResponse, mapIncidentSummaryResponse } from '../api/incidents-api.mapper';
+import { mapIncidentDetailResponse } from '../api/incidents-api.mapper';
 import { IncidentQuery } from '../models/incident-query';
-import { IncidentDetail, IncidentSummary } from '../models/incidents';
+import { IncidentDetail } from '../models/incidents';
+import { IncidentPageResponse } from '../models/incidents.response';
 import { IncidentsMockService } from './incidents-mock.service';
 
 @Injectable({ providedIn: 'root' })
@@ -17,10 +18,26 @@ export class IncidentsService {
 
   private readonly mock = inject(IncidentsMockService);
 
-  search(query: IncidentQuery): Observable<readonly IncidentSummary[]> {
+  search(query: IncidentQuery): Observable<IncidentPageResponse> {
     return this.backendMode.usesApi
-      ? this.api.search(query).pipe(map((page) => page.content.map(mapIncidentSummaryResponse)))
-      : this.mock.search(query);
+      ? this.api.search(query)
+      : this.mock.search(query).pipe(
+          map((content) => ({
+            content: content.map((incident) => ({
+              incidentId: incident.incidentId,
+              severity: incident.severity,
+              component: incident.component,
+              summary: incident.summary,
+              status: incident.status,
+              openedAt: incident.openedAt.toISOString(),
+              updatedAt: incident.updatedAt.toISOString(),
+            })),
+            page: query.page ?? 0,
+            size: query.size ?? 20,
+            totalElements: content.length,
+            totalPages: content.length === 0 ? 0 : 1,
+          })),
+        );
   }
 
   get(incidentId: string): Observable<IncidentDetail | null> {

@@ -14,6 +14,42 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
     Optional<AccountingCandidateJpaEntity> findByEventId(UUID eventId);
     Optional<AccountingCandidateJpaEntity> findByPaymentIdAndFinancialSnapshotId(UUID paymentId, UUID financialSnapshotId);
     Optional<AccountingCandidateJpaEntity> findByPaymentId(UUID paymentId);
+    Optional<AccountingCandidateJpaEntity> findById(UUID id);
+
+    org.springframework.data.domain.Page<AccountingCandidateJpaEntity>
+    findByAccountingBusinessDateAndPublicPaymentReferenceContainingIgnoreCase(
+            LocalDate businessDate,
+            String publicPaymentReference,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    org.springframework.data.domain.Page<AccountingCandidateJpaEntity>
+    findByAccountingBusinessDate(
+            LocalDate businessDate,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    org.springframework.data.domain.Page<AccountingCandidateJpaEntity>
+    findByPublicPaymentReferenceContainingIgnoreCase(
+            String publicPaymentReference,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query("""
+            select c from AccountingCandidateJpaEntity c
+            where (:businessDate is null or c.accountingBusinessDate = :businessDate)
+              and (
+                    :paymentReference is null
+                    or lower(c.publicPaymentReference)
+                       like lower(concat('%', :paymentReference, '%'))
+                  )
+            order by c.paymentOccurredAt asc, c.publicPaymentReference asc
+            """)
+    List<AccountingCandidateJpaEntity> searchOperationalCandidates(
+            @Param("businessDate") LocalDate businessDate,
+            @Param("paymentReference") String paymentReference
+    );
+
 
     @Query("""
             select c from AccountingCandidateJpaEntity c

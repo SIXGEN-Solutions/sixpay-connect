@@ -15,7 +15,7 @@ import { AdministrationService } from '../services/administration.service';
 
       <sp-toolbar
         title="Paramètres généraux"
-        description="Configuration opérationnelle SIXPAY en lecture seule."
+        description="Projection historique en lecture seule du contrat Administration opérationnel."
       />
 
       @if (settings(); as currentSettings) {
@@ -39,8 +39,9 @@ import { AdministrationService } from '../services/administration.service';
 
         <sp-card title="Important">
           <p>
-            Cette boundary est volontairement read-only. Les mutations de configuration ne font pas
-            partie du contrat FS-1.4.
+            Cette surface reste volontairement read-only au titre du contrat Administration
+            opérationnel. Les paramètres modifiables à chaud sont gérés séparément dans « Paramètres
+            dynamiques ».
           </p>
         </sp-card>
       }

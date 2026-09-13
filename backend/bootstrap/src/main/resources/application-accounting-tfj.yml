@@ -1,0 +1,43 @@
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          amplitude-tfj:
+            token-uri: ${AMPLITUDE_TFJ_OAUTH2_TOKEN_URI}
+        registration:
+          amplitude-tfj:
+            provider: amplitude-tfj
+            authorization-grant-type: client_credentials
+            client-id: ${AMPLITUDE_TFJ_OAUTH2_CLIENT_ID}
+            client-secret: ${AMPLITUDE_TFJ_OAUTH2_CLIENT_SECRET}
+            scope: ${AMPLITUDE_TFJ_OAUTH2_SCOPE:amplitude.tfj.read}
+
+  ssl:
+    bundle:
+      jks:
+        amplitude-tfj-client:
+          keystore:
+            location: ${AMPLITUDE_TFJ_KEYSTORE_LOCATION}
+            password: ${AMPLITUDE_TFJ_KEYSTORE_PASSWORD}
+            type: ${AMPLITUDE_TFJ_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${AMPLITUDE_TFJ_TRUSTSTORE_LOCATION}
+            password: ${AMPLITUDE_TFJ_TRUSTSTORE_PASSWORD}
+            type: ${AMPLITUDE_TFJ_TRUSTSTORE_TYPE:PKCS12}
+
+sixpay:
+  accounting:
+    tfj:
+      lookup:
+        enabled: ${AMPLITUDE_TFJ_LOOKUP_ENABLED:false}
+        base-url: ${AMPLITUDE_TFJ_BASE_URL:https://amplitude-tfj.invalid}
+        lookup-path: ${AMPLITUDE_TFJ_LOOKUP_PATH:/api/v1/end-of-day-confirmations}
+        connect-timeout: ${AMPLITUDE_TFJ_CONNECT_TIMEOUT:2s}
+        read-timeout: ${AMPLITUDE_TFJ_READ_TIMEOUT:5s}
+        security:
+          oauth2-registration-id: ${AMPLITUDE_TFJ_OAUTH2_REGISTRATION_ID:amplitude-tfj}
+          ssl-bundle: ${AMPLITUDE_TFJ_SSL_BUNDLE:amplitude-tfj-client}
+      webhook:
+        enabled: ${AMPLITUDE_TFJ_WEBHOOK_ENABLED:false}
+        signature-keys-base64: {}

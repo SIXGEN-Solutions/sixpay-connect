@@ -18,6 +18,10 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
+import java.util.HexFormat;
+import java.security.NoSuchAlgorithmException;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -36,20 +40,20 @@ public class CustomerE2eConfiguration {
         return query ->
                 new BankingCustomerLookupPort.BankingCustomerProfile(
                         query.financialInstitutionCode(),
-                        "AMPLITUDE-CUSTOMER-CM9",
+                        "AMPLITUDE-CUSTOMER-" + normalizedNiu(query.niu()),
                         query.customerNumber() == null
                                 || query.customerNumber().isBlank()
                                 ? "CM9-000001"
                                 : query.customerNumber().strip(),
-                        query.niu() == null || query.niu().isBlank()
-                                ? "CM9-NIU-000001"
-                                : query.niu().strip(),
+                        normalizedNiu(query.niu()),
                         "CM9 Full-stack Customer",
                         "cm9.customer@sixpay.test",
                         "+237600000009",
                         new BankingCustomerLookupPort.BankingAccount(
                                 query.accountReference(),
-                                "v1:" + "a".repeat(64),
+                                accountBindingFingerprint(
+                                        query.accountReference()
+                                ),
                                 query.accountReference(),
                                 "****4321",
                                 "XAF",
@@ -57,6 +61,30 @@ public class CustomerE2eConfiguration {
                                 Instant.now()
                         )
                 );
+    }
+
+    private static String accountBindingFingerprint(
+            String accountReference
+    ) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(
+                            accountReference.strip()
+                                    .getBytes(StandardCharsets.UTF_8)
+                    );
+            return "v1:" + HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(
+                    "SHA-256 is unavailable",
+                    exception
+            );
+        }
+    }
+
+    private static String normalizedNiu(String niu) {
+        return niu == null || niu.isBlank()
+                ? "CM9-NIU-000001"
+                : niu.strip();
     }
 
     @Bean

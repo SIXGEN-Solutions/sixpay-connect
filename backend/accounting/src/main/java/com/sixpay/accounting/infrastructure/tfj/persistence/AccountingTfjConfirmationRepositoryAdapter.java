@@ -46,6 +46,45 @@ public class AccountingTfjConfirmationRepositoryAdapter
     }
 
     @Override
+    public TfjConfirmationRepository.OperationalPage searchOperational(
+            java.time.LocalDate businessDate,
+            String paymentReference,
+            String bankPostingReference,
+            int page,
+            int size
+    ) {
+        var result = repository.searchOperational(
+                businessDate,
+                paymentReference,
+                bankPostingReference,
+                PageRequest.of(page, size)
+        );
+
+        return new TfjConfirmationRepository.OperationalPage(
+                result.getContent().stream()
+                        .map(AccountingTfjConfirmationJpaEntity::toDomain)
+                        .toList(),
+                result.getTotalElements()
+        );
+    }
+
+    @Override
+    public List<TfjConfirmation> searchOperationalAll(
+            java.time.LocalDate businessDate,
+            String paymentReference,
+            String bankPostingReference
+    ) {
+        return repository.searchOperationalAll(
+                        businessDate,
+                        paymentReference,
+                        bankPostingReference
+                )
+                .stream()
+                .map(AccountingTfjConfirmationJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
     public TfjConfirmation save(
             TfjConfirmation confirmation
     ) {

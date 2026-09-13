@@ -2,6 +2,8 @@ package com.sixpay.reporting.api.exception;
 
 import com.sixpay.reporting.application.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,10 @@ import java.util.UUID;
 
 @RestControllerAdvice(basePackages = "com.sixpay.reporting.api")
 public final class PaymentAuditQueryExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+            PaymentAuditQueryExceptionHandler.class
+    );
 
     private static final String CORRELATION = "X-Correlation-ID";
 
@@ -124,6 +130,14 @@ public final class PaymentAuditQueryExceptionHandler {
             PaymentAuditQueryUnavailableException exception,
             HttpServletRequest request
     ) {
+        LOGGER.error(
+                "Payment audit query unavailable: method={} uri={} correlationId={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getHeader(CORRELATION),
+                exception
+        );
+
         return problem(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "Payment audit query unavailable",

@@ -12,6 +12,7 @@ const bootstrapTarget = join(backendDir, 'bootstrap', 'target');
 const docker = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const maven = process.platform === 'win32' ? 'mvn.cmd' : 'mvn';
 const java = process.platform === 'win32' ? 'java.exe' : 'java';
+const node = process.execPath;
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 const postgresContainer = `sixpay-fullstack-postgres-${process.pid}`;
@@ -24,6 +25,32 @@ const backendStartupTimeoutMs = Number.parseInt(
 );
 
 let amplitudeStubProcess;
+
+function phase(name) {
+  console.log(`\n=== SIXPAY full-stack: ${name} ===`);
+}
+
+function requireCommand(command, args) {
+  const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
+  const executable = isWindowsCmd ? process.env.ComSpec || 'cmd.exe' : command;
+  const executableArgs = isWindowsCmd ? ['/d', '/s', '/c', command, ...args] : args;
+
+  const result = spawnSync(executable, executableArgs, { stdio: 'ignore' });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(`Missing or unusable prerequisite: ${command} ${args.join(' ')}`);
+  }
+}
+
+function preflight() {
+  phase('preflight');
+  requireCommand(docker, ['version']);
+  requireCommand(maven, ['-version']);
+  requireCommand(java, ['-version']);
+  requireCommand(node, ['--version']);
+  requireCommand(npx, ['--version']);
+  console.log('Prerequisites available: Docker, Maven, Java, Node.js, npx.');
+}
 
 function run(command, args, options = {}) {
   const isWindowsCmd = process.platform === 'win32' && command.toLowerCase().endsWith('.cmd');
@@ -149,6 +176,284 @@ function mappedPostgresPort() {
   return match[1];
 }
 
+function seedPaymentVerticalFixture() {
+  const sql = `
+INSERT INTO payments (
+    payment_id,
+    public_payment_reference,
+    payment_source,
+    external_payment_reference,
+    external_subscription_reference,
+    financial_institution_code,
+    requested_amount,
+    requested_currency,
+    status,
+    business_version,
+    received_at,
+    updated_at,
+    finalized_at,
+    state_payload,
+    persistence_version
+) VALUES (
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    'TRESOR_PAY',
+    'L594-E2E-REQUEST-001',
+    'partner:L594',
+    'SIXPAY',
+    12500.00,
+    'XAF',
+    'RECEIVED',
+    1,
+    '2026-09-12T12:00:00Z',
+    '2026-09-12T12:00:00Z',
+    NULL,
+    '{
+      "schemaVersion": 1,
+      "requestIdentity": {
+        "correlationId": {
+          "value": "59040000-0000-0000-0000-000000000099"
+        }
+      },
+      "debtorAccountReference": {
+        "bindingFingerprint": "acct:v1:l594",
+        "maskedDisplay": "RIB-****-5940"
+      }
+    }'::jsonb,
+    0
+)
+ON CONFLICT (payment_id) DO NOTHING;
+
+INSERT INTO reporting_payment_audit_evidence (
+    evidence_id,
+    timeline_visible,
+    audit_visible,
+    payment_id,
+    payment_reference,
+    observed_customer_id,
+    category,
+    event_type,
+    timeline_result,
+    actor_type,
+    actor_id,
+    actor_roles,
+    action,
+    target_type,
+    target_id,
+    audit_result,
+    reason_code,
+    correlation_id,
+    trace_id,
+    source_system,
+    external_reference,
+    before_state,
+    after_state,
+    aggregate_version,
+    integrity_scheme,
+    integrity_value,
+    occurred_at
+) VALUES (
+    '59040000-0000-0000-0000-000000000002',
+    TRUE,
+    TRUE,
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    NULL,
+    'DOMAIN',
+    'PAYMENT_RECEIVED',
+    'SUCCESS',
+    'EXTERNAL_SYSTEM',
+    'TRESOR_PAY',
+    NULL,
+    'PAYMENT_RECEIVED',
+    'PAYMENT',
+    '59040000-0000-0000-0000-000000000001',
+    'SUCCESS',
+    'PAYMENT_RECEIVED',
+    '59040000-0000-0000-0000-000000000099',
+    NULL,
+    'TRESOR_PAY',
+    'L594-E2E-REQUEST-001',
+    NULL,
+    'RECEIVED',
+    1,
+    'WORM_REFERENCE',
+    'lot-5.9.4-e2e-proof',
+    '2026-09-12T12:00:00Z'
+)
+ON CONFLICT (evidence_id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
+function seedAccountingVerticalFixture() {
+  const sql = `
+INSERT INTO accounting_batches (
+    id,
+    idempotency_key,
+    business_date,
+    financial_institution_code,
+    created_at,
+    status,
+    version
+) VALUES (
+    '59050000-0000-0000-0000-000000000001',
+    '9aa0a2f094d472d7aa4973054b98c5f00f96e50547f0df9ffda0504d8fc6001d',
+    '2026-09-12',
+    'SIXPAY',
+    '2026-09-12T15:00:00Z',
+    'COMPLETED',
+    0
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO accounting_batch_items (
+    id,
+    batch_id,
+    payment_id,
+    public_payment_reference,
+    partner_id,
+    amount,
+    currency,
+    payment_occurred_at,
+    payment_business_date,
+    bank_posting_reference,
+    tresorpay_status,
+    tresorpay_status_checked_at,
+    status
+) VALUES (
+    '59050000-0000-0000-0000-000000000002',
+    '59050000-0000-0000-0000-000000000001',
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    'L595-PARTNER',
+    12500.00,
+    'XAF',
+    '2026-09-12T12:00:00Z',
+    '2026-09-12',
+    'AMP-L595-POSTING-001',
+    'COMPLETED',
+    '2026-09-12T14:45:00Z',
+    'COMPLETED'
+)
+ON CONFLICT (id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
+function seedAdministrationIdentityIncidentsFixture() {
+  const sql = `
+INSERT INTO operational_incident (
+    incident_id,
+    severity,
+    component,
+    summary,
+    status,
+    description,
+    impact,
+    accounting_batch_id,
+    payment_id,
+    payment_reference,
+    correlation_id,
+    opened_at,
+    updated_at
+) VALUES (
+    'INC-L596-E2E-001',
+    'HIGH',
+    'PAYMENT',
+    'Dégradation contrôlée LOT 5.9.6',
+    'INVESTIGATING',
+    'Incident de preuve full-stack Administration / Identity / Incidents.',
+    'Validation E2E uniquement dans la base PostgreSQL jetable.',
+    '59050000-0000-0000-0000-000000000001',
+    '59040000-0000-0000-0000-000000000001',
+    'PAY-0123456789ABCDEFGHJKMNPQRS',
+    '59060000-0000-0000-0000-000000000099',
+    '2026-09-12T16:00:00Z',
+    '2026-09-12T16:05:00Z'
+)
+ON CONFLICT (incident_id) DO NOTHING;
+
+INSERT INTO operational_incident_timeline (
+    event_id,
+    incident_id,
+    occurred_at,
+    message,
+    actor,
+    sequence_no
+) VALUES
+(
+    'EVT-L596-E2E-001',
+    'INC-L596-E2E-001',
+    '2026-09-12T16:00:00Z',
+    'Incident détecté par la supervision SIXPAY.',
+    'SYSTEM',
+    0
+),
+(
+    'EVT-L596-E2E-002',
+    'INC-L596-E2E-001',
+    '2026-09-12T16:05:00Z',
+    'Investigation opérationnelle démarrée.',
+    'admin',
+    1
+)
+ON CONFLICT (event_id) DO NOTHING;
+`;
+
+  run(
+    docker,
+    [
+      'exec',
+      postgresContainer,
+      'psql',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-U',
+      'sixpay',
+      '-d',
+      'sixpay',
+      '-c',
+      sql,
+    ],
+    { cwd: repositoryRoot },
+  );
+}
+
 function terminateProcessTree(child) {
   if (!child || child.exitCode !== null) return;
 
@@ -164,6 +469,9 @@ function removePostgresContainer() {
 }
 
 async function main() {
+  preflight();
+
+  phase('PostgreSQL');
   run(docker, [
     'run',
     '--detach',
@@ -184,6 +492,7 @@ async function main() {
   await waitForPostgres();
   const postgresPort = mappedPostgresPort();
 
+  phase('backend build');
   run(
     maven,
     ['-f', join(backendDir, 'pom.xml'), '-pl', 'bootstrap', '-am', '-DskipTests', 'package'],
@@ -192,6 +501,7 @@ async function main() {
 
   const bootstrapJar = findBootstrapJar();
 
+  phase('strictly required external stub: Amplitude customer verification');
   amplitudeStubProcess = spawn(
     process.execPath,
     [join(frontendDir, 'scripts', 'cm9-amplitude-stub.mjs')],
@@ -207,6 +517,7 @@ async function main() {
 
   await waitForAmplitudeStub();
 
+  phase('Spring Boot backend');
   backendProcess = spawn(java, ['-jar', bootstrapJar], {
     cwd: backendDir,
     env: {
@@ -215,7 +526,13 @@ async function main() {
       SPRING_DATASOURCE_URL: `jdbc:postgresql://127.0.0.1:${postgresPort}/sixpay`,
       SPRING_DATASOURCE_USERNAME: 'sixpay',
       SPRING_DATASOURCE_PASSWORD: 'sixpay-test',
+      // Keep full-stack authentication deterministic even when the host
+      // environment already defines SIXPAY_LOCAL_* credentials.
       SIXPAY_LOCAL_ADMIN_PASSWORD: 'admin-dev-2026',
+      SIXPAY_LOCAL_MANAGER_PASSWORD: 'M@nager-dev-2027',
+      SIXPAY_LOCAL_AUDITOR_PASSWORD: 'auditor-dev-2026',
+      SIXPAY_LOCAL_PARTNER_PASSWORD: 'partner-dev-2026',
+      SIXPAY_LOCAL_PARTNER_SUBJECT: 'f88166d1-39df-4900-bb31-1700d25c3bfa',
       SIXPAY_MESSAGING_OUTBOX_ENABLED: 'false',
       SIXPAY_E2E_CUSTOMER_ENABLED: 'true',
       SIXPAY_E2E_CUSTOMER_AMPLITUDE_BASE_URL: `http://127.0.0.1:${amplitudeStubPort}`,
@@ -225,6 +542,12 @@ async function main() {
 
   await waitForBackend();
 
+  phase('full-stack fixtures');
+  seedPaymentVerticalFixture();
+  seedAccountingVerticalFixture();
+  seedAdministrationIdentityIncidentsFixture();
+
+  phase('Angular integration frontend + Playwright');
   run(npx, ['playwright', 'test', '--config', 'playwright.fullstack.config.ts'], {
     cwd: frontendDir,
     env: process.env,
@@ -234,6 +557,7 @@ async function main() {
 try {
   await main();
 } finally {
+  phase('cleanup');
   terminateProcessTree(backendProcess);
   terminateProcessTree(amplitudeStubProcess);
   removePostgresContainer();

@@ -87,11 +87,13 @@ public class AmplitudePostingConfiguration {
     @Bean
     AmplitudePaymentEventContextClient amplitudePaymentEventContextClient(
             RestClient amplitudePostingRestClient,
-            PostingAccessTokenProvider tokenProvider
+            PostingAccessTokenProvider tokenProvider,
+            AmplitudePostingProperties properties
     ) {
         return new RestAmplitudePaymentEventContextClient(
                 amplitudePostingRestClient,
-                tokenProvider
+                tokenProvider,
+                properties
         );
     }
 

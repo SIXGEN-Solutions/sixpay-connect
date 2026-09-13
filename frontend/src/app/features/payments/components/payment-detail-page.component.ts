@@ -1,9 +1,13 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, EMPTY, finalize } from 'rxjs';
 
+import { AuthenticationService } from '../../../core/auth/authentication.service';
+import { ErrorService } from '../../../core/errors/error.service';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { MockContentStateComponent } from '../../../shared/components/mock-content-state/mock-content-state.component';
+import { SpNotificationComponent } from '../../../shared/components/notification/sp-notification.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { PaymentDetail } from '../models/payments';
 import { PaymentsService } from '../services/payments.service';
@@ -16,11 +20,22 @@ import { PaymentsService } from '../services/payments.service';
     RouterLink,
     SpCardComponent,
     MockContentStateComponent,
+    SpNotificationComponent,
     SpToolbarComponent,
   ],
   template: `
     <section class="sp-page">
       <a routerLink="/payments">← Retour aux paiements</a>
+
+      @if (errorService.currentError(); as error) {
+        <sp-notification
+          status="error"
+          [title]="error.title"
+          [message]="error.detail"
+          [dismissible]="true"
+          (dismissed)="errorService.clear()"
+        />
+      }
 
       @if (payment(); as currentPayment) {
         <sp-toolbar
@@ -118,78 +133,119 @@ import { PaymentsService } from '../services/payments.service';
                 </div>
               </dl>
             } @else {
-              <p>Aucune vérification disponible.</p>
+              <p>Aucune vérification bancaire projetée.</p>
             }
           </sp-card>
         </div>
 
         <div class="sp-operation-grid">
           <sp-card title="Posting">
-            <p>
-              <strong>{{ currentPayment.posting?.outcome ?? '—' }}</strong>
-            </p>
-            <p>Référence : {{ currentPayment.posting?.bankPostingReference ?? '—' }}</p>
+            @if (currentPayment.posting; as posting) {
+              <p>
+                <strong>{{ posting.outcome }}</strong>
+              </p>
+              <p>Référence : {{ posting.bankPostingReference ?? '—' }}</p>
+              <p>
+                Observé :
+                {{ posting.observedAt ? (posting.observedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
+              </p>
+            } @else {
+              <p>Aucune projection de posting disponible.</p>
+            }
           </sp-card>
 
           <sp-card title="TFJ">
-            <p>
-              <strong>{{ currentPayment.tfj?.status ?? '—' }}</strong>
-            </p>
-            <p>Business date : {{ currentPayment.tfj?.businessDate ?? '—' }}</p>
+            @if (currentPayment.tfj; as tfj) {
+              <p>
+                <strong>{{ tfj.status }}</strong>
+              </p>
+              <p>Business date : {{ tfj.businessDate ?? '—' }}</p>
+              <p>
+                Confirmé :
+                {{ tfj.confirmedAt ? (tfj.confirmedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
+              </p>
+            } @else {
+              <p>Aucune projection TFJ disponible.</p>
+            }
           </sp-card>
 
           <sp-card title="Reversal">
-            <p>
-              <strong>{{ currentPayment.reversal?.status ?? '—' }}</strong>
-            </p>
-            <p>Référence : {{ currentPayment.reversal?.reversalReference ?? '—' }}</p>
+            @if (currentPayment.reversal; as reversal) {
+              <p>
+                <strong>{{ reversal.status }}</strong>
+              </p>
+              <p>Référence : {{ reversal.reversalReference ?? '—' }}</p>
+              <p>
+                Observé :
+                {{
+                  reversal.observedAt ? (reversal.observedAt | date: 'dd/MM/yyyy HH:mm:ss') : '—'
+                }}
+              </p>
+            } @else {
+              <p>Aucune projection de reversal disponible.</p>
+            }
           </sp-card>
         </div>
 
         <sp-card title="Notifications">
-          <div class="sp-table-scroll">
-            <table class="sp-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Statut</th>
-                  <th>Event ID</th>
-                  <th>Dernière tentative</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (notification of currentPayment.notifications; track notification.eventId) {
+          @if (currentPayment.notifications.length === 0) {
+            <sp-mock-content-state
+              kind="empty"
+              title="Aucune notification"
+              message="Aucune projection de notification n'est disponible pour ce Payment."
+            />
+          } @else {
+            <div class="sp-table-scroll">
+              <table class="sp-table">
+                <thead>
                   <tr>
-                    <td>{{ notification.type }}</td>
-                    <td>{{ notification.status }}</td>
-                    <td>{{ notification.eventId ?? '—' }}</td>
-                    <td>
-                      {{
-                        notification.lastAttemptAt
-                          ? (notification.lastAttemptAt | date: 'dd/MM/yyyy HH:mm:ss')
-                          : '—'
-                      }}
-                    </td>
+                    <th>Type</th>
+                    <th>Statut</th>
+                    <th>Event ID</th>
+                    <th>Dernière tentative</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (
+                    notification of currentPayment.notifications;
+                    track notification.eventId ?? notification.type
+                  ) {
+                    <tr>
+                      <td>{{ notification.type }}</td>
+                      <td>{{ notification.status }}</td>
+                      <td>{{ notification.eventId ?? '—' }}</td>
+                      <td>
+                        {{
+                          notification.lastAttemptAt
+                            ? (notification.lastAttemptAt | date: 'dd/MM/yyyy HH:mm:ss')
+                            : '—'
+                        }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </sp-card>
 
-        <sp-card title="Timeline et preuve d'audit">
-          <p>
-            Ces données appartiennent au domaine Reporting et seront exposées dans le sous-lot 7.3
-            via le contrat Payment Audit Query API.
-          </p>
-        </sp-card>
+        @if (canReadAudit()) {
+          <sp-card title="Timeline et audit">
+            <p>
+              La timeline et les preuves d'audit sont exposées par la capacité Reporting dédiée.
+            </p>
+            <a [routerLink]="['/reporting/payments', currentPayment.paymentId, 'timeline']">
+              Ouvrir la timeline Payment
+            </a>
+          </sp-card>
+        }
       } @else if (notFound()) {
         <sp-mock-content-state
           kind="empty"
           title="Paiement introuvable"
-          message="Aucune projection Payment ne correspond à cet identifiant."
+          message="Aucune projection Payment ne correspond à cet identifiant ou n'est visible dans votre périmètre."
         />
-      } @else {
+      } @else if (loading()) {
         <sp-mock-content-state
           kind="loading"
           title="Chargement du paiement"
@@ -273,16 +329,33 @@ import { PaymentsService } from '../services/payments.service';
 export class PaymentDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly payments = inject(PaymentsService);
+  private readonly auth = inject(AuthenticationService);
+  protected readonly errorService = inject(ErrorService);
 
   protected readonly payment = signal<PaymentDetail | null>(null);
+  protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
+
+  protected readonly canReadAudit = () =>
+    this.auth.hasPermission('payment.audit.read') ||
+    (this.auth.isStandaloneMode && this.auth.hasRole('AUDITOR'));
 
   constructor() {
     const paymentId = this.route.snapshot.paramMap.get('paymentId') ?? '';
 
-    this.payments.get(paymentId).subscribe((payment) => {
-      this.payment.set(payment);
-      this.notFound.set(payment === null);
-    });
+    this.errorService.clear();
+    this.payments
+      .get(paymentId)
+      .pipe(
+        catchError(() => {
+          this.notFound.set(false);
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe((payment) => {
+        this.payment.set(payment);
+        this.notFound.set(payment === null);
+      });
   }
 }

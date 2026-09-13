@@ -1,14 +1,16 @@
 import { Routes } from '@angular/router';
 
-import { roleGuard } from '../../core/auth/role.guard';
+import { authorizationGuard } from '../../core/auth/authorization.guard';
 
 const AUDIT_ROLES = ['AUDITOR'] as const;
+const AUDIT_READ = ['payment.audit.read'] as const;
+const AUDIT_EXPORT = ['payment.audit.read', 'payment.audit.export'] as const;
 
 export const REPORTING_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_READ, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/reporting-home-page.component').then(
         (component) => component.ReportingHomePageComponent,
@@ -16,8 +18,8 @@ export const REPORTING_ROUTES: Routes = [
   },
   {
     path: 'payments/:paymentId/timeline',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_READ, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/payment-timeline-page.component').then(
         (component) => component.PaymentTimelinePageComponent,
@@ -25,8 +27,8 @@ export const REPORTING_ROUTES: Routes = [
   },
   {
     path: 'audit-records',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_READ, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/payment-audit-list-page.component').then(
         (component) => component.PaymentAuditListPageComponent,
@@ -34,8 +36,8 @@ export const REPORTING_ROUTES: Routes = [
   },
   {
     path: 'audit-records/:auditId',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_READ, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/payment-audit-detail-page.component').then(
         (component) => component.PaymentAuditDetailPageComponent,
@@ -43,8 +45,8 @@ export const REPORTING_ROUTES: Routes = [
   },
   {
     path: 'exports',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_EXPORT, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/payment-audit-export-page.component').then(
         (component) => component.PaymentAuditExportPageComponent,
@@ -52,8 +54,8 @@ export const REPORTING_ROUTES: Routes = [
   },
   {
     path: 'exports/:exportId',
-    canActivate: [roleGuard],
-    data: { roles: AUDIT_ROLES },
+    canActivate: [authorizationGuard],
+    data: { roles: AUDIT_ROLES, permissions: AUDIT_EXPORT, standaloneRoles: AUDIT_ROLES },
     loadComponent: () =>
       import('./components/payment-audit-export-status-page.component').then(
         (component) => component.PaymentAuditExportStatusPageComponent,

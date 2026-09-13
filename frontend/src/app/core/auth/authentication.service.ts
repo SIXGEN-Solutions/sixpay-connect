@@ -24,6 +24,7 @@ import {
   AuthenticationSessionResponse,
   LocalLoginRequest,
   LocalPasswordChangeRequest,
+  normalizeSixpayPermissions,
   normalizeSixpayRoles,
   SixpayRole,
 } from './authentication.model';
@@ -103,6 +104,14 @@ export class AuthenticationService {
 
   hasPermission(permission: string): boolean {
     return this.permissions().has(permission);
+  }
+
+  hasAnyPermission(permissions: readonly string[]): boolean {
+    return permissions.some((permission) => this.hasPermission(permission));
+  }
+
+  hasAllPermissions(permissions: readonly string[]): boolean {
+    return permissions.every((permission) => this.hasPermission(permission));
   }
 
   simulateStandaloneRole(role: SixpayRole): void {
@@ -312,7 +321,7 @@ export class AuthenticationService {
     this.identityState.set({
       subject: session.subject,
       roles: normalizeSixpayRoles(session.roles),
-      permissions: new Set(session.permissions),
+      permissions: normalizeSixpayPermissions(session.permissions),
     });
 
     this.usernameState.set(session.username);

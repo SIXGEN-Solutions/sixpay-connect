@@ -61,9 +61,12 @@ export class ReportingService {
     );
   }
 
-  requestExport(request: PaymentAuditExportRequest): Observable<PaymentAuditExportJob> {
+  requestExport(
+    request: PaymentAuditExportRequest,
+    idempotencyKey: string,
+  ): Observable<PaymentAuditExportJob> {
     const source$ = this.backendMode.usesApi
-      ? this.api.requestExport(request)
+      ? this.api.requestExport(request, idempotencyKey)
       : this.mock.requestExport(request);
 
     return source$.pipe(map(mapExportJobResponse));

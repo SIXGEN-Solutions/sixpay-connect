@@ -117,7 +117,7 @@ export class PaymentAuditExportPageComponent {
       format: value.format,
     };
 
-    this.reporting.requestExport(request).subscribe((job) => {
+    this.reporting.requestExport(request, crypto.randomUUID()).subscribe((job) => {
       this.submitting.set(false);
       void this.router.navigate(['/reporting/exports', job.exportId]);
     });

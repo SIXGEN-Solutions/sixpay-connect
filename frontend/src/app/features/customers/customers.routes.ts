@@ -1,14 +1,18 @@
 import { Routes } from '@angular/router';
 
-import { roleGuard } from '../../core/auth/role.guard';
+import { authorizationGuard } from '../../core/auth/authorization.guard';
 
 const CUSTOMER_READ_ROLES = ['ADMIN', 'MANAGER', 'AUDITOR'] as const;
 
 export const CUSTOMER_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [roleGuard],
-    data: { roles: CUSTOMER_READ_ROLES },
+    canActivate: [authorizationGuard],
+    data: {
+      roles: CUSTOMER_READ_ROLES,
+      permissions: ['customer.read'],
+      standaloneRoles: CUSTOMER_READ_ROLES,
+    },
     loadComponent: () =>
       import('./components/customer-master-list-page.component').then(
         (component) => component.CustomerMasterListPageComponent,
@@ -16,8 +20,12 @@ export const CUSTOMER_ROUTES: Routes = [
   },
   {
     path: 'enroll',
-    canActivate: [roleGuard],
-    data: { roles: ['ADMIN'] },
+    canActivate: [authorizationGuard],
+    data: {
+      roles: ['ADMIN'],
+      permissions: ['customer.create'],
+      standaloneRoles: ['ADMIN'],
+    },
     loadComponent: () =>
       import('./components/customer-enrollment-wizard.component').then(
         (component) => component.CustomerEnrollmentWizardComponent,
@@ -25,8 +33,12 @@ export const CUSTOMER_ROUTES: Routes = [
   },
   {
     path: 'observed',
-    canActivate: [roleGuard],
-    data: { roles: CUSTOMER_READ_ROLES },
+    canActivate: [authorizationGuard],
+    data: {
+      roles: CUSTOMER_READ_ROLES,
+      permissions: ['observed-customer.read'],
+      standaloneRoles: CUSTOMER_READ_ROLES,
+    },
     loadComponent: () =>
       import('./components/customer-list-page.component').then(
         (component) => component.CustomerListPageComponent,
@@ -34,8 +46,12 @@ export const CUSTOMER_ROUTES: Routes = [
   },
   {
     path: 'observed/:observedCustomerId',
-    canActivate: [roleGuard],
-    data: { roles: CUSTOMER_READ_ROLES },
+    canActivate: [authorizationGuard],
+    data: {
+      roles: CUSTOMER_READ_ROLES,
+      permissions: ['observed-customer.read'],
+      standaloneRoles: CUSTOMER_READ_ROLES,
+    },
     loadComponent: () =>
       import('./components/customer-detail-page.component').then(
         (component) => component.CustomerDetailPageComponent,
@@ -43,8 +59,12 @@ export const CUSTOMER_ROUTES: Routes = [
   },
   {
     path: ':customerId',
-    canActivate: [roleGuard],
-    data: { roles: CUSTOMER_READ_ROLES },
+    canActivate: [authorizationGuard],
+    data: {
+      roles: CUSTOMER_READ_ROLES,
+      permissions: ['customer.read'],
+      standaloneRoles: CUSTOMER_READ_ROLES,
+    },
     loadComponent: () =>
       import('./components/customer-master-detail-page.component').then(
         (component) => component.CustomerMasterDetailPageComponent,

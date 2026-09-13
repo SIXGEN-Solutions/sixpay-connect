@@ -5,5 +5,7 @@ export interface NavigationItem {
   readonly icon: string;
   readonly route: string;
   readonly roles?: readonly SixpayRole[];
+  readonly permissions?: readonly string[];
+  readonly standaloneRoles?: readonly SixpayRole[];
   readonly exact?: boolean;
 }

@@ -4,7 +4,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
-import { AuthenticationSessionResponse, extractSixpayRoles } from './authentication.model';
+import {
+  AuthenticationSessionResponse,
+  extractSixpayRoles,
+  normalizeSixpayPermissions,
+} from './authentication.model';
 import { AuthenticationService } from './authentication.service';
 import { LocalAuthenticationClient } from './local-authentication.client';
 
@@ -59,6 +63,26 @@ describe('AuthenticationService', () => {
     });
 
     expect([...roles]).toEqual(['ADMIN', 'AUDITOR', 'MANAGER']);
+  });
+
+  it('normalizes Spring Security SCOPE_ permissions to canonical frontend permissions', () => {
+    const permissions = normalizeSixpayPermissions([
+      'SCOPE_customer.read',
+      'SCOPE_observed-customer.read',
+      'SCOPE_payment.read',
+      'SCOPE_payment.audit.read',
+      'SCOPE_payment.audit.export',
+      'customer.create',
+    ]);
+
+    expect([...permissions]).toEqual([
+      'customer.read',
+      'observed-customer.read',
+      'payment.read',
+      'payment.audit.read',
+      'payment.audit.export',
+      'customer.create',
+    ]);
   });
 
   it('navigates mandatory password change directly to dashboard after backend promotion', () => {

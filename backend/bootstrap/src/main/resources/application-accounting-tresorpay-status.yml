@@ -1,0 +1,11 @@
+sixpay:
+  accounting:
+    tresorpay-status:
+      enabled: ${SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED:false}
+      base-url: ${TRESORPAY_STATUS_BASE_URL:https://tresorpay.invalid}
+      status-path: ${TRESORPAY_STATUS_PATH:/api/v1/payments/{reference}/status}
+      connect-timeout: ${TRESORPAY_STATUS_CONNECT_TIMEOUT:2s}
+      read-timeout: ${TRESORPAY_STATUS_READ_TIMEOUT:5s}
+      security:
+        oauth2-registration-id: ${TRESORPAY_STATUS_OAUTH2_REGISTRATION_ID:tresorpay-status}
+        ssl-bundle: ${TRESORPAY_STATUS_SSL_BUNDLE:tresorpay-status-client}

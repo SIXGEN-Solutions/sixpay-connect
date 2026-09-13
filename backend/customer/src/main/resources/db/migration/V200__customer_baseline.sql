@@ -1,10 +1,8 @@
 -- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
 -- This file represents current schema state; Git preserves prior migration history.
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260803_01__create_customer_observed_projection.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_observed_customer (
@@ -172,7 +170,6 @@ CREATE INDEX ix_customer_observation_event_customer
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260804.01__add_observed_customer_query_indexes.sql
 -- ---------------------------------------------------------------------------
 
 CREATE INDEX IF NOT EXISTS
@@ -240,7 +237,6 @@ ON customer_observed_payment (
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260805.01__create_customer_observation_audit.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_observation_audit (
@@ -316,7 +312,6 @@ EXECUTE FUNCTION reject_customer_observation_audit_mutation();
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260822.01__create_customer_management.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_management_customer (
@@ -414,7 +409,6 @@ CREATE INDEX ix_customer_management_bank_account_customer
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260822.02__create_customer_subscription.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_management_subscription (
@@ -515,7 +509,6 @@ CREATE INDEX ix_customer_subscription_account
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260822.03__link_observed_customer_to_customer.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_observed_master_link (
@@ -579,7 +572,6 @@ CREATE INDEX ix_observed_master_link_customer
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260822.04__create_customer_management_audit.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE customer_management_audit (
@@ -617,7 +609,6 @@ CREATE INDEX ix_customer_management_audit_correlation
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V20260822.05__index_customer_management_search.sql
 -- ---------------------------------------------------------------------------
 
 CREATE INDEX ix_customer_management_customer_financial_institution

@@ -1,0 +1,247 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY Accounting TFJ Operational Query API
+  version: 1.0.0
+  description: |
+    Internal read-only operator query API for Accounting-owned TFJ and
+    reconciliation visibility.
+
+    The browser consumes normalized SIXPAY operational facts only. This
+    contract never exposes the Amplitude provider-facing contract directly,
+    provider transport payloads, raw exceptions, stack traces or persistence
+    internals.
+
+    No retry, replay, force-match, resolve, reverse or mark-integrated command
+    is part of this API.
+  x-sixpay-contract:
+    registryId: accounting-tfj-operational-query-api-v1
+    gate: ACCOUNTING_T1
+    phaseStep: "5.7.2"
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    domain: accounting
+    businessOwner: accounting
+    securityOwner: security
+    capability: ACCOUNTING_TFJ_OPERATIONAL_QUERY
+    direction: SIXPAY_TO_INTERNAL_CLIENT
+    dataClassification: RESTRICTED
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+
+security:
+  - bearerAuth: []
+
+paths:
+  /internal/api/v1/accounting-tfj-operations:
+    get:
+      operationId: searchAccountingTfjOperations
+      summary: Search TFJ and reconciliation operational confirmations
+      description: |
+        Returns normalized Accounting-owned TFJ operational snapshots.
+        This operation is read-only.
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, MANAGER, AUDITOR]
+        requiredPermissions: [accounting.read]
+      parameters:
+        - name: businessDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TfjOperationalCategory'
+        - name: paymentReference
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: bankPostingReference
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: TFJ operational page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TfjOperationalPageResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+
+  /internal/api/v1/accounting-tfj-operations/{confirmationId}:
+    get:
+      operationId: getAccountingTfjOperation
+      summary: Get one TFJ operational confirmation
+      description: |
+        Returns one normalized Accounting-owned TFJ operational snapshot.
+        This operation is read-only.
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, MANAGER, AUDITOR]
+        requiredPermissions: [accounting.read]
+      parameters:
+        - name: confirmationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: TFJ operational confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TfjOperationalResponse'
+        '401':
+          description: Authentication required
+        '403':
+          description: Forbidden
+        '404':
+          description: TFJ confirmation not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TfjOperationalCategory:
+      type: string
+      enum:
+        - MATCHED
+        - QUARANTINED_UNMATCHED
+        - QUARANTINED_AMBIGUOUS
+        - FAILED
+        - FINALITY_PUBLICATION_PENDING
+        - COMPLETED
+
+    TfjStatus:
+      type: string
+      enum:
+        - PENDING
+        - INTEGRATED
+        - FAILED
+
+    TfjObservationChannel:
+      type: string
+      enum:
+        - ASYNC_CALLBACK
+        - SCHEDULED_LOOKUP
+
+    TfjMatchStatus:
+      type: string
+      enum:
+        - MATCHED
+        - UNMATCHED
+        - AMBIGUOUS
+
+    TfjRecoveryAction:
+      type: string
+      enum:
+        - MANUAL_RECONCILIATION
+        - REVERSAL_REVIEW
+        - REVERSAL_REQUIRED
+
+    TfjOperationalResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - confirmationId
+        - financialInstitutionCode
+        - businessDate
+        - paymentReference
+        - bankPostingReference
+        - tfjStatus
+        - confirmedAt
+        - observationChannel
+        - correlationId
+        - matchStatus
+        - category
+      properties:
+        confirmationId:
+          type: string
+          format: uuid
+        financialInstitutionCode:
+          type: string
+        businessDate:
+          type: string
+          format: date
+        paymentReference:
+          type: string
+        bankPostingReference:
+          type: string
+        tfjBatchReference:
+          type: [string, 'null']
+        tfjStatus:
+          $ref: '#/components/schemas/TfjStatus'
+        confirmedAt:
+          type: string
+          format: date-time
+        observationChannel:
+          $ref: '#/components/schemas/TfjObservationChannel'
+        correlationId:
+          type: string
+        matchStatus:
+          $ref: '#/components/schemas/TfjMatchStatus'
+        matchedPaymentId:
+          type: [string, 'null']
+          format: uuid
+        finalityPublishedAt:
+          type: [string, 'null']
+          format: date-time
+        failureCode:
+          type: [string, 'null']
+        recoveryAction:
+          oneOf:
+            - $ref: '#/components/schemas/TfjRecoveryAction'
+            - type: 'null'
+        category:
+          $ref: '#/components/schemas/TfjOperationalCategory'
+
+    TfjOperationalPageResponse:
+      type: object
+      additionalProperties: false
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TfjOperationalResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer

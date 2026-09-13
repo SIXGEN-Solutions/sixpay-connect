@@ -7,8 +7,21 @@ import {
   AccountingBatchDetailResponse,
   AccountingBatchPageResponse,
 } from '../models/accounting.response';
+import { AccountingT1ManualExecutionResponse } from '../models/accounting-t1-execution';
+import {
+  AccountingT1OperationalPageResponse,
+  AccountingT1OperationalQuery,
+  AccountingT1OperationalResponse,
+} from '../models/accounting-t1-operational';
+import {
+  TfjOperationalPageResponse,
+  TfjOperationalQuery,
+  TfjOperationalResponse,
+} from '../models/accounting-tfj-operational';
 
 const ACCOUNTING_BATCHES_API_PATH = '/internal/api/v1/accounting-batches';
+const ACCOUNTING_T1_OPERATIONS_API_PATH = '/internal/api/v1/accounting-t1-operations';
+const ACCOUNTING_TFJ_OPERATIONS_API_PATH = '/internal/api/v1/accounting-tfj-operations';
 
 @Injectable({ providedIn: 'root' })
 export class AccountingApiClient {
@@ -31,6 +44,76 @@ export class AccountingApiClient {
   get(batchId: string): Observable<AccountingBatchDetailResponse> {
     return this.http.get<AccountingBatchDetailResponse>(
       `${ACCOUNTING_BATCHES_API_PATH}/${encodeURIComponent(batchId)}`,
+    );
+  }
+
+  searchT1Operations(
+    query: AccountingT1OperationalQuery,
+  ): Observable<AccountingT1OperationalPageResponse> {
+    let params = new HttpParams().set('page', query.page ?? 0).set('size', query.size ?? 20);
+
+    if (query.businessDate !== undefined) {
+      params = params.set('businessDate', query.businessDate);
+    }
+
+    if (query.status !== undefined) {
+      params = params.set('status', query.status);
+    }
+
+    if (query.paymentReference !== undefined && query.paymentReference.trim() !== '') {
+      params = params.set('paymentReference', query.paymentReference.trim());
+    }
+
+    return this.http.get<AccountingT1OperationalPageResponse>(ACCOUNTING_T1_OPERATIONS_API_PATH, {
+      params,
+    });
+  }
+
+  getT1Operation(candidateId: string): Observable<AccountingT1OperationalResponse> {
+    return this.http.get<AccountingT1OperationalResponse>(
+      `${ACCOUNTING_T1_OPERATIONS_API_PATH}/${encodeURIComponent(candidateId)}`,
+    );
+  }
+
+  searchTfjOperations(query: TfjOperationalQuery): Observable<TfjOperationalPageResponse> {
+    let params = new HttpParams().set('page', query.page ?? 0).set('size', query.size ?? 20);
+
+    if (query.businessDate !== undefined) {
+      params = params.set('businessDate', query.businessDate);
+    }
+
+    if (query.category !== undefined) {
+      params = params.set('category', query.category);
+    }
+
+    if (query.paymentReference !== undefined && query.paymentReference.trim() !== '') {
+      params = params.set('paymentReference', query.paymentReference.trim());
+    }
+
+    if (query.bankPostingReference !== undefined && query.bankPostingReference.trim() !== '') {
+      params = params.set('bankPostingReference', query.bankPostingReference.trim());
+    }
+
+    return this.http.get<TfjOperationalPageResponse>(ACCOUNTING_TFJ_OPERATIONS_API_PATH, {
+      params,
+    });
+  }
+
+  getTfjOperation(confirmationId: string): Observable<TfjOperationalResponse> {
+    return this.http.get<TfjOperationalResponse>(
+      `${ACCOUNTING_TFJ_OPERATIONS_API_PATH}/${encodeURIComponent(confirmationId)}`,
+    );
+  }
+
+  executeT1Manually(businessDate: string): Observable<AccountingT1ManualExecutionResponse> {
+    return this.http.post<AccountingT1ManualExecutionResponse>(
+      '/internal/api/v1/accounting-t1-executions',
+      { businessDate },
+      {
+        headers: {
+          'X-Correlation-ID': crypto.randomUUID(),
+        },
+      },
     );
   }
 }

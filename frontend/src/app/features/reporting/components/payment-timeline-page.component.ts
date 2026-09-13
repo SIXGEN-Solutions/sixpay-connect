@@ -165,15 +165,18 @@ export class PaymentTimelinePageComponent {
   protected readonly paymentId = this.route.snapshot.paramMap.get('paymentId') ?? '';
   protected readonly categories = TIMELINE_CATEGORIES;
   protected readonly page = signal<PaymentTimelinePage | null>(null);
-  protected readonly cursorHistory = signal<string[]>([]);
+  protected readonly cursorHistory = signal<(string | null)[]>([]);
   protected readonly form = this.formBuilder.nonNullable.group({ category: [''] });
 
   constructor() {
     this.search();
   }
 
-  protected search(cursor?: string): void {
+  protected search(cursor?: string, preserveHistory = false): void {
     const category = this.form.getRawValue().category;
+    if (!preserveHistory) {
+      this.cursorHistory.set([]);
+    }
     const query: PaymentTimelineQuery = {
       size: 3,
       ...(category ? { category: category as TimelineCategoryResponse } : {}),
@@ -187,15 +190,21 @@ export class PaymentTimelinePageComponent {
     if (!cursor) {
       return;
     }
-    this.cursorHistory.update((history) => [...history, '0']);
-    this.search(cursor);
+    const currentCursor =
+      this.cursorHistory().length === 0
+        ? null
+        : (this.cursorHistory()[this.cursorHistory().length - 1] ?? null);
+    this.cursorHistory.update((history) => [...history, currentCursor]);
+    this.search(cursor, true);
   }
 
   protected previous(): void {
     if (this.cursorHistory().length === 0) {
       return;
     }
-    this.cursorHistory.set([]);
-    this.search();
+    const history = this.cursorHistory();
+    const previousCursor = history[history.length - 1] ?? undefined;
+    this.cursorHistory.set(history.slice(0, -1));
+    this.search(previousCursor, true);
   }
 }

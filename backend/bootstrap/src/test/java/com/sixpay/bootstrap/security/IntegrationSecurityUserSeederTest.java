@@ -88,7 +88,9 @@ class IntegrationSecurityUserSeederTest {
                         "payment.read",
                         "payment.write",
                         "payment.audit",
-                        "payment.reverse"
+                        "payment.reverse",
+                        "accounting.read",
+                        "accounting.t1.execute"
                 );
 
         assertThat(values.get(2).roles())
@@ -99,7 +101,8 @@ class IntegrationSecurityUserSeederTest {
                         "payment.read",
                         "payment.audit",
                         "payment.audit.read",
-                        "payment.audit.export"
+                        "payment.audit.export",
+                        "accounting.read"
                 );
 
         assertThat(values.get(3).userId())
@@ -174,7 +177,9 @@ class IntegrationSecurityUserSeederTest {
                                         "payment.read",
                                         "payment.write",
                                         "payment.audit",
-                                        "payment.reverse"
+                                        "payment.reverse",
+                                        "accounting.read",
+                                        "accounting.t1.execute"
                                 )
                         )
                 );
@@ -190,7 +195,8 @@ class IntegrationSecurityUserSeederTest {
                                         "payment.read",
                                         "payment.audit",
                                         "payment.audit.read",
-                                        "payment.audit.export"
+                                        "payment.audit.export",
+                                        "accounting.read"
                                 )
                         )
                 );

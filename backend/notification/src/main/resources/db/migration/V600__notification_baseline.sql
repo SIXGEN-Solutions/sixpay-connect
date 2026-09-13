@@ -1,10 +1,8 @@
 -- SIXPAY CONNECT canonical pre-production Flyway baseline
--- FS-2.3 Database baseline consolidation
 -- This file represents current schema state; Git preserves prior migration history.
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202607272300__create_notification_deliveries.sql
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE notification_deliveries (
@@ -55,7 +53,6 @@ CREATE INDEX ix_notification_deliveries_correlation
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202607280100__add_notification_delivery_retry_payload.sql
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE notification_deliveries
@@ -63,7 +60,6 @@ ALTER TABLE notification_deliveries
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608071300__operational_notifications.sql
 -- ---------------------------------------------------------------------------
 
 CREATE SCHEMA IF NOT EXISTS sixpay;
@@ -168,7 +164,6 @@ CREATE INDEX IF NOT EXISTS idx_operational_notification_attempts_notification
 
 
 -- ---------------------------------------------------------------------------
--- Source folded into baseline: V202608071400__operational_notification_operations.sql
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE sixpay.operational_notification_deliveries

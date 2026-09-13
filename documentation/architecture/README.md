@@ -3,9 +3,10 @@
 This directory is the canonical architecture source for SIXPAY CONNECT,
 subject to the source-of-truth precedence defined in `ENGINEERING_CONTEXT.md`.
 
-Architecture documentation must describe the **current repository baseline**.
-Phase/audit documents may exist temporarily as consolidation evidence, but they
-are not the preferred navigation surface once their conclusions are absorbed.
+Architecture documentation describes the **current repository baseline**.
+Implementation-phase or delivery evidence may be retained only when explicitly
+classified as historical material; it is not part of the canonical navigation
+surface.
 
 ## Canonical architecture map
 
@@ -22,51 +23,25 @@ are not the preferred navigation surface once their conclusions are absorbed.
 | Core-banking integration baseline | `documentation/architecture/integration/core-banking-api-baseline.md` |
 | Internal architecture | `documentation/architecture/internal/` |
 | Feature-flag registry | `documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml` |
+| Accounting T1 architecture | `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` |
 
 ## Golden business-module reference
 
-```text
-backend/partner
-```
+`backend/partner` remains the structural and implementation reference for
+business modules.
 
-remains the structural and implementation reference for business modules.
+## Historical material
 
-## Historical consolidation evidence
+Historical implementation and audit documents do not define current
+architecture. Their durable conclusions must be reflected in canonical
+current-state documents and permanent verification rules.
 
-Phase-oriented FS-2.4, FS-2.5 and FS-2.6 architecture documents have been
-removed after their durable conclusions were absorbed into the canonical
-current-state documents and permanent verification gates.
-
-FS-2.7 phase reports are likewise removed once their policies are represented
-by the canonical documentation indexes.
-
-Git history remains the source for reconstructing those consolidation steps.
-
-## Binary architecture documents
-
-Existing `.docx` architecture documents remain reference candidates until
-FS-2.7 semantic review determines whether they are:
-
-```text
-KEEP_CANONICAL
-MERGE_INTO_CANONICAL
-KEEP_REFERENCE_SOURCE
-ARCHIVE_HISTORY
-DELETE_ABSORBED_HISTORY
-REVIEW_SEMANTIC_DUPLICATE
-```
-
-A binary document does not override a higher-priority current-state Markdown
-baseline merely because it is stored in this directory.
+Git history remains the source for reconstructing superseded consolidation
+steps when needed.
 
 ## Maintenance rule
 
 New architecture decisions should update an existing canonical document where
-possible instead of creating a new phase-specific document.
+possible instead of creating phase-specific documents.
 
-Phase-specific audit evidence is acceptable during controlled consolidation,
-but it must not become the permanent navigation model.
-
-## Accounting T1 architecture
-
-See `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` for the approved Payment→Accounting internal boundary and T1 ownership model.
+Temporary audit evidence must not become the permanent navigation model.

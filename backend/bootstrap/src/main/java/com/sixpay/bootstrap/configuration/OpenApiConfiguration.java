@@ -32,6 +32,18 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfiguration {
 
     @Bean
+    GroupedOpenApi securityOpenApi() {
+        return GroupedOpenApi.builder()
+                .group("security")
+                .displayName("Security API")
+                .pathsToMatch(
+                        "/api/v1/auth",
+                        "/api/v1/auth/**"
+                )
+                .build();
+    }
+
+    @Bean
     GroupedOpenApi partnerOpenApi() {
         return GroupedOpenApi.builder()
                 .group("partner")
@@ -86,6 +98,8 @@ public class OpenApiConfiguration {
                         "/internal/api/v1/administration/overview",
                         "/internal/api/v1/administration/settings",
                         "/internal/api/v1/administration/integrations",
+                        "/internal/api/v1/administration/dynamic-settings",
+                        "/internal/api/v1/administration/dynamic-settings/**",
                         "/internal/api/v1/incidents",
                         "/internal/api/v1/incidents/**"
                 )
@@ -114,7 +128,13 @@ public class OpenApiConfiguration {
                 .displayName("Accounting API")
                 .pathsToMatch(
                         "/internal/api/v1/accounting-batches",
-                        "/internal/api/v1/accounting-batches/**"
+                        "/internal/api/v1/accounting-batches/**",
+                        "/internal/api/v1/accounting-t1-executions",
+                        "/internal/api/v1/accounting-t1-executions/**",
+                        "/internal/api/v1/accounting-t1-operations",
+                        "/internal/api/v1/accounting-t1-operations/**",
+                        "/internal/api/v1/accounting-tfj-operations",
+                        "/internal/api/v1/accounting-tfj-operations/**"
                 )
                 .build();
     }

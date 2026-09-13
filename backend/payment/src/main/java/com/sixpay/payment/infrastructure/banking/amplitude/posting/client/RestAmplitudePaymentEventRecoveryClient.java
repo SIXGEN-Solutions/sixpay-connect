@@ -16,24 +16,19 @@ import java.util.Optional;
 public final class RestAmplitudePaymentEventRecoveryClient
         implements AmplitudePaymentEventRecoveryClient {
 
-    private static final String PAYMENT_REFERENCE_PATH =
-            "/api/v1/payment-events/{paymentReference}";
-    private static final String IDEMPOTENCY_LOOKUP_PATH =
-            "/api/v1/payment-events/idempotency/{idempotencyKey}";
-    private static final String FINANCIAL_INSTITUTION_HEADER =
-            "X-Financial-Institution-Code";
 
     private final RestClient restClient;
     private final PostingAccessTokenProvider tokenProvider;
+    private final AmplitudePostingProperties properties;
 
     public RestAmplitudePaymentEventRecoveryClient(
             RestClient restClient,
             PostingAccessTokenProvider tokenProvider,
-            AmplitudePostingProperties ignoredProperties
+            AmplitudePostingProperties properties
     ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.tokenProvider = Objects.requireNonNull(tokenProvider);
-        Objects.requireNonNull(ignoredProperties);
+        this.properties = Objects.requireNonNull(properties);
     }
 
     @Override
@@ -44,7 +39,7 @@ public final class RestAmplitudePaymentEventRecoveryClient
     ) {
         requireText(paymentReference, "paymentReference");
         return get(
-                PAYMENT_REFERENCE_PATH,
+                properties.paymentReferenceLookupPath(),
                 paymentReference,
                 correlationId,
                 financialInstitutionCode
@@ -59,7 +54,7 @@ public final class RestAmplitudePaymentEventRecoveryClient
     ) {
         requireText(idempotencyKey, "idempotencyKey");
         return get(
-                IDEMPOTENCY_LOOKUP_PATH,
+                properties.idempotencyLookupPath(),
                 idempotencyKey,
                 correlationId,
                 financialInstitutionCode
@@ -89,11 +84,11 @@ public final class RestAmplitudePaymentEventRecoveryClient
                                             + tokenProvider.accessToken()
                             )
                             .header(
-                                    IntegrationHttpHeaders.CORRELATION_ID,
+                                    properties.contract().correlationHeader(),
                                     correlationId
                             )
                             .header(
-                                    FINANCIAL_INSTITUTION_HEADER,
+                                    properties.contract().institutionHeader(),
                                     financialInstitutionCode
                             )
                             .retrieve()

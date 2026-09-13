@@ -53,6 +53,12 @@ public class IntegrationSecurityUserSeeder
                             .value(),
                     SixpayPermission
                             .PAYMENT_REVERSE
+                            .value(),
+                    SixpayPermission
+                            .ACCOUNTING_READ
+                            .value(),
+                    SixpayPermission
+                            .ACCOUNTING_T1_EXECUTE
                             .value()
             );
 
@@ -72,6 +78,9 @@ public class IntegrationSecurityUserSeeder
                             .value(),
                     SixpayPermission
                             .PAYMENT_AUDIT_EXPORT
+                            .value(),
+                    SixpayPermission
+                            .ACCOUNTING_READ
                             .value()
             );
 

@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -101,6 +102,7 @@ class IncidentQueryControllerTest {
                                 )
                 )
                 .andExpect(status().isOk())
+                .andExpect(header().string("X-Correlation-ID", CORRELATION))
                 .andExpect(
                         jsonPath(
                                 "$.content[0].incidentId"
@@ -133,6 +135,7 @@ class IncidentQueryControllerTest {
                                 )
                 )
                 .andExpect(status().isOk())
+                .andExpect(header().string("X-Correlation-ID", CORRELATION))
                 .andExpect(
                         jsonPath("$.incidentId")
                                 .value("INC-001")
@@ -141,6 +144,36 @@ class IncidentQueryControllerTest {
                         jsonPath("$.component")
                                 .value("Accounting")
                 );
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void requiresCorrelationId() throws Exception {
+        mockMvc.perform(
+                        get(API)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void rejectsInvalidPaginationBeforeUseCase()
+            throws Exception {
+
+        mockMvc.perform(
+                        get(API)
+                                .param("page", "-1")
+                                .param("size", "0")
+                                .header(
+                                        "X-Correlation-ID",
+                                        CORRELATION
+                                )
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(useCase);
     }
 
     @Test

@@ -2,14 +2,15 @@
 
 ## Purpose
 
-The Administration module owns administrative HTTP boundaries and operational
-queries. It does not own users, identities, roles, permissions or
-authentication; those responsibilities belong to Security.
+Administration owns administrative HTTP boundaries, operational queries,
+dynamic runtime-setting management and operational incident visibility.
+Security owns users, identities, roles, permissions and authentication.
 
 ## Responsibilities
 
-- expose Security user-administration commands through an administrative API;
+- expose Security user-administration commands;
 - expose operational overview, settings and integration-health projections;
+- manage approved dynamic settings with versioned history and rollback;
 - search and retrieve operational incidents;
 - keep operational concerns separate from Payment audit reporting.
 
@@ -17,51 +18,66 @@ authentication; those responsibilities belong to Security.
 
 Security user administration:
 
-    /internal/api/v1/administration/users
-
-Current operations include create, list, retrieve, update, enable, disable,
-delete, local authentication-method management, local password reset, OIDC
-identity linking and OIDC identity unlinking.
+```text
+/internal/api/v1/administration/users
+```
 
 Operational queries:
 
-    GET /internal/api/v1/administration/overview
-    GET /internal/api/v1/administration/settings
-    GET /internal/api/v1/administration/integrations
+```text
+GET /internal/api/v1/administration/overview
+GET /internal/api/v1/administration/settings
+GET /internal/api/v1/administration/integrations
+```
+
+Dynamic settings:
+
+```text
+GET  /internal/api/v1/administration/dynamic-settings
+GET  /internal/api/v1/administration/dynamic-settings/{key}
+PUT  /internal/api/v1/administration/dynamic-settings/{key}
+GET  /internal/api/v1/administration/dynamic-settings/{key}/history
+POST /internal/api/v1/administration/dynamic-settings/{key}/rollback
+```
 
 Incident queries:
 
-    GET /internal/api/v1/incidents
-    GET /internal/api/v1/incidents/{incidentId}
-
-The active administrative contract is:
-documentation/contracts/internal/administration-operational-api-v1.yaml
+```text
+GET /internal/api/v1/incidents
+GET /internal/api/v1/incidents/{incidentId}
+```
 
 ## Boundaries
 
-- Security remains the owner of canonical users, identities and authorization.
-- Reporting remains the owner of immutable Payment audit queries and exports.
-- Administration collaborates with other modules through application ports.
-- Internal calls remain in-process in the modular monolith.
+- Security owns canonical users, identities and authorization.
+- Reporting owns immutable Payment audit queries and exports.
+- Administration owns operational incidents and dynamic-setting persistence.
+- Cross-module collaboration uses application ports.
 
 ## Validation
 
-From backend:
-
-    mvn -pl administration -am test
-    mvn -pl administration -am clean verify
+```bash
+mvn -pl administration -am test
+mvn -pl administration -am clean verify
+```
 
 ## Persistence ownership
 
-Administration owns these production tables:
-
 | Table | Purpose |
 |---|---|
-| operational_incident | Operational incident state |
-| operational_incident_timeline | Incident timeline entries |
+| `operational_incident` | Operational incident state |
+| `operational_incident_timeline` | Incident timeline entries |
+| `general_parameter` | General parameter values |
+| `dynamic_setting_value` | Current dynamic-setting values |
+| `dynamic_setting_history` | Versioned dynamic-setting history |
 
-Security-owned users, identities, credentials and authorization tables are not
-duplicated by Administration.
+Security-owned persistence is not duplicated by Administration.
 
-Schema:
-backend/administration/src/main/resources/db/migration/V800__administration_baseline.sql
+## Database baseline
+
+Current Flyway baseline:
+
+```text
+V800__administration_baseline.sql
+```
+

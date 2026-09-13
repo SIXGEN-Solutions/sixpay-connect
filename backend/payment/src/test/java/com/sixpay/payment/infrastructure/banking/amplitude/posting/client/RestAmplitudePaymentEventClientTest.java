@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -97,6 +96,11 @@ class RestAmplitudePaymentEventClientTest {
         return new AmplitudePostingProperties(
                 URI.create("http://localhost"),
                 "/api/v1/payment-events",
+                "/api/v1/payment-events/{paymentReference}",
+                "/api/v1/payment-events/idempotency/{idempotencyKey}",
+                "/api/v1/transactions/process/lastnumeroeveope/{operationCode}",
+                "/api/v1/nomenclature/getdatecomptable",
+                "/api/v1/kyc/process/modenuit",
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(2),
                 new AmplitudePostingProperties.Security(
@@ -104,11 +108,10 @@ class RestAmplitudePaymentEventClientTest {
                         "amplitude-mtls"
                 ),
                 new AmplitudePostingProperties.Contract(
-                        "v1",
+                        "1.0.0",
                         "Idempotency-Key",
-                        Set.of("200"),
-                        Set.of("REJECTED"),
-                        Set.of("202")
+                        "X-Correlation-ID",
+                        "X-Financial-Institution-Code"
                 )
         );
     }

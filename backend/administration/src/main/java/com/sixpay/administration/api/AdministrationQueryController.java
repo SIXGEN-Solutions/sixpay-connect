@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Objects;
@@ -47,13 +48,17 @@ public class AdministrationQueryController {
                     "Returns the effective operational settings "
                             + "and observable integration-health projections."
     )
-    public AdministrationOverviewResponse overview(
+    public ResponseEntity<AdministrationOverviewResponse> overview(
             @RequestHeader(CORRELATION_ID)
             UUID correlationId
     ) {
-        return AdministrationOverviewResponse.from(
-                useCase.overview()
-        );
+        return ResponseEntity.ok()
+                .header(CORRELATION_ID, correlationId.toString())
+                .body(
+                        AdministrationOverviewResponse.from(
+                                useCase.overview()
+                        )
+                );
     }
 
     @GetMapping("/settings")
@@ -63,13 +68,17 @@ public class AdministrationQueryController {
                     "Returns only operational settings backed "
                             + "by real SIXPAY runtime configuration."
     )
-    public AdministrationSettingsResponse settings(
+    public ResponseEntity<AdministrationSettingsResponse> settings(
             @RequestHeader(CORRELATION_ID)
             UUID correlationId
     ) {
-        return AdministrationSettingsResponse.from(
-                useCase.settings()
-        );
+        return ResponseEntity.ok()
+                .header(CORRELATION_ID, correlationId.toString())
+                .body(
+                        AdministrationSettingsResponse.from(
+                                useCase.settings()
+                        )
+                );
     }
 
     @GetMapping("/integrations")
@@ -79,13 +88,17 @@ public class AdministrationQueryController {
                     "Returns the bounded set of integration-health "
                             + "states that SIXPAY can observe at runtime."
     )
-    public List<IntegrationStatusResponse> integrations(
+    public ResponseEntity<List<IntegrationStatusResponse>> integrations(
             @RequestHeader(CORRELATION_ID)
             UUID correlationId
     ) {
-        return useCase.integrations()
-                .stream()
-                .map(IntegrationStatusResponse::from)
-                .toList();
+        return ResponseEntity.ok()
+                .header(CORRELATION_ID, correlationId.toString())
+                .body(
+                        useCase.integrations()
+                                .stream()
+                                .map(IntegrationStatusResponse::from)
+                                .toList()
+                );
     }
 }

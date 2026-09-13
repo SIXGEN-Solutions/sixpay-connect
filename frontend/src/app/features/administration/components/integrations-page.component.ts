@@ -15,7 +15,7 @@ import { AdministrationService } from '../services/administration.service';
       <a routerLink="/administration">← Retour à l'administration</a>
       <sp-toolbar
         title="Intégrations"
-        description="Vue de supervision mockée des dépendances externes et internes."
+        description="Vue de supervision des dépendances externes et internes observables par SIXPAY."
       />
 
       <div class="sp-grid">

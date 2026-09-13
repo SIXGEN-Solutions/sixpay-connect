@@ -2,11 +2,13 @@ package com.sixpay.accounting.configuration;
 
 import com.sixpay.accounting.AccountingModule;
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
+import com.sixpay.accounting.application.port.output.AccountingBatchQueryPort;
 import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
 import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
 import com.sixpay.accounting.application.service.AccountingT1OrchestrationService;
+import com.sixpay.accounting.application.service.AccountingT1ManualExecutionService;
 import com.sixpay.accounting.application.service.AccountingBatchConstitutionService;
 import com.sixpay.accounting.application.service.AccountingBatchIdempotencyKeyFactory;
 import com.sixpay.accounting.application.service.AccountingBatchReconciliationService;
@@ -188,4 +190,33 @@ public class AccountingModuleConfiguration {
                 accountingClock
         );
     }
+    @Bean
+    @ConditionalOnBean({
+            AccountingCandidateProjectionRepository.class,
+            AccountingBatchQueryPort.class,
+            AccountingT1OrchestrationService.class,
+            AccountingBatchReconciliationService.class,
+            AccountingBatchTrackingRepository.class
+    })
+    @ConditionalOnMissingBean
+    AccountingT1ManualExecutionService accountingT1ManualExecutionService(
+            @Qualifier(ACCOUNTING_CLOCK) Clock accountingClock,
+            AccountingCutoffPolicy cutoffPolicy,
+            AccountingCandidateProjectionRepository projectionRepository,
+            AccountingBatchQueryPort queryPort,
+            AccountingT1OrchestrationService orchestrationService,
+            AccountingBatchReconciliationService reconciliationService,
+            AccountingBatchTrackingRepository trackingRepository
+    ) {
+        return new AccountingT1ManualExecutionService(
+                accountingClock,
+                cutoffPolicy,
+                projectionRepository,
+                queryPort,
+                orchestrationService,
+                reconciliationService,
+                trackingRepository
+        );
+    }
+
 }

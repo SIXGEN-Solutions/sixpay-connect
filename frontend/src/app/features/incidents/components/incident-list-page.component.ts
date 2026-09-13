@@ -10,6 +10,7 @@ import { SpButtonComponent } from '../../../shared/components/button/sp-button.c
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { IncidentSeverity, IncidentStatus, IncidentSummary } from '../models/incidents';
+import { mapIncidentSummaryResponse } from '../api/incidents-api.mapper';
 import { IncidentsService } from '../services/incidents.service';
 
 @Component({
@@ -125,6 +126,23 @@ import { IncidentsService } from '../services/incidents.service';
               </tbody>
             </table>
           </div>
+          <div class="sp-pagination">
+            <span>
+              Page {{ page() + 1 }} / {{ totalPages() || 1 }} — {{ totalElements() }} incident(s)
+            </span>
+            <div class="sp-actions">
+              <sp-button type="button" (buttonClick)="previousPage()" [disabled]="page() === 0">
+                Précédent
+              </sp-button>
+              <sp-button
+                type="button"
+                (buttonClick)="nextPage()"
+                [disabled]="page() + 1 >= totalPages()"
+              >
+                Suivant
+              </sp-button>
+            </div>
+          </div>
         }
       </sp-card>
     </section>
@@ -157,6 +175,15 @@ import { IncidentsService } from '../services/incidents.service';
       border-collapse: collapse;
     }
 
+    .sp-pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-space-3);
+      margin-top: var(--sp-space-3);
+      flex-wrap: wrap;
+    }
+
     .sp-table th,
     .sp-table td {
       padding: var(--sp-space-2);
@@ -178,6 +205,14 @@ export class IncidentListPageComponent {
   private readonly service = inject(IncidentsService);
 
   protected readonly incidents = signal<readonly IncidentSummary[]>([]);
+
+  protected readonly page = signal(0);
+
+  protected readonly size = signal(20);
+
+  protected readonly totalElements = signal(0);
+
+  protected readonly totalPages = signal(0);
 
   protected readonly loading = signal(false);
 
@@ -225,12 +260,16 @@ export class IncidentListPageComponent {
         ...(severity ? { severity } : {}),
         ...(status ? { status } : {}),
         ...(component ? { component } : {}),
-        page: 0,
-        size: 20,
+        page: this.page(),
+        size: this.size(),
       })
       .subscribe({
-        next: (incidents) => {
-          this.incidents.set(incidents);
+        next: (result) => {
+          this.incidents.set(result.content.map(mapIncidentSummaryResponse));
+          this.page.set(result.page);
+          this.size.set(result.size);
+          this.totalElements.set(result.totalElements);
+          this.totalPages.set(result.totalPages);
           this.loading.set(false);
         },
         error: () => {
@@ -241,7 +280,22 @@ export class IncidentListPageComponent {
       });
   }
 
+  protected previousPage(): void {
+    if (this.page() > 0) {
+      this.page.update((page) => page - 1);
+      this.search();
+    }
+  }
+
+  protected nextPage(): void {
+    if (this.page() + 1 < this.totalPages()) {
+      this.page.update((page) => page + 1);
+      this.search();
+    }
+  }
+
   protected reset(): void {
+    this.page.set(0);
     this.form.reset({
       severity: '',
       status: '',

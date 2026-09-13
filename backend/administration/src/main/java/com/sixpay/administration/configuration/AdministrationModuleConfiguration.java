@@ -1,6 +1,10 @@
 package com.sixpay.administration.configuration;
 
 import com.sixpay.administration.AdministrationModule;
+import com.sixpay.administration.infrastructure.persistence.DynamicSettingHistoryJpaEntity;
+import com.sixpay.administration.infrastructure.persistence.DynamicSettingHistorySpringDataRepository;
+import com.sixpay.administration.infrastructure.persistence.DynamicSettingJpaEntity;
+import com.sixpay.administration.infrastructure.persistence.DynamicSettingSpringDataRepository;
 import com.sixpay.administration.infrastructure.persistence.GeneralParameterJpaEntity;
 import com.sixpay.administration.infrastructure.persistence.GeneralParameterSpringDataRepository;
 import com.sixpay.administration.infrastructure.persistence.IncidentTimelineJpaEntity;
@@ -46,13 +50,17 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         basePackageClasses = {
                 OperationalIncidentJpaEntity.class,
                 IncidentTimelineJpaEntity.class,
-                GeneralParameterJpaEntity.class
+                GeneralParameterJpaEntity.class,
+                DynamicSettingJpaEntity.class,
+                DynamicSettingHistoryJpaEntity.class
         }
 )
 @EnableJpaRepositories(
         basePackageClasses = {
                 OperationalIncidentSpringDataRepository.class,
-                GeneralParameterSpringDataRepository.class
+                GeneralParameterSpringDataRepository.class,
+                DynamicSettingSpringDataRepository.class,
+                DynamicSettingHistorySpringDataRepository.class
         }
 )
 public class AdministrationModuleConfiguration {

@@ -16,9 +16,6 @@ import java.util.Objects;
 public final class RestAmplitudePaymentEventClient
         implements AmplitudePaymentEventClient {
 
-    public static final String FINANCIAL_INSTITUTION_HEADER =
-            "X-Financial-Institution-Code";
-
     private final RestClient restClient;
     private final PostingAccessTokenProvider tokenProvider;
     private final AmplitudePostingProperties properties;
@@ -60,11 +57,11 @@ public final class RestAmplitudePaymentEventClient
                                             + tokenProvider.accessToken()
                             )
                             .header(
-                                    IntegrationHttpHeaders.CORRELATION_ID,
+                                    properties.contract().correlationHeader(),
                                     correlationId
                             )
                             .header(
-                                    FINANCIAL_INSTITUTION_HEADER,
+                                    properties.contract().institutionHeader(),
                                     financialInstitutionCode
                             )
                             .header(

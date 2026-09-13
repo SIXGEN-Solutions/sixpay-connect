@@ -1,75 +1,136 @@
-# SIXPAY CONNECT — Administration Golden Test Coverage
+# SIXPAY CONNECT — LOT 5.8 Administration / Identity / Incidents — Test Coverage
 
-## Phase
-
-```text
-Dual Authentication — Local + OIDC
-User Administration CRUD
-Sous-lot 4 — Tests / documentation
-```
-
-## Source of truth
-
-The authoritative implementation revision is supplied by the task invocation or selected execution environment. `ENGINEERING_CONTEXT.md` remains the mandatory engineering entry point and `partner` remains the golden business-module reference.
-
-Administration is no longer a module shell. The implemented responsibility split is:
-
-```text
-backend/administration
-    HTTP administration boundary
-
-backend/security
-    canonical SIXPAY user model
-    authentication identities
-    Local credentials
-    SIXPAY authorization
-    operational security audit
-    administration use cases and persistence
-```
-
-Overall classification:
+## Status
 
 ```text
 ADMINISTRATION = COVERED
 ```
 
-## Evidence
+## Scope
 
-`SecurityUserAdministrationServiceTest` covers canonical creation, normalization, role/permission propagation, Local password hashing and minimum length, update, audit creation, and delete audit ordering.
+LOT 5.8 consolidates three existing operational capabilities:
 
-`SecurityUserAdministrationControllerTest` covers anonymous rejection, non-ADMIN rejection, ADMIN list access, create 201 + Location, Bean Validation, actor propagation, update, enable/disable and delete 204.
+- Administration operational queries;
+- Security-owned user and identity administration exposed through the Administration HTTP boundary;
+- read-only operational Incident queries.
 
-`IntegrationSecurityUserSeederTest` covers empty-database seed, admin/manager/auditor/partner profiles, Local provisioning, idempotency, partial completion and deterministic technical identities.
+Dynamic-settings mutation is explicitly outside this closure and remains a
+separate decision workstream.
 
-`SecurityUserAdministrationService.spec.ts` covers the frontend HTTP mapping for CRUD and protects existing Local/OIDC administration endpoints against regression.
-
-## Architectural invariants
+## Ownership invariants
 
 ```text
-SIXPAY User != Authentication Identity
-IdP proves identity
-SIXPAY owns authorization
-Local and OIDC may represent the same canonical user
-business modules do not branch on LOCAL vs OIDC
-Administration API is ADMIN-only
-passwords/tokens/secrets are never written to audit
+backend/administration
+    administrative HTTP boundary
+    operational Administration queries
+    operational Incident query/persistence
+
+backend/security
+    canonical SIXPAY users
+    authentication identities
+    Local credentials
+    SIXPAY authorization
+    security administration use cases
+    security audit
 ```
+
+Administration does not take ownership of canonical users, identities, roles,
+permissions or authentication.
+
+## Implemented security model
+
+Administration operational queries:
+
+```text
+ROLE_ADMIN
+```
+
+Security User Administration:
+
+```text
+ROLE_ADMIN
+```
+
+Operational Incident queries:
+
+```text
+ROLE_ADMIN
+ROLE_MANAGER
+ROLE_AUDITOR
+```
+
+No new permission or security rule was introduced by LOT 5.8 closure.
+
+## Coverage evidence
+
+Backend coverage includes:
+
+- Administration query authentication and ADMIN-only authorization;
+- mandatory `X-Correlation-ID` handling and response echo;
+- Security User Administration authentication, ADMIN-only authorization,
+  validation, actor propagation and administrative commands;
+- Incident authentication and role authorization;
+- Incident pagination validation;
+- Incident filtering and PostgreSQL persistence;
+- Incident contract read-only/security assertions.
+
+Frontend coverage includes:
+
+- Security User Administration HTTP mapping;
+- Local/OIDC administration surfaces;
+- Incident API selection without fallback from API errors to mock data;
+- Incident pagination metadata;
+- mock-mode `Date` to ISO contract mapping;
+- route-level role restrictions.
+
+## Canonical contracts
+
+The applicable physical contracts remain:
+
+```text
+documentation/contracts/internal/administration-operational-api-v1.yaml
+documentation/contracts/internal/security-user-administration-api-v1.yaml
+```
+
+Their lifecycle, approval, generation policy and code-generation authorization
+remain governed by:
+
+```text
+documentation/contracts/CONTRACT_REGISTRY.yaml
+```
+
+LOT 5.8 closure does not promote or alter contract approval/generation status.
 
 ## Validation
 
+Focused backend validation:
+
 ```bash
 cd backend
-mvn -pl security -Dtest=SecurityUserAdministrationServiceTest test
-mvn -pl administration -am -Dtest=SecurityUserAdministrationControllerTest test
-mvn -pl bootstrap -am -Dtest=IntegrationSecurityUserSeederTest test
-mvn -pl tests -Dtest=BackendGoldenCoverageGateTest test
-mvn clean package
+mvn -pl administration -am test
+mvn -pl administration -am clean verify
 ```
+
+Frontend validation:
 
 ```bash
 cd frontend
-npm test
-npm run build
+npm run verify:sixpay
 ```
 
-The sub-lot is closed when all commands are green.
+Canonical repository gates:
+
+```bash
+py scripts/verify_master_prompt_input_manifest.py
+py scripts/verify_master_engineering_prompt.py
+py scripts/verify_baseline.py
+```
+
+Optional clean-room proof when required by the delivery gate:
+
+```bash
+py scripts/verify_clean_room.py
+```
+
+The LOT 5.8 closure status may be declared repository-validated only after the
+required commands have actually completed successfully.

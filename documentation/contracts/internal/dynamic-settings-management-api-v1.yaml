@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Internal Dynamic Settings Management API
+  version: 1.0.0
+  description: |
+    Dedicated internal API for administration of approved dynamic operational settings.
+    This contract is intentionally separate from administration-operational-api-v1.yaml.
+    The operational Administration API remains read-only and unchanged.
+    Only allowlisted DYNAMIC_OPERATIONAL settings may be mutated.
+    Secrets, deployment configuration and contract-static values are excluded.
+  x-sixpay-contract:
+    registryIds: [dynamic-settings-management-api-v1]
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: administration
+    businessOwner: administration
+    securityOwner: security
+    capabilities: [DYNAMIC_SETTINGS_MANAGEMENT]
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: INTERNAL
+    readOnly: false
+    authorization:
+      model: ROLE_BASED
+      requiredRoles: [ADMIN]
+    limitations:
+      - ALLOWLIST_ONLY
+      - NO_SECRETS
+      - NO_DEPLOYMENT_CONFIG
+      - NO_CONTRACT_STATIC_VALUES
+      - NO_PROVIDER_CREDENTIALS
+security:
+  - bearerAuth: []
+paths:
+  /internal/api/v1/administration/dynamic-settings:
+    get:
+      operationId: listDynamicSettingDefinitions
+      responses:
+        '200':
+          description: Dynamic setting catalogue
+  /internal/api/v1/administration/dynamic-settings/{key}:
+    get:
+      operationId: getDynamicSetting
+      parameters:
+        - $ref: '#/components/parameters/Key'
+      responses:
+        '200': { description: Effective dynamic setting }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: updateDynamicSetting
+      parameters:
+        - $ref: '#/components/parameters/Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DynamicSettingUpdateRequest'
+      responses:
+        '200': { description: Updated dynamic setting }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /internal/api/v1/administration/dynamic-settings/{key}/history:
+    get:
+      operationId: getDynamicSettingHistory
+      parameters:
+        - $ref: '#/components/parameters/Key'
+      responses:
+        '200': { description: Setting audit history }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /internal/api/v1/administration/dynamic-settings/{key}/rollback:
+    post:
+      operationId: rollbackDynamicSetting
+      parameters:
+        - $ref: '#/components/parameters/Key'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DynamicSettingRollbackRequest'
+      responses:
+        '200': { description: New effective value created by rollback }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Key:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 192
+  responses:
+    BadRequest:
+      description: Invalid request
+    NotFound:
+      description: Setting or version does not exist
+  schemas:
+    DynamicSettingUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [value, reason]
+      properties:
+        value: { type: string, minLength: 1, maxLength: 2048 }
+        reason: { type: string, minLength: 1, maxLength: 1024 }
+    DynamicSettingRollbackRequest:
+      type: object
+      additionalProperties: false
+      required: [targetVersion, reason]
+      properties:
+        targetVersion: { type: integer, format: int64, minimum: 1 }
+        reason: { type: string, minLength: 1, maxLength: 1024 }

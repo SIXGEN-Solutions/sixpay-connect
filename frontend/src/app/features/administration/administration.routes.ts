@@ -51,6 +51,15 @@ export const ADMINISTRATION_ROUTES: Routes = [
       ),
   },
   {
+    path: 'dynamic-settings',
+    canActivate: [roleGuard],
+    data: { roles: ADMIN_ONLY },
+    loadComponent: () =>
+      import('./components/dynamic-settings-page.component').then(
+        (component) => component.DynamicSettingsPageComponent,
+      ),
+  },
+  {
     path: 'integrations',
     canActivate: [roleGuard],
     data: { roles: ADMIN_ONLY },

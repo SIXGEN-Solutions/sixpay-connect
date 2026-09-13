@@ -15,6 +15,24 @@ export const ACCOUNTING_ROUTES: Routes = [
       ),
   },
   {
+    path: 't1-operations',
+    canActivate: [roleGuard],
+    data: { roles: ACCOUNTING_READ_ROLES },
+    loadComponent: () =>
+      import('./components/accounting-t1-operational-page.component').then(
+        (component) => component.AccountingT1OperationalPageComponent,
+      ),
+  },
+  {
+    path: 'tfj-operations',
+    canActivate: [roleGuard],
+    data: { roles: ACCOUNTING_READ_ROLES },
+    loadComponent: () =>
+      import('./components/accounting-tfj-operational-page.component').then(
+        (component) => component.AccountingTfjOperationalPageComponent,
+      ),
+  },
+  {
     path: 'batches/:batchId',
     canActivate: [roleGuard],
     data: { roles: ACCOUNTING_READ_ROLES },

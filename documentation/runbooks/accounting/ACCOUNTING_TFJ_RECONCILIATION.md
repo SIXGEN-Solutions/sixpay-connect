@@ -1,154 +1,193 @@
-# Accounting TFJ reconciliation and finality runbook
+# Accounting TFJ Reconciliation Runbook
 
 ## Purpose
 
-Operate the Accounting end-of-day / TFJ confirmation flow without bypassing
-the approved contracts, Accounting ownership or Payment finality rules.
+This runbook covers operational investigation of Accounting T1 / TFJ
+reconciliation in SIXPAY CONNECT.
 
-Canonical physical contract:
+Amplitude / La Régionale remains the authoritative system of record for the
+end-of-day treasury confirmation. SIXPAY persists the confirmation evidence,
+matches it against durable Accounting evidence and publishes Payment finality
+only when the approved matching and finality rules are satisfied.
+
+This procedure does not authorize a financial replay, a manual Payment state
+change, or a direct database correction.
+
+## Authoritative flow
+
+```text
+SIXPAY Accounting batch submission
+  -> Core Banking processing
+  -> Amplitude TFJ confirmation
+  -> SIXPAY TFJ ingestion
+  -> durable matching result
+  -> finality publication
+  -> Payment reconciliation
+```
+
+The authoritative TFJ contract is:
 
 `documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml`
 
-Amplitude is the TFJ system of record. The runbook does not redefine that
-contract.
+The Accounting submission/recovery contract is:
 
-## Normal outcomes
+`documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml`
 
-### PENDING
+## Matching keys
 
-Persist the confirmation. Do not update Payment finality. Wait for a later
-authoritative callback or controlled lookup result.
+A TFJ confirmation is matched using exactly:
 
-### INTEGRATED + unique match
+- `financialInstitutionCode`;
+- `businessDate`;
+- `paymentReference`;
+- `bankPostingReference`.
 
-The confirmation must already be durably persisted and uniquely matched on:
+Do not attempt to match on mutable Payment state or on alternative identifiers.
 
-- financial institution code;
-- business date;
-- Payment reference;
-- bank posting reference.
+## Operational states
 
-Accounting publishes the provider-neutral finality event only after commit.
-Payment applies its existing reconciliation policy and may reach
-`TREASURY_INTEGRATED`.
+### MATCHED
 
-### FAILED + unique match
+Exactly one durable Accounting candidate matches the confirmation.
 
-Accounting forwards the authoritative failure evidence and recovery action.
-Payment remains the owner of its lifecycle. Do not force a Payment state from
-Accounting or with manual SQL.
-
-## Quarantine
+- `PENDING` remains non-final.
+- `INTEGRATED` may publish Payment finality after the confirmation has been
+  durably persisted.
+- `FAILED` remains authoritative recovery evidence and is forwarded to Payment
+  through the existing finality mechanism. Accounting does not directly mutate
+  Payment.
 
 ### UNMATCHED
 
-Do not modify Payment.
+No durable Accounting record matches the four canonical keys.
 
-Verify the four matching facts against the Accounting batch and the
-authoritative Amplitude result. Do not edit the stored TFJ row, re-key a
-Payment or manufacture a match.
+Operational action:
 
-The current baseline does not automatically rematch a previously persisted
-unmatched confirmation. Escalate for controlled reconciliation if the
-authoritative facts cannot be matched.
+1. preserve the TFJ confirmation as quarantined evidence;
+2. verify the institution, business date, Payment reference and bank posting
+   reference against the durable Accounting batch;
+3. verify whether the corresponding T1 batch was submitted or is still
+   recoverable through the approved Core Banking lookup operations;
+4. do not create a synthetic Accounting row;
+5. do not update Payment manually;
+6. do not replay a financial submission blindly.
+
+An `UNMATCHED` confirmation never changes Payment.
 
 ### AMBIGUOUS
 
-Do not select one candidate manually and do not update Payment.
+More than one durable Accounting record matches the canonical identity.
 
-Investigate duplicate/inconsistent Accounting evidence and the four matching
-facts. Preserve the original confirmation and correlation identifiers for
-traceability.
+Operational action:
 
-## Identical replay
+1. preserve the confirmation as quarantined evidence;
+2. inspect the duplicate durable Accounting facts;
+3. verify batch and projection identity before any remediation;
+4. escalate the data-integrity issue if more than one durable candidate remains;
+5. do not select one candidate manually;
+6. do not mutate Payment.
 
-An identical replay is a no-op. No second Payment finality effect is expected.
+An `AMBIGUOUS` confirmation never changes Payment.
 
-## Conflicting replay
+## Replay handling
 
-The same confirmation identity or idempotency key with a different logical
-payload is a conflict. Preserve the first durable evidence, return/observe the
-contractual conflict and investigate the provider/system integration.
+### Identical replay
 
-Never overwrite the stored evidence to make the replay succeed.
+An identical confirmation received again for the same logical identity is a
+no-op.
 
-## Finality publication failure
+The already persisted evidence remains authoritative and no duplicate Payment
+finality event must be emitted.
 
-A matched terminal confirmation remains recoverable while
-`finalityPublishedAt` is null.
+### Conflicting replay
 
-Operational signals:
+A confirmation with the same logical identity but a different logical payload
+is a conflict.
 
-- `sixpay.accounting.tfj.finality.pending`;
-- `sixpay.accounting.tfj.finality.publication{outcome=...}`;
-- structured log `TFJ finality publication failed`.
+Operational action:
 
-Do not insert a Payment state manually and do not replay a banking financial
-command. Use only the application-level pending-finality recovery capability
-(`TfjFinalityPublicationService.publishPending`) from approved operational
-tooling. No public or internal HTTP recovery endpoint is introduced by T1.
+1. retain the conflicting evidence for investigation;
+2. do not replace the previously persisted authoritative confirmation;
+3. do not update Payment;
+4. do not replay the Accounting submission;
+5. escalate for reconciliation with La Régionale / Amplitude.
 
-## Ingestion observability
+## Finality publication recovery
 
-Metrics are deliberately low-cardinality:
+A matched terminal TFJ confirmation is not considered published until its
+Payment finality event has been emitted successfully.
+
+The durable marker is:
+
+`finalityPublishedAt`
+
+Interpretation:
+
+- `finalityPublishedAt != null`: the finality publication completed;
+- `finalityPublishedAt == null`: the terminal confirmation remains pending
+  publication and is recoverable through the existing
+  `TfjFinalityPublicationService.publishPending` mechanism.
+
+No public or internal HTTP recovery endpoint exists for this recovery path.
+
+Do not introduce an ad-hoc HTTP endpoint, direct SQL update, or manual Payment
+transition as an operational shortcut.
+
+## Provider submission recovery
+
+When the outcome of a Core Banking Accounting submission is unknown:
+
+1. use the authoritative provider lookup by idempotency key first when
+   applicable;
+2. use the approved batch lookup as defined by the provider contract;
+3. reconcile the durable local batch with the provider result;
+4. never repeat the financial POST blindly.
+
+The local Accounting batch idempotency key remains the canonical financial
+idempotency identity.
+
+## Manual T1 execution
+
+The operator command **Lancer le traitement T1** launches the SIXPAY T1
+treatment for one `businessDate`.
+
+It does not launch the bank-owned TFJ.
+
+The command:
+
+- requires `ADMIN` or `MANAGER`;
+- requires `accounting.t1.execute`;
+- runs the existing `MANUAL` cutoff path;
+- derives the financial institution from durable Accounting candidates;
+- reuses existing batch idempotency;
+- submits or reconciles through the approved Core Banking Accounting boundary.
+
+`AUDITOR` remains read-only.
+
+## Observability
+
+Use the existing low-cardinality metrics:
 
 - `sixpay.accounting.tfj.ingestion{tfj_status,receipt_status}`;
 - `sixpay.accounting.tfj.conflicts`;
 - `sixpay.accounting.tfj.finality.publication{outcome}`;
 - `sixpay.accounting.tfj.finality.pending`.
 
-Payment reference, bank reference, confirmation ID and correlation ID are
-allowed in structured operational logs where required for investigation, but
-are never metric tags.
+Do not add Payment identifiers, confirmation identifiers or other
+high-cardinality business identifiers as metric tags.
 
-Never log OAuth tokens, client secrets, private keys, OTP values, raw banking
-payloads or account credentials.
+Structured logs may contain only the minimum operational identifiers required
+for reconciliation. Do not log secrets, tokens, OTP values or raw banking
+payloads.
 
-## Provider lookup
+## Forbidden operational actions
 
-The read-only Amplitude TFJ lookup is available only when the Accounting API
-provider configuration is enabled. Do not create a standalone/mock provider
-client to make a runtime profile boot.
+The following actions are not authorized by this runbook:
 
-The TRESOR PAY status-query contract remains a separate `REFERENCE_MVP`
-capability and is not generated while its registry approval/generation policy
-forbids generation.
-
-## Escalation evidence
-
-Capture only:
-
-- confirmation ID;
-- correlation ID;
-- financial institution code;
-- business date;
-- Payment reference;
-- bank posting reference;
-- TFJ status;
-- match status;
-- provider batch/item references where already part of approved evidence.
-
-Do not attach secrets or raw provider payloads.
-
-## Validation after remediation
-
-Run the targeted Accounting tests first, then the repository gates:
-
-```bash
-cd backend
-mvn -pl accounting,payment -am -DskipITs verify
-cd ..
-py scripts/verify_accounting_t1_closure.py
-py scripts/verify_master_prompt_input_manifest.py
-py scripts/verify_master_engineering_prompt.py
-py scripts/verify_documentation_final.py
-py scripts/verify_baseline.py
-```
-
-When Docker and the clean-room prerequisites are available:
-
-```bash
-py scripts/verify_clean_room.py
-```
-
-A command is evidence only when it actually finishes with exit code zero.
+- direct Accounting access to Payment JPA entities or repositories;
+- manual Payment finality mutation from Accounting;
+- blind financial replay after an unknown provider outcome;
+- fabrication or alteration of TFJ evidence;
+- direct database changes to force `MATCHED`, `INTEGRATED` or publication;
+- creation of a public or internal HTTP recovery endpoint outside an approved
+  contract and implementation lot.
