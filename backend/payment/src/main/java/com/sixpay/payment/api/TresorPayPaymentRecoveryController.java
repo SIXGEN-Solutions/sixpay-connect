@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
         description = "TRESOR PAY Payment recovery API"
 )
 @SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = "subscriptionKey")
 public final class TresorPayPaymentRecoveryController {
 
     private final TresorPayPaymentRecoveryUseCase recoveryUseCase;
@@ -52,8 +53,7 @@ public final class TresorPayPaymentRecoveryController {
             @Pattern(regexp = "^PAY-[0-9A-HJKMNP-TV-Z]{26}$")
             String paymentReference,
             @RequestHeader(
-                    name = IntegrationHttpHeaders.CORRELATION_ID,
-                    required = false
+                    name = IntegrationHttpHeaders.CORRELATION_ID
             )
             String correlationHeader
     ) {
