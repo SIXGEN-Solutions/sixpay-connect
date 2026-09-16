@@ -16,4 +16,4 @@ sixpay:
     tresorpay:
       subscription-key:
         enabled: ${SIXPAY_SECURITY_TRESORPAY_SUBSCRIPTION_KEY_ENABLED:true}
-        value: ${SIXPAY_SECURITY_TRESORPAY_SUBSCRIPTION_KEY_VALUE:xxxxxx}
+        value: ${SIXPAY_SECURITY_TRESORPAY_SUBSCRIPTION_KEY_VALUE}
