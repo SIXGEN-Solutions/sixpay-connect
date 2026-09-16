@@ -1,107 +1,57 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.common.time.TimeProvider;
+import com.sixpay.payment.application.command.CreatePaymentConfirmationCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.payment.application.port.output.idempotency.PaymentInitiationIdempotencyPort;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
 import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.view.PaymentConfirmationView;
+import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
+import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.Objects;
 
-/**
- * Coordinates the synchronous portion of {@code POST /v1/payments/initiate}.
- *
- * <p>The service first enters the idempotency boundary. Only a new request is
- * prepared and received by the Payment aggregate; a completed request is
- * returned from the durable replay store. A successful new call finishes input
- * {@link PaymentStatus#RECEIVED}; banking verification, confirmation,
- * authorization and posting are handled by separate workflow services.</p>
- */
+/** Synchronous InitiateDebit preparation through an ACTIVE OTP challenge. */
 @Service
-public class PaymentInitiationOrchestrationService
-        implements PaymentInitiationUseCase {
-
+public class PaymentInitiationOrchestrationService implements PaymentInitiationUseCase {
     private final PaymentInitiationIdempotencyPort idempotencyPort;
     private final PaymentInitiationPreparationPort preparationPort;
     private final PaymentReceptionService receptionService;
+    private final PaymentMutationCoordinator coordinator;
+    private final ObjectProvider<PaymentCustomerVerificationService> customerProvider;
+    private final ObjectProvider<PaymentConfirmationService> confirmationProvider;
+    private final PaymentPolicyBundle policies;
     private final TimeProvider timeProvider;
 
-    public PaymentInitiationOrchestrationService(
-            PaymentInitiationIdempotencyPort idempotencyPort,
-            PaymentInitiationPreparationPort preparationPort,
-            PaymentReceptionService receptionService,
-            TimeProvider timeProvider
-    ) {
-        this.idempotencyPort = Objects.requireNonNull(idempotencyPort);
-        this.preparationPort = Objects.requireNonNull(preparationPort);
-        this.receptionService = Objects.requireNonNull(receptionService);
-        this.timeProvider = Objects.requireNonNull(timeProvider);
+    public PaymentInitiationOrchestrationService(PaymentInitiationIdempotencyPort idempotencyPort, PaymentInitiationPreparationPort preparationPort, PaymentReceptionService receptionService, PaymentMutationCoordinator coordinator, ObjectProvider<PaymentCustomerVerificationService> customerProvider, ObjectProvider<PaymentConfirmationService> confirmationProvider, PaymentPolicyBundle policies, TimeProvider timeProvider) {
+        this.idempotencyPort=Objects.requireNonNull(idempotencyPort); this.preparationPort=Objects.requireNonNull(preparationPort); this.receptionService=Objects.requireNonNull(receptionService); this.coordinator=Objects.requireNonNull(coordinator); this.customerProvider=Objects.requireNonNull(customerProvider); this.confirmationProvider=Objects.requireNonNull(confirmationProvider); this.policies=Objects.requireNonNull(policies); this.timeProvider=Objects.requireNonNull(timeProvider);
     }
-
-    /**
-     * Initiates or replays a debit request under its idempotency key.
-     *
-     * @param command validated command containing partner, business and
-     *                request-control data
-     * @return the stable accepted result for this idempotency key
-     */
-    @Override
-    public InitiateDebitResult initiateDebit(
-            InitiateDebitCommand command
-    ) {
-        Objects.requireNonNull(command);
-
-        return idempotencyPort.execute(
-                command,
-                requestHash -> initiateNew(command, requestHash)
-        );
+    @Override public InitiateDebitResult initiateDebit(InitiateDebitCommand command) {
+        Objects.requireNonNull(command); return idempotencyPort.execute(command, hash -> initiateNew(command, hash));
     }
-
-    /**
-     * Performs the new-request path. The supplied hash is the exact
-     * fingerprint already registered by the idempotency adapter and becomes
-     * part of the Payment request identity.
-     */
-    private InitiateDebitResult initiateNew(
-            InitiateDebitCommand command,
-            String requestHash
-    ) {
-        Instant receivedAt = timeProvider.now();
-
-        PreparedPaymentInitiation prepared =
-                preparationPort.prepare(
-                        command,
-                        requestHash,
-                        receivedAt
-                );
-
-        PaymentWorkflowResult workflow =
-                receptionService.receive(
-                        prepared.paymentId(),
-                        prepared.publicPaymentReference(),
-                        prepared.intent(),
-                        prepared.receivedAt()
-                );
-
-        if (workflow.status()
-                != PaymentStatus.RECEIVED) {
-            throw new IllegalStateException(
-                    "InitiateDebit must durably persist Payment in RECEIVED"
-            );
-        }
-
-        return InitiateDebitResult.accepted(
-                workflow.paymentId(),
-                workflow.publicPaymentReference(),
-                command.endToEndId(),
-                Money.of(command.totalAmount(), command.currency()),
-                prepared.receivedAt()
-        );
+    private InitiateDebitResult initiateNew(InitiateDebitCommand command, String requestHash) {
+        Instant receivedAt=timeProvider.now();
+        PreparedPaymentInitiation prepared=preparationPort.prepare(command,requestHash,receivedAt);
+        PaymentWorkflowResult received=receptionService.receive(prepared.paymentId(),prepared.publicPaymentReference(),prepared.intent(),prepared.receivedAt());
+        if(received.status()!=PaymentStatus.RECEIVED) throw new IllegalStateException("InitiateDebit must first durably persist Payment in RECEIVED");
+        PaymentWorkflowResult pending=coordinator.mutate(received.paymentId(), payment -> { if(payment.status()==PaymentStatus.RECEIVED) payment.startBankingVerification(timeProvider.now()); });
+        if(pending.status()!=PaymentStatus.BANKING_VERIFICATION_PENDING) throw new IllegalStateException("InitiateDebit must enter BANKING_VERIFICATION_PENDING");
+        PaymentCustomerVerificationService customer=customerProvider.getIfAvailable();
+        if(customer==null) throw new IllegalStateException("Customer Verification bridge is unavailable");
+        PaymentWorkflowResult verified=customer.verifyCustomer(received.paymentId(),timeProvider.now(),policies);
+        if(verified.status()!=PaymentStatus.PENDING_CONFIRMATION) throw new IllegalStateException("InitiateDebit requires VERIFIED banking preparation before OTP creation; actual="+verified.status());
+        PaymentConfirmationService confirmation=confirmationProvider.getIfAvailable();
+        if(confirmation==null) throw new IllegalStateException("Payment Confirmation bridge is unavailable");
+        PaymentConfirmationView challenge=confirmation.create(new CreatePaymentConfirmationCommand(received.publicPaymentReference(),command.correlationId(),IdempotencyKey.of(command.idempotencyKey())));
+        if(challenge.status()!=ConfirmationChallengeStatus.ACTIVE) throw new IllegalStateException("InitiateDebit may return only after an ACTIVE confirmation challenge");
+        return InitiateDebitResult.awaitingOtp(received.paymentId(),received.publicPaymentReference(),command.endToEndId(),Money.of(command.totalAmount(),command.currency()),prepared.receivedAt(),challenge);
     }
 }
