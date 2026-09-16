@@ -68,14 +68,19 @@ public class PaymentConfirmationService
         Objects.requireNonNull(command, "Create confirmation command");
         Payment payment = requirePayment(command.paymentReference());
         requirePendingConfirmation(payment);
-        payment.toState()
+
+        ConfirmationChallenge existingChallenge = payment.toState()
                 .confirmationChallenge()
                 .filter(ConfirmationChallenge::active)
-                .ifPresent(existing -> {
-                    throw new IllegalStateException(
-                            "Payment already has an active confirmation challenge"
-                    );
-                });
+                .orElse(null);
+
+        if (existingChallenge != null) {
+            return PaymentConfirmationView.fromExisting(
+                    payment.publicPaymentReference(),
+                    existingChallenge
+            );
+        }
+
         BankingRequestContext context = bankingContext(
                 payment,
                 command.correlationId()
