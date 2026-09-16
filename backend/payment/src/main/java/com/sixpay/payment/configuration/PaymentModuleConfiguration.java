@@ -5,6 +5,7 @@ import com.sixpay.common.identifier.UuidIdentifierGenerator;
 import com.sixpay.common.time.SystemTimeProvider;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.PaymentModule;
+import com.sixpay.payment.application.service.PaymentInitiationDeadline;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntity;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditRepository;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyEntity;
@@ -19,6 +20,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.TypeExcludeFilter;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,6 +31,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import java.util.UUID;
 
 @AutoConfiguration
+@EnableConfigurationProperties(PaymentInitiationProperties.class)
 @ConditionalOnClass({
         EntityManager.class,
         JpaRepository.class
@@ -69,6 +72,14 @@ public class PaymentModuleConfiguration {
     @ConditionalOnMissingBean
     TimeProvider paymentTimeProvider() {
         return new SystemTimeProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PaymentInitiationDeadline paymentInitiationDeadline(
+            PaymentInitiationProperties properties
+    ) {
+        return new PaymentInitiationDeadline(properties.deadline());
     }
 
     @Bean
