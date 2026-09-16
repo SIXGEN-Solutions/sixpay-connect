@@ -20,7 +20,8 @@ public final class PaymentCustomerVerificationRequestFactory {
     public CustomerVerificationRequest from(
             Payment payment,
             UUID verificationId,
-            Instant requestedAt
+            Instant requestedAt,
+            Instant deadlineAt
     ) {
         Objects.requireNonNull(payment, "payment is required");
         Objects.requireNonNull(
@@ -28,6 +29,7 @@ public final class PaymentCustomerVerificationRequestFactory {
                 "verificationId is required"
         );
         Objects.requireNonNull(requestedAt, "requestedAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
 
         if (payment.status()
                 != PaymentStatus.BANKING_VERIFICATION_PENDING) {
@@ -60,7 +62,8 @@ public final class PaymentCustomerVerificationRequestFactory {
                         .correlationId()
                         .value(),
                 state.paymentId().value(),
-                requestedAt
+                requestedAt,
+                deadlineAt
         );
     }
 }

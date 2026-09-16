@@ -30,7 +30,7 @@ class PaymentInitiationOrchestrationServiceTest {
         when(prep.prepare(command,"a".repeat(64),NOW)).thenReturn(new PreparedPaymentInitiation(id,ref,intent,NOW));
         when(reception.receive(id,ref,intent,NOW)).thenReturn(flow(id,ref,PaymentStatus.RECEIVED,1));
         when(coordinator.mutate(any(),any())).thenReturn(flow(id,ref,PaymentStatus.BANKING_VERIFICATION_PENDING,2));
-        when(cp.getIfAvailable()).thenReturn(customer); when(customer.verifyCustomer(any(),any(),any())).thenReturn(flow(id,ref,PaymentStatus.PENDING_CONFIRMATION,3));
+        when(cp.getIfAvailable()).thenReturn(customer); when(customer.verifyCustomer(any(),any(),any(),any())).thenReturn(flow(id,ref,PaymentStatus.PENDING_CONFIRMATION,3));
         PaymentConfirmationView challenge=new PaymentConfirmationView(ref,ConfirmationChallengeStatus.ACTIVE,ConfirmationBusinessCode.CHALLENGE_ACTIVE,null,NOW,NOW.plusSeconds(300),null);
         when(fp.getIfAvailable()).thenReturn(confirmation); when(confirmation.create(any())).thenReturn(challenge);
         InitiateDebitResult result=new PaymentInitiationOrchestrationService(idem,prep,reception,coordinator,cp,fp,policies,()->NOW,new PaymentInitiationDeadline(java.time.Duration.ofSeconds(30))).initiateDebit(command);

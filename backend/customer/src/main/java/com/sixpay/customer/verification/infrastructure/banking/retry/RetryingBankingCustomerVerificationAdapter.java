@@ -1,6 +1,7 @@
 package com.sixpay.customer.verification.infrastructure.banking.retry;
 
 import com.sixpay.customer.verification.application.exception.BankingVerificationException;
+import com.sixpay.customer.verification.application.exception.BankingVerificationTimeoutException;
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.application.port.output.BankingVerificationQuery;
 import com.sixpay.customer.verification.application.port.output.BankingVerificationResponse;
@@ -10,7 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Bounded retry and observability decorator for the banking output port.
@@ -65,7 +71,7 @@ public final class RetryingBankingCustomerVerificationAdapter
         while (true) {
             try {
                 BankingVerificationResponse response =
-                        delegate.verify(query);
+                        verifyWithinRemainingBudget(query);
 
                 observation.success(
                         institution,
@@ -125,9 +131,75 @@ public final class RetryingBankingCustomerVerificationAdapter
                         maxAttempts
                 );
 
-                sleeper.sleep(retryBackoff);
+                Duration remaining = remaining(query.deadlineAt());
+                if (remaining.isZero() || remaining.isNegative()) {
+                    throw deadlineExceeded(null);
+                }
+                Duration boundedBackoff =
+                        retryBackoff.compareTo(remaining) < 0
+                                ? retryBackoff : remaining;
+                sleeper.sleep(boundedBackoff);
+                if (!Instant.now().isBefore(query.deadlineAt())) {
+                    throw deadlineExceeded(null);
+                }
                 attempt++;
             }
         }
+    }
+
+    private BankingVerificationResponse verifyWithinRemainingBudget(
+            BankingVerificationQuery query
+    ) {
+        Duration remaining = remaining(query.deadlineAt());
+        if (remaining.isZero() || remaining.isNegative()) {
+            throw deadlineExceeded(null);
+        }
+        FutureTask<BankingVerificationResponse> task =
+                new FutureTask<>(() -> delegate.verify(query));
+        Thread worker = Thread.ofVirtual()
+                .name("customer-banking-verification")
+                .start(task);
+        try {
+            return task.get(remaining.toNanos(), TimeUnit.NANOSECONDS);
+        } catch (TimeoutException timeout) {
+            task.cancel(true);
+            worker.interrupt();
+            throw deadlineExceeded(timeout);
+        } catch (InterruptedException interrupted) {
+            task.cancel(true);
+            worker.interrupt();
+            Thread.currentThread().interrupt();
+            throw new BankingVerificationTimeoutException(
+                    "Customer verification interrupted before deadline completion",
+                    interrupted
+            );
+        } catch (ExecutionException execution) {
+            Throwable cause = execution.getCause();
+            if (cause instanceof BankingVerificationException bankingFailure) {
+                throw bankingFailure;
+            }
+            if (cause instanceof RuntimeException runtimeFailure) {
+                throw runtimeFailure;
+            }
+            throw new IllegalStateException(
+                    "Unexpected Core Banking verification failure", cause
+            );
+        }
+    }
+
+    private static Duration remaining(Instant deadlineAt) {
+        if (Instant.MAX.equals(deadlineAt)) {
+            return Duration.ofDays(36500);
+        }
+        return Duration.between(Instant.now(), deadlineAt);
+    }
+
+    private static BankingVerificationTimeoutException deadlineExceeded(
+            Throwable cause
+    ) {
+        return new BankingVerificationTimeoutException(
+                "Customer verification exceeded the Payment initiation deadline",
+                cause
+        );
     }
 }

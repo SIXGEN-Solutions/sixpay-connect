@@ -70,8 +70,18 @@ public final class PaymentCustomerVerificationService {
             Instant decisionAt,
             PaymentPolicyBundle policies
     ) {
+        return verifyCustomer(paymentId, decisionAt, Instant.MAX, policies);
+    }
+
+    public PaymentWorkflowResult verifyCustomer(
+            PaymentId paymentId,
+            Instant decisionAt,
+            Instant deadlineAt,
+            PaymentPolicyBundle policies
+    ) {
         Objects.requireNonNull(paymentId, "paymentId is required");
         Objects.requireNonNull(decisionAt, "decisionAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
         Objects.requireNonNull(policies, "policies are required");
 
         UUID verificationId = idGenerator.forPayment(paymentId);
@@ -105,7 +115,8 @@ public final class PaymentCustomerVerificationService {
                             requestFactory.from(
                                     payment,
                                     verificationId,
-                                    decisionAt
+                                    decisionAt,
+                                    deadlineAt
                             );
 
                     CustomerVerificationResponse response;

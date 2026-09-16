@@ -54,7 +54,12 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
         if(pending.status()!=PaymentStatus.BANKING_VERIFICATION_PENDING) throw new IllegalStateException("InitiateDebit must enter BANKING_VERIFICATION_PENDING");
         PaymentCustomerVerificationService customer=customerProvider.getIfAvailable();
         if(customer==null) throw new IllegalStateException("Customer Verification bridge is unavailable");
-        PaymentWorkflowResult verified=customer.verifyCustomer(received.paymentId(),timeProvider.now(),policies);
+        PaymentWorkflowResult verified=customer.verifyCustomer(
+                received.paymentId(),
+                timeProvider.now(),
+                initiationDeadline.deadlineAt(prepared.receivedAt()),
+                policies
+        );
         failIfDeadlineExpired(received.paymentId(),prepared.receivedAt());
         if(verified.status()!=PaymentStatus.PENDING_CONFIRMATION) throw new IllegalStateException("InitiateDebit requires VERIFIED banking preparation before OTP creation; actual="+verified.status());
         PaymentConfirmationService confirmation=confirmationProvider.getIfAvailable();

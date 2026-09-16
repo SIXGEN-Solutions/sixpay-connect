@@ -15,5 +15,9 @@ public final class PaymentInitiationDeadline {
         Objects.requireNonNull(observedAt,"Observed instant");
         return !observedAt.isBefore(receivedAt.plus(duration));
     }
+    public Instant deadlineAt(Instant receivedAt) {
+        Objects.requireNonNull(receivedAt, "Received instant");
+        return receivedAt.plus(duration);
+    }
     public Duration duration(){ return duration; }
 }
