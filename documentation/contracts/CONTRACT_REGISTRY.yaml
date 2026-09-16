@@ -142,9 +142,9 @@ contracts:
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     security:
       active:
         - "BEARER_AUTHORIZATION_TOKEN"
