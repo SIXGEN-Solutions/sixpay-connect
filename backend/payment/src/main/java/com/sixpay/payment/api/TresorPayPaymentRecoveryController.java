@@ -65,10 +65,7 @@ public final class TresorPayPaymentRecoveryController {
                         PublicPaymentReference.of(paymentReference)
                 )
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Payment not found for public reference "
-                                        + paymentReference
-                        )
+                        new PaymentNotFoundException(paymentReference)
                 );
 
         var response = new TresorPayPaymentRecoveryResponse(
