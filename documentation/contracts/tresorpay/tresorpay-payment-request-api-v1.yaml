@@ -3,16 +3,26 @@ openapi: 3.1.0
 info:
   title: SIXPAY CONNECT - TRESOR PAY Payment Request API
   version: 1.0.0
-  summary: Receive a TRESOR PAY payment order for asynchronous bank processing.
+  summary: Receive a TRESOR PAY payment order and prepare customer OTP confirmation.
   description: |
     Normative inbound contract used by TRESOR PAY to submit a payment order to
     SIXPAY CONNECT.
 
-    A successful `202 Accepted` response confirms only that SIXPAY has
-    authenticated, validated and durably persisted the request. It does not
-    confirm the banking verification, debit, CUT credit or TFJ integration.
-    Those outcomes are returned through the versioned immediate-result and
-    final-result notification contracts.
+    A successful initiation response is returned only after SIXPAY has
+    authenticated, validated and durably persisted the request, completed the
+    mandatory banking customer/account/KYC verification with outcome VERIFIED,
+    created the initial bank-owned OTP challenge and durably recorded that
+    challenge as ACTIVE. The returned Payment state is `AWAITING_OTP`.
+
+    The initiation call is bounded by a configurable 30-second end-to-end
+    preparation deadline. If the required banking preparation cannot reach a
+    stable ACTIVE challenge within that deadline, SIXPAY records the Payment as
+    failed for a technical cause and does not create a late OTP challenge after
+    the response lifecycle has ended.
+
+    `AWAITING_OTP` confirms only readiness for customer confirmation. It does
+    not confirm OTP verification, sufficient funds, debit, CUT credit or TFJ
+    integration.
 
     The TRESOR PAY source document calls this operation `InitiateDebit` and
     uses `endToEndId` as the unique payment reference. This contract preserves
@@ -117,10 +127,15 @@ paths:
       summary: Submit a TRESOR PAY payment order
       description: |
         Authenticates and validates the request, enforces idempotency and
-        durably persists Payment before any call to Amplitude.
+        durably persists Payment before any call to Amplitude. SIXPAY then
+        completes mandatory banking customer/account/KYC verification and
+        creates the initial OTP challenge.
 
-        `202 Accepted` is an intake acknowledgement. Banking controls and
-        financial posting continue asynchronously.
+        A successful response is returned only after the challenge is durably
+        ACTIVE and the public Payment state is `AWAITING_OTP`. The complete
+        initiation preparation is bounded by a configurable 30-second
+        end-to-end deadline. Financial authorization and posting remain later
+        steps.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/CorrelationId'
@@ -173,10 +188,12 @@ paths:
                   metadata:
                     source-channel: "TRESOR_PAY"
       responses:
-        '202':
+        '200':
           description: |
-            Request durably accepted for asynchronous processing. The same
-            acknowledgement is returned for an accepted replay.
+            Payment durably prepared for customer confirmation. Banking
+            customer/account/KYC verification is VERIFIED, the initial OTP
+            challenge is ACTIVE and the public Payment state is `AWAITING_OTP`.
+            The same stable result is returned for an accepted replay.
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
@@ -196,7 +213,7 @@ paths:
                     paymentId: "aa686337-700d-4b66-a9ec-a284ed821f68"
                     paymentReference: "PAY-DEMO-2026-000001"
                     tresorPayPaymentReference: "AVI-DEMO-00045678"
-                    status: "RECEIVED"
+                    status: "AWAITING_OTP"
                     receivedAt: "2026-08-03T10:30:01Z"
                     correlationId: "57db67dc-5112-4e4e-bfc2-5ac50f66ba87"
         '400':
@@ -211,6 +228,55 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/integrations/tresorpay/payments/{paymentReference}:
+    get:
+      tags:
+        - TRESOR PAY payments
+      operationId: getTresorPayPayment
+      summary: Recover the current SIXPAY Payment state
+      description: |
+        Returns the current public Payment state for recovery when the
+        `initiateDebit` HTTP response was lost or its outcome is uncertain.
+
+        TRESOR PAY must use this operation before creating a new logical
+        payment after a transport failure. The lookup never triggers banking
+        verification, OTP creation, OTP resend, posting or financial replay.
+      parameters:
+        - name: paymentReference
+          in: path
+          required: true
+          description: Stable SIXPAY public Payment reference returned by initiation.
+          schema:
+            type: string
+            minLength: 30
+            maxLength: 30
+            pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Current public Payment recovery view.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecoveryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -297,7 +363,7 @@ components:
       schema:
         type: string
         format: uri-reference
-      example: "/api/v1/payments/aa686337-700d-4b66-a9ec-a284ed821f68"
+      example: "/api/v1/integrations/tresorpay/payments/PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X"
 
   schemas:
     PaymentRequest:
@@ -557,16 +623,49 @@ components:
           maxLength: 100
         status:
           type: string
-          const: "RECEIVED"
+          const: "AWAITING_OTP"
           description: |
-            Durable intake state only. It does not mean ACCEPTED, DEBITED,
-            CUT_CREDITED or TREASURY_INTEGRATED.
+            The initial bank-owned confirmation challenge is ACTIVE and
+            customer OTP entry may begin. No funds, posting or finality
+            success is implied.
         receivedAt:
           type: string
           format: date-time
         correlationId:
           type: string
           format: uuid
+
+    PaymentRecoveryResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - status
+      description: |
+        Read-only public recovery projection for TRESOR PAY. It never exposes
+        the internal bank challenge reference and never triggers side effects.
+      properties:
+        paymentReference:
+          type: string
+          minLength: 30
+          maxLength: 30
+          pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        status:
+          type: string
+          enum:
+            - AWAITING_OTP
+            - FAILED
+            - CUT_CREDITED
+            - TREASURY_INTEGRATED
+        failureCategory:
+          type: string
+          description: Present only when the Payment is terminally failed.
+          enum:
+            - TECHNICAL
+        failureReason:
+          type: string
+          maxLength: 200
+          description: Safe normalized reason with no provider-internal detail.
 
     ProblemDetail:
       type: object
@@ -610,6 +709,7 @@ components:
             - AUTHORIZATION_KEY_UNAVAILABLE
             - IDEMPOTENCY_CONFLICT
             - PAYMENT_REFERENCE_CONFLICT
+            - PAYMENT_NOT_FOUND
             - FINANCIAL_INSTITUTION_UNSUPPORTED
             - SUBSCRIPTION_REFERENCE_INVALID
             - DEBTOR_ACCOUNT_REFERENCE_INVALID
@@ -724,6 +824,16 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Payment not found.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
     InternalServerError:
       description: Unexpected SIXPAY failure before a safe result is available
       headers:

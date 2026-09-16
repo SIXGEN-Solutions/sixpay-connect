@@ -293,7 +293,7 @@ readinessEvidence:
     - command: "npm run verify:contract-consolidation"
       workingDirectory: "frontend"
       status: "PASSED"
-    - command: "npm run verify:sixpay"
+    - command: "npm run verify:quality"
       workingDirectory: "frontend"
       status: "PASSED"
     - command: "mvn verify"

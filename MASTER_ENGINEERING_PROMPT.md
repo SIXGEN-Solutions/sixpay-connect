@@ -497,7 +497,7 @@ mvn -Pfull-tests clean verify
 
 # Depuis frontend/
 npm ci
-npm run verify:sixpay
+npm run verify:quality
 npm run verify:ci
 ```
 

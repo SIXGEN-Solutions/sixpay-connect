@@ -159,7 +159,9 @@ contracts:
         - "Receive a TRESOR PAY payment order"
         - "Enforce idempotency and correlation"
         - "Durably persist Payment before any Amplitude call"
-        - "Acknowledge intake without claiming banking success"
+        - "Complete VERIFIED banking customer/account/KYC preparation before response"
+        - "Create and durably persist the initial bank-owned OTP challenge before returning AWAITING_OTP"
+        - "Expose read-only Payment recovery when the initiation response is lost or uncertain"
       constraints:
         - "TRESOR PAY remains the subscription system of record"
         - "No local subscription validation"
@@ -167,6 +169,10 @@ contracts:
         - "No synchronous TRESOR PAY subscription-verification call in the MVP"
         - "Treasury beneficiaries must resolve to bank-controlled configuration"
         - "Credentials are forbidden in the JSON payload"
+        - "Successful initiation returns only after the initial confirmation challenge is ACTIVE"
+        - "The initiation preparation deadline is 30 seconds and remains runtime-configurable"
+        - "Deadline exhaustion before an ACTIVE challenge records the Payment as failed with a technical cause and forbids late challenge creation"
+        - "GET Payment recovery is read-only and never triggers OTP or financial replay"
     approvalPrerequisite:
       - "TRESOR PAY contract owner approval"
       - "SIXPAY Payment and Integration approval"
@@ -226,7 +232,6 @@ contracts:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
       requiredScopes:
-        create: "payment.confirmation.create"
         verify: "payment.confirmation.verify"
         resend: "payment.confirmation.resend"
         read: "payment.confirmation.read"
@@ -234,7 +239,7 @@ contracts:
     mvpUsage:
       included: true
       purpose:
-        - "Create and send a customer confirmation challenge for an existing Payment"
+        - "Read the current normalized challenge state created during Payment initiation"
         - "Synchronously verify the customer OTP"
         - "Replace and resend the current challenge"
         - "Read the current normalized challenge state"
@@ -245,7 +250,8 @@ contracts:
         - "La Regionale owns OTP generation, storage, delivery and verification"
         - "SIXPAY never persists OTP"
         - "challengeReference remains internal to SIXPAY"
-        - "Create and resend have no public request body"
+        - "Initial challenge creation is internal to SIXPAY initiation and has no public TRESOR PAY endpoint"
+        - "Resend has no public request body"
         - "GET returns the current challenge only"
         - "No public revoke endpoint"
         - "OTP success does not establish funds availability or posting success"
