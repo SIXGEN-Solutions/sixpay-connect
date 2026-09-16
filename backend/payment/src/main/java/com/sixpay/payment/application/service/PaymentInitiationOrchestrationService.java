@@ -7,6 +7,7 @@ import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.payment.application.port.output.idempotency.PaymentInitiationIdempotencyPort;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
+import com.sixpay.payment.application.exception.PaymentCustomerVerificationRetryableException;
 import com.sixpay.payment.application.view.InitiateDebitResult;
 import com.sixpay.payment.application.view.PaymentConfirmationView;
 import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
@@ -54,18 +55,34 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
         if(pending.status()!=PaymentStatus.BANKING_VERIFICATION_PENDING) throw new IllegalStateException("InitiateDebit must enter BANKING_VERIFICATION_PENDING");
         PaymentCustomerVerificationService customer=customerProvider.getIfAvailable();
         if(customer==null) throw new IllegalStateException("Customer Verification bridge is unavailable");
-        PaymentWorkflowResult verified=customer.verifyCustomer(
-                received.paymentId(),
-                timeProvider.now(),
-                initiationDeadline.deadlineAt(prepared.receivedAt()),
-                policies
-        );
+        PaymentWorkflowResult verified;
+        try {
+            verified=customer.verifyCustomer(
+                    received.paymentId(),
+                    timeProvider.now(),
+                    initiationDeadline.deadlineAt(prepared.receivedAt()),
+                    policies
+            );
+        } catch (PaymentCustomerVerificationRetryableException failure) {
+            if (initiationDeadline.expired(prepared.receivedAt(), timeProvider.now())) {
+                failInitiationDeadline(received.paymentId(), timeProvider.now());
+            }
+            throw failure;
+        }
         failIfDeadlineExpired(received.paymentId(),prepared.receivedAt());
         if(verified.status()!=PaymentStatus.PENDING_CONFIRMATION) throw new IllegalStateException("InitiateDebit requires VERIFIED banking preparation before OTP creation; actual="+verified.status());
         PaymentConfirmationService confirmation=confirmationProvider.getIfAvailable();
         if(confirmation==null) throw new IllegalStateException("Payment Confirmation bridge is unavailable");
         failIfDeadlineExpired(received.paymentId(),prepared.receivedAt());
-        PaymentConfirmationView challenge=confirmation.create(new CreatePaymentConfirmationCommand(received.publicPaymentReference(),command.correlationId(),IdempotencyKey.of(command.idempotencyKey())));
+        PaymentConfirmationView challenge=confirmation.createBefore(
+                new CreatePaymentConfirmationCommand(
+                        received.publicPaymentReference(),
+                        command.correlationId(),
+                        IdempotencyKey.of(command.idempotencyKey())
+                ),
+                initiationDeadline.deadlineAt(prepared.receivedAt()),
+                timeProvider
+        );
         if(challenge.status()!=ConfirmationChallengeStatus.ACTIVE) throw new IllegalStateException("InitiateDebit may return only after an ACTIVE confirmation challenge");
         return InitiateDebitResult.awaitingOtp(received.paymentId(),received.publicPaymentReference(),command.endToEndId(),Money.of(command.totalAmount(),command.currency()),prepared.receivedAt(),challenge);
     }
@@ -73,16 +90,20 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
     private void failIfDeadlineExpired(PaymentId paymentId, Instant receivedAt) {
         Instant now=timeProvider.now();
         if(!initiationDeadline.expired(receivedAt,now)) return;
+        failInitiationDeadline(paymentId, now);
+    }
+
+    private void failInitiationDeadline(PaymentId paymentId, Instant failedAt) {
         PaymentFailure failure=new PaymentFailure(
                 FailureCode.of("INITIATION_DEADLINE_EXCEEDED"),
                 FailureCategory.TECHNICAL_FAILURE,
                 FailureStage.BANKING_VERIFICATION,
                 RetryDisposition.OPERATOR_ACTION_REQUIRED,
                 "Payment initiation deadline exceeded",
-                now,
+                failedAt,
                 null
         );
-        coordinator.mutate(paymentId,payment -> payment.failInitiationDeadline(failure,now));
+        coordinator.mutate(paymentId,payment -> payment.failInitiationDeadline(failure,failedAt));
         throw new IllegalStateException("Payment initiation deadline exceeded");
     }
 }

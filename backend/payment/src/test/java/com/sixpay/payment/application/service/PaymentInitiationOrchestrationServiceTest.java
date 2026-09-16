@@ -32,10 +32,10 @@ class PaymentInitiationOrchestrationServiceTest {
         when(coordinator.mutate(any(),any())).thenReturn(flow(id,ref,PaymentStatus.BANKING_VERIFICATION_PENDING,2));
         when(cp.getIfAvailable()).thenReturn(customer); when(customer.verifyCustomer(any(),any(),any(),any())).thenReturn(flow(id,ref,PaymentStatus.PENDING_CONFIRMATION,3));
         PaymentConfirmationView challenge=new PaymentConfirmationView(ref,ConfirmationChallengeStatus.ACTIVE,ConfirmationBusinessCode.CHALLENGE_ACTIVE,null,NOW,NOW.plusSeconds(300),null);
-        when(fp.getIfAvailable()).thenReturn(confirmation); when(confirmation.create(any())).thenReturn(challenge);
+        when(fp.getIfAvailable()).thenReturn(confirmation); when(confirmation.createBefore(any(),any(),any())).thenReturn(challenge);
         InitiateDebitResult result=new PaymentInitiationOrchestrationService(idem,prep,reception,coordinator,cp,fp,policies,()->NOW,new PaymentInitiationDeadline(java.time.Duration.ofSeconds(30))).initiateDebit(command);
         assertThat(result.status()).isEqualTo(InitiateDebitStatus.AWAITING_OTP); assertThat(result.confirmationChallenge().status()).isEqualTo(ConfirmationChallengeStatus.ACTIVE);
-        Mockito.verify(confirmation, Mockito.times(1)).create(any());
+        Mockito.verify(confirmation, Mockito.times(1)).createBefore(any(),any(),any());
     }
     private static PaymentWorkflowResult flow(PaymentId id,PublicPaymentReference ref,PaymentStatus s,long v){ return new PaymentWorkflowResult(id,ref,s,v,true); }
     private static InitiateDebitCommand command(){ return new InitiateDebitCommand("TRESOR_PAY","TRESOR_PAY","TP_APP_001","AVI-2025-00045678",new BigDecimal("600000"),"XAF","10005-00001-12345678901-12","Société ABC SARL",ClaimType.AVI,"100200300",NOW,List.of(new InitiateDebitBeneficiaryCommand("10005-00001-TRESDGI-97",new BigDecimal("600000"))),"https://tresorpay.cm/callback","IDEMPOTENCY-00000001",CorrelationId.of("11111111-1111-1111-1111-111111111111")); }
