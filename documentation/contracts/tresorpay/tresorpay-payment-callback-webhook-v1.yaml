@@ -1,0 +1,361 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - TRESOR PAY Payment Callback Webhook
+  version: 1.0.0
+  description: |
+    Common callback used by SIXPAY on the single callback URL supplied and
+    allow-listed by TRESOR PAY.
+
+    The same runtime callback URL receives the two approved facts:
+    CUT_CREDITED and TREASURY_INTEGRATED. eventType discriminates the payload.
+
+    CUT_CREDITED means the immediate CUT credit is durably known; it is not TFJ
+    finality. TREASURY_INTEGRATED is emitted only after the successful TFJ /
+    Treasury result is durably persisted and uniquely matched.
+
+    The callback URL is environment-specific external configuration owned by
+    TRESOR PAY and is not hard-coded by SIXPAY.
+
+    Delivery is at-least-once. eventId identifies one immutable logical event
+    and is preserved across retries. X-Webhook-Delivery-ID identifies one
+    transport attempt and changes on retry. A delivery retry never replays a
+    banking operation.
+
+    HTTP 204 means durable first acceptance or acceptance of an identical
+    replay. The same eventId with a different canonical payload returns 409.
+    Delivery order is not guaranteed; paymentVersion is monotonic per Payment.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryIds:
+      - "tresorpay-payment-status-webhook-v1"
+      - "tresorpay-treasury-integration-webhook-v1"
+    capabilities:
+      - "PAYMENT_STATUS_NOTIFICATION"
+      - "TREASURY_INTEGRATION_NOTIFICATION"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    deliverySemantics: "AT_LEAST_ONCE"
+    callbackUrlOwnership: "TRESOR_PAY"
+    callbackUrlConfiguration: "EXTERNAL_RUNTIME_CONFIGURATION"
+    eventTypes: ["CUT_CREDITED", "TREASURY_INTEGRATED"]
+    limitations:
+      - "NO_FINANCIAL_COMMAND"
+      - "NO_AUTOMATIC_REVERSAL"
+      - "NO_SUBSCRIPTION_LIFECYCLE_UPDATE"
+
+servers:
+  - url: https://tresorpay.example
+    description: Documentation placeholder only; the complete runtime callback URL is supplied by TRESOR PAY.
+
+security:
+  - bearerAuth: []
+    subscriptionKey: []
+
+tags:
+  - name: Payment callback
+    description: Common idempotent callback for approved SIXPAY Payment lifecycle facts.
+
+paths:
+  /:
+    post:
+      tags: [Payment callback]
+      operationId: receiveSixpayPaymentCallback
+      summary: Receive a SIXPAY Payment callback event
+      description: |
+        SIXPAY invokes the single callback URL supplied by TRESOR PAY.
+        TRESOR PAY validates credentials, timestamp freshness and the HMAC
+        signature over the raw body before parsing it.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/DeliveryId'
+        - $ref: '#/components/parameters/DeliveryAttempt'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureKeyId'
+        - $ref: '#/components/parameters/SignatureTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCallbackEvent'
+      responses:
+        '204':
+          description: Event durably accepted or identical event already processed
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/EventConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived service token issued for SIXPAY callback delivery.
+    subscriptionKey:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+      description: TRESOR PAY subscription key provisioned to SIXPAY.
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: Must equal correlationId in the event body.
+      schema: { type: string, format: uuid }
+    EventId:
+      name: X-Webhook-Event-ID
+      in: header
+      required: true
+      description: Must equal immutable eventId in the event body.
+      schema: { type: string, format: uuid }
+    DeliveryId:
+      name: X-Webhook-Delivery-ID
+      in: header
+      required: true
+      description: New UUID for each transport attempt; eventId and payload remain unchanged.
+      schema: { type: string, format: uuid }
+    DeliveryAttempt:
+      name: X-Webhook-Delivery-Attempt
+      in: header
+      required: true
+      schema: { type: integer, minimum: 1, maximum: 12 }
+    Signature:
+      name: X-SIXPAY-Signature
+      in: header
+      required: true
+      description: |
+        v1=<base64url-signature>, HMAC-SHA256(secret, signingInput), where
+        signingInput is timestamp + "." + HTTP_METHOD + "." + request_target +
+        "." + base64url(SHA-256(raw_request_body)).
+      schema:
+        type: string
+        pattern: '^v1=[A-Za-z0-9_-]{43}$'
+    SignatureKeyId:
+      name: X-SIXPAY-Signature-Key-ID
+      in: header
+      required: true
+      description: Identifier of the active shared secret, supporting rotation.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        pattern: '^[A-Za-z0-9._-]+$'
+    SignatureTimestamp:
+      name: X-SIXPAY-Signature-Timestamp
+      in: header
+      required: true
+      description: Unix epoch seconds accepted only within a five-minute window.
+      schema:
+        type: string
+        pattern: '^[0-9]{10}$'
+
+  headers:
+    CorrelationId:
+      required: true
+      description: End-to-end correlation identifier.
+      schema: { type: string, format: uuid }
+    RetryAfter:
+      description: Delay in seconds before the next delivery attempt.
+      schema: { type: integer, minimum: 1 }
+
+  schemas:
+    PaymentCallbackEvent:
+      oneOf:
+        - $ref: '#/components/schemas/CutCreditedEvent'
+        - $ref: '#/components/schemas/TreasuryIntegratedEvent'
+      discriminator:
+        propertyName: eventType
+        mapping:
+          CUT_CREDITED: '#/components/schemas/CutCreditedEvent'
+          TREASURY_INTEGRATED: '#/components/schemas/TreasuryIntegratedEvent'
+
+    BaseEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - schemaVersion
+        - eventId
+        - eventType
+        - occurredAt
+        - correlationId
+        - paymentId
+        - paymentReference
+        - tresorPayPaymentReference
+        - financialInstitutionCode
+        - paymentVersion
+        - data
+      properties:
+        schemaVersion: { type: string, const: '1.0' }
+        eventId:
+          type: string
+          format: uuid
+          description: Immutable logical-event idempotency key.
+        eventType:
+          type: string
+          enum: [CUT_CREDITED, TREASURY_INTEGRATED]
+        occurredAt: { type: string, format: date-time }
+        correlationId: { type: string, format: uuid }
+        causationId:
+          type: [string, 'null']
+          format: uuid
+        paymentId: { type: string, format: uuid }
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        tresorPayPaymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+        paymentVersion:
+          type: integer
+          minimum: 1
+          description: Monotonic Payment version used for out-of-order delivery.
+        data: { type: object }
+
+    CutCreditedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            eventType: { type: string, const: CUT_CREDITED }
+            data: { $ref: '#/components/schemas/CutCreditedData' }
+
+    TreasuryIntegratedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            eventType: { type: string, const: TREASURY_INTEGRATED }
+            data: { $ref: '#/components/schemas/TreasuryIntegratedData' }
+
+    CutCreditedData:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - bankPostingReference
+        - bankDebitReference
+        - bankCutCreditReference
+        - creditedAt
+        - immediateResult
+        - tfjFinality
+      properties:
+        amount: { $ref: '#/components/schemas/Money' }
+        bankPostingReference: { $ref: '#/components/schemas/BankReference' }
+        bankDebitReference: { $ref: '#/components/schemas/BankReference' }
+        bankCutCreditReference: { $ref: '#/components/schemas/BankReference' }
+        creditedAt: { type: string, format: date-time }
+        immediateResult: { type: string, const: POSTED_PENDING_TFJ }
+        tfjFinality: { type: boolean, const: false }
+
+    TreasuryIntegratedData:
+      type: object
+      additionalProperties: false
+      required:
+        - businessDate
+        - bankPostingReference
+        - tfjConfirmationId
+        - integratedAt
+      properties:
+        businessDate: { type: string, format: date }
+        bankPostingReference: { $ref: '#/components/schemas/BankReference' }
+        tfjConfirmationId: { type: string, format: uuid }
+        tfjBatchReference:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9._:/-]+$'
+        integratedAt: { type: string, format: date-time }
+
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amount, currency]
+      properties:
+        amount:
+          type: string
+          pattern: '^-?[0-9]+(\.[0-9]{1,2})?$'
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    PaymentReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: '^[A-Za-z0-9._:/-]+$'
+    FinancialInstitutionCode:
+      type: string
+      minLength: 2
+      maxLength: 35
+      pattern: '^[A-Z0-9._-]+$'
+    BankReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: '^[A-Za-z0-9._:/-]+$'
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string, format: uri }
+        code: { type: string }
+        correlationId: { type: string, format: uuid }
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    Unauthorized:
+      description: Authentication failed
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    Forbidden:
+      description: Caller is authenticated but not authorized
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    EventConflict:
+      description: Same eventId already accepted with a different canonical payload
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    UnprocessableEntity:
+      description: Semantically invalid event
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    TooManyRequests:
+      description: Rate limit reached
+      headers: { Retry-After: { $ref: '#/components/headers/RetryAfter' } }
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    InternalServerError:
+      description: Internal receiver failure
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    BadGateway:
+      description: Upstream gateway failure
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    ServiceUnavailable:
+      description: Receiver temporarily unavailable
+      headers: { Retry-After: { $ref: '#/components/headers/RetryAfter' } }
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    GatewayTimeout:
+      description: Receiver gateway timeout
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }

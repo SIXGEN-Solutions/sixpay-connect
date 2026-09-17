@@ -454,7 +454,7 @@ contracts:
     approvalPrerequisite: []
 
   - id: "tresorpay-payment-status-webhook-v1"
-    path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml"
     domain: "integration"
     businessOwner: "payment"
     deliveryOwner: "notification"
@@ -463,7 +463,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     mvpUsage:
@@ -531,7 +531,7 @@ contracts:
       - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
 
   - id: "tresorpay-treasury-integration-webhook-v1"
-    path: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml"
     domain: "integration"
     businessOwner: "payment"
     deliveryOwner: "notification"
@@ -540,7 +540,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     mvpUsage:
