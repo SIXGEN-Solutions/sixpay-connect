@@ -9,6 +9,7 @@ import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.event.PaymentEndOfDayConfirmationRecorded;
 import com.sixpay.payment.domain.event.PaymentEventOutcomeRecorded;
 import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
 import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
@@ -81,7 +82,12 @@ public class PaymentCallbackPlanFactory {
         } else {
             EndOfDayConfirmationSnapshot tfj = state.endOfDayConfirmationEvidence()
                     .filter(snapshot -> snapshot.tfjStatus() == TfjStatus.INTEGRATED)
-                    .orElseThrow(() -> new IllegalStateException("TREASURY_INTEGRATED requires integrated TFJ evidence"));
+                    .orElseThrow(() -> new IllegalStateException(
+                            "TREASURY_INTEGRATED requires durable integrated TFJ evidence"));
+            if (state.status() != PaymentStatus.TREASURY_INTEGRATED) {
+                throw new IllegalStateException(
+                        "TREASURY_INTEGRATED requires durable Payment finality");
+            }
             data = new PaymentStatusCallbackMessage.TreasuryIntegratedData(
                     tfj.businessDate(),
                     tfj.principalBankPostingReference(),
@@ -106,7 +112,10 @@ public class PaymentCallbackPlanFactory {
 
     private static String callbackType(PaymentAuditEntry current) {
         if (current.paymentStatus() == PaymentStatus.TREASURY_INTEGRATED) {
-            return PaymentStatusCallbackMessage.TREASURY_INTEGRATED;
+            return PaymentEndOfDayConfirmationRecorded.class.getSimpleName()
+                    .equals(current.eventType())
+                    ? PaymentStatusCallbackMessage.TREASURY_INTEGRATED
+                    : null;
         }
 
         if (current.paymentStatus() != PaymentStatus.POSTED_PENDING_TFJ) {

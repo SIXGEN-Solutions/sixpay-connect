@@ -1,6 +1,7 @@
 package com.sixpay.payment.infrastructure.callback.relay;
 
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackMessage;
+import com.sixpay.payment.domain.event.PaymentEndOfDayConfirmationRecorded;
 import com.sixpay.payment.domain.event.PaymentEventOutcomeRecorded;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntry;
@@ -54,6 +55,35 @@ class PaymentCallbackPlanFactoryTest {
         );
 
         assertThat(method.invoke(null, unknown)).isNull();
+    }
+
+    @Test
+    void treasuryIntegratedIsBoundToDurableTfjConfirmationEvent() throws Exception {
+        var method = PaymentCallbackPlanFactory.class
+                .getDeclaredMethod("callbackType", PaymentAuditEntry.class);
+        method.setAccessible(true);
+
+        PaymentAuditEntry integrated = audit(
+                PaymentEndOfDayConfirmationRecorded.class.getSimpleName(),
+                PaymentStatus.TREASURY_INTEGRATED
+        );
+
+        assertThat(method.invoke(null, integrated))
+                .isEqualTo(PaymentStatusCallbackMessage.TREASURY_INTEGRATED);
+    }
+
+    @Test
+    void treasuryIntegratedStatusFromAnotherEventDoesNotEmitCallback() throws Exception {
+        var method = PaymentCallbackPlanFactory.class
+                .getDeclaredMethod("callbackType", PaymentAuditEntry.class);
+        method.setAccessible(true);
+
+        PaymentAuditEntry unrelated = audit(
+                "PaymentFinalResultAvailable",
+                PaymentStatus.TREASURY_INTEGRATED
+        );
+
+        assertThat(method.invoke(null, unrelated)).isNull();
     }
 
     private static PaymentAuditEntry audit(
