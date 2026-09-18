@@ -41,6 +41,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentFinalizationService.java",
                 "PaymentFundsControlRequestFactory.java",
                 "PaymentFundsControlService.java",
+                "PaymentInitiationDeadline.java",
                 "PaymentInitiationOrchestrationService.java",
                 "PaymentInitiationInProgressException.java",
                 "PaymentMutationCoordinator.java",
@@ -59,6 +60,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
                 "SecuredPaymentProjectionQueryService.java",
+                "TresorPayPaymentRecoveryService.java",
                 "package-info.java"
         );
 

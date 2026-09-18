@@ -19,7 +19,8 @@ public record BankingVerificationQuery(
         AccountBindingFingerprint accountBindingFingerprint,
         BankingAccountAccessReference bankingAccountAccessReference,
         CustomerVerificationContext context,
-        Instant requestedAt
+        Instant requestedAt,
+        Instant deadlineAt
 ) {
 
     public BankingVerificationQuery {
@@ -39,6 +40,24 @@ public record BankingVerificationQuery(
         );
         context = Objects.requireNonNull(context, "context is required");
         requestedAt = Objects.requireNonNull(requestedAt, "requestedAt is required");
+        deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");
+        if (!deadlineAt.isAfter(requestedAt)) {
+            throw new IllegalArgumentException("deadlineAt must be after requestedAt");
+        }
+    }
+
+    public BankingVerificationQuery(
+            CustomerVerificationId verificationId,
+            CustomerVerificationSubject subject,
+            FinancialInstitutionCode financialInstitutionCode,
+            AccountBindingFingerprint accountBindingFingerprint,
+            BankingAccountAccessReference bankingAccountAccessReference,
+            CustomerVerificationContext context,
+            Instant requestedAt
+    ) {
+        this(verificationId, subject, financialInstitutionCode,
+                accountBindingFingerprint, bankingAccountAccessReference,
+                context, requestedAt, Instant.MAX);
     }
 
     @Override

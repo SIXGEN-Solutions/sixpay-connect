@@ -20,7 +20,8 @@ public record CustomerVerificationRequest(
         String integrationAccountToken,
         String correlationId,
         UUID causationId,
-        Instant requestedAt
+        Instant requestedAt,
+        Instant deadlineAt
 ) {
 
     public CustomerVerificationRequest {
@@ -53,6 +54,22 @@ public record CustomerVerificationRequest(
                 requestedAt,
                 "requestedAt is required"
         );
+        deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");
+        if (!deadlineAt.isAfter(requestedAt)) {
+            throw new IllegalArgumentException("deadlineAt must be after requestedAt");
+        }
+    }
+
+    public CustomerVerificationRequest(
+            UUID verificationId, String customerNiu, String customerLegalName,
+            String financialInstitutionCode, String accountBindingFingerprint,
+            String integrationAccountToken, String correlationId,
+            UUID causationId, Instant requestedAt
+    ) {
+        this(verificationId, customerNiu, customerLegalName,
+                financialInstitutionCode, accountBindingFingerprint,
+                integrationAccountToken, correlationId, causationId,
+                requestedAt, Instant.MAX);
     }
 
     private static String requireText(

@@ -149,6 +149,39 @@ public final class Payment {
     }
 
     /**
+     * Terminates synchronous initiation when its global deadline expires.
+     */
+    public void failInitiationDeadline(PaymentFailure failure, Instant failedAt) {
+        Objects.requireNonNull(failure, "Initiation failure");
+        Objects.requireNonNull(failedAt, "Failure instant");
+        if (state.status() == PaymentStatus.FAILED) return;
+        if (state.status() != PaymentStatus.RECEIVED
+                && state.status() != PaymentStatus.BANKING_VERIFICATION_PENDING
+                && state.status() != PaymentStatus.PENDING_CONFIRMATION) {
+            throw PaymentDomainException.conflict(
+                    "Initiation deadline cannot fail Payment from " + state.status()
+            );
+        }
+        if (failure.failureCategory() != FailureCategory.TECHNICAL_FAILURE) {
+            throw PaymentDomainException.conflict(
+                    "Initiation deadline requires TECHNICAL_FAILURE"
+            );
+        }
+        PaymentState next = nextBuilder(PaymentStatus.FAILED, failedAt)
+                .failure(failure)
+                .finalizedAt(failedAt)
+                .build();
+        EventBatch batch = new EventBatch(next, failedAt);
+        commit(next, List.of(new PaymentFailedWithoutFinancialEffect(
+                batch.metadata(),
+                failure.failureCode(),
+                failure.failureCategory(),
+                failure.failureStage(),
+                failedAt
+        )));
+    }
+
+    /**
      * Starts banking customer/account verification after durable reception.
      */
     public void startBankingVerification(

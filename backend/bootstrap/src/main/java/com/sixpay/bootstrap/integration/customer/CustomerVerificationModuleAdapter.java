@@ -104,7 +104,8 @@ public final class CustomerVerificationModuleAdapter
                         CorrelationId.of(request.correlationId()),
                         request.causationId()
                 ),
-                request.requestedAt()
+                request.requestedAt(),
+                request.deadlineAt()
         );
     }
 

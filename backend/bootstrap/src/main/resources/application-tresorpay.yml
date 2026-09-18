@@ -11,3 +11,9 @@ sixpay:
       security:
         mtls-required: ${TRESORPAY_MTLS_REQUIRED:true}
         oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:true}
+
+  security:
+    tresorpay:
+      subscription-key:
+        enabled: ${SIXPAY_SECURITY_TRESORPAY_SUBSCRIPTION_KEY_ENABLED:true}
+        value: ${SIXPAY_SECURITY_TRESORPAY_SUBSCRIPTION_KEY_VALUE}
