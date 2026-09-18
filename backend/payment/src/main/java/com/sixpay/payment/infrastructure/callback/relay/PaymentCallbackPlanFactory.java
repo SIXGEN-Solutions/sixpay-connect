@@ -9,7 +9,9 @@ import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.event.PaymentEventOutcomeRecorded;
 import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
 import com.sixpay.payment.domain.model.evidence.PaymentEventOutcomeSnapshot;
 import com.sixpay.payment.domain.model.evidence.TfjStatus;
 import com.sixpay.payment.domain.repository.PaymentRepository;
@@ -42,7 +44,7 @@ public class PaymentCallbackPlanFactory {
         if (currentIndex < 0) throw new IllegalStateException("Outbox event has no matching audit entry");
         PaymentAuditEntry current = audit.get(currentIndex);
         if (!isLastEventOfVersion(audit, currentIndex)) return PaymentCallbackPlan.skip();
-        String callbackType = callbackType(current.paymentStatus());
+        String callbackType = callbackType(current);
         if (callbackType == null) return PaymentCallbackPlan.skip();
 
         Payment payment = paymentRepository.findById(new PaymentId(event.paymentId()))
@@ -64,7 +66,8 @@ public class PaymentCallbackPlanFactory {
         Object data;
         if (PaymentStatusCallbackMessage.CUT_CREDITED.equals(callbackType)) {
             PaymentEventOutcomeSnapshot outcome = state.paymentEventOutcomeEvidence()
-                    .orElseThrow(() -> new IllegalStateException("CUT_CREDITED requires Payment event outcome"));
+                    .filter(snapshot -> snapshot.outcome() == PaymentEventOutcome.COMPLETED)
+                    .orElseThrow(() -> new IllegalStateException("CUT_CREDITED requires durable COMPLETED Payment event outcome"));
             BankPostingReference bankReference = state.bankPostingReference()
                     .orElseThrow(() -> new IllegalStateException("CUT_CREDITED requires bank posting reference"));
             data = new PaymentStatusCallbackMessage.CutCreditedData(
@@ -101,12 +104,18 @@ public class PaymentCallbackPlanFactory {
                 data);
     }
 
-    private static String callbackType(PaymentStatus status) {
-        return switch (status) {
-            case POSTED_PENDING_TFJ -> PaymentStatusCallbackMessage.CUT_CREDITED;
-            case TREASURY_INTEGRATED -> PaymentStatusCallbackMessage.TREASURY_INTEGRATED;
-            default -> null;
-        };
+    private static String callbackType(PaymentAuditEntry current) {
+        if (current.paymentStatus() == PaymentStatus.TREASURY_INTEGRATED) {
+            return PaymentStatusCallbackMessage.TREASURY_INTEGRATED;
+        }
+
+        if (current.paymentStatus() != PaymentStatus.POSTED_PENDING_TFJ) {
+            return null;
+        }
+
+        return PaymentEventOutcomeRecorded.class.getSimpleName().equals(current.eventType())
+                ? PaymentStatusCallbackMessage.CUT_CREDITED
+                : null;
     }
 
     private static int indexOf(List<PaymentAuditEntry> audit, ClaimedPaymentOutboxEvent event) {
