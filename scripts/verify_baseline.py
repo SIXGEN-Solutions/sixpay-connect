@@ -121,7 +121,7 @@ def main():
         [
             npm,
             "run",
-            "verify:sixpay",
+            "verify:quality",
         ],
         ROOT / "frontend",
     )
@@ -161,7 +161,7 @@ def main():
     print()
     print("Canonical commands:")
     print(" - backend:  mvn verify")
-    print(" - frontend: npm run verify:sixpay")
+    print(" - frontend: npm run verify:quality")
     print(" - repo:     py scripts/verify_baseline.py")
 
 if __name__ == "__main__":

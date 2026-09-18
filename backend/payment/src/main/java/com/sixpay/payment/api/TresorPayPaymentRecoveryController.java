@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 )
 @SecurityRequirement(name = "bearerAuth")
 @SecurityRequirement(name = "subscriptionKey")
-public final class TresorPayPaymentRecoveryController {
+public class TresorPayPaymentRecoveryController {
 
     private final TresorPayPaymentRecoveryUseCase recoveryUseCase;
     private final CorrelationIdResolver correlationIdResolver;
