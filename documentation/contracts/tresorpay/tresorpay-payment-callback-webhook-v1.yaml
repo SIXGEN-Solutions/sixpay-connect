@@ -252,16 +252,15 @@ components:
       required:
         - amount
         - bankPostingReference
-        - bankDebitReference
-        - bankCutCreditReference
         - creditedAt
         - immediateResult
         - tfjFinality
       properties:
         amount: { $ref: '#/components/schemas/Money' }
-        bankPostingReference: { $ref: '#/components/schemas/BankReference' }
-        bankDebitReference: { $ref: '#/components/schemas/BankReference' }
-        bankCutCreditReference: { $ref: '#/components/schemas/BankReference' }
+        bankPostingReference:
+          allOf:
+            - $ref: '#/components/schemas/BankReference'
+          description: Canonical bank reference returned by the atomic T0 posting.
         creditedAt: { type: string, format: date-time }
         immediateResult: { type: string, const: POSTED_PENDING_TFJ }
         tfjFinality: { type: boolean, const: false }

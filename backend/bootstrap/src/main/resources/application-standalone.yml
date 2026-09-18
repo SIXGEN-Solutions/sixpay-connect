@@ -104,7 +104,7 @@ sixpay:
       maximum-retry-delay: ${SIXPAY_PAYMENT_CALLBACK_MAXIMUM_RETRY_DELAY:PT1H}
       worker-id: ${SIXPAY_PAYMENT_CALLBACK_WORKER_ID:payment-callback-worker}
       signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID:}
-      signing-private-key-pem: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_PRIVATE_KEY_PEM:}
+      signing-secret: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_SECRET:}
 
   customer:
     observation:

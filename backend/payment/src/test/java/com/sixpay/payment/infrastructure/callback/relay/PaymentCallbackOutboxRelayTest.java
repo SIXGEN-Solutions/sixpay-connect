@@ -7,7 +7,6 @@ import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackMessage;
 import com.sixpay.payment.application.port.output.callback
         .PaymentStatusCallbackTransportPort;
-import com.sixpay.payment.domain.model.PaymentStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -164,20 +163,29 @@ class PaymentCallbackOutboxRelayTest {
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"
                 ),
+                UUID.fromString(
+                        "99999999-8888-7777-6666-555555555555"
+                ),
+                2,
                 new PaymentStatusCallbackMessage(
+                        "1.0",
                         EVENT_ID,
-                        "PAYMENT_STATUS_CHANGED",
-                        Instant.parse(
-                                "2026-08-03T10:31:00Z"
-                        ),
+                        PaymentStatusCallbackMessage.CUT_CREDITED,
+                        Instant.parse("2026-08-03T10:31:00Z"),
+                        UUID.fromString("11111111-1111-1111-1111-111111111111"),
+                        null,
+                        UUID.fromString("11111111-2222-3333-4444-555555555555"),
                         "PAY-1234567890ABCDEFGHJKMNPQRS",
                         "AVI-2025-00045678",
-                        null,
-                        PaymentStatus.PENDING_CONFIRMATION,
-                        PaymentStatus.AUTHORIZATION_CHECKING,
-                        null,
-                        "Customer confirmation accepted",
-                        null
+                        "LRB",
+                        2L,
+                        new PaymentStatusCallbackMessage.CutCreditedData(
+                                new PaymentStatusCallbackMessage.MoneyData("1000", "XAF"),
+                                "BANK-EVENT-123",
+                                Instant.parse("2026-08-03T10:31:00Z"),
+                                "POSTED_PENDING_TFJ",
+                                false
+                        )
                 )
         );
     }

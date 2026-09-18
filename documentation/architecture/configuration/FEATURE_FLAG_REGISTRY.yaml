@@ -448,10 +448,9 @@ flags:
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
       - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackDetachedJwsSigner.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackProperties.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackHmacSigner.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackSchedulingConfiguration.java"
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentCallbackSigningConfiguration.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/PaymentStatusCallbackHttpAdapter.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/relay/PaymentCallbackOutboxCoordinator.java"
       - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/callback/relay/PaymentCallbackOutboxRelay.java"
