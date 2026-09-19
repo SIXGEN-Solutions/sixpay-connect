@@ -213,7 +213,7 @@ class AuthorizationEvidenceSnapshotTest {
 
     private static EvidenceMetadata metadata() {
         return EvidenceMetadataTest.metadata(
-                ExternalSystem.TRESOR_PAY,
+                ExternalSystem.EXTERNAL_PARTNER,
                 EvidenceObservationChannel.LOCAL_VALIDATION
         );
     }

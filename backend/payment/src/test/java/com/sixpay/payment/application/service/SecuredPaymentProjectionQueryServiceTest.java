@@ -82,7 +82,7 @@ class SecuredPaymentProjectionQueryServiceTest {
         PaymentObjectAccessDescriptor descriptor =
                 new PaymentObjectAccessDescriptor(
                         paymentId,
-                        PaymentSource.TRESOR_PAY,
+                        PaymentSource.of("TRESOR_PAY"),
                         "partner-001"
                 );
 
@@ -147,7 +147,7 @@ class SecuredPaymentProjectionQueryServiceTest {
         PaymentObjectAccessDescriptor descriptor =
                 new PaymentObjectAccessDescriptor(
                         paymentId,
-                        PaymentSource.TRESOR_PAY,
+                        PaymentSource.of("TRESOR_PAY"),
                         "partner-002"
                 );
 
@@ -185,7 +185,7 @@ class SecuredPaymentProjectionQueryServiceTest {
         PaymentObjectAccessDescriptor descriptor =
                 new PaymentObjectAccessDescriptor(
                         paymentId,
-                        PaymentSource.TRESOR_PAY,
+                        PaymentSource.of("TRESOR_PAY"),
                         "partner-001"
                 );
 

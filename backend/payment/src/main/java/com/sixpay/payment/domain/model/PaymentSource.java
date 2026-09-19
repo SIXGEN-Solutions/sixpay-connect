@@ -11,18 +11,14 @@ import java.util.regex.Pattern;
 /**
  * External origin of the original Payment intention.
  *
- * <p>The Payment domain deliberately does not enumerate partner providers.
- * Provider-specific boundaries may use well-known values such as
- * {@link #TRESOR_PAY}, while other approved integrations can supply their own
- * stable source identifier without changing the domain type.</p>
+ * <p>The Payment domain deliberately does not enumerate external partners.
+ * Provider-specific boundaries supply stable opaque source identifiers without
+ * changing this domain type.</p>
  */
 public record PaymentSource(String value) implements ValueObject {
 
     private static final Pattern FORMAT =
             Pattern.compile("^[A-Z0-9][A-Z0-9_-]{1,31}$");
-
-    public static final PaymentSource TRESOR_PAY =
-            PaymentSource.of("TRESOR_PAY");
 
     public PaymentSource {
         value = Objects.requireNonNull(value, "Payment source")

@@ -27,7 +27,7 @@ class AuthorizationControlSourceMapTest {
                         AuthorizationControl.SUBSCRIPTION_AUTHORIZED
                 );
 
-        assertEquals("TRESOR_PAY", source.owner());
+        assertEquals("trusted external partner intake", source.owner());
         assertEquals(
                 AuthorizationSourceKind.TRUSTED_INTAKE_ATTESTATION,
                 source.sourceKind()
@@ -40,7 +40,7 @@ class AuthorizationControlSourceMapTest {
         );
         assertTrue(
                 source.evidence().contains(
-                        "no synchronous TRESOR PAY subscription verification"
+                        "no synchronous external subscription verification"
                 )
         );
     }

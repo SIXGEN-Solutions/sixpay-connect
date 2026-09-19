@@ -107,9 +107,9 @@ public final class AuthorizationEvidenceSnapshot implements ValueObject {
                 "Authorization evidence metadata"
         );
 
-        if (metadata.sourceSystem() != ExternalSystem.TRESOR_PAY) {
+        if (metadata.sourceSystem() != ExternalSystem.EXTERNAL_PARTNER) {
             throw new IllegalArgumentException(
-                    "Authorization evidence source must be TRESOR_PAY"
+                    "Authorization evidence source must be EXTERNAL_PARTNER"
             );
         }
 

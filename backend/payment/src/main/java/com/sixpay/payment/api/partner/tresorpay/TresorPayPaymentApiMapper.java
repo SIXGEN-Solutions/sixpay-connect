@@ -50,7 +50,7 @@ public final class TresorPayPaymentApiMapper {
                 PartnerIdentity.from(authenticatedPartnerSubject);
 
         return new InitiatePaymentCommand(
-                PaymentSource.TRESOR_PAY,
+                PaymentSource.of("TRESOR_PAY"),
                 externalSubscriptionReference(request),
                 partnerIdentity,
                 request.applicationId(),

@@ -84,7 +84,7 @@ class CoreAcceptancePoliciesTest {
                         PolicyTestFixtures.DECISION_AT.plusSeconds(600),
                         null,
                         new EvidenceMetadata(
-                                ExternalSystem.TRESOR_PAY,
+                                ExternalSystem.EXTERNAL_PARTNER,
                                 com.sixpay.common.context.CorrelationId.of(
                                         "40a11cb8-b32c-474e-bab2-e0b6f43138c8"
                                 ),

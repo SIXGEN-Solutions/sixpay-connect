@@ -108,7 +108,7 @@ class PaymentInitiationCanonicalizerTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiatePaymentCommand(
-                PaymentSource.TRESOR_PAY,
+                PaymentSource.of("TRESOR_PAY"),
                 ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
                 PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",

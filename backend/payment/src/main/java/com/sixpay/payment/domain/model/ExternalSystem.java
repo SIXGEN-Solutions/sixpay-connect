@@ -6,7 +6,7 @@ import com.sixpay.sharedkernel.domain.valueobject.ValueObject;
  * Closed system classification used by PaymentFailure.
  */
 public enum ExternalSystem implements ValueObject {
-    TRESOR_PAY,
+    EXTERNAL_PARTNER,
     AMPLITUDE,
     SIXPAY,
     NOT_APPLICABLE

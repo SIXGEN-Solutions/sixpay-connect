@@ -196,7 +196,7 @@ public final class PaymentAggregateTestFixtures {
 
     static NewPaymentIntent newIntent() {
         return new NewPaymentIntent(
-                PaymentSource.TRESOR_PAY,
+                PaymentSource.of("TRESOR_PAY"),
                 ExternalPaymentReference.of("PAYMENT-001"),
                 ExternalSubscriptionReference.of("SUBSCRIPTION-001"),
                 new PaymentRequestIdentity(
@@ -278,7 +278,7 @@ public final class PaymentAggregateTestFixtures {
                 T0.plusSeconds(3600),
                 null,
                 metadata(
-                        ExternalSystem.TRESOR_PAY,
+                        ExternalSystem.EXTERNAL_PARTNER,
                         EvidenceObservationChannel.LOCAL_VALIDATION,
                         hex,
                         T0.plusSeconds(1)

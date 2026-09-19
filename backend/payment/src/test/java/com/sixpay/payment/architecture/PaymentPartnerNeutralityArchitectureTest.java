@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,38 +15,25 @@ class PaymentPartnerNeutralityArchitectureTest {
             Path.of("src/main/java/com/sixpay/payment/domain");
 
     @Test
-    void paymentSourceAcceptsProviderNeutralIdentifiers() {
-        assertThat(PaymentSource.of("PARTNER_A").value())
-                .isEqualTo("PARTNER_A");
-        assertThat(PaymentSource.TRESOR_PAY.value())
-                .isEqualTo("TRESOR_PAY");
+    void paymentSourceAcceptsOpaqueProviderNeutralIdentifiers() {
+        assertThat(PaymentSource.of("PARTNER_A").value()).isEqualTo("PARTNER_A");
+        assertThat(PaymentSource.of("PARTNER_B").value()).isEqualTo("PARTNER_B");
     }
 
     @Test
-    void domainDoesNotEnforceTresorPayAsTheOnlyPaymentOrigin()
-            throws Exception {
-
-        String paymentState = Files.readString(
-                DOMAIN.resolve("model/PaymentState.java")
-        );
-
-        assertThat(paymentState)
-                .doesNotContain("source != PaymentSource.TRESOR_PAY")
-                .doesNotContain("Payment source must be TRESOR_PAY");
-    }
-
-    @Test
-    void prioritizedDomainTypesRemainProviderNeutralInDocumentation()
-            throws Exception {
-
-        for (String relative : new String[] {
-                "model/PaymentInitiationContext.java",
-                "model/NewPaymentIntent.java",
-                "model/ExternalSubscriptionReference.java"
-        }) {
-            assertThat(Files.readString(DOMAIN.resolve(relative)))
-                    .doesNotContain("TresorPay")
-                    .doesNotContain("TRESOR PAY");
+    void paymentDomainContainsNoTresorPaySemantics() throws Exception {
+        try (Stream<Path> paths = Files.walk(DOMAIN)) {
+            for (Path path : paths.filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".java")).toList()) {
+                String content = Files.readString(path);
+                assertThat(path.getFileName().toString())
+                        .as("provider-specific type name in %s", path)
+                        .doesNotContain("TresorPay").doesNotContain("Tresorpay");
+                assertThat(content)
+                        .as("provider-specific semantics in %s", path)
+                        .doesNotContain("TresorPay").doesNotContain("Tresorpay")
+                        .doesNotContain("TRESOR_PAY").doesNotContain("TRESOR PAY");
+            }
         }
     }
 }

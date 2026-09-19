@@ -114,7 +114,7 @@ public final class SixpayAuthorizationGate {
                     control,
                     state,
                     AuthorizationBindingType.SUBSCRIPTION_REFERENCE,
-                    "Trusted TRESOR PAY subscription authorization evidence"
+                    "Trusted external partner subscription authorization evidence"
             );
         }
 
@@ -123,7 +123,7 @@ public final class SixpayAuthorizationGate {
                     control,
                     state,
                     AuthorizationBindingType.CLIENT_APPLICATION,
-                    "Trusted TRESOR PAY application authorization evidence"
+                    "Trusted external partner application authorization evidence"
             );
         }
 
@@ -166,14 +166,14 @@ public final class SixpayAuthorizationGate {
             return new AuthorizationControlResult(
                     control,
                     AuthorizationControlOutcome.UNRESOLVED,
-                    "Trusted TRESOR PAY authorization evidence is not durably available"
+                    "Trusted external partner authorization evidence is not durably available"
             );
         }
 
         if (evidence.outcome() != AuthorizationDecisionOutcome.APPROVED) {
             return fail(
                     control,
-                    "Trusted TRESOR PAY authorization evidence is not APPROVED"
+                    "Trusted external partner authorization evidence is not APPROVED"
             );
         }
 
@@ -187,7 +187,7 @@ public final class SixpayAuthorizationGate {
         if (bindingResult == AuthorizationBindingResult.MISMATCH) {
             return fail(
                     control,
-                    "Trusted TRESOR PAY authorization binding does not match"
+                    "Trusted external partner authorization binding does not match"
             );
         }
 
@@ -195,7 +195,7 @@ public final class SixpayAuthorizationGate {
             return new AuthorizationControlResult(
                     control,
                     AuthorizationControlOutcome.UNRESOLVED,
-                    "Trusted TRESOR PAY authorization binding was not evaluated"
+                    "Trusted external partner authorization binding was not evaluated"
             );
         }
 

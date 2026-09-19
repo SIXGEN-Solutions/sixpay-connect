@@ -65,7 +65,7 @@ class PaymentTresorPayAntiCorruptionArchitectureTest {
 
         assertThat(preparation)
                 .contains("command.source()")
-                .doesNotContain("PaymentSource.TRESOR_PAY");
+                .doesNotContain("PaymentSource.of(\"TRESOR_PAY\")");
     }
 
     @Test

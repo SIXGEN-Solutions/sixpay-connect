@@ -66,7 +66,7 @@ class PaymentInitiationPreparationAdapterTest {
         var intent = prepared.intent();
 
         assertThat(intent.source())
-                .isEqualTo(PaymentSource.TRESOR_PAY);
+                .isEqualTo(PaymentSource.of("TRESOR_PAY"));
         assertThat(intent.externalPaymentReference().value())
                 .isEqualTo("AVI-2025-00045678");
         assertThat(intent.requestIdentity()
@@ -208,7 +208,7 @@ class PaymentInitiationPreparationAdapterTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiatePaymentCommand(
-                PaymentSource.TRESOR_PAY,
+                PaymentSource.of("TRESOR_PAY"),
                 ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
                 PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",

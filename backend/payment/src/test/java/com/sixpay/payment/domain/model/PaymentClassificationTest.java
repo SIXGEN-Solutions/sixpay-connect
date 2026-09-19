@@ -74,7 +74,7 @@ class PaymentClassificationTest {
 
         assertTrue(
                 Set.of(ExternalSystem.values()).contains(
-                        ExternalSystem.TRESOR_PAY
+                        ExternalSystem.EXTERNAL_PARTNER
                 )
         );
         assertTrue(

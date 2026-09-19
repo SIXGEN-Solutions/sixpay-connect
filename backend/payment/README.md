@@ -124,3 +124,16 @@ Current Flyway baseline:
 V300__payment_baseline.sql
 ```
 
+## Partner integration boundary
+
+TRESOR PAY is one external Partner integration. It is not part of the Payment
+domain model.
+
+The Payment domain and application layers remain provider-neutral. TRESOR PAY
+wire contracts, request/response models and provider mappings are permitted only
+at approved external boundaries, including `api/partner/tresorpay` and
+TRESOR PAY-specific Payment infrastructure adapters. Canonical contracts under
+`documentation/contracts/tresorpay` may remain provider-specific.
+
+`integration` remains technical and provider-neutral and does not own TRESOR PAY
+payloads or mappings.

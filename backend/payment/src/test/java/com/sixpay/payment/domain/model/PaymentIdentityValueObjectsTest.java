@@ -185,7 +185,7 @@ class PaymentIdentityValueObjectsTest {
     @Test
     void paymentSourceUsesProviderNeutralIdentifiers() {
         assertEquals(
-                PaymentSource.TRESOR_PAY,
+                PaymentSource.of("TRESOR_PAY"),
                 PaymentSource.of("TRESOR_PAY")
         );
         assertEquals(

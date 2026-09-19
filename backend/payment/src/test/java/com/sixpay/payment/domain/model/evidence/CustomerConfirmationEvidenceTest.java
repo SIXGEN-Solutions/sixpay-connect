@@ -45,7 +45,7 @@ class CustomerConfirmationEvidenceTest {
 
         EvidenceMetadata metadata =
                 new EvidenceMetadata(
-                        ExternalSystem.TRESOR_PAY,
+                        ExternalSystem.EXTERNAL_PARTNER,
                         CorrelationId.of(
                                 "11111111-1111-1111-1111-111111111111"
                         ),

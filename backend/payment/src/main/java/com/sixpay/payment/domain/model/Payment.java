@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Sole write Aggregate Root for one logical TRESOR PAY payment intention.
+ * Sole write Aggregate Root for one logical payment intention.
  *
  * <p>The aggregate owns lifecycle transitions, bounded current evidence,
  * business version, timestamps, failure and Payment domain-event

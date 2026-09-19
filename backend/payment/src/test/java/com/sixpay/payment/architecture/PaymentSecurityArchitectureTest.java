@@ -50,10 +50,10 @@ class PaymentSecurityArchitectureTest {
 
         assertTrue(policy.contains("partnerSubjectOptional"));
         assertFalse(policy.contains(
-                "source() == PaymentSource.TRESOR_PAY"
+                "source() == PaymentSource.of(\"TRESOR_PAY\")"
         ));
         assertFalse(policy.contains(
-                "source() != PaymentSource.TRESOR_PAY"
+                "source() != PaymentSource.of(\"TRESOR_PAY\")"
         ));
     }
 

@@ -4,10 +4,10 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Canonical LOT 2.1.1 mapping of the six AUTHORIZATION_CHECKING controls.
+ * Canonical mapping of the six AUTHORIZATION_CHECKING controls.
  *
  * <p>This class is descriptive only. It cannot approve or reject a Payment.
- * Its purpose is to prevent LOT 2.1.2 from inventing a source of truth.</p>
+ * Its purpose is to prevent downstream implementations from inventing a source of truth.</p>
  */
 public final class AuthorizationControlSourceMap {
 
@@ -72,17 +72,17 @@ public final class AuthorizationControlSourceMap {
                 new AuthorizationControlSource(
                         AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
                         AuthorizationSourceKind.TRUSTED_INTAKE_ATTESTATION,
-                        "TRESOR_PAY",
-                        "Resolved source: the short-lived asymmetric TRESOR PAY "
+                        "trusted external partner intake",
+                        "Resolved source: a short-lived asymmetric partner "
                                 + "signed JWT/JWS validated locally at payment intake "
                                 + "attests subscription_status=ACTIVE and binds "
                                 + "the subscription, client, financial institution, "
                                 + "debtor account and payment. "
                                 + "CustomerSubscription is not the source; "
-                                + "no synchronous TRESOR PAY subscription verification "
+                                + "no synchronous external subscription verification "
                                 + "call is allowed in MVP. "
                                 + "Implementation remains gated by the "
-                                + "tresorpay-payment-request-api-v1 contract approval.",
+                                + "approved external payment-request contract.",
                         AuthorizationControlSource
                                 .ImplementationStatus
                                 .REQUIRES_RUNTIME_SOURCE
@@ -94,9 +94,9 @@ public final class AuthorizationControlSourceMap {
                 new AuthorizationControlSource(
                         AuthorizationControl.APPLICATION_AUTHORIZED,
                         AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
-                        "security / TRESOR_PAY intake profile",
+                        "security / external partner intake profile",
                         "Resolved source: PaymentInitiationContext.applicationId "
-                                + "comes from X-TresorPay-App-Id and the signed "
+                                + "comes from authenticated intake metadata and the signed "
                                 + "authorization token client_id is required to match "
                                 + "that application identity and the Subscription Key "
                                 + "owner at intake. Re-evaluation after OTP requires "
