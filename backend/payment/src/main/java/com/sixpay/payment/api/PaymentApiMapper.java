@@ -26,7 +26,7 @@ public final class PaymentApiMapper {
         return new PaymentQueryResponses.PaymentDetailResponse(
                 summary.paymentId(),
                 summary.paymentReference(),
-                summary.tresorPayRequestId(),
+                summary.externalPaymentReference(),
                 summary.observedCustomerId(),
                 summary.financialInstitutionCode(),
                 account(summary.debtorAccount()),
@@ -54,7 +54,7 @@ public final class PaymentApiMapper {
         return new PaymentQueryResponses.PaymentSummaryResponse(
                 summary.paymentId(),
                 summary.paymentReference(),
-                summary.tresorPayRequestId(),
+                summary.externalPaymentReference(),
                 summary.observedCustomerId(),
                 summary.financialInstitutionCode(),
                 account(summary.debtorAccount()),

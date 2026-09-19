@@ -99,7 +99,7 @@ class PaymentProjectionAdaptersIT {
         assertThat(firstPage.hasMore()).isTrue();
         assertThat(firstPage.nextCursor()).isNotBlank();
         assertThat(firstPage.items().getFirst()
-                .tresorPayRequestId())
+                .externalPaymentReference())
                 .isEqualTo("TP-REQ-002");
 
         var secondPage = readAdapter.search(
@@ -110,7 +110,7 @@ class PaymentProjectionAdaptersIT {
         assertThat(secondPage.items()).hasSize(1);
         assertThat(secondPage.hasMore()).isFalse();
         assertThat(secondPage.items().getFirst()
-                .tresorPayRequestId())
+                .externalPaymentReference())
                 .isEqualTo("TP-REQ-001");
 
         var detail = readAdapter.findById(

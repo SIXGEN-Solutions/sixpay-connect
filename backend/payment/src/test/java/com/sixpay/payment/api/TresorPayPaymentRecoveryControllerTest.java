@@ -62,7 +62,7 @@ class TresorPayPaymentRecoveryControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().paymentReference())
                 .isEqualTo(view.paymentReference());
-        assertThat(response.getBody().externalPaymentReference())
+        assertThat(response.getBody().tresorPayPaymentReference())
                 .isEqualTo(view.externalPaymentReference());
         assertThat(response.getBody().status())
                 .isEqualTo(view.status());

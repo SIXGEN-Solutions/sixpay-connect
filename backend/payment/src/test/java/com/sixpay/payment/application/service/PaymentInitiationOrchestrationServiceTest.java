@@ -33,7 +33,7 @@ class PaymentInitiationOrchestrationServiceTest {
         when(cp.getIfAvailable()).thenReturn(customer); when(customer.verifyCustomer(any(),any(),any(),any())).thenReturn(flow(id,ref,PaymentStatus.PENDING_CONFIRMATION,3));
         PaymentConfirmationView challenge=new PaymentConfirmationView(ref,ConfirmationChallengeStatus.ACTIVE,ConfirmationBusinessCode.CHALLENGE_ACTIVE,null,NOW,NOW.plusSeconds(300),null);
         when(fp.getIfAvailable()).thenReturn(confirmation); when(confirmation.createBefore(any(),any(),any())).thenReturn(challenge);
-        PaymentInitiationResult result=new PaymentInitiationOrchestrationService(idem,prep,reception,coordinator,cp,fp,policies,()->NOW,new PaymentInitiationDeadline(java.time.Duration.ofSeconds(30))).initiateDebit(command);
+        PaymentInitiationResult result=new PaymentInitiationOrchestrationService(idem,prep,reception,coordinator,cp,fp,policies,()->NOW,new PaymentInitiationDeadline(java.time.Duration.ofSeconds(30))).initiatePayment(command);
         assertThat(result.status()).isEqualTo(PaymentInitiationStatus.AWAITING_OTP); assertThat(result.confirmationChallenge().status()).isEqualTo(ConfirmationChallengeStatus.ACTIVE);
         Mockito.verify(confirmation, Mockito.times(1)).createBefore(any(),any(),any());
     }

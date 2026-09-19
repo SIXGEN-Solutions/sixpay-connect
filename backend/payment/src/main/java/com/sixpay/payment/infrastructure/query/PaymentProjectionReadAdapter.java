@@ -205,8 +205,8 @@ public final class PaymentProjectionReadAdapter
                 where,
                 parameters,
                 "p.external_payment_reference",
-                "tresorPayRequestId",
-                query.tresorPayRequestId()
+                "externalPaymentReference",
+                query.externalPaymentReference()
         );
         appendEquals(
                 where,
@@ -616,7 +616,7 @@ public final class PaymentProjectionReadAdapter
     private record ProjectionRow(
             UUID paymentId,
             String paymentReference,
-            String tresorPayRequestId,
+            String externalPaymentReference,
             UUID observedCustomerId,
             String financialInstitutionCode,
             java.math.BigDecimal amount,
@@ -658,7 +658,7 @@ public final class PaymentProjectionReadAdapter
             return new PaymentProjectionViews.Summary(
                     paymentId,
                     paymentReference,
-                    tresorPayRequestId,
+                    externalPaymentReference,
                     observedCustomerId,
                     financialInstitutionCode,
                     account,
