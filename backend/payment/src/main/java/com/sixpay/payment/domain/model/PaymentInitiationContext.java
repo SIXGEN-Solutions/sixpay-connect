@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * Immutable non-secret business context supplied by TresorPay at initiation.
+ * Immutable non-secret business context supplied by an external partner at Payment initiation.
  *
  * <p>API keys, PIN values, access tokens and OTP values are deliberately
  * excluded from this value object.</p>

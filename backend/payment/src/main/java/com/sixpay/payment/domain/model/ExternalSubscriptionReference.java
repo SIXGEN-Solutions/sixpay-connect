@@ -5,7 +5,10 @@ import com.sixpay.sharedkernel.domain.valueobject.ValueObject;
 import java.util.regex.Pattern;
 
 /**
- * Immutable TRESOR PAY subscription traceability reference.
+ * Immutable external subscription traceability reference.
+ *
+ * <p>The Payment domain treats this value as opaque external metadata. It does
+ * not own, validate or infer the lifecycle of the referenced subscription.</p>
  *
  * @param value canonical external subscription reference
  */

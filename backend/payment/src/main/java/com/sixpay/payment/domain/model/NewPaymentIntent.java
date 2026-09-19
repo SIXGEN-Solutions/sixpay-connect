@@ -18,7 +18,7 @@ import java.util.Objects;
  * @param requestedAmount total requested amount
  * @param treasuryAllocationIntent beneficiary allocation intention
  * @param allocationIntentFingerprint canonical allocation fingerprint
- * @param initiationContext non-secret TresorPay initiation context
+ * @param initiationContext non-secret external-partner initiation context
  */
 public record NewPaymentIntent(
         PaymentSource source,
@@ -35,7 +35,7 @@ public record NewPaymentIntent(
 
     /**
      * Backward-compatible constructor for existing internal callers and tests
-     * that do not yet provide a TresorPay initiation context.
+     * that do not yet provide an initiation context.
      */
     public NewPaymentIntent(
             PaymentSource source,

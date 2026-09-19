@@ -183,14 +183,18 @@ class PaymentIdentityValueObjectsTest {
     }
 
     @Test
-    void paymentSourceIsClosedForTheMvp() {
-        assertEquals(
-                1,
-                PaymentSource.values().length
-        );
+    void paymentSourceUsesProviderNeutralIdentifiers() {
         assertEquals(
                 PaymentSource.TRESOR_PAY,
-                PaymentSource.valueOf("TRESOR_PAY")
+                PaymentSource.of("TRESOR_PAY")
+        );
+        assertEquals(
+                PaymentSource.of("PARTNER_A"),
+                PaymentSource.of("partner_a")
+        );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PaymentSource.of(" ")
         );
     }
 }

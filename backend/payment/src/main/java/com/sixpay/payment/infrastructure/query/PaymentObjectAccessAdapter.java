@@ -49,7 +49,7 @@ public final class PaymentObjectAccessAdapter
                 (resultSet, rowNumber) ->
                         new PaymentObjectAccessDescriptor(
                                 paymentId,
-                                PaymentSource.valueOf(
+                                PaymentSource.of(
                                         resultSet.getString(
                                                 "payment_source"
                                         )

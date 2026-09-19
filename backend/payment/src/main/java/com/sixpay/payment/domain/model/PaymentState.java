@@ -127,11 +127,6 @@ public final class PaymentState implements ValueObject {
     }
 
     private void validate() {
-        if (source != PaymentSource.TRESOR_PAY) {
-            throw new IllegalArgumentException(
-                    "Payment source must be TRESOR_PAY"
-            );
-        }
         if (!financialInstitutionCode.equals(
                 debtorAccountReference.financialInstitutionCode()
         )) {

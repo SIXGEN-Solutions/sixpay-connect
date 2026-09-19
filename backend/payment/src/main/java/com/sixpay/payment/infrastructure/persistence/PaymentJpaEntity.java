@@ -4,6 +4,7 @@ import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -69,7 +70,7 @@ public class PaymentJpaEntity {
     )
     private String publicPaymentReference;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PaymentSourceJpaConverter.class)
     @Column(
             name = "payment_source",
             nullable = false,
@@ -212,7 +213,7 @@ public class PaymentJpaEntity {
                     "Public Payment reference cannot change"
             );
         }
-        if (source != state.source()
+        if (!source.equals(state.source())
                 || !externalPaymentReference.equals(
                         state.externalPaymentReference().value()
                 )) {

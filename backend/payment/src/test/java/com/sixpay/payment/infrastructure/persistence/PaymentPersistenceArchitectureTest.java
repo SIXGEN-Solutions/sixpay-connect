@@ -266,6 +266,7 @@ class PaymentPersistenceArchitectureTest {
                 "PaymentPersistenceException.java",
                 "PaymentPersistenceMapper.java",
                 "PaymentRepositoryAdapter.java",
+                "PaymentSourceJpaConverter.java",
                 "PaymentSpringDataRepository.java",
                 "PaymentStateDocument.java",
                 "package-info.java"
