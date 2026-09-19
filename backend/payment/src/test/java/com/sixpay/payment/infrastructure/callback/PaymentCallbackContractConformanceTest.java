@@ -16,6 +16,7 @@ class PaymentCallbackContractConformanceTest {
                 .contains("X-Webhook-Delivery-ID")
                 .contains("X-Webhook-Delivery-Attempt")
                 .contains("HMAC-SHA256")
+                .contains("tresorPayPaymentReference")
                 .doesNotContain("PAYMENT_STATUS_CHANGED")
                 .doesNotContain("bankDebitReference")
                 .doesNotContain("bankCutCreditReference");

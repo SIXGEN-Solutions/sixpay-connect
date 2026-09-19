@@ -56,4 +56,42 @@ class PaymentAsyncCallbackArchitectureTest {
                 "X-Correlation-ID"
         ));
     }
+    @Test
+    void callbackInternalMessageKeepsProviderNeutralVocabulary()
+            throws Exception {
+        String message = Files.readString(
+                ROOT.resolve(
+                        "application/port/output/callback/"
+                                + "PaymentStatusCallbackMessage.java"
+                )
+        );
+        String payload = Files.readString(
+                ROOT.resolve(
+                        "infrastructure/callback/tresorpay/"
+                                + "TresorPayPaymentCallbackPayload.java"
+                )
+        );
+        String transport = Files.readString(
+                ROOT.resolve(
+                        "infrastructure/callback/"
+                                + "PaymentStatusCallbackHttpAdapter.java"
+                )
+        );
+
+        assertTrue(message.contains(
+                "String externalPaymentReference"
+        ));
+        assertFalse(message.contains(
+                "tresorPayPaymentReference"
+        ));
+        assertTrue(payload.contains(
+                "@JsonProperty(\"tresorPayPaymentReference\")"
+        ));
+        assertTrue(payload.contains(
+                "message.externalPaymentReference()"
+        ));
+        assertTrue(transport.contains(
+                "TresorPayPaymentCallbackPayload.from(delivery.message())"
+        ));
+    }
 }
