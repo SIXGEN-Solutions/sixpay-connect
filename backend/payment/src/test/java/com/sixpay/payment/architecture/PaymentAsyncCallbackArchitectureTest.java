@@ -19,7 +19,7 @@ class PaymentAsyncCallbackArchitectureTest {
             throws Exception {
         String controller = Files.readString(
                 ROOT.resolve(
-                        "api/PaymentCommandController.java"
+                        "api/partner/tresorpay/TresorPayPaymentCommandController.java"
                 )
         );
         String relay = Files.readString(

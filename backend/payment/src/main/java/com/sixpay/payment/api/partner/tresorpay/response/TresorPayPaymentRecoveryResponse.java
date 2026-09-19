@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.response;
+package com.sixpay.payment.api.partner.tresorpay.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;

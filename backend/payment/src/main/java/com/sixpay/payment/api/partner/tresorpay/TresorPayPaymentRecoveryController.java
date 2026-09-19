@@ -1,9 +1,10 @@
-package com.sixpay.payment.api;
+package com.sixpay.payment.api.partner.tresorpay;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
-import com.sixpay.payment.api.response.TresorPayPaymentRecoveryResponse;
+import com.sixpay.payment.api.PaymentNotFoundException;
+import com.sixpay.payment.api.partner.tresorpay.response.TresorPayPaymentRecoveryResponse;
 import com.sixpay.payment.application.port.input.PaymentRecoveryUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import io.swagger.v3.oas.annotations.Operation;

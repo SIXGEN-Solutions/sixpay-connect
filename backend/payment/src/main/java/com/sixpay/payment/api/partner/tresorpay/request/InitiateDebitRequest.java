@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.request;
+package com.sixpay.payment.api.partner.tresorpay.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sixpay.payment.domain.model.ClaimType;

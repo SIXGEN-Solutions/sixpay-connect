@@ -19,12 +19,12 @@ class PaymentCommandApiArchitectureTest {
             throws Exception {
         String source = Files.readString(
                 API_ROOT.resolve(
-                        "PaymentCommandController.java"
+                        "partner/tresorpay/TresorPayPaymentCommandController.java"
                 )
         );
 
         assertTrue(source.contains(
-                "package com.sixpay.payment.api;"
+                "package com.sixpay.payment.api.partner.tresorpay;"
         ));
         assertTrue(source.contains(
                 "@RequestMapping(\"/v1/payments\")"
@@ -45,12 +45,12 @@ class PaymentCommandApiArchitectureTest {
             throws Exception {
         String controller = Files.readString(
                 API_ROOT.resolve(
-                        "PaymentCommandController.java"
+                        "partner/tresorpay/TresorPayPaymentCommandController.java"
                 )
         );
         String mapper = Files.readString(
                 API_ROOT.resolve(
-                        "PaymentCommandApiMapper.java"
+                        "partner/tresorpay/TresorPayPaymentApiMapper.java"
                 )
         );
 

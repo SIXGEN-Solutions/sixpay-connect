@@ -1,10 +1,10 @@
-package com.sixpay.payment.api;
+package com.sixpay.payment.api.partner.tresorpay;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
-import com.sixpay.payment.api.request.InitiateDebitRequest;
-import com.sixpay.payment.api.response.InitiateDebitResponse;
+import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
+import com.sixpay.payment.api.partner.tresorpay.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,16 +31,16 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Payment Commands", description = "TresorPay Payment initiation API")
 @SecurityRequirement(name = "mutualTLS")
 @SecurityRequirement(name = "oauth2")
-public class PaymentCommandController {
+public class TresorPayPaymentCommandController {
 
     private final PaymentInitiationUseCase initiationUseCase;
-    private final PaymentCommandApiMapper mapper;
+    private final TresorPayPaymentApiMapper mapper;
     private final CurrentUserProvider currentUserProvider;
     private final CorrelationIdResolver correlationIdResolver;
 
-    public PaymentCommandController(
+    public TresorPayPaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
-            PaymentCommandApiMapper mapper,
+            TresorPayPaymentApiMapper mapper,
             CurrentUserProvider currentUserProvider,
             CorrelationIdResolver correlationIdResolver
     ) {

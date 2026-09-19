@@ -1,7 +1,8 @@
-package com.sixpay.payment.api.response;
+package com.sixpay.payment.api.partner.tresorpay.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import java.time.Instant;
 
 /**

@@ -97,7 +97,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
                         + "PaymentRecoveryService.java"
         );
         String recoveryController = source(
-                "com/sixpay/payment/api/"
+                "com/sixpay/payment/api/partner/tresorpay/"
                         + "TresorPayPaymentRecoveryController.java"
         );
         String idempotencyIt = testSource(

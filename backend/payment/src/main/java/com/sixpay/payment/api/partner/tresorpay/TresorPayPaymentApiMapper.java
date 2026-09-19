@@ -1,8 +1,8 @@
-package com.sixpay.payment.api;
+package com.sixpay.payment.api.partner.tresorpay;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.api.request.InitiateDebitRequest;
-import com.sixpay.payment.api.response.InitiateDebitResponse;
+import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
+import com.sixpay.payment.api.partner.tresorpay.response.InitiateDebitResponse;
 import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
@@ -15,7 +15,7 @@ import java.util.Objects;
  * Maps the partner-facing API contract to the Payment application boundary.
  */
 @Component
-public final class PaymentCommandApiMapper {
+public final class TresorPayPaymentApiMapper {
 
     /**
      * Creates the application command while keeping authentication and

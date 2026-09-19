@@ -1,8 +1,8 @@
-package com.sixpay.payment.api;
+package com.sixpay.payment.api.partner.tresorpay;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.api.request.InitiateDebitBeneficiaryRequest;
-import com.sixpay.payment.api.request.InitiateDebitRequest;
+import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitBeneficiaryRequest;
+import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -17,10 +17,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PaymentCommandApiMapperTest {
+class TresorPayPaymentApiMapperTest {
 
-    private final PaymentCommandApiMapper mapper =
-            new PaymentCommandApiMapper();
+    private final TresorPayPaymentApiMapper mapper =
+            new TresorPayPaymentApiMapper();
 
     @Test
     void mapsContractRequestWithoutAuthenticationSecrets() {
