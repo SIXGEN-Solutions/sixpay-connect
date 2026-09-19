@@ -38,5 +38,5 @@ class PaymentInitiationOrchestrationServiceTest {
         Mockito.verify(confirmation, Mockito.times(1)).createBefore(any(),any(),any());
     }
     private static PaymentWorkflowResult flow(PaymentId id,PublicPaymentReference ref,PaymentStatus s,long v){ return new PaymentWorkflowResult(id,ref,s,v,true); }
-    private static InitiatePaymentCommand command(){ return new InitiatePaymentCommand("TRESOR_PAY","TRESOR_PAY","TP_APP_001","AVI-2025-00045678",new BigDecimal("600000"),"XAF","10005-00001-12345678901-12","Société ABC SARL",ClaimType.AVI,"100200300",NOW,List.of(new PaymentBeneficiaryCommand("10005-00001-TRESDGI-97",new BigDecimal("600000"))),"https://tresorpay.cm/callback","IDEMPOTENCY-00000001",CorrelationId.of("11111111-1111-1111-1111-111111111111")); }
+    private static InitiatePaymentCommand command(){ return new InitiatePaymentCommand(PaymentSource.TRESOR_PAY,"TRESOR_PAY","TRESOR_PAY","TP_APP_001","AVI-2025-00045678",new BigDecimal("600000"),"XAF","10005-00001-12345678901-12","Société ABC SARL",ClaimType.AVI,"100200300",NOW,List.of(new PaymentBeneficiaryCommand("10005-00001-TRESDGI-97",new BigDecimal("600000"))),"https://tresorpay.cm/callback","IDEMPOTENCY-00000001",CorrelationId.of("11111111-1111-1111-1111-111111111111")); }
 }

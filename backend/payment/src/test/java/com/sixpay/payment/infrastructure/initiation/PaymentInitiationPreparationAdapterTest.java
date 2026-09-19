@@ -128,6 +128,46 @@ class PaymentInitiationPreparationAdapterTest {
     }
 
     @Test
+    void propagatesSourceFromApplicationCommand() {
+        InitiatePaymentCommand base = command(
+                List.of(
+                        beneficiary(
+                                "10005-00001-TRESDGI-97",
+                                "600000"
+                        )
+                )
+        );
+
+        InitiatePaymentCommand command =
+                new InitiatePaymentCommand(
+                        PaymentSource.of("PARTNER_A"),
+                        base.partnerLoginName(),
+                        base.authenticatedPartnerLoginName(),
+                        base.applicationId(),
+                        base.endToEndId(),
+                        base.totalAmount(),
+                        base.currency(),
+                        base.debtorRib(),
+                        base.debtorName(),
+                        base.claimType(),
+                        base.taxpayerIdentifier(),
+                        base.requestedExecutionAt(),
+                        base.beneficiaries(),
+                        base.callbackUrl(),
+                        base.idempotencyKey(),
+                        base.correlationId()
+                );
+
+        var prepared = adapter.prepare(
+                command,
+                "c".repeat(64),
+                NOW
+        );
+
+        assertThat(prepared.intent().source())
+                .isEqualTo(PaymentSource.of("PARTNER_A"));
+    }
+    @Test
     void rejectsMalformedRequestHash() {
         assertThatThrownBy(() ->
                 adapter.prepare(
@@ -160,6 +200,7 @@ class PaymentInitiationPreparationAdapterTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiatePaymentCommand(
+                PaymentSource.TRESOR_PAY,
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",

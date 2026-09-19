@@ -53,4 +53,19 @@ class PaymentTresorPayAntiCorruptionArchitectureTest {
                 "SCOPE_payment.initiate"
         );
     }
+    @Test
+    void genericPreparationDoesNotSelectTresorPaySource() throws Exception {
+        String preparation = Files.readString(
+                Path.of(
+                        "src/main/java/com/sixpay/payment/"
+                                + "infrastructure/initiation/"
+                                + "PaymentInitiationPreparationAdapter.java"
+                )
+        );
+
+        assertThat(preparation)
+                .contains("command.source()")
+                .doesNotContain("PaymentSource.TRESOR_PAY");
+    }
+
 }

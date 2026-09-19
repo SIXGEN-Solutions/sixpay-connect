@@ -4,6 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.domain.model.ClaimType;
+import com.sixpay.payment.domain.model.PaymentSource;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -56,6 +57,7 @@ class PaymentInitiationCanonicalizerTest {
 
         InitiatePaymentCommand changed =
                 new InitiatePaymentCommand(
+                        original.source(),
                         original.partnerLoginName(),
                         original.authenticatedPartnerLoginName(),
                         original.applicationId(),
@@ -104,6 +106,7 @@ class PaymentInitiationCanonicalizerTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiatePaymentCommand(
+                PaymentSource.TRESOR_PAY,
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",

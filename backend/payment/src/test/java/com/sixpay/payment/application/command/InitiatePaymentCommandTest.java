@@ -2,6 +2,7 @@ package com.sixpay.payment.application.command;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
+import com.sixpay.payment.domain.model.PaymentSource;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -54,6 +55,7 @@ class InitiatePaymentCommandTest {
     void rejectsPartnerIdentityMismatch() {
         assertThatThrownBy(() ->
                 new InitiatePaymentCommand(
+                        PaymentSource.TRESOR_PAY,
                         "TRESOR_PAY",
                         "OTHER_PARTNER",
                         "TP_APP_001",
@@ -90,6 +92,7 @@ class InitiatePaymentCommandTest {
             List<PaymentBeneficiaryCommand> beneficiaries
     ) {
         return new InitiatePaymentCommand(
+                PaymentSource.TRESOR_PAY,
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",

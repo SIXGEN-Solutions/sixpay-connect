@@ -15,7 +15,6 @@ import com.sixpay.payment.domain.model.NewPaymentIntent;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentRequestIdentity;
-import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.payment.domain.model.RequestFingerprint;
 import com.sixpay.payment.domain.model.TreasuryAllocation;
@@ -99,7 +98,7 @@ public final class PaymentInitiationPreparationAdapter
                 sha256(canonicalAllocations(command));
 
         NewPaymentIntent intent = new NewPaymentIntent(
-                PaymentSource.TRESOR_PAY,
+                command.source(),
                 ExternalPaymentReference.of(command.endToEndId()),
                 ExternalSubscriptionReference.of(
                         subscriptionReference(command)

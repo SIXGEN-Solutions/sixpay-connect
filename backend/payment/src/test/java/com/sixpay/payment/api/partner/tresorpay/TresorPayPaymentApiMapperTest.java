@@ -6,6 +6,7 @@ import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentId;
+import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,8 @@ class TresorPayPaymentApiMapperTest {
                 )
         );
 
+        assertThat(command.source())
+                .isEqualTo(PaymentSource.TRESOR_PAY);
         assertThat(command.partnerLoginName())
                 .isEqualTo("TRESOR_PAY");
         assertThat(command.authenticatedPartnerLoginName())

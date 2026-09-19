@@ -2,6 +2,7 @@ package com.sixpay.payment.application.command;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
+import com.sixpay.payment.domain.model.PaymentSource;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.util.Objects;
  * values are deliberately excluded.</p>
  */
 public record InitiatePaymentCommand(
+        PaymentSource source,
         String partnerLoginName,
         String authenticatedPartnerLoginName,
         String applicationId,
@@ -35,6 +37,10 @@ public record InitiatePaymentCommand(
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
     public InitiatePaymentCommand {
+        source = Objects.requireNonNull(
+                source,
+                "Payment source"
+        );
         partnerLoginName = requireText(
                 partnerLoginName,
                 64,

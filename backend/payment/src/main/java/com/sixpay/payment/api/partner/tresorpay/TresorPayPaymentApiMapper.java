@@ -7,6 +7,7 @@ import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
+import com.sixpay.payment.domain.model.PaymentSource;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -34,6 +35,7 @@ public final class TresorPayPaymentApiMapper {
         Objects.requireNonNull(request, "InitiateDebit request");
 
         return new InitiatePaymentCommand(
+                PaymentSource.TRESOR_PAY,
                 request.loginName(),
                 authenticatedPartnerLoginName,
                 request.applicationId(),
