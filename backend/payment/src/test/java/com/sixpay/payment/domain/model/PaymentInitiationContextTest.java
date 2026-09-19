@@ -34,6 +34,10 @@ class PaymentInitiationContextTest {
                 .contains("TP_APP_001");
         assertThat(context.claimType())
                 .isEqualTo(ClaimType.AVI);
+        assertThat(context.treasuryPaymentContext().claimType())
+                .isEqualTo(ClaimType.AVI);
+        assertThat(context.treasuryPaymentContext().taxpayerIdentifier())
+                .isEqualTo("100200300");
     }
 
     @Test

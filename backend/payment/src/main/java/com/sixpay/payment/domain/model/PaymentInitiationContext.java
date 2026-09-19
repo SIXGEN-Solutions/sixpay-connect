@@ -49,8 +49,17 @@ public record PaymentInitiationContext(
         );
     }
 
+    /** Partner/application metadata; not a financial Payment invariant. */
     public Optional<String> optionalApplicationId() {
         return Optional.ofNullable(applicationId);
+    }
+
+    /**
+     * Treasury-payment-specific context projected from the stable persisted
+     * fields. The v8 JSON shape is intentionally preserved.
+     */
+    public TreasuryPaymentContext treasuryPaymentContext() {
+        return new TreasuryPaymentContext(claimType, taxpayerIdentifier);
     }
 
     private static String requireIdentifier(

@@ -82,6 +82,20 @@ transport outcomes are recovered through authoritative lookup before retry.
 - Reporting owns immutable Payment audit queries and exports.
 - Bootstrap contains no Payment business logic.
 
+### Functional classification
+
+Payment keeps Treasury-payment semantics explicit instead of generalizing
+provider vocabulary by renaming it:
+
+- `ClaimType` and the taxpayer identifier are Treasury-payment invariants;
+- beneficiary allocation is a Treasury-payment invariant represented by `TreasuryAllocationIntent`;
+- `ExternalSubscriptionReference` is opaque provider trace metadata and never a local `CustomerSubscription` identity;
+- `applicationId` is partner application metadata, not a financial Payment invariant.
+
+The active TRESOR PAY API remains responsible for mapping its physical wire
+fields to these internal concepts. This classification does not change the
+active external contract or the persisted Payment state payload.
+
 ## Validation
 
 ```bash

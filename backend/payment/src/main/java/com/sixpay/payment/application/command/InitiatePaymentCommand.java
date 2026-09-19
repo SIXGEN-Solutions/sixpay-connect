@@ -16,6 +16,13 @@ import java.util.Objects;
  *
  * <p>Authentication secrets, API keys, PIN values, bearer tokens and OTP
  * values are deliberately excluded.</p>
+ *
+ * <p>Functional classification: {@code claimType},
+ * {@code taxpayerIdentifier} and {@code beneficiaries} describe the
+ * Treasury-payment capability; {@code externalSubscriptionReference} is
+ * opaque provider trace metadata; {@code applicationId} is partner
+ * application metadata. None of those five values is promoted to a universal
+ * Payment invariant by this command.</p>
  */
 public record InitiatePaymentCommand(
         PaymentSource source,

@@ -4,7 +4,12 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * One beneficiary allocation supplied with a Payment initiation command.
+ * One Treasury beneficiary allocation supplied with a Treasury-payment
+ * initiation.
+ *
+ * <p>This command type is not a universal Payment beneficiary abstraction.
+ * It is translated to {@code TreasuryAllocationIntent} before aggregate
+ * creation.</p>
  */
 public record PaymentBeneficiaryCommand(
         String rib,

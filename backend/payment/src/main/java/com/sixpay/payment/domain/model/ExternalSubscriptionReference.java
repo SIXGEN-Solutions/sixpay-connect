@@ -7,8 +7,10 @@ import java.util.regex.Pattern;
 /**
  * Immutable external subscription traceability reference.
  *
- * <p>The Payment domain treats this value as opaque external metadata. It does
- * not own, validate or infer the lifecycle of the referenced subscription.</p>
+ * <p>The Payment domain treats this value as opaque provider trace metadata.
+ * It is not a Payment invariant and is not a local CustomerSubscription
+ * identity. Payment does not own, validate or infer the lifecycle of the
+ * referenced subscription.</p>
  *
  * @param value canonical external subscription reference
  */
