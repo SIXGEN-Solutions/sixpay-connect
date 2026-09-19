@@ -81,13 +81,14 @@ public class TresorPayPaymentCommandController {
         CorrelationId correlationId =
                 correlationIdResolver.resolve(correlationHeader);
 
-        String authenticatedPartner =
-                currentUserProvider.requireCurrentUser().username();
+        var authenticatedPartner =
+                currentUserProvider.requireCurrentUser();
 
         var result = initiationUseCase.initiatePayment(
                 mapper.toCommand(
                         request,
-                        authenticatedPartner,
+                        authenticatedPartner.username(),
+                        authenticatedPartner.subject(),
                         idempotencyKey,
                         correlationId
                 )

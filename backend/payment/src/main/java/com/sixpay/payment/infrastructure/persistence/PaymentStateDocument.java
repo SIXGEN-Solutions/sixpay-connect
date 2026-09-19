@@ -54,7 +54,7 @@ record PaymentStateDocument(
         Instant finalizedAt
 ) {
 
-    static final int CURRENT_SCHEMA_VERSION = 7;
+    static final int CURRENT_SCHEMA_VERSION = 8;
 
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(

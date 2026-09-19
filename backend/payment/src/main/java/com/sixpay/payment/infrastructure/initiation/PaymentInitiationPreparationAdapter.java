@@ -6,6 +6,7 @@ import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
 import com.sixpay.payment.domain.model.CallbackEndpoint;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.FinancialInstitutionCode;
@@ -113,7 +114,9 @@ public final class PaymentInitiationPreparationAdapter
                         "v1:sha256:" + allocationHash
                 ),
                 new PaymentInitiationContext(
-                        command.partnerLoginName(),
+                        new CanonicalPartnerIdentity(
+                                command.partnerIdentity().value()
+                        ),
                         command.applicationId(),
                         command.debtorName(),
                         command.claimType(),
@@ -141,7 +144,7 @@ public final class PaymentInitiationPreparationAdapter
             FinancialInstitutionCode institution
     ) {
         String hash = sha256(
-                command.partnerLoginName()
+                command.partnerIdentity().value()
                         + "|"
                         + command.debtorRib()
         );

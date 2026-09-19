@@ -9,6 +9,7 @@ import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.partner.application.contract.PartnerIdentity;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -30,16 +31,28 @@ public final class TresorPayPaymentApiMapper {
     public InitiatePaymentCommand toCommand(
             InitiateDebitRequest request,
             String authenticatedPartnerLoginName,
+            String authenticatedPartnerSubject,
             String idempotencyKey,
             CorrelationId correlationId
     ) {
         Objects.requireNonNull(request, "InitiateDebit request");
+        String authenticatedLogin = Objects.requireNonNull(
+                authenticatedPartnerLoginName,
+                "Authenticated partner login name"
+        ).trim();
+        if (!request.loginName().equals(authenticatedLogin)) {
+            throw new IllegalArgumentException(
+                    "Partner login name must match the authenticated partner login"
+            );
+        }
+
+        PartnerIdentity partnerIdentity =
+                PartnerIdentity.from(authenticatedPartnerSubject);
 
         return new InitiatePaymentCommand(
                 PaymentSource.TRESOR_PAY,
                 externalSubscriptionReference(request),
-                request.loginName(),
-                authenticatedPartnerLoginName,
+                partnerIdentity,
                 request.applicationId(),
                 request.endToEndId(),
                 request.totalAmount(),

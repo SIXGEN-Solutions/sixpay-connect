@@ -13,7 +13,9 @@ class PaymentInitiationContextTest {
     void acceptsCompleteNonSecretTresorPayContext() {
         PaymentInitiationContext context =
                 new PaymentInitiationContext(
-                        "TRESOR_PAY",
+                        CanonicalPartnerIdentity.from(
+                                "11111111-2222-3333-4444-555555555555"
+                        ),
                         "TP_APP_001",
                         "Société ABC SARL",
                         ClaimType.AVI,
@@ -24,8 +26,10 @@ class PaymentInitiationContextTest {
                         )
                 );
 
-        assertThat(context.partnerLoginName())
-                .isEqualTo("TRESOR_PAY");
+        assertThat(context.partnerIdentity().toString())
+                .isEqualTo(
+                        "11111111-2222-3333-4444-555555555555"
+                );
         assertThat(context.optionalApplicationId())
                 .contains("TP_APP_001");
         assertThat(context.claimType())
@@ -36,7 +40,9 @@ class PaymentInitiationContextTest {
     void applicationIdIsOptional() {
         PaymentInitiationContext context =
                 new PaymentInitiationContext(
-                        "TRESOR_PAY",
+                        CanonicalPartnerIdentity.from(
+                                "11111111-2222-3333-4444-555555555555"
+                        ),
                         null,
                         "Société ABC SARL",
                         ClaimType.IM7,

@@ -7,6 +7,7 @@ import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.partner.application.contract.PartnerIdentity;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -143,8 +144,7 @@ class PaymentInitiationPreparationAdapterTest {
                 new InitiatePaymentCommand(
                         PaymentSource.of("PARTNER_A"),
                         ExternalSubscriptionReference.of("PARTNER_A:APP_001"),
-                        base.partnerLoginName(),
-                        base.authenticatedPartnerLoginName(),
+                        base.partnerIdentity(),
                         base.applicationId(),
                         base.endToEndId(),
                         base.totalAmount(),
@@ -210,8 +210,7 @@ class PaymentInitiationPreparationAdapterTest {
         return new InitiatePaymentCommand(
                 PaymentSource.TRESOR_PAY,
                 ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
-                "TRESOR_PAY",
-                "TRESOR_PAY",
+                PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 total,

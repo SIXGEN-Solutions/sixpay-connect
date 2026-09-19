@@ -4,6 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.partner.application.contract.PartnerIdentity;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -52,43 +53,6 @@ class InitiatePaymentCommandTest {
                 );
     }
 
-    @Test
-    void rejectsPartnerIdentityMismatch() {
-        assertThatThrownBy(() ->
-                new InitiatePaymentCommand(
-                        PaymentSource.TRESOR_PAY,
-                        ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
-                        "TRESOR_PAY",
-                        "OTHER_PARTNER",
-                        "TP_APP_001",
-                        "AVI-2025-00045678",
-                        new BigDecimal("600000"),
-                        "XAF",
-                        "10005-00001-12345678901-12",
-                        "Société ABC SARL",
-                        ClaimType.AVI,
-                        "100200300",
-                        Instant.parse(
-                                "2026-08-03T10:30:00Z"
-                        ),
-                        List.of(
-                                beneficiary("600000")
-                        ),
-                        "https://tresorpay.cm/callback",
-                        "idem-001",
-                        CorrelationId.of(
-                                "11111111-1111-1111-1111-111111111111"
-                        )
-                )
-        )
-                .isInstanceOf(
-                        IllegalArgumentException.class
-                )
-                .hasMessageContaining(
-                        "authenticated partner identity"
-                );
-    }
-
     private InitiatePaymentCommand command(
             BigDecimal totalAmount,
             List<PaymentBeneficiaryCommand> beneficiaries
@@ -96,8 +60,7 @@ class InitiatePaymentCommandTest {
         return new InitiatePaymentCommand(
                 PaymentSource.TRESOR_PAY,
                 ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
-                "TRESOR_PAY",
-                "TRESOR_PAY",
+                PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 totalAmount,

@@ -227,7 +227,9 @@ public final class PaymentAggregateTestFixtures {
                 ),
                 fingerprint("c"),
                 new PaymentInitiationContext(
-                        "TRESOR_PAY",
+                        CanonicalPartnerIdentity.from(
+                                "11111111-2222-3333-4444-555555555555"
+                        ),
                         "TP_APP_001",
                         "TEST CUSTOMER",
                         ClaimType.AVI,

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  * excluded from this value object.</p>
  */
 public record PaymentInitiationContext(
-        String partnerLoginName,
+        CanonicalPartnerIdentity partnerIdentity,
         String applicationId,
         String debtorName,
         ClaimType claimType,
@@ -27,9 +27,9 @@ public record PaymentInitiationContext(
             Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
 
     public PaymentInitiationContext {
-        partnerLoginName = requireIdentifier(
-                partnerLoginName,
-                "Partner login name"
+        partnerIdentity = Objects.requireNonNull(
+                partnerIdentity,
+                "Canonical Partner identity"
         );
         applicationId = normalizeOptionalIdentifier(applicationId);
         debtorName = requireText(debtorName, 200, "Debtor name");
@@ -99,8 +99,8 @@ public record PaymentInitiationContext(
 
     @Override
     public String toString() {
-        return "PaymentInitiationContext[partnerLoginName="
-                + partnerLoginName
+        return "PaymentInitiationContext[partnerIdentity="
+                + partnerIdentity
                 + ", applicationIdPresent="
                 + (applicationId != null)
                 + ", claimType="

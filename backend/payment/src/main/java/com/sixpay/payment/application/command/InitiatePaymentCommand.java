@@ -4,6 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.partner.application.contract.PartnerIdentity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,8 +20,7 @@ import java.util.Objects;
 public record InitiatePaymentCommand(
         PaymentSource source,
         ExternalSubscriptionReference externalSubscriptionReference,
-        String partnerLoginName,
-        String authenticatedPartnerLoginName,
+        PartnerIdentity partnerIdentity,
         String applicationId,
         String endToEndId,
         BigDecimal totalAmount,
@@ -47,15 +47,9 @@ public record InitiatePaymentCommand(
                 externalSubscriptionReference,
                 "External subscription reference"
         );
-        partnerLoginName = requireText(
-                partnerLoginName,
-                64,
-                "Partner login name"
-        );
-        authenticatedPartnerLoginName = requireText(
-                authenticatedPartnerLoginName,
-                64,
-                "Authenticated partner login name"
+        partnerIdentity = Objects.requireNonNull(
+                partnerIdentity,
+                "Canonical Partner identity"
         );
         applicationId = normalizeOptional(
                 applicationId,
@@ -113,15 +107,6 @@ public record InitiatePaymentCommand(
                 correlationId,
                 "Correlation ID"
         );
-
-        if (!partnerLoginName.equals(
-                authenticatedPartnerLoginName
-        )) {
-            throw new IllegalArgumentException(
-                    "Partner login name must match "
-                            + "the authenticated partner identity"
-            );
-        }
 
         if (totalAmount.signum() <= 0) {
             throw new IllegalArgumentException(

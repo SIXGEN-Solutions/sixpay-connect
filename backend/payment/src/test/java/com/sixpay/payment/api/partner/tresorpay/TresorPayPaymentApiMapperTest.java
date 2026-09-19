@@ -30,6 +30,7 @@ class TresorPayPaymentApiMapperTest {
         var command = mapper.toCommand(
                 request,
                 "TRESOR_PAY",
+                "11111111-2222-3333-4444-555555555555",
                 "IDEMPOTENCY-001",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"
@@ -40,10 +41,8 @@ class TresorPayPaymentApiMapperTest {
                 .isEqualTo(PaymentSource.TRESOR_PAY);
         assertThat(command.externalSubscriptionReference().value())
                 .isEqualTo("TRESOR_PAY:TP_APP_001");
-        assertThat(command.partnerLoginName())
-                .isEqualTo("TRESOR_PAY");
-        assertThat(command.authenticatedPartnerLoginName())
-                .isEqualTo("TRESOR_PAY");
+        assertThat(command.partnerIdentity().toString())
+                .isEqualTo("11111111-2222-3333-4444-555555555555");
         assertThat(command.beneficiaries())
                 .hasSize(1);
     }

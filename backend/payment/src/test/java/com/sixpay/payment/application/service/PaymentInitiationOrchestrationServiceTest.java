@@ -8,6 +8,7 @@ import com.sixpay.payment.application.port.output.initiation.*;
 import com.sixpay.payment.application.view.*;
 import com.sixpay.payment.domain.model.*;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import com.sixpay.partner.application.contract.PartnerIdentity;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.ObjectProvider;
@@ -38,5 +39,5 @@ class PaymentInitiationOrchestrationServiceTest {
         Mockito.verify(confirmation, Mockito.times(1)).createBefore(any(),any(),any());
     }
     private static PaymentWorkflowResult flow(PaymentId id,PublicPaymentReference ref,PaymentStatus s,long v){ return new PaymentWorkflowResult(id,ref,s,v,true); }
-    private static InitiatePaymentCommand command(){ return new InitiatePaymentCommand(PaymentSource.TRESOR_PAY,ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),"TRESOR_PAY","TRESOR_PAY","TP_APP_001","AVI-2025-00045678",new BigDecimal("600000"),"XAF","10005-00001-12345678901-12","Société ABC SARL",ClaimType.AVI,"100200300",NOW,List.of(new PaymentBeneficiaryCommand("10005-00001-TRESDGI-97",new BigDecimal("600000"))),"https://tresorpay.cm/callback","IDEMPOTENCY-00000001",CorrelationId.of("11111111-1111-1111-1111-111111111111")); }
+    private static InitiatePaymentCommand command(){ return new InitiatePaymentCommand(PaymentSource.TRESOR_PAY,ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),"TP_APP_001","AVI-2025-00045678",new BigDecimal("600000"),"XAF","10005-00001-12345678901-12","Société ABC SARL",ClaimType.AVI,"100200300",NOW,List.of(new PaymentBeneficiaryCommand("10005-00001-TRESDGI-97",new BigDecimal("600000"))),"https://tresorpay.cm/callback","IDEMPOTENCY-00000001",CorrelationId.of("11111111-1111-1111-1111-111111111111")); }
 }

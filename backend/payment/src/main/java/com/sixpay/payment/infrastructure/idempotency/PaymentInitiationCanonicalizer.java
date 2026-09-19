@@ -30,8 +30,7 @@ public final class PaymentInitiationCanonicalizer {
 
         append(value, command.source().value());
         append(value, command.externalSubscriptionReference().value());
-        append(value, command.partnerLoginName());
-        append(value, command.authenticatedPartnerLoginName());
+        append(value, command.partnerIdentity().toString());
         append(value, command.applicationId());
         append(value, command.endToEndId());
         append(value, decimal(command.totalAmount()));
