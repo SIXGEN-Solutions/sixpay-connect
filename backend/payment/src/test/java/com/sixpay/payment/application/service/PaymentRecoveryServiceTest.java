@@ -13,7 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class TresorPayPaymentRecoveryServiceTest {
+class PaymentRecoveryServiceTest {
 
     @Test
     void mapsAuthoritativePaymentStateToRecoveryView() {
@@ -24,7 +24,7 @@ class TresorPayPaymentRecoveryServiceTest {
         when(lookup.findByPublicPaymentReference(reference))
                 .thenReturn(Optional.of(payment));
 
-        var service = new TresorPayPaymentRecoveryService(lookup);
+        var service = new PaymentRecoveryService(lookup);
 
         var result = service.findByPaymentReference(reference);
 
@@ -37,7 +37,7 @@ class TresorPayPaymentRecoveryServiceTest {
                 .isEqualTo(state.paymentId().value());
         assertThat(view.paymentReference())
                 .isEqualTo(state.publicPaymentReference().value());
-        assertThat(view.tresorPayPaymentReference())
+        assertThat(view.externalPaymentReference())
                 .isEqualTo(state.externalPaymentReference().value());
         assertThat(view.status())
                 .isEqualTo(state.status().name());
@@ -65,7 +65,7 @@ class TresorPayPaymentRecoveryServiceTest {
         when(lookup.findByPublicPaymentReference(reference))
                 .thenReturn(Optional.empty());
 
-        var service = new TresorPayPaymentRecoveryService(lookup);
+        var service = new PaymentRecoveryService(lookup);
 
         assertThat(service.findByPaymentReference(reference)).isEmpty();
 

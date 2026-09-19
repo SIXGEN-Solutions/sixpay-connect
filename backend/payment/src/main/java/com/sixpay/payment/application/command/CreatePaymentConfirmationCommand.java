@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * Public create-confirmation application command.
  *
- * <p>No TRESOR PAY request payload is reproduced here. The business context
+ * <p>No provider request payload is reproduced here. The business context
  * required by Core Banking is derived from the existing Payment aggregate.</p>
  */
 public record CreatePaymentConfirmationCommand(

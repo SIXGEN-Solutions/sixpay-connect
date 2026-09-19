@@ -1,8 +1,8 @@
 package com.sixpay.payment.infrastructure.initiation;
 
 import com.sixpay.common.identifier.IdentifierGenerator;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
 import com.sixpay.payment.domain.model.CallbackEndpoint;
@@ -68,7 +68,7 @@ public final class PaymentInitiationPreparationAdapter
      */
     @Override
     public PreparedPaymentInitiation prepare(
-            InitiateDebitCommand command,
+            InitiatePaymentCommand command,
             String requestHash,
             Instant receivedAt
     ) {
@@ -141,7 +141,7 @@ public final class PaymentInitiationPreparationAdapter
      * partners from sharing the same integration token.
      */
     private static DebtorAccountReference debtorReference(
-            InitiateDebitCommand command,
+            InitiatePaymentCommand command,
             FinancialInstitutionCode institution
     ) {
         String hash = sha256(
@@ -159,7 +159,7 @@ public final class PaymentInitiationPreparationAdapter
     }
 
     private static List<TreasuryAllocation> allocations(
-            InitiateDebitCommand command
+            InitiatePaymentCommand command
     ) {
         return command.beneficiaries()
                 .stream()
@@ -178,7 +178,7 @@ public final class PaymentInitiationPreparationAdapter
      * RIB is not stored input the Payment aggregate.
      */
     private static TreasuryBeneficiaryReference beneficiaryReference(
-            InitiateDebitBeneficiaryCommand item
+            PaymentBeneficiaryCommand item
     ) {
         return TreasuryBeneficiaryReference.of(
                 "BEN_" + sha256(item.rib()).substring(0, 32)
@@ -186,13 +186,13 @@ public final class PaymentInitiationPreparationAdapter
     }
 
     private static String canonicalAllocations(
-            InitiateDebitCommand command
+            InitiatePaymentCommand command
     ) {
         return command.beneficiaries()
                 .stream()
                 .sorted(
                         Comparator.comparing(
-                                InitiateDebitBeneficiaryCommand::rib
+                                PaymentBeneficiaryCommand::rib
                         )
                 )
                 .map(item ->
@@ -210,7 +210,7 @@ public final class PaymentInitiationPreparationAdapter
      * local CustomerSubscription aggregate identifier owned by Customer.
      */
     private static String subscriptionReference(
-            InitiateDebitCommand command
+            InitiatePaymentCommand command
     ) {
         return command.applicationId() == null
                 ? command.partnerLoginName()

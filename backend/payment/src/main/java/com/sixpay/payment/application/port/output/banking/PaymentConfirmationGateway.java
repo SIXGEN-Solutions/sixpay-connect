@@ -59,7 +59,7 @@ public interface PaymentConfirmationGateway {
 
     /**
      * Create deliberately receives the existing Payment aggregate rather than
-     * an invented TRESOR PAY payload. Provider mapping is deferred to the
+     * an invented provider payload. Provider mapping is deferred to the
      * banking adapter.
      */
     record CreateRequest(

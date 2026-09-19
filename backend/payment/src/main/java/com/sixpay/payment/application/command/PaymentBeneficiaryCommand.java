@@ -4,14 +4,14 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * One beneficiary allocation supplied with an InitiateDebit command.
+ * One beneficiary allocation supplied with a Payment initiation command.
  */
-public record InitiateDebitBeneficiaryCommand(
+public record PaymentBeneficiaryCommand(
         String rib,
         BigDecimal amount
 ) {
 
-    public InitiateDebitBeneficiaryCommand {
+    public PaymentBeneficiaryCommand {
         rib = requireText(rib, 64, "Beneficiary RIB");
         amount = Objects.requireNonNull(
                 amount,

@@ -1,7 +1,7 @@
 package com.sixpay.payment.application.service;
 
-import com.sixpay.payment.application.view.TresorPayPaymentRecoveryView;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.application.view.PaymentRecoveryView;
+import com.sixpay.payment.application.port.input.PaymentRecoveryUseCase;
 import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
@@ -17,12 +17,12 @@ import java.util.Optional;
  * triggered by this service.</p>
  */
 @Service
-public final class TresorPayPaymentRecoveryService
-        implements TresorPayPaymentRecoveryUseCase {
+public final class PaymentRecoveryService
+        implements PaymentRecoveryUseCase {
 
     private final PaymentLookupPort paymentLookupPort;
 
-    public TresorPayPaymentRecoveryService(
+    public PaymentRecoveryService(
             PaymentLookupPort paymentLookupPort
     ) {
         this.paymentLookupPort = Objects.requireNonNull(
@@ -32,27 +32,27 @@ public final class TresorPayPaymentRecoveryService
     }
 
     @Override
-    public Optional<TresorPayPaymentRecoveryView> findByPaymentReference(
+    public Optional<PaymentRecoveryView> findByPaymentReference(
             PublicPaymentReference paymentReference
     ) {
         Objects.requireNonNull(paymentReference, "Public Payment reference");
 
         return paymentLookupPort
                 .findByPublicPaymentReference(paymentReference)
-                .map(TresorPayPaymentRecoveryService::toResponse);
+                .map(PaymentRecoveryService::toResponse);
     }
 
-    private static TresorPayPaymentRecoveryView toResponse(
+    private static PaymentRecoveryView toResponse(
             Payment payment
     ) {
         var state = payment.toState();
 
-        return new TresorPayPaymentRecoveryView(
+        return new PaymentRecoveryView(
                 state.paymentId().value(),
                 state.publicPaymentReference().value(),
                 state.externalPaymentReference().value(),
                 state.status().name(),
-                new TresorPayPaymentRecoveryView.Money(
+                new PaymentRecoveryView.Money(
                         state.requestedAmount().amount(),
                         state.requestedAmount()
                                 .currency()

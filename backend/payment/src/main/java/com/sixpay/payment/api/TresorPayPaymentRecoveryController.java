@@ -4,7 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.response.TresorPayPaymentRecoveryResponse;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.application.port.input.PaymentRecoveryUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,11 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirement(name = "subscriptionKey")
 public class TresorPayPaymentRecoveryController {
 
-    private final TresorPayPaymentRecoveryUseCase recoveryUseCase;
+    private final PaymentRecoveryUseCase recoveryUseCase;
     private final CorrelationIdResolver correlationIdResolver;
 
     public TresorPayPaymentRecoveryController(
-            TresorPayPaymentRecoveryUseCase recoveryUseCase,
+            PaymentRecoveryUseCase recoveryUseCase,
             CorrelationIdResolver correlationIdResolver
     ) {
         this.recoveryUseCase = recoveryUseCase;
@@ -71,7 +71,7 @@ public class TresorPayPaymentRecoveryController {
         var response = new TresorPayPaymentRecoveryResponse(
                 view.paymentId(),
                 view.paymentReference(),
-                view.tresorPayPaymentReference(),
+                view.externalPaymentReference(),
                 view.status(),
                 new TresorPayPaymentRecoveryResponse.Money(
                         view.amount().amount(),

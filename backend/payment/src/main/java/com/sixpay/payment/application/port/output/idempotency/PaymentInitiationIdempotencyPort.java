@@ -1,7 +1,7 @@
 package com.sixpay.payment.application.port.output.idempotency;
 
-import com.sixpay.payment.application.command.InitiateDebitCommand;
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 
 import java.util.function.Function;
 
@@ -20,8 +20,8 @@ public interface PaymentInitiationIdempotencyPort {
      *                   computed lowercase SHA-256 request fingerprint
      * @return a newly produced or durably replayed initiation result
      */
-    InitiateDebitResult execute(
-            InitiateDebitCommand command,
-            Function<String, InitiateDebitResult> newRequest
+    PaymentInitiationResult execute(
+            InitiatePaymentCommand command,
+            Function<String, PaymentInitiationResult> newRequest
     );
 }

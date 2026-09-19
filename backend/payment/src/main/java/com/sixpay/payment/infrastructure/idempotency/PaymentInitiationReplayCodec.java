@@ -1,8 +1,8 @@
 package com.sixpay.payment.infrastructure.idempotency;
 
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.application.view.InitiateDebitStatus;
+import com.sixpay.payment.application.view.PaymentInitiationStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public final class PaymentInitiationReplayCodec {
 
     private static final String VERSION = "v2";
 
-    public String encode(InitiateDebitResult result) {
+    public String encode(PaymentInitiationResult result) {
         return String.join(
                 "|",
                 VERSION,
@@ -44,7 +44,7 @@ public final class PaymentInitiationReplayCodec {
         );
     }
 
-    public InitiateDebitResult decode(String payload) {
+    public PaymentInitiationResult decode(String payload) {
         if (payload == null || payload.isBlank()) {
             throw new IllegalArgumentException(
                     "Payment initiation replay payload is empty"
@@ -60,8 +60,8 @@ public final class PaymentInitiationReplayCodec {
             );
         }
 
-        InitiateDebitStatus status =
-                InitiateDebitStatus.valueOf(values[7]);
+        PaymentInitiationStatus status =
+                PaymentInitiationStatus.valueOf(values[7]);
 
         PublicPaymentReference paymentReference = PublicPaymentReference.of(values[2]);
         com.sixpay.payment.application.view.PaymentConfirmationView challenge = new com.sixpay.payment.application.view.PaymentConfirmationView(
@@ -74,7 +74,7 @@ public final class PaymentInitiationReplayCodec {
                 "~".equals(values[13]) ? null : Instant.parse(values[13]),
                 Boolean.parseBoolean(values[14]));
 
-        return new InitiateDebitResult(
+        return new PaymentInitiationResult(
                 PaymentId.from(values[1]), paymentReference, decodeText(values[3]),
                 Money.of(new java.math.BigDecimal(values[4]), values[5]),
                 Instant.parse(values[6]), status, challenge);

@@ -17,7 +17,7 @@ class PaymentInitiateDebitCoverageArchitectureTest {
     void commandApiIdempotencyPreparationAndCallbackHaveTests() {
         List<String> required = List.of(
                 "application/command/"
-                        + "InitiateDebitCommandTest.java",
+                        + "InitiatePaymentCommandTest.java",
                 "application/service/"
                         + "PaymentInitiationOrchestrationServiceTest.java",
                 "api/PaymentCommandApiMapperTest.java",

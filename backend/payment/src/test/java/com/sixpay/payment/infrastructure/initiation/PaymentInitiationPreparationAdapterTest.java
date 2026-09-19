@@ -2,8 +2,8 @@ package com.sixpay.payment.infrastructure.initiation;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.common.identifier.IdentifierGenerator;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentSource;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class PaymentInitiationPreparationAdapterTest {
 
     @Test
     void preparesProtectedDomainIntentWithoutClearRib() {
-        InitiateDebitCommand command = command(
+        InitiatePaymentCommand command = command(
                 List.of(
                         beneficiary(
                                 "10005-00001-TRESDGI-97",
@@ -152,14 +152,14 @@ class PaymentInitiationPreparationAdapterTest {
     }
 
 
-    private static InitiateDebitCommand command(
-            List<InitiateDebitBeneficiaryCommand> beneficiaries
+    private static InitiatePaymentCommand command(
+            List<PaymentBeneficiaryCommand> beneficiaries
     ) {
         BigDecimal total = beneficiaries.stream()
-                .map(InitiateDebitBeneficiaryCommand::amount)
+                .map(PaymentBeneficiaryCommand::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new InitiateDebitCommand(
+        return new InitiatePaymentCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
@@ -180,11 +180,11 @@ class PaymentInitiationPreparationAdapterTest {
         );
     }
 
-    private static InitiateDebitBeneficiaryCommand beneficiary(
+    private static PaymentBeneficiaryCommand beneficiary(
             String rib,
             String amount
     ) {
-        return new InitiateDebitBeneficiaryCommand(
+        return new PaymentBeneficiaryCommand(
                 rib,
                 new BigDecimal(amount)
         );

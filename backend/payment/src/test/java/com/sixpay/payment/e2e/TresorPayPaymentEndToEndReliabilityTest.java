@@ -60,7 +60,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
                 .contains("PaymentStatus.PENDING_CONFIRMATION")
                 .contains("confirmation.createBefore(")
                 .contains("ConfirmationChallengeStatus.ACTIVE")
-                .contains("InitiateDebitResult.awaitingOtp(");
+                .contains("PaymentInitiationResult.awaitingOtp(");
 
         assertThat(confirmation)
                 .contains("confirmationGateway.verify(")
@@ -94,7 +94,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
         );
         String recovery = source(
                 "com/sixpay/payment/application/service/"
-                        + "TresorPayPaymentRecoveryService.java"
+                        + "PaymentRecoveryService.java"
         );
         String recoveryController = source(
                 "com/sixpay/payment/api/"

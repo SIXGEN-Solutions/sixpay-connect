@@ -3,8 +3,8 @@ package com.sixpay.payment.api;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.payment.api.response.TresorPayPaymentRecoveryResponse;
-import com.sixpay.payment.application.view.TresorPayPaymentRecoveryView;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.application.view.PaymentRecoveryView;
+import com.sixpay.payment.application.port.input.PaymentRecoveryUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -23,8 +23,8 @@ class TresorPayPaymentRecoveryControllerTest {
 
     @Test
     void returnsRecoveryViewAndEchoesCorrelationId() {
-        TresorPayPaymentRecoveryUseCase useCase =
-                mock(TresorPayPaymentRecoveryUseCase.class);
+        PaymentRecoveryUseCase useCase =
+                mock(PaymentRecoveryUseCase.class);
         CorrelationIdResolver resolver = mock(CorrelationIdResolver.class);
 
         String reference = "PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X";
@@ -33,12 +33,12 @@ class TresorPayPaymentRecoveryControllerTest {
         when(resolver.resolve(correlation))
                 .thenReturn(CorrelationId.of(correlation));
 
-        var view = new TresorPayPaymentRecoveryView(
+        var view = new PaymentRecoveryView(
                 UUID.randomUUID(),
                 reference,
                 "AVI-DEMO-00045678",
                 "PENDING_CONFIRMATION",
-                new TresorPayPaymentRecoveryView.Money(
+                new PaymentRecoveryView.Money(
                         new BigDecimal("600000"),
                         "XAF"
                 ),
@@ -62,8 +62,8 @@ class TresorPayPaymentRecoveryControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().paymentReference())
                 .isEqualTo(view.paymentReference());
-        assertThat(response.getBody().tresorPayPaymentReference())
-                .isEqualTo(view.tresorPayPaymentReference());
+        assertThat(response.getBody().externalPaymentReference())
+                .isEqualTo(view.externalPaymentReference());
         assertThat(response.getBody().status())
                 .isEqualTo(view.status());
         assertThat(response.getHeaders().getFirst("X-Correlation-ID"))
@@ -72,8 +72,8 @@ class TresorPayPaymentRecoveryControllerTest {
 
     @Test
     void throwsPaymentNotFoundForUnknownReference() {
-        TresorPayPaymentRecoveryUseCase useCase =
-                mock(TresorPayPaymentRecoveryUseCase.class);
+        PaymentRecoveryUseCase useCase =
+                mock(PaymentRecoveryUseCase.class);
         CorrelationIdResolver resolver = mock(CorrelationIdResolver.class);
 
         String reference = "PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X";

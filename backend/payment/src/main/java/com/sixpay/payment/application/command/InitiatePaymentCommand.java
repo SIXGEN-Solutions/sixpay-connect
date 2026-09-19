@@ -9,13 +9,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Application command corresponding to the contracted TresorPay
- * {@code initiateDebit} operation.
+ * Provider-neutral application command for Payment initiation.
  *
  * <p>Authentication secrets, API keys, PIN values, bearer tokens and OTP
  * values are deliberately excluded.</p>
  */
-public record InitiateDebitCommand(
+public record InitiatePaymentCommand(
         String partnerLoginName,
         String authenticatedPartnerLoginName,
         String applicationId,
@@ -27,7 +26,7 @@ public record InitiateDebitCommand(
         ClaimType claimType,
         String taxpayerIdentifier,
         Instant requestedExecutionAt,
-        List<InitiateDebitBeneficiaryCommand> beneficiaries,
+        List<PaymentBeneficiaryCommand> beneficiaries,
         String callbackUrl,
         String idempotencyKey,
         CorrelationId correlationId
@@ -35,7 +34,7 @@ public record InitiateDebitCommand(
 
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
-    public InitiateDebitCommand {
+    public InitiatePaymentCommand {
         partnerLoginName = requireText(
                 partnerLoginName,
                 64,
@@ -156,7 +155,7 @@ public record InitiateDebitCommand(
         BigDecimal allocatedAmount =
                 beneficiaries.stream()
                         .map(
-                                InitiateDebitBeneficiaryCommand
+                                PaymentBeneficiaryCommand
                                         ::amount
                         )
                         .reduce(

@@ -4,9 +4,9 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.api.response.PaymentMoneyResponse;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -25,7 +25,7 @@ public final class PaymentCommandApiMapper {
      * correlation ID come from trusted request processing components. The
      * command validates their relationship with the partner-provided data.</p>
      */
-    public InitiateDebitCommand toCommand(
+    public InitiatePaymentCommand toCommand(
             InitiateDebitRequest request,
             String authenticatedPartnerLoginName,
             String idempotencyKey,
@@ -33,7 +33,7 @@ public final class PaymentCommandApiMapper {
     ) {
         Objects.requireNonNull(request, "InitiateDebit request");
 
-        return new InitiateDebitCommand(
+        return new InitiatePaymentCommand(
                 request.loginName(),
                 authenticatedPartnerLoginName,
                 request.applicationId(),
@@ -47,7 +47,7 @@ public final class PaymentCommandApiMapper {
                 request.requestedExecutionAt(),
                 request.beneficiaries().stream()
                         .map(beneficiary ->
-                                new InitiateDebitBeneficiaryCommand(
+                                new PaymentBeneficiaryCommand(
                                         beneficiary.rib(),
                                         beneficiary.amount()
                                 )
@@ -67,7 +67,7 @@ public final class PaymentCommandApiMapper {
      * operation IDs, fees, validity periods or QR data.</p>
      */
     public InitiateDebitResponse toResponse(
-            InitiateDebitResult result
+            PaymentInitiationResult result
     ) {
         Objects.requireNonNull(result, "InitiateDebit result");
 

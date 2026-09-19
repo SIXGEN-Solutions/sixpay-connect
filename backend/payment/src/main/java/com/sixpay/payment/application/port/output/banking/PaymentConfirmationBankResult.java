@@ -13,7 +13,7 @@ import java.util.Optional;
  * Provider-neutral authoritative result of a banking confirmation operation.
  *
  * <p>The challenge reference remains internal to the Payment application and
- * is not part of the public TRESOR PAY view.</p>
+ * is not part of the public partner-facing view.</p>
  */
 public record PaymentConfirmationBankResult(
         ConfirmationChallengeReference challengeReference,

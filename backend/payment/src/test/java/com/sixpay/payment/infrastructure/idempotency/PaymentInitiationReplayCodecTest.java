@@ -1,6 +1,6 @@
 package com.sixpay.payment.infrastructure.idempotency;
 
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
@@ -19,8 +19,8 @@ class PaymentInitiationReplayCodecTest {
         PaymentInitiationReplayCodec codec =
                 new PaymentInitiationReplayCodec();
 
-        InitiateDebitResult original =
-                InitiateDebitResult.awaitingOtp(
+        PaymentInitiationResult original =
+                PaymentInitiationResult.awaitingOtp(
                         new PaymentId(UUID.randomUUID()),
                         PublicPaymentReference.of(
                                 "PAY-1234567890ABCDEFGHJKMNPQRS"
@@ -46,7 +46,7 @@ class PaymentInitiationReplayCodecTest {
                 );
 
         String encoded = codec.encode(original);
-        InitiateDebitResult decoded =
+        PaymentInitiationResult decoded =
                 codec.decode(encoded);
 
         assertThat(decoded).isEqualTo(original);

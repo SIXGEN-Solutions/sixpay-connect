@@ -11,11 +11,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class InitiateDebitCommandTest {
+class InitiatePaymentCommandTest {
 
     @Test
     void acceptsContractedTresorPayCommand() {
-        InitiateDebitCommand command =
+        InitiatePaymentCommand command =
                 command(
                         new BigDecimal("600000"),
                         List.of(
@@ -53,7 +53,7 @@ class InitiateDebitCommandTest {
     @Test
     void rejectsPartnerIdentityMismatch() {
         assertThatThrownBy(() ->
-                new InitiateDebitCommand(
+                new InitiatePaymentCommand(
                         "TRESOR_PAY",
                         "OTHER_PARTNER",
                         "TP_APP_001",
@@ -85,11 +85,11 @@ class InitiateDebitCommandTest {
                 );
     }
 
-    private InitiateDebitCommand command(
+    private InitiatePaymentCommand command(
             BigDecimal totalAmount,
-            List<InitiateDebitBeneficiaryCommand> beneficiaries
+            List<PaymentBeneficiaryCommand> beneficiaries
     ) {
-        return new InitiateDebitCommand(
+        return new InitiatePaymentCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
@@ -112,10 +112,10 @@ class InitiateDebitCommandTest {
         );
     }
 
-    private InitiateDebitBeneficiaryCommand beneficiary(
+    private PaymentBeneficiaryCommand beneficiary(
             String amount
     ) {
-        return new InitiateDebitBeneficiaryCommand(
+        return new PaymentBeneficiaryCommand(
                 "10005-00001-000000TRESDGI-97",
                 new BigDecimal(amount)
         );

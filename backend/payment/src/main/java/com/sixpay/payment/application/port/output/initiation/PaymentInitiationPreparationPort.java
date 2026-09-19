@@ -1,6 +1,6 @@
 package com.sixpay.payment.application.port.output.initiation;
 
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 
 import java.time.Instant;
 
@@ -16,7 +16,7 @@ public interface PaymentInitiationPreparationPort {
      * orchestration service.
      */
     PreparedPaymentInitiation prepare(
-            InitiateDebitCommand command,
+            InitiatePaymentCommand command,
             String requestHash,
             Instant receivedAt
     );

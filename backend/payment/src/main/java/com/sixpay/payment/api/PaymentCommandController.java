@@ -84,7 +84,7 @@ public class PaymentCommandController {
         String authenticatedPartner =
                 currentUserProvider.requireCurrentUser().username();
 
-        var result = initiationUseCase.initiateDebit(
+        var result = initiationUseCase.initiatePayment(
                 mapper.toCommand(
                         request,
                         authenticatedPartner,

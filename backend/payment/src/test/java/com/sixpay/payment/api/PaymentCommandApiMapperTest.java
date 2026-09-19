@@ -3,7 +3,7 @@ package com.sixpay.payment.api;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.api.request.InitiateDebitBeneficiaryRequest;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
@@ -45,8 +45,8 @@ class PaymentCommandApiMapperTest {
 
     @Test
     void omitsUnavailableBankChallengeData() {
-        InitiateDebitResult result =
-                InitiateDebitResult.awaitingOtp(
+        PaymentInitiationResult result =
+                PaymentInitiationResult.awaitingOtp(
                         new PaymentId(UUID.randomUUID()),
                         PublicPaymentReference.of(
                                 "PAY-1234567890ABCDEFGHJKMNPQRS"

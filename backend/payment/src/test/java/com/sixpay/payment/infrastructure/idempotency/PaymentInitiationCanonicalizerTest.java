@@ -1,8 +1,8 @@
 package com.sixpay.payment.infrastructure.idempotency;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.domain.model.ClaimType;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +44,7 @@ class PaymentInitiationCanonicalizerTest {
 
     @Test
     void materialBusinessChangeChangesCanonicalRequest() {
-        InitiateDebitCommand original =
+        InitiatePaymentCommand original =
                 command(
                         List.of(
                                 beneficiary(
@@ -54,8 +54,8 @@ class PaymentInitiationCanonicalizerTest {
                         )
                 );
 
-        InitiateDebitCommand changed =
-                new InitiateDebitCommand(
+        InitiatePaymentCommand changed =
+                new InitiatePaymentCommand(
                         original.partnerLoginName(),
                         original.authenticatedPartnerLoginName(),
                         original.applicationId(),
@@ -81,7 +81,7 @@ class PaymentInitiationCanonicalizerTest {
 
     @Test
     void canonicalRequestNeverContainsIdempotencyKey() {
-        InitiateDebitCommand command =
+        InitiatePaymentCommand command =
                 command(
                         List.of(
                                 beneficiary(
@@ -96,14 +96,14 @@ class PaymentInitiationCanonicalizerTest {
     }
 
 
-    private static InitiateDebitCommand command(
-            List<InitiateDebitBeneficiaryCommand> beneficiaries
+    private static InitiatePaymentCommand command(
+            List<PaymentBeneficiaryCommand> beneficiaries
     ) {
         BigDecimal total = beneficiaries.stream()
-                .map(InitiateDebitBeneficiaryCommand::amount)
+                .map(PaymentBeneficiaryCommand::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new InitiateDebitCommand(
+        return new InitiatePaymentCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
@@ -124,11 +124,11 @@ class PaymentInitiationCanonicalizerTest {
         );
     }
 
-    private static InitiateDebitBeneficiaryCommand beneficiary(
+    private static PaymentBeneficiaryCommand beneficiary(
             String rib,
             String amount
     ) {
-        return new InitiateDebitBeneficiaryCommand(
+        return new PaymentBeneficiaryCommand(
                 rib,
                 new BigDecimal(amount)
         );

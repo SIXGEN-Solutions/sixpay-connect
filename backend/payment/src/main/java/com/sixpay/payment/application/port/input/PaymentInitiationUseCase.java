@@ -1,14 +1,14 @@
 package com.sixpay.payment.application.port.input;
 
-import com.sixpay.payment.application.command.InitiateDebitCommand;
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 
 /**
- * Inbound application boundary for TresorPay debit initiation.
+ * Inbound application boundary for Payment initiation.
  */
 public interface PaymentInitiationUseCase {
 
-    InitiateDebitResult initiateDebit(
-            InitiateDebitCommand command
+    PaymentInitiationResult initiatePayment(
+            InitiatePaymentCommand command
     );
 }

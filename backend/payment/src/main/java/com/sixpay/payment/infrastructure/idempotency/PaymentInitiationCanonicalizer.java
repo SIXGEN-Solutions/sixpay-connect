@@ -1,7 +1,7 @@
 package com.sixpay.payment.infrastructure.idempotency;
 
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -23,7 +23,7 @@ public final class PaymentInitiationCanonicalizer {
      * and idempotency keys are intentionally excluded because they identify
      * transport/execution context rather than the requested debit itself.</p>
      */
-    public String canonicalize(InitiateDebitCommand command) {
+    public String canonicalize(InitiatePaymentCommand command) {
         Objects.requireNonNull(command, "InitiateDebit command");
 
         StringBuilder value = new StringBuilder(1024);
@@ -44,7 +44,7 @@ public final class PaymentInitiationCanonicalizer {
         command.beneficiaries().stream()
                 .sorted(
                         Comparator.comparing(
-                                InitiateDebitBeneficiaryCommand::rib
+                                PaymentBeneficiaryCommand::rib
                         ).thenComparing(
                                 beneficiary ->
                                         decimal(

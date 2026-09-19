@@ -26,7 +26,7 @@ public final class PaymentProjectionViews {
 
     public record Summary(
             UUID paymentId, String paymentReference,
-            String tresorPayRequestId, UUID observedCustomerId,
+            String externalPaymentReference, UUID observedCustomerId,
             String financialInstitutionCode,
             MaskedAccountView debtorAccount, MoneyView amount,
             String status, String reasonCode, Instant createdAt,
@@ -35,7 +35,7 @@ public final class PaymentProjectionViews {
         public Summary {
             paymentId = Objects.requireNonNull(paymentId, "Payment ID");
             paymentReference = requireText(paymentReference, "Payment reference");
-            tresorPayRequestId = requireText(tresorPayRequestId, "TRESOR PAY request ID");
+            externalPaymentReference = requireText(externalPaymentReference, "External Payment reference");
             financialInstitutionCode = requireText(financialInstitutionCode, "Financial institution code");
             amount = Objects.requireNonNull(amount, "Payment amount");
             status = requireText(status, "Payment status");

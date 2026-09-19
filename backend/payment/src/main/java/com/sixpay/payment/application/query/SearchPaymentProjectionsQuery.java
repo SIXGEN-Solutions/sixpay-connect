@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record SearchPaymentProjectionsQuery(
         String cursor, int size, String paymentReference,
-        String tresorPayRequestId, UUID observedCustomerId,
+        String externalPaymentReference, UUID observedCustomerId,
         String financialInstitutionCode, String status,
         String reasonCode, Instant createdFrom, Instant createdTo,
         BigDecimal amountMin, BigDecimal amountMax, String currency,

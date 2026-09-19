@@ -1,12 +1,12 @@
 package com.sixpay.payment.infrastructure.idempotency;
 
 import com.sixpay.common.time.TimeProvider;
-import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.port.output.idempotency
         .PaymentInitiationIdempotencyPort;
 import com.sixpay.payment.application.service
         .PaymentInitiationInProgressException;
-import com.sixpay.payment.application.view.InitiateDebitResult;
+import com.sixpay.payment.application.view.PaymentInitiationResult;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,9 +91,9 @@ public class PaymentInitiationIdempotencyAdapter
      */
     @Override
     @Transactional
-    public InitiateDebitResult execute(
-            InitiateDebitCommand command,
-            Function<String, InitiateDebitResult> newRequest
+    public PaymentInitiationResult execute(
+            InitiatePaymentCommand command,
+            Function<String, PaymentInitiationResult> newRequest
     ) {
         Objects.requireNonNull(
                 command,
@@ -120,10 +120,10 @@ public class PaymentInitiationIdempotencyAdapter
         );
     }
 
-    private InitiateDebitResult executeLocked(
-            InitiateDebitCommand command,
+    private PaymentInitiationResult executeLocked(
+            InitiatePaymentCommand command,
             String requestHash,
-            Function<String, InitiateDebitResult> newRequest
+            Function<String, PaymentInitiationResult> newRequest
     ) {
         PaymentIdempotencyDecision decision =
                 replayStore.begin(
@@ -154,12 +154,12 @@ public class PaymentInitiationIdempotencyAdapter
         };
     }
 
-    private InitiateDebitResult completeNew(
-            InitiateDebitCommand command,
+    private PaymentInitiationResult completeNew(
+            InitiatePaymentCommand command,
             String requestHash,
-            Function<String, InitiateDebitResult> newRequest
+            Function<String, PaymentInitiationResult> newRequest
     ) {
-        InitiateDebitResult result =
+        PaymentInitiationResult result =
                 newRequest.apply(requestHash);
 
         replayStore.complete(
@@ -180,10 +180,10 @@ public class PaymentInitiationIdempotencyAdapter
      * agrees with the independently stored idempotency metadata before it is
      * returned to the caller.
      */
-    private InitiateDebitResult replay(
+    private PaymentInitiationResult replay(
             PaymentIdempotencyDecision decision
     ) {
-        InitiateDebitResult result =
+        PaymentInitiationResult result =
                 replayCodec.decode(
                         decision.responsePayload()
                 );

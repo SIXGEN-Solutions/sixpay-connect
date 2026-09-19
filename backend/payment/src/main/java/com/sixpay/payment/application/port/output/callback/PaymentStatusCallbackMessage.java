@@ -14,7 +14,7 @@ public record PaymentStatusCallbackMessage(
         UUID causationId,
         UUID paymentId,
         String paymentReference,
-        String tresorPayPaymentReference,
+        String externalPaymentReference,
         String financialInstitutionCode,
         long paymentVersion,
         Object data
@@ -36,7 +36,7 @@ public record PaymentStatusCallbackMessage(
         correlationId = Objects.requireNonNull(correlationId, "Correlation ID");
         paymentId = Objects.requireNonNull(paymentId, "Payment ID");
         paymentReference = requireText(paymentReference, "Payment reference");
-        tresorPayPaymentReference = requireText(tresorPayPaymentReference, "TRESOR PAY Payment reference");
+        externalPaymentReference = requireText(externalPaymentReference, "External Payment reference");
         financialInstitutionCode = requireText(financialInstitutionCode, "Financial institution code");
         if (paymentVersion <= 0) {
             throw new IllegalArgumentException("Payment version must be positive");
