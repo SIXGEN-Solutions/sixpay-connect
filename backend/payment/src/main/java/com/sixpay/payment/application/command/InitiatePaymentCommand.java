@@ -2,6 +2,7 @@ package com.sixpay.payment.application.command;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
+import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
 
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ import java.util.Objects;
  */
 public record InitiatePaymentCommand(
         PaymentSource source,
+        ExternalSubscriptionReference externalSubscriptionReference,
         String partnerLoginName,
         String authenticatedPartnerLoginName,
         String applicationId,
@@ -40,6 +42,10 @@ public record InitiatePaymentCommand(
         source = Objects.requireNonNull(
                 source,
                 "Payment source"
+        );
+        externalSubscriptionReference = Objects.requireNonNull(
+                externalSubscriptionReference,
+                "External subscription reference"
         );
         partnerLoginName = requireText(
                 partnerLoginName,

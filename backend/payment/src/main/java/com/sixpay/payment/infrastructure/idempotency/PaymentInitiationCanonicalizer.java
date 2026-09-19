@@ -29,6 +29,7 @@ public final class PaymentInitiationCanonicalizer {
         StringBuilder value = new StringBuilder(1024);
 
         append(value, command.source().value());
+        append(value, command.externalSubscriptionReference().value());
         append(value, command.partnerLoginName());
         append(value, command.authenticatedPartnerLoginName());
         append(value, command.applicationId());

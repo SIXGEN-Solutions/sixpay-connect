@@ -38,6 +38,8 @@ class TresorPayPaymentApiMapperTest {
 
         assertThat(command.source())
                 .isEqualTo(PaymentSource.TRESOR_PAY);
+        assertThat(command.externalSubscriptionReference().value())
+                .isEqualTo("TRESOR_PAY:TP_APP_001");
         assertThat(command.partnerLoginName())
                 .isEqualTo("TRESOR_PAY");
         assertThat(command.authenticatedPartnerLoginName())

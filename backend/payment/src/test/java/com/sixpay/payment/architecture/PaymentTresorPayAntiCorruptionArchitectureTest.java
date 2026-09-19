@@ -68,4 +68,31 @@ class PaymentTresorPayAntiCorruptionArchitectureTest {
                 .doesNotContain("PaymentSource.TRESOR_PAY");
     }
 
+    @Test
+    void externalSubscriptionReferenceDerivationStaysInTresorPayBoundary()
+            throws Exception {
+        String mapper = Files.readString(
+                TRESOR_PAY.resolve(
+                        "TresorPayPaymentApiMapper.java"
+                )
+        );
+        String preparation = Files.readString(
+                Path.of(
+                        "src/main/java/com/sixpay/payment/"
+                                + "infrastructure/initiation/"
+                                + "PaymentInitiationPreparationAdapter.java"
+                )
+        );
+
+        assertThat(mapper)
+                .contains("externalSubscriptionReference(request)")
+                .contains("request.loginName()")
+                .contains("request.applicationId()");
+
+        assertThat(preparation)
+                .contains("command.externalSubscriptionReference()")
+                .doesNotContain("subscriptionReference(command)")
+                .doesNotContain("external TresorPay subscription identity");
+    }
+
 }

@@ -7,6 +7,7 @@ import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
+import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +37,7 @@ public final class TresorPayPaymentApiMapper {
 
         return new InitiatePaymentCommand(
                 PaymentSource.TRESOR_PAY,
+                externalSubscriptionReference(request),
                 request.loginName(),
                 authenticatedPartnerLoginName,
                 request.applicationId(),
@@ -100,4 +102,16 @@ public final class TresorPayPaymentApiMapper {
                 money.currency().getCurrencyCode()
         );
     }
+    private static ExternalSubscriptionReference externalSubscriptionReference(
+            InitiateDebitRequest request
+    ) {
+        String value = request.applicationId() == null
+                ? request.loginName()
+                : request.loginName()
+                + ":"
+                + request.applicationId();
+
+        return ExternalSubscriptionReference.of(value);
+    }
+
 }

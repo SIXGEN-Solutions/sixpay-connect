@@ -8,7 +8,6 @@ import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInit
 import com.sixpay.payment.domain.model.CallbackEndpoint;
 import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
-import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.FinancialInstitutionCode;
 import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.NewPaymentIntent;
@@ -100,9 +99,7 @@ public final class PaymentInitiationPreparationAdapter
         NewPaymentIntent intent = new NewPaymentIntent(
                 command.source(),
                 ExternalPaymentReference.of(command.endToEndId()),
-                ExternalSubscriptionReference.of(
-                        subscriptionReference(command)
-                ),
+                command.externalSubscriptionReference(),
                 new PaymentRequestIdentity(
                         IdempotencyKey.of(command.idempotencyKey()),
                         RequestFingerprint.of(requestHash),
@@ -202,20 +199,6 @@ public final class PaymentInitiationPreparationAdapter
                                 .toPlainString()
                 )
                 .collect(Collectors.joining("|"));
-    }
-
-    /**
-     * Derives the external TresorPay subscription identity. This is not the
-     * local CustomerSubscription aggregate identifier owned by Customer.
-     */
-    private static String subscriptionReference(
-            InitiatePaymentCommand command
-    ) {
-        return command.applicationId() == null
-                ? command.partnerLoginName()
-                : command.partnerLoginName()
-                + ":"
-                + command.applicationId();
     }
 
     private static String institutionCode(String rib) {

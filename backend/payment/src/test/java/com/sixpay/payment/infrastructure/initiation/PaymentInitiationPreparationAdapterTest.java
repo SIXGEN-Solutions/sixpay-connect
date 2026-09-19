@@ -5,6 +5,7 @@ import com.sixpay.common.identifier.IdentifierGenerator;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.domain.model.ClaimType;
+import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
 import org.junit.jupiter.api.Test;
 
@@ -141,6 +142,7 @@ class PaymentInitiationPreparationAdapterTest {
         InitiatePaymentCommand command =
                 new InitiatePaymentCommand(
                         PaymentSource.of("PARTNER_A"),
+                        ExternalSubscriptionReference.of("PARTNER_A:APP_001"),
                         base.partnerLoginName(),
                         base.authenticatedPartnerLoginName(),
                         base.applicationId(),
@@ -166,6 +168,12 @@ class PaymentInitiationPreparationAdapterTest {
 
         assertThat(prepared.intent().source())
                 .isEqualTo(PaymentSource.of("PARTNER_A"));
+        assertThat(prepared.intent().externalSubscriptionReference())
+                .isEqualTo(
+                        ExternalSubscriptionReference.of(
+                                "PARTNER_A:APP_001"
+                        )
+                );
     }
     @Test
     void rejectsMalformedRequestHash() {
@@ -201,6 +209,7 @@ class PaymentInitiationPreparationAdapterTest {
 
         return new InitiatePaymentCommand(
                 PaymentSource.TRESOR_PAY,
+                ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
