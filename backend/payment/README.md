@@ -137,3 +137,21 @@ TRESOR PAY-specific Payment infrastructure adapters. Canonical contracts under
 
 `integration` remains technical and provider-neutral and does not own TRESOR PAY
 payloads or mappings.
+
+## External partner contract evolution
+
+SIXPAY does not expose a generic external Partner Payment contract solely to
+anticipate future integrations.
+
+Each concrete external Partner integration may keep its own approved wire
+contract and anti-corruption boundary while mapping to the provider-neutral
+Payment application API.
+
+A shared SIXPAY Partner Payment contract may be introduced only after at least
+two concrete Partner integrations demonstrate a stable common external-contract
+need. That decision requires explicit architecture and contract approval and
+must not be inferred from internal Payment abstractions.
+
+Until such evidence exists, TRESOR PAY remains a concrete external integration,
+not the template for a universal Partner protocol.
+
