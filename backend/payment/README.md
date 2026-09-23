@@ -72,7 +72,7 @@ transport outcomes are recovered through authoritative lookup before retry.
 
 ## Boundaries
 
-- Partner owns the canonical Partner identity and exposes only its reviewed public identity contract to Payment.
+- Partner/Security own and resolve the authoritative SIXPAY Partner identity; Payment receives only the canonical Partner UUID and represents it through its Payment-owned `CanonicalPartnerIdentity` value object.
 - Security resolves authenticated partner credentials to the canonical SIXPAY Partner UUID subject before Payment is invoked.
 - Provider login names remain at provider API boundaries and are not Payment business identities.
 - Integration owns provider-neutral transport only.
