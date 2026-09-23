@@ -15,7 +15,7 @@ class PaymentCanonicalPartnerIdentityArchitectureTest {
         String preparation = Files.readString(PAYMENT.resolve("infrastructure/initiation/PaymentInitiationPreparationAdapter.java"));
         String canonicalizer = Files.readString(PAYMENT.resolve("infrastructure/idempotency/PaymentInitiationCanonicalizer.java"));
 
-        assertThat(command).contains("PartnerIdentity partnerIdentity")
+        assertThat(command).contains("CanonicalPartnerIdentity partnerIdentity")
                 .doesNotContain("partnerLoginName", "authenticatedPartnerLoginName");
         assertThat(context)
                 .contains("CanonicalPartnerIdentity partnerIdentity")
@@ -33,16 +33,17 @@ class PaymentCanonicalPartnerIdentityArchitectureTest {
         Path boundary = PAYMENT.resolve("api/partner/tresorpay");
         String mapper = Files.readString(boundary.resolve("TresorPayPaymentApiMapper.java"));
         String controller = Files.readString(boundary.resolve("TresorPayPaymentCommandController.java"));
-        assertThat(mapper).contains("request.loginName()", "authenticatedPartnerLoginName", "PartnerIdentity.from(authenticatedPartnerSubject)");
+        assertThat(mapper).contains("request.loginName()", "authenticatedPartnerLoginName", "CanonicalPartnerIdentity.from(authenticatedPartnerSubject)");
         assertThat(controller).contains("authenticatedPartner.username()", "authenticatedPartner.subject()");
     }
 
     @Test
-    void paymentUsesOnlyPartnerPublicContract() throws Exception {
+    void paymentHasNoCompileTimeDependencyOnPartnerModule() throws Exception {
         String all = Files.walk(PAYMENT).filter(x -> x.toString().endsWith(".java"))
                 .map(x -> { try { return Files.readString(x); } catch (Exception e) { throw new IllegalStateException(e); } })
                 .reduce("", (a, b) -> a + "\n" + b);
-        assertThat(all).contains("com.sixpay.partner.application.contract.PartnerIdentity")
-                .doesNotContain("com.sixpay.partner.infrastructure", "com.sixpay.partner.domain.model.PartnerId");
+        assertThat(all).doesNotContain("com.sixpay.partner.");
+        assertThat(Files.readString(Path.of("pom.xml")))
+                .doesNotContain("<artifactId>partner</artifactId>");
     }
 }

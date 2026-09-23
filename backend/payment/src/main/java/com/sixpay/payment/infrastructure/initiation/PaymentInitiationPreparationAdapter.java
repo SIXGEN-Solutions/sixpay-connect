@@ -114,9 +114,7 @@ public final class PaymentInitiationPreparationAdapter
                         "v1:sha256:" + allocationHash
                 ),
                 new PaymentInitiationContext(
-                        new CanonicalPartnerIdentity(
-                                command.partnerIdentity().value()
-                        ),
+                        command.partnerIdentity(),
                         command.applicationId(),
                         command.debtorName(),
                         command.claimType(),

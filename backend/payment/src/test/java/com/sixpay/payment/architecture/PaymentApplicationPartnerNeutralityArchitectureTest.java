@@ -26,7 +26,8 @@ class PaymentApplicationPartnerNeutralityArchitectureTest {
                         .as("provider-specific application semantics in %s", path)
                         .doesNotContain("TresorPay").doesNotContain("Tresorpay")
                         .doesNotContain("tresorPay").doesNotContain("TRESOR_PAY")
-                        .doesNotContain("TRESOR PAY").doesNotContain(".tresorpay.");
+                        .doesNotContain("TRESOR PAY").doesNotContain(".tresorpay.")
+                        .doesNotContain("com.sixpay.partner.");
             }
         }
     }

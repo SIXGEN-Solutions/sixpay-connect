@@ -7,9 +7,9 @@ import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import com.sixpay.payment.application.command.PaymentBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiatePaymentCommand;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
-import com.sixpay.partner.application.contract.PartnerIdentity;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -46,8 +46,8 @@ public final class TresorPayPaymentApiMapper {
             );
         }
 
-        PartnerIdentity partnerIdentity =
-                PartnerIdentity.from(authenticatedPartnerSubject);
+        CanonicalPartnerIdentity partnerIdentity =
+                CanonicalPartnerIdentity.from(authenticatedPartnerSubject);
 
         return new InitiatePaymentCommand(
                 PaymentSource.of("TRESOR_PAY"),

@@ -4,7 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
-import com.sixpay.partner.application.contract.PartnerIdentity;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -60,7 +60,7 @@ class InitiatePaymentCommandTest {
         return new InitiatePaymentCommand(
                 PaymentSource.of("TRESOR_PAY"),
                 ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
-                PartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
+                CanonicalPartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 totalAmount,

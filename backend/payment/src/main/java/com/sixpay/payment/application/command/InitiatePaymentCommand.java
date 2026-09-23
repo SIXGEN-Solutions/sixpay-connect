@@ -4,7 +4,7 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.PaymentSource;
-import com.sixpay.partner.application.contract.PartnerIdentity;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,7 +27,7 @@ import java.util.Objects;
 public record InitiatePaymentCommand(
         PaymentSource source,
         ExternalSubscriptionReference externalSubscriptionReference,
-        PartnerIdentity partnerIdentity,
+        CanonicalPartnerIdentity partnerIdentity,
         String applicationId,
         String endToEndId,
         BigDecimal totalAmount,
