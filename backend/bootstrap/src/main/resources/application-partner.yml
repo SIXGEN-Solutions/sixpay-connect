@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: partner
+    import:
+      - classpath:config/payment/partner-common.yml
+
+sixpay:
+  payment:
+    partner:
+      security:
+        mtls-required: ${PARTNER_MTLS_REQUIRED:false}
+        oauth2-required: ${PARTNER_OAUTH2_REQUIRED:true}
+
+  security:
+    partner:
+      subscription-key:
+        enabled: ${SIXPAY_SECURITY_PARTNER_SUBSCRIPTION_KEY_ENABLED:true}
+        value: ${SIXPAY_SECURITY_PARTNER_SUBSCRIPTION_KEY_VALUE}

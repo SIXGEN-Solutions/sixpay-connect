@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class TresorPayRequestGuardTest {
+class PartnerRequestGuardTest {
 
     private static final Instant NOW =
             Instant.parse("2026-08-06T14:00:00Z");
@@ -26,38 +26,38 @@ class TresorPayRequestGuardTest {
 
     @Test
     void acceptsStandaloneTransportRequest() {
-        authenticate("TRESOR_PAY");
+        authenticate("PARTNER");
         guard(10).validateTransportRequest(request("nonce-1"));
     }
 
     @Test
     void rejectsReplayOfSamePartnerNonce() {
-        authenticate("TRESOR_PAY");
-        TresorPayRequestGuard guard = guard(10);
+        authenticate("PARTNER");
+        PartnerRequestGuard guard = guard(10);
 
         guard.validateTransportRequest(request("nonce-1"));
 
         assertThatThrownBy(() ->
                 guard.validateTransportRequest(request("nonce-1"))
         )
-                .isInstanceOf(TresorPayRequestRejectedException.class)
+                .isInstanceOf(PartnerRequestRejectedException.class)
                 .extracting("code")
-                .isEqualTo(TresorPayErrorCode.REPLAY_DETECTED);
+                .isEqualTo(PartnerRequestErrorCode.REPLAY_DETECTED);
     }
 
     @Test
     void enforcesPartnerRateLimit() {
-        authenticate("TRESOR_PAY");
-        TresorPayRequestGuard guard = guard(1);
+        authenticate("PARTNER");
+        PartnerRequestGuard guard = guard(1);
 
         guard.validateTransportRequest(request("nonce-1"));
 
         assertThatThrownBy(() ->
                 guard.validateTransportRequest(request("nonce-2"))
         )
-                .isInstanceOf(TresorPayRequestRejectedException.class)
+                .isInstanceOf(PartnerRequestRejectedException.class)
                 .extracting("code")
-                .isEqualTo(TresorPayErrorCode.RATE_LIMIT_EXCEEDED);
+                .isEqualTo(PartnerRequestErrorCode.RATE_LIMIT_EXCEEDED);
     }
 
     @Test
@@ -65,17 +65,17 @@ class TresorPayRequestGuardTest {
         assertThatThrownBy(() ->
                 guard(10).validateTransportRequest(request("nonce-1"))
         )
-                .isInstanceOf(TresorPayRequestRejectedException.class)
+                .isInstanceOf(PartnerRequestRejectedException.class)
                 .extracting("code")
-                .isEqualTo(TresorPayErrorCode.AUTHENTICATION_REQUIRED);
+                .isEqualTo(PartnerRequestErrorCode.AUTHENTICATION_REQUIRED);
     }
 
-    private static TresorPayRequestGuard guard(int limit) {
+    private static PartnerRequestGuard guard(int limit) {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
-        TresorPayIntegrationProperties properties =
-                new TresorPayIntegrationProperties(
-                        new TresorPayIntegrationProperties.Security(
+        PartnerIntegrationProperties properties =
+                new PartnerIntegrationProperties(
+                        new PartnerIntegrationProperties.Security(
                                 false,
                                 false,
                                 false,
@@ -85,28 +85,28 @@ class TresorPayRequestGuardTest {
                                 "client_id",
                                 "payment.initiate"
                         ),
-                        new TresorPayIntegrationProperties.AntiReplay(
+                        new PartnerIntegrationProperties.AntiReplay(
                                 true,
                                 Duration.ofMinutes(5),
                                 Duration.ofMinutes(10)
                         ),
-                        new TresorPayIntegrationProperties.RateLimit(
+                        new PartnerIntegrationProperties.RateLimit(
                                 true,
                                 limit
                         ),
-                        new TresorPayIntegrationProperties.Callback(
+                        new PartnerIntegrationProperties.Callback(
                                 true,
                                 "RS256",
                                 Duration.ofHours(24)
                         ),
-                        List.of("tresorpay.cm")
+                        List.of("partner.example")
                 );
 
-        return new TresorPayRequestGuard(
+        return new PartnerRequestGuard(
                 properties,
-                new InMemoryTresorPayNonceStore(clock),
-                new FixedWindowTresorPayRateLimiter(clock, limit),
-                new StructuredTresorPayAccessAudit(),
+                new InMemoryPartnerNonceStore(clock),
+                new FixedWindowPartnerRateLimiter(clock, limit),
+                new StructuredPartnerAccessAudit(),
                 clock
         );
     }
@@ -116,11 +116,11 @@ class TresorPayRequestGuardTest {
                 new MockHttpServletRequest();
 
         request.addHeader(
-                TresorPayHeaders.REQUEST_TIMESTAMP,
+                PartnerHeaders.REQUEST_TIMESTAMP,
                 NOW.toString()
         );
         request.addHeader(
-                TresorPayHeaders.REQUEST_NONCE,
+                PartnerHeaders.REQUEST_NONCE,
                 nonce
         );
 

@@ -1,22 +1,22 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class StructuredTresorPayAccessAudit implements TresorPayAccessAudit {
+public final class StructuredPartnerAccessAudit implements PartnerAccessAudit {
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(StructuredTresorPayAccessAudit.class);
+            LoggerFactory.getLogger(StructuredPartnerAccessAudit.class);
 
     @Override
     public void accepted(
             String partnerId,
-            String endToEndId,
+            String externalPaymentReference,
             String correlationId
     ) {
         LOGGER.info(
-                "event=tresorpay_payment_request outcome=accepted partner={} endToEndId={} correlationId={}",
+                "event=partner_payment_request outcome=accepted partner={} externalPaymentReference={} correlationId={}",
                 safe(partnerId),
-                mask(endToEndId),
+                mask(externalPaymentReference),
                 safe(correlationId)
         );
     }
@@ -24,11 +24,11 @@ public final class StructuredTresorPayAccessAudit implements TresorPayAccessAudi
     @Override
     public void rejected(
             String partnerId,
-            TresorPayErrorCode code,
+            PartnerRequestErrorCode code,
             String correlationId
     ) {
         LOGGER.warn(
-                "event=tresorpay_payment_request outcome=rejected partner={} code={} correlationId={}",
+                "event=partner_payment_request outcome=rejected partner={} code={} correlationId={}",
                 safe(partnerId),
                 code,
                 safe(correlationId)

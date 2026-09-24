@@ -1,0 +1,24 @@
+sixpay:
+  payment:
+    partner:
+      enabled: ${PARTNER_ENABLED:true}
+      security:
+        api-key-enabled: ${PARTNER_API_KEY_ENABLED:false}
+        api-key-header: ${PARTNER_API_KEY_HEADER:X-API-Key}
+        api-key-value: ${PARTNER_API_KEY_VALUE:}
+        audience: ${PARTNER_JWT_AUDIENCE:sixpay-payment-api}
+        partner-claim: ${PARTNER_PARTNER_CLAIM:client_id}
+        required-scope: ${PARTNER_REQUIRED_SCOPE:payment.initiate}
+      anti-replay:
+        enabled: ${PARTNER_ANTI_REPLAY_ENABLED:true}
+        allowed-clock-skew: ${PARTNER_ALLOWED_CLOCK_SKEW:5m}
+        nonce-ttl: ${PARTNER_NONCE_TTL:10m}
+      rate-limit:
+        enabled: ${PARTNER_RATE_LIMIT_ENABLED:true}
+        requests-per-minute: ${PARTNER_REQUESTS_PER_MINUTE:120}
+      callback:
+        signature-enabled: ${PARTNER_CALLBACK_SIGNATURE_ENABLED:true}
+        algorithm: ${PARTNER_CALLBACK_SIGNATURE_ALGORITHM:HMAC-SHA256}
+        delivery-expiration: ${PARTNER_CALLBACK_DELIVERY_EXPIRATION:24h}
+      allowed-callback-hosts:
+        - ${PARTNER_CALLBACK_HOST:partner.cm}

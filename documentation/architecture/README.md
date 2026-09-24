@@ -24,6 +24,7 @@ surface.
 | Internal architecture | `documentation/architecture/internal/` |
 | Feature-flag registry | `documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml` |
 | Accounting T1 architecture | `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` |
+| Partner Payment security | `documentation/architecture/payment/PARTNER_PAYMENT_SECURITY_BASELINE.md` |
 
 ## Golden business-module reference
 

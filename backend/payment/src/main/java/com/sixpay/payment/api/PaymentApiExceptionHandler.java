@@ -5,7 +5,7 @@ import com.sixpay.payment.api.response.PaymentProblemResponse;
 import com.sixpay.payment.application.exception.PaymentQueryUnavailableException;
 import com.sixpay.payment.application.security.PaymentAccessDeniedException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
-import com.sixpay.payment.infrastructure.tresorpay.TresorPayRequestRejectedException;
+import com.sixpay.payment.infrastructure.partner.PartnerRequestRejectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -26,9 +26,9 @@ import java.util.UUID;
 @RestControllerAdvice
 public class PaymentApiExceptionHandler {
 
-    @ExceptionHandler(TresorPayRequestRejectedException.class)
+    @ExceptionHandler(PartnerRequestRejectedException.class)
     ResponseEntity<PaymentProblemResponse> tresorPayRejected(
-            TresorPayRequestRejectedException exception,
+            PartnerRequestRejectedException exception,
             HttpServletRequest request
     ) {
         ResponseEntity.BodyBuilder builder =

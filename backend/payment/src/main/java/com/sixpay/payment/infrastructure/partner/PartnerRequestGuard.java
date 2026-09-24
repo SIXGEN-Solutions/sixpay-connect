@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,22 +17,22 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Objects;
 
-public final class TresorPayRequestGuard {
+public final class PartnerRequestGuard {
 
     private static final String CERTIFICATE_ATTRIBUTE =
             "jakarta.servlet.request.X509Certificate";
 
-    private final TresorPayIntegrationProperties properties;
-    private final TresorPayNonceStore nonceStore;
-    private final TresorPayRateLimiter rateLimiter;
-    private final StructuredTresorPayAccessAudit audit;
+    private final PartnerIntegrationProperties properties;
+    private final PartnerNonceStore nonceStore;
+    private final PartnerRateLimiter rateLimiter;
+    private final StructuredPartnerAccessAudit audit;
     private final Clock clock;
 
-    public TresorPayRequestGuard(
-            TresorPayIntegrationProperties properties,
-            TresorPayNonceStore nonceStore,
-            TresorPayRateLimiter rateLimiter,
-            StructuredTresorPayAccessAudit audit,
+    public PartnerRequestGuard(
+            PartnerIntegrationProperties properties,
+            PartnerNonceStore nonceStore,
+            PartnerRateLimiter rateLimiter,
+            StructuredPartnerAccessAudit audit,
             Clock clock
     ) {
         this.properties = Objects.requireNonNull(properties);
@@ -61,7 +61,7 @@ public final class TresorPayRequestGuard {
             requireRateLimit(partnerId);
 
             audit.accepted(partnerId, null, correlationId);
-        } catch (TresorPayRequestRejectedException rejection) {
+        } catch (PartnerRequestRejectedException rejection) {
             audit.rejected(
                     partnerId,
                     rejection.code(),
@@ -79,7 +79,7 @@ public final class TresorPayRequestGuard {
                 || !authentication.isAuthenticated()) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.AUTHENTICATION_REQUIRED,
+                    PartnerRequestErrorCode.AUTHENTICATION_REQUIRED,
                     "Authentication is required"
             );
         }
@@ -98,7 +98,7 @@ public final class TresorPayRequestGuard {
         if (!(authentication.getPrincipal() instanceof Jwt jwt)) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.INVALID_ACCESS_TOKEN,
+                    PartnerRequestErrorCode.INVALID_ACCESS_TOKEN,
                     "A valid OAuth2 access token is required"
             );
         }
@@ -108,7 +108,7 @@ public final class TresorPayRequestGuard {
         )) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.INVALID_ACCESS_TOKEN,
+                    PartnerRequestErrorCode.INVALID_ACCESS_TOKEN,
                     "Access token audience is invalid"
             );
         }
@@ -129,7 +129,7 @@ public final class TresorPayRequestGuard {
         if (!requiredScopePresent) {
             throw reject(
                     HttpStatus.FORBIDDEN,
-                    TresorPayErrorCode.SCOPE_NOT_GRANTED,
+                    PartnerRequestErrorCode.SCOPE_NOT_GRANTED,
                     "Required scope is not granted"
             );
         }
@@ -143,7 +143,7 @@ public final class TresorPayRequestGuard {
                 .equals(authenticatedPartner)) {
             throw reject(
                     HttpStatus.FORBIDDEN,
-                    TresorPayErrorCode.PARTNER_IDENTITY_MISMATCH,
+                    PartnerRequestErrorCode.PARTNER_IDENTITY_MISMATCH,
                     "Token partner identity is inconsistent"
             );
         }
@@ -164,7 +164,7 @@ public final class TresorPayRequestGuard {
                 || certificates.length == 0) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.INVALID_CLIENT_CERTIFICATE,
+                    PartnerRequestErrorCode.INVALID_CLIENT_CERTIFICATE,
                     "A valid client certificate is required"
             );
         }
@@ -190,7 +190,7 @@ public final class TresorPayRequestGuard {
                 )) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.API_KEY_INVALID,
+                    PartnerRequestErrorCode.API_KEY_INVALID,
                     "Partner credential is invalid"
             );
         }
@@ -205,10 +205,10 @@ public final class TresorPayRequestGuard {
         }
 
         String timestampValue = request.getHeader(
-                TresorPayHeaders.REQUEST_TIMESTAMP
+                PartnerHeaders.REQUEST_TIMESTAMP
         );
         String nonce = request.getHeader(
-                TresorPayHeaders.REQUEST_NONCE
+                PartnerHeaders.REQUEST_NONCE
         );
 
         if (timestampValue == null
@@ -216,7 +216,7 @@ public final class TresorPayRequestGuard {
                 || nonce.isBlank()) {
             throw reject(
                     HttpStatus.BAD_REQUEST,
-                    TresorPayErrorCode.MISSING_HEADER,
+                    PartnerRequestErrorCode.MISSING_HEADER,
                     "Anti-replay headers are required"
             );
         }
@@ -227,7 +227,7 @@ public final class TresorPayRequestGuard {
         } catch (DateTimeParseException exception) {
             throw reject(
                     HttpStatus.BAD_REQUEST,
-                    TresorPayErrorCode.REQUEST_TIMESTAMP_INVALID,
+                    PartnerRequestErrorCode.REQUEST_TIMESTAMP_INVALID,
                     "Request timestamp is invalid"
             );
         }
@@ -241,7 +241,7 @@ public final class TresorPayRequestGuard {
         ) > 0) {
             throw reject(
                     HttpStatus.UNAUTHORIZED,
-                    TresorPayErrorCode.REQUEST_TIMESTAMP_INVALID,
+                    PartnerRequestErrorCode.REQUEST_TIMESTAMP_INVALID,
                     "Request timestamp is outside the accepted window"
             );
         }
@@ -253,7 +253,7 @@ public final class TresorPayRequestGuard {
         )) {
             throw reject(
                     HttpStatus.CONFLICT,
-                    TresorPayErrorCode.REPLAY_DETECTED,
+                    PartnerRequestErrorCode.REPLAY_DETECTED,
                     "Request replay detected"
             );
         }
@@ -266,25 +266,25 @@ public final class TresorPayRequestGuard {
             return;
         }
 
-        TresorPayRateLimiter.RateLimitDecision decision =
+        PartnerRateLimiter.RateLimitDecision decision =
                 rateLimiter.acquire(partnerId);
 
         if (!decision.allowed()) {
-            throw new TresorPayRequestRejectedException(
+            throw new PartnerRequestRejectedException(
                     HttpStatus.TOO_MANY_REQUESTS,
-                    TresorPayErrorCode.RATE_LIMIT_EXCEEDED,
+                    PartnerRequestErrorCode.RATE_LIMIT_EXCEEDED,
                     "Partner rate limit exceeded",
                     decision.retryAfterSeconds()
             );
         }
     }
 
-    private static TresorPayRequestRejectedException reject(
+    private static PartnerRequestRejectedException reject(
             HttpStatus status,
-            TresorPayErrorCode code,
+            PartnerRequestErrorCode code,
             String message
     ) {
-        return new TresorPayRequestRejectedException(
+        return new PartnerRequestRejectedException(
                 status,
                 code,
                 message

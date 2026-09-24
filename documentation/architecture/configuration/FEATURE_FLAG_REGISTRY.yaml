@@ -487,102 +487,102 @@ flags:
       - "CONDITIONAL_ON_PROPERTY"
       - "CONFIGURATION_PROPERTIES_BOOLEAN"
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_ANTI_REPLAY_ENABLED
-    key: "sixpay.payment.tresorpay.anti-replay.enabled"
+  - id: SIXPAY_PAYMENT_PARTNER_ANTI_REPLAY_ENABLED
+    key: "sixpay.payment.partner.anti-replay.enabled"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "true"
     environmentVariables:
-      - "TRESORPAY_ANTI_REPLAY_ENABLED"
+      - "PARTNER_ANTI_REPLAY_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_CALLBACK_SIGNATURE_ENABLED
-    key: "sixpay.payment.tresorpay.callback.signature-enabled"
+  - id: SIXPAY_PAYMENT_PARTNER_CALLBACK_SIGNATURE_ENABLED
+    key: "sixpay.payment.partner.callback.signature-enabled"
     owner: PAYMENT
     category: INTEGRATION_CALLBACK
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "true"
     environmentVariables:
-      - "TRESORPAY_CALLBACK_SIGNATURE_ENABLED"
+      - "PARTNER_CALLBACK_SIGNATURE_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_ENABLED
-    key: "sixpay.payment.tresorpay.enabled"
+  - id: SIXPAY_PAYMENT_PARTNER_ENABLED
+    key: "sixpay.payment.partner.enabled"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationConfiguration.java"
-      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/tresorpay/TresorPayIntegrationProperties.java"
+      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/partner/PartnerIntegrationConfiguration.java"
+      - "backend/payment/src/main/java/com/sixpay/payment/infrastructure/partner/PartnerIntegrationProperties.java"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "true"
     environmentVariables:
-      - "TRESORPAY_ENABLED"
+      - "PARTNER_ENABLED"
     detection:
       - "CONDITIONAL_ON_PROPERTY"
       - "CONFIGURATION_PROPERTIES_BOOLEAN"
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_RATE_LIMIT_ENABLED
-    key: "sixpay.payment.tresorpay.rate-limit.enabled"
+  - id: SIXPAY_PAYMENT_PARTNER_RATE_LIMIT_ENABLED
+    key: "sixpay.payment.partner.rate-limit.enabled"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "true"
     environmentVariables:
-      - "TRESORPAY_RATE_LIMIT_ENABLED"
+      - "PARTNER_RATE_LIMIT_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_API_KEY_ENABLED
-    key: "sixpay.payment.tresorpay.security.api-key-enabled"
+  - id: SIXPAY_PAYMENT_PARTNER_SECURITY_API_KEY_ENABLED
+    key: "sixpay.payment.partner.security.api-key-enabled"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/config/payment/tresorpay-common.yml"
+      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "false"
     environmentVariables:
-      - "TRESORPAY_API_KEY_ENABLED"
+      - "PARTNER_API_KEY_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_MTLS_REQUIRED
-    key: "sixpay.payment.tresorpay.security.mtls-required"
+  - id: SIXPAY_PAYMENT_PARTNER_SECURITY_MTLS_REQUIRED
+    key: "sixpay.payment.partner.security.mtls-required"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
@@ -590,19 +590,19 @@ flags:
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
       - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/application-partner.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "false"
       - "true"
     environmentVariables:
-      - "TRESORPAY_MTLS_REQUIRED"
+      - "PARTNER_MTLS_REQUIRED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_TRESORPAY_SECURITY_OAUTH2_REQUIRED
-    key: "sixpay.payment.tresorpay.security.oauth2-required"
+  - id: SIXPAY_PAYMENT_PARTNER_SECURITY_OAUTH2_REQUIRED
+    key: "sixpay.payment.partner.security.oauth2-required"
     owner: PAYMENT
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
@@ -610,15 +610,15 @@ flags:
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
       - "backend/bootstrap/src/main/resources/application-standalone.yml"
-      - "backend/bootstrap/src/main/resources/application-tresorpay.yml"
+      - "backend/bootstrap/src/main/resources/application-partner.yml"
     observedProfiles:
       - "standalone"
-      - "tresorpay"
+      - "partner"
     observedValues:
       - "false"
       - "true"
     environmentVariables:
-      - "TRESORPAY_OAUTH2_REQUIRED"
+      - "PARTNER_OAUTH2_REQUIRED"
     detection:
       - "YAML_TOGGLE"
   - id: SIXPAY_SECURITY_AUTHENTICATION_MODE

@@ -1,15 +1,15 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class InMemoryTresorPayNonceStore implements TresorPayNonceStore {
+public final class InMemoryPartnerNonceStore implements PartnerNonceStore {
     private final Clock clock;
     private final Map<String, Instant> entries = new ConcurrentHashMap<>();
 
-    public InMemoryTresorPayNonceStore(Clock clock) {
+    public InMemoryPartnerNonceStore(Clock clock) {
         this.clock = clock;
     }
 

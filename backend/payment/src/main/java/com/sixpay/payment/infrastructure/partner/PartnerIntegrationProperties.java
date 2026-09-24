@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -11,15 +11,15 @@ import java.time.Duration;
 import java.util.List;
 
 @Validated
-@ConfigurationProperties(prefix = "sixpay.payment.tresorpay")
-public record TresorPayIntegrationProperties(
+@ConfigurationProperties(prefix = "sixpay.payment.partner")
+public record PartnerIntegrationProperties(
         @NotNull @Valid Security security,
         @NotNull @Valid AntiReplay antiReplay,
         @NotNull @Valid RateLimit rateLimit,
         @NotNull @Valid Callback callback,
         @NotNull List<@NotBlank String> allowedCallbackHosts
 ) {
-    public TresorPayIntegrationProperties {
+    public PartnerIntegrationProperties {
         allowedCallbackHosts = allowedCallbackHosts == null
                 ? List.of()
                 : allowedCallbackHosts.stream().map(String::strip).toList();

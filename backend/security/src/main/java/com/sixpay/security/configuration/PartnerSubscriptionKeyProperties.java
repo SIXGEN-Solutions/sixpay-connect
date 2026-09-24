@@ -2,16 +2,16 @@ package com.sixpay.security.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "sixpay.security.tresorpay.subscription-key")
-public record TresorPaySubscriptionKeyProperties(
+@ConfigurationProperties(prefix = "sixpay.security.partner.subscription-key")
+public record PartnerSubscriptionKeyProperties(
         boolean enabled,
         String value
 ) {
 
-    public TresorPaySubscriptionKeyProperties {
+    public PartnerSubscriptionKeyProperties {
         if (enabled && (value == null || value.isBlank())) {
             throw new IllegalArgumentException(
-                    "TRESOR PAY subscription key must not be blank when enabled"
+                    "Partner subscription key must not be blank when enabled"
             );
         }
         if (value != null) {

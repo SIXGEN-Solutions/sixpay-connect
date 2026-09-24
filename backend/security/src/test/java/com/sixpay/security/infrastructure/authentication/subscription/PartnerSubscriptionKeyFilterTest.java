@@ -10,20 +10,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-class TresorPaySubscriptionKeyFilterTest {
+class PartnerSubscriptionKeyFilterTest {
 
     @Test
-    void rejectsMissingSubscriptionKeyOnTresorPayPaymentBoundary()
+    void rejectsMissingSubscriptionKeyOnPartnerPaymentBoundary()
             throws Exception {
         AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
         FilterChain chain = mock(FilterChain.class);
-        var filter = new TresorPaySubscriptionKeyFilter(
+        var filter = new PartnerSubscriptionKeyFilter(
                 "expected-key"::equals,
                 entryPoint
         );
         var request = new MockHttpServletRequest(
                 "GET",
-                "/api/v1/integrations/tresorpay/payments/PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X"
+                "/api/v1/partners/payments/PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X"
         );
         var response = new MockHttpServletResponse();
 
@@ -38,20 +38,20 @@ class TresorPaySubscriptionKeyFilterTest {
     }
 
     @Test
-    void acceptsValidSubscriptionKeyOnTresorPayPaymentBoundary()
+    void acceptsValidSubscriptionKeyOnPartnerPaymentBoundary()
             throws Exception {
         AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
         FilterChain chain = mock(FilterChain.class);
-        var filter = new TresorPaySubscriptionKeyFilter(
+        var filter = new PartnerSubscriptionKeyFilter(
                 "expected-key"::equals,
                 entryPoint
         );
         var request = new MockHttpServletRequest(
                 "GET",
-                "/api/v1/integrations/tresorpay/payments/PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X"
+                "/api/v1/partners/payments/PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X"
         );
         request.addHeader(
-                TresorPaySubscriptionKeyFilter.HEADER_NAME,
+                PartnerSubscriptionKeyFilter.HEADER_NAME,
                 "expected-key"
         );
         var response = new MockHttpServletResponse();
@@ -67,10 +67,10 @@ class TresorPaySubscriptionKeyFilterTest {
     }
 
     @Test
-    void ignoresNonTresorPayEndpoints() throws Exception {
+    void ignoresNonPartnerEndpoints() throws Exception {
         AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
         FilterChain chain = mock(FilterChain.class);
-        var filter = new TresorPaySubscriptionKeyFilter(
+        var filter = new PartnerSubscriptionKeyFilter(
                 "expected-key"::equals,
                 entryPoint
         );

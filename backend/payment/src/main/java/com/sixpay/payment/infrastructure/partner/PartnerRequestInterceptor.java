@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -6,13 +6,13 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Objects;
 
-public final class TresorPayRequestInterceptor
+public final class PartnerRequestInterceptor
         implements HandlerInterceptor {
 
-    private final TresorPayRequestGuard requestGuard;
+    private final PartnerRequestGuard requestGuard;
 
-    public TresorPayRequestInterceptor(
-            TresorPayRequestGuard requestGuard
+    public PartnerRequestInterceptor(
+            PartnerRequestGuard requestGuard
     ) {
         this.requestGuard = Objects.requireNonNull(requestGuard);
     }

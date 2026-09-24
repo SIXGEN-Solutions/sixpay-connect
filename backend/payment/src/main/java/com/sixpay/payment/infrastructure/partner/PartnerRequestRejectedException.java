@@ -1,23 +1,23 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import org.springframework.http.HttpStatus;
 
-public final class TresorPayRequestRejectedException extends RuntimeException {
+public final class PartnerRequestRejectedException extends RuntimeException {
     private final HttpStatus status;
-    private final TresorPayErrorCode code;
+    private final PartnerRequestErrorCode code;
     private final Integer retryAfterSeconds;
 
-    public TresorPayRequestRejectedException(
+    public PartnerRequestRejectedException(
             HttpStatus status,
-            TresorPayErrorCode code,
+            PartnerRequestErrorCode code,
             String safeMessage
     ) {
         this(status, code, safeMessage, null);
     }
 
-    public TresorPayRequestRejectedException(
+    public PartnerRequestRejectedException(
             HttpStatus status,
-            TresorPayErrorCode code,
+            PartnerRequestErrorCode code,
             String safeMessage,
             Integer retryAfterSeconds
     ) {
@@ -28,6 +28,6 @@ public final class TresorPayRequestRejectedException extends RuntimeException {
     }
 
     public HttpStatus status() { return status; }
-    public TresorPayErrorCode code() { return code; }
+    public PartnerRequestErrorCode code() { return code; }
     public Integer retryAfterSeconds() { return retryAfterSeconds; }
 }

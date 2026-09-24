@@ -1,6 +1,6 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
-public enum TresorPayErrorCode {
+public enum PartnerRequestErrorCode {
     INVALID_REQUEST,
     MISSING_HEADER,
     INVALID_IDEMPOTENCY_KEY,
@@ -17,7 +17,7 @@ public enum TresorPayErrorCode {
     REPLAY_DETECTED,
     REQUEST_TIMESTAMP_INVALID,
     IDEMPOTENCY_KEY_CONFLICT,
-    END_TO_END_ID_CONFLICT,
+    PAYMENT_REFERENCE_CONFLICT,
     PAYMENT_INITIATION_IN_PROGRESS,
     RATE_LIMIT_EXCEEDED,
     BANKING_SERVICE_UNAVAILABLE,

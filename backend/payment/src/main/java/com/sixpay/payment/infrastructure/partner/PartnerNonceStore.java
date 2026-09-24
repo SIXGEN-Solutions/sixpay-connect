@@ -1,8 +1,8 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import java.time.Instant;
 
 @FunctionalInterface
-public interface TresorPayNonceStore {
+public interface PartnerNonceStore {
     boolean registerIfAbsent(String partnerId, String nonce, Instant expiresAt);
 }

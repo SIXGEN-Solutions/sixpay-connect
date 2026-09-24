@@ -12,15 +12,15 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-public final class TresorPaySubscriptionKeyFilter extends OncePerRequestFilter {
+public final class PartnerSubscriptionKeyFilter extends OncePerRequestFilter {
 
     public static final String HEADER_NAME = "X-Subscription-Key";
-    private static final String PREFIX = "/api/v1/integrations/tresorpay/payments";
+    private static final String PREFIX = "/api/v1/partners/payments";
 
     private final Predicate<String> validator;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    public TresorPaySubscriptionKeyFilter(
+    public PartnerSubscriptionKeyFilter(
             Predicate<String> validator,
             AuthenticationEntryPoint authenticationEntryPoint
     ) {
@@ -48,7 +48,7 @@ public final class TresorPaySubscriptionKeyFilter extends OncePerRequestFilter {
             authenticationEntryPoint.commence(
                     request,
                     response,
-                    new BadCredentialsException("Invalid TRESOR PAY subscription key")
+                    new BadCredentialsException("Invalid Partner subscription key")
             );
             return;
         }

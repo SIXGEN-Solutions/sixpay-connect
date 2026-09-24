@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import jakarta.servlet.FilterChain;
@@ -9,16 +9,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-public final class TresorPayRequestGuardFilter
+public final class PartnerRequestGuardFilter
         extends OncePerRequestFilter {
 
     private static final String PAYMENT_INITIATION_PATH =
-            "/v1/payments/initiate";
+            "/api/v1/partners/payments";
 
-    private final TresorPayRequestGuard requestGuard;
+    private final PartnerRequestGuard requestGuard;
 
-    public TresorPayRequestGuardFilter(
-            TresorPayRequestGuard requestGuard
+    public PartnerRequestGuardFilter(
+            PartnerRequestGuard requestGuard
     ) {
         this.requestGuard = requestGuard;
     }

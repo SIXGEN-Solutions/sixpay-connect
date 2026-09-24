@@ -10,7 +10,7 @@ import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
-import com.sixpay.security.infrastructure.authentication.subscription.TresorPaySubscriptionKeyFilter;
+import com.sixpay.security.infrastructure.authentication.subscription.PartnerSubscriptionKeyFilter;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -45,7 +45,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @EnableMethodSecurity
 @EnableConfigurationProperties({
         AuthenticationCapabilitiesProperties.class,
-        TresorPaySubscriptionKeyProperties.class
+        PartnerSubscriptionKeyProperties.class
 })
 @Import({
         LocalAuthenticationConfiguration.class,
@@ -199,19 +199,19 @@ public class SixpaySecurityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
-            prefix = "sixpay.security.tresorpay.subscription-key",
+            prefix = "sixpay.security.partner.subscription-key",
             name = "enabled",
             havingValue = "true"
     )
-    TresorPaySubscriptionKeyFilter
-    tresorPaySubscriptionKeyFilter(
-            TresorPaySubscriptionKeyProperties properties,
+    PartnerSubscriptionKeyFilter
+    partnerSubscriptionKeyFilter(
+            PartnerSubscriptionKeyProperties properties,
             SecurityAuditPort securityAuditPort
     ) {
         AuditingAuthenticationEntryPoint entryPoint =
                 new AuditingAuthenticationEntryPoint(securityAuditPort);
 
-        return new TresorPaySubscriptionKeyFilter(
+        return new PartnerSubscriptionKeyFilter(
                 candidate -> properties.value().equals(candidate),
                 entryPoint
         );
@@ -236,8 +236,8 @@ public class SixpaySecurityAutoConfiguration {
                     securityAuditPort,
             RestrictedLocalSessionFilter
                     restrictedLocalSessionFilter,
-            ObjectProvider<TresorPaySubscriptionKeyFilter>
-                    tresorPaySubscriptionKeyFilterProvider
+            ObjectProvider<PartnerSubscriptionKeyFilter>
+                    partnerSubscriptionKeyFilterProvider
     ) throws Exception {
 
         RequestMatcher bearerRequest =
@@ -383,12 +383,12 @@ public class SixpaySecurityAutoConfiguration {
                         ExceptionTranslationFilter.class
                 );
 
-        TresorPaySubscriptionKeyFilter tresorPaySubscriptionKeyFilter =
-                tresorPaySubscriptionKeyFilterProvider.getIfAvailable();
+        PartnerSubscriptionKeyFilter partnerSubscriptionKeyFilter =
+                partnerSubscriptionKeyFilterProvider.getIfAvailable();
 
-        if (tresorPaySubscriptionKeyFilter != null) {
+        if (partnerSubscriptionKeyFilter != null) {
             http.addFilterBefore(
-                    tresorPaySubscriptionKeyFilter,
+                    partnerSubscriptionKeyFilter,
                     BasicAuthenticationFilter.class
             );
         }

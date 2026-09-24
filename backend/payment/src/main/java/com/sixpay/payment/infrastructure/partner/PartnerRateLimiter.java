@@ -1,6 +1,6 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
-public interface TresorPayRateLimiter {
+public interface PartnerRateLimiter {
 
     RateLimitDecision acquire(String partnerId);
 

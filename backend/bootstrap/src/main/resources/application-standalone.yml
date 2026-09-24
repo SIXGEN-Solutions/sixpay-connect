@@ -2,7 +2,7 @@ spring:
   config:
     import:
       - classpath:application-notification-operational.yml
-      - classpath:config/payment/tresorpay-common.yml
+      - classpath:config/payment/partner-common.yml
 
   datasource:
     url: ${SIXPAY_DB_URL:jdbc:postgresql://localhost:5432/sixpaydb?currentSchema=sixpay}

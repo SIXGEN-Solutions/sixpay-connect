@@ -15,7 +15,7 @@ REQUIRED_RUNTIME_FILES = {
     "application.yml",
     "application-amplitude-payment-sandbox.yml",
     "application-payment-banking.yml",
-    "config/payment/tresorpay-common.yml",
+    "config/payment/partner-common.yml",
     "config/security/local-auth-common.yml",
     "config/security/oidc-common.yml",
 }

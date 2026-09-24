@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.tresorpay;
+package com.sixpay.payment.infrastructure.partner;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -6,15 +6,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class FixedWindowTresorPayRateLimiter
-        implements TresorPayRateLimiter {
+public final class FixedWindowPartnerRateLimiter
+        implements PartnerRateLimiter {
 
     private final Clock clock;
     private final int limit;
     private final Map<String, Window> windows =
             new ConcurrentHashMap<>();
 
-    public FixedWindowTresorPayRateLimiter(Clock clock, int limit) {
+    public FixedWindowPartnerRateLimiter(Clock clock, int limit) {
         this.clock = Objects.requireNonNull(clock);
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be positive");
