@@ -1,15 +1,15 @@
-# ACCOUNTING_T1 — T1.1 TRESOR PAY status verification decisions
+# ACCOUNTING_T1 — T1.1 Partner status verification decisions
 
 ## Purpose
 
-Define the authoritative TRESOR PAY status evidence required before a T0-completed
+Define the authoritative Partner status evidence required before a T0-completed
 Payment may be selected for T1 accounting.
 
 ## Business rationale
 
-A Payment may be financially completed at T0 in SIXPAY/Core Banking while TRESOR PAY
+A Payment may be financially completed at T0 in SIXPAY/Core Banking while Partner
 still exposes an unpaid or non-final state. T1 must not include such a transaction
-until TRESOR PAY confirms the corresponding payment as paid/completed.
+until Partner confirms the corresponding payment as paid/completed.
 
 This verification serves both cross-system business coherence and accounting eligibility.
 It never invalidates or rolls back an authoritative T0 `COMPLETED` result.
@@ -17,12 +17,12 @@ It never invalidates or rolls back an authoritative T0 `COMPLETED` result.
 ## Source-of-truth order
 
 1. Core Banking / Payment T0 remains authoritative for financial execution.
-2. TRESOR PAY status is an additional downstream coherence requirement for T1 eligibility.
-3. A TRESOR PAY non-paid or unavailable status does not rewrite T0.
+2. Partner status is an additional downstream coherence requirement for T1 eligibility.
+3. A Partner non-paid or unavailable status does not rewrite T0.
 
-## External API supplied by TRESOR PAY
+## External API supplied by Partner
 
-Direction: SIXPAY -> TRESOR PAY
+Direction: SIXPAY -> Partner
 
 `GET /api/v1/payments/{reference}/status`
 
@@ -45,7 +45,7 @@ parameters remain to be approved before provider adapter generation.
 ## Accounting eligibility
 
 A transaction is T1-eligible only when all prior T1.0 conditions are satisfied and
-TRESOR PAY evidence confirms the payment as paid/completed.
+Partner evidence confirms the payment as paid/completed.
 
 For T1.1, `COMPLETED` is the accepted provider status.
 
@@ -63,9 +63,9 @@ In both cases, only candidates with stored, verified `COMPLETED` evidence are se
 
 Worker cadence belongs to T1.2/T1.3 operational design.
 
-## TRESOR PAY unavailable / non-final
+## Partner unavailable / non-final
 
-If TRESOR PAY is unavailable or the payment is not yet confirmed paid:
+If Partner is unavailable or the payment is not yet confirmed paid:
 - do not fail the already-completed T0 Payment;
 - do not include the transaction in the current T1 batch;
 - leave it eligible for a future verification/cutoff;
@@ -73,7 +73,7 @@ If TRESOR PAY is unavailable or the payment is not yet confirmed paid:
 
 Operational/manual handling of unmatched transactions may include SIXPAY extraction
 of reconciliation data. External file exchange/validation is owned by La Régionale /
-TRESOR PAY and remains outside SIXPAY until separately defined.
+Partner and remains outside SIXPAY until separately defined.
 
 ## Recovery and idempotence
 

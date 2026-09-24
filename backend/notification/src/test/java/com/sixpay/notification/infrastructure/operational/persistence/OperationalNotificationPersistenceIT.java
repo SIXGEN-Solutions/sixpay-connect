@@ -425,7 +425,7 @@ class OperationalNotificationPersistenceIT {
                                 "paymentReference",
                                 "PAY-20260809-0001",
                                 "partnerId",
-                                "TRESORPAY",
+                                "PARTNER",
                                 "amount",
                                 "10000",
                                 "currency",

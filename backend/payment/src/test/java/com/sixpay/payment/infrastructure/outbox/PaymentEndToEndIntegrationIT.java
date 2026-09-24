@@ -89,7 +89,7 @@ class PaymentEndToEndIntegrationIT {
                     paymentId,
                     correlationId,
                     "PaymentReceived",
-                    "{\"source\":\"TRESOR_PAY\",\"paymentReference\":\""
+                    "{\"source\":\"PARTNER\",\"paymentReference\":\""
                             + paymentReference + "\"}",
                     STARTED_AT
             );
@@ -219,7 +219,7 @@ class PaymentEndToEndIntegrationIT {
                         + "state_payload,"
                         + "persistence_version"
                         + ") VALUES ("
-                        + "?, ?, 'TRESOR_PAY', ?, ?, 'SIXPAY_BANK', "
+                        + "?, ?, 'PARTNER', ?, ?, 'SIXPAY_BANK', "
                         + "1000.00, 'XAF', 'RECEIVED', 1, "
                         + "TIMESTAMPTZ '2026-08-01 20:00:00+00', "
                         + "TIMESTAMPTZ '2026-08-01 20:00:00+00', "

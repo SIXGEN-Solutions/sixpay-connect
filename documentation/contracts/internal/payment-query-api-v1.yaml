@@ -55,7 +55,7 @@ paths:
             type: string
             minLength: 1
             maxLength: 64
-        - name: tresorPayRequestId
+        - name: partnerRequestId
           in: query
           schema:
             type: string
@@ -324,7 +324,7 @@ components:
       required:
         - paymentId
         - paymentReference
-        - tresorPayRequestId
+        - partnerRequestId
         - financialInstitutionCode
         - amount
         - status
@@ -336,7 +336,7 @@ components:
           format: uuid
         paymentReference:
           type: string
-        tresorPayRequestId:
+        partnerRequestId:
           type: string
         observedCustomerId:
           type:
@@ -491,7 +491,7 @@ components:
       required:
         - paymentId
         - paymentReference
-        - tresorPayRequestId
+        - partnerRequestId
         - financialInstitutionCode
         - amount
         - status
@@ -506,7 +506,7 @@ components:
           format: uuid
         paymentReference:
           type: string
-        tresorPayRequestId:
+        partnerRequestId:
           type: string
         observedCustomerId:
           type:

@@ -82,13 +82,13 @@ class PaymentAsyncCallbackArchitectureTest {
                 "String externalPaymentReference"
         ));
         assertFalse(message.contains(
-                "tresorPayPaymentReference"
+                "partnerPaymentReference"
         ));
         assertTrue(payload.contains(
                 "String externalPaymentReference"
         ));
         assertFalse(payload.contains(
-                "tresorPayPaymentReference"
+                "partnerPaymentReference"
         ));
         assertTrue(payload.contains(
                 "message.externalPaymentReference()"

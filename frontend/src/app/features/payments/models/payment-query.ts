@@ -5,7 +5,7 @@ export type PaymentSort =
 
 export interface PaymentSearchQuery {
   readonly paymentReference?: string;
-  readonly tresorPayRequestId?: string;
+  readonly partnerRequestId?: string;
   readonly observedCustomerId?: string;
   readonly financialInstitutionCode?: string;
   readonly status?: PaymentStatus;

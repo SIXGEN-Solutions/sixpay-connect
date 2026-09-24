@@ -292,7 +292,7 @@ AccountingBatchIdempotencyKeyFactoryTest
 AccountingBatchReconciliationServiceTest
 
 DailyAccountingCutoffPolicyTest
-VerifiedTresorPayStatusEligibilityPolicyTest
+VerifiedPartnerStatusEligibilityPolicyTest
 
 AccountingApiMapperTest
 AccountingApiPropertiesTest

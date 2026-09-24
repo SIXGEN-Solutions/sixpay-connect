@@ -6,7 +6,7 @@ import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import java.time.Instant;
 
 /**
- * TresorPay response for InitiateDebit.
+ * Partner response for InitiateDebit.
  *
  * <p>Bank-issued challenge fields remain absent until an approved core-banking
  * contract provides them. SIXPAY does not fabricate these values.</p>

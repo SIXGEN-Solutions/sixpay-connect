@@ -75,7 +75,7 @@ public class PaymentQueryController {
 
             @RequestParam(required = false)
             @Size(min = 1, max = 100)
-            String tresorPayRequestId,
+            String partnerRequestId,
 
             @RequestParam(required = false)
             UUID observedCustomerId,
@@ -125,7 +125,7 @@ public class PaymentQueryController {
                         cursor,
                         size,
                         paymentReference,
-                        tresorPayRequestId,
+                        partnerRequestId,
                         observedCustomerId,
                         financialInstitutionCode,
                         status == null

@@ -122,7 +122,7 @@ components:
     AccountingT1OperationalCandidateStatus:
       type: string
       enum:
-        - AWAITING_TRESORPAY_VERIFICATION
+        - AWAITING_PARTNER_VERIFICATION
         - ELIGIBLE_FOR_BATCH
         - INELIGIBLE_FOR_CURRENT_SELECTION
         - ASSIGNED_TO_BATCH
@@ -131,15 +131,15 @@ components:
       type: string
       enum:
         - NONE
-        - TRESORPAY_STATUS_NOT_COMPLETED
-        - TRESORPAY_STATUS_UNAVAILABLE
+        - PARTNER_STATUS_NOT_COMPLETED
+        - PARTNER_STATUS_UNAVAILABLE
         - OUTSIDE_SELECTION_WINDOW
 
     AccountingT1TechnicalIssue:
       type: string
       enum:
         - NONE
-        - TRESORPAY_STATUS_LOOKUP_UNAVAILABLE
+        - PARTNER_STATUS_LOOKUP_UNAVAILABLE
         - ACCOUNTING_SUBMISSION_OUTCOME_UNKNOWN
         - ACCOUNTING_RECONCILIATION_PENDING
 
@@ -174,9 +174,9 @@ components:
           format: date
         status:
           $ref: '#/components/schemas/AccountingT1OperationalCandidateStatus'
-        tresorPayProviderStatus:
+        partnerProviderStatus:
           type: [string, 'null']
-        tresorPayCheckedAt:
+        partnerCheckedAt:
           type: [string, 'null']
           format: date-time
         eligibilityReason:

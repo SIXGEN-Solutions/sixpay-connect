@@ -17,8 +17,8 @@ describe('PartnerAccessPageComponent hardening', () => {
     items: [
       {
         id: '10000000-0000-4000-8000-000000000001',
-        legalName: 'TresorPay',
-        technicalContactName: 'TresorPay Operations',
+        legalName: 'Partner',
+        technicalContactName: 'Partner Operations',
         technicalContactEmail: 'operations1@example.test',
         authorizedTransactionTypes: ['PAYMENT'],
         status: 'ACTIVE',
@@ -79,7 +79,7 @@ describe('PartnerAccessPageComponent hardening', () => {
       page: 0,
       size: 20,
     });
-    expect(fixture.nativeElement.textContent).toContain('TresorPay');
+    expect(fixture.nativeElement.textContent).toContain('Partner');
   });
 
   it('requests page one when next is selected', () => {

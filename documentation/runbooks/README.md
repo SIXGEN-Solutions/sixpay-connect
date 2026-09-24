@@ -31,7 +31,7 @@ integration/
 kafka/
 notification/
 payment/
-tresorpay/
+partner/
 ```
 
 Each directory owns procedures for its operational concern.

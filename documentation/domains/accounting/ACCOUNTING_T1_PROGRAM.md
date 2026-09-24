@@ -16,7 +16,7 @@ Le T0 Payment est fermé et n’est pas redéfini par ce programme.
 ## Lots
 
 1. T1.0 — Gouvernance et contrat interne Payment → Accounting + refresh AI.
-2. T1.1 — TRESOR PAY status verification.
+2. T1.1 — Partner status verification.
 3. T1.2 — Accounting candidate projection depuis snapshots T0 finalisés.
 4. T1.3 — Cutoff / eligibility / batch constitution.
 5. T1.4 — Core Banking Accounting API contract.
@@ -39,11 +39,11 @@ Le T0 Payment est fermé et n’est pas redéfini par ce programme.
 
 ## T1.1 decisions
 
-- SIXPAY consults TRESOR PAY through `GET /api/v1/payments/{reference}/status` using partner OAuth2.
+- SIXPAY consults Partner through `GET /api/v1/payments/{reference}/status` using partner OAuth2.
 - The lookup verifies cross-system coherence before T1; it does not determine or rewrite T0 financial truth.
-- A transaction is T1-eligible only when TRESOR PAY confirms it as `COMPLETED`.
-- TRESOR PAY cannot invalidate an already-authoritative T0 `COMPLETED`.
-- When TRESOR PAY is unavailable or not yet completed, the transaction is skipped for the current T1 run and remains eligible for a later verification/cutoff.
+- A transaction is T1-eligible only when Partner confirms it as `COMPLETED`.
+- Partner cannot invalidate an already-authoritative T0 `COMPLETED`.
+- When Partner is unavailable or not yet completed, the transaction is skipped for the current T1 run and remains eligible for a later verification/cutoff.
 - Other verified transactions continue through T1/TFJ.
 - Verification may be anticipated by a periodic worker or performed on-demand for unverified candidates; the worker cadence is deferred.
 - Manual/export reconciliation processes remain external to SIXPAY until separately defined; SIXPAY may later expose extraction capability under an approved scope.

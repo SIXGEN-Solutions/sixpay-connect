@@ -20,7 +20,7 @@ describe('reporting-api.mapper', () => {
           eventType: 'PAYMENT_RECEIVED',
           occurredAt: '2026-08-08T13:47:12.104Z',
           correlationId: 'e5e41af6-6f71-4cf2-a111-42837d1ea100',
-          sourceSystem: 'TRESOR_PAY',
+          sourceSystem: 'PARTNER',
           aggregateVersion: 1,
         },
       ],

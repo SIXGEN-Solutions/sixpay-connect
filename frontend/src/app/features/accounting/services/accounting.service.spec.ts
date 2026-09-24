@@ -73,14 +73,14 @@ describe('AccountingService', () => {
           {
             paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afb3',
             publicPaymentReference: 'PAY-2026-0001801',
-            partnerId: 'TRESORPAY',
+            partnerId: 'PARTNER',
             amount: 75000,
             currency: 'XAF',
             paymentOccurredAt: '2026-08-08T17:59:00Z',
             paymentBusinessDate: '2026-08-08',
             bankPostingReference: 'BANK-POST-001',
-            tresorPayStatus: 'SUCCESS',
-            tresorPayStatusCheckedAt: '2026-08-08T18:00:00Z',
+            partnerStatus: 'SUCCESS',
+            partnerStatusCheckedAt: '2026-08-08T18:00:00Z',
             status: 'PENDING',
           },
         ],
@@ -92,7 +92,7 @@ describe('AccountingService', () => {
 
     expect(result?.items).toHaveLength(1);
     expect(result?.items[0]?.bankPostingReference).toBe('BANK-POST-001');
-    expect(result?.items[0]?.tresorPayStatus).toBe('SUCCESS');
+    expect(result?.items[0]?.partnerStatus).toBe('SUCCESS');
     expect(result?.items[0]?.status).toBe('PENDING');
   });
 

@@ -15,7 +15,7 @@ read projections.
 - link and unlink ObservedCustomer records to local customers;
 - expose customer observation and customer audit queries.
 
-The external TRESOR PAY subscription remains outside the Payment MVP. It must
+The external Partner subscription remains outside the Payment MVP. It must
 not be confused with the local CustomerSubscription capability owned by this
 module.
 
@@ -86,7 +86,7 @@ Customer owns these production table families:
 | customer_observation_audit | Observation audit |
 | customer_observed_master_link | Observed/local customer link |
 
-The external TRESOR PAY subscription is not stored as a local
+The external Partner subscription is not stored as a local
 CustomerSubscription record.
 
 Schema:

@@ -68,7 +68,7 @@ import { AccountingService } from '../services/accounting.service';
                     <th>Partenaire</th>
                     <th>Montant</th>
                     <th>Posting</th>
-                    <th>TresorPay</th>
+                    <th>Partner</th>
                     <th>Statut</th>
                   </tr>
                 </thead>
@@ -95,7 +95,7 @@ import { AccountingService } from '../services/accounting.service';
                       </td>
 
                       <td>
-                        {{ item.tresorPayStatus }}
+                        {{ item.partnerStatus }}
                       </td>
 
                       <td>

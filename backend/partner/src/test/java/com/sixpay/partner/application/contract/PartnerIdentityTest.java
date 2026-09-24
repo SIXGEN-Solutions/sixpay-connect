@@ -13,7 +13,7 @@ class PartnerIdentityTest {
 
     @Test
     void rejectsProviderLoginAsCanonicalIdentity() {
-        assertThatThrownBy(() -> PartnerIdentity.from("TRESOR_PAY"))
+        assertThatThrownBy(() -> PartnerIdentity.from("PARTNER"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

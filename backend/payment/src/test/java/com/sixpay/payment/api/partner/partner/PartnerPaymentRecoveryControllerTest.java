@@ -1,9 +1,9 @@
-package com.sixpay.payment.api.partner.tresorpay;
+package com.sixpay.payment.api.partner.partner;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.payment.api.PaymentNotFoundException;
-import com.sixpay.payment.api.partner.tresorpay.response.TresorPayPaymentRecoveryResponse;
+import com.sixpay.payment.api.partner.partner.response.PartnerPaymentRecoveryResponse;
 import com.sixpay.payment.application.view.PaymentRecoveryView;
 import com.sixpay.payment.application.port.input.PaymentRecoveryUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TresorPayPaymentRecoveryControllerTest {
+class PartnerPaymentRecoveryControllerTest {
 
     @Test
     void returnsRecoveryViewAndEchoesCorrelationId() {
@@ -52,7 +52,7 @@ class TresorPayPaymentRecoveryControllerTest {
                 PublicPaymentReference.of(reference)
         )).thenReturn(Optional.of(view));
 
-        var controller = new TresorPayPaymentRecoveryController(
+        var controller = new PartnerPaymentRecoveryController(
                 useCase,
                 resolver
         );
@@ -63,7 +63,7 @@ class TresorPayPaymentRecoveryControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().paymentReference())
                 .isEqualTo(view.paymentReference());
-        assertThat(response.getBody().tresorPayPaymentReference())
+        assertThat(response.getBody().partnerPaymentReference())
                 .isEqualTo(view.externalPaymentReference());
         assertThat(response.getBody().status())
                 .isEqualTo(view.status());
@@ -86,7 +86,7 @@ class TresorPayPaymentRecoveryControllerTest {
                 PublicPaymentReference.of(reference)
         )).thenReturn(Optional.empty());
 
-        var controller = new TresorPayPaymentRecoveryController(
+        var controller = new PartnerPaymentRecoveryController(
                 useCase,
                 resolver
         );
@@ -100,7 +100,7 @@ class TresorPayPaymentRecoveryControllerTest {
 
     @Test
     void correlationHeaderIsDeclaredRequired() throws Exception {
-        var parameter = TresorPayPaymentRecoveryController.class
+        var parameter = PartnerPaymentRecoveryController.class
                 .getMethod("getPayment", String.class, String.class)
                 .getParameters()[1];
 

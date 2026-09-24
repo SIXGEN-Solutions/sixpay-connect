@@ -12,8 +12,8 @@ public record ExternalSystem(String name) {
     public static final ExternalSystem AMPLITUDE =
             new ExternalSystem("AMPLITUDE");
 
-    public static final ExternalSystem TRESORPAY =
-            new ExternalSystem("TRESORPAY");
+    public static final ExternalSystem PARTNER =
+            new ExternalSystem("PARTNER");
 
     public ExternalSystem {
         name = Preconditions.requireNonBlank(

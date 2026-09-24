@@ -11,7 +11,7 @@ reconciliation.
 
 - consume approved durable Payment finalization facts into an Accounting-owned
   projection;
-- verify authoritative TRESOR PAY status evidence;
+- verify authoritative PARTNER status evidence;
 - select eligible candidates for the configured business window;
 - constitute immutable accounting batches;
 - submit batches through `AccountingBatchGateway`;
@@ -29,7 +29,7 @@ Accounting. Provider-neutral HTTP/resilience belongs to Integration.
 ```text
 Payment T0 finalized fact
 -> Accounting candidate projection
--> TRESOR PAY status evidence
+-> PARTNER status evidence
 -> cutoff / eligibility
 -> immutable Accounting batch
 -> Core Banking Accounting submission

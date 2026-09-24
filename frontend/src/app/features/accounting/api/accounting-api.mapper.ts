@@ -34,8 +34,8 @@ export function mapAccountingBatchItemResponse(
     paymentOccurredAt: new Date(response.paymentOccurredAt),
     paymentBusinessDate: response.paymentBusinessDate,
     bankPostingReference: response.bankPostingReference,
-    tresorPayStatus: response.tresorPayStatus,
-    tresorPayStatusCheckedAt: new Date(response.tresorPayStatusCheckedAt),
+    partnerStatus: response.partnerStatus,
+    partnerStatusCheckedAt: new Date(response.partnerStatusCheckedAt),
     status: response.status,
   };
 }

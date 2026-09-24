@@ -7,7 +7,7 @@ package com.sixpay.accounting.domain.model;
  * exposing provider or infrastructure implementation details.</p>
  */
 public enum AccountingT1OperationalCandidateStatus {
-    AWAITING_TRESORPAY_VERIFICATION,
+    AWAITING_PARTNER_VERIFICATION,
     ELIGIBLE_FOR_BATCH,
     INELIGIBLE_FOR_CURRENT_SELECTION,
     ASSIGNED_TO_BATCH

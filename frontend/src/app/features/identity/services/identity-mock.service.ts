@@ -32,9 +32,9 @@ const USERS: readonly IdentityUser[] = [
     lastLoginAt: new Date('2026-08-08T12:48:00Z'),
   },
   {
-    userId: 'PARTNER-TRESORPAY',
-    displayName: 'TresorPay',
-    subject: 'partner-tresorpay',
+    userId: 'PARTNER-PARTNER',
+    displayName: 'Partner',
+    subject: 'partner-partner',
     type: 'PARTNER',
     roles: ['PARTNER'],
     status: 'ACTIVE',

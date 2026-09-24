@@ -3,7 +3,7 @@
 | Capability | Code complete | Deterministic tests | Runbook/ops | External sandbox | Release note |
 |---|---|---|---|---|---|
 | Integration foundation | YES | YES | YES | N/A | modular-monolith safe |
-| TresorPay inbound/callback | YES/contract-dependent | YES | YES | PENDING | external certification required |
+| Partner inbound/callback | YES/contract-dependent | YES | YES | PENDING | external certification required |
 | Customer Verification → Amplitude | YES/contract-dependent | YES | YES | PENDING | provider contract still authoritative |
 | Payment banking operations | YES/provisional provider contract | YES | YES | PENDING | financial sandbox mandatory before production |
 | Observed Customer projection | YES | YES | YES | N/A for first release | in-process outbox is valid |

@@ -587,7 +587,7 @@ class PaymentConcurrencyPerformanceIT {
                 ) VALUES (
                     ?,
                     ?,
-                    'TRESOR_PAY',
+                    'PARTNER',
                     ?,
                     ?,
                     'SIXPAY_BANK',

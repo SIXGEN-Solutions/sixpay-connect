@@ -31,8 +31,8 @@ class ExternalSystemTest {
         );
 
         assertEquals(
-                "TRESORPAY",
-                ExternalSystem.TRESORPAY.name()
+                "PARTNER",
+                ExternalSystem.PARTNER.name()
         );
     }
 

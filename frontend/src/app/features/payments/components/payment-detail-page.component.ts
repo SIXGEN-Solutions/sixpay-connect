@@ -72,8 +72,8 @@ import { PaymentsService } from '../services/payments.service';
                 <dd>{{ currentPayment.debtorAccount?.maskedValue ?? '—' }}</dd>
               </div>
               <div>
-                <dt>TresorPay Request</dt>
-                <dd>{{ currentPayment.tresorPayRequestId }}</dd>
+                <dt>Partner Request</dt>
+                <dd>{{ currentPayment.partnerRequestId }}</dd>
               </div>
               <div>
                 <dt>Observed Customer</dt>

@@ -55,9 +55,9 @@ class AccountingT1OperationalQueryServiceCoverageTest {
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().getFirst().status())
-                .isEqualTo(AccountingT1OperationalCandidateStatus.AWAITING_TRESORPAY_VERIFICATION);
+                .isEqualTo(AccountingT1OperationalCandidateStatus.AWAITING_PARTNER_VERIFICATION);
         assertThat(result.content().getFirst().eligibilityReason())
-                .isEqualTo(AccountingT1EligibilityReason.TRESORPAY_STATUS_UNAVAILABLE);
+                .isEqualTo(AccountingT1EligibilityReason.PARTNER_STATUS_UNAVAILABLE);
     }
 
     @Test
@@ -74,7 +74,7 @@ class AccountingT1OperationalQueryServiceCoverageTest {
         assertThat(result.content().getFirst().status())
                 .isEqualTo(AccountingT1OperationalCandidateStatus.INELIGIBLE_FOR_CURRENT_SELECTION);
         assertThat(result.content().getFirst().eligibilityReason())
-                .isEqualTo(AccountingT1EligibilityReason.TRESORPAY_STATUS_NOT_COMPLETED);
+                .isEqualTo(AccountingT1EligibilityReason.PARTNER_STATUS_NOT_COMPLETED);
     }
 
     @Test

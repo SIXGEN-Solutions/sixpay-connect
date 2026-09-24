@@ -82,7 +82,7 @@ public class PaymentMvpPolicyConfiguration {
     ) {
         return new AuthorizationPolicyProfile(
                 metadata,
-                Set.of("TRESOR_PAY", "SIXPAY"),
+                Set.of("PARTNER", "SIXPAY"),
                 Set.of("RS256", "PS256"),
                 Set.of("payment:initiate"),
                 Set.of(

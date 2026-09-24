@@ -29,10 +29,10 @@ public final class DefaultSettingRegistry implements SettingRegistryQueryUseCase
         add(registry, duration("security.local.authentication.lock-duration", SettingDomain.SECURITY, "PT15M", "PT1S", "P7D", "Local account lock duration"));
         add(registry, duration("security.local.session.timeout", SettingDomain.SECURITY, "PT30M", "PT1M", "P1D", "Local authenticated session timeout"));
 
-        add(registry, duration("payment.tresorpay.anti-replay.allowed-clock-skew", SettingDomain.PAYMENT, "PT5M", "PT0S", "PT1H", "Accepted clock skew for TresorPay anti-replay"));
-        add(registry, duration("payment.tresorpay.anti-replay.nonce-ttl", SettingDomain.PAYMENT, "PT10M", "PT1S", "P1D", "TresorPay nonce retention period"));
-        add(registry, integer("payment.tresorpay.rate-limit.requests-per-minute", SettingDomain.PAYMENT, "120", "1", "1000000", "TresorPay requests allowed per minute"));
-        add(registry, duration("payment.tresorpay.callback.delivery-expiration", SettingDomain.PAYMENT, "PT24H", "PT1M", "P30D", "TresorPay callback delivery expiration"));
+        add(registry, duration("payment.partner.anti-replay.allowed-clock-skew", SettingDomain.PAYMENT, "PT5M", "PT0S", "PT1H", "Accepted clock skew for Partner anti-replay"));
+        add(registry, duration("payment.partner.anti-replay.nonce-ttl", SettingDomain.PAYMENT, "PT10M", "PT1S", "P1D", "Partner nonce retention period"));
+        add(registry, integer("payment.partner.rate-limit.requests-per-minute", SettingDomain.PAYMENT, "120", "1", "1000000", "Partner requests allowed per minute"));
+        add(registry, duration("payment.partner.callback.delivery-expiration", SettingDomain.PAYMENT, "PT24H", "PT1M", "P30D", "Partner callback delivery expiration"));
 
         add(registry, bool("payment.callback.enabled", SettingDomain.PAYMENT, "false", "Payment callback worker operational switch"));
         add(registry, duration("payment.callback.poll-delay", SettingDomain.PAYMENT, "PT2S", "PT0.1S", "PT1H", "Payment callback polling delay"));
@@ -80,8 +80,8 @@ public final class DefaultSettingRegistry implements SettingRegistryQueryUseCase
 
         add(registry, duration("accounting.api.connect-timeout", SettingDomain.ACCOUNTING, "PT2S", "PT0.1S", "PT1M", "Accounting API connect timeout"));
         add(registry, duration("accounting.api.read-timeout", SettingDomain.ACCOUNTING, "PT5S", "PT0.1S", "PT5M", "Accounting API read timeout"));
-        add(registry, duration("accounting.tresorpay-status.connect-timeout", SettingDomain.ACCOUNTING, "PT2S", "PT0.1S", "PT1M", "TresorPay status connect timeout"));
-        add(registry, duration("accounting.tresorpay-status.read-timeout", SettingDomain.ACCOUNTING, "PT5S", "PT0.1S", "PT5M", "TresorPay status read timeout"));
+        add(registry, duration("accounting.partner-status.connect-timeout", SettingDomain.ACCOUNTING, "PT2S", "PT0.1S", "PT1M", "Partner status connect timeout"));
+        add(registry, duration("accounting.partner-status.read-timeout", SettingDomain.ACCOUNTING, "PT5S", "PT0.1S", "PT5M", "Partner status read timeout"));
 
         add(registry, duration("reporting.audit-export.retention", SettingDomain.REPORTING, "PT1H", "PT1M", "P3650D", "Audit export retention"));
         add(registry, integer("reporting.audit-export.recovery-delay-ms", SettingDomain.REPORTING, "60000", "100", "86400000", "Audit export recovery delay in milliseconds"));

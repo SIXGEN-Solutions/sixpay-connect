@@ -14,9 +14,9 @@ const PARTNER_PAGE = {
   items: [
     {
       id: 'f88166d1-39df-4900-bb31-1700d25c3bfa',
-      legalName: 'TresorPay',
-      technicalContactName: 'TresorPay Operations',
-      technicalContactEmail: 'operations@tresorpay.cm',
+      legalName: 'Partner',
+      technicalContactName: 'Partner Operations',
+      technicalContactEmail: 'operations@partner.cm',
       authorizedTransactionTypes: ['PAYMENT'],
       status: 'ACTIVE',
       createdAt: '2026-08-08T12:00:00Z',
@@ -57,7 +57,7 @@ test.describe('Phase 7.8 integration profile hardening', () => {
 
     await expect(
       page.getByRole('link', {
-        name: 'Ouvrir TresorPay',
+        name: 'Ouvrir Partner',
       }),
     ).toBeVisible();
 

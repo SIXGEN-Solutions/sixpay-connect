@@ -39,8 +39,8 @@ finally {
 }
 
 $ExternalVariables = @(
-    "TRESORPAY_BASE_URL",
-    "TRESORPAY_CLIENT_ID",
+    "PARTNER_BASE_URL",
+    "PARTNER_CLIENT_ID",
     "AMPLITUDE_BASE_URL",
     "AMPLITUDE_TOKEN_URL",
     "AMPLITUDE_CLIENT_ID",

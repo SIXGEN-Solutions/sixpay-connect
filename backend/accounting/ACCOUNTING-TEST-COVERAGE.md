@@ -29,7 +29,7 @@ Accounting already contains focused domain-policy tests:
 
 ```text
 DailyAccountingCutoffPolicyTest
-VerifiedTresorPayStatusEligibilityPolicyTest
+VerifiedPartnerStatusEligibilityPolicyTest
 ```
 
 Application tests also exercise real Accounting domain objects and their

@@ -115,7 +115,7 @@ class OperationalEmailTemplateRendererTest {
                         "paymentReference",
                         "PAY-20260807-0001",
                         "partnerId",
-                        "TRESORPAY",
+                        "PARTNER",
                         "amount",
                         "10000",
                         "currency",

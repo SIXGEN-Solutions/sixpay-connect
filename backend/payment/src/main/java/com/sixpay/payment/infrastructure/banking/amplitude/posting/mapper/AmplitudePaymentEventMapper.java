@@ -43,7 +43,7 @@ public final class AmplitudePaymentEventMapper {
         }
         if (!REQUIRED_NATURE.equals(context.nature())) {
             throw new IllegalArgumentException(
-                    "Amplitude nature must be VIRPAY for TRESOR PAY"
+                    "Amplitude nature must be VIRPAY for PARTNER"
             );
         }
         if (!REQUIRED_CURRENCY.equals(

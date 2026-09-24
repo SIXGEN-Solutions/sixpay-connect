@@ -174,9 +174,9 @@ class PartnerCatalogControllerTest {
                 List.of(
                         new PartnerSummaryView(
                                 PARTNER_ID,
-                                "TresorPay",
-                                "Operations TresorPay",
-                                "operations@tresorpay.cm",
+                                "Partner",
+                                "Operations Partner",
+                                "operations@partner.cm",
                                 Set.of("PAYMENT"),
                                 PartnerStatus.ACTIVE,
                                 now,

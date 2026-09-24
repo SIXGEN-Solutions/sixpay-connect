@@ -40,8 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         properties = {
                 "sixpay.security.authentication.local.enabled=false",
                 "sixpay.security.authentication.oidc.enabled=true",
-                "sixpay.security.tresorpay.subscription-key.enabled=true",
-                "sixpay.security.tresorpay.subscription-key.value=test-subscription-key"
+                "sixpay.security.partner.subscription-key.enabled=true",
+                "sixpay.security.partner.subscription-key.value=test-subscription-key"
         }
 )
 @AutoConfigureMockMvc

@@ -23,21 +23,21 @@ describe('Accounting API mapper', () => {
     const mapped = mapAccountingBatchItemResponse({
       paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afb3',
       publicPaymentReference: 'PAY-2026-0001801',
-      partnerId: 'TRESORPAY',
+      partnerId: 'PARTNER',
       amount: 75000,
       currency: 'XAF',
       paymentOccurredAt: '2026-08-08T17:59:00Z',
       paymentBusinessDate: '2026-08-08',
       bankPostingReference: 'BANK-POST-001',
-      tresorPayStatus: 'SUCCESS',
-      tresorPayStatusCheckedAt: '2026-08-08T18:00:00Z',
+      partnerStatus: 'SUCCESS',
+      partnerStatusCheckedAt: '2026-08-08T18:00:00Z',
       status: 'PENDING',
     });
 
     expect(mapped.bankPostingReference).toBe('BANK-POST-001');
-    expect(mapped.tresorPayStatus).toBe('SUCCESS');
+    expect(mapped.partnerStatus).toBe('SUCCESS');
     expect(mapped.status).toBe('PENDING');
-    expect(mapped.tresorPayStatusCheckedAt.toISOString()).toBe('2026-08-08T18:00:00.000Z');
+    expect(mapped.partnerStatusCheckedAt.toISOString()).toBe('2026-08-08T18:00:00.000Z');
   });
 
   it('maps detail and items without introducing internal T1 fields', () => {
@@ -53,14 +53,14 @@ describe('Accounting API mapper', () => {
         {
           paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afb3',
           publicPaymentReference: 'PAY-2026-0001801',
-          partnerId: 'TRESORPAY',
+          partnerId: 'PARTNER',
           amount: 75000,
           currency: 'XAF',
           paymentOccurredAt: '2026-08-08T17:59:00Z',
           paymentBusinessDate: '2026-08-08',
           bankPostingReference: null,
-          tresorPayStatus: 'SUCCESS',
-          tresorPayStatusCheckedAt: '2026-08-08T18:00:00Z',
+          partnerStatus: 'SUCCESS',
+          partnerStatusCheckedAt: '2026-08-08T18:00:00Z',
           status: 'PENDING',
         },
       ],

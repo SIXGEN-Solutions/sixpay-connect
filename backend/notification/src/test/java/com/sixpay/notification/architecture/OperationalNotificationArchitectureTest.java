@@ -78,7 +78,7 @@ class OperationalNotificationArchitectureTest {
     }
 
     @Test
-    void tresorPayCallbackIsNotOwnedByNotification()
+    void partnerCallbackIsNotOwnedByNotification()
             throws Exception {
         String eventTypes = Files.readString(
                 ROOT.resolve(
@@ -94,7 +94,7 @@ class OperationalNotificationArchitectureTest {
 
         assertFalse(
                 eventTypes.contains(
-                        "TRESORPAY_CALLBACK"
+                        "PARTNER_CALLBACK"
                 )
         );
     }

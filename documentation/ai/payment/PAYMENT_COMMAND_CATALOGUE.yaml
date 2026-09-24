@@ -269,7 +269,7 @@ commands:
   - NO_OP_IDENTICAL_EVIDENCE_REPLAY
   - CONFIGURATION_CONFLICT
   forbidden:
-  - Construct a CUT account from inbound TRESOR PAY data.
+  - Construct a CUT account from inbound PARTNER data.
   - Expose a Treasury account token in an event.
   possibleFactKinds:
   - TREASURY_ACCOUNT_RESOLUTION_RECORDED
@@ -821,7 +821,7 @@ statusModel:
   - name: AUTHORIZATION_CHECKING
     terminal: false
     financialEffectPossible: false
-    meaning: SIXPAY is awaiting or applying the canonical TRESOR PAY authorization decision.
+    meaning: SIXPAY is awaiting or applying the canonical PARTNER authorization decision.
   - name: BANKING_VERIFICATION_PENDING
     terminal: false
     financialEffectPossible: false

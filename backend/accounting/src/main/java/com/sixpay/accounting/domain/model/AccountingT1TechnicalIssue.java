@@ -8,7 +8,7 @@ package com.sixpay.accounting.domain.model;
  */
 public enum AccountingT1TechnicalIssue {
     NONE,
-    TRESORPAY_STATUS_LOOKUP_UNAVAILABLE,
+    PARTNER_STATUS_LOOKUP_UNAVAILABLE,
     ACCOUNTING_SUBMISSION_OUTCOME_UNKNOWN,
     ACCOUNTING_RECONCILIATION_PENDING
 }

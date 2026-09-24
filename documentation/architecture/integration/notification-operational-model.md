@@ -70,11 +70,11 @@ Notification receives only:
 The trigger is emitted only for the Accounting business state `COMPLETED`, not
 for transport states such as `SUBMITTED` or `OUTCOME_UNKNOWN`.
 
-## 4. TresorPay callback exclusion
+## 4. Partner callback exclusion
 
-TresorPay Callback API 3 remains owned by Payment.
+Partner Callback API 3 remains owned by Payment.
 
-Although the callback functionally informs TresorPay of Payment progress, it is
+Although the callback functionally informs Partner of Payment progress, it is
 a partner integration with its own outbox, security and JWS rules. It is not a
 Notification delivery channel and must not be moved into this module.
 

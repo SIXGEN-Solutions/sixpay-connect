@@ -25,7 +25,7 @@ categories:
 - id: BOUNDARY_AND_CONFIDENTIALITY
   title: Domain boundary and confidentiality
 - id: AUTHORIZATION_AND_ADMISSION
-  title: Admission and TRESOR PAY authorization
+  title: Admission and PARTNER authorization
 - id: BANKING_AND_FUNDS
   title: Banking verification, funds and Treasury resolution
 - id: POSTING_AND_FINANCIAL_SAFETY
@@ -481,7 +481,7 @@ invariants:
       accounting: false
 - id: PAY-INV-013
   category: BOUNDARY_AND_CONFIDENTIALITY
-  statement: Raw TRESOR PAY, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
+  statement: Raw PARTNER, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
   enforcement:
   - DOMAIN
   - INTEGRATION
@@ -981,7 +981,7 @@ invariants:
       accounting: false
 - id: PAY-INV-026
   category: AUTHORIZATION_AND_ADMISSION
-  statement: Payment never infers, manages or changes a TRESOR PAY Subscription status from ExternalSubscriptionReference.
+  statement: Payment never infers, manages or changes a PARTNER Subscription status from ExternalSubscriptionReference.
   enforcement:
   - DOMAIN
   - ARCHITECTURE

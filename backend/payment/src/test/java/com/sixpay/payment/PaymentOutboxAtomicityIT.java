@@ -125,7 +125,7 @@ class PaymentOutboxAtomicityIT {
                     received_at, updated_at, finalized_at,
                     state_payload, persistence_version
                 ) VALUES (
-                    ?, ?, 'TRESOR_PAY', ?, ?, 'SIXPAY_BANK',
+                    ?, ?, 'PARTNER', ?, ?, 'SIXPAY_BANK',
                     1000.00, 'XAF', 'RECEIVED', 1,
                     TIMESTAMPTZ '2026-08-01 16:00:00+00',
                     TIMESTAMPTZ '2026-08-01 16:00:00+00',

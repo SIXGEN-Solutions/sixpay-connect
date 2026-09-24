@@ -170,7 +170,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+            enum: [SIXPAY, PARTNER, AMPLITUDE]
         - name: occurredFrom
           in: query
           required: true
@@ -535,7 +535,7 @@ components:
           format: uuid
         sourceSystem:
           type: string
-          enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+          enum: [SIXPAY, PARTNER, AMPLITUDE]
         externalReference:
           type:
             - string
@@ -660,7 +660,7 @@ components:
             - 'null'
         sourceSystem:
           type: string
-          enum: [SIXPAY, TRESOR_PAY, AMPLITUDE]
+          enum: [SIXPAY, PARTNER, AMPLITUDE]
         beforeState:
           oneOf:
             - $ref: '#/components/schemas/PaymentState'

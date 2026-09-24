@@ -133,9 +133,9 @@ components:
           format: date
         bankPostingReference:
           type: [string, 'null']
-        tresorPayStatus:
+        partnerStatus:
           type: string
-        tresorPayStatusCheckedAt:
+        partnerStatusCheckedAt:
           type: string
           format: date-time
         status:

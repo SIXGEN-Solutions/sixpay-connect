@@ -38,7 +38,7 @@ Secrets must come from environment or secret-management facilities.
 ## D2
 
 Provider-named security runtime façades are replaced directly by Partner-generic
-equivalents. No active TresorPay compatibility security boundary remains.
+equivalents. No active Partner compatibility security boundary remains.
 
 ## D4
 

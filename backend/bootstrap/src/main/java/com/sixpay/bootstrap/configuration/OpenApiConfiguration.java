@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
         type = SecuritySchemeType.APIKEY,
         in = io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER,
         paramName = "X-Subscription-Key",
-        description = "TRESOR PAY MVP subscription key"
+        description = "PARTNER MVP subscription key"
 )
 public class OpenApiConfiguration {
 
@@ -86,7 +86,7 @@ public class OpenApiConfiguration {
                 .displayName("Payment API")
                 .pathsToMatch(
                         "/v1/payments/**",
-                        "/api/v1/integrations/tresorpay/payments/**",
+                        "/api/v1/integrations/partner/payments/**",
                         "/internal/api/v1/payments/**"
                 )
                 .pathsToExclude(

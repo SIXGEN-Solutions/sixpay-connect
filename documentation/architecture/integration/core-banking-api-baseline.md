@@ -69,7 +69,7 @@ runtime parameters.
 For the MVP Payment flow, Core Banking capabilities are ordered as follows:
 
 ```text
-TRESOR PAY payment request
+Partner payment request
         ↓
 SIXPAY durable Payment persistence
         ↓
@@ -92,7 +92,7 @@ must not create or send an OTP challenge.
 
 The canonical `customerReference` and debtor `accountReference` used by Payment
 Confirmation come from the completed VERIFIED Amplitude verification result.
-They are not inferred from NIU, TRESOR PAY subscription references or other
+They are not inferred from NIU, Partner subscription references or other
 non-authoritative identifiers.
 
 Customer Verification remains distinct from execution-time Funds Control.
@@ -163,7 +163,7 @@ T0 Payment Event surface.
 ### Accounting T+1 / TFJ / EOD
 
 Accounting first constitutes a batch from financially successful Payments whose
-TRESOR PAY status evidence satisfies the accounting-eligibility rule.
+Partner status evidence satisfies the accounting-eligibility rule.
 
 Payment exposes immutable financial-entry snapshot facts through an approved
 internal boundary. Accounting never reads Payment JPA repositories or provider

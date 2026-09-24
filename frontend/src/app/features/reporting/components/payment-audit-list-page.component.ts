@@ -76,7 +76,7 @@ import { ReportingService } from '../services/reporting.service';
             <mat-select formControlName="sourceSystem">
               <mat-option value="">Toutes</mat-option>
               <mat-option value="SIXPAY">SIXPAY</mat-option>
-              <mat-option value="TRESOR_PAY">TRESOR_PAY</mat-option>
+              <mat-option value="PARTNER">PARTNER</mat-option>
               <mat-option value="AMPLITUDE">AMPLITUDE</mat-option>
             </mat-select>
           </mat-form-field>

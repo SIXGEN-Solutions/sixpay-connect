@@ -11,7 +11,7 @@
 
 | ID | Gate | Scenario | Expected result |
 |---|---|---|---|
-| E2E-01 | MODULAR_MONOLITH | TresorPay-style valid Payment request enters SIXPAY with correlation and idempotency | request accepted exactly once; duplicate key is safe |
+| E2E-01 | MODULAR_MONOLITH | Partner-style valid Payment request enters SIXPAY with correlation and idempotency | request accepted exactly once; duplicate key is safe |
 | E2E-02 | MODULAR_MONOLITH | Customer Verification returns positive banking evidence | Payment continues with verified evidence |
 | E2E-03 | MODULAR_MONOLITH | Customer Verification technical timeout | bounded retry/classification; no false business rejection |
 | E2E-04 | MODULAR_MONOLITH | Payment reservation/posting succeeds | bank references persisted; no duplicate financial side effect |
@@ -23,7 +23,7 @@
 | E2E-10 | MODULAR_MONOLITH | DEAD_LETTERED notification is replayed | same notification identity; replay audit present; fresh bounded retry cycle |
 | E2E-11 | MODULAR_MONOLITH | duplicate asynchronous delivery/restart | functional effect occurs once |
 | E2E-12 | MODULAR_MONOLITH | terminal data retention executes | only terminal old records are purged |
-| E2E-13 | EXTERNAL_SANDBOX | TresorPay real security and callback exchange | provider-certified request/callback/security evidence |
+| E2E-13 | EXTERNAL_SANDBOX | Partner real security and callback exchange | provider-certified request/callback/security evidence |
 | E2E-14 | EXTERNAL_SANDBOX | Amplitude customer verification | real OAuth2+mTLS, mappings and error codes certified |
 | E2E-15 | EXTERNAL_SANDBOX | Amplitude Payment reservation/posting/lookup/reversal | real financial-operation semantics certified |
 | E2E-16 | EXTERNAL_SANDBOX | Accounting API submit/lookup/reconciliation | real batch schema and provider statuses certified |

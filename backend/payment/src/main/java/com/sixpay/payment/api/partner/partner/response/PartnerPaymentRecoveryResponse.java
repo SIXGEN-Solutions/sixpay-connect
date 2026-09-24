@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.partner.tresorpay.response;
+package com.sixpay.payment.api.partner.partner.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -6,28 +6,28 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Public, read-only TRESOR PAY Payment recovery representation.
+ * Public, read-only PARTNER Payment recovery representation.
  *
  * <p>This response intentionally contains only the fields approved by the
- * TRESOR PAY Payment Request contract. It exposes no debtor-account value,
+ * PARTNER Payment Request contract. It exposes no debtor-account value,
  * internal evidence, OTP material or internal authorization detail.</p>
  */
-public record TresorPayPaymentRecoveryResponse(
+public record PartnerPaymentRecoveryResponse(
         UUID paymentId,
         String paymentReference,
-        String tresorPayPaymentReference,
+        String partnerPaymentReference,
         String status,
         Money amount,
         Instant receivedAt,
         Instant updatedAt,
         Instant finalizedAt
 ) {
-    public TresorPayPaymentRecoveryResponse {
+    public PartnerPaymentRecoveryResponse {
         paymentId = Objects.requireNonNull(paymentId, "Payment ID");
         paymentReference = requireText(paymentReference, "Payment reference");
-        tresorPayPaymentReference = requireText(
-                tresorPayPaymentReference,
-                "TRESOR PAY Payment reference"
+        partnerPaymentReference = requireText(
+                partnerPaymentReference,
+                "PARTNER Payment reference"
         );
         status = requireText(status, "Payment status");
         amount = Objects.requireNonNull(amount, "Payment amount");

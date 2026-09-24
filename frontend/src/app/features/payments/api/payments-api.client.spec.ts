@@ -69,7 +69,7 @@ describe('PaymentsApiClient', () => {
     request.flush({
       paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
       paymentReference: 'PAY-2026-0001842',
-      tresorPayRequestId: 'TP-2026-440921',
+      partnerRequestId: 'TP-2026-440921',
       financialInstitutionCode: 'LRB',
       amount: { amount: 125000, currency: 'XAF' },
       status: 'TREASURY_INTEGRATED',

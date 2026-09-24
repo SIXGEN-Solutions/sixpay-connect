@@ -1584,7 +1584,7 @@ invariantCoverage:
   futureFile: backend/payment/src/test/java/com/sixpay/payment/infrastructure/persistence/PaymentPersistenceIntegrationTest.java
   auditExpectation: SECURITY_REJECTION_AUDIT_ONLY; no sensitive value, raw payload or state-transition audit.
 - invariantId: PAY-INV-013
-  statement: Raw TRESOR PAY, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
+  statement: Raw PARTNER, Amplitude, TFJ or notification payloads never enter the aggregate or domain events.
   sourceRequirementRefs:
   - PAY-BOUND-003
   - PAY-SNAP-004
@@ -1594,7 +1594,7 @@ invariantCoverage:
   eventRefs: []
   eventNames: []
   scenarioId: PAY-TEST-INV-013
-  scenarioName: invariant_pay_inv_013_rawTresorPay,Amplitude,TfjOrNotificationPayloads
+  scenarioName: invariant_pay_inv_013_rawPartner,Amplitude,TfjOrNotificationPayloads
   testLayer: DOMAIN_OR_ARCHITECTURE
   testStatus: IMPLEMENTED_OR_CURRENT_DOMAIN_TEST
   verificationKinds:
@@ -1913,7 +1913,7 @@ invariantCoverage:
   futureFile: backend/payment/src/test/java/com/sixpay/payment/domain/model/PaymentPreFinancialLifecycleTest.java
   auditExpectation: On success, append transition audit with PaymentId, source/target state, resulting version and safe evidence references; on rejection, no transition audit.
 - invariantId: PAY-INV-026
-  statement: Payment never infers, manages or changes a TRESOR PAY Subscription status from ExternalSubscriptionReference.
+  statement: Payment never infers, manages or changes a PARTNER Subscription status from ExternalSubscriptionReference.
   sourceRequirementRefs:
   - PAY-BASE-006
   - PAY-BOUND-001

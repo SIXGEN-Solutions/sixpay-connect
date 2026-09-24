@@ -51,7 +51,7 @@ Accounting owns:
 - batch status;
 - item assignment;
 - item accounting status;
-- TresorPay status evidence copied into the canonical Accounting item.
+- Partner status evidence copied into the canonical Accounting item.
 
 Accounting does not persist or reconstruct the Payment aggregate.
 

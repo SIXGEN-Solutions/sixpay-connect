@@ -8,14 +8,14 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Global TRESOR PAY reliability journey.
+ * Global PARTNER reliability journey.
  *
  * <p>This test validates that the production path is fully wired from
  * initiation through OTP, T0, TFJ finality and both callbacks, including
  * network-loss/retry safeguards. Focused tests keep the behavioral depth;
  * this test closes the complete journey without duplicating business logic.</p>
  */
-class TresorPayPaymentEndToEndReliabilityTest {
+class PartnerPaymentEndToEndReliabilityTest {
 
     private static String source(String relativePath) throws Exception {
         return Files.readString(
@@ -30,7 +30,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
     }
 
     @Test
-    void completeTresorPayJourneyIsClosedFromInitiationToTfjCallback()
+    void completePartnerJourneyIsClosedFromInitiationToTfjCallback()
             throws Exception {
 
         String initiation = source(
@@ -97,8 +97,8 @@ class TresorPayPaymentEndToEndReliabilityTest {
                         + "PaymentRecoveryService.java"
         );
         String recoveryController = source(
-                "com/sixpay/payment/api/partner/tresorpay/"
-                        + "TresorPayPaymentRecoveryController.java"
+                "com/sixpay/payment/api/partner/partner/"
+                        + "PartnerPaymentRecoveryController.java"
         );
         String idempotencyIt = testSource(
                 "com/sixpay/payment/PaymentIdempotencyFoundationIT.java"
@@ -118,7 +118,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
 
         assertThat(recoveryController)
                 .contains("@GetMapping(\"/{paymentReference}\")")
-                .contains("getTresorPayPayment");
+                .contains("getPartnerPayment");
 
         assertThat(idempotencyIt)
                 .contains("replaysCompletedPaymentResult")
@@ -203,8 +203,8 @@ class TresorPayPaymentEndToEndReliabilityTest {
                         "..",
                         "documentation",
                         "contracts",
-                        "tresorpay",
-                        "tresorpay-payment-callback-webhook-v1.yaml"
+                        "partner",
+                        "partner-payment-callback-webhook-v1.yaml"
                 )
         );
         String transport = source(

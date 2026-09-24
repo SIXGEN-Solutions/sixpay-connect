@@ -24,7 +24,7 @@ scope:
   deferredDomains:
     - "subscription"
   mvp:
-    subscriptionSystemOfRecord: "TRESOR_PAY"
+    subscriptionSystemOfRecord: "PARTNER"
     localSubscriptionManagement: false
     paymentProcessingInSixpay: true
     observedCustomerReadModel: true
@@ -36,14 +36,14 @@ scope:
 
 authority:
   subscription:
-    owner: "TRESOR_PAY"
+    owner: "PARTNER"
     sixpayRole: "NONE_FOR_MVP"
   bankingCustomer:
     owner: "AMPLITUDE_CORE_BANKING"
     sixpayRole: "VERIFY_AND_OBSERVE"
   payment:
     owner: "SIXPAY"
-    upstreamRequester: "TRESOR_PAY"
+    upstreamRequester: "PARTNER"
   observedCustomer:
     owner: "SIXPAY"
     modelType: "CQRS_READ_MODEL"
@@ -53,18 +53,18 @@ businessFlow:
   subscription:
     inMvp: false
     steps:
-      - "Customer creates subscription in TRESOR PAY"
-      - "TRESOR PAY keeps pending bank-validation status"
-      - "Bank agent validates KYC in TRESOR PAY interface"
-      - "TRESOR PAY owns the subscription lifecycle"
+      - "Customer creates subscription in PARTNER"
+      - "PARTNER keeps pending bank-validation status"
+      - "Bank agent validates KYC in PARTNER interface"
+      - "PARTNER owns the subscription lifecycle"
   payment:
     inMvp: true
     steps:
-      - "Receive and persist TRESOR PAY payment request"
+      - "Receive and persist PARTNER payment request"
       - "Create or update ObservedCustomer"
       - "Verify banking identity and account through Amplitude"
       - "Reject or execute debit and CUT credit"
-      - "Notify immediate result to TRESOR PAY"
+      - "Notify immediate result to PARTNER"
       - "Await or reconcile end-of-day processing"
       - "Notify final Treasury integration confirmation"
 
@@ -106,7 +106,7 @@ payment:
     - "REVERSED"
   invariants:
     - "Persist request before external processing"
-    - "Enforce idempotency on TRESOR PAY request and Idempotency-Key"
+    - "Enforce idempotency on PARTNER request and Idempotency-Key"
     - "Never post before favorable banking checks"
     - "Keep failed requests visible and auditable"
     - "Separate immediate notification from TFJ confirmation"
@@ -147,12 +147,12 @@ contracts:
         - "timeout"
         - "retry"
         - "sla"
-    - path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+    - path: "documentation/contracts/partner/partner-authorization-request-api-v1.yaml"
       lifecycleStatus: "DEFERRED_FUTURE"
       approvalStatus: "DRAFT"
       generationPolicy: "EXCLUDED"
       mvpIncluded: false
-    - path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+    - path: "documentation/contracts/partner/partner-authorization-decision-webhook-v1.yaml"
       lifecycleStatus: "DEFERRED_FUTURE"
       approvalStatus: "DRAFT"
       generationPolicy: "EXCLUDED"
@@ -160,7 +160,7 @@ contracts:
   paymentPack:
     status: "TO_BE_PRODUCED"
     required:
-      - "TRESOR_PAY_TO_SIXPAY_PAYMENT_API"
+      - "PARTNER_TO_SIXPAY_PAYMENT_API"
       - "AMPLITUDE_ACCOUNT_CONTROL_AND_POSTING"
       - "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
       - "END_OF_DAY_TREASURY_CONFIRMATION"
@@ -181,7 +181,7 @@ integration:
     timeout: "CONFIGURABLE"
     retry: "CONFIGURABLE"
     sla: "CONFIGURABLE"
-  tresorPay:
+  partner:
     authentication:
       token: true
       subscriptionKey: true
@@ -231,7 +231,7 @@ gates:
   closedArchitectureDecisions:
     - "ObservedCustomer identity and cross-institution reconciliation"
     - "Access matrix and retention baseline"
-    - "TRESOR PAY MVP authentication"
+    - "PARTNER MVP authentication"
     - "Timeout, retry and backoff baseline"
     - "Partial posting and reversal policy"
     - "TFJ confirmation and matching protocol"

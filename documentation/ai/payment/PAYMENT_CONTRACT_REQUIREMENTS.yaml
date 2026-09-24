@@ -143,20 +143,20 @@ globalRequirements:
 
 contractFamilies:
   - id: "PAY-CONTRACT-01"
-    name: "TRESOR PAY payment request"
+    name: "PARTNER payment request"
     capability: "PAYMENT_REQUEST"
     direction:
-      caller: "TRESOR_PAY"
+      caller: "PARTNER"
       provider: "SIXPAY"
-      code: "TRESOR_PAY_TO_SIXPAY"
+      code: "PARTNER_TO_SIXPAY"
     owner:
       openApi: "integration"
       business: "payment"
       supporting:
         - "customer"
     artifacts:
-      - id: "tresorpay-payment-request-api-v1"
-        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+      - id: "partner-payment-request-api-v1"
+        targetPath: "documentation/contracts/partner/partner-payment-request-api-v1.yaml"
         type: "OPENAPI"
         operations:
           - "Submit a payment request"
@@ -176,7 +176,7 @@ contractFamilies:
     idempotency:
       required: true
       header: "Idempotency-Key"
-      scope: "TRESOR_PAY_CLIENT_PLUS_FINANCIAL_INSTITUTION"
+      scope: "PARTNER_CLIENT_PLUS_FINANCIAL_INSTITUTION"
       fingerprint: "Canonical business payload excluding transport headers"
       sameKeySameFingerprint: "Return the original Payment identity and current acceptance result without a second effect"
       sameKeyDifferentFingerprint: "HTTP_409_IDEMPOTENCY_CONFLICT"
@@ -205,7 +205,7 @@ contractFamilies:
       - "Authenticate and validate the request boundary."
       - "Persist Payment before any Amplitude call."
       - "Create or update the ObservedCustomer candidate projection."
-      - "Never validate or mutate a TRESOR PAY subscription."
+      - "Never validate or mutate a PARTNER subscription."
     sourceRequirements:
       - "PAY-SRC-001"
       - "PAY-SRC-005"
@@ -338,7 +338,7 @@ contractFamilies:
       sameKeySameInstruction: "Return the same posting identity and known outcome"
       sameKeyDifferentInstruction: "HTTP_409_IDEMPOTENCY_CONFLICT"
       reversalKey: "Required, distinct from original posting key"
-      cutAccount: "Resolved from protected bank configuration, never accepted from TRESOR PAY"
+      cutAccount: "Resolved from protected bank configuration, never accepted from PARTNER"
     correlation:
       headerRequired: true
       requiredBusinessKeys:
@@ -382,15 +382,15 @@ contractFamilies:
     capability: "IMMEDIATE_PAYMENT_RESULT_NOTIFICATION"
     direction:
       caller: "SIXPAY"
-      provider: "TRESOR_PAY"
-      code: "SIXPAY_TO_TRESOR_PAY"
+      provider: "PARTNER"
+      code: "SIXPAY_TO_PARTNER"
     owner:
       openApi: "integration"
       business: "payment"
       delivery: "notification"
     artifacts:
-      - id: "tresorpay-payment-status-webhook-v1"
-        targetPath: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+      - id: "partner-payment-status-webhook-v1"
+        targetPath: "documentation/contracts/partner/partner-payment-status-webhook-v1.yaml"
         type: "OPENAPI_WEBHOOK"
         operations:
           - "Deliver PAYMENT_RECEIVED"
@@ -426,7 +426,7 @@ contractFamilies:
       paymentKeys:
         - "PaymentId"
         - "PaymentReference"
-        - "TresorPayRequestId"
+        - "PartnerRequestId"
     errors:
       receiverStatuses:
         accepted:
@@ -554,15 +554,15 @@ contractFamilies:
     capability: "DEFINITIVE_TFJ_RESULT_NOTIFICATION"
     direction:
       caller: "SIXPAY"
-      provider: "TRESOR_PAY"
-      code: "SIXPAY_TO_TRESOR_PAY"
+      provider: "PARTNER"
+      code: "SIXPAY_TO_PARTNER"
     owner:
       openApi: "integration"
       business: "payment"
       delivery: "notification"
     artifacts:
-      - id: "tresorpay-treasury-integration-webhook-v1"
-        targetPath: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+      - id: "partner-treasury-integration-webhook-v1"
+        targetPath: "documentation/contracts/partner/partner-treasury-integration-webhook-v1.yaml"
         type: "OPENAPI_WEBHOOK"
         operations:
           - "Deliver PENDING_END_OF_DAY_CONFIRMATION"
@@ -591,7 +591,7 @@ contractFamilies:
       headerRequired: true
       requiredBusinessKeys:
         - "PaymentReference"
-        - "TresorPayRequestId"
+        - "PartnerRequestId"
         - "BankPostingReference"
         - "BusinessDate"
     errors:
@@ -606,8 +606,8 @@ contractFamilies:
       onTimeout: "Retry the same eventId without changing TFJ finality"
     businessResponsibility:
       - "Notify only after TreasuryIntegrationConfirmed."
-      - "Allow TRESOR PAY to reconcile and make its receipt available."
-      - "SIXPAY does not generate the TRESOR PAY receipt."
+      - "Allow PARTNER to reconcile and make its receipt available."
+      - "SIXPAY does not generate the PARTNER receipt."
     sourceRequirements:
       - "PAY-SRC-034"
       - "PAY-SRC-035"
@@ -709,9 +709,9 @@ contractFamilies:
       - "PAY-SRC-046"
 
 artifactInventory:
-  - id: "tresorpay-payment-request-api-v1"
+  - id: "partner-payment-request-api-v1"
     family: "PAY-CONTRACT-01"
-    direction: "TRESOR_PAY_TO_SIXPAY"
+    direction: "PARTNER_TO_SIXPAY"
     owner: "integration"
   - id: "amplitude-payment-verification-api-v1"
     family: "PAY-CONTRACT-02"
@@ -721,17 +721,17 @@ artifactInventory:
     family: "PAY-CONTRACT-03"
     direction: "SIXPAY_TO_AMPLITUDE"
     owner: "integration"
-  - id: "tresorpay-payment-status-webhook-v1"
+  - id: "partner-payment-status-webhook-v1"
     family: "PAY-CONTRACT-04"
-    direction: "SIXPAY_TO_TRESOR_PAY"
+    direction: "SIXPAY_TO_PARTNER"
     owner: "integration"
   - id: "amplitude-end-of-day-confirmation-api-v1"
     family: "PAY-CONTRACT-05"
     direction: "BIDIRECTIONAL_AMPLITUDE_SIXPAY"
     owner: "integration"
-  - id: "tresorpay-treasury-integration-webhook-v1"
+  - id: "partner-treasury-integration-webhook-v1"
     family: "PAY-CONTRACT-06"
-    direction: "SIXPAY_TO_TRESOR_PAY"
+    direction: "SIXPAY_TO_PARTNER"
     owner: "integration"
   - id: "payment-query-api-v1"
     family: "PAY-CONTRACT-07"
@@ -748,7 +748,7 @@ artifactInventory:
 
 crossContractRules:
   - id: "PAY-XCON-001"
-    rule: "PaymentReference, TresorPayRequestId and CorrelationId keep the same semantics in every applicable contract."
+    rule: "PaymentReference, PartnerRequestId and CorrelationId keep the same semantics in every applicable contract."
   - id: "PAY-XCON-002"
     rule: "External DTOs never become domain objects; Integration maps them to canonical commands and results."
   - id: "PAY-XCON-003"
@@ -771,7 +771,7 @@ crossContractRules:
 gateIA05PProductionOrder:
   - order: 1
     artifacts:
-      - "tresorpay-payment-request-api-v1"
+      - "partner-payment-request-api-v1"
     reason: "Closes the inbound identity, persistence acknowledgement and idempotency boundary."
   - order: 2
     artifacts:
@@ -780,7 +780,7 @@ gateIA05PProductionOrder:
     reason: "Closes the bank read, financial write and recovery boundaries."
   - order: 3
     artifacts:
-      - "tresorpay-payment-status-webhook-v1"
+      - "partner-payment-status-webhook-v1"
     reason: "Closes immediate external outcomes after the state and posting contracts."
   - order: 4
     artifacts:
@@ -788,7 +788,7 @@ gateIA05PProductionOrder:
     reason: "Closes primary and fallback Treasury finality."
   - order: 5
     artifacts:
-      - "tresorpay-treasury-integration-webhook-v1"
+      - "partner-treasury-integration-webhook-v1"
     reason: "Depends on the finality contract."
   - order: 6
     artifacts:
@@ -817,7 +817,7 @@ approvalRequirements:
       - "Posting and reversal idempotency"
       - "TFJ payload, matching keys and fallback query"
       - "Numeric timeout, retry and SLA values"
-  tresorPaySpecific:
+  partnerSpecific:
     jointApprovalRequired:
       - "Payment request schema and idempotency scope"
       - "Webhook authentication and signature profile"
@@ -832,7 +832,7 @@ openDependencies:
     - id: "PAY-CONTRACT-DEP-02"
       item: "Amplitude validates atomic posting, outcome lookup, reversal and TFJ interfaces."
     - id: "PAY-CONTRACT-DEP-03"
-      item: "TRESOR PAY validates inbound authentication and both webhook profiles."
+      item: "PARTNER validates inbound authentication and both webhook profiles."
     - id: "PAY-CONTRACT-DEP-04"
       item: "Security approves outbound webhook signing and internal RBAC scopes."
     - id: "PAY-CONTRACT-DEP-05"
@@ -844,10 +844,10 @@ acceptanceCriteria:
   - "Every family specifies protocol, authentication, idempotency, correlation, errors, retry, timeout and business responsibility."
   - "The Amplitude posting contract includes safe outcome lookup and explicit reversal operations."
   - "The TFJ family includes asynchronous confirmation and scheduled fallback reconciliation."
-  - "Immediate and definitive TRESOR PAY notifications are distinct."
+  - "Immediate and definitive PARTNER notifications are distinct."
   - "Payment, ObservedCustomer and Payment Audit query APIs preserve module ownership, privilege separation and read-only semantics."
   - "All requirements cite baseline identifiers or an explicit SIXPAY decision."
-  - "No contract authorizes local Subscription or TRESOR PAY merchant management."
+  - "No contract authorizes local Subscription or PARTNER merchant management."
   - "Code generation remains forbidden until IA-0.5P contracts are approved and registered."
 
 verdict:

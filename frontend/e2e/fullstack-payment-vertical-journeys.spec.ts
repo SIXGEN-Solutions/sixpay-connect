@@ -4,7 +4,7 @@ import { authenticateFullstackAuditor } from './support/fullstack-local-admin-au
 
 const PAYMENT_ID = '59040000-0000-0000-0000-000000000001';
 const PAYMENT_REFERENCE = 'PAY-0123456789ABCDEFGHJKMNPQRS';
-const TRESORPAY_REQUEST_ID = 'L594-E2E-REQUEST-001';
+const PARTNER_REQUEST_ID = 'L594-E2E-REQUEST-001';
 
 test.describe('LOT 5.9.4 Payment vertical journeys', () => {
   test('searches a persisted Payment and opens its real detail projection', async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe('LOT 5.9.4 Payment vertical journeys', () => {
       items: Array<{
         paymentId: string;
         paymentReference: string;
-        tresorPayRequestId: string;
+        partnerRequestId: string;
         status: string;
       }>;
     };
@@ -51,7 +51,7 @@ test.describe('LOT 5.9.4 Payment vertical journeys', () => {
         expect.objectContaining({
           paymentId: PAYMENT_ID,
           paymentReference: PAYMENT_REFERENCE,
-          tresorPayRequestId: TRESORPAY_REQUEST_ID,
+          partnerRequestId: PARTNER_REQUEST_ID,
           status: 'RECEIVED',
         }),
       ]),
@@ -73,7 +73,7 @@ test.describe('LOT 5.9.4 Payment vertical journeys', () => {
 
     await expect(page).toHaveURL(new RegExp(`/payments/${PAYMENT_ID}$`));
     await expect(page.getByText(PAYMENT_REFERENCE, { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(TRESORPAY_REQUEST_ID, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(PARTNER_REQUEST_ID, { exact: true }).first()).toBeVisible();
     await expect(page.getByText('RECEIVED', { exact: true }).first()).toBeVisible();
   });
 

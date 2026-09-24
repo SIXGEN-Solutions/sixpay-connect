@@ -3,7 +3,7 @@
   "gate": "EXTERNAL_SANDBOX_CERTIFICATION",
   "statusWithoutInputs": "BLOCKED_EXTERNAL",
   "providers": {
-    "tresorPay": {
+    "partner": {
       "required": [
         "baseUrl",
         "clientIdentity",

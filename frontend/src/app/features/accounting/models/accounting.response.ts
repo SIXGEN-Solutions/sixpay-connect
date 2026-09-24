@@ -16,8 +16,8 @@ export interface AccountingBatchItemResponse {
   readonly paymentOccurredAt: string;
   readonly paymentBusinessDate: string;
   readonly bankPostingReference: string | null;
-  readonly tresorPayStatus: string;
-  readonly tresorPayStatusCheckedAt: string;
+  readonly partnerStatus: string;
+  readonly partnerStatusCheckedAt: string;
   readonly status: string;
 }
 

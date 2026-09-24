@@ -19,7 +19,7 @@ financial execution orchestration and Outbox boundaries.
 ## Current Payment flow
 
 ```text
-TRESOR PAY payment request
+Partner payment request
 -> durable Payment persistence
 -> Customer Verification / Core Banking
 -> verified banking evidence
@@ -92,7 +92,7 @@ provider vocabulary by renaming it:
 - `ExternalSubscriptionReference` is opaque provider trace metadata and never a local `CustomerSubscription` identity;
 - `applicationId` is partner application metadata, not a financial Payment invariant.
 
-The active TRESOR PAY API remains responsible for mapping its physical wire
+The active Partner API remains responsible for mapping its physical wire
 fields to these internal concepts. This classification does not change the
 active external contract or the persisted Payment state payload.
 
@@ -126,16 +126,16 @@ V300__payment_baseline.sql
 
 ## Partner integration boundary
 
-TRESOR PAY is one external Partner integration. It is not part of the Payment
+Partner is one external Partner integration. It is not part of the Payment
 domain model.
 
-The Payment domain and application layers remain provider-neutral. TRESOR PAY
+The Payment domain and application layers remain provider-neutral. Partner
 wire contracts, request/response models and provider mappings are permitted only
-at approved external boundaries, including `api/partner/tresorpay` and
-TRESOR PAY-specific Payment infrastructure adapters. Canonical contracts under
-`documentation/contracts/tresorpay` may remain provider-specific.
+at approved external boundaries, including `api/partner/partner` and
+Partner-specific Payment infrastructure adapters. Canonical contracts under
+`documentation/contracts/partner` may remain provider-specific.
 
-`integration` remains technical and provider-neutral and does not own TRESOR PAY
+`integration` remains technical and provider-neutral and does not own Partner
 payloads or mappings.
 
 ## External partner contract evolution
@@ -152,6 +152,6 @@ two concrete Partner integrations demonstrate a stable common external-contract
 need. That decision requires explicit architecture and contract approval and
 must not be inferred from internal Payment abstractions.
 
-Until such evidence exists, TRESOR PAY remains a concrete external integration,
+Until such evidence exists, Partner remains a concrete external integration,
 not the template for a universal Partner protocol.
 

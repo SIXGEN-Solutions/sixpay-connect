@@ -93,7 +93,7 @@ test.describe('LOT 5.9.5 Accounting vertical journeys', () => {
         amount: number;
         currency: string;
         bankPostingReference: string | null;
-        tresorPayStatus: string;
+        partnerStatus: string;
         status: string;
       }>;
     };
@@ -118,7 +118,7 @@ test.describe('LOT 5.9.5 Accounting vertical journeys', () => {
           amount: 12500,
           currency: 'XAF',
           bankPostingReference: 'AMP-L595-POSTING-001',
-          tresorPayStatus: 'COMPLETED',
+          partnerStatus: 'COMPLETED',
           status: 'COMPLETED',
         }),
       ]),

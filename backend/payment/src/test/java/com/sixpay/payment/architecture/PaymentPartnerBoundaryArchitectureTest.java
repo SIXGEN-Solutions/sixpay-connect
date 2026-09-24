@@ -15,13 +15,13 @@ class PaymentPartnerBoundaryArchitectureTest {
         assertThat(PARTNER.resolve("PartnerPaymentApiMapper.java")).exists();
         assertThat(PARTNER.resolve("request/InitiateDebitRequest.java")).exists();
         assertThat(PARTNER.resolve("request/InitiateDebitBeneficiaryRequest.java")).exists();
-        assertThat(PARTNER.resolve("tresorpay/TresorPayPaymentCommandController.java")).doesNotExist();
-        assertThat(PARTNER.resolve("tresorpay/TresorPayPaymentApiMapper.java")).doesNotExist();
+        assertThat(PARTNER.resolve("partner/PartnerPaymentCommandController.java")).doesNotExist();
+        assertThat(PARTNER.resolve("partner/PartnerPaymentApiMapper.java")).doesNotExist();
     }
 
     @Test
     void genericPreparationDoesNotSelectProviderSpecificSource() throws Exception {
         String preparation = Files.readString(PAYMENT.resolve("infrastructure/initiation/PaymentInitiationPreparationAdapter.java"));
-        assertThat(preparation).contains("command.source()").doesNotContain("PaymentSource.of(\"TRESOR_PAY\")");
+        assertThat(preparation).contains("command.source()").doesNotContain("PaymentSource.of(\"PARTNER\")");
     }
 }

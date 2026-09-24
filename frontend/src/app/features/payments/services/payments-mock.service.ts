@@ -18,7 +18,7 @@ const PAYMENTS: readonly PaymentDetailResponse[] = [
   {
     paymentId: PAYMENT_ONE_ID,
     paymentReference: 'PAY-2026-0001842',
-    tresorPayRequestId: 'TP-2026-440921',
+    partnerRequestId: 'TP-2026-440921',
     observedCustomerId: CUSTOMER_ONE_ID,
     financialInstitutionCode: 'LRB',
     debtorAccount: { reference: 'ACC-REF-8921', maskedValue: '•••• 8921' },
@@ -65,7 +65,7 @@ const PAYMENTS: readonly PaymentDetailResponse[] = [
   {
     paymentId: PAYMENT_TWO_ID,
     paymentReference: 'PAY-2026-0001841',
-    tresorPayRequestId: 'TP-2026-440920',
+    partnerRequestId: 'TP-2026-440920',
     observedCustomerId: CUSTOMER_TWO_ID,
     financialInstitutionCode: 'LRB',
     debtorAccount: { reference: 'ACC-REF-1450', maskedValue: '•••• 1450' },
@@ -91,7 +91,7 @@ const PAYMENTS: readonly PaymentDetailResponse[] = [
   {
     paymentId: PAYMENT_THREE_ID,
     paymentReference: 'PAY-2026-0001840',
-    tresorPayRequestId: 'TP-2026-440918',
+    partnerRequestId: 'TP-2026-440918',
     observedCustomerId: null,
     financialInstitutionCode: 'LRB',
     debtorAccount: { reference: 'ACC-REF-7744', maskedValue: '•••• 7744' },
@@ -162,10 +162,10 @@ export class PaymentsMockService {
     return (
       (!query.paymentReference ||
         payment.paymentReference.toLowerCase().includes(query.paymentReference.toLowerCase())) &&
-      (!query.tresorPayRequestId ||
-        payment.tresorPayRequestId
+      (!query.partnerRequestId ||
+        payment.partnerRequestId
           .toLowerCase()
-          .includes(query.tresorPayRequestId.toLowerCase())) &&
+          .includes(query.partnerRequestId.toLowerCase())) &&
       (!query.observedCustomerId || payment.observedCustomerId === query.observedCustomerId) &&
       (!query.financialInstitutionCode ||
         payment.financialInstitutionCode === query.financialInstitutionCode) &&
@@ -183,7 +183,7 @@ export class PaymentsMockService {
   private readonly toSummary = (payment: PaymentDetailResponse): PaymentSummaryResponse => ({
     paymentId: payment.paymentId,
     paymentReference: payment.paymentReference,
-    tresorPayRequestId: payment.tresorPayRequestId,
+    partnerRequestId: payment.partnerRequestId,
     observedCustomerId: payment.observedCustomerId ?? null,
     financialInstitutionCode: payment.financialInstitutionCode,
 

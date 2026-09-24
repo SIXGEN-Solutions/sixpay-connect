@@ -31,7 +31,7 @@ This lot does not hard-code or claim production readiness.
 | Area | Current implementation evidence | Local/CI readiness | External certification |
 |---|---|---|---|
 | Transverse integration foundation | correlation/request context, REST foundation, errors, retry policy, event envelope, Kafka/DLQ/idempotency support | testable | N/A |
-| TresorPay inbound Payment | controller, security, idempotency, anti-replay, rate limiting, audit, callback foundation/stub tests | testable | sandbox credentials/contracts still required |
+| Partner inbound Payment | controller, security, idempotency, anti-replay, rate limiting, audit, callback foundation/stub tests | testable | sandbox credentials/contracts still required |
 | Customer Verification → Amplitude | OAuth2, mTLS bundle, mapper/client, timeout/retry/error classification | testable with stub | authoritative Amplitude sandbox required |
 | Payment → Amplitude | account/funds, reservation, posting, release/reversal, lookup/reconciliation | testable with deterministic provider doubles | provider endpoints/codes/certificates must be certified |
 | Payment → Observed Customer | transactional outbox plus scheduled in-process consumer and projection deduplication | testable and valid for modular monolith | distributed transport not required for first release |
@@ -63,8 +63,8 @@ The gate is green only when all of the following pass:
 This gate requires real external inputs that cannot be manufactured by the
 repository:
 
-- TresorPay sandbox URL and credentials/certificates;
-- final TresorPay JWT/API-key/JWS characteristics;
+- Partner sandbox URL and credentials/certificates;
+- final Partner JWT/API-key/JWS characteristics;
 - Amplitude OAuth2 token endpoint, scopes, audience and certificate chain;
 - test banking identities/accounts and deterministic balances/statuses;
 - Accounting API sandbox endpoint and credentials;
@@ -108,7 +108,7 @@ A Phase 5 readiness review should attach:
 
 | Evidence | Primary owner |
 |---|---|
-| Payment/TresorPay acceptance | Payment |
+| Payment/Partner acceptance | Payment |
 | Customer/Amplitude verification | Customer |
 | Payment banking operations | Payment |
 | Accounting API/reconciliation | Accounting |

@@ -6,7 +6,7 @@ The Integration module provides provider-neutral transport, messaging, Outbox
 relay, correlation, resilience, Kafka and consumer-idempotency capabilities.
 Business rules and provider-specific mappings remain in their owning modules.
 
-TRESOR PAY is one external Partner integration and is not part of the Payment domain model. TRESOR PAY payloads and mappings therefore remain outside this module.
+Partner is one external Partner integration and is not part of the Payment domain model. Partner payloads and mappings therefore remain outside this module.
 
 ## Transport
 

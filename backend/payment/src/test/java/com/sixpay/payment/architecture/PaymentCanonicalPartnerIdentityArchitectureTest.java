@@ -29,7 +29,7 @@ class PaymentCanonicalPartnerIdentityArchitectureTest {
     }
 
     @Test
-    void tresorPayBoundaryOwnsProviderLoginValidationAndSubjectResolution() throws Exception {
+    void partnerBoundaryOwnsProviderLoginValidationAndSubjectResolution() throws Exception {
         Path boundary = PAYMENT.resolve("api/partner");
         String mapper = Files.readString(boundary.resolve("PartnerPaymentApiMapper.java"));
         String controller = Files.readString(boundary.resolve("PartnerPaymentCommandController.java"));

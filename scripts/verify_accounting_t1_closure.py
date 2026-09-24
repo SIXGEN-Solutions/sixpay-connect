@@ -33,7 +33,7 @@ def main():
     for contract in (
         "amplitude-accounting-entries-api-v1",
         "amplitude-end-of-day-confirmation-api-v1",
-        "tresorpay-payment-status-query-api-v1",
+        "partner-payment-status-query-api-v1",
     ):
         if f'id: "{contract}"' not in registry:
             fail(f"required Accounting contract missing from registry: {contract}")
@@ -124,7 +124,7 @@ def main():
     print(" - TFJ runbook: present")
     print(" - Accounting AI context: consolidated")
     print(" - Master Prompt source/rules: synchronized")
-    print(" - T1.1 TRESOR PAY contract activation: synchronized")
+    print(" - T1.1 Partner contract activation: synchronized")
     print(" - dynamic Maven/baseline/clean-room validation remains separate evidence")
 
 if __name__ == "__main__":

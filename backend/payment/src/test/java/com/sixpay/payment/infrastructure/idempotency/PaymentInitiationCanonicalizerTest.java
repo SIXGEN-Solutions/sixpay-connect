@@ -108,8 +108,8 @@ class PaymentInitiationCanonicalizerTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiatePaymentCommand(
-                PaymentSource.of("TRESOR_PAY"),
-                ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
+                PaymentSource.of("PARTNER"),
+                ExternalSubscriptionReference.of("PARTNER:TP_APP_001"),
                 CanonicalPartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",
                 "AVI-2025-00045678",
@@ -121,7 +121,7 @@ class PaymentInitiationCanonicalizerTest {
                 "100200300",
                 NOW,
                 beneficiaries,
-                "https://tresorpay.cm/callback",
+                "https://partner.cm/callback",
                 "IDEMPOTENCY-00000001",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"

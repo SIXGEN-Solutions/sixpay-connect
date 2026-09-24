@@ -157,7 +157,7 @@ Recovery uses authoritative lookup; blind financial replay is forbidden.
 The end-of-day Accounting/TFJ lifecycle is distinct from T0 financial success.
 
 Accounting selects eligible financially successful Payments, uses authoritative
-TRESOR PAY status evidence, constitutes a batch, and submits it to the Core
+Partner status evidence, constitutes a batch, and submits it to the Core
 Banking accounting capability. Core Banking owns generation and posting of the
 accounting entries.
 

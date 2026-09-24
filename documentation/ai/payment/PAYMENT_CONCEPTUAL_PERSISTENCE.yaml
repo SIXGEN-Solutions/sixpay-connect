@@ -131,7 +131,7 @@ queryIndexes:
   - payment_id
   type: PRIMARY_OR_UNIQUE
 - id: PAY-IDX-002
-  query: TRESOR PAY reference lookup
+  query: PARTNER reference lookup
   columns:
   - payment_source
   - external_payment_reference

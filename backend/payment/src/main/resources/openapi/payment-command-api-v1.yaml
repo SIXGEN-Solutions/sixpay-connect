@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: SIXPAY CONNECT - TresorPay Payment Command API
+  title: SIXPAY CONNECT - Partner Payment Command API
   version: 1.0.0
   description: |
-    Official partner-facing command contract used by TresorPay to initiate one
+    Official partner-facing command contract used by Partner to initiate one
     debit order through SIXPAY CONNECT. Authentication requires BOTH mutual TLS
     and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
     the JSON payload. The initial response is PENDING_CONFIRMATION and callbacks
@@ -18,7 +18,7 @@ info:
     codeGenerationAllowed: false
     domain: payment
     capability: PAYMENT_INITIATION
-    direction: TRESORPAY_TO_SIXPAY
+    direction: PARTNER_TO_SIXPAY
     dataClassification: RESTRICTED
     idempotent: true
     callbackMode: ASYNCHRONOUS
@@ -51,7 +51,7 @@ paths:
             schema:
               $ref: '#/components/schemas/InitiateDebitRequest'
             example:
-              LoginName: TRESOR_PAY
+              LoginName: PARTNER
               AppID: TP_APP_001
               endToEndId: AVI-2025-00045678
               montantTotal: 600000
@@ -68,7 +68,7 @@ paths:
                   montant: 200000
                 - rib: 10005-00001-000000TRESDOMAINE-22
                   montant: 100000
-              callbackURL: https://tresorpay.cm/v1/callbacks/payment-status
+              callbackURL: https://partner.cm/v1/callbacks/payment-status
       responses:
         '200':
           description: Payment order initiated and awaiting customer confirmation
@@ -94,7 +94,7 @@ paths:
               operationId: receivePaymentStatusCallback
               summary: Receive an asynchronous payment status notification
               description: |
-                Delivery is at-least-once. TresorPay deduplicates by eventId.
+                Delivery is at-least-once. Partner deduplicates by eventId.
                 The exact request body is protected by a detached JWS signature.
               security:
                 - mutualTLS: []

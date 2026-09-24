@@ -1,18 +1,18 @@
 export type AccountingT1OperationalCandidateStatus =
-  | 'AWAITING_TRESORPAY_VERIFICATION'
+  | 'AWAITING_PARTNER_VERIFICATION'
   | 'ELIGIBLE_FOR_BATCH'
   | 'INELIGIBLE_FOR_CURRENT_SELECTION'
   | 'ASSIGNED_TO_BATCH';
 
 export type AccountingT1EligibilityReason =
   | 'NONE'
-  | 'TRESORPAY_STATUS_NOT_COMPLETED'
-  | 'TRESORPAY_STATUS_UNAVAILABLE'
+  | 'PARTNER_STATUS_NOT_COMPLETED'
+  | 'PARTNER_STATUS_UNAVAILABLE'
   | 'OUTSIDE_SELECTION_WINDOW';
 
 export type AccountingT1TechnicalIssue =
   | 'NONE'
-  | 'TRESORPAY_STATUS_LOOKUP_UNAVAILABLE'
+  | 'PARTNER_STATUS_LOOKUP_UNAVAILABLE'
   | 'ACCOUNTING_SUBMISSION_OUTCOME_UNKNOWN'
   | 'ACCOUNTING_RECONCILIATION_PENDING';
 
@@ -23,8 +23,8 @@ export interface AccountingT1OperationalResponse {
   financialInstitutionCode: string;
   accountingBusinessDate: string;
   status: AccountingT1OperationalCandidateStatus;
-  tresorPayProviderStatus: string | null;
-  tresorPayCheckedAt: string | null;
+  partnerProviderStatus: string | null;
+  partnerCheckedAt: string | null;
   eligibilityReason: AccountingT1EligibilityReason;
   selectionBusinessDate: string;
   selectionFromInclusive: string;

@@ -27,7 +27,7 @@ The authoritative implementation revision is provided by the task invocation or 
 
 | ID | Flow | Direction | Mode | Current state | Primary implementation evidence | Contract status |
 |---|---|---|---|---|---|---|
-| INT-01 | TresorPay → SIXPAY Payment command | inbound | synchronous REST | implemented | `PaymentCommandController`, command DTOs, idempotency, security, audit and packaged OpenAPI | `documentation/contracts/external/payment-command-api-v1.yaml` |
+| INT-01 | Partner → SIXPAY Payment command | inbound | synchronous REST | implemented | `PaymentCommandController`, command DTOs, idempotency, security, audit and packaged OpenAPI | `documentation/contracts/external/payment-command-api-v1.yaml` |
 | INT-02 | SIXPAY Payment → Partner lifecycle callback | outbound | asynchronous HTTP callback | implemented foundation | Partner callback payload, HMAC-SHA256 signer, callback outbox relay and HTTP adapter | `documentation/contracts/partner/partner-payment-callback-webhook-v1.yaml` |
 | INT-03 | Payment → Customer Verification | internal | synchronous Java port | implemented | `CustomerVerificationModuleAdapter`, composition configuration and intermodule integration tests | Java application port; no external transport contract required while co-deployed |
 | INT-04 | Customer Verification → Amplitude | outbound | synchronous REST | technically implemented | Amplitude mapper/client, OAuth2 token provider, mTLS SSL bundle, retry and observations | provider contract must be validated against authoritative Amplitude specification |
@@ -121,7 +121,7 @@ Kafka dependencies and abstractions are foundations only. They do not prove that
 
 ## 6. Contract ownership
 
-- TresorPay-facing Payment API: Payment team owns the SIXPAY provider contract.
+- Partner-facing Payment API: Payment team owns the SIXPAY provider contract.
 - Payment internal APIs and ports: Payment team.
 - Customer Verification internal port: Customer team.
 - Amplitude external schema: Core Banking provider; SIXPAY teams own anti-corruption mappings.
@@ -145,7 +145,7 @@ Kafka dependencies and abstractions are foundations only. They do not prove that
 
 ### Lot 5.2
 
-- authoritative TresorPay examples;
+- authoritative Partner examples;
 - mTLS/JWT/API-key/signature decision;
 - token claims and scopes;
 - idempotency format and retention;
@@ -188,7 +188,7 @@ Kafka dependencies and abstractions are foundations only. They do not prove that
 ### Lot 5.6
 
 - Payment→Accounting candidate-source contract and eligibility semantics;
-- authoritative TRESOR PAY status verification contract used for T+1 eligibility;
+- authoritative Partner status verification contract used for T+1 eligibility;
 - Core Banking Accounting API batch submission/result contract for the MVP;
 - cut-off calendar/timezone;
 - acknowledgement/rejection/unknown-outcome formats;

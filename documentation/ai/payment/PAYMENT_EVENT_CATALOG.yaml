@@ -139,7 +139,7 @@ sensitiveDataDenylist: &id006
 - FULL_NIU_OR_CUSTOMER_IDENTITY
 - RAW_KYC_DATA
 - AVAILABLE_OR_LEDGER_BALANCE
-- RAW_TRESOR_PAY_OR_AMPLITUDE_PAYLOAD
+- RAW_PARTNER_OR_AMPLITUDE_PAYLOAD
 - STACK_TRACE_SQL_ENDPOINT_OR_INFRASTRUCTURE_TOPOLOGY
 - FREE_FORM_PROVIDER_ERROR
 - OPERATOR_CREDENTIAL_OR_BANK_INSTRUCTION_DOCUMENT
@@ -237,7 +237,7 @@ events:
     classification: INTERNAL_NON_SENSITIVE
   consumers:
   - module: security
-    purpose: Resolve and validate canonical TRESOR PAY authorization evidence.
+    purpose: Resolve and validate canonical PARTNER authorization evidence.
     sideEffect: IDEMPOTENT_SECURITY_VALIDATION
     idempotency: eventId
   - module: integration
@@ -529,8 +529,8 @@ events:
     classification: INTERNAL_NON_SENSITIVE
   consumers:
   - module: notification
-    purpose: Create or reuse the immediate TRESOR PAY NotificationDelivery.
-    sideEffect: TRESOR_PAY_NOTIFICATION
+    purpose: Create or reuse the immediate PARTNER NotificationDelivery.
+    sideEffect: PARTNER_NOTIFICATION
     idempotency: sourceEventId+IMMEDIATE
   - *id001
   sensitiveDataForbidden:
@@ -1885,8 +1885,8 @@ events:
     classification: INTERNAL_NON_SENSITIVE
   consumers:
   - module: notification
-    purpose: Create or reuse the final TRESOR PAY NotificationDelivery.
-    sideEffect: TRESOR_PAY_NOTIFICATION
+    purpose: Create or reuse the final PARTNER NotificationDelivery.
+    sideEffect: PARTNER_NOTIFICATION
     idempotency: sourceEventId+FINAL
   - *id001
   sensitiveDataForbidden: []
@@ -2252,8 +2252,8 @@ events:
     classification: INTERNAL_NON_SENSITIVE
   consumers:
   - module: notification
-    purpose: Create or reuse the reversal-phase TRESOR PAY NotificationDelivery.
-    sideEffect: TRESOR_PAY_NOTIFICATION
+    purpose: Create or reuse the reversal-phase PARTNER NotificationDelivery.
+    sideEffect: PARTNER_NOTIFICATION
     idempotency: sourceEventId+REVERSAL
   - *id001
   sensitiveDataForbidden: []
@@ -2631,7 +2631,7 @@ rules:
 - id: PAY-EVT-RULE-009
   rule: PROCESS_REQUEST replay uses the event-specific business idempotency identity and never relies on broker delivery semantics alone.
 - id: PAY-EVT-RULE-010
-  rule: Projection replay never invokes Amplitude, TRESOR PAY or another financial/notification side effect.
+  rule: Projection replay never invokes Amplitude, PARTNER or another financial/notification side effect.
 - id: PAY-EVT-RULE-011
   rule: EventType is stable; schemaVersion changes for required-field, removal, rename or semantic changes.
 - id: PAY-EVT-RULE-012

@@ -62,7 +62,7 @@ import {
               <th>Référence paiement</th>
               <th>Date comptable</th>
               <th>Statut</th>
-              <th>TRESOR PAY</th>
+              <th>Partner</th>
               <th>Motif</th>
               <th>Incident technique</th>
               <th>Batch</th>
@@ -74,7 +74,7 @@ import {
                 <td>{{ item.publicPaymentReference }}</td>
                 <td>{{ item.accountingBusinessDate }}</td>
                 <td>{{ item.status }}</td>
-                <td>{{ item.tresorPayProviderStatus || '—' }}</td>
+                <td>{{ item.partnerProviderStatus || '—' }}</td>
                 <td>{{ item.eligibilityReason }}</td>
                 <td>{{ item.technicalIssue }}</td>
                 <td>{{ item.batchId || '—' }}</td>
@@ -98,7 +98,7 @@ export class AccountingT1OperationalPageComponent {
   private readonly api = inject(AccountingApiClient);
 
   readonly statuses: AccountingT1OperationalCandidateStatus[] = [
-    'AWAITING_TRESORPAY_VERIFICATION',
+    'AWAITING_PARTNER_VERIFICATION',
     'ELIGIBLE_FOR_BATCH',
     'INELIGIBLE_FOR_CURRENT_SELECTION',
     'ASSIGNED_TO_BATCH',

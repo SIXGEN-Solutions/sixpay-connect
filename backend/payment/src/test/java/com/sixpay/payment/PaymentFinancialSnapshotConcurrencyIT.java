@@ -202,7 +202,7 @@ class PaymentFinancialSnapshotConcurrencyIT {
                 ) VALUES (
                     ?,
                     ?,
-                    'TRESOR_PAY',
+                    'PARTNER',
                     ?,
                     ?,
                     'LRB',

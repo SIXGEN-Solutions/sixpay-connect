@@ -46,7 +46,7 @@ class PaymentAccessPolicyTest {
 
         var owned = new PaymentObjectAccessDescriptor(
                 new PaymentId(UUID.randomUUID()),
-                PaymentSource.of("TRESOR_PAY"),
+                PaymentSource.of("PARTNER"),
                 "partner-001"
         );
 
@@ -57,7 +57,7 @@ class PaymentAccessPolicyTest {
 
         var foreign = new PaymentObjectAccessDescriptor(
                 new PaymentId(UUID.randomUUID()),
-                PaymentSource.of("TRESOR_PAY"),
+                PaymentSource.of("PARTNER"),
                 "partner-002"
         );
 
@@ -84,7 +84,7 @@ class PaymentAccessPolicyTest {
         var unknownOwner =
                 new PaymentObjectAccessDescriptor(
                         new PaymentId(UUID.randomUUID()),
-                        PaymentSource.of("TRESOR_PAY"),
+                        PaymentSource.of("PARTNER"),
                         null
                 );
 

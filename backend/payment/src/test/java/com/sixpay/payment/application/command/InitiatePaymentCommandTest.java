@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class InitiatePaymentCommandTest {
 
     @Test
-    void acceptsContractedTresorPayCommand() {
+    void acceptsContractedPartnerCommand() {
         InitiatePaymentCommand command =
                 command(
                         new BigDecimal("600000"),
@@ -58,8 +58,8 @@ class InitiatePaymentCommandTest {
             List<PaymentBeneficiaryCommand> beneficiaries
     ) {
         return new InitiatePaymentCommand(
-                PaymentSource.of("TRESOR_PAY"),
-                ExternalSubscriptionReference.of("TRESOR_PAY:TP_APP_001"),
+                PaymentSource.of("PARTNER"),
+                ExternalSubscriptionReference.of("PARTNER:TP_APP_001"),
                 CanonicalPartnerIdentity.from("11111111-2222-3333-4444-555555555555"),
                 "TP_APP_001",
                 "AVI-2025-00045678",
@@ -73,7 +73,7 @@ class InitiatePaymentCommandTest {
                         "2026-08-03T10:30:00Z"
                 ),
                 beneficiaries,
-                "https://tresorpay.cm/callback",
+                "https://partner.cm/callback",
                 "idem-001",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"

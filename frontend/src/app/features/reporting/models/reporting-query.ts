@@ -18,7 +18,7 @@ export interface PaymentAuditQuery {
   readonly result?: 'SUCCESS' | 'FAILURE' | 'DENIED' | 'NO_OP' | 'QUARANTINED';
   readonly reasonCode?: string;
   readonly correlationId?: string;
-  readonly sourceSystem?: 'SIXPAY' | 'TRESOR_PAY' | 'AMPLITUDE';
+  readonly sourceSystem?: 'SIXPAY' | 'PARTNER' | 'AMPLITUDE';
   readonly occurredFrom: Date;
   readonly occurredTo: Date;
   readonly sort?: 'OCCURRED_AT_ASC' | 'OCCURRED_AT_DESC';

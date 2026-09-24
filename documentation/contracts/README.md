@@ -186,7 +186,6 @@ The integrity gate treats the following roots as the current canonical
 physical-contract baseline:
 
 - `documentation/contracts/amplitude/`;
-- `documentation/contracts/tresorpay/`;
 - `documentation/contracts/internal/`.
 
 Within those roots, YAML/YML/JSON specifications are physical contracts.
@@ -269,11 +268,11 @@ provider-facing `amplitude-end-of-day-confirmation-api-v1`.
 No retry, replay, force-match, resolve, reverse or mark-integrated command is
 defined by this contract.
 
-## Partner Payment contract transition
+## Partner Payment contract baseline
 
 The canonical MVP Payment integration surface is Partner-neutral.
 
-The active Payment/Accounting external capabilities are:
+The active external Payment/Accounting capabilities are:
 
 - `partner-payment-request-api-v1`;
 - `partner-payment-confirmation-api-v1`;
@@ -281,19 +280,9 @@ The active Payment/Accounting external capabilities are:
 - `partner-payment-callback-webhook-v1`.
 
 Their canonical physical contracts live under `documentation/contracts/partner/`.
+Superseded provider-specific Payment contract artifacts are not retained in the
+current repository baseline; Git history preserves their evolution.
 
-The former TresorPay Payment request, confirmation and status-query contracts
-are retained only as `SUPERSEDED` traceability entries. They are
-`REFERENCE_ONLY`, have `codeGenerationAllowed: false`, are excluded from MVP
-usage, and each registry entry points to its Partner replacement.
-
-TresorPay authorization request/decision contracts are a separate deferred
-subscription concern. They remain `DEFERRED_FUTURE`, excluded from the active
-MVP generation context, and must not be treated as active Payment integration
-contracts.
-
-None of the active Partner contracts for the migrated Payment/Accounting capabilities
-may use `TRESOR_PAY` as its source system, system of record or direction endpoint.
-This transition rule does not reclassify unrelated capabilities such as the local
-`CustomerSubscription` boundary.
-
+Deferred external-subscription contracts remain excluded from active MVP
+generation and are governed independently until an approved Partner-neutral
+replacement is defined.

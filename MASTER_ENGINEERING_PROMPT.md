@@ -76,7 +76,7 @@ aux contrats, aux consommateurs, aux tests et au runtime concernés.
 Règles de chargement :
 
 - ne charge jamais en bloc toute la documentation ou tout le repository ;
-- ne charge jamais les 38 documents listés sous
+- ne charge jamais les documents historiques listés sous
   `excludedHistoricalDocuments.paths` ;
 - ne charge pas les contrats listés sous `excludedContracts` comme contexte
   actif du MVP ;

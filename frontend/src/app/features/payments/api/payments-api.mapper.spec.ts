@@ -5,7 +5,7 @@ describe('payments-api.mapper', () => {
   const detail: PaymentDetailResponse = {
     paymentId: '7fa85f64-5717-4562-b3fc-2c963f66afa1',
     paymentReference: 'PAY-1',
-    tresorPayRequestId: 'TP-1',
+    partnerRequestId: 'TP-1',
     observedCustomerId: null,
     financialInstitutionCode: 'LRB',
     amount: { amount: 1000, currency: 'XAF' },

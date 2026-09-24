@@ -49,8 +49,8 @@ import { PaymentsService } from '../services/payments.service';
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>TresorPay Request ID</mat-label>
-            <input matInput formControlName="tresorPayRequestId" />
+            <mat-label>Partner Request ID</mat-label>
+            <input matInput formControlName="partnerRequestId" />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -163,7 +163,7 @@ import { PaymentsService } from '../services/payments.service';
                     <thead>
                       <tr>
                         <th>Référence</th>
-                        <th>TresorPay</th>
+                        <th>Partner</th>
                         <th>Compte</th>
                         <th>Institution</th>
                         <th>Montant</th>
@@ -178,7 +178,7 @@ import { PaymentsService } from '../services/payments.service';
                           <td>
                             <a [routerLink]="[payment.paymentId]">{{ payment.paymentReference }}</a>
                           </td>
-                          <td>{{ payment.tresorPayRequestId }}</td>
+                          <td>{{ payment.partnerRequestId }}</td>
                           <td>{{ payment.debtorAccount?.maskedValue ?? '—' }}</td>
                           <td>{{ payment.financialInstitutionCode }}</td>
                           <td>
@@ -306,7 +306,7 @@ export class PaymentListPageComponent {
 
   protected readonly form = this.formBuilder.nonNullable.group({
     paymentReference: [''],
-    tresorPayRequestId: [''],
+    partnerRequestId: [''],
     observedCustomerId: [''],
     financialInstitutionCode: [''],
     status: [''],
@@ -335,7 +335,7 @@ export class PaymentListPageComponent {
   protected reset(): void {
     this.form.reset({
       paymentReference: '',
-      tresorPayRequestId: '',
+      partnerRequestId: '',
       observedCustomerId: '',
       financialInstitutionCode: '',
       status: '',
@@ -374,8 +374,8 @@ export class PaymentListPageComponent {
     return {
       ...(value.paymentReference.trim() ? { paymentReference: value.paymentReference.trim() } : {}),
 
-      ...(value.tresorPayRequestId.trim()
-        ? { tresorPayRequestId: value.tresorPayRequestId.trim() }
+      ...(value.partnerRequestId.trim()
+        ? { partnerRequestId: value.partnerRequestId.trim() }
         : {}),
 
       ...(value.observedCustomerId.trim()

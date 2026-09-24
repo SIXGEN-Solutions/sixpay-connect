@@ -15,7 +15,7 @@ export interface MaskedAccountReference {
 export interface PaymentSummary {
   readonly paymentId: string;
   readonly paymentReference: string;
-  readonly tresorPayRequestId: string;
+  readonly partnerRequestId: string;
   readonly observedCustomerId: string | null;
   readonly financialInstitutionCode: string;
   readonly debtorAccount: MaskedAccountReference | null;

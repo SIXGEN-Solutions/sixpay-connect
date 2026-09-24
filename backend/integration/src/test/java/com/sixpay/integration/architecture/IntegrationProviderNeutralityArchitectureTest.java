@@ -14,19 +14,19 @@ class IntegrationProviderNeutralityArchitectureTest {
             Path.of("src/main/java/com/sixpay/integration");
 
     @Test
-    void integrationDoesNotOwnTresorPayPayloadsMappingsOrSemantics() throws Exception {
+    void integrationDoesNotOwnPartnerPayloadsMappingsOrSemantics() throws Exception {
         try (Stream<Path> paths = Files.walk(INTEGRATION)) {
             for (Path path : paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java")).toList()) {
                 String content = Files.readString(path);
                 assertThat(path.getFileName().toString())
                         .as("provider-specific integration type in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay");
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay");
                 assertThat(content)
                         .as("provider-specific integration semantics in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay")
-                        .doesNotContain("tresorPay").doesNotContain("TRESOR_PAY")
-                        .doesNotContain("TRESOR PAY").doesNotContain(".tresorpay.");
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay")
+                        .doesNotContain("partner").doesNotContain("PARTNER")
+                        .doesNotContain("PARTNER").doesNotContain(".partner.");
             }
         }
     }

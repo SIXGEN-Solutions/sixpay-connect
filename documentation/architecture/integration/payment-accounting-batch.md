@@ -17,11 +17,11 @@ rebuild accounting lines from current Payment, Partner or provider configuration
 A candidate is eligible when:
 
 1. its Payment occurrence belongs to the selected accounting window;
-2. a TresorPay payment-status lookup evidence is present;
+2. a Partner payment-status lookup evidence is present;
 3. the status lookup was completed no later than the cut-off.
 
 Lot 5.6.1 deliberately does not invent a provider-status allow-list. The
-provider status is preserved as an opaque value. Once TresorPay defines which
+provider status is preserved as an opaque value. Once Partner defines which
 statuses are accounting-eligible, only the eligibility policy changes.
 
 ## Cut-off

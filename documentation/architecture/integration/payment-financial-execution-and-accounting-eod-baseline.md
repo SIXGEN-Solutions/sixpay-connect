@@ -96,8 +96,8 @@ lines from mutable current Payment, Partner or provider-configuration state.
 Accounting:
 
 1. selects eligible successful Payments for the applicable cut-off/business date;
-2. obtains or uses authoritative TRESOR PAY status evidence for each candidate;
-3. retains only candidates whose TRESOR PAY status is compatible with accounting eligibility;
+2. obtains or uses authoritative Partner status evidence for each candidate;
+3. retains only candidates whose Partner status is compatible with accounting eligibility;
 4. obtains the immutable T0 financial-entry snapshot facts through an approved Payment-to-Accounting boundary;
 5. builds an Accounting batch containing the frozen accounting lines;
 6. submits that batch to the Core Banking accounting capability;
@@ -171,9 +171,9 @@ The existing names are not renamed by this documentation-only alignment.
 
 - Payment owns the T0 business lifecycle, immutable reduced financial-event/entry snapshots and provider-specific event mapping.
 - Amplitude/Core Banking is authoritative for account state, funds, limits, execution acceptance, effective debit/credit and banking references.
-- Accounting owns candidate selection, TRESOR PAY status evidence used for accounting eligibility, consumption of immutable Payment financial-entry facts, batch constitution, submission tracking and reconciliation.
+- Accounting owns candidate selection, Partner status evidence used for accounting eligibility, consumption of immutable Payment financial-entry facts, batch constitution, submission tracking and reconciliation.
 - Core Banking owns validation and effective accounting posting of the T1 lines submitted by SIXPAY.
-- TRESOR PAY does not need to know Core Banking accounting internals. It receives
+- Partner does not need to know Core Banking accounting internals. It receives
   only the appropriate Payment/Treasury integration status and failure reason
   through approved SIXPAY-facing contracts.
 
@@ -226,7 +226,7 @@ This baseline does not:
 - modify Java implementation;
 - add a database migration;
 - rename Payment statuses;
-- define a new public TRESOR PAY endpoint;
+- define a new public Partner endpoint;
 - invent a Core Banking endpoint or field;
 - enable CSV transport;
 - authorize blind retry of financial commands;

@@ -317,7 +317,7 @@ policies:
     timeMustBeExplicitInput: true
   forbidden:
   - Read protected configuration.
-  - Create a Treasury account from inbound TRESOR PAY data.
+  - Create a Treasury account from inbound PARTNER data.
   - Expose the account integration token.
   verification:
   - PURE_UNIT_TEST

@@ -13,7 +13,7 @@ class IntegrationFoundationArchitectureTest {
         try (var paths = Files.walk(source)) {
             assertThat(paths.map(Path::toString)
                     .map(String::toLowerCase)
-                    .filter(path -> path.contains("amplitude") || path.contains("tresorpay"))
+                    .filter(path -> path.contains("amplitude") || path.contains("partner"))
                     .toList()).isEmpty();
         }
     }

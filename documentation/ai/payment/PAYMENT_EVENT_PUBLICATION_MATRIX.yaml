@@ -73,7 +73,7 @@ events:
   integrationSchemaVersion: 1
   consumers:
   - module: security
-    purpose: Resolve and validate canonical TRESOR PAY authorization evidence.
+    purpose: Resolve and validate canonical PARTNER authorization evidence.
     idempotency: eventId
   - module: integration
     purpose: Coordinate local token/JWKS validation without exposing credentials to Payment.
@@ -225,7 +225,7 @@ events:
   integrationSchemaVersion: 1
   consumers:
   - module: notification
-    purpose: Create or reuse the immediate TRESOR PAY NotificationDelivery.
+    purpose: Create or reuse the immediate PARTNER NotificationDelivery.
     idempotency: sourceEventId+IMMEDIATE
   - module: reporting
     purpose: Update Payment search and immutable timeline projections.
@@ -1062,7 +1062,7 @@ events:
   integrationSchemaVersion: 1
   consumers:
   - module: notification
-    purpose: Create or reuse the final TRESOR PAY NotificationDelivery.
+    purpose: Create or reuse the final PARTNER NotificationDelivery.
     idempotency: sourceEventId+FINAL
   - module: reporting
     purpose: Update Payment search and immutable timeline projections.
@@ -1299,7 +1299,7 @@ events:
   integrationSchemaVersion: 1
   consumers:
   - module: notification
-    purpose: Create or reuse the reversal-phase TRESOR PAY NotificationDelivery.
+    purpose: Create or reuse the reversal-phase PARTNER NotificationDelivery.
     idempotency: sourceEventId+REVERSAL
   - module: reporting
     purpose: Update Payment search and immutable timeline projections.

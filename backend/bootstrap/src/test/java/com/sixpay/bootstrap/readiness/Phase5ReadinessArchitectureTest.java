@@ -108,7 +108,7 @@ class Phase5ReadinessArchitectureTest {
                             String source =
                                     Files.readString(path);
 
-                            return source.contains("TresorPay")
+                            return source.contains("Partner")
                                     || source.contains("Amplitude")
                                     || source.contains(
                                     "AccountingBatchRequestDto"

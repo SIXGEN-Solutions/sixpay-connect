@@ -6,10 +6,10 @@ This document covers request/response interactions that participate directly in 
 
 Kafka must not be introduced into these paths merely because the dependency exists. Internal calls remain Java calls while modules are co-deployed.
 
-## 2. Flow SYN-01 — TresorPay initiates a payment
+## 2. Flow SYN-01 — Partner initiates a payment
 
 ```text
-TresorPay
+Partner
   -> PaymentCommandController
   -> authentication / authorization / partner isolation
   -> correlation and idempotency
@@ -51,7 +51,7 @@ TresorPay
 - controller and mapper tests;
 - security and partner-isolation tests;
 - idempotency concurrency/replay tests;
-- TresorPay stub;
+- Partner stub;
 - complete E2E scenario.
 
 ## 3. Flow SYN-02 — Payment invokes Customer Verification

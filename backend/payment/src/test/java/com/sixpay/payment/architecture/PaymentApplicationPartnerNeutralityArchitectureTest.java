@@ -14,19 +14,19 @@ class PaymentApplicationPartnerNeutralityArchitectureTest {
             Path.of("src/main/java/com/sixpay/payment/application");
 
     @Test
-    void applicationLayerDoesNotExposeTresorPaySpecificTypesOrSemantics() throws Exception {
+    void applicationLayerDoesNotExposePartnerSpecificTypesOrSemantics() throws Exception {
         try (Stream<Path> paths = Files.walk(APPLICATION)) {
             for (Path path : paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java")).toList()) {
                 String content = Files.readString(path);
                 assertThat(path.getFileName().toString())
                         .as("provider-specific application type in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay");
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay");
                 assertThat(content)
                         .as("provider-specific application semantics in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay")
-                        .doesNotContain("tresorPay").doesNotContain("TRESOR_PAY")
-                        .doesNotContain("TRESOR PAY").doesNotContain(".tresorpay.")
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay")
+                        .doesNotContain("partner").doesNotContain("PARTNER")
+                        .doesNotContain("PARTNER").doesNotContain(".partner.")
                         .doesNotContain("com.sixpay.partner.");
             }
         }

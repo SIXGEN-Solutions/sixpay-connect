@@ -17,10 +17,10 @@ const SETTINGS: GeneralSettings = {
 const INTEGRATIONS: readonly IntegrationStatus[] = [
   {
     integrationId: 'tresor-pay',
-    name: 'TresorPay',
+    name: 'Partner',
     type: 'REST / mTLS',
     health: 'AVAILABLE',
-    detail: 'État de démonstration TresorPay.',
+    detail: 'État de démonstration Partner.',
     lastSuccessfulAt: new Date('2026-08-08T14:43:42Z'),
     lastCheckedAt: new Date('2026-08-08T14:44:00Z'),
   },

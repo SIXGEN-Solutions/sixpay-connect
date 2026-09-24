@@ -85,14 +85,13 @@ full-stack journeys.
 
 A pre-existing local SIXPAY database is neither read nor required.
 
-### Partner contract final-transition gate
+### Partner naming eradication gate
 
 ```bash
-py scripts/verify_partner_contract_transition.py
+py scripts/verify_partner_naming_eradication.py
 ```
 
-This gate verifies that the Partner Payment contracts are the active approved
-MVP contracts, the migrated TresorPay Payment contracts are superseded and
-reference-only, deferred TresorPay subscription contracts remain excluded, and
-none of the active Partner contracts for the migrated Payment/Accounting capabilities depends on `TRESOR_PAY`; unrelated capabilities such as `CustomerSubscription` remain outside this transition gate.
-
+This gate verifies that active/current-state documentation, frontend code,
+mocks, fixtures, scripts and tests no longer carry provider-specific Partner
+naming. Explicitly deferred contract-governance exceptions remain outside this
+gate until their lifecycle is separately approved for migration.

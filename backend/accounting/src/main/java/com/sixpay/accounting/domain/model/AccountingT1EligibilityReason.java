@@ -6,7 +6,7 @@ package com.sixpay.accounting.domain.model;
  */
 public enum AccountingT1EligibilityReason {
     NONE,
-    TRESORPAY_STATUS_NOT_COMPLETED,
-    TRESORPAY_STATUS_UNAVAILABLE,
+    PARTNER_STATUS_NOT_COMPLETED,
+    PARTNER_STATUS_UNAVAILABLE,
     OUTSIDE_SELECTION_WINDOW
 }

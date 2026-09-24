@@ -83,7 +83,7 @@ states:
     terminal: false
     financialEffectPossible: false
   AUTHORIZATION_CHECKING:
-    description: SIXPAY is awaiting or applying the canonical TRESOR PAY authorization decision.
+    description: SIXPAY is awaiting or applying the canonical PARTNER authorization decision.
     terminal: false
     financialEffectPossible: false
   BANKING_VERIFICATION_PENDING:

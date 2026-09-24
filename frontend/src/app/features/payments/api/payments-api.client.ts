@@ -29,8 +29,8 @@ export class PaymentsApiClient {
     if (query.paymentReference) {
       params = params.set('paymentReference', query.paymentReference);
     }
-    if (query.tresorPayRequestId) {
-      params = params.set('tresorPayRequestId', query.tresorPayRequestId);
+    if (query.partnerRequestId) {
+      params = params.set('partnerRequestId', query.partnerRequestId);
     }
     if (query.observedCustomerId) {
       params = params.set('observedCustomerId', query.observedCustomerId);

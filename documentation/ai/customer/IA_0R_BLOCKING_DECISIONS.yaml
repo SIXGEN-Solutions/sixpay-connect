@@ -114,7 +114,7 @@ decisions:
       - "The baseline supports payment traceability while limiting operational payload retention."
 
   - id: "IA0R-D05"
-    subject: "TRESOR PAY inbound authentication"
+    subject: "PARTNER inbound authentication"
     status: "DECIDED"
     decision:
       mvpMandatory:
@@ -167,7 +167,7 @@ decisions:
       debitConfirmedCutCreditUnknown:
         paymentState: "ACCOUNTING_OUTCOME_UNKNOWN"
         customerNotification: "PROCESSING"
-        tresorPayNotification: "PROCESSING"
+        partnerNotification: "PROCESSING"
         action:
           - "QUERY_BY_IDEMPOTENCY_KEY_OR_POSTING_REFERENCE"
           - "OPEN_RECONCILIATION_CASE"

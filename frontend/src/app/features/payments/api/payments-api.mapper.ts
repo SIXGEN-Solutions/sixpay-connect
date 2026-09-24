@@ -9,7 +9,7 @@ export function mapPaymentSummaryResponse(response: PaymentSummaryResponse): Pay
   return {
     paymentId: response.paymentId,
     paymentReference: response.paymentReference,
-    tresorPayRequestId: response.tresorPayRequestId,
+    partnerRequestId: response.partnerRequestId,
     observedCustomerId: response.observedCustomerId ?? null,
     financialInstitutionCode: response.financialInstitutionCode,
     debtorAccount: response.debtorAccount ? { ...response.debtorAccount } : null,

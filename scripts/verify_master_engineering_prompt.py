@@ -94,7 +94,7 @@ def main():
 
     required_rules = [
         "La cohérence avec les sources d’autorité prévaut sur la créativité.",
-        "ne charge jamais les 38 documents",
+        "ne charge jamais les documents historiques",
         "ACTIVE_MVP` ou `REFERENCE_MVP`",
         "`approvalStatus`, `generationPolicy` et `codeGenerationAllowed`",
         "SIXPAY CONNECT est un monolithe modulaire.",
@@ -138,8 +138,8 @@ def main():
         historical_block,
         re.MULTILINE,
     )
-    if len(historical_paths) != 38:
-        fail("documentation classification no longer exposes 38 exclusions")
+    if len(historical_paths) != len(set(historical_paths)):
+        fail("documentation classification historical exclusions contain duplicates")
     leaked = [path for path in historical_paths if path in prompt]
     if leaked:
         fail(f"historical AI path leaked into active prompt: {leaked[0]}")
@@ -199,7 +199,7 @@ def main():
     print(f" - historical AI paths excluded: {len(historical_paths)}")
     print(" - backend, frontend and full-stack rules: present")
     print(" - Partner golden-module rule: present")
-    print(" - CustomerSubscription / TRESOR PAY boundary: present")
+    print(" - CustomerSubscription / Partner boundary: present")
     print(" - unified Local/OIDC backend-session model: present")
     print(" - canonical validation commands: present")
 

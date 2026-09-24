@@ -120,7 +120,7 @@ class OperationalNotificationOrchestrationServiceTest {
                         "7ed75090-8af7-4dfa-9b62-8e4dca73501a"
                 ),
                 "PAY-20260807-0001",
-                "TRESORPAY",
+                "PARTNER",
                 new java.math.BigDecimal("10000"),
                 java.util.Currency.getInstance("XAF"),
                 Instant.parse("2026-08-07T15:55:00Z"),

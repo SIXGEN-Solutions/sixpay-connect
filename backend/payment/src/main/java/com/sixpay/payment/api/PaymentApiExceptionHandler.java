@@ -27,7 +27,7 @@ import java.util.UUID;
 public class PaymentApiExceptionHandler {
 
     @ExceptionHandler(PartnerRequestRejectedException.class)
-    ResponseEntity<PaymentProblemResponse> tresorPayRejected(
+    ResponseEntity<PaymentProblemResponse> partnerRejected(
             PartnerRequestRejectedException exception,
             HttpServletRequest request
     ) {

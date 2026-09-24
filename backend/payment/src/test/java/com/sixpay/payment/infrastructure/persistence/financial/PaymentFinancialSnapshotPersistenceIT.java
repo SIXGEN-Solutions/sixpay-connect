@@ -126,7 +126,7 @@ class PaymentFinancialSnapshotPersistenceIT {
                         + ") VALUES ("
                         + "?,"
                         + "'PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV',"
-                        + "'TRESOR_PAY',"
+                        + "'PARTNER',"
                         + "'TP-LOT24-001',"
                         + "'SUB-LOT24-001',"
                         + "'LRB',"

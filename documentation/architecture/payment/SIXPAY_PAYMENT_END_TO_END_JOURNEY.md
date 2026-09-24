@@ -5,7 +5,7 @@
 Ce document décrit le parcours complet d’un paiement entre :
 
 ```text
-TresorPay
+Partner
     ↓
 SIXPAY CONNECT
     ↓
@@ -13,7 +13,7 @@ Core Banking / Amplitude
     ↓
 SIXPAY CONNECT
     ↓
-TresorPay
+Partner
 ```
 
 Il présente :
@@ -24,22 +24,22 @@ Il présente :
 - le lifecycle métier du domaine Payment ;
 - les mécanismes d’idempotence, d’audit et d’outbox ;
 - les interactions attendues avec le core banking ;
-- la notification asynchrone de TresorPay ;
+- la notification asynchrone de Partner ;
 - les principaux scénarios d’erreur ;
 - l’état réel de l’implémentation à la clôture de la Phase 3.
 
 > **Principe fondamental**
 >
-> TresorPay ne contacte jamais directement le core banking.
+> Partner ne contacte jamais directement le core banking.
 >
-> TresorPay appelle uniquement les API exposées par SIXPAY. SIXPAY orchestre ensuite toutes les opérations avec le core banking, conserve l’état métier du paiement et notifie TresorPay des évolutions ultérieures.
+> Partner appelle uniquement les API exposées par SIXPAY. SIXPAY orchestre ensuite toutes les opérations avec le core banking, conserve l’état métier du paiement et notifie Partner des évolutions ultérieures.
 
 ---
 
 ## 2. Vue d’ensemble du parcours
 
 ```text
-TresorPay
+Partner
     |
     | POST /v1/payments/initiate
     | Authorization: Bearer <JWT>
@@ -57,7 +57,7 @@ SIXPAY Payment API
     v
 PENDING_CONFIRMATION
     |
-    | réponse HTTP initiale à TresorPay
+    | réponse HTTP initiale à Partner
     v
 Core Banking / Amplitude
     |
@@ -74,7 +74,7 @@ SIXPAY Payment
     | outbox
     | réconciliation / TFJ
     v
-TresorPay
+Partner
     |
     | callback asynchrone signé
     v
@@ -83,9 +83,9 @@ Statut final du paiement
 
 ---
 
-## 3. Initiation du paiement par TresorPay
+## 3. Initiation du paiement par Partner
 
-TresorPay appelle l’endpoint suivant :
+Partner appelle l’endpoint suivant :
 
 ```http
 POST /v1/payments/initiate
@@ -105,7 +105,7 @@ SCOPE_payment.initiate
 
 ```json
 {
-  "LoginName": "TRESOR_PAY",
+  "LoginName": "PARTNER",
   "AppID": "TP_APP_001",
   "endToEndId": "AVI-2025-00045678",
   "montantTotal": 600000,
@@ -129,7 +129,7 @@ SCOPE_payment.initiate
       "montant": 100000
     }
   ],
-  "callbackURL": "https://tresorpay.cm/v1/callbacks/payment-status"
+  "callbackURL": "https://partner.cm/v1/callbacks/payment-status"
 }
 ```
 
@@ -323,7 +323,7 @@ callbackEndpoint
 Ce contexte permettra ensuite :
 
 - de confronter les données avec le core banking ;
-- de retrouver le callback de TresorPay ;
+- de retrouver le callback de Partner ;
 - de construire les notifications de statut.
 
 ---
@@ -344,10 +344,10 @@ PaymentSource
 ExternalPaymentReference
 ```
 
-Dans le cas TresorPay :
+Dans le cas Partner :
 
 ```text
-TRESOR_PAY
+PARTNER
 +
 endToEndId
 ```
@@ -422,7 +422,7 @@ La version métier et la version de persistence sont distinctes.
 
 ---
 
-## 9. Réponse initiale à TresorPay
+## 9. Réponse initiale à Partner
 
 Lorsque la transaction réussit, SIXPAY retourne immédiatement une réponse de type :
 
@@ -634,7 +634,7 @@ ReversalGateway
 
 Ces gateways sont invoqués uniquement par SIXPAY.
 
-TresorPay n’a aucune visibilité sur :
+Partner n’a aucune visibilité sur :
 
 ```text
 les URLs du core banking
@@ -815,9 +815,9 @@ Comme pour le Posting, SIXPAY doit consulter l’état réel du core banking ava
 
 ---
 
-## 16. Callback asynchrone vers TresorPay
+## 16. Callback asynchrone vers Partner
 
-TresorPay ne reste pas connecté pendant tout le traitement.
+Partner ne reste pas connecté pendant tout le traitement.
 
 Après la réponse initiale, les changements de statut sont envoyés à :
 
@@ -892,7 +892,7 @@ La livraison est :
 at least once
 ```
 
-TresorPay doit donc dédupliquer les événements grâce à :
+Partner doit donc dédupliquer les événements grâce à :
 
 ```text
 eventId
@@ -990,7 +990,7 @@ REVERSED
 ## 19. Parcours nominal complet
 
 ```text
-TresorPay
+Partner
     |
     | POST /v1/payments/initiate
     v
@@ -1007,7 +1007,7 @@ RECEIVED
     v
 PENDING_CONFIRMATION
     |
-    | réponse initiale à TresorPay
+    | réponse initiale à Partner
     v
 Confirmation client / Core Banking
     |
@@ -1042,7 +1042,7 @@ TREASURY_INTEGRATED
     |
     | callback signé
     v
-TresorPay
+Partner
 ```
 
 ---
@@ -1116,9 +1116,9 @@ lookup / réconciliation
 
 ---
 
-## 21. Responsabilités de TresorPay
+## 21. Responsabilités de Partner
 
-TresorPay est responsable de :
+Partner est responsable de :
 
 ```text
 authentification auprès de SIXPAY
@@ -1131,7 +1131,7 @@ traitement idempotent des callbacks
 affichage du statut au client
 ```
 
-TresorPay n’est pas responsable de :
+Partner n’est pas responsable de :
 
 ```text
 validation directe du compte dans Amplitude
@@ -1163,7 +1163,7 @@ posting
 réconciliation
 reversal
 API Query
-callback TresorPay
+callback Partner
 observabilité
 ```
 
@@ -1247,7 +1247,7 @@ La Phase 3 fournit désormais un backend Payment structuré autour de SIXPAY com
 Le système dispose déjà de :
 
 ```text
-son API TresorPay
+son API Partner
 son domaine métier
 son lifecycle
 son idempotence
@@ -1260,10 +1260,10 @@ son callback asynchrone
 ses tests
 ```
 
-Les futures intégrations avec Amplitude pourront être branchées derrière les gateways existants sans modifier le contrat externe exposé à TresorPay ni reconstruire le domaine Payment.
+Les futures intégrations avec Amplitude pourront être branchées derrière les gateways existants sans modifier le contrat externe exposé à Partner ni reconstruire le domaine Payment.
 
 > **Résultat architectural**
 >
-> TresorPay reste découplé du core banking.
+> Partner reste découplé du core banking.
 >
 > SIXPAY conserve l’autorité d’orchestration, de traçabilité et de cohérence du paiement de bout en bout.

@@ -196,7 +196,7 @@ public final class PaymentAggregateTestFixtures {
 
     static NewPaymentIntent newIntent() {
         return new NewPaymentIntent(
-                PaymentSource.of("TRESOR_PAY"),
+                PaymentSource.of("PARTNER"),
                 ExternalPaymentReference.of("PAYMENT-001"),
                 ExternalSubscriptionReference.of("SUBSCRIPTION-001"),
                 new PaymentRequestIdentity(
@@ -236,7 +236,7 @@ public final class PaymentAggregateTestFixtures {
                         "NIU-TEST-001",
                         T0,
                         CallbackEndpoint.of(
-                                "https://tresorpay.example.test/callback"
+                                "https://partner.example.test/callback"
                         )
                 )
         );

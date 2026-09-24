@@ -75,11 +75,11 @@ ALLOWED_DUPLICATE_GROUPS = {
         "documentation/contracts/internal/payment-query-api-v1.yaml",
     }),
     frozenset({
-        "documentation/architecture/tresorpay/"
-        "Cahier des Charges interopérabilité entre TRESOR PAY et le "
+        "documentation/architecture/partner/"
+        "Cahier des Charges interopérabilité entre Partner et le "
         "core banking_final_schema_final.docx",
         "documentation/requirements/cdc/"
-        "Cahier des Charges interopérabilité entre TRESOR PAY et le "
+        "Cahier des Charges interopérabilité entre Partner et le "
         "core banking_final_schema_final.docx",
     }),
     frozenset({"frontend/.node-version", "frontend/.nvmrc"}),

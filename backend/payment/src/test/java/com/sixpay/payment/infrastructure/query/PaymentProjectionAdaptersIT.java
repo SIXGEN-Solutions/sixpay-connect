@@ -203,7 +203,7 @@ class PaymentProjectionAdaptersIT {
                 ) VALUES (
                     ?,
                     ?,
-                    'TRESOR_PAY',
+                    'PARTNER',
                     ?,
                     ?,
                     'SIXPAY_BANK',

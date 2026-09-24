@@ -55,7 +55,7 @@ Payment remains owner of final Payment states including `TREASURY_INTEGRATED` an
 
 T1.0 does not define or authorize:
 
-- a TRESOR PAY status endpoint;
+- a Partner status endpoint;
 - a Core Banking Accounting endpoint;
 - provider DTOs or provider mappings;
 - a bkmvti persistence entity inside SIXPAY;
@@ -67,7 +67,7 @@ T1.0 does not define or authorize:
 T1.2 materializes the approved Payment -> Accounting fact into the Accounting-owned
 tables `accounting_payment_candidates` and `accounting_payment_candidate_entries`.
 
-Projection creation uses the T1.0 publication preconditions. TRESOR PAY `COMPLETED`,
+Projection creation uses the T1.0 publication preconditions. Partner `COMPLETED`,
 cutoff-window membership and absence of batch assignment are selection-time criteria,
 not projection-publication preconditions.
 
@@ -83,7 +83,7 @@ constituted Accounting batch item.
 
 Active rules:
 - candidates come only from the Accounting-owned T1.2 projection;
-- cutoff membership, financial institution, TRESOR PAY `COMPLETED` and no prior batch assignment are selection-time criteria;
+- cutoff membership, financial institution, Partner `COMPLETED` and no prior batch assignment are selection-time criteria;
 - a new T1.3 batch item requires a finalized financial snapshot identity and its two frozen entries;
 - batch idempotency binds to `(paymentId, financialSnapshotId)` identities;
 - after durable batch persistence, selected candidates are assigned to that batch transactionally;
@@ -93,7 +93,7 @@ Active rules:
 ## T1.3 cutoff and batch constitution
 
 T1.3 consumes only the Accounting-owned T1.2 projection. Selection applies
-cutoff membership, financial-institution match, TRESOR PAY `COMPLETED`, and
+cutoff membership, financial-institution match, Partner `COMPLETED`, and
 absence of a previous batch assignment.
 
 Every newly constituted batch item copies the finalized financial snapshot

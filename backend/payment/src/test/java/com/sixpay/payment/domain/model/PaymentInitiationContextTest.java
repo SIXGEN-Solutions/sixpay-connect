@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PaymentInitiationContextTest {
 
     @Test
-    void acceptsCompleteNonSecretTresorPayContext() {
+    void acceptsCompleteNonSecretPartnerContext() {
         PaymentInitiationContext context =
                 new PaymentInitiationContext(
                         CanonicalPartnerIdentity.from(
@@ -22,7 +22,7 @@ class PaymentInitiationContextTest {
                         "100200300",
                         Instant.parse("2026-08-03T10:30:00Z"),
                         CallbackEndpoint.of(
-                                "https://tresorpay.cm/v1/callbacks/payment-status"
+                                "https://partner.cm/v1/callbacks/payment-status"
                         )
                 );
 
@@ -53,7 +53,7 @@ class PaymentInitiationContextTest {
                         "100200300",
                         Instant.parse("2026-08-03T10:30:00Z"),
                         CallbackEndpoint.of(
-                                "https://tresorpay.cm/callback"
+                                "https://partner.cm/callback"
                         )
                 );
 
@@ -64,7 +64,7 @@ class PaymentInitiationContextTest {
     void callbackMustUseHttps() {
         assertThatThrownBy(() ->
                 CallbackEndpoint.of(
-                        "http://tresorpay.cm/callback"
+                        "http://partner.cm/callback"
                 )
         ).isInstanceOf(IllegalArgumentException.class);
     }

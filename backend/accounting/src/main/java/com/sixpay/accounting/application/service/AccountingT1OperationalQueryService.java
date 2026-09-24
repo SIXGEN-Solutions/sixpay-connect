@@ -119,22 +119,22 @@ public class AccountingT1OperationalQueryService
             status = AccountingT1OperationalCandidateStatus.ASSIGNED_TO_BATCH;
             reason = AccountingT1EligibilityReason.NONE;
         } else if (candidate.partnerExternalStatusEvidence() == null) {
-            status = AccountingT1OperationalCandidateStatus.AWAITING_TRESORPAY_VERIFICATION;
-            reason = AccountingT1EligibilityReason.TRESORPAY_STATUS_UNAVAILABLE;
+            status = AccountingT1OperationalCandidateStatus.AWAITING_PARTNER_VERIFICATION;
+            reason = AccountingT1EligibilityReason.PARTNER_STATUS_UNAVAILABLE;
         } else if (!window.contains(candidate.paymentOccurredAt())) {
             status = AccountingT1OperationalCandidateStatus.INELIGIBLE_FOR_CURRENT_SELECTION;
             reason = AccountingT1EligibilityReason.OUTSIDE_SELECTION_WINDOW;
         } else if (candidate.partnerExternalStatusEvidence()
                 .checkedAt()
                 .isAfter(window.toExclusive())) {
-            status = AccountingT1OperationalCandidateStatus.AWAITING_TRESORPAY_VERIFICATION;
-            reason = AccountingT1EligibilityReason.TRESORPAY_STATUS_UNAVAILABLE;
+            status = AccountingT1OperationalCandidateStatus.AWAITING_PARTNER_VERIFICATION;
+            reason = AccountingT1EligibilityReason.PARTNER_STATUS_UNAVAILABLE;
         } else if (candidate.partnerExternalStatusEvidence().confirmsPaidPayment()) {
             status = AccountingT1OperationalCandidateStatus.ELIGIBLE_FOR_BATCH;
             reason = AccountingT1EligibilityReason.NONE;
         } else {
             status = AccountingT1OperationalCandidateStatus.INELIGIBLE_FOR_CURRENT_SELECTION;
-            reason = AccountingT1EligibilityReason.TRESORPAY_STATUS_NOT_COMPLETED;
+            reason = AccountingT1EligibilityReason.PARTNER_STATUS_NOT_COMPLETED;
         }
 
         return AccountingT1OperationalSnapshot.from(

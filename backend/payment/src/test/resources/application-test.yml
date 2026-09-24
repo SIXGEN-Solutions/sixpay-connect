@@ -1,4 +1,4 @@
 sixpay:
   payment:
-    tresorpay:
+    partner:
       enabled: false

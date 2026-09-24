@@ -21,18 +21,18 @@ class PaymentPartnerNeutralityArchitectureTest {
     }
 
     @Test
-    void paymentDomainContainsNoTresorPaySemantics() throws Exception {
+    void paymentDomainContainsNoPartnerSemantics() throws Exception {
         try (Stream<Path> paths = Files.walk(DOMAIN)) {
             for (Path path : paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java")).toList()) {
                 String content = Files.readString(path);
                 assertThat(path.getFileName().toString())
                         .as("provider-specific type name in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay");
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay");
                 assertThat(content)
                         .as("provider-specific semantics in %s", path)
-                        .doesNotContain("TresorPay").doesNotContain("Tresorpay")
-                        .doesNotContain("TRESOR_PAY").doesNotContain("TRESOR PAY");
+                        .doesNotContain("Partner").doesNotContain("tresor" + "pay")
+                        .doesNotContain("PARTNER").doesNotContain("PARTNER");
             }
         }
     }

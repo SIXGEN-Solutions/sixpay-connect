@@ -22,7 +22,7 @@ class AccountingT1ManualExecutionControllerActivationTest {
         assertThat(condition.name())
                 .containsExactlyInAnyOrder(
                         "api.enabled",
-                        "tresorpay-status.enabled"
+                        "partner-status.enabled"
                 );
 
         assertThat(condition.havingValue())

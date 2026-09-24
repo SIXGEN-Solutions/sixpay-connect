@@ -52,6 +52,6 @@ class PaymentInitiationReplayCodecTest {
         assertThat(decoded).isEqualTo(original);
         assertThat(encoded)
                 .doesNotContain("10005-")
-                .doesNotContain("TRESOR_PAY");
+                .doesNotContain("PARTNER");
     }
 }

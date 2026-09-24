@@ -11,7 +11,7 @@ export interface PaymentTimelineEntry {
   readonly reasonCode: string | null;
   readonly occurredAt: Date;
   readonly correlationId: string;
-  readonly sourceSystem: 'SIXPAY' | 'TRESOR_PAY' | 'AMPLITUDE';
+  readonly sourceSystem: 'SIXPAY' | 'PARTNER' | 'AMPLITUDE';
   readonly externalReference: string | null;
   readonly aggregateVersion: number;
   readonly metadata: Readonly<Record<string, string | number | boolean | null>>;
@@ -41,7 +41,7 @@ export interface PaymentAuditRecord {
   readonly reasonCode: string;
   readonly correlationId: string;
   readonly traceId: string | null;
-  readonly sourceSystem: 'SIXPAY' | 'TRESOR_PAY' | 'AMPLITUDE';
+  readonly sourceSystem: 'SIXPAY' | 'PARTNER' | 'AMPLITUDE';
   readonly beforeState: PaymentStateResponse | null;
   readonly afterState: PaymentStateResponse | null;
   readonly metadata: Readonly<Record<string, string | number | boolean | null>>;

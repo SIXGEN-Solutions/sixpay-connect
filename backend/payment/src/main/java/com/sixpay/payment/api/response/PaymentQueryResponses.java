@@ -17,7 +17,7 @@ public final class PaymentQueryResponses {
     public record PaymentSummaryResponse(
             UUID paymentId,
             String paymentReference,
-            String tresorPayRequestId,
+            String partnerRequestId,
             UUID observedCustomerId,
             String financialInstitutionCode,
             MaskedAccountResponse debtorAccount,
@@ -72,7 +72,7 @@ public final class PaymentQueryResponses {
     public record PaymentDetailResponse(
             UUID paymentId,
             String paymentReference,
-            String tresorPayRequestId,
+            String partnerRequestId,
             UUID observedCustomerId,
             String financialInstitutionCode,
             MaskedAccountResponse debtorAccount,
