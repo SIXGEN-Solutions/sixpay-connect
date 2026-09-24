@@ -85,13 +85,25 @@ full-stack journeys.
 
 A pre-existing local SIXPAY database is neither read nor required.
 
-### Partner naming eradication gate
+### Permanent Partner-neutral architecture gate
 
 ```bash
 py scripts/verify_partner_naming_eradication.py
 ```
 
-This gate verifies that active/current-state documentation, frontend code,
-mocks, fixtures, scripts and tests no longer carry provider-specific Partner
-naming. Explicitly deferred contract-governance exceptions remain outside this
-gate until their lifecycle is separately approved for migration.
+This permanent non-regression gate scans tracked source content and tracked
+file/directory names across backend, contracts, runtime configuration, scripts,
+frontend, tests and documentation.
+
+Only the explicitly deferred external-subscription governance references remain
+narrowly exempted. Governance files are still scanned and are not globally
+excluded.
+
+The gate is part of the canonical repository baseline:
+
+```bash
+py scripts/verify_baseline.py
+```
+
+This makes Partner-neutral naming a permanent repository invariant rather than
+a one-time cleanup check.

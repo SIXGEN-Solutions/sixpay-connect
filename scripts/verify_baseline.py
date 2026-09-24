@@ -10,6 +10,7 @@ ENGINEERING = ROOT / "ENGINEERING_CONTEXT.md"
 REQUIRED = [
     "frontend/package.json",
     "scripts/verify_repository_hygiene.py",
+    "scripts/verify_partner_naming_eradication.py",
     "scripts/verify_spring_configuration_hygiene.py",
     "scripts/verify_feature_flag_registry.py",
     "frontend/scripts/verify-angular-environment-policy.mjs",
@@ -81,7 +82,7 @@ def main():
     python = sys.executable
 
     run(
-        "1/6 — Repository hygiene",
+        "1/7 — Repository hygiene",
         [
             python,
             "scripts/verify_repository_hygiene.py",
@@ -90,7 +91,16 @@ def main():
     )
 
     run(
-        "2/6 — Spring runtime-configuration hygiene",
+        "2/7 — Permanent Partner-neutral architecture",
+        [
+            python,
+            "scripts/verify_partner_naming_eradication.py",
+        ],
+        ROOT,
+    )
+
+    run(
+        "3/7 — Spring runtime-configuration hygiene",
         [
             python,
             "scripts/verify_spring_configuration_hygiene.py",
@@ -99,7 +109,7 @@ def main():
     )
 
     run(
-        "3/6 — Configuration / feature-flag registry",
+        "4/7 — Configuration / feature-flag registry",
         [
             python,
             "scripts/verify_feature_flag_registry.py",
@@ -108,7 +118,7 @@ def main():
     )
 
     run(
-        "4/6 — Backend canonical verification",
+        "5/7 — Backend canonical verification",
         [
             mvn,
             "verify",
@@ -117,7 +127,7 @@ def main():
     )
 
     run(
-        "5/6 — Frontend canonical verification",
+        "6/7 — Frontend canonical verification",
         [
             npm,
             "run",
@@ -127,7 +137,7 @@ def main():
     )
 
     run(
-        "6/6 — Fresh PostgreSQL canonical bootstrap",
+        "7/7 — Fresh PostgreSQL canonical bootstrap",
         [
             mvn,
             "-pl",
@@ -149,6 +159,7 @@ def main():
     print()
     print("Validated:")
     print(" - tracked repository hygiene and artifact classification")
+    print(" - permanent Partner-neutral naming across tracked content and paths")
     print(" - Spring runtime-configuration ownership and deduplication")
     print(" - configuration/feature-flag registry")
     print(" - full backend unit/architecture reactor verify")

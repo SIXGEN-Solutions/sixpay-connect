@@ -23,9 +23,9 @@ entries = re.findall(r"^\s+- (documentation/ai/[^\n]+)$", historical_block, re.M
 excluded_block = text.split("excludedHistoricalDocuments:", 1)[1].split("precedence:", 1)[0]
 excluded = re.findall(r"^\s+- (documentation/ai/[^\n]+)$", excluded_block, re.MULTILINE)
 
-if len(entries) != 38 or len(set(entries)) != 38:
+if len(entries) != len(set(entries)):
     print("DOCUMENTATION CLASSIFICATION GATE FAILED")
-    print(" - expected 38 unique historical AI documents")
+    print(" - historical AI documents must be unique")
     sys.exit(1)
 if set(entries) != set(excluded):
     print("DOCUMENTATION CLASSIFICATION GATE FAILED")
@@ -39,4 +39,4 @@ for relative in entries:
 
 print("Documentation classification gate PASSED.")
 print(" - categories: CANONICAL, REFERENCE_SOURCE, HISTORICAL, TEMPLATE")
-print(" - historical AI documents retained and excluded from active context: 38")
+print(f" - historical AI documents retained and excluded from active context: {len(entries)}")

@@ -16,7 +16,7 @@ const SETTINGS: GeneralSettings = {
 
 const INTEGRATIONS: readonly IntegrationStatus[] = [
   {
-    integrationId: 'tresor-pay',
+    integrationId: 'partner',
     name: 'Partner',
     type: 'REST / mTLS',
     health: 'AVAILABLE',

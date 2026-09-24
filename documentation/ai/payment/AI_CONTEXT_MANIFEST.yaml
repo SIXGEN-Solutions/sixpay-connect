@@ -13,24 +13,18 @@ codeGenerationAllowed: false
 generationReadiness: IA1_BRIEF_COMPLETE_PENDING_APPROVALS
 nextStep: PRODUCT_ARCHITECTURE_ENGINEERING_REVIEW_AND_APPROVAL
 primaryDocuments:
-- path: documentation/ai/payment/PAYMENT_DOMAIN_GENERATION_BRIEF.md
-  role: Consolidated official twenty-section IA-1 Payment brief
 - path: documentation/ai/payment/PAYMENT_IA1_GATE_VALIDATION.yaml
   role: Machine-readable IA-1 exit-criteria and approval validation
 - path: documentation/ai/payment/PAYMENT_TEST_PLAN_AND_TRACEABILITY.md
   role: Human test strategy and end-to-end requirements traceability
 - path: documentation/ai/payment/PAYMENT_TEST_TRACEABILITY.yaml
   role: Machine-readable invariant, transition, event and test coverage matrix
-- path: documentation/ai/payment/PAYMENT_EVENTS_AUDIT_OUTBOX_BRIEF.md
-  role: Events, immutable audit and transactional Outbox boundary
 - path: documentation/ai/payment/PAYMENT_EVENT_PUBLICATION_MATRIX.yaml
   role: Machine-readable event audit/outbox/integration publication matrix
 - path: documentation/ai/payment/PAYMENT_AUDIT_RECORD_SCHEMA.yaml
   role: Normative append-only Payment audit schema
 - path: documentation/ai/payment/PAYMENT_OUTBOX_CONTRACT.yaml
   role: Normative Payment Outbox contract
-- path: documentation/ai/payment/PAYMENT_INVARIANT_FORMALIZATION.md
-  role: Human exhaustive invariant enforcement strategy
 - path: documentation/ai/payment/PAYMENT_INVARIANT_RESPONSIBILITY_MATRIX.md
   role: Cross-layer invariant responsibility matrix
 - path: documentation/ai/payment/PAYMENT_MODEL_VALIDATION_REPORT.md
@@ -39,14 +33,6 @@ primaryDocuments:
   role: Machine final validation
 - path: documentation/ai/payment/PAYMENT_ACCEPTANCE_SCENARIOS.md
   role: Final IA-1 acceptance baseline
-- path: documentation/ai/payment/PAYMENT_AGGREGATE_ROOT.md
-  role: Aggregate Root
-- path: documentation/ai/payment/PAYMENT_VALUE_OBJECT_CATALOGUE.md
-  role: Value Objects
-- path: documentation/ai/payment/PAYMENT_EVIDENCE_SNAPSHOT_CATALOGUE.md
-  role: Snapshots
-- path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.md
-  role: Human invariants
 - path: documentation/ai/payment/PAYMENT_INVARIANT_CATALOGUE.yaml
   role: Machine invariants
 - path: documentation/ai/payment/PAYMENT_COMMAND_CATALOGUE.md
@@ -55,12 +41,8 @@ primaryDocuments:
   role: Machine commands and operations
 - path: documentation/ai/payment/PAYMENT_STATE_MACHINE.yaml
   role: Final state machine
-- path: documentation/ai/payment/PAYMENT_DOMAIN_EVENT_CATALOGUE.md
-  role: Human events
 - path: documentation/ai/payment/PAYMENT_EVENT_CATALOG.yaml
   role: Machine events
-- path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.md
-  role: Human policies/services
 - path: documentation/ai/payment/PAYMENT_POLICY_DOMAIN_SERVICE_CATALOGUE.yaml
   role: Machine policies/services
 - path: documentation/ai/payment/PAYMENT_DOMAIN_MODEL.md

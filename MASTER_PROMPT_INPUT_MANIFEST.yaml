@@ -89,8 +89,6 @@ contextSelection:
         - "documentation/requirements/cdc/*.pdf"
         - "documentation/requirements/cdc/*.docx"
         - "documentation/requirements/user-stories/*.docx"
-        - "documentation/architecture/tresorpay/*.pdf"
-        - "documentation/architecture/tresorpay/*.docx"
         - "documentation/architecture/*.docx"
       rule: >-
         Use for traceability or unresolved details only. A REFERENCE_SOURCE
@@ -243,7 +241,6 @@ excludedHistoricalDocuments:
 - "documentation/ai/payment/PAYMENT_BACKEND_LOT_3_4_OUTBOX_FOUNDATION.md"
 - "documentation/ai/integration/ACCOUNTING_LOT_5_6_4.md"
 - "documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_1.md"
-- "documentation/ai/integration/TRESORPAY_CONSOLIDATION_LOT_5_2.md"
 - "documentation/ai/integration/INTEGRATION_FOUNDATION_LOT_5_1.md"
 generationSafety:
   productionDataAllowed: false

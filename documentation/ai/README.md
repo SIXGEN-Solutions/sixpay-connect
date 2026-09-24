@@ -57,13 +57,11 @@ must not drive current implementation.
 
 ### Accounting
 
-`documentation/ai/accounting/ACCOUNTING_T1_AI_CONTEXT.md` is the consolidated
-Accounting supporting reference. It summarizes the implemented candidate,
-cutoff, batch, approved Core Banking Accounting submission and TFJ finality
-baseline after higher-authority sources are loaded.
+Accounting AI assets are supporting or historical engineering material.
+Current Accounting behavior must be derived from implementation, architecture,
+requirements, operational runbooks and registered physical contracts.
 
-It never overrides implementation, architecture, requirements or registered
-physical contracts.
+AI material never overrides those higher-authority current-state sources.
 
 ### Integration
 

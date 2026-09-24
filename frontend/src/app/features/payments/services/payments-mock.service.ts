@@ -163,9 +163,7 @@ export class PaymentsMockService {
       (!query.paymentReference ||
         payment.paymentReference.toLowerCase().includes(query.paymentReference.toLowerCase())) &&
       (!query.partnerRequestId ||
-        payment.partnerRequestId
-          .toLowerCase()
-          .includes(query.partnerRequestId.toLowerCase())) &&
+        payment.partnerRequestId.toLowerCase().includes(query.partnerRequestId.toLowerCase())) &&
       (!query.observedCustomerId || payment.observedCustomerId === query.observedCustomerId) &&
       (!query.financialInstitutionCode ||
         payment.financialInstitutionCode === query.financialInstitutionCode) &&

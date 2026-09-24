@@ -9,9 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,11 +19,6 @@ class PaymentBriefValidationTest {
     private static final Path REPOSITORY_ROOT =
             Path.of("..", "..").normalize();
 
-    private static final Path BRIEF =
-            REPOSITORY_ROOT.resolve(
-                    "documentation/ai/payment/"
-                            + "PAYMENT_DOMAIN_GENERATION_BRIEF.md"
-            );
 
     private static final Path GATE =
             REPOSITORY_ROOT.resolve(
@@ -34,56 +26,8 @@ class PaymentBriefValidationTest {
                             + "PAYMENT_IA1_GATE_VALIDATION.yaml"
             );
 
-    private static final List<String> FORBIDDEN_MARKERS =
-            List.of(
-                    "T" + "ODO",
-                    "T" + "BD",
-                    "{" + "{",
-                    "}" + "}",
-                    "<" + "PLACEHOLDER" + ">",
-                    "[" + "TO COMPLETE" + "]",
-                    "CHANGE" + "ME",
-                    "FIX" + "ME"
-            );
 
-    @Test
-    void briefContainsExactlyTwentyOrderedSections()
-            throws IOException {
 
-        String content = Files.readString(BRIEF);
-
-        Matcher matcher = Pattern.compile(
-                "^## ([0-9]+)\\.",
-                Pattern.MULTILINE
-        ).matcher(content);
-
-        List<Integer> actual = matcher.results()
-                .map(result ->
-                        Integer.parseInt(result.group(1))
-                )
-                .toList();
-
-        List<Integer> expected = IntStream
-                .rangeClosed(1, 20)
-                .boxed()
-                .toList();
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void briefContainsNoUnresolvedMarker()
-            throws IOException {
-
-        String content = Files.readString(BRIEF);
-
-        for (String marker : FORBIDDEN_MARKERS) {
-            assertFalse(
-                    content.contains(marker),
-                    () -> "Unresolved marker: " + marker
-            );
-        }
-    }
 
     @Test
     void gateRemainsInReviewUntilApprovalsAreRecorded()

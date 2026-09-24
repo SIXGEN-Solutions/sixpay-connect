@@ -30,8 +30,6 @@ categories:
       - documentation/requirements/cdc/*.pdf
       - documentation/requirements/cdc/*.docx
       - documentation/requirements/user-stories/*.docx
-      - documentation/architecture/tresorpay/*.pdf
-      - documentation/architecture/tresorpay/*.docx
       - documentation/architecture/*.docx
     aiRule: >-
       Non-historical AI briefs and manifests are reference material and
@@ -60,7 +58,6 @@ categories:
 - documentation/ai/integration/ACCOUNTING_LOT_5_6_4.md
 - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_1.md
       - documentation/ai/integration/PAYMENT_AMPLITUDE_LOT_5_4_5.md
-- documentation/ai/integration/TRESORPAY_CONSOLIDATION_LOT_5_2.md
       - documentation/ai/integration/ACCOUNTING_LOT_5_6_2.md
       - documentation/ai/integration/NOTIFICATION_LOT_5_7_4.md
       - documentation/ai/integration/AMPLITUDE_CUSTOMER_VERIFICATION_LOT_5_3.md

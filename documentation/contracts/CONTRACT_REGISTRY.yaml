@@ -276,7 +276,6 @@ contracts:
     codeGenerationAllowed: true
     governanceDecision: "D00-CB-OWNERSHIP"
     reviewStep: "1.3"
-    reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
     mvpUsage:
       included: true
       confirmedForPayment: true
@@ -669,7 +668,7 @@ contracts:
       included: true
       purpose:
         - "Expose normalized Accounting-owned T1 operational candidate visibility"
-        - "Expose persisted TRESOR PAY verification state"
+        - "Expose persisted Partner verification state"
         - "Expose Accounting-owned eligibility reason and resolved selection window"
         - "Expose bounded technical issue categories"
         - "Expose existing batch assignment and durable recovery state only when available"
@@ -931,7 +930,7 @@ contracts:
       readOnly: false
       pagination: "NOT_REQUIRED"
       purpose: ["Manage the Customer-owned subscription relationship", "Activate, suspend, close and read a subscription"]
-      constraints: ["Distinct from deferred TRESOR PAY subscription authorization", "References an enrolled Customer and bank account", "Closure is logical and history is retained"]
+      constraints: ["Distinct from deferred external Partner subscription authorization", "References an enrolled Customer and bank account", "Closure is logical and history is retained"]
 
 missingMvpContracts:
   status: "PARTIALLY_CLOSED"
@@ -946,7 +945,6 @@ missingMvpContracts:
 
 mvpAuthorizationVerification:
   decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
-  decisionPath: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
   sourceSystem: "TRESOR_PAY"
   subscriptionSystemOfRecord: "TRESOR_PAY"
   localSubscriptionManagement: false
@@ -988,4 +986,4 @@ rules:
   - "Payment audit is separated from Payment query and requires dedicated privileged scopes."
   - "Every privileged audit consultation, denial and export is itself audited."
   - "Payment confirmation is Payment-owned; OTP and authoritative bank challenge state remain bank-owned."
-  - "TRESOR PAY Payment confirmation exposes only the current normalized challenge and never the OTP or bank challengeReference."
+  - "Partner Payment confirmation exposes only the current normalized challenge and never the OTP or bank challengeReference."

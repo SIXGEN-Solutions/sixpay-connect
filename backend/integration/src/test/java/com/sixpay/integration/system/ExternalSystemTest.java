@@ -30,10 +30,6 @@ class ExternalSystemTest {
                 ExternalSystem.AMPLITUDE.name()
         );
 
-        assertEquals(
-                "PARTNER",
-                ExternalSystem.PARTNER.name()
-        );
     }
 
     @Test

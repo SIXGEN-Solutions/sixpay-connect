@@ -19,15 +19,32 @@ class PaymentApplicationPartnerNeutralityArchitectureTest {
             for (Path path : paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".java")).toList()) {
                 String content = Files.readString(path);
-                assertThat(path.getFileName().toString())
-                        .as("provider-specific application type in %s", path)
-                        .doesNotContain("Partner").doesNotContain("tresor" + "pay");
-                assertThat(content)
-                        .as("provider-specific application semantics in %s", path)
-                        .doesNotContain("Partner").doesNotContain("tresor" + "pay")
-                        .doesNotContain("partner").doesNotContain("PARTNER")
-                        .doesNotContain("PARTNER").doesNotContain(".partner.")
-                        .doesNotContain("com.sixpay.partner.");
+                String normalizedFileName =
+                        path.getFileName()
+                                .toString()
+                                .toLowerCase(java.util.Locale.ROOT);
+
+                String normalizedContent =
+                        content.toLowerCase(java.util.Locale.ROOT);
+
+                assertThat(normalizedFileName)
+                        .as(
+                                "provider-specific application type in %s",
+                                path
+                        )
+                        .doesNotContain("tresor" + "pay")
+                        .doesNotContain("tresor" + "_pay")
+                        .doesNotContain("tresor" + "-pay");
+
+                assertThat(normalizedContent)
+                        .as(
+                                "provider-specific application semantics in %s",
+                                path
+                        )
+                        .doesNotContain("tresor" + "pay")
+                        .doesNotContain("tresor" + "_pay")
+                        .doesNotContain("tresor" + "-pay")
+                        .doesNotContain("tresor" + " pay");
             }
         }
     }

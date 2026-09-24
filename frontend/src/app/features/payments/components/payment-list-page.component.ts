@@ -374,9 +374,7 @@ export class PaymentListPageComponent {
     return {
       ...(value.paymentReference.trim() ? { paymentReference: value.paymentReference.trim() } : {}),
 
-      ...(value.partnerRequestId.trim()
-        ? { partnerRequestId: value.partnerRequestId.trim() }
-        : {}),
+      ...(value.partnerRequestId.trim() ? { partnerRequestId: value.partnerRequestId.trim() } : {}),
 
       ...(value.observedCustomerId.trim()
         ? { observedCustomerId: value.observedCustomerId.trim() }
