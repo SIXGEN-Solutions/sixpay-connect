@@ -43,7 +43,7 @@ class AccountingCandidateProjectionServiceTest {
     private static PaymentT0FinalizedForAccounting eventWithIds(UUID eventId, UUID paymentId, UUID snapshotId) {
         return new PaymentT0FinalizedForAccounting(
                 eventId, Instant.parse("2026-08-11T12:00:00Z"),1,paymentId,
-                "REF-DGI-2026-0042","TRESORPAY","LRB","POSTED_PENDING_TFJ","COMPLETED",
+                "REF-DGI-2026-0042","PARTNER-TEST","LRB","POSTED_PENDING_TFJ","COMPLETED",
                 "RB-2026081100045",Instant.parse("2026-08-11T11:59:00Z"),LocalDate.of(2026,8,11),
                 snapshotId,"v1",Instant.parse("2026-08-11T11:59:30Z"),
                 "DEBTOR-REF","TREASURY-REF",new BigDecimal("1000.00"),Currency.getInstance("XAF"),

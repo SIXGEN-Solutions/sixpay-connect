@@ -235,15 +235,15 @@ class AccountingPersistenceIT {
         );
 
         assertThat(
-                savedItem.tresorPayStatus()
+                savedItem.partnerExternalStatus()
         ).isEqualTo(
-                reloadedItem.tresorPayStatus()
+                reloadedItem.partnerExternalStatus()
         );
 
         assertThat(
-                savedItem.tresorPayStatusCheckedAt()
+                savedItem.partnerExternalStatusCheckedAt()
         ).isEqualTo(
-                reloadedItem.tresorPayStatusCheckedAt()
+                reloadedItem.partnerExternalStatusCheckedAt()
         );
 
         assertThat(
@@ -489,7 +489,7 @@ class AccountingPersistenceIT {
                                         paymentId
                                 ),
                                 paymentReference,
-                                "TRESORPAY",
+                                "PARTNER-TEST",
                                 new BigDecimal(
                                         "12500.00"
                                 ),

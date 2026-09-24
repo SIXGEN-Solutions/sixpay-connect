@@ -91,7 +91,7 @@ class AccountingApiMapperTest {
                 new AccountingBatchItem(
                         UUID.randomUUID(),
                         "PAY-LEGACY",
-                        "TRESORPAY",
+                        "PARTNER-TEST",
                         new BigDecimal("1000"),
                         Currency.getInstance("XAF"),
                         Instant.parse("2026-09-08T10:00:00Z"),
@@ -129,7 +129,7 @@ class AccountingApiMapperTest {
                 new AccountingBatchItem(
                         paymentId,
                         "PAY-20260908-0001",
-                        "TRESORPAY",
+                        "PARTNER-TEST",
                         new BigDecimal("10000"),
                         Currency.getInstance("XAF"),
                         Instant.parse("2026-09-08T10:00:00Z"),

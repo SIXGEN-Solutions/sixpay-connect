@@ -17,8 +17,8 @@ public record AccountingBatchItem(
         Instant paymentOccurredAt,
         LocalDate paymentBusinessDate,
         String bankPostingReference,
-        String tresorPayStatus,
-        Instant tresorPayStatusCheckedAt,
+        String partnerExternalStatus,
+        Instant partnerExternalStatusCheckedAt,
         AccountingBatchItemStatus status,
         UUID financialSnapshotId,
         String financialSnapshotVersion,
@@ -37,8 +37,8 @@ public record AccountingBatchItem(
         paymentOccurredAt = Objects.requireNonNull(paymentOccurredAt, "paymentOccurredAt");
         paymentBusinessDate = Objects.requireNonNull(paymentBusinessDate, "paymentBusinessDate");
         bankPostingReference = optional(bankPostingReference);
-        tresorPayStatus = required(tresorPayStatus, "tresorPayStatus");
-        tresorPayStatusCheckedAt = Objects.requireNonNull(tresorPayStatusCheckedAt, "tresorPayStatusCheckedAt");
+        partnerExternalStatus = required(partnerExternalStatus, "partnerExternalStatus");
+        partnerExternalStatusCheckedAt = Objects.requireNonNull(partnerExternalStatusCheckedAt, "partnerExternalStatusCheckedAt");
         status = Objects.requireNonNull(status, "status");
         financialSnapshotVersion = optional(financialSnapshotVersion);
         debtorAccountReference = optional(debtorAccountReference);
@@ -67,13 +67,13 @@ public record AccountingBatchItem(
             Instant paymentOccurredAt,
             LocalDate paymentBusinessDate,
             String bankPostingReference,
-            String tresorPayStatus,
-            Instant tresorPayStatusCheckedAt,
+            String partnerExternalStatus,
+            Instant partnerExternalStatusCheckedAt,
             AccountingBatchItemStatus status
     ) {
         this(paymentId, publicPaymentReference, partnerId, amount, currency,
                 paymentOccurredAt, paymentBusinessDate, bankPostingReference,
-                tresorPayStatus, tresorPayStatusCheckedAt, status,
+                partnerExternalStatus, partnerExternalStatusCheckedAt, status,
                 null, null, null, null, null, List.of());
     }
 
@@ -137,7 +137,7 @@ public record AccountingBatchItem(
         return new AccountingBatchItem(
                 paymentId, publicPaymentReference, partnerId, amount, currency,
                 paymentOccurredAt, paymentBusinessDate, bankPostingReference,
-                tresorPayStatus, tresorPayStatusCheckedAt,
+                partnerExternalStatus, partnerExternalStatusCheckedAt,
                 Objects.requireNonNull(newStatus, "newStatus"), financialSnapshotId,
                 financialSnapshotVersion, financialSnapshotFinalizedAt,
                 debtorAccountReference, creditorAccountReference, entries);

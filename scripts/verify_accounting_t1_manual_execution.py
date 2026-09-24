@@ -20,8 +20,8 @@ for path in [
     "backend/accounting/src/main/java/com/sixpay/accounting/application/service/AccountingT1ManualExecutionService.java",
     "frontend/src/app/features/accounting/models/accounting-t1-execution.ts",
     "frontend/e2e/accounting-t1-manual-execution.spec.ts",
-    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status-sandbox.yml",
-    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status.yml",
+    "backend/bootstrap/src/main/resources/application-accounting-partner-status-sandbox.yml",
+    "backend/bootstrap/src/main/resources/application-accounting-partner-status.yml",
     "backend/accounting/src/test/java/com/sixpay/accounting/api/AccountingT1ManualExecutionControllerActivationTest.java",
 ]:
     if not (ROOT / path).is_file():
@@ -52,7 +52,7 @@ require_text(
     "@ConditionalOnProperty(",
     'prefix = "sixpay.accounting"',
     '"api.enabled"',
-    '"tresorpay-status.enabled"',
+    '"partner-status.enabled"',
     'havingValue = "true"',
 )
 require_text(
@@ -62,19 +62,19 @@ require_text(
 )
 
 require_text(
-    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status.yml",
-    "SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED",
+    "backend/bootstrap/src/main/resources/application-accounting-partner-status.yml",
+    "SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED",
     "/api/v1/payments/{reference}/status",
 )
 require_text(
-    "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status-sandbox.yml",
-    "accounting-tresorpay-status-sandbox",
+    "backend/bootstrap/src/main/resources/application-accounting-partner-status-sandbox.yml",
+    "accounting-partner-status-sandbox",
     "enabled: true",
 )
 require_text(
     "documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml",
-    "SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED",
-    'key: "sixpay.accounting.tresorpay-status.enabled"',
+    "SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED",
+    'key: "sixpay.accounting.partner-status.enabled"',
 )
 
 print("[PASS] Accounting T1 manual execution baseline")

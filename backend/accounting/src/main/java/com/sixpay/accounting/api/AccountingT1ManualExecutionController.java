@@ -23,7 +23,7 @@ import java.util.UUID;
         prefix = "sixpay.accounting",
         name = {
                 "api.enabled",
-                "tresorpay-status.enabled"
+                "partner-status.enabled"
         },
         havingValue = "true"
 )

@@ -51,7 +51,7 @@ class AccountingBatchIdempotencyKeyFactoryTest {
         return new AccountingPaymentCandidate(
                 UUID.fromString(paymentId),
                 reference,
-                "TRESORPAY",
+                "PARTNER-TEST",
                 "LAREGIONALE",
                 UUID.nameUUIDFromBytes(("snapshot-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
                 "v1",

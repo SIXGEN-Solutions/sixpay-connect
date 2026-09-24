@@ -16,8 +16,8 @@ public record AccountingBatchItemResponse(
         Instant paymentOccurredAt,
         LocalDate paymentBusinessDate,
         String bankPostingReference,
-        String tresorPayStatus,
-        Instant tresorPayStatusCheckedAt,
+        String partnerExternalStatus,
+        Instant partnerExternalStatusCheckedAt,
         String status
 ) {
     public static AccountingBatchItemResponse from(AccountingBatchItem item) {
@@ -30,8 +30,8 @@ public record AccountingBatchItemResponse(
                 item.paymentOccurredAt(),
                 item.paymentBusinessDate(),
                 item.bankPostingReference(),
-                item.tresorPayStatus(),
-                item.tresorPayStatusCheckedAt(),
+                item.partnerExternalStatus(),
+                item.partnerExternalStatusCheckedAt(),
                 item.status().name()
         );
     }

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class AccountingT1OperationalSnapshotTest {
 
     @Test
-    void shouldMapAccountingCandidateAndTresorPayEvidence() {
+    void shouldMapAccountingCandidateAndPartnerEvidence() {
         Instant checkedAt = Instant.parse("2026-09-10T12:00:00Z");
         AccountingCandidateProjection candidate = candidate(
                 null,

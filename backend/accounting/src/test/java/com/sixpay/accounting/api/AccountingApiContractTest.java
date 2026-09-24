@@ -113,8 +113,8 @@ class AccountingApiContractTest {
                 "paymentOccurredAt",
                 "paymentBusinessDate",
                 "bankPostingReference",
-                "tresorPayStatus",
-                "tresorPayStatusCheckedAt",
+                "partnerExternalStatus",
+                "partnerExternalStatusCheckedAt",
                 "status"
         );
     }

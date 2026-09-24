@@ -32,8 +32,8 @@ public class AccountingBatchItemJpaEntity {
     @Column(name="payment_occurred_at", nullable=false, updatable=false) private Instant paymentOccurredAt;
     @Column(name="payment_business_date", nullable=false, updatable=false) private LocalDate paymentBusinessDate;
     @Column(name="bank_posting_reference", updatable=false, length=128) private String bankPostingReference;
-    @Column(name="tresorpay_status", nullable=false, updatable=false, length=64) private String tresorPayStatus;
-    @Column(name="tresorpay_status_checked_at", nullable=false, updatable=false) private Instant tresorPayStatusCheckedAt;
+    @Column(name="partner_external_status", nullable=false, updatable=false, length=64) private String partnerExternalStatus;
+    @Column(name="partner_external_status_checked_at", nullable=false, updatable=false) private Instant partnerExternalStatusCheckedAt;
     @Enumerated(EnumType.STRING)
     @Column(name="status", nullable=false, length=32) private AccountingBatchItemStatus status;
     @Column(name="financial_snapshot_id", updatable=false) private UUID financialSnapshotId;
@@ -59,8 +59,8 @@ public class AccountingBatchItemJpaEntity {
         e.paymentOccurredAt = item.paymentOccurredAt();
         e.paymentBusinessDate = item.paymentBusinessDate();
         e.bankPostingReference = item.bankPostingReference();
-        e.tresorPayStatus = item.tresorPayStatus();
-        e.tresorPayStatusCheckedAt = item.tresorPayStatusCheckedAt();
+        e.partnerExternalStatus = item.partnerExternalStatus();
+        e.partnerExternalStatusCheckedAt = item.partnerExternalStatusCheckedAt();
         e.status = item.status();
         e.financialSnapshotId = item.financialSnapshotId();
         e.financialSnapshotVersion = item.financialSnapshotVersion();
@@ -84,7 +84,7 @@ public class AccountingBatchItemJpaEntity {
         return new AccountingBatchItem(
                 paymentId, publicPaymentReference, partnerId, amount,
                 Currency.getInstance(currency), paymentOccurredAt, paymentBusinessDate,
-                bankPostingReference, tresorPayStatus, tresorPayStatusCheckedAt, status,
+                bankPostingReference, partnerExternalStatus, partnerExternalStatusCheckedAt, status,
                 financialSnapshotId, financialSnapshotVersion, financialSnapshotFinalizedAt,
                 debtorAccountReference, creditorAccountReference,
                 entries.stream().map(AccountingBatchItemEntryJpaEntity::toDomain).toList()
@@ -99,7 +99,7 @@ public class AccountingBatchItemJpaEntity {
     public Instant paymentOccurredAt() { return paymentOccurredAt; }
     public LocalDate paymentBusinessDate() { return paymentBusinessDate; }
     public String bankPostingReference() { return bankPostingReference; }
-    public String tresorPayStatus() { return tresorPayStatus; }
-    public Instant tresorPayStatusCheckedAt() { return tresorPayStatusCheckedAt; }
+    public String partnerExternalStatus() { return partnerExternalStatus; }
+    public Instant partnerExternalStatusCheckedAt() { return partnerExternalStatusCheckedAt; }
     public AccountingBatchItemStatus status() { return status; }
 }

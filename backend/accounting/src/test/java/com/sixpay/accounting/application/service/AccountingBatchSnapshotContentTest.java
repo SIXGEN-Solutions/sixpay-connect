@@ -22,7 +22,7 @@ class AccountingBatchSnapshotContentTest {
         AccountingPaymentCandidate candidate = new AccountingPaymentCandidate(
                 UUID.randomUUID(),
                 "PAY-T13-001",
-                "TRESORPAY",
+                "PARTNER-TEST",
                 "LAREGIONALE",
                 snapshotId,
                 "v1",

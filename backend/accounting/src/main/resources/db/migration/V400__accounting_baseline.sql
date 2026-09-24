@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS accounting_batch_items (
     payment_occurred_at TIMESTAMPTZ NOT NULL,
     payment_business_date DATE NOT NULL,
     bank_posting_reference VARCHAR(128),
-    tresorpay_status VARCHAR(64) NOT NULL,
-    tresorpay_status_checked_at TIMESTAMPTZ NOT NULL,
+    partner_external_status VARCHAR(64) NOT NULL,
+    partner_external_status_checked_at TIMESTAMPTZ NOT NULL,
     status VARCHAR(32) NOT NULL,
     financial_snapshot_id UUID,
     financial_snapshot_version VARCHAR(32),
@@ -155,18 +155,18 @@ CREATE TABLE accounting_payment_candidates (
     payment_occurred_at TIMESTAMP WITH TIME ZONE NOT NULL,
     candidate_created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     batch_id UUID NULL,
-    tresorpay_reference VARCHAR(128) NULL,
-    tresorpay_transaction_id VARCHAR(128) NULL,
-    tresorpay_status VARCHAR(64) NULL,
-    tresorpay_payment_method VARCHAR(64) NULL,
-    tresorpay_operator_reference VARCHAR(128) NULL,
-    tresorpay_debit_effectue BOOLEAN NULL,
-    tresorpay_quittance_disponible BOOLEAN NULL,
-    tresorpay_provider_updated_at TIMESTAMP WITH TIME ZONE NULL,
-    tresorpay_failure_reason VARCHAR(512) NULL,
-    tresorpay_checked_at TIMESTAMP WITH TIME ZONE NULL,
-    tresorpay_request_reference VARCHAR(128) NULL,
-    tresorpay_correlation_id VARCHAR(128) NULL,
+    partner_status_reference VARCHAR(128) NULL,
+    partner_status_transaction_id VARCHAR(128) NULL,
+    partner_status_status VARCHAR(64) NULL,
+    partner_status_payment_method VARCHAR(64) NULL,
+    partner_status_operator_reference VARCHAR(128) NULL,
+    partner_status_debit_effectue BOOLEAN NULL,
+    partner_status_quittance_disponible BOOLEAN NULL,
+    partner_status_provider_updated_at TIMESTAMP WITH TIME ZONE NULL,
+    partner_status_failure_reason VARCHAR(512) NULL,
+    partner_status_checked_at TIMESTAMP WITH TIME ZONE NULL,
+    partner_status_request_reference VARCHAR(128) NULL,
+    partner_status_correlation_id VARCHAR(128) NULL,
     CONSTRAINT uk_accounting_payment_candidates_event_id UNIQUE (event_id),
     CONSTRAINT uk_accounting_payment_candidates_business_identity UNIQUE (payment_id, financial_snapshot_id),
     CONSTRAINT ck_accounting_payment_candidates_t0_completed CHECK (t0_outcome = 'COMPLETED'),
@@ -174,7 +174,7 @@ CREATE TABLE accounting_payment_candidates (
 );
 
 CREATE INDEX idx_accounting_payment_candidates_selection
-    ON accounting_payment_candidates(accounting_business_date, financial_institution_code, batch_id, tresorpay_status);
+    ON accounting_payment_candidates(accounting_business_date, financial_institution_code, batch_id, partner_status_status);
 
 CREATE TABLE accounting_payment_candidate_entries (
     id UUID PRIMARY KEY,

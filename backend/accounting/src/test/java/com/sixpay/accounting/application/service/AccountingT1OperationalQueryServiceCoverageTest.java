@@ -44,7 +44,7 @@ class AccountingT1OperationalQueryServiceCoverageTest {
             );
 
     @Test
-    void mapsMissingTresorPayEvidenceToAwaitingVerification() {
+    void mapsMissingPartnerEvidenceToAwaitingVerification() {
         var candidate = candidate(null, null);
         when(port.search(null, null, 0, 20))
                 .thenReturn(new AccountingT1OperationalQueryPort.Page(
@@ -61,7 +61,7 @@ class AccountingT1OperationalQueryServiceCoverageTest {
     }
 
     @Test
-    void mapsNonCompletedTresorPayEvidenceToIneligible() {
+    void mapsNonCompletedPartnerEvidenceToIneligible() {
         var candidate = candidate(null, evidence("PENDING"));
         when(port.search(null, null, 0, 20))
                 .thenReturn(new AccountingT1OperationalQueryPort.Page(

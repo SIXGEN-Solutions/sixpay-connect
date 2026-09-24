@@ -244,7 +244,7 @@ class AccountingBatchReconciliationServiceTest {
                                         "43d7e460-4ca7-4ed1-8603-9f11fb62dd65"
                                 ),
                                 "PAY-20260807-0001",
-                                "TRESORPAY",
+                                "PARTNER-TEST",
                                 new BigDecimal("10000"),
                                 Currency.getInstance("XAF"),
                                 Instant.parse(

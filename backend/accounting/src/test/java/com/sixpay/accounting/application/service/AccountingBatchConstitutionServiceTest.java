@@ -156,7 +156,7 @@ class AccountingBatchConstitutionServiceTest {
         return new AccountingPaymentCandidate(
                 UUID.fromString(id),
                 reference,
-                "TRESORPAY",
+                "PARTNER-TEST",
                 "LAREGIONALE",
                 UUID.nameUUIDFromBytes(("snapshot-" + reference).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
                 "v1",

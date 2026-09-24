@@ -120,6 +120,27 @@ flags:
       - "SIXPAY_ACCOUNTING_API_ENABLED"
     detection:
       - "YAML_TOGGLE"
+  - id: SIXPAY_ACCOUNTING_EXTERNAL_STATUS_VERIFICATION_ENABLED
+    key: "sixpay.accounting.external-status-verification.enabled"
+    owner: ACCOUNTING
+    category: DOMAIN_OR_RUNTIME_FEATURE
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "backend/bootstrap/src/main/resources/application-accounting.yml"
+      - "backend/accounting/src/main/java/com/sixpay/accounting/configuration/AccountingExternalStatusVerificationProperties.java"
+      - "backend/accounting/src/main/java/com/sixpay/accounting/application/service/AccountingT1OrchestrationService.java"
+    observedProfiles:
+      - "accounting"
+    observedValues:
+      - "true"
+      - "false"
+    environmentVariables:
+      - "SIXPAY_ACCOUNTING_EXTERNAL_STATUS_VERIFICATION_ENABLED"
+    detection:
+      - "CONFIGURATION_PROPERTIES_BOOLEAN"
+      - "YAML_TOGGLE"
   - id: SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED
     key: "sixpay.accounting.partner-status.enabled"
     owner: ACCOUNTING
