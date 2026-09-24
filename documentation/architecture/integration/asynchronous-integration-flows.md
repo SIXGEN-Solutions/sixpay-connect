@@ -53,16 +53,16 @@ The current canonical mapping is code-level. Before Kafka or independent deploym
 - retry exhaustion: operationally visible blocked state;
 - replay: authorized, audited and idempotent.
 
-## 3. Flow ASY-02 — Payment sends status callback to TresorPay
+## 3. Flow ASY-02 — Payment sends lifecycle callback to Partner
 
 ```text
 Payment state transition
   -> callback outbox entry
   -> callback relay
   -> callback plan and payload
-  -> detached JWS signer
+  -> HMAC-SHA256 signer
   -> HTTPS callback adapter
-  -> TresorPay callback endpoint
+  -> Partner callback endpoint
 ```
 
 ### Required contract fields

@@ -25,6 +25,7 @@ surface.
 | Feature-flag registry | `documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml` |
 | Accounting T1 architecture | `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` |
 | Partner Payment security | `documentation/architecture/payment/PARTNER_PAYMENT_SECURITY_BASELINE.md` |
+| Partner Payment callback | `documentation/architecture/payment/PARTNER_PAYMENT_CALLBACK_BASELINE.md` |
 
 ## Golden business-module reference
 

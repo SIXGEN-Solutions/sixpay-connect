@@ -40,7 +40,7 @@ class PaymentAsyncCallbackArchitectureTest {
     }
 
     @Test
-    void callbackUsesDetachedJwsAndCorrelationHeader()
+    void callbackUsesHmacSignatureAndCorrelationHeader()
             throws Exception {
         String transport = Files.readString(
                 ROOT.resolve(
@@ -67,8 +67,8 @@ class PaymentAsyncCallbackArchitectureTest {
         );
         String payload = Files.readString(
                 ROOT.resolve(
-                        "infrastructure/callback/tresorpay/"
-                                + "TresorPayPaymentCallbackPayload.java"
+                        "infrastructure/callback/partner/"
+                                + "PartnerPaymentCallbackPayload.java"
                 )
         );
         String transport = Files.readString(
@@ -85,13 +85,16 @@ class PaymentAsyncCallbackArchitectureTest {
                 "tresorPayPaymentReference"
         ));
         assertTrue(payload.contains(
-                "@JsonProperty(\"tresorPayPaymentReference\")"
+                "String externalPaymentReference"
+        ));
+        assertFalse(payload.contains(
+                "tresorPayPaymentReference"
         ));
         assertTrue(payload.contains(
                 "message.externalPaymentReference()"
         ));
         assertTrue(transport.contains(
-                "TresorPayPaymentCallbackPayload.from(delivery.message())"
+                "PartnerPaymentCallbackPayload.from(delivery.message())"
         ));
     }
 }

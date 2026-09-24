@@ -16,9 +16,5 @@ sixpay:
       rate-limit:
         enabled: ${PARTNER_RATE_LIMIT_ENABLED:true}
         requests-per-minute: ${PARTNER_REQUESTS_PER_MINUTE:120}
-      callback:
-        signature-enabled: ${PARTNER_CALLBACK_SIGNATURE_ENABLED:true}
-        algorithm: ${PARTNER_CALLBACK_SIGNATURE_ALGORITHM:HMAC-SHA256}
-        delivery-expiration: ${PARTNER_CALLBACK_DELIVERY_EXPIRATION:24h}
       allowed-callback-hosts:
         - ${PARTNER_CALLBACK_HOST:partner.cm}

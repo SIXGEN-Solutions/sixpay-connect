@@ -88,11 +88,6 @@ sixpay:
         purge-batch-size: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_BATCH_SIZE:500}
         purge-interval-ms: ${SIXPAY_NOTIFICATION_OPERATIONAL_PURGE_INTERVAL_MS:86400000}
 
-  payment:
-    tresorpay:
-      security:
-        mtls-required: ${TRESORPAY_MTLS_REQUIRED:false}
-        oauth2-required: ${TRESORPAY_OAUTH2_REQUIRED:false}
 
     callback:
       enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:false}

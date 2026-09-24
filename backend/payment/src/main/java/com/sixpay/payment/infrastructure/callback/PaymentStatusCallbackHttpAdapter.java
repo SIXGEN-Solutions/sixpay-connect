@@ -2,7 +2,7 @@ package com.sixpay.payment.infrastructure.callback;
 
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackDelivery;
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackTransportPort;
-import com.sixpay.payment.infrastructure.callback.tresorpay.TresorPayPaymentCallbackPayload;
+import com.sixpay.payment.infrastructure.callback.partner.PartnerPaymentCallbackPayload;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -30,7 +30,7 @@ public final class PaymentStatusCallbackHttpAdapter implements PaymentStatusCall
     public void send(PaymentStatusCallbackDelivery delivery) {
         Objects.requireNonNull(delivery, "Callback delivery");
         try {
-            var payload = TresorPayPaymentCallbackPayload.from(delivery.message());
+            var payload = PartnerPaymentCallbackPayload.from(delivery.message());
             byte[] body = objectMapper.writeValueAsBytes(payload);
             URI uri = URI.create(delivery.callbackUrl());
             Instant timestamp = Instant.now();

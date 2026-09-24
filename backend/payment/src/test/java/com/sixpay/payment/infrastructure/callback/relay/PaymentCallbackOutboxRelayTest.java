@@ -159,7 +159,7 @@ class PaymentCallbackOutboxRelayTest {
 
     private static PaymentStatusCallbackDelivery delivery() {
         return new PaymentStatusCallbackDelivery(
-                "https://tresorpay.cm/callback",
+                "https://partner.example/callback",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"
                 ),

@@ -1,20 +1,15 @@
-package com.sixpay.payment.infrastructure.callback.tresorpay;
+package com.sixpay.payment.infrastructure.callback.partner;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackMessage;
 
 import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Physical TRESOR PAY callback payload.
+ * Physical Partner callback payload aligned with the active Partner contract.
  *
- * <p>The application callback fact remains provider-neutral. This transport
- * representation preserves the approved TRESOR PAY wire field
- * {@code tresorPayPaymentReference} without leaking that vocabulary into the
- * application port.</p>
  */
-public record TresorPayPaymentCallbackPayload(
+public record PartnerPaymentCallbackPayload(
         String schemaVersion,
         UUID eventId,
         String eventType,
@@ -23,17 +18,16 @@ public record TresorPayPaymentCallbackPayload(
         UUID causationId,
         UUID paymentId,
         String paymentReference,
-        @JsonProperty("tresorPayPaymentReference")
-        String tresorPayPaymentReference,
+        String externalPaymentReference,
         String financialInstitutionCode,
         long paymentVersion,
         Object data
 ) {
 
-    public static TresorPayPaymentCallbackPayload from(
+    public static PartnerPaymentCallbackPayload from(
             PaymentStatusCallbackMessage message
     ) {
-        return new TresorPayPaymentCallbackPayload(
+        return new PartnerPaymentCallbackPayload(
                 message.schemaVersion(),
                 message.eventId(),
                 message.eventType(),

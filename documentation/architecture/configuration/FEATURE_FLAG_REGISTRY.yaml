@@ -505,24 +505,6 @@ flags:
       - "PARTNER_ANTI_REPLAY_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_PAYMENT_PARTNER_CALLBACK_SIGNATURE_ENABLED
-    key: "sixpay.payment.partner.callback.signature-enabled"
-    owner: PAYMENT
-    category: INTEGRATION_CALLBACK
-    lifecycleStatus: ACTIVE
-    changePolicy: REVIEW_REQUIRED
-    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
-    sources:
-      - "backend/bootstrap/src/main/resources/config/payment/partner-common.yml"
-    observedProfiles:
-      - "standalone"
-      - "partner"
-    observedValues:
-      - "true"
-    environmentVariables:
-      - "PARTNER_CALLBACK_SIGNATURE_ENABLED"
-    detection:
-      - "YAML_TOGGLE"
   - id: SIXPAY_PAYMENT_PARTNER_ENABLED
     key: "sixpay.payment.partner.enabled"
     owner: PAYMENT

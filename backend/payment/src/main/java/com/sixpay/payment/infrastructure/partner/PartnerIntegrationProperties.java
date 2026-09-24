@@ -16,7 +16,6 @@ public record PartnerIntegrationProperties(
         @NotNull @Valid Security security,
         @NotNull @Valid AntiReplay antiReplay,
         @NotNull @Valid RateLimit rateLimit,
-        @NotNull @Valid Callback callback,
         @NotNull List<@NotBlank String> allowedCallbackHosts
 ) {
     public PartnerIntegrationProperties {
@@ -69,19 +68,6 @@ public record PartnerIntegrationProperties(
             @Min(1) int requestsPerMinute
     ) { }
 
-    public record Callback(
-            boolean signatureEnabled,
-            @NotBlank String algorithm,
-            @NotNull Duration deliveryExpiration
-    ) {
-        public Callback {
-            algorithm = required(algorithm, "algorithm");
-            deliveryExpiration = positive(
-                    deliveryExpiration,
-                    "deliveryExpiration"
-            );
-        }
-    }
 
     private static String required(String value, String name) {
         if (value == null || value.isBlank()) {

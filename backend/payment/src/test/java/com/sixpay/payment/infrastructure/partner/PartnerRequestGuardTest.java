@@ -94,11 +94,6 @@ class PartnerRequestGuardTest {
                                 true,
                                 limit
                         ),
-                        new PartnerIntegrationProperties.Callback(
-                                true,
-                                "RS256",
-                                Duration.ofHours(24)
-                        ),
                         List.of("partner.example")
                 );
 

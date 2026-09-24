@@ -1,4 +1,4 @@
-package com.sixpay.payment.infrastructure.callback.tresorpay;
+package com.sixpay.payment.infrastructure.callback.partner;
 
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackMessage;
 import org.junit.jupiter.api.Test;
@@ -8,10 +8,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TresorPayPaymentCallbackPayloadTest {
+class PartnerPaymentCallbackPayloadTest {
 
     @Test
-    void mapsProviderNeutralReferenceToTresorPayWireField() {
+    void mapsExternalPaymentReferenceToPartnerWireField() {
         UUID eventId = UUID.fromString(
                 "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
         );
@@ -44,11 +44,11 @@ class TresorPayPaymentCallbackPayloadTest {
                 )
         );
 
-        var payload = TresorPayPaymentCallbackPayload.from(message);
+        var payload = PartnerPaymentCallbackPayload.from(message);
 
         assertThat(message.externalPaymentReference())
                 .isEqualTo("AVI-2025-00045678");
-        assertThat(payload.tresorPayPaymentReference())
+        assertThat(payload.externalPaymentReference())
                 .isEqualTo(message.externalPaymentReference());
         assertThat(payload.eventId())
                 .isEqualTo(message.eventId());
