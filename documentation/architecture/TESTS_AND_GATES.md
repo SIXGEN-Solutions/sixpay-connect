@@ -84,3 +84,15 @@ health verification, Angular integration startup and the configured Playwright
 full-stack journeys.
 
 A pre-existing local SIXPAY database is neither read nor required.
+
+### Partner contract final-transition gate
+
+```bash
+py scripts/verify_partner_contract_transition.py
+```
+
+This gate verifies that the Partner Payment contracts are the active approved
+MVP contracts, the migrated TresorPay Payment contracts are superseded and
+reference-only, deferred TresorPay subscription contracts remain excluded, and
+none of the active Partner contracts for the migrated Payment/Accounting capabilities depends on `TRESOR_PAY`; unrelated capabilities such as `CustomerSubscription` remain outside this transition gate.
+

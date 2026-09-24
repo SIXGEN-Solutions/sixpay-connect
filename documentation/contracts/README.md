@@ -268,3 +268,32 @@ provider-facing `amplitude-end-of-day-confirmation-api-v1`.
 
 No retry, replay, force-match, resolve, reverse or mark-integrated command is
 defined by this contract.
+
+## Partner Payment contract transition
+
+The canonical MVP Payment integration surface is Partner-neutral.
+
+The active Payment/Accounting external capabilities are:
+
+- `partner-payment-request-api-v1`;
+- `partner-payment-confirmation-api-v1`;
+- `partner-payment-status-query-api-v1`;
+- `partner-payment-callback-webhook-v1`.
+
+Their canonical physical contracts live under `documentation/contracts/partner/`.
+
+The former TresorPay Payment request, confirmation and status-query contracts
+are retained only as `SUPERSEDED` traceability entries. They are
+`REFERENCE_ONLY`, have `codeGenerationAllowed: false`, are excluded from MVP
+usage, and each registry entry points to its Partner replacement.
+
+TresorPay authorization request/decision contracts are a separate deferred
+subscription concern. They remain `DEFERRED_FUTURE`, excluded from the active
+MVP generation context, and must not be treated as active Payment integration
+contracts.
+
+None of the active Partner contracts for the migrated Payment/Accounting capabilities
+may use `TRESOR_PAY` as its source system, system of record or direction endpoint.
+This transition rule does not reclassify unrelated capabilities such as the local
+`CustomerSubscription` boundary.
+
