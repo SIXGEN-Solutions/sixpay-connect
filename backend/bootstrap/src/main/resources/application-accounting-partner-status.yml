@@ -1,0 +1,11 @@
+sixpay:
+  accounting:
+    partner-status:
+      enabled: ${SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED:false}
+      base-url: ${PARTNER_STATUS_BASE_URL:https://partner.invalid}
+      status-path: ${PARTNER_STATUS_PATH:/api/v1/payments/{reference}/status}
+      connect-timeout: ${PARTNER_STATUS_CONNECT_TIMEOUT:2s}
+      read-timeout: ${PARTNER_STATUS_READ_TIMEOUT:5s}
+      security:
+        oauth2-registration-id: ${PARTNER_STATUS_OAUTH2_REGISTRATION_ID:partner-status}
+        ssl-bundle: ${PARTNER_STATUS_SSL_BUNDLE:partner-status-client}

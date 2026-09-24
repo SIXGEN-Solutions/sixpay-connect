@@ -3,7 +3,7 @@ package com.sixpay.accounting.application.service;
 import com.sixpay.accounting.application.port.output.AccountingT1OperationalQueryPort;
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
 import com.sixpay.accounting.domain.model.AccountingT1OperationalCandidateStatus;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
 import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository;
 import org.junit.jupiter.api.Test;
@@ -68,7 +68,7 @@ class AccountingT1OperationalQueryServiceTest {
             UUID batchId,
             String providerStatus
     ) {
-        var evidence = new TresorPayPaymentStatusEvidence(
+        var evidence = new PartnerExternalPaymentStatusEvidence(
                 "TP-REF",
                 "TX-001",
                 providerStatus,

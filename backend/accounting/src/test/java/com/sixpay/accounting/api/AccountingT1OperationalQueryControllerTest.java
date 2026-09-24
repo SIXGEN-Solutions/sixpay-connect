@@ -111,7 +111,7 @@ class AccountingT1OperationalQueryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paymentId")
                         .value(PAYMENT_ID.toString()))
-                .andExpect(jsonPath("$.tresorPayProviderStatus")
+                .andExpect(jsonPath("$.partnerExternalStatus")
                         .value("COMPLETED"));
     }
 

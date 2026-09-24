@@ -3,3 +3,7 @@ sixpay:
     batch:
       cutoff-zone: ${SIXPAY_ACCOUNTING_CUTOFF_ZONE:Africa/Douala}
       cutoff-time: ${SIXPAY_ACCOUNTING_CUTOFF_TIME:23:00}
+
+  external-status-verification:
+    enabled: ${SIXPAY_ACCOUNTING_EXTERNAL_STATUS_VERIFICATION_ENABLED:true}
+    partners: {}

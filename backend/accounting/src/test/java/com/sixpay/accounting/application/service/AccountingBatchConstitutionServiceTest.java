@@ -7,10 +7,10 @@ import com.sixpay.accounting.domain.model.AccountingBatch;
 import com.sixpay.accounting.domain.model.AccountingBatchId;
 import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.AccountingCutoffMode;
 import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
-import com.sixpay.accounting.domain.policy.VerifiedTresorPayStatusEligibilityPolicy;
+import com.sixpay.accounting.domain.policy.VerifiedPartnerExternalStatusEligibilityPolicy;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
 import org.junit.jupiter.api.Test;
 
@@ -141,7 +141,7 @@ class AccountingBatchConstitutionServiceTest {
                 ),
                 source,
                 new AccountingBatchBuilder(
-                        new VerifiedTresorPayStatusEligibilityPolicy(),
+                        new VerifiedPartnerExternalStatusEligibilityPolicy(),
                         new AccountingBatchIdempotencyKeyFactory(),
                         clock
                 ),
@@ -168,7 +168,7 @@ class AccountingBatchConstitutionServiceTest {
                 Instant.parse("2026-08-07T12:00:00Z"),
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
-                new TresorPayPaymentStatusEvidence(
+                new PartnerExternalPaymentStatusEvidence(
                         reference,
                         "TX-" + reference,
                         "COMPLETED",
@@ -225,7 +225,7 @@ class AccountingBatchConstitutionServiceTest {
             return List.of();
         }
         @Override
-        public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {}
+        public void recordPartnerExternalEvidence(UUID paymentId, PartnerExternalPaymentStatusEvidence evidence) {}
         @Override
         public void assignToBatch(UUID paymentId, UUID batchId) {}
     }

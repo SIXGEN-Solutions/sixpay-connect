@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: accounting-partner-status-sandbox
+    import:
+      - classpath:application-accounting.yml
+      - classpath:application-accounting-partner-status.yml
+
+sixpay:
+  accounting:
+    partner-status:
+      enabled: true

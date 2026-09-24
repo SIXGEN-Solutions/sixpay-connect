@@ -2,7 +2,7 @@ package com.sixpay.accounting.application.service;
 
 import com.sixpay.accounting.domain.model.AccountingBatchItem;
 import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -34,7 +34,7 @@ class AccountingBatchSnapshotContentTest {
                 Instant.parse("2026-08-11T11:58:00Z"),
                 LocalDate.of(2026, 8, 11),
                 "RB-T13-001",
-                new TresorPayPaymentStatusEvidence(
+                new PartnerExternalPaymentStatusEvidence(
                         "PAY-T13-001", "TX-T13-001", "COMPLETED", "BANK_TRANSFER", "RB-T13-001",
                         true, true, Instant.parse("2026-08-11T11:58:30Z"), null,
                         Instant.parse("2026-08-11T12:00:00Z"), "PAY-T13-001", "corr-t13"),

@@ -1,7 +1,7 @@
 package com.sixpay.accounting.domain.policy;
 
 import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -14,13 +14,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class VerifiedTresorPayStatusEligibilityPolicyTest {
+class VerifiedPartnerExternalStatusEligibilityPolicyTest {
 
-    private final VerifiedTresorPayStatusEligibilityPolicy policy =
-            new VerifiedTresorPayStatusEligibilityPolicy();
+    private final VerifiedPartnerExternalStatusEligibilityPolicy policy =
+            new VerifiedPartnerExternalStatusEligibilityPolicy();
 
     @Test
-    void completedTresorPayStatusIsEligible() {
+    void completedPartnerStatusIsEligible() {
         AccountingSelectionWindow window = new AccountingSelectionWindow(
                 LocalDate.of(2026, 8, 11),
                 Instant.parse("2026-08-10T18:00:00Z"),
@@ -34,7 +34,7 @@ class VerifiedTresorPayStatusEligibilityPolicyTest {
     }
 
     @Test
-    void nonCompletedTresorPayStatusIsNotEligible() {
+    void nonCompletedPartnerStatusIsNotEligible() {
         AccountingSelectionWindow window = new AccountingSelectionWindow(
                 LocalDate.of(2026, 8, 11),
                 Instant.parse("2026-08-10T18:00:00Z"),
@@ -66,9 +66,9 @@ class VerifiedTresorPayStatusEligibilityPolicyTest {
                 Instant.parse("2026-08-11T11:58:00Z"),
                 LocalDate.of(2026, 8, 11),
                 "RB-2026081100045",
-                new TresorPayPaymentStatusEvidence(
+                new PartnerExternalPaymentStatusEvidence(
                         "REF-DGI-2026-0042",
-                        "EXT_TRESORPAY-CM_D46J080300003",
+                        "EXT_PARTNER-CM_D46J080300003",
                         status,
                         "BANK_TRANSFER",
                         "RB-2026081100045",

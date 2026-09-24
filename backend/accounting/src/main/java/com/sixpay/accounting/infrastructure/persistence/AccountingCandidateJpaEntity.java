@@ -1,7 +1,7 @@
 package com.sixpay.accounting.infrastructure.persistence;
 
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -42,18 +42,18 @@ public class AccountingCandidateJpaEntity {
     @Column(name="candidate_created_at", nullable=false, updatable=false) private Instant candidateCreatedAt;
     @Column(name="batch_id") private UUID batchId;
 
-    @Column(name="tresorpay_reference", length=128) private String tresorPayReference;
-    @Column(name="tresorpay_transaction_id", length=128) private String tresorPayTransactionId;
-    @Column(name="tresorpay_status", length=64) private String tresorPayStatus;
-    @Column(name="tresorpay_payment_method", length=64) private String tresorPayPaymentMethod;
-    @Column(name="tresorpay_operator_reference", length=128) private String tresorPayOperatorReference;
-    @Column(name="tresorpay_debit_effectue") private Boolean tresorPayDebitEffectue;
-    @Column(name="tresorpay_quittance_disponible") private Boolean tresorPayQuittanceDisponible;
-    @Column(name="tresorpay_provider_updated_at") private Instant tresorPayProviderUpdatedAt;
-    @Column(name="tresorpay_failure_reason", length=512) private String tresorPayFailureReason;
-    @Column(name="tresorpay_checked_at") private Instant tresorPayCheckedAt;
-    @Column(name="tresorpay_request_reference", length=128) private String tresorPayRequestReference;
-    @Column(name="tresorpay_correlation_id", length=128) private String tresorPayCorrelationId;
+    @Column(name="partner_status_reference", length=128) private String partnerStatusReference;
+    @Column(name="partner_status_transaction_id", length=128) private String partnerStatusTransactionId;
+    @Column(name="partner_status_status", length=64) private String partnerExternalStatus;
+    @Column(name="partner_status_payment_method", length=64) private String partnerPaymentMethod;
+    @Column(name="partner_status_operator_reference", length=128) private String partnerOperatorReference;
+    @Column(name="partner_status_debit_effectue") private Boolean partnerDebitEffectue;
+    @Column(name="partner_status_quittance_disponible") private Boolean partnerQuittanceDisponible;
+    @Column(name="partner_status_provider_updated_at") private Instant partnerProviderUpdatedAt;
+    @Column(name="partner_status_failure_reason", length=512) private String partnerFailureReason;
+    @Column(name="partner_status_checked_at") private Instant partnerStatusCheckedAt;
+    @Column(name="partner_status_request_reference", length=128) private String partnerRequestReference;
+    @Column(name="partner_status_correlation_id", length=128) private String partnerCorrelationId;
 
     @OneToMany(mappedBy="candidate", cascade=CascadeType.ALL, orphanRemoval=true)
     private List<AccountingCandidateEntryJpaEntity> entries = new ArrayList<>();
@@ -72,17 +72,17 @@ public class AccountingCandidateJpaEntity {
         e.amount=p.amount(); e.currency=p.currency().getCurrencyCode(); e.paymentOccurredAt=p.paymentOccurredAt();
         e.candidateCreatedAt=p.candidateCreatedAt(); e.batchId=p.batchId();
         p.entries().stream().map(x -> AccountingCandidateEntryJpaEntity.create(e,x)).forEach(e.entries::add);
-        if (p.tresorPayStatusEvidence()!=null) e.recordTresorPayEvidence(p.tresorPayStatusEvidence());
+        if (p.partnerExternalStatusEvidence()!=null) e.recordPartnerExternalEvidence(p.partnerExternalStatusEvidence());
         return e;
     }
 
-    void recordTresorPayEvidence(TresorPayPaymentStatusEvidence x) {
-        tresorPayReference=x.reference(); tresorPayTransactionId=x.transactionId();
-        tresorPayStatus=x.providerStatus(); tresorPayPaymentMethod=x.paymentMethod();
-        tresorPayOperatorReference=x.operatorReference(); tresorPayDebitEffectue=x.debitEffectue();
-        tresorPayQuittanceDisponible=x.quittanceDisponible(); tresorPayProviderUpdatedAt=x.providerUpdatedAt();
-        tresorPayFailureReason=x.failureReason(); tresorPayCheckedAt=x.checkedAt();
-        tresorPayRequestReference=x.requestReference(); tresorPayCorrelationId=x.correlationId();
+    void recordPartnerExternalEvidence(PartnerExternalPaymentStatusEvidence x) {
+        partnerStatusReference=x.reference(); partnerStatusTransactionId=x.transactionId();
+        partnerExternalStatus=x.providerStatus(); partnerPaymentMethod=x.paymentMethod();
+        partnerOperatorReference=x.operatorReference(); partnerDebitEffectue=x.debitEffectue();
+        partnerQuittanceDisponible=x.quittanceDisponible(); partnerProviderUpdatedAt=x.providerUpdatedAt();
+        partnerFailureReason=x.failureReason(); partnerStatusCheckedAt=x.checkedAt();
+        partnerRequestReference=x.requestReference(); partnerCorrelationId=x.correlationId();
     }
     void assignToBatch(UUID batchId) {
         UUID targetBatchId = Objects.requireNonNull(batchId, "batchId");
@@ -94,13 +94,13 @@ public class AccountingCandidateJpaEntity {
         this.batchId = targetBatchId;
     }
     AccountingCandidateProjection toDomain() {
-        TresorPayPaymentStatusEvidence x = null;
-        if (tresorPayStatus != null) {
-            x = new TresorPayPaymentStatusEvidence(
-                    tresorPayReference,tresorPayTransactionId,tresorPayStatus,tresorPayPaymentMethod,
-                    tresorPayOperatorReference,Boolean.TRUE.equals(tresorPayDebitEffectue),
-                    Boolean.TRUE.equals(tresorPayQuittanceDisponible),tresorPayProviderUpdatedAt,
-                    tresorPayFailureReason,tresorPayCheckedAt,tresorPayRequestReference,tresorPayCorrelationId
+        PartnerExternalPaymentStatusEvidence x = null;
+        if (partnerExternalStatus != null) {
+            x = new PartnerExternalPaymentStatusEvidence(
+                    partnerStatusReference,partnerStatusTransactionId,partnerExternalStatus,partnerPaymentMethod,
+                    partnerOperatorReference,Boolean.TRUE.equals(partnerDebitEffectue),
+                    Boolean.TRUE.equals(partnerQuittanceDisponible),partnerProviderUpdatedAt,
+                    partnerFailureReason,partnerStatusCheckedAt,partnerRequestReference,partnerCorrelationId
             );
         }
         return new AccountingCandidateProjection(

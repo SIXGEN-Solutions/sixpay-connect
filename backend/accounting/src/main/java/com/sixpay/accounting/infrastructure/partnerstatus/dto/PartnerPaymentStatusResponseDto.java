@@ -1,10 +1,10 @@
-package com.sixpay.accounting.infrastructure.tresorpay.dto;
+package com.sixpay.accounting.infrastructure.partnerstatus.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
 
-public record TresorPayPaymentStatusResponseDto(
+public record PartnerPaymentStatusResponseDto(
         String reference,
         @JsonProperty("transaction_id")
         String transactionId,

@@ -5,7 +5,7 @@ import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
 import com.sixpay.accounting.application.port.output.AccountingBatchQueryPort;
 import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
-import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
+import com.sixpay.accounting.application.port.output.PartnerExternalPaymentStatusGateway;
 import com.sixpay.accounting.application.service.AccountingBatchBuilder;
 import com.sixpay.accounting.application.service.AccountingT1OrchestrationService;
 import com.sixpay.accounting.application.service.AccountingT1ManualExecutionService;
@@ -15,7 +15,7 @@ import com.sixpay.accounting.application.service.AccountingBatchReconciliationSe
 import com.sixpay.accounting.domain.policy.AccountingCutoffPolicy;
 import com.sixpay.accounting.domain.policy.AccountingEligibilityPolicy;
 import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
-import com.sixpay.accounting.domain.policy.VerifiedTresorPayStatusEligibilityPolicy;
+import com.sixpay.accounting.domain.policy.VerifiedPartnerExternalStatusEligibilityPolicy;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
 import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository;
 import com.sixpay.accounting.domain.repository.AccountingReconciliationRepository;
@@ -46,9 +46,10 @@ import java.time.Clock;
         EntityManager.class,
         JpaRepository.class
 })
-@EnableConfigurationProperties(
-        AccountingBatchProperties.class
-)
+@EnableConfigurationProperties({
+        AccountingBatchProperties.class,
+        AccountingExternalStatusVerificationProperties.class
+})
 @ComponentScan(
         basePackageClasses = AccountingModule.class,
         excludeFilters = {
@@ -102,7 +103,7 @@ public class AccountingModuleConfiguration {
     @ConditionalOnMissingBean
     AccountingEligibilityPolicy
     accountingEligibilityPolicy() {
-        return new VerifiedTresorPayStatusEligibilityPolicy();
+        return new VerifiedPartnerExternalStatusEligibilityPolicy();
     }
 
     @Bean
@@ -150,20 +151,22 @@ public class AccountingModuleConfiguration {
     @Bean
     @ConditionalOnBean({
             AccountingCandidateProjectionRepository.class,
-            TresorPayPaymentStatusGateway.class,
+            PartnerExternalPaymentStatusGateway.class,
             AccountingBatchConstitutionService.class
     })
     @ConditionalOnMissingBean
     AccountingT1OrchestrationService accountingT1OrchestrationService(
             AccountingCutoffPolicy cutoffPolicy,
             AccountingCandidateProjectionRepository projectionRepository,
-            TresorPayPaymentStatusGateway tresorPayGateway,
+            PartnerExternalPaymentStatusGateway partnerExternalStatusGateway,
+            AccountingExternalStatusVerificationProperties verificationProperties,
             AccountingBatchConstitutionService constitutionService
     ) {
         return new AccountingT1OrchestrationService(
                 cutoffPolicy,
                 projectionRepository,
-                tresorPayGateway,
+                partnerExternalStatusGateway,
+                verificationProperties,
                 constitutionService
         );
     }

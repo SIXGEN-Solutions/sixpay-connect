@@ -1,10 +1,10 @@
-package com.sixpay.accounting.infrastructure.tresorpay.client;
+package com.sixpay.accounting.infrastructure.partnerstatus.client;
 
 import com.sixpay.accounting.application.port.output.AccountingIntegrationContext;
-import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
-import com.sixpay.accounting.infrastructure.tresorpay.configuration.TresorPayStatusProperties;
-import com.sixpay.accounting.infrastructure.tresorpay.dto.TresorPayPaymentStatusResponseDto;
+import com.sixpay.accounting.application.port.output.PartnerExternalPaymentStatusGateway;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
+import com.sixpay.accounting.infrastructure.partnerstatus.configuration.PartnerStatusProperties;
+import com.sixpay.accounting.infrastructure.partnerstatus.dto.PartnerPaymentStatusResponseDto;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,18 +16,18 @@ import org.springframework.web.client.RestClientResponseException;
 import java.time.Clock;
 import java.util.Objects;
 
-public final class RestTresorPayPaymentStatusClient
-        implements TresorPayPaymentStatusGateway {
+public final class RestPartnerExternalPaymentStatusClient
+        implements PartnerExternalPaymentStatusGateway {
 
     private final RestClient restClient;
-    private final TresorPayStatusAccessTokenProvider tokenProvider;
-    private final TresorPayStatusProperties properties;
+    private final PartnerStatusAccessTokenProvider tokenProvider;
+    private final PartnerStatusProperties properties;
     private final Clock clock;
 
-    public RestTresorPayPaymentStatusClient(
+    public RestPartnerExternalPaymentStatusClient(
             RestClient restClient,
-            TresorPayStatusAccessTokenProvider tokenProvider,
-            TresorPayStatusProperties properties,
+            PartnerStatusAccessTokenProvider tokenProvider,
+            PartnerStatusProperties properties,
             Clock clock
     ) {
         this.restClient = Objects.requireNonNull(restClient);
@@ -37,7 +37,7 @@ public final class RestTresorPayPaymentStatusClient
     }
 
     @Override
-    public TresorPayPaymentStatusEvidence findByPaymentReference(
+    public PartnerExternalPaymentStatusEvidence findByPaymentReference(
             String paymentReference,
             AccountingIntegrationContext context
     ) {
@@ -51,7 +51,7 @@ public final class RestTresorPayPaymentStatusClient
         String reference = paymentReference.strip();
 
         try {
-            TresorPayPaymentStatusResponseDto response =
+            PartnerPaymentStatusResponseDto response =
                     restClient.get()
                             .uri(
                                     properties.statusPath(),
@@ -72,16 +72,16 @@ public final class RestTresorPayPaymentStatusClient
                             )
                             .retrieve()
                             .body(
-                                    TresorPayPaymentStatusResponseDto.class
+                                    PartnerPaymentStatusResponseDto.class
                             );
 
             if (response == null) {
                 throw new IllegalStateException(
-                        "TRESOR PAY status response is empty"
+                        "Partner status response is empty"
                 );
             }
 
-            return new TresorPayPaymentStatusEvidence(
+            return new PartnerExternalPaymentStatusEvidence(
                     response.reference(),
                     response.transactionId(),
                     response.status(),
@@ -97,30 +97,30 @@ public final class RestTresorPayPaymentStatusClient
             );
         } catch (HttpClientErrorException.NotFound exception) {
             throw new IllegalArgumentException(
-                    "TRESOR PAY payment reference not found",
+                    "Partner payment reference not found",
                     exception
             );
         } catch (ResourceAccessException exception) {
             throw new IllegalStateException(
-                    "TRESOR PAY status service is unavailable",
+                    "Partner status service is unavailable",
                     exception
             );
         } catch (RestClientResponseException exception) {
             int status = exception.getStatusCode().value();
             if (status == 401 || status == 403) {
                 throw new IllegalStateException(
-                        "TRESOR PAY status authentication failed",
+                        "Partner status authentication failed",
                         exception
                 );
             }
             if (status == 429 || status >= 500) {
                 throw new IllegalStateException(
-                        "TRESOR PAY status service is unavailable",
+                        "Partner status service is unavailable",
                         exception
                 );
             }
             throw new IllegalStateException(
-                    "TRESOR PAY status query was rejected",
+                    "Partner status query was rejected",
                     exception
             );
         }

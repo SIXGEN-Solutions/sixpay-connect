@@ -1,12 +1,12 @@
-package com.sixpay.accounting.infrastructure.tresorpay.configuration;
+package com.sixpay.accounting.infrastructure.partnerstatus.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.net.URI;
 import java.time.Duration;
 
-@ConfigurationProperties(prefix = TresorPayStatusProperties.PREFIX)
-public record TresorPayStatusProperties(
+@ConfigurationProperties(prefix = PartnerStatusProperties.PREFIX)
+public record PartnerStatusProperties(
         boolean enabled,
         URI baseUrl,
         String statusPath,
@@ -15,9 +15,9 @@ public record TresorPayStatusProperties(
         Security security
 ) {
     public static final String PREFIX =
-            "sixpay.accounting.tresorpay-status";
+            "sixpay.accounting.partner-status";
 
-    public TresorPayStatusProperties {
+    public PartnerStatusProperties {
         if (baseUrl == null
                 || !baseUrl.isAbsolute()
                 || baseUrl.getHost() == null

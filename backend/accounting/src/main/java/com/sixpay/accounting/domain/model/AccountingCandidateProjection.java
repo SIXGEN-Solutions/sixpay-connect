@@ -29,7 +29,7 @@ public record AccountingCandidateProjection(
         Instant paymentOccurredAt,
         Instant candidateCreatedAt,
         UUID batchId,
-        TresorPayPaymentStatusEvidence tresorPayStatusEvidence,
+        PartnerExternalPaymentStatusEvidence partnerExternalStatusEvidence,
         List<Entry> entries
 ) {
     public AccountingCandidateProjection {

@@ -2,13 +2,14 @@ package com.sixpay.accounting.application.service;
 
 import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.application.port.output.AccountingIntegrationContext;
-import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
+import com.sixpay.accounting.application.port.output.PartnerExternalPaymentStatusGateway;
 import com.sixpay.accounting.domain.model.AccountingBatch;
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.AccountingCutoffMode;
 import com.sixpay.accounting.domain.policy.AccountingCutoffPolicy;
 import com.sixpay.accounting.domain.policy.AccountingSelectionWindow;
+import com.sixpay.accounting.configuration.AccountingExternalStatusVerificationProperties;
 import com.sixpay.common.context.CorrelationId;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 class AccountingT1OrchestrationServiceTest {
 
     @Test
-    void verifiesTresorPayBeforeConstitutingBatch() {
+    void verifiesPartnerExternalStatusBeforeConstitutingBatch() {
         Instant runAt = Instant.parse("2026-09-09T12:00:00Z");
         AccountingSelectionWindow window =
                 new AccountingSelectionWindow(
@@ -40,8 +41,8 @@ class AccountingT1OrchestrationServiceTest {
         AccountingCutoffPolicy cutoffPolicy = mock(AccountingCutoffPolicy.class);
         AccountingCandidateProjectionRepository repository =
                 mock(AccountingCandidateProjectionRepository.class);
-        TresorPayPaymentStatusGateway gateway =
-                mock(TresorPayPaymentStatusGateway.class);
+        PartnerExternalPaymentStatusGateway gateway =
+                mock(PartnerExternalPaymentStatusGateway.class);
         AccountingBatchConstitutionService constitutionService =
                 mock(AccountingBatchConstitutionService.class);
 
@@ -51,6 +52,7 @@ class AccountingT1OrchestrationServiceTest {
                 mock(AccountingCandidateProjection.class);
 
         when(candidate.paymentId()).thenReturn(paymentId);
+        when(candidate.partnerId()).thenReturn("partner-test");
         when(candidate.publicPaymentReference())
                 .thenReturn("REF-DGI-2026-0042");
 
@@ -63,8 +65,8 @@ class AccountingT1OrchestrationServiceTest {
         when(repository.findUnbatchedForVerification(window))
                 .thenReturn(List.of(candidate));
 
-        TresorPayPaymentStatusEvidence evidence =
-                mock(TresorPayPaymentStatusEvidence.class);
+        PartnerExternalPaymentStatusEvidence evidence =
+                mock(PartnerExternalPaymentStatusEvidence.class);
 
         when(gateway.findByPaymentReference(
                 eq("REF-DGI-2026-0042"),
@@ -85,6 +87,7 @@ class AccountingT1OrchestrationServiceTest {
                         cutoffPolicy,
                         repository,
                         gateway,
+                        new AccountingExternalStatusVerificationProperties(true, java.util.Map.of()),
                         constitutionService
                 );
 
@@ -105,7 +108,7 @@ class AccountingT1OrchestrationServiceTest {
                 eq("REF-DGI-2026-0042"),
                 any(AccountingIntegrationContext.class)
         );
-        verify(repository).recordTresorPayEvidence(
+        verify(repository).recordPartnerExternalEvidence(
                 paymentId,
                 evidence
         );

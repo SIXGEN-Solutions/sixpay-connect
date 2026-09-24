@@ -118,18 +118,18 @@ public class AccountingT1OperationalQueryService
         if (candidate.batchId() != null) {
             status = AccountingT1OperationalCandidateStatus.ASSIGNED_TO_BATCH;
             reason = AccountingT1EligibilityReason.NONE;
-        } else if (candidate.tresorPayStatusEvidence() == null) {
+        } else if (candidate.partnerExternalStatusEvidence() == null) {
             status = AccountingT1OperationalCandidateStatus.AWAITING_TRESORPAY_VERIFICATION;
             reason = AccountingT1EligibilityReason.TRESORPAY_STATUS_UNAVAILABLE;
         } else if (!window.contains(candidate.paymentOccurredAt())) {
             status = AccountingT1OperationalCandidateStatus.INELIGIBLE_FOR_CURRENT_SELECTION;
             reason = AccountingT1EligibilityReason.OUTSIDE_SELECTION_WINDOW;
-        } else if (candidate.tresorPayStatusEvidence()
+        } else if (candidate.partnerExternalStatusEvidence()
                 .checkedAt()
                 .isAfter(window.toExclusive())) {
             status = AccountingT1OperationalCandidateStatus.AWAITING_TRESORPAY_VERIFICATION;
             reason = AccountingT1EligibilityReason.TRESORPAY_STATUS_UNAVAILABLE;
-        } else if (candidate.tresorPayStatusEvidence().confirmsPaidPayment()) {
+        } else if (candidate.partnerExternalStatusEvidence().confirmsPaidPayment()) {
             status = AccountingT1OperationalCandidateStatus.ELIGIBLE_FOR_BATCH;
             reason = AccountingT1EligibilityReason.NONE;
         } else {

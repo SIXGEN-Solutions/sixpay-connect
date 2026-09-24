@@ -23,7 +23,7 @@ public record AccountingPaymentCandidate(
         Instant paymentOccurredAt,
         LocalDate paymentBusinessDate,
         String bankPostingReference,
-        TresorPayPaymentStatusEvidence tresorPayStatusEvidence,
+        PartnerExternalPaymentStatusEvidence partnerExternalStatusEvidence,
         List<FrozenEntry> entries
 ) {
     public AccountingPaymentCandidate {
@@ -47,9 +47,9 @@ public record AccountingPaymentCandidate(
         paymentOccurredAt = Objects.requireNonNull(paymentOccurredAt, "paymentOccurredAt");
         paymentBusinessDate = Objects.requireNonNull(paymentBusinessDate, "paymentBusinessDate");
         bankPostingReference = required(bankPostingReference, "bankPostingReference");
-        tresorPayStatusEvidence = Objects.requireNonNull(
-                tresorPayStatusEvidence,
-                "tresorPayStatusEvidence"
+        partnerExternalStatusEvidence = Objects.requireNonNull(
+                partnerExternalStatusEvidence,
+                "partnerExternalStatusEvidence"
         );
         entries = List.copyOf(Objects.requireNonNull(entries, "entries"));
         if (entries.isEmpty()) {

@@ -18,8 +18,8 @@ public record AccountingT1OperationalSnapshot(
         String financialInstitutionCode,
         LocalDate accountingBusinessDate,
         AccountingT1OperationalCandidateStatus status,
-        String tresorPayProviderStatus,
-        Instant tresorPayCheckedAt,
+        String partnerExternalStatus,
+        Instant partnerExternalStatusCheckedAt,
         AccountingT1EligibilityReason eligibilityReason,
         LocalDate selectionBusinessDate,
         Instant selectionFromInclusive,
@@ -34,7 +34,7 @@ public record AccountingT1OperationalSnapshot(
         financialInstitutionCode = required(financialInstitutionCode, "financialInstitutionCode");
         accountingBusinessDate = Objects.requireNonNull(accountingBusinessDate, "accountingBusinessDate");
         status = Objects.requireNonNull(status, "status");
-        tresorPayProviderStatus = optional(tresorPayProviderStatus);
+        partnerExternalStatus = optional(partnerExternalStatus);
         eligibilityReason = Objects.requireNonNull(eligibilityReason, "eligibilityReason");
         selectionBusinessDate = Objects.requireNonNull(selectionBusinessDate, "selectionBusinessDate");
         selectionFromInclusive = Objects.requireNonNull(selectionFromInclusive, "selectionFromInclusive");
@@ -62,7 +62,7 @@ public record AccountingT1OperationalSnapshot(
         Objects.requireNonNull(candidate, "candidate");
         Objects.requireNonNull(window, "window");
 
-        TresorPayPaymentStatusEvidence evidence = candidate.tresorPayStatusEvidence();
+        PartnerExternalPaymentStatusEvidence evidence = candidate.partnerExternalStatusEvidence();
 
         return new AccountingT1OperationalSnapshot(
                 candidate.id(),

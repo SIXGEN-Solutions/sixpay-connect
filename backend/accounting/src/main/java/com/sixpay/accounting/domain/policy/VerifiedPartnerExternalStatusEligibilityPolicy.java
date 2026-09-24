@@ -4,7 +4,7 @@ import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
 
 import java.util.Objects;
 
-public final class VerifiedTresorPayStatusEligibilityPolicy
+public final class VerifiedPartnerExternalStatusEligibilityPolicy
         implements AccountingEligibilityPolicy {
 
     @Override
@@ -21,17 +21,17 @@ public final class VerifiedTresorPayStatusEligibilityPolicy
             );
         }
 
-        if (!candidate.tresorPayStatusEvidence().confirmsPaidPayment()) {
+        if (!candidate.partnerExternalStatusEvidence().confirmsPaidPayment()) {
             return AccountingEligibilityDecision.rejected(
-                    "TRESORPAY_PAYMENT_NOT_CONFIRMED_PAID"
+                    "PARTNER_PAYMENT_NOT_CONFIRMED_PAID"
             );
         }
 
-        if (candidate.tresorPayStatusEvidence()
+        if (candidate.partnerExternalStatusEvidence()
                 .checkedAt()
                 .isAfter(window.toExclusive())) {
             return AccountingEligibilityDecision.rejected(
-                    "TRESORPAY_STATUS_CHECKED_AFTER_CUTOFF"
+                    "PARTNER_STATUS_CHECKED_AFTER_CUTOFF"
             );
         }
 

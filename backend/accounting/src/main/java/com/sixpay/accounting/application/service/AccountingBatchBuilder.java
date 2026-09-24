@@ -74,8 +74,8 @@ public final class AccountingBatchBuilder {
                 candidate.accountingBusinessDate(),
                 candidate.bankReference(),
                 Objects.requireNonNull(
-                        candidate.tresorPayStatusEvidence(),
-                        "tresorPayStatusEvidence"
+                        candidate.partnerExternalStatusEvidence(),
+                        "partnerExternalStatusEvidence"
                 ),
                 candidate.entries().stream()
                         .map(entry -> new AccountingPaymentCandidate.FrozenEntry(

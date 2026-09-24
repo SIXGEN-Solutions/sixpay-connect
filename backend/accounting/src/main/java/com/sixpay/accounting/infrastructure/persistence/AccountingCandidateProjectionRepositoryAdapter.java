@@ -4,7 +4,7 @@ import com.sixpay.accounting.application.port.output.AccountingCandidateProjecti
 import com.sixpay.accounting.application.port.output.PaymentAccountingCandidateSource;
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
 import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.AccountingSelectionWindow;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,10 +58,10 @@ public class AccountingCandidateProjectionRepositoryAdapter
     }
 
     @Override @Transactional
-    public void recordTresorPayEvidence(UUID paymentId, TresorPayPaymentStatusEvidence evidence) {
+    public void recordPartnerExternalEvidence(UUID paymentId, PartnerExternalPaymentStatusEvidence evidence) {
         var entity = repository.findByPaymentId(paymentId).orElseThrow(() ->
                 new IllegalArgumentException("Accounting candidate not found for paymentId=" + paymentId));
-        entity.recordTresorPayEvidence(evidence);
+        entity.recordPartnerExternalEvidence(evidence);
     }
 
     @Override @Transactional
@@ -160,7 +160,7 @@ public class AccountingCandidateProjectionRepositoryAdapter
                 projection.paymentOccurredAt(),
                 projection.accountingBusinessDate(),
                 projection.bankReference(),
-                projection.tresorPayStatusEvidence(),
+                projection.partnerExternalStatusEvidence(),
                 projection.entries().stream()
                         .map(entry -> new AccountingPaymentCandidate.FrozenEntry(
                                 entry.entrySnapshotId(),

@@ -2,7 +2,7 @@ package com.sixpay.accounting.application.service;
 
 import com.sixpay.accounting.application.port.output.AccountingCandidateProjectionRepository;
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.AccountingSelectionWindow;
 import com.sixpay.accounting.events.PaymentT0FinalizedForAccounting;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class AccountingCandidateProjectionServiceTest {
         public AccountingCandidateProjection save(AccountingCandidateProjection p){saved.add(p);return p;}
         public List<AccountingCandidateProjection> findEligibleUnbatched(AccountingSelectionWindow w){return List.of();}
         public List<AccountingCandidateProjection> findUnbatchedForVerification(AccountingSelectionWindow w){return List.of();}
-        public void recordTresorPayEvidence(UUID p,TresorPayPaymentStatusEvidence e){}
+        public void recordPartnerExternalEvidence(UUID p,PartnerExternalPaymentStatusEvidence e){}
         public void assignToBatch(UUID p,UUID b){}
     }
 }

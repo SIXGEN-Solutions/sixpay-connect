@@ -48,3 +48,25 @@ Bootstrap:
 
 Integration:
 - provider-neutral technical support only.
+
+## External Partner status evidence
+
+Before T1 batch selection, Accounting may verify the authoritative external
+payment status exposed by the registered Partner through
+`partner-payment-status-query-api-v1`.
+
+This verification is provider-neutral:
+
+- no concrete Partner name belongs to the Accounting domain model;
+- evidence is represented as `PartnerExternalPaymentStatusEvidence`;
+- only `COMPLETED` external evidence is eligible when verification applies;
+- external status never invalidates authoritative T0 `COMPLETED`;
+- unavailable or non-final external status excludes the candidate from the current T1 selection only.
+
+D3 is active: the verification policy is configurable globally and may be
+overridden per Partner. When verification does not apply to a Partner, T1 uses
+the durable T0 Accounting snapshot and records explicit `NOT_REQUIRED` evidence.
+
+Runtime configuration belongs to Accounting under
+`sixpay.accounting.external-status-verification.*` and
+`sixpay.accounting.partner-status.*`.

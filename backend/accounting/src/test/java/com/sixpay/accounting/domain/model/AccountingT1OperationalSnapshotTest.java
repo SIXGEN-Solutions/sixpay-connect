@@ -19,7 +19,7 @@ class AccountingT1OperationalSnapshotTest {
         Instant checkedAt = Instant.parse("2026-09-10T12:00:00Z");
         AccountingCandidateProjection candidate = candidate(
                 null,
-                new TresorPayPaymentStatusEvidence(
+                new PartnerExternalPaymentStatusEvidence(
                         "PAY-001",
                         "TP-001",
                         "COMPLETED",
@@ -49,8 +49,8 @@ class AccountingT1OperationalSnapshotTest {
         );
 
         assertEquals(candidate.id(), snapshot.candidateId());
-        assertEquals("COMPLETED", snapshot.tresorPayProviderStatus());
-        assertEquals(checkedAt, snapshot.tresorPayCheckedAt());
+        assertEquals("COMPLETED", snapshot.partnerExternalStatus());
+        assertEquals(checkedAt, snapshot.partnerExternalStatusCheckedAt());
         assertEquals(window.businessDate(), snapshot.selectionBusinessDate());
     }
 
@@ -77,7 +77,7 @@ class AccountingT1OperationalSnapshotTest {
 
     private static AccountingCandidateProjection candidate(
             UUID batchId,
-            TresorPayPaymentStatusEvidence evidence
+            PartnerExternalPaymentStatusEvidence evidence
     ) {
         Instant now = Instant.parse("2026-09-10T10:00:00Z");
         return new AccountingCandidateProjection(

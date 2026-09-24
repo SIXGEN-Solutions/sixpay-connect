@@ -120,24 +120,24 @@ flags:
       - "SIXPAY_ACCOUNTING_API_ENABLED"
     detection:
       - "YAML_TOGGLE"
-  - id: SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED
-    key: "sixpay.accounting.tresorpay-status.enabled"
+  - id: SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED
+    key: "sixpay.accounting.partner-status.enabled"
     owner: ACCOUNTING
     category: DOMAIN_OR_RUNTIME_FEATURE
     lifecycleStatus: ACTIVE
     changePolicy: REVIEW_REQUIRED
     runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
     sources:
-      - "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status.yml"
-      - "backend/bootstrap/src/main/resources/application-accounting-tresorpay-status-sandbox.yml"
-      - "backend/accounting/src/main/java/com/sixpay/accounting/infrastructure/tresorpay/configuration/TresorPayStatusConfiguration.java"
+      - "backend/bootstrap/src/main/resources/application-accounting-partner-status.yml"
+      - "backend/bootstrap/src/main/resources/application-accounting-partner-status-sandbox.yml"
+      - "backend/accounting/src/main/java/com/sixpay/accounting/infrastructure/partnerstatus/configuration/PartnerStatusConfiguration.java"
     observedProfiles:
-      - "accounting-tresorpay-status-sandbox"
+      - "accounting-partner-status-sandbox"
     observedValues:
       - "false"
       - "true"
     environmentVariables:
-      - "SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED"
+      - "SIXPAY_ACCOUNTING_PARTNER_STATUS_ENABLED"
     detection:
       - "CONDITIONAL_ON_PROPERTY"
       - "YAML_TOGGLE"

@@ -5,7 +5,7 @@ import com.sixpay.accounting.application.port.output.AccountingT1OperationalQuer
 import com.sixpay.accounting.domain.model.AccountingCandidateProjection;
 import com.sixpay.accounting.domain.model.AccountingT1EligibilityReason;
 import com.sixpay.accounting.domain.model.AccountingT1OperationalCandidateStatus;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import com.sixpay.accounting.domain.policy.DailyAccountingCutoffPolicy;
 import com.sixpay.accounting.domain.repository.AccountingBatchTrackingRepository;
 import org.junit.jupiter.api.Test;
@@ -136,7 +136,7 @@ class AccountingT1OperationalQueryServiceCoverageTest {
 
     private static AccountingCandidateProjection candidate(
             UUID batchId,
-            TresorPayPaymentStatusEvidence evidence
+            PartnerExternalPaymentStatusEvidence evidence
     ) {
         return new AccountingCandidateProjection(
                 UUID.fromString("11111111-1111-4111-8111-111111111111"),
@@ -163,8 +163,8 @@ class AccountingT1OperationalQueryServiceCoverageTest {
         );
     }
 
-    private static TresorPayPaymentStatusEvidence evidence(String providerStatus) {
-        return new TresorPayPaymentStatusEvidence(
+    private static PartnerExternalPaymentStatusEvidence evidence(String providerStatus) {
+        return new PartnerExternalPaymentStatusEvidence(
                 "TP-REF",
                 "TX-001",
                 providerStatus,

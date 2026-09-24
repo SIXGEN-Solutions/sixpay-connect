@@ -3,7 +3,7 @@ package com.sixpay.accounting.domain.model;
 import java.time.Instant;
 import java.util.Objects;
 
-public record TresorPayPaymentStatusEvidence(
+public record PartnerExternalPaymentStatusEvidence(
         String reference,
         String transactionId,
         String providerStatus,
@@ -17,7 +17,7 @@ public record TresorPayPaymentStatusEvidence(
         String requestReference,
         String correlationId
 ) {
-    public TresorPayPaymentStatusEvidence {
+    public PartnerExternalPaymentStatusEvidence {
         reference = required(reference, "reference");
         transactionId = required(transactionId, "transactionId");
         providerStatus = required(providerStatus, "providerStatus");
@@ -31,13 +31,36 @@ public record TresorPayPaymentStatusEvidence(
 
         if (!reference.equals(requestReference)) {
             throw new IllegalArgumentException(
-                    "TRESOR PAY response reference must match requestReference"
+                    "Partner response reference must match requestReference"
             );
         }
     }
 
     public boolean confirmsPaidPayment() {
-        return "COMPLETED".equalsIgnoreCase(providerStatus);
+        return "COMPLETED".equalsIgnoreCase(providerStatus)
+                || "NOT_REQUIRED".equalsIgnoreCase(providerStatus);
+    }
+
+    public static PartnerExternalPaymentStatusEvidence notRequired(
+            String reference,
+            Instant checkedAt,
+            String correlationId
+    ) {
+        String normalized = required(reference, "reference");
+        return new PartnerExternalPaymentStatusEvidence(
+                normalized,
+                "NOT_REQUIRED",
+                "NOT_REQUIRED",
+                "NOT_REQUIRED",
+                null,
+                false,
+                false,
+                checkedAt,
+                null,
+                checkedAt,
+                normalized,
+                required(correlationId, "correlationId")
+        );
     }
 
     private static String required(String value, String name) {

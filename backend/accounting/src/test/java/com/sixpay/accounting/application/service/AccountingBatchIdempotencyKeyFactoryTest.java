@@ -1,7 +1,7 @@
 package com.sixpay.accounting.application.service;
 
 import com.sixpay.accounting.domain.model.AccountingPaymentCandidate;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -63,7 +63,7 @@ class AccountingBatchIdempotencyKeyFactoryTest {
                 Instant.parse("2026-08-07T12:00:00Z"),
                 LocalDate.of(2026, 8, 7),
                 "AMP-" + reference,
-                new TresorPayPaymentStatusEvidence(
+                new PartnerExternalPaymentStatusEvidence(
                         reference,
                         "TX-" + reference,
                         "COMPLETED",

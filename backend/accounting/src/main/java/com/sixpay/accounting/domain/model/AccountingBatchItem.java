@@ -79,7 +79,7 @@ public record AccountingBatchItem(
 
     public static AccountingBatchItem from(AccountingCandidateProjection candidate) {
         Objects.requireNonNull(candidate, "candidate");
-        var evidence = Objects.requireNonNull(candidate.tresorPayStatusEvidence(), "tresorPayStatusEvidence");
+        var evidence = Objects.requireNonNull(candidate.partnerExternalStatusEvidence(), "partnerExternalStatusEvidence");
         return new AccountingBatchItem(
                 candidate.paymentId(), candidate.publicPaymentReference(), candidate.partnerId(),
                 candidate.amount(), candidate.currency(), candidate.paymentOccurredAt(),
@@ -97,8 +97,8 @@ public record AccountingBatchItem(
     public static AccountingBatchItem from(AccountingPaymentCandidate candidate) {
         Objects.requireNonNull(candidate, "candidate");
         var evidence = Objects.requireNonNull(
-                candidate.tresorPayStatusEvidence(),
-                "tresorPayStatusEvidence"
+                candidate.partnerExternalStatusEvidence(),
+                "partnerExternalStatusEvidence"
         );
         return new AccountingBatchItem(
                 candidate.paymentId(),

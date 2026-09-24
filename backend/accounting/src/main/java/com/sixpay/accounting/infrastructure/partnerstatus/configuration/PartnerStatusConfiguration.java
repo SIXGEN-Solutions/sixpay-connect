@@ -1,10 +1,10 @@
-package com.sixpay.accounting.infrastructure.tresorpay.configuration;
+package com.sixpay.accounting.infrastructure.partnerstatus.configuration;
 
-import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
+import com.sixpay.accounting.application.port.output.PartnerExternalPaymentStatusGateway;
 import com.sixpay.accounting.configuration.AccountingModuleConfiguration;
-import com.sixpay.accounting.infrastructure.tresorpay.client.OAuth2TresorPayStatusAccessTokenProvider;
-import com.sixpay.accounting.infrastructure.tresorpay.client.RestTresorPayPaymentStatusClient;
-import com.sixpay.accounting.infrastructure.tresorpay.client.TresorPayStatusAccessTokenProvider;
+import com.sixpay.accounting.infrastructure.partnerstatus.client.OAuth2PartnerStatusAccessTokenProvider;
+import com.sixpay.accounting.infrastructure.partnerstatus.client.RestPartnerExternalPaymentStatusClient;
+import com.sixpay.accounting.infrastructure.partnerstatus.client.PartnerStatusAccessTokenProvider;
 import com.sixpay.integration.http.HttpTimeoutPolicy;
 import com.sixpay.integration.http.StandardRestClientFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,30 +21,30 @@ import java.time.Clock;
 import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(TresorPayStatusProperties.class)
+@EnableConfigurationProperties(PartnerStatusProperties.class)
 @ConditionalOnProperty(
-        prefix = TresorPayStatusProperties.PREFIX,
+        prefix = PartnerStatusProperties.PREFIX,
         name = "enabled",
         havingValue = "true"
 )
-public class TresorPayStatusConfiguration {
+public class PartnerStatusConfiguration {
 
     @Bean
-    TresorPayStatusAccessTokenProvider
-    tresorPayStatusAccessTokenProvider(
+    PartnerStatusAccessTokenProvider
+    partnerStatusAccessTokenProvider(
             OAuth2AuthorizedClientManager manager,
-            TresorPayStatusProperties properties
+            PartnerStatusProperties properties
     ) {
-        return new OAuth2TresorPayStatusAccessTokenProvider(
+        return new OAuth2PartnerStatusAccessTokenProvider(
                 manager,
                 properties
         );
     }
 
     @Bean
-    RestClient tresorPayStatusRestClient(
+    RestClient partnerStatusRestClient(
             StandardRestClientFactory factory,
-            TresorPayStatusProperties properties,
+            PartnerStatusProperties properties,
             SslBundles sslBundles
     ) {
         return factory.create(
@@ -61,16 +61,16 @@ public class TresorPayStatusConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(TresorPayPaymentStatusGateway.class)
-    TresorPayPaymentStatusGateway tresorPayPaymentStatusGateway(
-            RestClient tresorPayStatusRestClient,
-            TresorPayStatusAccessTokenProvider tokenProvider,
-            TresorPayStatusProperties properties,
+    @ConditionalOnMissingBean(PartnerExternalPaymentStatusGateway.class)
+    PartnerExternalPaymentStatusGateway partnerExternalPaymentStatusGateway(
+            RestClient partnerStatusRestClient,
+            PartnerStatusAccessTokenProvider tokenProvider,
+            PartnerStatusProperties properties,
             @Qualifier(AccountingModuleConfiguration.ACCOUNTING_CLOCK)
             Clock accountingClock
     ) {
-        return new RestTresorPayPaymentStatusClient(
-                tresorPayStatusRestClient,
+        return new RestPartnerExternalPaymentStatusClient(
+                partnerStatusRestClient,
                 tokenProvider,
                 properties,
                 accountingClock

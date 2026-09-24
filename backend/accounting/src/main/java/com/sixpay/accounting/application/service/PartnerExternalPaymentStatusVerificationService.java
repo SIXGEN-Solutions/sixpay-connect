@@ -1,22 +1,22 @@
 package com.sixpay.accounting.application.service;
 
 import com.sixpay.accounting.application.port.output.AccountingIntegrationContext;
-import com.sixpay.accounting.application.port.output.TresorPayPaymentStatusGateway;
-import com.sixpay.accounting.domain.model.TresorPayPaymentStatusEvidence;
+import com.sixpay.accounting.application.port.output.PartnerExternalPaymentStatusGateway;
+import com.sixpay.accounting.domain.model.PartnerExternalPaymentStatusEvidence;
 
 import java.util.Objects;
 
-public final class TresorPayPaymentStatusVerificationService {
+public final class PartnerExternalPaymentStatusVerificationService {
 
-    private final TresorPayPaymentStatusGateway gateway;
+    private final PartnerExternalPaymentStatusGateway gateway;
 
-    public TresorPayPaymentStatusVerificationService(
-            TresorPayPaymentStatusGateway gateway
+    public PartnerExternalPaymentStatusVerificationService(
+            PartnerExternalPaymentStatusGateway gateway
     ) {
         this.gateway = Objects.requireNonNull(gateway, "gateway");
     }
 
-    public TresorPayPaymentStatusEvidence verify(
+    public PartnerExternalPaymentStatusEvidence verify(
             String paymentReference,
             AccountingIntegrationContext context
     ) {
@@ -25,18 +25,18 @@ public final class TresorPayPaymentStatusVerificationService {
         }
 
         String normalized = paymentReference.strip();
-        TresorPayPaymentStatusEvidence evidence =
+        PartnerExternalPaymentStatusEvidence evidence =
                 Objects.requireNonNull(
                         gateway.findByPaymentReference(
                                 normalized,
                                 Objects.requireNonNull(context, "context")
                         ),
-                        "TRESOR PAY status evidence"
+                        "Partner external status evidence"
                 );
 
         if (!normalized.equals(evidence.reference())) {
             throw new IllegalStateException(
-                    "TRESOR PAY status response reference mismatch"
+                    "Partner external status response reference mismatch"
             );
         }
 
