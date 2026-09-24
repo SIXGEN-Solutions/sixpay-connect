@@ -313,7 +313,7 @@ class PaymentPersistenceArchitectureTest {
         assertTrue(
                 sql.contains(
                         "UNIQUE "
-                                + "(payment_source, "
+                                + "(canonical_partner_id, "
                                 + "external_payment_reference)"
                 )
         );

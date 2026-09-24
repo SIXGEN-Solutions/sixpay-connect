@@ -1,6 +1,5 @@
 package com.sixpay.payment.infrastructure.persistence;
 
-import com.sixpay.payment.domain.model.PaymentSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -14,13 +13,13 @@ public interface PaymentSpringDataRepository
     );
 
     Optional<PaymentJpaEntity>
-            findBySourceAndExternalPaymentReference(
-                    PaymentSource source,
+            findByCanonicalPartnerIdAndExternalPaymentReference(
+                    UUID canonicalPartnerId,
                     String externalPaymentReference
             );
 
-    boolean existsBySourceAndExternalPaymentReference(
-            PaymentSource source,
+    boolean existsByCanonicalPartnerIdAndExternalPaymentReference(
+            UUID canonicalPartnerId,
             String externalPaymentReference
     );
 }

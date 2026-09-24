@@ -20,7 +20,7 @@ class PaymentInitiateDebitCoverageArchitectureTest {
                         + "InitiatePaymentCommandTest.java",
                 "application/service/"
                         + "PaymentInitiationOrchestrationServiceTest.java",
-                "api/partner/tresorpay/TresorPayPaymentApiMapperTest.java",
+                "api/partner/PartnerPaymentApiMapperTest.java",
                 "infrastructure/initiation/"
                         + "PaymentInitiationPreparationAdapterTest.java",
                 "infrastructure/idempotency/"

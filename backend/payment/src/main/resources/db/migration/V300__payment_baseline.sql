@@ -11,6 +11,7 @@ CREATE TABLE payments
     payment_id                     UUID           NOT NULL,
     public_payment_reference       VARCHAR(30)    NOT NULL,
     payment_source                 VARCHAR(32)    NOT NULL,
+    canonical_partner_id           UUID           NOT NULL,
     external_payment_reference     VARCHAR(128)   NOT NULL,
     external_subscription_reference VARCHAR(128)  NOT NULL,
     financial_institution_code     VARCHAR(32)    NOT NULL,
@@ -30,11 +31,11 @@ CREATE TABLE payments
     CONSTRAINT uk_payments_public_reference
         UNIQUE (public_payment_reference),
 
-    CONSTRAINT uk_payments_source_external_reference
-        UNIQUE (payment_source, external_payment_reference),
+    CONSTRAINT uk_payments_partner_external_reference
+        UNIQUE (canonical_partner_id, external_payment_reference),
 
     CONSTRAINT ck_payments_source
-        CHECK (payment_source = 'TRESOR_PAY'),
+        CHECK (payment_source ~ '^[A-Z0-9][A-Z0-9_-]{1,31}$'),
 
     CONSTRAINT ck_payments_public_reference
         CHECK (

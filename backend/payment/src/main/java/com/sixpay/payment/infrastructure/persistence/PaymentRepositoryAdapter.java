@@ -4,7 +4,7 @@ import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.payment.domain.repository.PaymentRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -101,38 +101,38 @@ public class PaymentRepositoryAdapter implements PaymentRepository, PaymentLooku
 
     @Override
     public Optional<Payment>
-            findBySourceAndExternalPaymentReference(
-                    PaymentSource source,
+            findByPartnerIdentityAndExternalPaymentReference(
+                    CanonicalPartnerIdentity partnerIdentity,
                     ExternalPaymentReference externalPaymentReference
             ) {
-        Objects.requireNonNull(source, "Payment source");
+        Objects.requireNonNull(partnerIdentity, "Canonical Partner identity");
         Objects.requireNonNull(
                 externalPaymentReference,
                 "External Payment reference"
         );
 
         return springDataRepository
-                .findBySourceAndExternalPaymentReference(
-                        source,
+                .findByCanonicalPartnerIdAndExternalPaymentReference(
+                        partnerIdentity.value(),
                         externalPaymentReference.value()
                 )
                 .map(mapper::toDomain);
     }
 
     @Override
-    public boolean existsBySourceAndExternalPaymentReference(
-            PaymentSource source,
+    public boolean existsByPartnerIdentityAndExternalPaymentReference(
+            CanonicalPartnerIdentity partnerIdentity,
             ExternalPaymentReference externalPaymentReference
     ) {
-        Objects.requireNonNull(source, "Payment source");
+        Objects.requireNonNull(partnerIdentity, "Canonical Partner identity");
         Objects.requireNonNull(
                 externalPaymentReference,
                 "External Payment reference"
         );
 
         return springDataRepository
-                .existsBySourceAndExternalPaymentReference(
-                        source,
+                .existsByCanonicalPartnerIdAndExternalPaymentReference(
+                        partnerIdentity.value(),
                         externalPaymentReference.value()
                 );
     }

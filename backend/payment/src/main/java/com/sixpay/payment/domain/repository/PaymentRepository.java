@@ -3,7 +3,7 @@ package com.sixpay.payment.domain.repository;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 
 import java.util.Optional;
@@ -25,13 +25,13 @@ public interface PaymentRepository {
             PublicPaymentReference publicPaymentReference
     );
 
-    Optional<Payment> findBySourceAndExternalPaymentReference(
-            PaymentSource source,
+    Optional<Payment> findByPartnerIdentityAndExternalPaymentReference(
+            CanonicalPartnerIdentity partnerIdentity,
             ExternalPaymentReference externalPaymentReference
     );
 
-    boolean existsBySourceAndExternalPaymentReference(
-            PaymentSource source,
+    boolean existsByPartnerIdentityAndExternalPaymentReference(
+            CanonicalPartnerIdentity partnerIdentity,
             ExternalPaymentReference externalPaymentReference
     );
 }

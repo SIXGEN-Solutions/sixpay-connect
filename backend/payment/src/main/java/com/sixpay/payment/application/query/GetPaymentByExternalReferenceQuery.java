@@ -1,18 +1,18 @@
 package com.sixpay.payment.application.query;
 
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
-import com.sixpay.payment.domain.model.PaymentSource;
+import com.sixpay.payment.domain.model.CanonicalPartnerIdentity;
 
 import java.util.Objects;
 
 public record GetPaymentByExternalReferenceQuery(
-        PaymentSource source,
+        CanonicalPartnerIdentity partnerIdentity,
         ExternalPaymentReference externalPaymentReference
 ) {
     public GetPaymentByExternalReferenceQuery {
-        source = Objects.requireNonNull(
-                source,
-                "Payment source"
+        partnerIdentity = Objects.requireNonNull(
+                partnerIdentity,
+                "Canonical Partner identity"
         );
         externalPaymentReference = Objects.requireNonNull(
                 externalPaymentReference,

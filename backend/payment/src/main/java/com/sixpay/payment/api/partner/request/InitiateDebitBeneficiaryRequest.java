@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.partner.tresorpay.request;
+package com.sixpay.payment.api.partner.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMin;

@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * Produces the deterministic canonical representation hashed for InitiateDebit.
+ * Produces the deterministic canonical representation hashed for Partner Payment initiation.
  */
 @Component
 public final class PaymentInitiationCanonicalizer {
@@ -24,7 +24,7 @@ public final class PaymentInitiationCanonicalizer {
      * transport/execution context rather than the requested debit itself.</p>
      */
     public String canonicalize(InitiatePaymentCommand command) {
-        Objects.requireNonNull(command, "InitiateDebit command");
+        Objects.requireNonNull(command, "Partner Payment initiation command");
 
         StringBuilder value = new StringBuilder(1024);
 

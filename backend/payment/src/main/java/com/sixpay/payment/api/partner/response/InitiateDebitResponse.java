@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.partner.tresorpay.response;
+package com.sixpay.payment.api.partner.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

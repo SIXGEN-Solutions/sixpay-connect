@@ -1,8 +1,8 @@
-package com.sixpay.payment.api.partner.tresorpay;
+package com.sixpay.payment.api.partner;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitBeneficiaryRequest;
-import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
+import com.sixpay.payment.api.partner.request.InitiateDebitBeneficiaryRequest;
+import com.sixpay.payment.api.partner.request.InitiateDebitRequest;
 import com.sixpay.payment.application.view.PaymentInitiationResult;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -18,10 +18,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TresorPayPaymentApiMapperTest {
+class PartnerPaymentApiMapperTest {
 
-    private final TresorPayPaymentApiMapper mapper =
-            new TresorPayPaymentApiMapper();
+    private final PartnerPaymentApiMapper mapper =
+            new PartnerPaymentApiMapper();
 
     @Test
     void mapsContractRequestWithoutAuthenticationSecrets() {
@@ -29,7 +29,7 @@ class TresorPayPaymentApiMapperTest {
 
         var command = mapper.toCommand(
                 request,
-                "TRESOR_PAY",
+                "PARTNER",
                 "11111111-2222-3333-4444-555555555555",
                 "IDEMPOTENCY-001",
                 CorrelationId.of(
@@ -38,9 +38,9 @@ class TresorPayPaymentApiMapperTest {
         );
 
         assertThat(command.source())
-                .isEqualTo(PaymentSource.of("TRESOR_PAY"));
+                .isEqualTo(PaymentSource.of("PARTNER"));
         assertThat(command.externalSubscriptionReference().value())
-                .isEqualTo("TRESOR_PAY:TP_APP_001");
+                .isEqualTo("PARTNER:TP_APP_001");
         assertThat(command.partnerIdentity().toString())
                 .isEqualTo("11111111-2222-3333-4444-555555555555");
         assertThat(command.beneficiaries())
@@ -86,7 +86,7 @@ class TresorPayPaymentApiMapperTest {
 
     private static InitiateDebitRequest request() {
         return new InitiateDebitRequest(
-                "TRESOR_PAY",
+                "PARTNER",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
@@ -104,7 +104,7 @@ class TresorPayPaymentApiMapperTest {
                                 new BigDecimal("600000")
                         )
                 ),
-                "https://tresorpay.cm/callback"
+                "https://partner.example/callback"
         );
     }
 }

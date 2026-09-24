@@ -1,4 +1,4 @@
-package com.sixpay.payment.api.partner.tresorpay.request;
+package com.sixpay.payment.api.partner.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sixpay.payment.domain.model.ClaimType;
@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * TresorPay request for the contracted InitiateDebit operation.
+ * Partner request for the contracted InitiateDebit operation.
  */
 public record InitiateDebitRequest(
         @JsonProperty("LoginName")

@@ -30,9 +30,9 @@ import java.util.UUID;
                         columnNames = "public_payment_reference"
                 ),
                 @UniqueConstraint(
-                        name = "uk_payments_source_external_reference",
+                        name = "uk_payments_partner_external_reference",
                         columnNames = {
-                                "payment_source",
+                                "canonical_partner_id",
                                 "external_payment_reference"
                         }
                 )
@@ -78,6 +78,13 @@ public class PaymentJpaEntity {
             length = 32
     )
     private PaymentSource source;
+
+    @Column(
+            name = "canonical_partner_id",
+            nullable = false,
+            updatable = false
+    )
+    private UUID canonicalPartnerId;
 
     @Column(
             name = "external_payment_reference",
@@ -177,6 +184,12 @@ public class PaymentJpaEntity {
         entity.publicPaymentReference =
                 state.publicPaymentReference().value();
         entity.source = state.source();
+        entity.canonicalPartnerId = state.initiationContext()
+                .orElseThrow(() -> new PaymentPersistenceException(
+                        "Canonical Partner identity is required for persisted Payment"
+                ))
+                .partnerIdentity()
+                .value();
         entity.externalPaymentReference =
                 state.externalPaymentReference().value();
         entity.externalSubscriptionReference =
@@ -213,7 +226,15 @@ public class PaymentJpaEntity {
                     "Public Payment reference cannot change"
             );
         }
+        UUID statePartnerId = state.initiationContext()
+                .orElseThrow(() -> new PaymentPersistenceException(
+                        "Canonical Partner identity is required for persisted Payment"
+                ))
+                .partnerIdentity()
+                .value();
+
         if (!source.equals(state.source())
+                || !canonicalPartnerId.equals(statePartnerId)
                 || !externalPaymentReference.equals(
                         state.externalPaymentReference().value()
                 )) {
@@ -251,6 +272,10 @@ public class PaymentJpaEntity {
 
     PaymentSource source() {
         return source;
+    }
+
+    UUID canonicalPartnerId() {
+        return canonicalPartnerId;
     }
 
     String externalPaymentReference() {

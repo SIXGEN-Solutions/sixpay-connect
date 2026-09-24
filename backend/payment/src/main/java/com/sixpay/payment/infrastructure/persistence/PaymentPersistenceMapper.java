@@ -122,6 +122,14 @@ public final class PaymentPersistenceMapper {
                 state.publicPaymentReference().value()
         )
                 || entity.source() != state.source()
+                || !entity.canonicalPartnerId().equals(
+                state.initiationContext()
+                        .orElseThrow(() -> new PaymentPersistenceException(
+                                "Canonical Partner identity is required for persisted Payment"
+                        ))
+                        .partnerIdentity()
+                        .value()
+        )
                 || !entity.externalPaymentReference().equals(
                 state.externalPaymentReference().value()
         )

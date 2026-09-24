@@ -1,10 +1,10 @@
-package com.sixpay.payment.api.partner.tresorpay;
+package com.sixpay.payment.api.partner;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
-import com.sixpay.payment.api.partner.tresorpay.request.InitiateDebitRequest;
-import com.sixpay.payment.api.partner.tresorpay.response.InitiateDebitResponse;
+import com.sixpay.payment.api.partner.request.InitiateDebitRequest;
+import com.sixpay.payment.api.partner.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,19 +28,19 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/v1/payments")
-@Tag(name = "Payment Commands", description = "TresorPay Payment initiation API")
+@Tag(name = "Payment Commands", description = "Partner Payment initiation API")
 @SecurityRequirement(name = "mutualTLS")
 @SecurityRequirement(name = "oauth2")
-public class TresorPayPaymentCommandController {
+public class PartnerPaymentCommandController {
 
     private final PaymentInitiationUseCase initiationUseCase;
-    private final TresorPayPaymentApiMapper mapper;
+    private final PartnerPaymentApiMapper mapper;
     private final CurrentUserProvider currentUserProvider;
     private final CorrelationIdResolver correlationIdResolver;
 
-    public TresorPayPaymentCommandController(
+    public PartnerPaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
-            TresorPayPaymentApiMapper mapper,
+            PartnerPaymentApiMapper mapper,
             CurrentUserProvider currentUserProvider,
             CorrelationIdResolver correlationIdResolver
     ) {
@@ -60,7 +60,7 @@ public class TresorPayPaymentCommandController {
      * resolved correlation ID is echoed input the response, including when the
      * caller did not supply one.</p>
      *
-     * @param request validated TresorPay debit initiation payload
+     * @param request validated Partner payment initiation payload
      * @param idempotencyKey required key used to replay the same result
      * @param correlationHeader optional caller correlation identifier
      * @return the accepted Payment result and the effective correlation ID

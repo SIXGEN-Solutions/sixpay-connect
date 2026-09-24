@@ -30,9 +30,9 @@ class PaymentCanonicalPartnerIdentityArchitectureTest {
 
     @Test
     void tresorPayBoundaryOwnsProviderLoginValidationAndSubjectResolution() throws Exception {
-        Path boundary = PAYMENT.resolve("api/partner/tresorpay");
-        String mapper = Files.readString(boundary.resolve("TresorPayPaymentApiMapper.java"));
-        String controller = Files.readString(boundary.resolve("TresorPayPaymentCommandController.java"));
+        Path boundary = PAYMENT.resolve("api/partner");
+        String mapper = Files.readString(boundary.resolve("PartnerPaymentApiMapper.java"));
+        String controller = Files.readString(boundary.resolve("PartnerPaymentCommandController.java"));
         assertThat(mapper).contains("request.loginName()", "authenticatedPartnerLoginName", "CanonicalPartnerIdentity.from(authenticatedPartnerSubject)");
         assertThat(controller).contains("authenticatedPartner.username()", "authenticatedPartner.subject()");
     }

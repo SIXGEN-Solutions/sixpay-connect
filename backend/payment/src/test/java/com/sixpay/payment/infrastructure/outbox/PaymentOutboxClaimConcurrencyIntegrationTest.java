@@ -515,6 +515,7 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
                     payment_id,
                     public_payment_reference,
                     payment_source,
+                    canonical_partner_id,
                     external_payment_reference,
                     external_subscription_reference,
                     financial_institution_code,
@@ -530,7 +531,8 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
                 ) VALUES (
                     ?,
                     ?,
-                    'TRESOR_PAY',
+                    'PARTNER',
+                    '11111111-2222-4333-8444-555555555555'::uuid,
                     ?,
                     ?,
                     'SIXPAY_BANK',

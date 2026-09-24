@@ -56,13 +56,13 @@ public class PaymentReceptionService {
         Objects.requireNonNull(receivedAt, "Received instant");
 
         if (paymentLookupPort
-                .existsBySourceAndExternalPaymentReference(
-                        intent.source(),
+                .existsByPartnerIdentityAndExternalPaymentReference(
+                        intent.initiationContext().partnerIdentity(),
                         intent.externalPaymentReference()
                 )) {
             throw new IllegalStateException(
-                    "Payment already exists for source "
-                            + intent.source()
+                    "Payment already exists for Partner "
+                            + intent.initiationContext().partnerIdentity()
                             + " and external reference "
                             + intent.externalPaymentReference()
             );
