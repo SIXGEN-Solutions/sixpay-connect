@@ -38,6 +38,7 @@ classificationModel:
 
   systems:
     SIXPAY: "SIXPAY CONNECT."
+    PARTNER: "Registered external SIXPAY Partner."
     TRESOR_PAY: "TRESOR PAY."
     AMPLITUDE: "Amplitude Core Banking."
     EMAIL_PROVIDER: "Configured operational email provider."
@@ -134,17 +135,96 @@ contracts:
         - "Domain-specific semantics remain owned by the setting domain"
         - "Rollback never deletes prior history"
 
-  - id: "tresorpay-payment-request-api-v1"
-    path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+  - id: "partner-payment-request-api-v1"
+    path: "documentation/contracts/partner/partner-payment-request-api-v1.yaml"
     domain: "payment"
     capability: "PAYMENT_REQUEST"
-    direction: "TRESOR_PAY_TO_SIXPAY"
-    sourceSystem: "TRESOR_PAY"
+    direction: "PARTNER_TO_SIXPAY"
+    sourceSystem: "PARTNER"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
+    mvpUsage:
+      included: true
+      purpose:
+        - "Receive a payment order from a registered Partner"
+        - "Preserve canonical Partner identity and external payment reference"
+        - "Apply the approved bounded Partner extension model"
+      constraints:
+        - "Partner-specific behavior must be configuration/profile driven"
+        - "No concrete Partner name is part of the canonical capability semantics"
+  - id: "partner-payment-confirmation-api-v1"
+    path: "documentation/contracts/partner/partner-payment-confirmation-api-v1.yaml"
+    domain: "payment"
+    capability: "PAYMENT_CONFIRMATION"
+    direction: "PARTNER_TO_SIXPAY"
+    sourceSystem: "PARTNER"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    mvpUsage:
+      included: true
+      purpose:
+        - "Expose Partner-neutral Payment confirmation operations"
+        - "Preserve bank-owned OTP semantics and Payment ownership"
+      constraints:
+        - "Partner-specific behavior must be configuration/profile driven"
+        - "No concrete Partner name is part of the canonical capability semantics"
+  - id: "partner-payment-status-query-api-v1"
+    path: "documentation/contracts/partner/partner-payment-status-query-api-v1.yaml"
+    domain: "accounting"
+    capability: "PARTNER_PAYMENT_STATUS_QUERY"
+    direction: "SIXPAY_TO_PARTNER"
+    sourceSystem: "PARTNER"
+    systemOfRecord: "PARTNER"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    mvpUsage:
+      included: true
+      purpose:
+        - "Obtain external Partner payment-status evidence for Accounting eligibility"
+        - "Preserve the approved external-consistency rule without provider-specific semantics"
+      constraints:
+        - "Partner-specific behavior must be configuration/profile driven"
+        - "No concrete Partner name is part of the canonical capability semantics"
+  - id: "partner-payment-callback-webhook-v1"
+    path: "documentation/contracts/partner/partner-payment-callback-webhook-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "PAYMENT_STATUS_CALLBACK"
+    direction: "SIXPAY_TO_PARTNER"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    mvpUsage:
+      included: true
+      purpose:
+        - "Deliver approved SIXPAY Payment lifecycle facts to a registered Partner"
+        - "Expose only callback-allowlisted Partner extensions"
+      constraints:
+        - "Partner-specific behavior must be configuration/profile driven"
+        - "No concrete Partner name is part of the canonical capability semantics"
+  - id: "tresorpay-payment-request-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    replacementContractId: "partner-payment-request-api-v1"
+    domain: "payment"
+    capability: "PAYMENT_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "SUPERSEDED"
+    approvalStatus: "APPROVED"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
     security:
       active:
         - "BEARER_AUTHORIZATION_TOKEN"
@@ -154,7 +234,7 @@ contracts:
         - "OAUTH2_CLIENT_CREDENTIALS"
         - "MUTUAL_TLS"
     mvpUsage:
-      included: true
+      included: false
       purpose:
         - "Receive a TRESOR PAY payment order"
         - "Enforce idempotency and correlation"
@@ -181,6 +261,7 @@ contracts:
 
   - id: "tresorpay-payment-status-query-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
+    replacementContractId: "partner-payment-status-query-api-v1"
     domain: "accounting"
     businessOwner: "accounting"
     deliveryOwner: "integration"
@@ -188,16 +269,16 @@ contracts:
     direction: "SIXPAY_TO_TRESOR_PAY"
     sourceSystem: "SIXPAY"
     systemOfRecord: "TRESOR_PAY"
-    lifecycleStatus: "ACTIVE_MVP"
+    lifecycleStatus: "SUPERSEDED"
     approvalStatus: "APPROVED"
-    generationPolicy: "ACTIVE"
-    codeGenerationAllowed: true
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_CLIENT_CREDENTIALS"]
       operationalParameters: "EXTERNAL_CONFIGURATION"
     mvpUsage:
-      included: true
+      included: false
       purpose:
         - "Verify that a T0-completed SIXPAY Payment is also recorded as paid/completed in TRESOR PAY before T1 selection"
         - "Provide downstream coherence evidence for Accounting eligibility"
@@ -217,6 +298,7 @@ contracts:
 
   - id: "tresorpay-payment-confirmation-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    replacementContractId: "partner-payment-confirmation-api-v1"
     domain: "payment"
     businessOwner: "payment"
     deliveryOwner: "integration"
@@ -224,10 +306,10 @@ contracts:
     direction: "TRESOR_PAY_TO_SIXPAY"
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
-    lifecycleStatus: "ACTIVE_MVP"
+    lifecycleStatus: "SUPERSEDED"
     approvalStatus: "APPROVED"
-    generationPolicy: "ACTIVE"
-    codeGenerationAllowed: true
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
     security:
       status: "APPROVED_CONTRACT_PROFILE"
       authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
@@ -237,7 +319,7 @@ contracts:
         read: "payment.confirmation.read"
       operationalParameters: "EXTERNAL_CONFIGURATION"
     mvpUsage:
-      included: true
+      included: false
       purpose:
         - "Read the current normalized challenge state created during Payment initiation"
         - "Synchronously verify the customer OTP"
@@ -455,6 +537,7 @@ contracts:
 
   - id: "tresorpay-payment-status-webhook-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml"
+    replacementContractId: "partner-payment-callback-webhook-v1"
     domain: "integration"
     businessOwner: "payment"
     deliveryOwner: "notification"
@@ -462,12 +545,12 @@ contracts:
     direction: "SIXPAY_TO_TRESOR_PAY"
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
-    lifecycleStatus: "ACTIVE_MVP"
+    lifecycleStatus: "SUPERSEDED"
     approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     mvpUsage:
-      included: true
+      included: false
       eventTypes:
         - "PAYMENT_RECEIVED"
         - "PAYMENT_REJECTED"
@@ -532,6 +615,7 @@ contracts:
 
   - id: "tresorpay-treasury-integration-webhook-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml"
+    replacementContractId: "partner-payment-callback-webhook-v1"
     domain: "integration"
     businessOwner: "payment"
     deliveryOwner: "notification"
@@ -539,12 +623,12 @@ contracts:
     direction: "SIXPAY_TO_TRESOR_PAY"
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
-    lifecycleStatus: "ACTIVE_MVP"
+    lifecycleStatus: "SUPERSEDED"
     approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     mvpUsage:
-      included: true
+      included: false
       eventTypes:
         - "PENDING_END_OF_DAY_CONFIRMATION"
         - "TREASURY_INTEGRATED"

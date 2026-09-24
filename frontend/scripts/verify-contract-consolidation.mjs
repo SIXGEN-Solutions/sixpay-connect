@@ -211,6 +211,7 @@ if (registry) {
     const canonicalContractRoots = [
       'documentation/contracts/amplitude/',
       'documentation/contracts/tresorpay/',
+      'documentation/contracts/partner/',
       'documentation/contracts/internal/',
     ];
 
@@ -500,7 +501,9 @@ if (registry) {
     const contractsByPhysicalPath = new Map();
 
     for (const contract of registry.contracts) {
-      if (typeof contract.capability === 'string') {
+      // SUPERSEDED entries remain traceability records. They no longer reserve
+      // the active canonical capability identity replaced by their successor.
+      if (contract.lifecycleStatus !== 'SUPERSEDED' && typeof contract.capability === 'string') {
         const previous = capabilityOwners.get(contract.capability);
 
         if (previous) {

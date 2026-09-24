@@ -226,16 +226,15 @@ confondues :
 
 - `CustomerSubscription` est une capacité locale `ACTIVE_MVP`, possédée et
   implémentée par `customer` ;
-- le cycle externe de souscription TRESOR PAY reste `DEFERRED_FUTURE`, hors MVP,
-  avec TRESOR PAY comme system of record.
+- tout cycle externe de souscription d'un Partner reste distinct de `CustomerSubscription` et n'est actif que lorsqu'un contrat Partner approuvé le définit explicitement.
 
 Conséquences :
 
 - ne crée jamais `backend/subscription` ;
 - `payment` ne possède ni ne gère `CustomerSubscription` ;
-- ne réintroduis pas une validation synchrone TRESOR PAY de souscription dans le
-  parcours Payment MVP ;
-- ne transforme pas les deux contrats TRESOR PAY différés en source active ;
+- ne réintroduis pas une validation synchrone provider-specific de souscription dans le
+  parcours Payment sans contrat Partner approuvé ;
+- ne transforme pas un contrat différé d'autorisation externe en source active sans approbation ;
 - toute évolution de cette séparation exige une décision métier, architecture,
   contrat et sécurité.
 

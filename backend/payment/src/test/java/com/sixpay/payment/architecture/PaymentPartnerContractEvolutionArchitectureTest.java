@@ -41,26 +41,33 @@ class PaymentPartnerContractEvolutionArchitectureTest {
     }
 
     @Test
-    void noGenericPartnerPaymentContractExistsWithoutExplicitGovernanceDecision()
+    void canonicalPartnerPaymentContractsExistAfterExplicitGovernanceDecision()
             throws Exception {
-        if (!Files.exists(CONTRACTS)) {
-            return;
-        }
+        Path partnerContracts = CONTRACTS.resolve("partner");
 
-        try (Stream<Path> paths = Files.walk(CONTRACTS)) {
-            List<Path> genericContracts = paths
+        assertThat(partnerContracts)
+                .as("PA-1 establishes the canonical Partner Payment contract root")
+                .isDirectory();
+
+        List<String> expectedContracts = List.of(
+                "partner-payment-request-api-v1.yaml",
+                "partner-payment-confirmation-api-v1.yaml",
+                "partner-payment-status-query-api-v1.yaml",
+                "partner-payment-callback-webhook-v1.yaml"
+        );
+
+        try (Stream<Path> paths = Files.list(partnerContracts)) {
+            List<String> observed = paths
                     .filter(Files::isRegularFile)
-                    .filter(path -> {
-                        String name = path.getFileName().toString().toLowerCase();
-                        return name.contains("partner")
-                                && name.contains("payment")
-                                && !path.toString().replace('\\', '/').contains("/tresorpay/");
-                    })
+                    .map(path -> path.getFileName().toString())
+                    .filter(expectedContracts::contains)
+                    .sorted()
                     .toList();
 
-            assertThat(genericContracts)
-                    .as("a shared external Partner Payment contract must be an explicit future governance decision")
-                    .isEmpty();
+            assertThat(observed)
+                    .as("PA-1 approved canonical Partner Payment contracts")
+                    .containsExactlyInAnyOrderElementsOf(expectedContracts);
         }
     }
+
 }
