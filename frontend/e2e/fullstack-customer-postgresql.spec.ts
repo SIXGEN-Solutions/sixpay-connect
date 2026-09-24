@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { authenticateFullstackAdmin } from './support/fullstack-local-admin-auth';
 
-test.describe('CM-9 Angular -> Spring -> Customer -> Verification -> Amplitude Stub -> PostgreSQL', () => {
+test.describe('Customer full-stack Angular -> Spring -> Verification -> Amplitude Stub -> PostgreSQL', () => {
   test('enrolls and reloads a Customer through the real stack', async ({ page }) => {
     const suffix = Date.now().toString();
     const niu = `CM9-NIU-${suffix}`;

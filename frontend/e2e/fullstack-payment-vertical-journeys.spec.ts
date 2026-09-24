@@ -6,7 +6,7 @@ const PAYMENT_ID = '59040000-0000-0000-0000-000000000001';
 const PAYMENT_REFERENCE = 'PAY-0123456789ABCDEFGHJKMNPQRS';
 const PARTNER_REQUEST_ID = 'L594-E2E-REQUEST-001';
 
-test.describe('LOT 5.9.4 Payment vertical journeys', () => {
+test.describe('Payment full-stack vertical journeys', () => {
   test('searches a persisted Payment and opens its real detail projection', async ({ page }) => {
     await authenticateFullstackAuditor(page);
 

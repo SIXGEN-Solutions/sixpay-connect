@@ -14,6 +14,9 @@ REQUIRED = [
     "frontend/playwright.fullstack.config.ts",
     "frontend/e2e/fullstack-partner-postgresql.spec.ts",
     "frontend/e2e/fullstack-customer-postgresql.spec.ts",
+    "frontend/e2e/fullstack-payment-vertical-journeys.spec.ts",
+    "frontend/e2e/fullstack-accounting-vertical-journeys.spec.ts",
+    "frontend/e2e/fullstack-administration-identity-incidents.spec.ts",
     "backend/bootstrap/src/test/java/com/sixpay/bootstrap/"
     "integration/persistence/FreshPostgreSqlApplicationIT.java",
 ]
@@ -103,7 +106,7 @@ def main():
     # This command creates a new uniquely named PostgreSQL container, builds
     # the executable bootstrap JAR, starts the backend with the integration
     # profile, waits for actuator health, starts Angular and executes the
-    # full-stack Playwright Partner/Customer persistence journeys.
+    # full-stack Playwright Partner, Customer, Payment, Accounting and Administration/Identity/Incidents journeys.
     run(
         "2/3 — Fresh PostgreSQL full-stack functional smoke",
         [
@@ -119,6 +122,9 @@ def main():
     for relative in [
         "frontend/e2e/fullstack-partner-postgresql.spec.ts",
         "frontend/e2e/fullstack-customer-postgresql.spec.ts",
+        "frontend/e2e/fullstack-payment-vertical-journeys.spec.ts",
+        "frontend/e2e/fullstack-accounting-vertical-journeys.spec.ts",
+        "frontend/e2e/fullstack-administration-identity-incidents.spec.ts",
     ]:
         require(relative)
 
@@ -137,6 +143,9 @@ def main():
     print(" - Angular integration frontend starts against the real backend")
     print(" - Partner can be created, persisted and reloaded")
     print(" - Customer can be enrolled, persisted and reloaded")
+    print(" - Payment query/detail/timeline works against the real stack")
+    print(" - Accounting batch query/detail works against the real stack")
+    print(" - Administration, Identity and Incident read paths work against the real stack")
     print(" - no local pre-existing SIXPAY database is required")
     print()
     print(

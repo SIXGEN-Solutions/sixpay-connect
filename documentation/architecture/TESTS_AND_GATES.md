@@ -78,6 +78,18 @@ canonical baseline verifier should be rerun.
 py scripts/verify_clean_room.py
 ```
 
+## Global repository closure
+
+The final repository closure command is:
+
+```bash
+py scripts/verify_repository_closure.py
+```
+
+It composes the active Master Prompt checks, documentation and contract reference validation, the clean-room repository baseline, the real full-stack Partner/Customer/Payment/Accounting/Administration-Identity-Incidents journeys and a final Partner-neutral tracked-content/path scan.
+
+Closure is valid only when the command exits successfully on the selected revision. Static analysis alone is not closure evidence.
+
 Clean-room validation uses disposable PostgreSQL instances and composes
 repository validation, fresh-database bootstrap, executable Bootstrap startup,
 health verification, Angular integration startup and the configured Playwright

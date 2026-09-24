@@ -6,7 +6,7 @@ const BATCH_ID = '59050000-0000-0000-0000-000000000001';
 const BUSINESS_DATE = '2026-09-12';
 const PAYMENT_REFERENCE = 'PAY-0123456789ABCDEFGHJKMNPQRS';
 
-test.describe('LOT 5.9.5 Accounting vertical journeys', () => {
+test.describe('Accounting full-stack vertical journeys', () => {
   test('lists a persisted Accounting batch and opens its real detail projection', async ({
     page,
   }) => {

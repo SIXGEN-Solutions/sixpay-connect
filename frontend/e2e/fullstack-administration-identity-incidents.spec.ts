@@ -4,7 +4,7 @@ import { authenticateFullstackAdmin } from './support/fullstack-local-admin-auth
 
 const INCIDENT_ID = 'INC-L596-E2E-001';
 
-test.describe('LOT 5.9.6 Administration / Identity / Incidents', () => {
+test.describe('Administration / Identity / Incidents full-stack journeys', () => {
   test.beforeEach(async ({ page }) => {
     await authenticateFullstackAdmin(page);
   });
@@ -98,7 +98,7 @@ test.describe('LOT 5.9.6 Administration / Identity / Incidents', () => {
 
     await expect(page.getByRole('heading', { name: 'Incidents' })).toBeVisible();
     await expect(page.getByRole('link', { name: INCIDENT_ID })).toBeVisible();
-    await expect(page.getByText('Dégradation contrôlée LOT 5.9.6', { exact: true })).toBeVisible();
+    await expect(page.getByText('Dégradation contrôlée E2E', { exact: true })).toBeVisible();
 
     const detailPromise = page.waitForResponse(
       (response) =>
@@ -112,7 +112,7 @@ test.describe('LOT 5.9.6 Administration / Identity / Incidents', () => {
     expect(detail.status()).toBe(200);
 
     await expect(page.getByRole('heading', { name: INCIDENT_ID })).toBeVisible();
-    await expect(page.getByText('Dégradation contrôlée LOT 5.9.6', { exact: true })).toBeVisible();
+    await expect(page.getByText('Dégradation contrôlée E2E', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Incident détecté par la supervision SIXPAY.', { exact: true }),
     ).toBeVisible();

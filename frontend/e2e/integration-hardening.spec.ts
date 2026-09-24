@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test.describe('Phase 7.8 integration profile hardening', () => {
+test.describe('Integration profile hardening', () => {
   test('uses the API datasource and exposes loading before data', async ({ page }) => {
     await page.route(/\/api\/v1\/partners(?:\?.*)?$/, async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500));

@@ -197,7 +197,7 @@ INSERT INTO payments (
 ) VALUES (
     '59040000-0000-0000-0000-000000000001',
     'PAY-0123456789ABCDEFGHJKMNPQRS',
-    'TRESOR_PAY',
+    'PARTNER',
     'L594-E2E-REQUEST-001',
     'partner:L594',
     'SIXPAY',
@@ -263,7 +263,7 @@ INSERT INTO reporting_payment_audit_evidence (
     'PAYMENT_RECEIVED',
     'SUCCESS',
     'EXTERNAL_SYSTEM',
-    'TRESOR_PAY',
+    'PARTNER',
     NULL,
     'PAYMENT_RECEIVED',
     'PAYMENT',
@@ -272,13 +272,13 @@ INSERT INTO reporting_payment_audit_evidence (
     'PAYMENT_RECEIVED',
     '59040000-0000-0000-0000-000000000099',
     NULL,
-    'TRESOR_PAY',
+    'PARTNER',
     'L594-E2E-REQUEST-001',
     NULL,
     'RECEIVED',
     1,
     'WORM_REFERENCE',
-    'lot-5.9.4-e2e-proof',
+    'partner-e2e-proof',
     '2026-09-12T12:00:00Z'
 )
 ON CONFLICT (evidence_id) DO NOTHING;
@@ -335,8 +335,8 @@ INSERT INTO accounting_batch_items (
     payment_occurred_at,
     payment_business_date,
     bank_posting_reference,
-    tresorpay_status,
-    tresorpay_status_checked_at,
+    partner_external_status,
+    partner_external_status_checked_at,
     status
 ) VALUES (
     '59050000-0000-0000-0000-000000000002',
@@ -395,7 +395,7 @@ INSERT INTO operational_incident (
     'INC-L596-E2E-001',
     'HIGH',
     'PAYMENT',
-    'Dégradation contrôlée LOT 5.9.6',
+    'Dégradation contrôlée E2E',
     'INVESTIGATING',
     'Incident de preuve full-stack Administration / Identity / Incidents.',
     'Validation E2E uniquement dans la base PostgreSQL jetable.',

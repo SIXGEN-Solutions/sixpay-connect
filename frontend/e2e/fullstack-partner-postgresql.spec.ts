@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { authenticateFullstackAdmin } from './support/fullstack-local-admin-auth';
 
-test.describe('Phase 8.4 full-stack Angular -> Spring Boot -> PostgreSQL', () => {
+test.describe('Partner full-stack Angular -> Spring Boot -> PostgreSQL', () => {
   test('creates and reloads a partner through the real stack', async ({ page }) => {
     const suffix = Date.now().toString();
     const legalName = `Full-stack Partner ${suffix}`;
