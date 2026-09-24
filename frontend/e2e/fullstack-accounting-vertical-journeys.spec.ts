@@ -93,7 +93,8 @@ test.describe('Accounting full-stack vertical journeys', () => {
         amount: number;
         currency: string;
         bankPostingReference: string | null;
-        partnerStatus: string;
+        partnerExternalStatus: string;
+        partnerExternalStatusCheckedAt: string;
         status: string;
       }>;
     };
@@ -118,7 +119,8 @@ test.describe('Accounting full-stack vertical journeys', () => {
           amount: 12500,
           currency: 'XAF',
           bankPostingReference: 'AMP-L595-POSTING-001',
-          partnerStatus: 'COMPLETED',
+          partnerExternalStatus: 'COMPLETED',
+          partnerExternalStatusCheckedAt: '2026-09-12T14:45:00Z',
           status: 'COMPLETED',
         }),
       ]),
