@@ -23,7 +23,7 @@ Physical payload names are preserved.
 
 | JSON field | Target |
 |---|---|
-| `LoginName` | REQUIRED |
+| `LoginName` | REQUIRED; compatibility metadata, not authentication |
 | `AppID` | REQUIRED; semantic `partnerIdentifier` |
 | `endToEndId` | REQUIRED; external payment reference |
 | `montantTotal` | REQUIRED |
@@ -45,10 +45,11 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 |---|---|---|---|
 | INIT-0 | COMPLETED-PROPOSAL | `INIT_0_DECISION_CLOSURE_IMPACT_AUDIT.md` | Close decisions and produce exact impact audit |
 | INIT-1 | COMPLETED-PROPOSAL | `INIT_1_PARTNER_CUSTOMER_IDENTIFICATION.md` | Reconcile current physical contract with INIT-0 decisions and prepare the future amendment |
-| INIT-2 | PARTIAL-BLOCKED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` | Public Partner/Payment identity surfaces defined; persistent partnerIdentifier and Security→Partner link require human decision |
-| INIT-3 | IMPLEMENTATION-PREPARED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
-| INIT-4 | NOT STARTED | future implementation artifact | Payment input implementation after approvals |
-| INIT-5 | NOT STARTED | future implementation artifact | Idempotency and recovery alignment |
+| INIT-2 | COMPLETED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` + INIT-2A/2B artifacts | Partner business and machine identity alignment implemented |
+| INIT-3 | TECHNICALLY-CLOSED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
+| INIT-4 | AMENDMENT-PREPARED | `INIT_4_PAYMENT_CONTRACT_AMENDMENT_SYNCHRONIZATION_GATE.md` | Payment Contract Amendment & Synchronization Gate |
+| INIT-5 | NOT STARTED | future implementation artifact | Payment input implementation after INIT-4 human contract validation |
+| INIT-6 | NOT STARTED | future implementation artifact | Idempotency / persistence / recovery alignment |
 
 ## Mandatory usage for following lots
 

@@ -79,5 +79,18 @@ before successful banking verification.
 Status:
 
 ```text
-INIT-3 — IMPLEMENTATION PATCH PREPARED; VALIDATION REQUIRED
+INIT-3 — TECHNICALLY CLOSED AT 8e5f6eb65ed412e589f970ab48a886dd219533d9
 ```
+
+
+## Validation evidence
+
+Observed for commit `8e5f6eb65ed412e589f970ab48a886dd219533d9`:
+
+```text
+Backend CI                 SUCCESS
+Frontend CI                SUCCESS
+Payment Final Validation   SUCCESS
+```
+
+The contract synchronization required by the preserved InitiateDebit wire shape is intentionally handled by INIT-4 and does not reopen INIT-3's NIU-first implementation.
