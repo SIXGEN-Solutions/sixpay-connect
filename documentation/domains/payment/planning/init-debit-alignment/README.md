@@ -15,7 +15,7 @@ This directory is a planning/decision aid. It does not override:
 
 - Repository: `SIXGEN-Solutions/sixpay-connect`
 - Branch: `feat/repository-baseline-consolidation-cucumber`
-- Reference SHA: `2c7a575674fecaae044a23ac0663de7ea9763387`
+- Reference SHA: `8c0c02d65f2d9ed10c143702b7a13cd9bdcbe94d`
 
 ## Payload baseline
 
@@ -44,7 +44,7 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 | Lot | Status | Artifact | Purpose |
 |---|---|---|---|
 | INIT-0 | COMPLETED-PROPOSAL | `INIT_0_DECISION_CLOSURE_IMPACT_AUDIT.md` | Close decisions and produce exact impact audit |
-| INIT-1 | INPUT-AVAILABLE-OUTSIDE-REPO | `SIXPAY_INIT_1_PARTNER_CUSTOMER_IDENTIFICATION_CONTRACT_PROPOSAL.md` | Contract/payload proposal used as decision input |
+| INIT-1 | COMPLETED-PROPOSAL | `INIT_1_PARTNER_CUSTOMER_IDENTIFICATION.md` | Reconcile current physical contract with INIT-0 decisions and prepare the future amendment |
 | INIT-2 | NOT STARTED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` | Partner identity alignment |
 | INIT-3 | NOT STARTED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
 | INIT-4 | NOT STARTED | future implementation artifact | Payment input implementation after approvals |
