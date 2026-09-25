@@ -4,6 +4,7 @@ import com.sixpay.partner.configuration.PartnerModuleConfiguration;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -43,7 +44,7 @@ public class CucumberSpringConfiguration {
     }
 
     @TestConfiguration(proxyBeanMethods = false)
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = SixpaySecurityAutoConfiguration.class)
     @EnableMethodSecurity
     @ImportAutoConfiguration(PartnerModuleConfiguration.class)
     static class TestApplication {

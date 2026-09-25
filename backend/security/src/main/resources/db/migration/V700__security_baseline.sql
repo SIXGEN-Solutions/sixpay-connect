@@ -190,6 +190,40 @@ COMMENT ON TABLE security_user_permissions IS
     'SIXPAY-owned business permissions independent from Local or OIDC authentication.';
 
 -- ---------------------------------------------------------------------------
+-- Partner machine identities
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE security_partner_machine_identities (
+    id UUID PRIMARY KEY,
+    machine_subject VARCHAR(255) NOT NULL,
+    partner_identifier VARCHAR(64) NOT NULL,
+    enabled BOOLEAN NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT uk_security_partner_machine_identity_subject
+        UNIQUE (machine_subject),
+    CONSTRAINT ck_security_partner_machine_identity_subject
+        CHECK (NULLIF(BTRIM(machine_subject), '') IS NOT NULL),
+    CONSTRAINT ck_security_partner_machine_identity_partner_identifier
+        CHECK (NULLIF(BTRIM(partner_identifier), '') IS NOT NULL),
+    CONSTRAINT ck_security_partner_machine_identity_timestamps
+        CHECK (updated_at >= created_at)
+);
+
+CREATE INDEX ix_security_partner_machine_identity_partner
+    ON security_partner_machine_identities (partner_identifier);
+
+CREATE INDEX ix_security_partner_machine_identity_enabled_subject
+    ON security_partner_machine_identities (enabled, machine_subject);
+
+COMMENT ON TABLE security_partner_machine_identities IS
+    'Security-owned mapping from authenticated technical machine subjects to stable Partner business identifiers.';
+
+COMMENT ON COLUMN security_partner_machine_identities.partner_identifier IS
+    'Stable Partner business identifier resolved later through Partner public application surfaces.';
+
+-- ---------------------------------------------------------------------------
 -- Password history
 -- ---------------------------------------------------------------------------
 

@@ -49,7 +49,7 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 | INIT-3 | TECHNICALLY-CLOSED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
 | INIT-4 | AMENDMENT-PREPARED | `INIT_4_PAYMENT_CONTRACT_AMENDMENT_SYNCHRONIZATION_GATE.md` | Payment Contract Amendment & Synchronization Gate |
 | INIT-5 | IMPLEMENTATION-PREPARED | `INIT_5_PAYMENT_INPUT_NIU_RESOLUTION_IMPLEMENTATION.md` | Payment Input & NIU Resolution Implementation |
-| INIT-6 | NOT STARTED | future implementation artifact | Idempotency / persistence / recovery alignment |
+| INIT-6 | IMPLEMENTED_LOCALLY_PENDING_VALIDATION | `INIT_6_IDEMPOTENCY_PERSISTENCE_RECOVERY_ALIGNMENT.md` | Idempotency / persistence / recovery alignment |
 
 ## Mandatory usage for following lots
 
