@@ -140,6 +140,12 @@ public final class CustomerVerificationModuleAdapter
                         : result.accountBindingFingerprint().value(),
                 result.customerReference(),
                 result.accountReference(),
+                result.accountOptional()
+                        .map(account -> account.financialInstitutionCode())
+                        .orElse(null),
+                result.accountOptional()
+                        .map(account -> account.maskedAccountIdentifier())
+                        .orElse(null),
                 result.observedAt(),
                 result.validUntil(),
                 result.completedAt()

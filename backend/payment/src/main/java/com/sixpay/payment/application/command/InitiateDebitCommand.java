@@ -46,7 +46,7 @@ public record InitiateDebitCommand(
                 64,
                 "Authenticated partner login name"
         );
-        applicationId = normalizeOptional(
+        applicationId = requireText(
                 applicationId,
                 64,
                 "Application ID"
@@ -60,11 +60,13 @@ public record InitiateDebitCommand(
                 totalAmount,
                 "Total amount"
         );
-        currency = requireText(
-                currency,
-                3,
-                "Currency"
-        ).toUpperCase(java.util.Locale.ROOT);
+        currency = currency == null || currency.isBlank()
+                ? "XAF"
+                : requireText(
+                        currency,
+                        3,
+                        "Currency"
+                ).toUpperCase(java.util.Locale.ROOT);
         debtorRib = normalizeOptional(
                 debtorRib,
                 64,
@@ -115,9 +117,16 @@ public record InitiateDebitCommand(
             );
         }
 
-        if (!currency.matches("^[A-Z]{3}$")) {
+        if (currency != null
+                && !currency.matches("^[A-Z]{3}$")) {
             throw new IllegalArgumentException(
                     "Currency must use an ISO 4217 alpha-3 code"
+            );
+        }
+
+        if (!"XAF".equals(currency)) {
+            throw new IllegalArgumentException(
+                    "Currency must be XAF for the SIXPAY MVP"
             );
         }
 
@@ -127,38 +136,35 @@ public record InitiateDebitCommand(
             );
         }
 
-        beneficiaries = List.copyOf(
-                Objects.requireNonNull(
-                        beneficiaries,
-                        "Beneficiaries"
-                )
-        );
+        beneficiaries = beneficiaries == null
+                ? List.of()
+                : List.copyOf(beneficiaries);
 
-        if (beneficiaries.isEmpty()
-                || beneficiaries.size()
-                > MAXIMUM_BENEFICIARIES) {
+        if (beneficiaries.size() > MAXIMUM_BENEFICIARIES) {
             throw new IllegalArgumentException(
-                    "Beneficiaries must contain between 1 and "
+                    "Beneficiaries must contain at most "
                             + MAXIMUM_BENEFICIARIES
                             + " entries"
             );
         }
 
-        BigDecimal allocatedAmount =
-                beneficiaries.stream()
-                        .map(
-                                InitiateDebitBeneficiaryCommand
-                                        ::amount
-                        )
-                        .reduce(
-                                BigDecimal.ZERO,
-                                BigDecimal::add
-                        );
+        if (!beneficiaries.isEmpty()) {
+            BigDecimal allocatedAmount =
+                    beneficiaries.stream()
+                            .map(
+                                    InitiateDebitBeneficiaryCommand
+                                            ::amount
+                            )
+                            .reduce(
+                                    BigDecimal.ZERO,
+                                    BigDecimal::add
+                            );
 
-        if (allocatedAmount.compareTo(totalAmount) != 0) {
-            throw new IllegalArgumentException(
-                    "Beneficiary amount sum must equal total amount"
-            );
+            if (allocatedAmount.compareTo(totalAmount) != 0) {
+                throw new IllegalArgumentException(
+                        "Beneficiary amount sum must equal total amount"
+                );
+            }
         }
     }
 

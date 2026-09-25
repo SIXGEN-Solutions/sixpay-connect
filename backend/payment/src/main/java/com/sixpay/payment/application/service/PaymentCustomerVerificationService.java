@@ -30,6 +30,7 @@ public final class PaymentCustomerVerificationService {
     private final CustomerVerificationEvidenceMapper evidenceMapper;
     private final CustomerVerificationFailureMapper failureMapper;
     private final PaymentCustomerVerificationIdGenerator idGenerator;
+    private final ResolvedDebtorAccountReferenceFactory accountReferenceFactory;
 
     public PaymentCustomerVerificationService(
             PaymentMutationCoordinator coordinator,
@@ -37,7 +38,8 @@ public final class PaymentCustomerVerificationService {
             PaymentCustomerVerificationRequestFactory requestFactory,
             CustomerVerificationEvidenceMapper evidenceMapper,
             CustomerVerificationFailureMapper failureMapper,
-            PaymentCustomerVerificationIdGenerator idGenerator
+            PaymentCustomerVerificationIdGenerator idGenerator,
+            ResolvedDebtorAccountReferenceFactory accountReferenceFactory
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -62,6 +64,10 @@ public final class PaymentCustomerVerificationService {
         this.idGenerator = Objects.requireNonNull(
                 idGenerator,
                 "idGenerator is required"
+        );
+        this.accountReferenceFactory = Objects.requireNonNull(
+                accountReferenceFactory,
+                "accountReferenceFactory is required"
         );
     }
 
@@ -145,6 +151,17 @@ public final class PaymentCustomerVerificationService {
                      * replay. Using completedAt rather than the current retry
                      * time makes the resulting evidence and failure identical.
                      */
+                    if (response.outcome()
+                            == CustomerVerificationResponse.Outcome.VERIFIED
+                            && payment.toState()
+                                    .optionalDebtorAccountReference()
+                                    .isEmpty()) {
+                        payment.resolveDebtorAccount(
+                                accountReferenceFactory.from(response),
+                                response.completedAt()
+                        );
+                    }
+
                     var snapshot = evidenceMapper.toSnapshot(
                             response,
                             payment.toState()

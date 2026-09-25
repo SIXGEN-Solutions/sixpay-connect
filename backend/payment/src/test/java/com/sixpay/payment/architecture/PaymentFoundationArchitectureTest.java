@@ -62,6 +62,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentT0SnapshotService.java",
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
+                "ResolvedDebtorAccountReferenceFactory.java",
                 "SecuredPaymentProjectionQueryService.java",
                 "TresorPayPaymentRecoveryService.java",
                 "package-info.java"

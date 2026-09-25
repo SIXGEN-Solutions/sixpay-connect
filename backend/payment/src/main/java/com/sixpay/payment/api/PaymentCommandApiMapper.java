@@ -45,14 +45,16 @@ public final class PaymentCommandApiMapper {
                 request.claimType(),
                 request.taxpayerIdentifier(),
                 request.requestedExecutionAt(),
-                request.beneficiaries().stream()
-                        .map(beneficiary ->
-                                new InitiateDebitBeneficiaryCommand(
-                                        beneficiary.rib(),
-                                        beneficiary.amount()
+                request.beneficiaries() == null
+                        ? java.util.List.of()
+                        : request.beneficiaries().stream()
+                                .map(beneficiary ->
+                                        new InitiateDebitBeneficiaryCommand(
+                                                beneficiary.rib(),
+                                                beneficiary.amount()
+                                        )
                                 )
-                        )
-                        .toList(),
+                                .toList(),
                 request.callbackUrl(),
                 idempotencyKey,
                 correlationId

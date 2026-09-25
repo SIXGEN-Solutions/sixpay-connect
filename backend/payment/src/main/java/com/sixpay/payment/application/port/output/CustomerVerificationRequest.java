@@ -30,9 +30,8 @@ public record CustomerVerificationRequest(
                 "verificationId is required"
         );
         customerNiu = requireText(customerNiu, "customerNiu");
-        customerLegalName = requireText(
-                customerLegalName,
-                "customerLegalName"
+        customerLegalName = normalizeOptional(
+                customerLegalName
         );
         financialInstitutionCode = requireText(
                 financialInstitutionCode,

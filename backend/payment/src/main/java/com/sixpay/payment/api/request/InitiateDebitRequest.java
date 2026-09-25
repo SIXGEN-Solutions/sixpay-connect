@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -41,7 +40,6 @@ public record InitiateDebitRequest(
         BigDecimal totalAmount,
 
         @JsonProperty("devise")
-        @NotBlank
         @Pattern(regexp = "^[A-Z]{3}$")
         String currency,
 
@@ -68,7 +66,6 @@ public record InitiateDebitRequest(
         Instant requestedExecutionAt,
 
         @JsonProperty("beneficiaires")
-        @NotEmpty
         @Size(max = 20)
         List<@Valid InitiateDebitBeneficiaryRequest> beneficiaries,
 

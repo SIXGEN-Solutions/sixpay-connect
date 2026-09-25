@@ -23,6 +23,8 @@ public record CustomerVerificationResponse(
         String accountBindingFingerprint,
         String customerReference,
         String accountReference,
+        String accountFinancialInstitutionCode,
+        String maskedAccountIdentifier,
         Instant observedAt,
         Instant validUntil,
         Instant completedAt
@@ -56,9 +58,17 @@ public record CustomerVerificationResponse(
         accountReference = normalizeOptional(
                 accountReference
         );
+        accountFinancialInstitutionCode = normalizeOptional(
+                accountFinancialInstitutionCode
+        );
+        maskedAccountIdentifier = normalizeOptional(
+                maskedAccountIdentifier
+        );
         if (outcome == Outcome.VERIFIED
                 && (customerReference == null
-                || accountReference == null)) {
+                || accountReference == null
+                || accountFinancialInstitutionCode == null
+                || maskedAccountIdentifier == null)) {
             throw new IllegalArgumentException(
                     "VERIFIED customer verification requires canonical "
                             + "customerReference and accountReference"
@@ -188,6 +198,9 @@ public record CustomerVerificationResponse(
                 + ", accountBindingFingerprint=[PROTECTED]"
                 + ", customerReference=[PROTECTED]"
                 + ", accountReference=[PROTECTED]"
+                + ", accountFinancialInstitutionCode="
+                + accountFinancialInstitutionCode
+                + ", maskedAccountIdentifier=[PROTECTED]"
                 + ", observedAt="
                 + observedAt
                 + ", validUntil="

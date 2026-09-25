@@ -48,7 +48,7 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 | INIT-2 | COMPLETED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` + INIT-2A/2B artifacts | Partner business and machine identity alignment implemented |
 | INIT-3 | TECHNICALLY-CLOSED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
 | INIT-4 | AMENDMENT-PREPARED | `INIT_4_PAYMENT_CONTRACT_AMENDMENT_SYNCHRONIZATION_GATE.md` | Payment Contract Amendment & Synchronization Gate |
-| INIT-5 | NOT STARTED | future implementation artifact | Payment input implementation after INIT-4 human contract validation |
+| INIT-5 | IMPLEMENTATION-PREPARED | `INIT_5_PAYMENT_INPUT_NIU_RESOLUTION_IMPLEMENTATION.md` | Payment Input & NIU Resolution Implementation |
 | INIT-6 | NOT STARTED | future implementation artifact | Idempotency / persistence / recovery alignment |
 
 ## Mandatory usage for following lots
