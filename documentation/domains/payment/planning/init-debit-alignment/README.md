@@ -82,3 +82,15 @@ See `INIT_2A_PARTNER_BUSINESS_IDENTITY.md`.
 
 Partner owns the canonical mandatory unique `partnerIdentifier`, distinct from
 its internal UUID. Machine identity binding remains outside INIT-2A.
+
+
+## INIT-2B — Partner machine identity
+
+See `INIT_2B_PARTNER_MACHINE_IDENTITY.md`.
+
+M2M Partner callers use a Security-owned machine identity surface distinct from
+human SIXPAY users. Security links the trusted machine subject to the canonical
+Partner `partnerIdentifier`; Bootstrap resolves Partner through its public
+surface and Payment owns the AppID consistency check.
+
+The physical public AppID contract remains pending explicit approval.

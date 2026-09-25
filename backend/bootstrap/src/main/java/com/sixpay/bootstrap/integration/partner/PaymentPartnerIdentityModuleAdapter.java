@@ -3,57 +3,59 @@ package com.sixpay.bootstrap.integration.partner;
 import com.sixpay.partner.application.port.input.PartnerIdentityQueryUseCase;
 import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.application.port.output.partner.ResolvedPartnerIdentity;
-import com.sixpay.security.authentication.AuthenticatedUser;
-import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.security.application.port.input.PartnerMachineIdentityQueryUseCase;
+import com.sixpay.security.authentication.CurrentMachineIdentityProvider;
 
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Bootstrap composition adapter between Payment, Partner and Security public
- * surfaces.
- *
- * <p>No business decision is implemented here. Partner owns canonical Partner
- * resolution; Security owns authenticated identity; Payment owns consistency
- * checks.</p>
+ * Composition adapter connecting Security machine identity to Partner business
+ * identity without leaking Security or Partner infrastructure into Payment.
  */
 public final class PaymentPartnerIdentityModuleAdapter
         implements PartnerIdentityResolutionPort {
 
-    private final CurrentUserProvider currentUserProvider;
+    private final CurrentMachineIdentityProvider machineIdentityProvider;
+    private final PartnerMachineIdentityQueryUseCase machineIdentityQuery;
     private final PartnerIdentityQueryUseCase partnerIdentityQuery;
 
     public PaymentPartnerIdentityModuleAdapter(
-            CurrentUserProvider currentUserProvider,
+            CurrentMachineIdentityProvider machineIdentityProvider,
+            PartnerMachineIdentityQueryUseCase machineIdentityQuery,
             PartnerIdentityQueryUseCase partnerIdentityQuery
     ) {
-        this.currentUserProvider = Objects.requireNonNull(
-                currentUserProvider,
-                "Current user provider"
-        );
-        this.partnerIdentityQuery = Objects.requireNonNull(
-                partnerIdentityQuery,
-                "Partner identity query use case"
-        );
+        this.machineIdentityProvider = Objects.requireNonNull(machineIdentityProvider);
+        this.machineIdentityQuery = Objects.requireNonNull(machineIdentityQuery);
+        this.partnerIdentityQuery = Objects.requireNonNull(partnerIdentityQuery);
     }
 
     @Override
     public Optional<ResolvedPartnerIdentity> resolveAuthenticatedPartner(
             String authenticatedSubject
     ) {
-        AuthenticatedUser current =
-                currentUserProvider.requireCurrentUser();
+        String trustedSubject = machineIdentityProvider
+                .requireCurrentMachineIdentity()
+                .subject();
 
-        if (!current.subject().equals(authenticatedSubject)) {
+        if (authenticatedSubject == null
+                || !trustedSubject.equals(authenticatedSubject.strip())) {
             return Optional.empty();
         }
 
-        /*
-         * The concrete Security-principal -> Partner business mapping is not
-         * invented in INIT-2. A reviewed Partner/Security linking surface is
-         * still required before this adapter can return a resolved Partner.
-         */
-        return Optional.empty();
+        return machineIdentityQuery
+                .findByMachineSubject(trustedSubject)
+                .flatMap(link ->
+                        partnerIdentityQuery
+                                .findByPartnerIdentifier(
+                                        link.partnerIdentifier()
+                                )
+                )
+                .map(view -> new ResolvedPartnerIdentity(
+                        view.partnerId(),
+                        view.partnerIdentifier(),
+                        view.acceptsNewTransactions()
+                ));
     }
 
     @Override

@@ -940,8 +940,11 @@ x-sixpay-tresorpay-source-mapping:
       acceptedInBody: false
       sensitive: true
     AppID:
-      target: "X-TresorPay-App-Id"
-      acceptedInBody: false
+      target: "partnerIdentifier"
+      acceptedInBody: true
+      requiredInBody: true
+      transportHeader: "X-TresorPay-App-Id"
+      consistencyRule: "AppID MUST equal X-TresorPay-App-Id and the partnerIdentifier resolved from the authenticated machine caller"
     PIN:
       target: "No direct equivalent"
       acceptedInBody: false
@@ -1009,7 +1012,6 @@ x-sixpay-sensitive-data:
   forbiddenRequestBodyProperties:
     - "LoginName"
     - "APIKey"
-    - "AppID"
     - "PIN"
   writeOnlyProperties:
     - "debtorAccount.rib"

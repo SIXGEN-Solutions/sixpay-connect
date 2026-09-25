@@ -25,6 +25,7 @@ public record InitiateDebitRequest(
         String loginName,
 
         @JsonProperty("AppID")
+        @NotBlank
         @Size(max = 64)
         String applicationId,
 

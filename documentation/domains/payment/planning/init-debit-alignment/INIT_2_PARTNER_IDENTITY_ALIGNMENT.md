@@ -226,3 +226,14 @@ The Partner business identity is explicit: `PartnerId` is the internal UUID and
 `partnerIdentifier` is mandatory, stable and unique. The remaining INIT-2
 concern is the reviewed Security/machine identity -> Partner link; INIT-2A does
 not introduce a username/subject heuristic.
+
+
+## INIT-2B completion
+
+Machine callers are no longer modeled as human SIXPAY users. Security exposes a
+dedicated trusted machine identity and a durable machine-subject ->
+`partnerIdentifier` link. Bootstrap composes Security and Partner public
+surfaces; Payment retains the mismatch decision.
+
+The active physical Payment contract still requires a separate approved
+alignment for the location/meaning of `AppID`.

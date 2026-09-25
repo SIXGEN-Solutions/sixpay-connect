@@ -50,6 +50,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @Import({
         LocalAuthenticationConfiguration.class,
         IdentityLinkingConfiguration.class,
+        PartnerMachineIdentityConfiguration.class,
         AuthenticationSessionController.class
 })
 @ConditionalOnClass({
