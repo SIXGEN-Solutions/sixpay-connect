@@ -1,0 +1,76 @@
+# SIXPAY CONNECT — Init Debit Alignment
+
+## Purpose
+
+Versioned planning and decision index for the `init-debit-alignment` workstream.
+
+This directory is a planning/decision aid. It does not override:
+- authoritative implementation;
+- architecture;
+- requirements;
+- physical contracts;
+- `documentation/contracts/CONTRACT_REGISTRY.yaml`.
+
+## Reference revision
+
+- Repository: `SIXGEN-Solutions/sixpay-connect`
+- Branch: `feat/repository-baseline-consolidation-cucumber`
+- Reference SHA: `2c7a575674fecaae044a23ac0663de7ea9763387`
+
+## Payload baseline
+
+Physical payload names are preserved.
+
+| JSON field | Target |
+|---|---|
+| `LoginName` | REQUIRED |
+| `AppID` | REQUIRED; semantic `partnerIdentifier` |
+| `endToEndId` | REQUIRED; external payment reference |
+| `montantTotal` | REQUIRED |
+| `devise` | OPTIONAL |
+| `ribDebiteur` | OPTIONAL |
+| `nomDebiteur` | OPTIONAL |
+| `typeCreance` | REQUIRED |
+| `NUI` | REQUIRED; NIU customer pivot |
+| `dateExecution` | REQUIRED |
+| `beneficiaires` | OPTIONAL |
+| `callbackURL` | REQUIRED |
+
+No new JSON field `partnerIdentifier` is introduced.
+No `RIP` or `accountNumber` field is introduced by this workstream.
+
+## Lot index
+
+| Lot | Status | Artifact | Purpose |
+|---|---|---|---|
+| INIT-0 | COMPLETED-PROPOSAL | `INIT_0_DECISION_CLOSURE_IMPACT_AUDIT.md` | Close decisions and produce exact impact audit |
+| INIT-1 | INPUT-AVAILABLE-OUTSIDE-REPO | `SIXPAY_INIT_1_PARTNER_CUSTOMER_IDENTIFICATION_CONTRACT_PROPOSAL.md` | Contract/payload proposal used as decision input |
+| INIT-2 | NOT STARTED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` | Partner identity alignment |
+| INIT-3 | NOT STARTED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
+| INIT-4 | NOT STARTED | future implementation artifact | Payment input implementation after approvals |
+| INIT-5 | NOT STARTED | future implementation artifact | Idempotency and recovery alignment |
+
+## Mandatory usage for following lots
+
+Before starting a subsequent lot:
+1. load this `README.md`;
+2. load every prior lot artifact marked as completed;
+3. reload repository governance and current authoritative contracts;
+4. compare prior decisions with the selected Git revision;
+5. report any divergence instead of silently redefining a prior decision.
+
+## Contract governance note
+
+At reference SHA `2c7a575674fecaae044a23ac0663de7ea9763387`,
+`tresorpay-payment-request-api-v1` is observed as:
+
+- `lifecycleStatus: ACTIVE_MVP`
+- `approvalStatus: APPROVED`
+- `generationPolicy: ACTIVE`
+- `codeGenerationAllowed: true`
+
+This differs from a task assumption of
+`PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed=false`.
+
+No physical contract is changed and no code generation is performed by INIT-0.
+Any future public-contract change still requires the applicable human approval.
