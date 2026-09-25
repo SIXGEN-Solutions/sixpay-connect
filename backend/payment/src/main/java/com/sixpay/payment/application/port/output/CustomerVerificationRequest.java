@@ -38,13 +38,11 @@ public record CustomerVerificationRequest(
                 financialInstitutionCode,
                 "financialInstitutionCode"
         );
-        accountBindingFingerprint = requireText(
-                accountBindingFingerprint,
-                "accountBindingFingerprint"
+        accountBindingFingerprint = normalizeOptional(
+                accountBindingFingerprint
         );
-        integrationAccountToken = requireText(
-                integrationAccountToken,
-                "integrationAccountToken"
+        integrationAccountToken = normalizeOptional(
+                integrationAccountToken
         );
         correlationId = requireText(
                 correlationId,
@@ -70,6 +68,13 @@ public record CustomerVerificationRequest(
                 financialInstitutionCode, accountBindingFingerprint,
                 integrationAccountToken, correlationId, causationId,
                 requestedAt, Instant.MAX);
+    }
+
+    private static String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.strip();
     }
 
     private static String requireText(

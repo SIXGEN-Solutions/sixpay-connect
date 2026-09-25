@@ -65,12 +65,12 @@ public record InitiateDebitCommand(
                 3,
                 "Currency"
         ).toUpperCase(java.util.Locale.ROOT);
-        debtorRib = requireText(
+        debtorRib = normalizeOptional(
                 debtorRib,
                 64,
                 "Debtor RIB"
         );
-        debtorName = requireText(
+        debtorName = normalizeOptional(
                 debtorName,
                 200,
                 "Debtor name"

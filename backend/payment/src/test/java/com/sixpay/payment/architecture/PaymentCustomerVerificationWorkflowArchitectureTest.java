@@ -226,12 +226,17 @@ class PaymentCustomerVerificationWorkflowArchitectureTest {
         );
         assertTrue(
                 factory.contains(
-                        "integrationAccountToken()"
+                        "optionalDebtorAccountReference()"
                 )
         );
         assertTrue(
                 factory.contains(
-                        "bindingFingerprint()"
+                        "DebtorAccountReference::integrationAccountToken"
+                )
+        );
+        assertTrue(
+                factory.contains(
+                        "DebtorAccountReference::bindingFingerprint"
                 )
         );
         assertTrue(

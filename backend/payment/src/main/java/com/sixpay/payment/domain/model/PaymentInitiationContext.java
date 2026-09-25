@@ -32,7 +32,11 @@ public record PaymentInitiationContext(
                 "Partner login name"
         );
         applicationId = normalizeOptionalIdentifier(applicationId);
-        debtorName = requireText(debtorName, 200, "Debtor name");
+        debtorName = normalizeOptionalText(
+                debtorName,
+                200,
+                "Debtor name"
+        );
         claimType = Objects.requireNonNull(claimType, "Claim type");
         taxpayerIdentifier = requireText(
                 taxpayerIdentifier,
@@ -71,6 +75,17 @@ public record PaymentInitiationContext(
             return null;
         }
         return requireIdentifier(value, "Application ID");
+    }
+
+    private static String normalizeOptionalText(
+            String value,
+            int maximumLength,
+            String label
+    ) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return requireText(value, maximumLength, label);
     }
 
     private static String requireText(

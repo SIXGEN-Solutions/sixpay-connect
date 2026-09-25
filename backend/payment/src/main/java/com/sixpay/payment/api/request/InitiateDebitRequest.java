@@ -46,13 +46,11 @@ public record InitiateDebitRequest(
         String currency,
 
         @JsonProperty("ribDebiteur")
-        @NotBlank
         @Size(min = 8, max = 64)
         @Pattern(regexp = "^[A-Za-z0-9-]+$")
         String debtorRib,
 
         @JsonProperty("nomDebiteur")
-        @NotBlank
         @Size(max = 200)
         String debtorName,
 

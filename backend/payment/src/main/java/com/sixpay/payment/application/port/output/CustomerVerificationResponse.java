@@ -47,9 +47,8 @@ public record CustomerVerificationResponse(
                 evidenceFingerprint,
                 "evidenceFingerprint"
         );
-        accountBindingFingerprint = requireText(
-                accountBindingFingerprint,
-                "accountBindingFingerprint"
+        accountBindingFingerprint = normalizeOptional(
+                accountBindingFingerprint
         );
         customerReference = normalizeOptional(
                 customerReference

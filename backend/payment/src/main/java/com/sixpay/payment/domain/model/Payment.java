@@ -131,7 +131,9 @@ public final class Payment {
                 state.source(),
                 state.financialInstitutionCode(),
                 MoneyPayload.from(state.requestedAmount()),
-                state.debtorAccountReference().maskedDisplay(),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::maskedDisplay)
+                        .orElse(null),
                 receivedAt
         );
 
@@ -214,12 +216,60 @@ public final class Payment {
                         new PaymentBankingVerificationRequested(
                                 batch.metadata(),
                                 next.financialInstitutionCode(),
-                                next.debtorAccountReference()
-                                        .bindingFingerprint(),
+                                next.optionalDebtorAccountReference()
+                                        .map(DebtorAccountReference::bindingFingerprint)
+                                        .orElse(null),
                                 requestedAt
                         )
                 )
         );
+    }
+
+    /**
+     * Establishes the canonical debtor account after authoritative banking
+     * resolution and before downstream account-bound processing.
+     */
+    public void resolveDebtorAccount(
+            DebtorAccountReference debtorAccountReference,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(
+                debtorAccountReference,
+                "Resolved debtor account"
+        );
+        Objects.requireNonNull(resolvedAt, "Resolved instant");
+
+        requireStatus(
+                "resolveDebtorAccount",
+                PaymentStatus.BANKING_VERIFICATION_PENDING
+        );
+
+        if (!state.financialInstitutionCode().equals(
+                debtorAccountReference.financialInstitutionCode()
+        )) {
+            throw PaymentDomainException.conflict(
+                    "Resolved debtor account institution does not match Payment"
+            );
+        }
+
+        DebtorAccountReference current =
+                state.optionalDebtorAccountReference().orElse(null);
+
+        if (current != null) {
+            if (!current.equals(debtorAccountReference)) {
+                throw PaymentDomainException.conflict(
+                        "Resolved debtor account cannot change"
+                );
+            }
+            return;
+        }
+
+        PaymentState next = state.toBuilder()
+                .debtorAccountReference(debtorAccountReference)
+                .updatedAt(resolvedAt)
+                .build();
+
+        commit(next, List.of());
     }
 
     /**

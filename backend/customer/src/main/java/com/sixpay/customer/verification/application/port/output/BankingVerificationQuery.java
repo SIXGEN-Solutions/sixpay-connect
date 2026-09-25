@@ -30,14 +30,7 @@ public record BankingVerificationQuery(
                 financialInstitutionCode,
                 "financialInstitutionCode is required"
         );
-        accountBindingFingerprint = Objects.requireNonNull(
-                accountBindingFingerprint,
-                "accountBindingFingerprint is required"
-        );
-        bankingAccountAccessReference = Objects.requireNonNull(
-                bankingAccountAccessReference,
-                "bankingAccountAccessReference is required"
-        );
+        // INIT-3: both account-bound values are optional pre-resolution hints.
         context = Objects.requireNonNull(context, "context is required");
         requestedAt = Objects.requireNonNull(requestedAt, "requestedAt is required");
         deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");

@@ -1,6 +1,7 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
+import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
@@ -54,10 +55,12 @@ public final class PaymentCustomerVerificationRequestFactory {
                 initiationContext.taxpayerIdentifier(),
                 initiationContext.debtorName(),
                 state.financialInstitutionCode().value(),
-                state.debtorAccountReference()
-                        .bindingFingerprint(),
-                state.debtorAccountReference()
-                        .integrationAccountToken(),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::bindingFingerprint)
+                        .orElse(null),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::integrationAccountToken)
+                        .orElse(null),
                 state.requestIdentity()
                         .correlationId()
                         .value(),
