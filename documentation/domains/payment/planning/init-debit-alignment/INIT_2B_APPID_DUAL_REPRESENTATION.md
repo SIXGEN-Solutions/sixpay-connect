@@ -1,24 +1,34 @@
-# INIT-2B — AppID dual representation
+# INIT-2B — AppID and transport application identifier
 
 ## Approved decision
 
-`X-TresorPay-App-Id` remains present and required as the transport-level
-Partner identifier.
-
-JSON `AppID` is also required and represents the same canonical
+`AppID` is the required business Partner identifier carried by the
+`initiateDebit` JSON payload. It maps to the registered Partner
 `partnerIdentifier`.
 
-Neither value authenticates the caller on its own.
+`X-TresorPay-App-Id` remains a required transport/integration identifier.
 
-The consistency invariant is:
+The two values may be equal, but SIXPAY does **not** require:
 
 ```text
-authenticatedPartner.partnerIdentifier
-    == X-TresorPay-App-Id
+X-TresorPay-App-Id == AppID
+```
+
+Neither value authenticates the machine caller by itself.
+
+The mandatory business identity invariant is:
+
+```text
+authenticated machine caller
+    -> Security machine identity link
+    -> registered Partner
+    -> Partner.partnerIdentifier
     == request.AppID
 ```
 
-A mismatch is rejected before Payment business processing.
+`X-TresorPay-App-Id` is validated according to its own transport/security
+contract and is not used as a substitute for Partner business identity.
 
-The authenticated Partner is obtained from the trusted M2M machine identity
-and its Security-owned link to the registered Partner.
+A mismatch between the Partner resolved from the authenticated machine caller
+and the Partner declared by `AppID` is rejected before Payment business
+processing.

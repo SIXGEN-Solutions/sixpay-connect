@@ -7,6 +7,9 @@ import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.PaymentModule;
 import com.sixpay.payment.application.service.PaymentInitiationDeadline;
 import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
+import com.sixpay.payment.application.port.output.partner.ResolvedPartnerIdentity;
+import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntity;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditRepository;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyEntity;
@@ -75,6 +78,34 @@ public class PaymentModuleConfiguration {
     @ConditionalOnMissingBean
     AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort() {
         return Optional::<String>empty;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PartnerIdentityResolutionPort partnerIdentityResolutionPort() {
+        return new PartnerIdentityResolutionPort() {
+            @Override
+            public Optional<ResolvedPartnerIdentity> resolveAuthenticatedPartner(
+                    String authenticatedSubject
+            ) {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<ResolvedPartnerIdentity> findByPartnerIdentifier(
+                    String partnerIdentifier
+            ) {
+                return Optional.empty();
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PartnerIdentityAlignmentService partnerIdentityAlignmentService(
+            PartnerIdentityResolutionPort resolutionPort
+    ) {
+        return new PartnerIdentityAlignmentService(resolutionPort);
     }
 
     @Bean

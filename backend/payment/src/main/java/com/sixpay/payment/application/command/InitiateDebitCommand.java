@@ -36,7 +36,7 @@ public record InitiateDebitCommand(
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
     public InitiateDebitCommand {
-        partnerLoginName = requireText(
+        partnerLoginName = normalizeOptional(
                 partnerLoginName,
                 64,
                 "Partner login name"
@@ -102,15 +102,6 @@ public record InitiateDebitCommand(
                 correlationId,
                 "Correlation ID"
         );
-
-        if (!partnerLoginName.equals(
-                authenticatedPartnerLoginName
-        )) {
-            throw new IllegalArgumentException(
-                    "Partner login name must match "
-                            + "the authenticated partner identity"
-            );
-        }
 
         if (totalAmount.signum() <= 0) {
             throw new IllegalArgumentException(

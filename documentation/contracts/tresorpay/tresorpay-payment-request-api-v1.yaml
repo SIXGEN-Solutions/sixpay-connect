@@ -944,7 +944,7 @@ x-sixpay-tresorpay-source-mapping:
       acceptedInBody: true
       requiredInBody: true
       transportHeader: "X-TresorPay-App-Id"
-      consistencyRule: "AppID MUST equal X-TresorPay-App-Id and the partnerIdentifier resolved from the authenticated machine caller"
+      consistencyRule: "AppID MUST identify the same registered Partner as the authenticated machine caller. X-TresorPay-App-Id remains independent transport metadata and is not required to equal AppID."
     PIN:
       target: "No direct equivalent"
       acceptedInBody: false

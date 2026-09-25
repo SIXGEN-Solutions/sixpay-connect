@@ -7,6 +7,7 @@ import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
 import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
+import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,17 +37,20 @@ public class PaymentCommandController {
     private final PaymentInitiationUseCase initiationUseCase;
     private final PaymentCommandApiMapper mapper;
     private final AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort;
+    private final PartnerIdentityAlignmentService partnerIdentityAlignmentService;
     private final CorrelationIdResolver correlationIdResolver;
 
     public PaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
             PaymentCommandApiMapper mapper,
             AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort,
+            PartnerIdentityAlignmentService partnerIdentityAlignmentService,
             CorrelationIdResolver correlationIdResolver
     ) {
         this.initiationUseCase = initiationUseCase;
         this.mapper = mapper;
         this.authenticatedPartnerCallerPort = authenticatedPartnerCallerPort;
+        this.partnerIdentityAlignmentService = partnerIdentityAlignmentService;
         this.correlationIdResolver = correlationIdResolver;
     }
 
@@ -87,11 +91,18 @@ public class PaymentCommandController {
                 authenticatedPartnerCallerPort
                         .requireAuthenticatedSubject();
 
-        if (!transportPartnerIdentifier.equals(request.applicationId())) {
-            throw new IllegalArgumentException(
-                    "X-TresorPay-App-Id must match request AppID"
-            );
-        }
+        /*
+         * X-TresorPay-App-Id is independent transport metadata.
+         * It is not required to equal the business Partner identifier carried
+         * by request AppID.
+         *
+         * The authoritative business check is between the authenticated M2M
+         * caller resolved to Partner and request.AppID.
+         */
+        partnerIdentityAlignmentService.requireConsistentPartner(
+                authenticatedPartner,
+                request.applicationId()
+        );
 
         var result = initiationUseCase.initiateDebit(
                 mapper.toCommand(

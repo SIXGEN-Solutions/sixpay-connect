@@ -98,3 +98,30 @@ auto-configuration while preserving the M2M identity boundary. The empty
 Payment fallback port is composition-safe for isolated module contexts and
 never authenticates a caller; protected API invocation still fails when no
 authenticated subject is supplied.
+
+
+## Final INIT-2B alignment
+
+The effective identity invariant is now:
+
+```text
+authenticated machine subject
+    -> Security machine identity link
+    -> Partner.partnerIdentifier
+    == request.AppID
+```
+
+`X-TresorPay-App-Id` remains independent transport metadata. It may equal
+`AppID`, but equality is not required.
+
+`LoginName` is not an authentication identity and no longer has to equal the
+authenticated machine subject.
+
+The Payment HTTP boundary invokes `PartnerIdentityAlignmentService` before
+delegating to the Payment initiation use case.
+
+## Closure status
+
+```text
+INIT-2B — IMPLEMENTATION COMPLETE, VALIDATION REQUIRED
+```
