@@ -29,9 +29,9 @@ import java.util.UUID;
                         columnNames = "public_payment_reference"
                 ),
                 @UniqueConstraint(
-                        name = "uk_payments_source_external_reference",
+                        name = "uk_payments_partner_external_reference",
                         columnNames = {
-                                "payment_source",
+                                "partner_identifier",
                                 "external_payment_reference"
                         }
                 )
@@ -85,6 +85,13 @@ public class PaymentJpaEntity {
             length = 128
     )
     private String externalPaymentReference;
+
+    @Column(
+            name = "partner_identifier",
+            updatable = false,
+            length = 64
+    )
+    private String partnerIdentifier;
 
     @Column(
             name = "external_subscription_reference",
@@ -177,6 +184,10 @@ public class PaymentJpaEntity {
         entity.source = state.source();
         entity.externalPaymentReference =
                 state.externalPaymentReference().value();
+        entity.partnerIdentifier =
+                state.initiationContext()
+                        .map(context -> context.applicationId())
+                        .orElse(null);
         entity.externalSubscriptionReference =
                 state.externalSubscriptionReference().value();
         entity.financialInstitutionCode =
@@ -259,6 +270,10 @@ public class PaymentJpaEntity {
 
     String externalPaymentReference() {
         return externalPaymentReference;
+    }
+
+    String partnerIdentifier() {
+        return partnerIdentifier;
     }
 
     PaymentStatus status() {

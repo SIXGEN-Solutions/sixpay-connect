@@ -12,6 +12,7 @@ CREATE TABLE payments
     public_payment_reference       VARCHAR(30)    NOT NULL,
     payment_source                 VARCHAR(32)    NOT NULL,
     external_payment_reference     VARCHAR(128)   NOT NULL,
+    partner_identifier              VARCHAR(64),
     external_subscription_reference VARCHAR(128)  NOT NULL,
     financial_institution_code     VARCHAR(32),
     requested_amount               NUMERIC(38,18) NOT NULL,
@@ -30,8 +31,8 @@ CREATE TABLE payments
     CONSTRAINT uk_payments_public_reference
         UNIQUE (public_payment_reference),
 
-    CONSTRAINT uk_payments_source_external_reference
-        UNIQUE (payment_source, external_payment_reference),
+    CONSTRAINT uk_payments_partner_external_reference
+        UNIQUE (partner_identifier, external_payment_reference),
 
     CONSTRAINT ck_payments_source
         CHECK (payment_source = 'TRESOR_PAY'),
@@ -95,6 +96,9 @@ CREATE TABLE payments
 
 CREATE INDEX idx_payments_status_updated_at
     ON payments (status, updated_at);
+
+CREATE INDEX idx_payments_partner_identifier
+    ON payments (partner_identifier);
 
 CREATE INDEX idx_payments_subscription_reference
     ON payments (external_subscription_reference);
@@ -274,6 +278,7 @@ COMMENT ON TABLE payment_outbox_events IS
 CREATE TABLE payment_idempotency
 (
     id                  UUID          NOT NULL,
+    partner_identifier  VARCHAR(64),
     operation           VARCHAR(160)  NOT NULL,
     idempotency_key     VARCHAR(150)  NOT NULL,
     request_hash        VARCHAR(64)   NOT NULL,
@@ -292,9 +297,6 @@ CREATE TABLE payment_idempotency
 
     CONSTRAINT pk_payment_idempotency
         PRIMARY KEY (id),
-
-    CONSTRAINT uk_payment_idempotency_operation_key
-        UNIQUE (operation, idempotency_key),
 
     CONSTRAINT fk_payment_idempotency_payment
         FOREIGN KEY (payment_id)
@@ -381,6 +383,24 @@ CREATE TABLE payment_idempotency
         )
 );
 
+CREATE UNIQUE INDEX uk_payment_idempotency_partner_operation_key
+    ON payment_idempotency (
+        partner_identifier,
+        operation,
+        idempotency_key
+    )
+    WHERE partner_identifier IS NOT NULL;
+
+CREATE UNIQUE INDEX uk_payment_idempotency_unscoped_operation_key
+    ON payment_idempotency (
+        operation,
+        idempotency_key
+    )
+    WHERE partner_identifier IS NULL;
+
+CREATE INDEX idx_payment_idempotency_partner
+    ON payment_idempotency (partner_identifier);
+
 CREATE INDEX idx_payment_idempotency_status_updated
     ON payment_idempotency (
         status,
@@ -396,6 +416,9 @@ CREATE INDEX idx_payment_idempotency_unknown_recovery
 
 COMMENT ON TABLE payment_idempotency IS
     'Durable Payment idempotency reservation and replay result.';
+
+COMMENT ON COLUMN payment_idempotency.partner_identifier IS
+    'Canonical Partner business identifier for Partner-scoped initiation idempotency. NULL is reserved for existing non-initiation Payment idempotency operations.';
 
 COMMENT ON COLUMN payment_idempotency.request_hash IS
     'Lowercase SHA-256 of the canonical Payment request representation.';

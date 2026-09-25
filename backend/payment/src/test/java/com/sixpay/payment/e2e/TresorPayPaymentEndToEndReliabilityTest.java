@@ -107,7 +107,8 @@ class TresorPayPaymentEndToEndReliabilityTest {
         assertThat(adapter)
                 .contains("case REPLAY ->")
                 .contains("replay(decision)")
-                .contains("replayStore.complete(");
+                .contains("replayStore.completeScoped(")
+                .contains("findCompletedReplayForPayment(");
 
         assertThat(recovery)
                 .contains("Read-only recovery view")

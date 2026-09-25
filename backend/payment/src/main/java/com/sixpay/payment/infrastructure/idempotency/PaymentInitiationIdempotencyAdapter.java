@@ -2,8 +2,10 @@ package com.sixpay.payment.infrastructure.idempotency;
 
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.application.port.output.idempotency
         .PaymentInitiationIdempotencyPort;
+import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.application.service
         .PaymentInitiationInProgressException;
 import com.sixpay.payment.application.view.InitiateDebitResult;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -39,6 +42,7 @@ public class PaymentInitiationIdempotencyAdapter
     private final PaymentIdempotencyConcurrencyCoordinator coordinator;
     private final PaymentIdempotencyReplayStore replayStore;
     private final PaymentInitiationReplayCodec replayCodec;
+    private final PaymentLookupPort paymentLookupPort;
     private final TimeProvider timeProvider;
 
     public PaymentInitiationIdempotencyAdapter(
@@ -47,6 +51,7 @@ public class PaymentInitiationIdempotencyAdapter
             PaymentIdempotencyConcurrencyCoordinator coordinator,
             PaymentIdempotencyReplayStore replayStore,
             PaymentInitiationReplayCodec replayCodec,
+            PaymentLookupPort paymentLookupPort,
             TimeProvider timeProvider
     ) {
         this.canonicalizer = Objects.requireNonNull(
@@ -72,6 +77,11 @@ public class PaymentInitiationIdempotencyAdapter
         this.replayCodec = Objects.requireNonNull(
                 replayCodec,
                 "Payment initiation replay codec"
+        );
+
+        this.paymentLookupPort = Objects.requireNonNull(
+                paymentLookupPort,
+                "Payment lookup port"
         );
 
         this.timeProvider = Objects.requireNonNull(
@@ -108,12 +118,25 @@ public class PaymentInitiationIdempotencyAdapter
         String requestHash = hasher.hash(
                 canonicalizer.canonicalize(command)
         );
+        String partnerIdentifier = command.applicationId();
 
-        return coordinator.executeLocked(
+        Optional<InitiateDebitResult> externalReferenceReplay =
+                replayByExternalReference(
+                        command,
+                        partnerIdentifier,
+                        requestHash
+                );
+        if (externalReferenceReplay.isPresent()) {
+            return externalReferenceReplay.orElseThrow();
+        }
+
+        return coordinator.executeScopedLocked(
+                partnerIdentifier,
                 OPERATION,
                 command.idempotencyKey(),
                 () -> executeLocked(
                         command,
+                        partnerIdentifier,
                         requestHash,
                         newRequest
                 )
@@ -122,11 +145,13 @@ public class PaymentInitiationIdempotencyAdapter
 
     private InitiateDebitResult executeLocked(
             InitiateDebitCommand command,
+            String partnerIdentifier,
             String requestHash,
             Function<String, InitiateDebitResult> newRequest
     ) {
         PaymentIdempotencyDecision decision =
-                replayStore.begin(
+                replayStore.beginScoped(
+                        partnerIdentifier,
                         OPERATION,
                         command.idempotencyKey(),
                         requestHash,
@@ -148,6 +173,7 @@ public class PaymentInitiationIdempotencyAdapter
             case NEW ->
                     completeNew(
                             command,
+                            partnerIdentifier,
                             requestHash,
                             newRequest
                     );
@@ -156,13 +182,15 @@ public class PaymentInitiationIdempotencyAdapter
 
     private InitiateDebitResult completeNew(
             InitiateDebitCommand command,
+            String partnerIdentifier,
             String requestHash,
             Function<String, InitiateDebitResult> newRequest
     ) {
         InitiateDebitResult result =
                 newRequest.apply(requestHash);
 
-        replayStore.complete(
+        replayStore.completeScoped(
+                partnerIdentifier,
                 OPERATION,
                 command.idempotencyKey(),
                 requestHash,
@@ -173,6 +201,46 @@ public class PaymentInitiationIdempotencyAdapter
         );
 
         return result;
+    }
+
+    private Optional<InitiateDebitResult> replayByExternalReference(
+            InitiateDebitCommand command,
+            String partnerIdentifier,
+            String requestHash
+    ) {
+        return paymentLookupPort
+                .findByPartnerIdentifierAndExternalPaymentReference(
+                        partnerIdentifier,
+                        ExternalPaymentReference.of(command.endToEndId())
+                )
+                .map(payment -> {
+                    String persistedHash = payment.toState()
+                            .requestIdentity()
+                            .requestFingerprint()
+                            .value();
+
+                    if (!persistedHash.equals(requestHash)) {
+                        throw new PaymentExternalReferenceConflictException(
+                                partnerIdentifier,
+                                command.endToEndId()
+                        );
+                    }
+
+                    PaymentIdempotencyDecision decision =
+                            replayStore
+                                    .findCompletedReplayForPayment(
+                                            partnerIdentifier,
+                                            OPERATION,
+                                            payment.id().value()
+                                    )
+                                    .orElseThrow(() ->
+                                            new IllegalStateException(
+                                                    "Existing Payment has no completed initiation replay"
+                                            )
+                                    );
+
+                    return replay(decision);
+                });
     }
 
     /**

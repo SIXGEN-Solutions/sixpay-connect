@@ -95,3 +95,10 @@ Partner `partnerIdentifier`; Bootstrap resolves Partner through its public
 surface and Payment owns the AppID consistency check.
 
 The physical public AppID contract remains pending explicit approval.
+
+## INIT-6 — Idempotency / Persistence / Recovery Alignment
+
+See `INIT_6_IDEMPOTENCY_PERSISTENCE_RECOVERY_ALIGNMENT.md`.
+
+Status: `IMPLEMENTED_LOCALLY_PENDING_VALIDATION`.
+

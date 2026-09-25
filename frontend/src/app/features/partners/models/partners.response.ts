@@ -15,6 +15,7 @@ export interface ValidationThresholdResponse {
 
 export interface PartnerResponse {
   readonly id: string;
+  readonly partnerIdentifier: string;
   readonly legalName: string;
   readonly technicalContactName: string;
   readonly technicalContactEmail: string;

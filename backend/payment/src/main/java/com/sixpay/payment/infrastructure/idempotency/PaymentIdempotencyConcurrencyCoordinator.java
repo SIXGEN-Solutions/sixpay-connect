@@ -27,6 +27,26 @@ public class PaymentIdempotencyConcurrencyCoordinator {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public <T> T executeScopedLocked(
+            String partnerIdentifier,
+            String operation,
+            String idempotencyKey,
+            Supplier<T> action
+    ) {
+        if (partnerIdentifier == null || partnerIdentifier.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Partner identifier is invalid"
+            );
+        }
+        return executeLockKey(
+                partnerIdentifier.strip()
+                        + ":"
+                        + lockKey(operation, idempotencyKey),
+                action
+        );
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public <T> T executeLocked(
             String operation,
             String idempotencyKey,
@@ -37,6 +57,13 @@ public class PaymentIdempotencyConcurrencyCoordinator {
                 idempotencyKey
         );
 
+        return executeLockKey(lockKey, action);
+    }
+
+    private <T> T executeLockKey(
+            String lockKey,
+            Supplier<T> action
+    ) {
         entityManager.createNativeQuery(
                         """
                         SELECT pg_advisory_xact_lock(
