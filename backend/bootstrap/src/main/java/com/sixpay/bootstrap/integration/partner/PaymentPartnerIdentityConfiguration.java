@@ -1,6 +1,7 @@
 package com.sixpay.bootstrap.integration.partner;
 
 import com.sixpay.partner.application.port.input.PartnerIdentityQueryUseCase;
+import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
 import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
 import com.sixpay.security.application.port.input.PartnerMachineIdentityQueryUseCase;
@@ -13,6 +14,16 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 public class PaymentPartnerIdentityConfiguration {
+
+
+    @Bean
+    AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort(
+            CurrentMachineIdentityProvider machineIdentityProvider
+    ) {
+        return new SecurityAuthenticatedPartnerCallerAdapter(
+                machineIdentityProvider
+        );
+    }
 
     @Bean
     PartnerIdentityResolutionPort paymentPartnerIdentityResolutionPort(

@@ -78,3 +78,23 @@ technical subject produced by the selected transport authentication.
 INIT-2B — INTERNAL MACHINE IDENTITY LINK IMPLEMENTED
 PUBLIC APPID CONTRACT ALIGNMENT STILL REQUIRES HUMAN APPROVAL
 ```
+
+
+## Corrective composition rule
+
+Payment no longer depends directly on `CurrentMachineIdentityProvider`.
+
+The module boundary is:
+
+```text
+PaymentCommandController
+    -> AuthenticatedPartnerCallerPort        [owned by Payment]
+    -> Bootstrap adapter
+    -> CurrentMachineIdentityProvider        [owned by Security]
+```
+
+This keeps Payment module tests independent from servlet Security
+auto-configuration while preserving the M2M identity boundary. The empty
+Payment fallback port is composition-safe for isolated module contexts and
+never authenticates a caller; protected API invocation still fails when no
+authenticated subject is supplied.

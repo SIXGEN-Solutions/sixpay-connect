@@ -6,7 +6,7 @@ import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
-import com.sixpay.security.authentication.CurrentMachineIdentityProvider;
+import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,18 +35,18 @@ public class PaymentCommandController {
 
     private final PaymentInitiationUseCase initiationUseCase;
     private final PaymentCommandApiMapper mapper;
-    private final CurrentMachineIdentityProvider currentMachineIdentityProvider;
+    private final AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort;
     private final CorrelationIdResolver correlationIdResolver;
 
     public PaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
             PaymentCommandApiMapper mapper,
-            CurrentMachineIdentityProvider currentMachineIdentityProvider,
+            AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort,
             CorrelationIdResolver correlationIdResolver
     ) {
         this.initiationUseCase = initiationUseCase;
         this.mapper = mapper;
-        this.currentMachineIdentityProvider = currentMachineIdentityProvider;
+        this.authenticatedPartnerCallerPort = authenticatedPartnerCallerPort;
         this.correlationIdResolver = correlationIdResolver;
     }
 
@@ -84,9 +84,8 @@ public class PaymentCommandController {
                 correlationIdResolver.resolve(correlationHeader);
 
         String authenticatedPartner =
-                currentMachineIdentityProvider
-                        .requireCurrentMachineIdentity()
-                        .subject();
+                authenticatedPartnerCallerPort
+                        .requireAuthenticatedSubject();
 
         if (!transportPartnerIdentifier.equals(request.applicationId())) {
             throw new IllegalArgumentException(

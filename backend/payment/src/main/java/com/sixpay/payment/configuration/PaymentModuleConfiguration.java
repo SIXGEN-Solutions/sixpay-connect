@@ -6,6 +6,7 @@ import com.sixpay.common.time.SystemTimeProvider;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.PaymentModule;
 import com.sixpay.payment.application.service.PaymentInitiationDeadline;
+import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntity;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditRepository;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyEntity;
@@ -28,6 +29,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @AutoConfiguration
@@ -67,6 +69,13 @@ import java.util.UUID;
         }
 )
 public class PaymentModuleConfiguration {
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort() {
+        return Optional::<String>empty;
+    }
 
     @Bean
     @ConditionalOnMissingBean
