@@ -129,7 +129,7 @@ public final class Payment {
                 batch.metadata(),
                 state.externalPaymentReference(),
                 state.source(),
-                state.financialInstitutionCode(),
+                state.optionalFinancialInstitutionCode().orElse(null),
                 MoneyPayload.from(state.requestedAmount()),
                 state.optionalDebtorAccountReference()
                         .map(DebtorAccountReference::maskedDisplay)
@@ -215,7 +215,7 @@ public final class Payment {
                 List.of(
                         new PaymentBankingVerificationRequested(
                                 batch.metadata(),
-                                next.financialInstitutionCode(),
+                                next.optionalFinancialInstitutionCode().orElse(null),
                                 next.optionalDebtorAccountReference()
                                         .map(DebtorAccountReference::bindingFingerprint)
                                         .orElse(null),
@@ -244,9 +244,12 @@ public final class Payment {
                 PaymentStatus.BANKING_VERIFICATION_PENDING
         );
 
-        if (!state.financialInstitutionCode().equals(
-                debtorAccountReference.financialInstitutionCode()
-        )) {
+        FinancialInstitutionCode currentInstitution =
+                state.optionalFinancialInstitutionCode().orElse(null);
+        if (currentInstitution != null
+                && !currentInstitution.equals(
+                        debtorAccountReference.financialInstitutionCode()
+                )) {
             throw PaymentDomainException.conflict(
                     "Resolved debtor account institution does not match Payment"
             );
@@ -265,6 +268,9 @@ public final class Payment {
         }
 
         PaymentState next = state.toBuilder()
+                .financialInstitutionCode(
+                        debtorAccountReference.financialInstitutionCode()
+                )
                 .debtorAccountReference(debtorAccountReference)
                 .updatedAt(resolvedAt)
                 .build();

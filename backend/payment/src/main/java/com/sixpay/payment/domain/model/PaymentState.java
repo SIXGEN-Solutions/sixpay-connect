@@ -70,10 +70,7 @@ public final class PaymentState implements ValueObject {
                 builder.requestIdentity,
                 "Request identity"
         );
-        financialInstitutionCode = Objects.requireNonNull(
-                builder.financialInstitutionCode,
-                "Financial institution code"
-        );
+        financialInstitutionCode = builder.financialInstitutionCode;
         debtorAccountReference = builder.debtorAccountReference;
         requestedAmount = Objects.requireNonNull(
                 builder.requestedAmount,
@@ -130,9 +127,10 @@ public final class PaymentState implements ValueObject {
             );
         }
         if (debtorAccountReference != null
-                && !financialInstitutionCode.equals(
+                && (financialInstitutionCode == null
+                || !financialInstitutionCode.equals(
                         debtorAccountReference.financialInstitutionCode()
-                )) {
+                ))) {
             throw new IllegalArgumentException(
                     "Debtor-account institution must match Payment"
             );
@@ -625,7 +623,16 @@ public final class PaymentState implements ValueObject {
     }
 
     public FinancialInstitutionCode financialInstitutionCode() {
+        if (financialInstitutionCode == null) {
+            throw new IllegalStateException(
+                    "Financial institution has not been resolved"
+            );
+        }
         return financialInstitutionCode;
+    }
+
+    public Optional<FinancialInstitutionCode> optionalFinancialInstitutionCode() {
+        return Optional.ofNullable(financialInstitutionCode);
     }
 
     /**

@@ -33,10 +33,7 @@ public record CustomerVerificationRequest(
         customerLegalName = normalizeOptional(
                 customerLegalName
         );
-        financialInstitutionCode = requireText(
-                financialInstitutionCode,
-                "financialInstitutionCode"
-        );
+        financialInstitutionCode = normalizeOptional(financialInstitutionCode);
         accountBindingFingerprint = normalizeOptional(
                 accountBindingFingerprint
         );

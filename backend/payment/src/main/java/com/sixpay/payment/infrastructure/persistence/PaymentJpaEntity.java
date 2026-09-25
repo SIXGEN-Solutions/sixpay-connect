@@ -96,8 +96,7 @@ public class PaymentJpaEntity {
 
     @Column(
             name = "financial_institution_code",
-            nullable = false,
-            updatable = false,
+            nullable = true,
             length = 32
     )
     private String financialInstitutionCode;
@@ -181,7 +180,9 @@ public class PaymentJpaEntity {
         entity.externalSubscriptionReference =
                 state.externalSubscriptionReference().value();
         entity.financialInstitutionCode =
-                state.financialInstitutionCode().value();
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null);
         entity.requestedAmount = state.requestedAmount().amount();
         entity.requestedCurrency =
                 state.requestedAmount().currency().getCurrencyCode();
@@ -233,6 +234,10 @@ public class PaymentJpaEntity {
             );
         }
 
+        financialInstitutionCode =
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null);
         status = state.status();
         businessVersion = state.businessVersion();
         updatedAt = state.updatedAt();

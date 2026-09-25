@@ -13,7 +13,7 @@ CREATE TABLE payments
     payment_source                 VARCHAR(32)    NOT NULL,
     external_payment_reference     VARCHAR(128)   NOT NULL,
     external_subscription_reference VARCHAR(128)  NOT NULL,
-    financial_institution_code     VARCHAR(32)    NOT NULL,
+    financial_institution_code     VARCHAR(32),
     requested_amount               NUMERIC(38,18) NOT NULL,
     requested_currency             VARCHAR(3)        NOT NULL,
     status                         VARCHAR(48)    NOT NULL,

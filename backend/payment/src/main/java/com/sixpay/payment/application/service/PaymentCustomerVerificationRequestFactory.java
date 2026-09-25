@@ -54,7 +54,9 @@ public final class PaymentCustomerVerificationRequestFactory {
                 verificationId,
                 initiationContext.taxpayerIdentifier(),
                 initiationContext.debtorName(),
-                state.financialInstitutionCode().value(),
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null),
                 state.optionalDebtorAccountReference()
                         .map(DebtorAccountReference::bindingFingerprint)
                         .orElse(null),
