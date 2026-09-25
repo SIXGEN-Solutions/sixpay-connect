@@ -89,7 +89,7 @@ public class PartnerMvpSteps {
                         .with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", uniqueKey("invalid"))
-                        .content("{\"legalName\":\"\",\"technicalContactName\":\"Alice Ops\",\"technicalContactEmail\":\"not-an-email\",\"authorizedTransactionTypes\":[]}"))
+                        .content("{\"partnerIdentifier\":\"INVALID_PARTNER\",\"legalName\":\"\",\"technicalContactName\":\"Alice Ops\",\"technicalContactEmail\":\"not-an-email\",\"authorizedTransactionTypes\":[]}"))
                 .andReturn();
         capture(result.getResponse().getStatus(), result.getResponse().getContentAsString());
     }
@@ -280,7 +280,7 @@ public class PartnerMvpSteps {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", idempotencyKey)
                         .header("X-Correlation-ID", uniqueKey("corr"))
-                        .content("{\"legalName\":\"Cucumber Payments\",\"technicalContactName\":\"Alice Ops\",\"technicalContactEmail\":\"alice.ops@example.com\",\"authorizedTransactionTypes\":[\"PAYMENT\"]}"))
+                        .content("{\"partnerIdentifier\":\"" + idempotencyKey + "\",\"legalName\":\"Cucumber Payments\",\"technicalContactName\":\"Alice Ops\",\"technicalContactEmail\":\"alice.ops@example.com\",\"authorizedTransactionTypes\":[\"PAYMENT\"]}"))
                 .andReturn();
 
         capture(result.getResponse().getStatus(), result.getResponse().getContentAsString());

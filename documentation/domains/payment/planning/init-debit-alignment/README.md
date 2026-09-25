@@ -15,7 +15,7 @@ This directory is a planning/decision aid. It does not override:
 
 - Repository: `SIXGEN-Solutions/sixpay-connect`
 - Branch: `feat/repository-baseline-consolidation-cucumber`
-- Reference SHA: `8c0c02d65f2d9ed10c143702b7a13cd9bdcbe94d`
+- Reference SHA: `3857f80711e5e7d5c36abd627d00f6aa9e7d79e1`
 
 ## Payload baseline
 
@@ -45,7 +45,7 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 |---|---|---|---|
 | INIT-0 | COMPLETED-PROPOSAL | `INIT_0_DECISION_CLOSURE_IMPACT_AUDIT.md` | Close decisions and produce exact impact audit |
 | INIT-1 | COMPLETED-PROPOSAL | `INIT_1_PARTNER_CUSTOMER_IDENTIFICATION.md` | Reconcile current physical contract with INIT-0 decisions and prepare the future amendment |
-| INIT-2 | NOT STARTED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` | Partner identity alignment |
+| INIT-2 | PARTIAL-BLOCKED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` | Public Partner/Payment identity surfaces defined; persistent partnerIdentifier and Security→Partner link require human decision |
 | INIT-3 | NOT STARTED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
 | INIT-4 | NOT STARTED | future implementation artifact | Payment input implementation after approvals |
 | INIT-5 | NOT STARTED | future implementation artifact | Idempotency and recovery alignment |
@@ -74,3 +74,11 @@ This differs from a task assumption of
 
 No physical contract is changed and no code generation is performed by INIT-0.
 Any future public-contract change still requires the applicable human approval.
+
+
+## INIT-2A — Partner business identity
+
+See `INIT_2A_PARTNER_BUSINESS_IDENTITY.md`.
+
+Partner owns the canonical mandatory unique `partnerIdentifier`, distinct from
+its internal UUID. Machine identity binding remains outside INIT-2A.

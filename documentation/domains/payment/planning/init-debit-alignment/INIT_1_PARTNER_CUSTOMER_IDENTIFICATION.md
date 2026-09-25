@@ -636,3 +636,11 @@ Status:
 ```text
 INIT-1 — CONTRACT CHANGE PROPOSAL READY FOR HUMAN REVIEW
 ```
+
+
+## INIT-2A clarification
+
+Partner owns `partnerIdentifier`, distinct from internal `PartnerId`. For the
+target Initiate Debit semantics, `AppID` represents this canonical Partner
+business identifier. Physical contract/security amendment remains separately
+governed.
