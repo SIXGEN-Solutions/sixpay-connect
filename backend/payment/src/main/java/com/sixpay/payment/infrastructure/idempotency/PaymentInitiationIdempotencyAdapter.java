@@ -120,26 +120,32 @@ public class PaymentInitiationIdempotencyAdapter
         );
         String partnerIdentifier = command.applicationId();
 
-        Optional<InitiateDebitResult> externalReferenceReplay =
-                replayByExternalReference(
-                        command,
-                        partnerIdentifier,
-                        requestHash
-                );
-        if (externalReferenceReplay.isPresent()) {
-            return externalReferenceReplay.orElseThrow();
-        }
-
-        return coordinator.executeScopedLocked(
+        return coordinator.executePartnerPaymentReferenceLocked(
                 partnerIdentifier,
-                OPERATION,
-                command.idempotencyKey(),
-                () -> executeLocked(
-                        command,
-                        partnerIdentifier,
-                        requestHash,
-                        newRequest
-                )
+                command.endToEndId(),
+                () -> {
+                    Optional<InitiateDebitResult> externalReferenceReplay =
+                            replayByExternalReference(
+                                    command,
+                                    partnerIdentifier,
+                                    requestHash
+                            );
+                    if (externalReferenceReplay.isPresent()) {
+                        return externalReferenceReplay.orElseThrow();
+                    }
+
+                    return coordinator.executeScopedLocked(
+                            partnerIdentifier,
+                            OPERATION,
+                            command.idempotencyKey(),
+                            () -> executeLocked(
+                                    command,
+                                    partnerIdentifier,
+                                    requestHash,
+                                    newRequest
+                            )
+                    );
+                }
         );
     }
 

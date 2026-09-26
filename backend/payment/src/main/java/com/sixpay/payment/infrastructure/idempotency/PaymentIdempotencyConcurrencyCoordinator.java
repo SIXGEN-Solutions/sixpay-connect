@@ -46,6 +46,41 @@ public class PaymentIdempotencyConcurrencyCoordinator {
         );
     }
 
+    /**
+     * Serializes initiation attempts that target the same Partner-owned
+     * external Payment identity, independently from the transport
+     * idempotency key. This closes the race where two different keys could
+     * concurrently observe no Payment and then compete on the database
+     * uniqueness constraint.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public <T> T executePartnerPaymentReferenceLocked(
+            String partnerIdentifier,
+            String externalPaymentReference,
+            Supplier<T> action
+    ) {
+        if (partnerIdentifier == null || partnerIdentifier.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Partner identifier is invalid"
+            );
+        }
+        if (externalPaymentReference == null
+                || externalPaymentReference.isBlank()
+                || externalPaymentReference.length() > 128) {
+            throw new IllegalArgumentException(
+                    "External Payment reference is invalid"
+            );
+        }
+
+        return executeLockKey(
+                "PAYMENT_EXTERNAL_REFERENCE:"
+                        + partnerIdentifier.strip()
+                        + ":"
+                        + externalPaymentReference.strip(),
+                action
+        );
+    }
+
     @Transactional(propagation = Propagation.MANDATORY)
     public <T> T executeLocked(
             String operation,
