@@ -4,7 +4,7 @@
 ### Status
 
 ```text
-AUTH-2 — IMPLEMENTATION PREPARED
+AUTH-2 — IMPLEMENTATION COMPLETE; VALIDATION REQUIRED
 ```
 
 ### Baseline
@@ -202,3 +202,44 @@ SIXPAY role or permission in AUTH-2.
 ```text
 AUTH-3 — LDAP Identity Linking
 ```
+
+## 10. AUTH-2 closure alignment
+
+The LDAP adapter closes the remaining AUTH-2 runtime gaps without extending the
+scope into identity linking.
+
+Before the transient user bind, the adapter evaluates the Active Directory
+account-state evidence exposed by the approved AUTH-1 baseline:
+
+- `userAccountControl` for disabled accounts;
+- `msDS-User-Account-Control-Computed` for lockout and password-expired state;
+- `accountExpires` for account expiration;
+- `pwdLastSet` for password-must-change state.
+
+A disabled, locked, expired, password-expired or password-must-change account
+fails closed through the generic LDAP authentication failure path. Malformed
+numeric account-state evidence also fails closed.
+
+`authenticationTimeout` is now an effective overall authentication budget.
+Each LDAP context derives its JNDI connect/read timeouts from both the configured
+phase timeout and the remaining global budget. The budget is checked after the
+directory search and after the transient user bind.
+
+No password, bind credential or LDAP group is copied to the authentication
+result. No LDAP group becomes a SIXPAY authority.
+
+AUTH-2 still does not resolve/create `UserIdentity` or `SixpayUserAccount`,
+create a SIXPAY session, or assign roles/permissions. Those responsibilities
+remain outside AUTH-2; identity linking remains the next lot.
+
+No schema evolution is required by this closure.
+
+### Validation state
+
+The implementation is complete but cannot be classified as validated until the
+required commands complete with exit code `0`.
+
+```text
+AUTH-2 — IMPLEMENTATION COMPLETE; VALIDATION REQUIRED
+```
+
