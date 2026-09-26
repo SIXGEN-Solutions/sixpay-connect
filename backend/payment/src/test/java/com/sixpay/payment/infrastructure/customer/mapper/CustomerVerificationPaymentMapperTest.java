@@ -332,6 +332,12 @@ class CustomerVerificationPaymentMapperTest {
                 outcome == CustomerVerificationResponse.Outcome.VERIFIED
                         ? "ACCOUNT-VERIFIED-001"
                         : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "LRB"
+                        : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "****0001"
+                        : null,
                 OBSERVED_AT,
                 OBSERVED_AT.plusSeconds(300),
                 COMPLETED_AT

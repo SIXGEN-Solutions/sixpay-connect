@@ -83,16 +83,6 @@ public record NewPaymentIntent(
                 "Payment request identity"
         );
 
-        financialInstitutionCode = Objects.requireNonNull(
-                financialInstitutionCode,
-                "Financial institution code"
-        );
-
-        debtorAccountReference = Objects.requireNonNull(
-                debtorAccountReference,
-                "Debtor account reference"
-        );
-
         requestedAmount = Objects.requireNonNull(
                 requestedAmount,
                 "Requested amount"
@@ -114,10 +104,12 @@ public record NewPaymentIntent(
             );
         }
 
-        if (!financialInstitutionCode.equals(
-                debtorAccountReference
-                        .financialInstitutionCode()
-        )) {
+        if (debtorAccountReference != null
+                && (financialInstitutionCode == null
+                || !financialInstitutionCode.equals(
+                        debtorAccountReference
+                                .financialInstitutionCode()
+                ))) {
             throw new IllegalArgumentException(
                     "Debtor account institution must match "
                             + "Payment institution"

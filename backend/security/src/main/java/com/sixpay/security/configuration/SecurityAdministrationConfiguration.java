@@ -22,6 +22,8 @@ import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthen
 import com.sixpay.security.infrastructure.authentication.persistence.PasswordHistoryJpaEntity;
 import com.sixpay.security.infrastructure.authentication.persistence.PasswordHistorySpringDataRepository;
 import org.springframework.beans.factory.ObjectProvider;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentityJpaEntity;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -36,12 +38,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EntityScan(basePackageClasses = {
         SecurityUserAccountJpaEntity.class, SecurityUserIdentityJpaEntity.class,
         LocalAuthenticationUserJpaEntity.class, PasswordHistoryJpaEntity.class,
-        AuthenticationAuditJpaEntity.class, SecurityAuditJpaEntity.class
+        AuthenticationAuditJpaEntity.class, SecurityAuditJpaEntity.class,
+        PartnerMachineIdentityJpaEntity.class
 })
 @EnableJpaRepositories(basePackageClasses = {
         SecurityUserAccountSpringDataRepository.class, SecurityUserIdentitySpringDataRepository.class,
         LocalAuthenticationUserSpringDataRepository.class, PasswordHistorySpringDataRepository.class,
-        AuthenticationAuditSpringDataRepository.class, SecurityAuditSpringDataRepository.class
+        AuthenticationAuditSpringDataRepository.class, SecurityAuditSpringDataRepository.class,
+        PartnerMachineIdentitySpringDataRepository.class
 })
 public class SecurityAdministrationConfiguration {
     @Bean @ConditionalOnMissingBean(SecurityAuditPort.class)

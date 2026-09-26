@@ -77,6 +77,7 @@ public class PartnerController {
             @NotBlank @Size(max = HEADER_MAX_LENGTH) String idempotencyKey
     ) {
         var partner = PartnerResponse.from(management.create(new CreatePartnerCommand(
+                request.partnerIdentifier(),
                 request.legalName(),
                 request.technicalContactName(),
                 request.technicalContactEmail(),

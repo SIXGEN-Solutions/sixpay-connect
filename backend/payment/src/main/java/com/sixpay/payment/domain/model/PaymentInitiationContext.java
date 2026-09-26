@@ -27,12 +27,18 @@ public record PaymentInitiationContext(
             Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
 
     public PaymentInitiationContext {
-        partnerLoginName = requireIdentifier(
-                partnerLoginName,
-                "Partner login name"
+        partnerLoginName = normalizeOptionalIdentifier(
+                partnerLoginName
         );
-        applicationId = normalizeOptionalIdentifier(applicationId);
-        debtorName = requireText(debtorName, 200, "Debtor name");
+        applicationId = requireIdentifier(
+                applicationId,
+                "Application ID"
+        );
+        debtorName = normalizeOptionalText(
+                debtorName,
+                200,
+                "Debtor name"
+        );
         claimType = Objects.requireNonNull(claimType, "Claim type");
         taxpayerIdentifier = requireText(
                 taxpayerIdentifier,
@@ -71,6 +77,17 @@ public record PaymentInitiationContext(
             return null;
         }
         return requireIdentifier(value, "Application ID");
+    }
+
+    private static String normalizeOptionalText(
+            String value,
+            int maximumLength,
+            String label
+    ) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return requireText(value, maximumLength, label);
     }
 
     private static String requireText(

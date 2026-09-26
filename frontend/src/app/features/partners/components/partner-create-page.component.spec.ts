@@ -11,6 +11,7 @@ import { PartnerCreatePageComponent } from './partner-create-page.component';
 describe('PartnerCreatePageComponent', () => {
   type TestableComponent = PartnerCreatePageComponent & {
     form: FormGroup<{
+      partnerIdentifier: FormControl<string>;
       legalName: FormControl<string>;
       technicalContactName: FormControl<string>;
       technicalContactEmail: FormControl<string>;
@@ -19,6 +20,7 @@ describe('PartnerCreatePageComponent', () => {
     submit(): void;
     fieldError(
       name:
+        | 'partnerIdentifier'
         | 'legalName'
         | 'technicalContactName'
         | 'technicalContactEmail'
@@ -57,6 +59,7 @@ describe('PartnerCreatePageComponent', () => {
 
   it('normalise les données, bloque la double soumission et redirige après succès', () => {
     component.form.setValue({
+      partnerIdentifier: '  GOLDEN_PARTNER ',
       legalName: '  Golden Partner ',
       technicalContactName: ' Alice ',
       technicalContactEmail: 'alice@example.test',
@@ -68,6 +71,7 @@ describe('PartnerCreatePageComponent', () => {
 
     expect(partners.create).toHaveBeenCalledOnce();
     expect(partners.create).toHaveBeenCalledWith({
+      partnerIdentifier: 'GOLDEN_PARTNER',
       legalName: 'Golden Partner',
       technicalContactName: 'Alice',
       technicalContactEmail: 'alice@example.test',

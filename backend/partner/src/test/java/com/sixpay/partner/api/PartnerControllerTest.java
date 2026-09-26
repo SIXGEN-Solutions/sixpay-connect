@@ -71,6 +71,7 @@ class PartnerControllerTest {
                         .header("Idempotency-Key", "idem-001")
                         .content("""
                                 {
+                                  "partnerIdentifier": "ACME_PAYMENTS",
                                   "legalName": "Acme Payments",
                                   "technicalContactName": "Alice Ops",
                                   "technicalContactEmail": "alice.ops@example.com",
@@ -91,6 +92,7 @@ class PartnerControllerTest {
                         .header("Idempotency-Key", "idem-002")
                         .content("""
                                 {
+                                  "partnerIdentifier": "ACME_PAYMENTS",
                                   "legalName": "Acme Payments",
                                   "technicalContactName": "Alice Ops",
                                   "technicalContactEmail": "alice.ops@example.com",
@@ -136,6 +138,7 @@ class PartnerControllerTest {
                         .header("Idempotency-Key", " ")
                         .content("""
                             {
+                              "partnerIdentifier": "ACME_PAYMENTS",
                               "legalName": "Acme Payments",
                               "technicalContactName": "Alice Ops",
                               "technicalContactEmail": "alice.ops@example.com",
@@ -158,6 +161,7 @@ class PartnerControllerTest {
                         .header("Idempotency-Key", "i".repeat(151))
                         .content("""
                             {
+                              "partnerIdentifier": "ACME_PAYMENTS",
                               "legalName": "Acme Payments",
                               "technicalContactName": "Alice Ops",
                               "technicalContactEmail": "alice.ops@example.com",
@@ -198,6 +202,7 @@ class PartnerControllerTest {
         var now = Instant.parse("2026-07-26T12:00:00Z");
         return new PartnerView(
                 PARTNER_ID,
+                "ACME_PAYMENTS",
                 "Acme Payments",
                 "Alice Ops",
                 "alice.ops@example.com",

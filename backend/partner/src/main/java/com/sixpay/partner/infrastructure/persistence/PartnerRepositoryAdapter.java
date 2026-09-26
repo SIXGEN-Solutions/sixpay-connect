@@ -3,6 +3,7 @@ package com.sixpay.partner.infrastructure.persistence;
 import com.sixpay.partner.domain.model.AuthorizedPerimeter;
 import com.sixpay.partner.domain.model.Partner;
 import com.sixpay.partner.domain.model.PartnerId;
+import com.sixpay.partner.domain.model.PartnerIdentifier;
 import com.sixpay.partner.domain.model.PartnerName;
 import com.sixpay.partner.domain.model.TechnicalContact;
 import com.sixpay.partner.domain.model.ValidationThreshold;
@@ -35,6 +36,12 @@ public class PartnerRepositoryAdapter implements PartnerRepository {
     }
 
     @Override
+    public Optional<Partner> findByPartnerIdentifier(PartnerIdentifier partnerIdentifier) {
+        return repository.findAggregateByPartnerIdentifier(partnerIdentifier.value())
+                .map(this::toDomain);
+    }
+
+    @Override
     public boolean existsById(PartnerId partnerId) {
         return repository.existsById(partnerId.value());
     }
@@ -42,6 +49,7 @@ public class PartnerRepositoryAdapter implements PartnerRepository {
     private Partner toDomain(PartnerJpaEntity entity) {
         return Partner.reconstitute(
                 new PartnerId(entity.id()),
+                new PartnerIdentifier(entity.partnerIdentifier()),
                 new PartnerName(entity.legalName()),
                 new TechnicalContact(entity.technicalContactName(), entity.technicalContactEmail()),
                 new AuthorizedPerimeter(entity.authorizedTransactionTypes()),

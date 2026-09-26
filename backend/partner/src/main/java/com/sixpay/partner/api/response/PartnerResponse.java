@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record PartnerResponse(
         UUID id,
+        String partnerIdentifier,
         String legalName,
         String technicalContactName,
         String technicalContactEmail,
@@ -24,6 +25,7 @@ public record PartnerResponse(
     public static PartnerResponse from(PartnerView view) {
         return new PartnerResponse(
                 view.id(),
+                view.partnerIdentifier(),
                 view.legalName(),
                 view.technicalContactName(),
                 view.technicalContactEmail(),

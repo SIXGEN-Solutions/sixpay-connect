@@ -129,9 +129,11 @@ public final class Payment {
                 batch.metadata(),
                 state.externalPaymentReference(),
                 state.source(),
-                state.financialInstitutionCode(),
+                state.optionalFinancialInstitutionCode().orElse(null),
                 MoneyPayload.from(state.requestedAmount()),
-                state.debtorAccountReference().maskedDisplay(),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::maskedDisplay)
+                        .orElse(null),
                 receivedAt
         );
 
@@ -146,6 +148,39 @@ public final class Payment {
                 Objects.requireNonNull(state, "Payment state"),
                 List.of()
         );
+    }
+
+    /**
+     * Terminates synchronous initiation when its global deadline expires.
+     */
+    public void failInitiationDeadline(PaymentFailure failure, Instant failedAt) {
+        Objects.requireNonNull(failure, "Initiation failure");
+        Objects.requireNonNull(failedAt, "Failure instant");
+        if (state.status() == PaymentStatus.FAILED) return;
+        if (state.status() != PaymentStatus.RECEIVED
+                && state.status() != PaymentStatus.BANKING_VERIFICATION_PENDING
+                && state.status() != PaymentStatus.PENDING_CONFIRMATION) {
+            throw PaymentDomainException.conflict(
+                    "Initiation deadline cannot fail Payment from " + state.status()
+            );
+        }
+        if (failure.failureCategory() != FailureCategory.TECHNICAL_FAILURE) {
+            throw PaymentDomainException.conflict(
+                    "Initiation deadline requires TECHNICAL_FAILURE"
+            );
+        }
+        PaymentState next = nextBuilder(PaymentStatus.FAILED, failedAt)
+                .failure(failure)
+                .finalizedAt(failedAt)
+                .build();
+        EventBatch batch = new EventBatch(next, failedAt);
+        commit(next, List.of(new PaymentFailedWithoutFinancialEffect(
+                batch.metadata(),
+                failure.failureCode(),
+                failure.failureCategory(),
+                failure.failureStage(),
+                failedAt
+        )));
     }
 
     /**
@@ -180,13 +215,67 @@ public final class Payment {
                 List.of(
                         new PaymentBankingVerificationRequested(
                                 batch.metadata(),
-                                next.financialInstitutionCode(),
-                                next.debtorAccountReference()
-                                        .bindingFingerprint(),
+                                next.optionalFinancialInstitutionCode().orElse(null),
+                                next.optionalDebtorAccountReference()
+                                        .map(DebtorAccountReference::bindingFingerprint)
+                                        .orElse(null),
                                 requestedAt
                         )
                 )
         );
+    }
+
+    /**
+     * Establishes the canonical debtor account after authoritative banking
+     * resolution and before downstream account-bound processing.
+     */
+    public void resolveDebtorAccount(
+            DebtorAccountReference debtorAccountReference,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(
+                debtorAccountReference,
+                "Resolved debtor account"
+        );
+        Objects.requireNonNull(resolvedAt, "Resolved instant");
+
+        requireStatus(
+                "resolveDebtorAccount",
+                PaymentStatus.BANKING_VERIFICATION_PENDING
+        );
+
+        FinancialInstitutionCode currentInstitution =
+                state.optionalFinancialInstitutionCode().orElse(null);
+        if (currentInstitution != null
+                && !currentInstitution.equals(
+                        debtorAccountReference.financialInstitutionCode()
+                )) {
+            throw PaymentDomainException.conflict(
+                    "Resolved debtor account institution does not match Payment"
+            );
+        }
+
+        DebtorAccountReference current =
+                state.optionalDebtorAccountReference().orElse(null);
+
+        if (current != null) {
+            if (!current.equals(debtorAccountReference)) {
+                throw PaymentDomainException.conflict(
+                        "Resolved debtor account cannot change"
+                );
+            }
+            return;
+        }
+
+        PaymentState next = state.toBuilder()
+                .financialInstitutionCode(
+                        debtorAccountReference.financialInstitutionCode()
+                )
+                .debtorAccountReference(debtorAccountReference)
+                .updatedAt(resolvedAt)
+                .build();
+
+        commit(next, List.of());
     }
 
     /**

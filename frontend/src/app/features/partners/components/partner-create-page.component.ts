@@ -34,6 +34,7 @@ export class PartnerCreatePageComponent {
   protected readonly submitting = signal(false);
 
   protected readonly form = this.formBuilder.nonNullable.group({
+    partnerIdentifier: ['', [Validators.required, Validators.maxLength(64)]],
     legalName: ['', [Validators.required, Validators.maxLength(200)]],
     technicalContactName: ['', [Validators.required, Validators.maxLength(150)]],
     technicalContactEmail: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
@@ -64,6 +65,7 @@ export class PartnerCreatePageComponent {
     this.submitting.set(true);
     this.partners
       .create({
+        partnerIdentifier: value.partnerIdentifier.trim(),
         legalName: value.legalName.trim(),
         technicalContactName: value.technicalContactName.trim(),
         technicalContactEmail: value.technicalContactEmail.trim(),

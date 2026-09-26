@@ -30,6 +30,7 @@ public final class PaymentCustomerVerificationService {
     private final CustomerVerificationEvidenceMapper evidenceMapper;
     private final CustomerVerificationFailureMapper failureMapper;
     private final PaymentCustomerVerificationIdGenerator idGenerator;
+    private final ResolvedDebtorAccountReferenceFactory accountReferenceFactory;
 
     public PaymentCustomerVerificationService(
             PaymentMutationCoordinator coordinator,
@@ -37,7 +38,8 @@ public final class PaymentCustomerVerificationService {
             PaymentCustomerVerificationRequestFactory requestFactory,
             CustomerVerificationEvidenceMapper evidenceMapper,
             CustomerVerificationFailureMapper failureMapper,
-            PaymentCustomerVerificationIdGenerator idGenerator
+            PaymentCustomerVerificationIdGenerator idGenerator,
+            ResolvedDebtorAccountReferenceFactory accountReferenceFactory
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -63,6 +65,10 @@ public final class PaymentCustomerVerificationService {
                 idGenerator,
                 "idGenerator is required"
         );
+        this.accountReferenceFactory = Objects.requireNonNull(
+                accountReferenceFactory,
+                "accountReferenceFactory is required"
+        );
     }
 
     public PaymentWorkflowResult verifyCustomer(
@@ -70,8 +76,18 @@ public final class PaymentCustomerVerificationService {
             Instant decisionAt,
             PaymentPolicyBundle policies
     ) {
+        return verifyCustomer(paymentId, decisionAt, Instant.MAX, policies);
+    }
+
+    public PaymentWorkflowResult verifyCustomer(
+            PaymentId paymentId,
+            Instant decisionAt,
+            Instant deadlineAt,
+            PaymentPolicyBundle policies
+    ) {
         Objects.requireNonNull(paymentId, "paymentId is required");
         Objects.requireNonNull(decisionAt, "decisionAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
         Objects.requireNonNull(policies, "policies are required");
 
         UUID verificationId = idGenerator.forPayment(paymentId);
@@ -105,7 +121,8 @@ public final class PaymentCustomerVerificationService {
                             requestFactory.from(
                                     payment,
                                     verificationId,
-                                    decisionAt
+                                    decisionAt,
+                                    deadlineAt
                             );
 
                     CustomerVerificationResponse response;
@@ -134,6 +151,17 @@ public final class PaymentCustomerVerificationService {
                      * replay. Using completedAt rather than the current retry
                      * time makes the resulting evidence and failure identical.
                      */
+                    if (response.outcome()
+                            == CustomerVerificationResponse.Outcome.VERIFIED
+                            && payment.toState()
+                                    .optionalDebtorAccountReference()
+                                    .isEmpty()) {
+                        payment.resolveDebtorAccount(
+                                accountReferenceFactory.from(response),
+                                response.completedAt()
+                        );
+                    }
+
                     var snapshot = evidenceMapper.toSnapshot(
                             response,
                             payment.toState()

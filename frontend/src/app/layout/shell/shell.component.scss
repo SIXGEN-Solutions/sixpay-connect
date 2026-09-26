@@ -2,15 +2,34 @@
   display: grid;
   min-height: 100dvh;
   grid-template-rows: auto auto 1fr auto;
+  background: #f6f8fa;
 }
 
 .sp-shell__container {
   min-height: 0;
+  background: transparent;
+}
+
+mat-sidenav {
+  width: 16rem;
+  border-radius: 0;
+  border-right: 0;
+  transition: width 180ms ease;
+}
+
+mat-sidenav.sp-shell__sidenav--collapsed {
+  width: 4.5rem;
+}
+
+mat-sidenav-content {
+  background: transparent;
 }
 
 .sp-shell__content {
   box-sizing: border-box;
   min-height: 100%;
+  max-width: 100rem;
+  margin: 0 auto;
   padding: var(--sp-space-6);
 }
 
@@ -32,7 +51,8 @@
 }
 
 @media (max-width: 48rem) {
-  mat-sidenav {
+  mat-sidenav,
+  mat-sidenav.sp-shell__sidenav--collapsed {
     width: 4.5rem;
   }
 

@@ -18,6 +18,7 @@ class AuthenticationCapabilitiesPropertiesTest {
         AuthenticationCapabilitiesProperties properties =
                 new AuthenticationCapabilitiesProperties(
                         null,
+                        null,
                         null
                 );
 
@@ -34,7 +35,8 @@ class AuthenticationCapabilitiesPropertiesTest {
                         new AuthenticationCapabilitiesProperties.Oidc(
                                 false,
                                 null
-                        )
+                        ),
+                        null
                 );
 
         assertThat(properties.localEnabled()).isTrue();
@@ -50,7 +52,8 @@ class AuthenticationCapabilitiesPropertiesTest {
                         new AuthenticationCapabilitiesProperties.Oidc(
                                 true,
                                 "sixpay"
-                        )
+                        ),
+                        null
                 );
 
         assertThat(properties.localEnabled()).isFalse();
@@ -66,12 +69,81 @@ class AuthenticationCapabilitiesPropertiesTest {
                         new AuthenticationCapabilitiesProperties.Oidc(
                                 true,
                                 "sixpay"
-                        )
+                        ),
+                        null
                 );
 
         assertThat(properties.localEnabled()).isTrue();
         assertThat(properties.oidcEnabled()).isTrue();
         assertThat(properties.hybridEnabled()).isTrue();
+    }
+
+
+    @Test
+    void supportsLdapOnlyWithApprovedActiveDirectoryDefaults() {
+        AuthenticationCapabilitiesProperties properties =
+                new AuthenticationCapabilitiesProperties(
+                        local(false),
+                        new AuthenticationCapabilitiesProperties.Oidc(
+                                false,
+                                null
+                        ),
+                        new AuthenticationCapabilitiesProperties.Ldap(
+                                true,
+                                java.util.List.of("ldaps://ad.example.test:636"),
+                                "DC=example,DC=test",
+                                "OU=Users",
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                "CN=sixpay,OU=Service Accounts",
+                                "secret-from-runtime",
+                                null,
+                                null,
+                                null
+                        )
+                );
+
+        assertThat(properties.ldapEnabled()).isTrue();
+        assertThat(properties.hybridEnabled()).isFalse();
+        assertThat(properties.ldap().userSearchFilter())
+                .isEqualTo("(sAMAccountName={0})");
+        assertThat(properties.ldap().subjectAttribute())
+                .isEqualTo("objectGUID");
+        assertThat(properties.ldap().trustDomain())
+                .isEqualTo("regionale-ldap");
+    }
+
+    @Test
+    void rejectsPlainLdapWhenCapabilityIsEnabled() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> new AuthenticationCapabilitiesProperties(
+                                local(false),
+                                new AuthenticationCapabilitiesProperties.Oidc(
+                                        false,
+                                        null
+                                ),
+                                new AuthenticationCapabilitiesProperties.Ldap(
+                                        true,
+                                        java.util.List.of("ldap://ad.example.test:389"),
+                                        "DC=example,DC=test",
+                                        "OU=Users",
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        "CN=sixpay,OU=Service Accounts",
+                                        "secret-from-runtime",
+                                        null,
+                                        null,
+                                        null
+                                )
+                        )
+                )
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static AuthenticationCapabilitiesProperties.Local local(

@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -25,6 +24,7 @@ public record InitiateDebitRequest(
         String loginName,
 
         @JsonProperty("AppID")
+        @NotBlank
         @Size(max = 64)
         String applicationId,
 
@@ -40,18 +40,15 @@ public record InitiateDebitRequest(
         BigDecimal totalAmount,
 
         @JsonProperty("devise")
-        @NotBlank
         @Pattern(regexp = "^[A-Z]{3}$")
         String currency,
 
         @JsonProperty("ribDebiteur")
-        @NotBlank
         @Size(min = 8, max = 64)
         @Pattern(regexp = "^[A-Za-z0-9-]+$")
         String debtorRib,
 
         @JsonProperty("nomDebiteur")
-        @NotBlank
         @Size(max = 200)
         String debtorName,
 
@@ -69,7 +66,6 @@ public record InitiateDebitRequest(
         Instant requestedExecutionAt,
 
         @JsonProperty("beneficiaires")
-        @NotEmpty
         @Size(max = 20)
         List<@Valid InitiateDebitBeneficiaryRequest> beneficiaries,
 

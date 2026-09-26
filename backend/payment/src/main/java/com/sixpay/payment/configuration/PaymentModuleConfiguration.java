@@ -5,6 +5,11 @@ import com.sixpay.common.identifier.UuidIdentifierGenerator;
 import com.sixpay.common.time.SystemTimeProvider;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.PaymentModule;
+import com.sixpay.payment.application.service.PaymentInitiationDeadline;
+import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
+import com.sixpay.payment.application.port.output.partner.ResolvedPartnerIdentity;
+import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntity;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditRepository;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyEntity;
@@ -19,6 +24,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.TypeExcludeFilter;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -26,9 +32,11 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @AutoConfiguration
+@EnableConfigurationProperties(PaymentInitiationProperties.class)
 @ConditionalOnClass({
         EntityManager.class,
         JpaRepository.class
@@ -65,10 +73,53 @@ import java.util.UUID;
 )
 public class PaymentModuleConfiguration {
 
+
+    @Bean
+    @ConditionalOnMissingBean
+    AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort() {
+        return Optional::<String>empty;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PartnerIdentityResolutionPort partnerIdentityResolutionPort() {
+        return new PartnerIdentityResolutionPort() {
+            @Override
+            public Optional<ResolvedPartnerIdentity> resolveAuthenticatedPartner(
+                    String authenticatedSubject
+            ) {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<ResolvedPartnerIdentity> findByPartnerIdentifier(
+                    String partnerIdentifier
+            ) {
+                return Optional.empty();
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PartnerIdentityAlignmentService partnerIdentityAlignmentService(
+            PartnerIdentityResolutionPort resolutionPort
+    ) {
+        return new PartnerIdentityAlignmentService(resolutionPort);
+    }
+
     @Bean
     @ConditionalOnMissingBean
     TimeProvider paymentTimeProvider() {
         return new SystemTimeProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    PaymentInitiationDeadline paymentInitiationDeadline(
+            PaymentInitiationProperties properties
+    ) {
+        return new PaymentInitiationDeadline(properties.deadline());
     }
 
     @Bean

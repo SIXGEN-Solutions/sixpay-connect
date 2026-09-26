@@ -43,7 +43,7 @@ class PaymentPersistenceMigrationIT {
         assertHistoricalPaymentMigrationsAreAbsent(flyway);
 
         assertPaymentsTableExistsWithRequiredColumns();
-        assertSourceExternalReferenceUniqueIndexExists();
+        assertPartnerExternalReferenceUniqueIndexExists();
     }
 
     private void assertPaymentBaselineWasApplied(
@@ -148,7 +148,7 @@ class PaymentPersistenceMigrationIT {
         }
     }
 
-    private void assertSourceExternalReferenceUniqueIndexExists()
+    private void assertPartnerExternalReferenceUniqueIndexExists()
             throws Exception {
 
         try (
@@ -171,7 +171,7 @@ class PaymentPersistenceMigrationIT {
                                 )
         ) {
 
-            boolean sourceExternalUnique = false;
+            boolean partnerExternalUnique = false;
 
             while (indexes.next()) {
                 String name =
@@ -180,18 +180,18 @@ class PaymentPersistenceMigrationIT {
                         );
 
                 if (
-                        "uk_payments_source_external_reference"
+                        "uk_payments_partner_external_reference"
                                 .equalsIgnoreCase(name)
                 ) {
-                    sourceExternalUnique = true;
+                    partnerExternalUnique = true;
                 }
             }
 
             assertTrue(
-                    sourceExternalUnique,
+                    partnerExternalUnique,
                     "Canonical Payment baseline "
                             + "must create "
-                            + "uk_payments_source_external_reference"
+                            + "uk_payments_partner_external_reference"
             );
         }
     }

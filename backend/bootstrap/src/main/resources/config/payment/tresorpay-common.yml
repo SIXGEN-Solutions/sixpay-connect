@@ -18,7 +18,7 @@ sixpay:
         requests-per-minute: ${TRESORPAY_REQUESTS_PER_MINUTE:120}
       callback:
         signature-enabled: ${TRESORPAY_CALLBACK_SIGNATURE_ENABLED:true}
-        algorithm: ${TRESORPAY_CALLBACK_SIGNATURE_ALGORITHM:RS256}
+        algorithm: ${TRESORPAY_CALLBACK_SIGNATURE_ALGORITHM:HMAC-SHA256}
         delivery-expiration: ${TRESORPAY_CALLBACK_DELIVERY_EXPIRATION:24h}
       allowed-callback-hosts:
         - ${TRESORPAY_CALLBACK_HOST:tresorpay.cm}

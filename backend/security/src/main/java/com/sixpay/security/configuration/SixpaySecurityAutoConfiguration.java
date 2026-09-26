@@ -1,15 +1,18 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.api.controller.AuthenticationSessionController;
+import com.sixpay.security.application.port.input.AuthenticateLdapIdentityUseCase;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
+import com.sixpay.security.infrastructure.authentication.subscription.TresorPaySubscriptionKeyFilter;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -30,6 +33,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
@@ -41,12 +45,14 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @AutoConfiguration
 @EnableMethodSecurity
-@EnableConfigurationProperties(
-        AuthenticationCapabilitiesProperties.class
-)
+@EnableConfigurationProperties({
+        AuthenticationCapabilitiesProperties.class,
+        TresorPaySubscriptionKeyProperties.class
+})
 @Import({
         LocalAuthenticationConfiguration.class,
         IdentityLinkingConfiguration.class,
+        PartnerMachineIdentityConfiguration.class,
         AuthenticationSessionController.class
 })
 @ConditionalOnClass({
@@ -105,6 +111,25 @@ public class SixpaySecurityAutoConfiguration {
         return new OidcAuthenticationAdapter(
                 externalIdentityResolver,
                 auditPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(
+            AuthenticateLdapIdentityUseCase.class
+    )
+    @ConditionalOnProperty(
+            prefix =
+                    "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    AuthenticateLdapIdentityUseCase
+    ldapAuthenticationProvider(
+            AuthenticationCapabilitiesProperties properties
+    ) {
+        return new ActiveDirectoryLdapAuthenticationAdapter(
+                properties.ldap()
         );
     }
 
@@ -194,6 +219,27 @@ public class SixpaySecurityAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.tresorpay.subscription-key",
+            name = "enabled",
+            havingValue = "true"
+    )
+    TresorPaySubscriptionKeyFilter
+    tresorPaySubscriptionKeyFilter(
+            TresorPaySubscriptionKeyProperties properties,
+            SecurityAuditPort securityAuditPort
+    ) {
+        AuditingAuthenticationEntryPoint entryPoint =
+                new AuditingAuthenticationEntryPoint(securityAuditPort);
+
+        return new TresorPaySubscriptionKeyFilter(
+                candidate -> properties.value().equals(candidate),
+                entryPoint
+        );
+    }
+
+    @Bean
     @ConditionalOnMissingBean(
             SecurityFilterChain.class
     )
@@ -211,7 +257,9 @@ public class SixpaySecurityAutoConfiguration {
             SecurityAuditPort
                     securityAuditPort,
             RestrictedLocalSessionFilter
-                    restrictedLocalSessionFilter
+                    restrictedLocalSessionFilter,
+            ObjectProvider<TresorPaySubscriptionKeyFilter>
+                    tresorPaySubscriptionKeyFilterProvider
     ) throws Exception {
 
         RequestMatcher bearerRequest =
@@ -356,6 +404,16 @@ public class SixpaySecurityAutoConfiguration {
                         restrictedLocalSessionFilter,
                         ExceptionTranslationFilter.class
                 );
+
+        TresorPaySubscriptionKeyFilter tresorPaySubscriptionKeyFilter =
+                tresorPaySubscriptionKeyFilterProvider.getIfAvailable();
+
+        if (tresorPaySubscriptionKeyFilter != null) {
+            http.addFilterBefore(
+                    tresorPaySubscriptionKeyFilter,
+                    BasicAuthenticationFilter.class
+            );
+        }
 
         if (capabilities
                 .oidcEnabled()) {

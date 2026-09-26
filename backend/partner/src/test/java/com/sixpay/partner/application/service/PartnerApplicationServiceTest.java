@@ -101,6 +101,7 @@ class PartnerApplicationServiceTest {
     @Test
     void createsThenApprovesPartnerAtomicallyThroughPorts() {
         var created = service.create(new CreatePartnerCommand(
+                "ACME_PAYMENTS",
                 "Acme Payments",
                 "Alice Ops",
                 "alice.ops@example.com",
@@ -131,6 +132,7 @@ class PartnerApplicationServiceTest {
     @Test
     void replaysCreateWithoutRepeatingSideEffects() {
         var command = new CreatePartnerCommand(
+                "ACME_PAYMENTS",
                 "Acme Payments",
                 "Alice Ops",
                 "alice.ops@example.com",
@@ -186,6 +188,15 @@ class PartnerApplicationServiceTest {
         @Override
         public Optional<Partner> findById(PartnerId partnerId) {
             return Optional.ofNullable(partners.get(partnerId));
+        }
+
+        @Override
+        public Optional<Partner> findByPartnerIdentifier(
+                com.sixpay.partner.domain.model.PartnerIdentifier partnerIdentifier
+        ) {
+            return partners.values().stream()
+                    .filter(partner -> partner.partnerIdentifier().equals(partnerIdentifier))
+                    .findFirst();
         }
 
         @Override

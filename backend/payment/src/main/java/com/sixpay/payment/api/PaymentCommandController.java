@@ -6,7 +6,8 @@ import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.application.port.input.PaymentInitiationUseCase;
-import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
+import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,18 +36,21 @@ public class PaymentCommandController {
 
     private final PaymentInitiationUseCase initiationUseCase;
     private final PaymentCommandApiMapper mapper;
-    private final CurrentUserProvider currentUserProvider;
+    private final AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort;
+    private final PartnerIdentityAlignmentService partnerIdentityAlignmentService;
     private final CorrelationIdResolver correlationIdResolver;
 
     public PaymentCommandController(
             PaymentInitiationUseCase initiationUseCase,
             PaymentCommandApiMapper mapper,
-            CurrentUserProvider currentUserProvider,
+            AuthenticatedPartnerCallerPort authenticatedPartnerCallerPort,
+            PartnerIdentityAlignmentService partnerIdentityAlignmentService,
             CorrelationIdResolver correlationIdResolver
     ) {
         this.initiationUseCase = initiationUseCase;
         this.mapper = mapper;
-        this.currentUserProvider = currentUserProvider;
+        this.authenticatedPartnerCallerPort = authenticatedPartnerCallerPort;
+        this.partnerIdentityAlignmentService = partnerIdentityAlignmentService;
         this.correlationIdResolver = correlationIdResolver;
     }
 
@@ -70,6 +74,8 @@ public class PaymentCommandController {
     @Operation(operationId = "initiateDebit", summary = "Initiate a debit order")
     public ResponseEntity<InitiateDebitResponse> initiateDebit(
             @Valid @RequestBody InitiateDebitRequest request,
+            @RequestHeader(name = "X-TresorPay-App-Id")
+            @NotBlank @Size(max = 64) String transportPartnerIdentifier,
             @RequestHeader(name = IntegrationHttpHeaders.IDEMPOTENCY_KEY)
             @NotBlank @Size(max = 128) String idempotencyKey,
             @RequestHeader(
@@ -82,7 +88,21 @@ public class PaymentCommandController {
                 correlationIdResolver.resolve(correlationHeader);
 
         String authenticatedPartner =
-                currentUserProvider.requireCurrentUser().username();
+                authenticatedPartnerCallerPort
+                        .requireAuthenticatedSubject();
+
+        /*
+         * X-TresorPay-App-Id is independent transport metadata.
+         * It is not required to equal the business Partner identifier carried
+         * by request AppID.
+         *
+         * The authoritative business check is between the authenticated M2M
+         * caller resolved to Partner and request.AppID.
+         */
+        partnerIdentityAlignmentService.requireConsistentPartner(
+                authenticatedPartner,
+                request.applicationId()
+        );
 
         var result = initiationUseCase.initiateDebit(
                 mapper.toCommand(

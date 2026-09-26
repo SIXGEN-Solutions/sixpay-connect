@@ -17,7 +17,7 @@ Frontend:
 
 ```bash
 cd frontend
-npm run verify:sixpay
+npm run verify:quality
 ```
 
 Whole repository:
