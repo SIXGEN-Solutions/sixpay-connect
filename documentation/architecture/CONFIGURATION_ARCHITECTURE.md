@@ -54,8 +54,24 @@ runtime configuration.
 
 ## Authentication
 
-Bootstrap owns OAuth2/session runtime assembly. Security owns the semantics and
-validation of Security configuration.
+Bootstrap owns OAuth2/session/LDAP physical runtime assembly. Security owns the
+semantics and validation of Security configuration.
+
+Human authentication is capability-based:
+
+```text
+sixpay.security.authentication.local.enabled
+sixpay.security.authentication.oidc.enabled
+sixpay.security.authentication.ldap.enabled
+```
+
+All non-empty provider combinations are supported. A secured runtime with all three providers disabled is invalid. Technical runtimes such as `standalone` may intentionally run without a human authentication provider.
+
+Existing runtime profiles are preserved; provider combinations must not be
+materialized as a separate YAML profile matrix. Reusable runtime fragments under
+`config/security/` carry provider-specific physical configuration.
+
+LDAP secrets are runtime-injected and have no repository default.
 
 ## Springdoc/OpenAPI
 

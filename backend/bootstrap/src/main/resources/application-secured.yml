@@ -2,11 +2,14 @@ spring:
   config:
     import:
       - classpath:config/security/oidc-common.yml
+      - classpath:config/security/ldap-common.yml
 
 sixpay:
   security:
     mode: oauth2
     authentication:
+      policy:
+        require-provider: true
       local:
         enabled: false
       oidc:

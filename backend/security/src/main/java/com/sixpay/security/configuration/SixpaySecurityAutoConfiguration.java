@@ -49,6 +49,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @EnableMethodSecurity
 @EnableConfigurationProperties({
         AuthenticationCapabilitiesProperties.class,
+        AuthenticationProviderPolicyProperties.class,
         TresorPaySubscriptionKeyProperties.class
 })
 @Import({
@@ -66,6 +67,15 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
                 ConditionalOnWebApplication.Type.SERVLET
 )
 public class SixpaySecurityAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(AuthenticationProviderPolicyValidator.class)
+    AuthenticationProviderPolicyValidator authenticationProviderPolicyValidator(
+            AuthenticationCapabilitiesProperties capabilities,
+            AuthenticationProviderPolicyProperties policy
+    ) {
+        return new AuthenticationProviderPolicyValidator(capabilities, policy);
+    }
 
     @Bean
     @ConditionalOnMissingBean

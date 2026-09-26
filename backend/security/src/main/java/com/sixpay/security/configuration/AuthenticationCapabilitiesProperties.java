@@ -23,6 +23,7 @@ public record AuthenticationCapabilitiesProperties(
         ldap = ldap == null
                 ? Ldap.disabled()
                 : ldap;
+
     }
 
     public boolean localEnabled() {
@@ -43,6 +44,18 @@ public record AuthenticationCapabilitiesProperties(
         enabledCount += oidcEnabled() ? 1 : 0;
         enabledCount += ldapEnabled() ? 1 : 0;
         return enabledCount > 1;
+    }
+
+    public int enabledProviderCount() {
+        int enabledCount = 0;
+        enabledCount += localEnabled() ? 1 : 0;
+        enabledCount += oidcEnabled() ? 1 : 0;
+        enabledCount += ldapEnabled() ? 1 : 0;
+        return enabledCount;
+    }
+
+    public boolean anyProviderEnabled() {
+        return enabledProviderCount() > 0;
     }
 
     public record Local(
