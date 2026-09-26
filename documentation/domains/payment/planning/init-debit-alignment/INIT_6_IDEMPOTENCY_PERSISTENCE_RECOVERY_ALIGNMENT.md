@@ -28,6 +28,10 @@ were still source/global scoped.
   the completed initiation acknowledgement.
 - Same Partner + same external reference + different fingerprint returns the
   Payment-reference conflict path.
+- Concurrent initiation attempts targeting the same
+  `(partnerIdentifier, externalPaymentReference)` are serialized independently
+  from their transport `Idempotency-Key`, preventing two distinct keys from
+  racing into the database uniqueness constraint.
 - `GET Payment` remains read-only and is not changed into a financial replay
   mechanism.
 - No callback behavior is changed because INIT-6 found no need to alter the

@@ -349,6 +349,60 @@ class PaymentIdempotencyFoundationIT {
     }
 
     @Test
+    void serializesConcurrentTransactionsForSamePartnerPaymentReferenceAcrossDifferentKeys()
+            throws Exception {
+        String partnerIdentifier = "PARTNER-" + UUID.randomUUID();
+        String externalPaymentReference = "EXT-" + UUID.randomUUID();
+
+        AtomicInteger insideCriticalSection =
+                new AtomicInteger();
+        AtomicInteger maximumConcurrency =
+                new AtomicInteger();
+        AtomicInteger executions =
+                new AtomicInteger();
+
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<?> first = executor.submit(() ->
+                    runPartnerPaymentReferenceLockedProbe(
+                            partnerIdentifier,
+                            externalPaymentReference,
+                            ready,
+                            start,
+                            insideCriticalSection,
+                            maximumConcurrency,
+                            executions
+                    )
+            );
+            Future<?> second = executor.submit(() ->
+                    runPartnerPaymentReferenceLockedProbe(
+                            partnerIdentifier,
+                            externalPaymentReference,
+                            ready,
+                            start,
+                            insideCriticalSection,
+                            maximumConcurrency,
+                            executions
+                    )
+            );
+
+            assertThat(
+                    ready.await(5, TimeUnit.SECONDS)
+            ).isTrue();
+
+            start.countDown();
+
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
+        }
+
+        assertThat(executions.get()).isEqualTo(2);
+        assertThat(maximumConcurrency.get()).isOne();
+    }
+
+    @Test
     void serializesConcurrentTransactionsForSameKey()
             throws Exception {
         String operation = "PAYMENT_CREATE";
@@ -400,6 +454,50 @@ class PaymentIdempotencyFoundationIT {
 
         assertThat(executions.get()).isEqualTo(2);
         assertThat(maximumConcurrency.get()).isOne();
+    }
+
+    private void runPartnerPaymentReferenceLockedProbe(
+            String partnerIdentifier,
+            String externalPaymentReference,
+            CountDownLatch ready,
+            CountDownLatch start,
+            AtomicInteger inside,
+            AtomicInteger maximum,
+            AtomicInteger executions
+    ) {
+        ready.countDown();
+        await(start);
+
+        inTransaction(() ->
+                coordinator.executePartnerPaymentReferenceLocked(
+                        partnerIdentifier,
+                        externalPaymentReference,
+                        () -> {
+                            int current =
+                                    inside.incrementAndGet();
+                            maximum.accumulateAndGet(
+                                    current,
+                                    Math::max
+                            );
+                            executions.incrementAndGet();
+
+                            try {
+                                Thread.sleep(250);
+                            } catch (
+                                    InterruptedException exception
+                            ) {
+                                Thread.currentThread()
+                                        .interrupt();
+                                throw new IllegalStateException(
+                                        exception
+                                );
+                            } finally {
+                                inside.decrementAndGet();
+                            }
+                            return null;
+                        }
+                )
+        );
     }
 
     private void runLockedProbe(
