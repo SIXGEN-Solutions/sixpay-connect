@@ -40,7 +40,7 @@ The preserved InitiateDebit payload is:
 | `AppID` | REQUIRED | canonical Partner `partnerIdentifier` |
 | `endToEndId` | REQUIRED | Partner-scoped external payment reference |
 | `montantTotal` | REQUIRED | requested amount |
-| `devise` | OPTIONAL | no default invented |
+| `devise` | OPTIONAL | defaults to `XAF` when omitted for the current MVP; supplied ISO currency is propagated for authoritative Core Banking validation |
 | `ribDebiteur` | OPTIONAL | account hint/control after NIU-first resolution |
 | `nomDebiteur` | OPTIONAL | non-authoritative descriptive input |
 | `typeCreance` | REQUIRED | claim type |
@@ -96,14 +96,13 @@ validate the physical OpenAPI amendment, in particular:
 2. `AppID` business semantics;
 3. independence of `X-TresorPay-App-Id`;
 4. NIU-first / optional-RIB semantics;
-5. optional `devise` and `beneficiaires` remaining without invented defaults;
+5. optional `devise` defaulting to `XAF` when omitted for the current MVP, while `beneficiaires` remains without automatic allocation;
 6. compatibility implications for existing consumers.
 
 ## Explicitly not solved by INIT-4
 
 INIT-4 does not invent:
 
-- a default currency;
 - automatic Treasury beneficiaries;
 - new public error codes;
 - a new authentication mechanism;
@@ -124,3 +123,25 @@ Status:
 ```text
 INIT-4 — CONTRACT AMENDMENT PREPARED; HUMAN VALIDATION REQUIRED BEFORE DTO CHANGE
 ```
+
+## INIT-7 currency clarification
+
+The human-approved MVP rule is:
+
+```text
+devise omitted
+  -> SIXPAY defaults to XAF
+  -> Core Banking performs authoritative currency validation
+
+devise supplied
+  -> SIXPAY normalizes and propagates the ISO alpha-3 value
+  -> Core Banking performs authoritative currency validation
+```
+
+`devise` remains optional on the public wire contract. `XAF` is the current MVP
+default because the first deployment context is a Central African financial
+environment. Making the default currency environment-configurable is explicitly
+deferred to a future evolution.
+
+SIXPAY must not reject a syntactically valid supplied currency merely because it
+is different from XAF. Final banking acceptance belongs to Core Banking.

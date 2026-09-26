@@ -47,9 +47,10 @@ No `RIP` or `accountNumber` field is introduced by this workstream.
 | INIT-1 | COMPLETED-PROPOSAL | `INIT_1_PARTNER_CUSTOMER_IDENTIFICATION.md` | Reconcile current physical contract with INIT-0 decisions and prepare the future amendment |
 | INIT-2 | COMPLETED | `INIT_2_PARTNER_IDENTITY_ALIGNMENT.md` + INIT-2A/2B artifacts | Partner business and machine identity alignment implemented |
 | INIT-3 | TECHNICALLY-CLOSED | `INIT_3_NIU_CORE_BANKING_RESOLUTION.md` | NIU-first Core Banking resolution |
-| INIT-4 | AMENDMENT-PREPARED | `INIT_4_PAYMENT_CONTRACT_AMENDMENT_SYNCHRONIZATION_GATE.md` | Payment Contract Amendment & Synchronization Gate |
-| INIT-5 | IMPLEMENTATION-PREPARED | `INIT_5_PAYMENT_INPUT_NIU_RESOLUTION_IMPLEMENTATION.md` | Payment Input & NIU Resolution Implementation |
-| INIT-6 | IMPLEMENTED_LOCALLY_PENDING_VALIDATION | `INIT_6_IDEMPOTENCY_PERSISTENCE_RECOVERY_ALIGNMENT.md` | Idempotency / persistence / recovery alignment |
+| INIT-4 | TECHNICALLY-CLOSED | `INIT_4_PAYMENT_CONTRACT_AMENDMENT_SYNCHRONIZATION_GATE.md` | Payment Contract Amendment & Synchronization Gate |
+| INIT-5 | TECHNICALLY-CLOSED | `INIT_5_PAYMENT_INPUT_NIU_RESOLUTION_IMPLEMENTATION.md` | Payment Input & NIU Resolution Implementation |
+| INIT-6 | TECHNICALLY-CLOSED | `INIT_6_IDEMPOTENCY_PERSISTENCE_RECOVERY_ALIGNMENT.md` | Idempotency / persistence / recovery alignment |
+| INIT-7 | CLOSURE-PREPARED | `INIT_7_INIT_DEBIT_FINAL_ALIGNMENT_CLOSURE.md` | Final contract / implementation / persistence / recovery synchronization and workstream closure |
 
 ## Mandatory usage for following lots
 
@@ -100,5 +101,15 @@ The physical public AppID contract remains pending explicit approval.
 
 See `INIT_6_IDEMPOTENCY_PERSISTENCE_RECOVERY_ALIGNMENT.md`.
 
-Status: `IMPLEMENTED_LOCALLY_PENDING_VALIDATION`.
+Status: `TECHNICALLY-CLOSED`.
+
+## INIT-7 — Init Debit Final Alignment & Closure
+
+See `INIT_7_INIT_DEBIT_FINAL_ALIGNMENT_CLOSURE.md`.
+
+INIT-7 reconciles the final physical contract, input boundary, Partner identity,
+NIU-first resolution, idempotency, persistence and recovery semantics.
+
+LDAP / human-user authentication is explicitly a separate Security workstream
+and does not belong to Init Debit alignment.
 

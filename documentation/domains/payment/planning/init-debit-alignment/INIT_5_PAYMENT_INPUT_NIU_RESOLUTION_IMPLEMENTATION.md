@@ -31,13 +31,15 @@ runtime NIU-first resolution path.
 
 ## Explicit non-invention rule
 
-No default currency and no automatic Treasury beneficiary allocation is
+`devise` remains optional, but an omitted value defaults to `XAF` for the
+current MVP deployment. No automatic Treasury beneficiary allocation is
 introduced by INIT-5.
 
-If downstream construction still requires `Money` or
-`TreasuryAllocationIntent`, absence of `devise` or `beneficiaires` must remain
-visible and must be resolved only by an existing authoritative rule or a later
-approved decision.
+If `devise` is omitted, the application boundary applies the approved MVP
+`XAF` default. If a syntactically valid ISO currency is supplied, SIXPAY
+propagates it and Core Banking remains authoritative for banking validation.
+Absence of `beneficiaires` remains visible and must not trigger an invented
+Treasury allocation.
 
 ## Account resolution flow
 
@@ -57,5 +59,19 @@ InitiateDebit
 ## Status
 
 ```text
-INIT-5 — IMPLEMENTATION PATCH PREPARED; VALIDATION REQUIRED
+INIT-5 — TECHNICALLY CLOSED
 ```
+
+
+## INIT-7 closure note
+
+Final alignment confirmed that the public request DTO, API mapper and NIU-first
+Customer Verification flow are implemented.
+
+INIT-7 clarified the approved MVP currency rule: `devise` remains optional at
+the wire boundary, but an omitted value defaults to `XAF`. A supplied
+syntactically valid ISO currency is propagated; authoritative banking currency
+validation belongs to Core Banking.
+
+`beneficiaires` remains optional at the wire boundary. No automatic Treasury
+beneficiary allocation is introduced by INIT-5/INIT-7.

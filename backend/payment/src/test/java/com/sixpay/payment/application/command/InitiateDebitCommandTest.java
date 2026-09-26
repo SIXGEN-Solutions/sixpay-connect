@@ -66,8 +66,8 @@ class InitiateDebitCommandTest {
     }
 
     @Test
-    void rejectsNonXafCurrencyForMvp() {
-        assertThatThrownBy(() -> new InitiateDebitCommand(
+    void preservesSuppliedIsoCurrencyForCoreBankingValidation() {
+        InitiateDebitCommand command = new InitiateDebitCommand(
                 "TRESOR_PAY", "TRESOR_PAY", "TP_APP_001",
                 "AVI-2025-00045678", new BigDecimal("600000"), "EUR",
                 "10005-00001-12345678901-12", "Société ABC SARL",
@@ -76,8 +76,9 @@ class InitiateDebitCommandTest {
                 List.of(beneficiary("600000")),
                 "https://tresorpay.cm/callback", "idem-001",
                 CorrelationId.of("11111111-1111-1111-1111-111111111111")
-        )).isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("XAF");
+        );
+
+        assertThat(command.currency()).isEqualTo("EUR");
     }
 
     @Test

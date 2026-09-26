@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED_LOCALLY_PENDING_VALIDATION
+TECHNICALLY_CLOSED
 
 Baseline: `9f62dc5c8f43d4a49516272e516b49faceb9ce57`
 
@@ -73,3 +73,12 @@ Repository gates remain to be executed by the human operator according to
 
 No validation result is claimed by this document until those commands actually
 finish with exit code 0.
+
+
+## Validation evidence
+
+The human operator reported the requested INIT-6 validation/gates completed
+successfully with exit code `0`.
+
+INIT-7 therefore closes INIT-6 as technically complete. No assistant-executed
+gate is claimed.

@@ -391,9 +391,14 @@ components:
         devise:
           type: string
           pattern: '^[A-Z]{3}$'
+          default: XAF
           description: |
-            Optional currency. No defaulting rule is defined by this contract
-            amendment.
+            Optional ISO 4217 alpha-3 currency. When omitted, SIXPAY uses XAF
+            as the default currency for the current MVP deployment context.
+            When supplied, the currency is propagated without SIXPAY imposing
+            the final banking acceptance rule; authoritative currency
+            validation belongs to Core Banking. Making the default currency
+            environment-configurable is a future evolution.
         ribDebiteur:
           type: string
           minLength: 8

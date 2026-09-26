@@ -124,12 +124,6 @@ public record InitiateDebitCommand(
             );
         }
 
-        if (!"XAF".equals(currency)) {
-            throw new IllegalArgumentException(
-                    "Currency must be XAF for the SIXPAY MVP"
-            );
-        }
-
         if (!callbackUrl.startsWith("https://")) {
             throw new IllegalArgumentException(
                     "Callback URL must use HTTPS"
