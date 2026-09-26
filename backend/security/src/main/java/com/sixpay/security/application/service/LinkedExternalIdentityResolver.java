@@ -41,6 +41,7 @@ public class LinkedExternalIdentityResolver
         );
     }
 
+    @Override
     public AuthenticatedUser resolve(
             AuthenticationIdentityType identityType,
             ExternalIdentity externalIdentity
