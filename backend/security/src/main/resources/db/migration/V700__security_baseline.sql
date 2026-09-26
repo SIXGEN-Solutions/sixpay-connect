@@ -54,7 +54,7 @@ CREATE TABLE security_user_identities (
         REFERENCES security_user_accounts (id)
         ON DELETE CASCADE,
     CONSTRAINT ck_security_user_identity_type
-        CHECK (identity_type IN ('LOCAL', 'OIDC')),
+        CHECK (identity_type IN ('LOCAL', 'OIDC', 'LDAP')),
     CONSTRAINT ck_security_user_identity_provider
         CHECK (NULLIF(BTRIM(provider), '') IS NOT NULL),
     CONSTRAINT ck_security_user_identity_subject
@@ -74,7 +74,7 @@ COMMENT ON TABLE security_user_identities IS
     'Authentication identities linked to canonical SIXPAY users. No automatic email linking.';
 
 COMMENT ON COLUMN security_user_identities.provider IS
-    'LOCAL uses SIXPAY. OIDC uses the exact trusted issuer URI.';
+    'LOCAL uses SIXPAY. OIDC uses the exact trusted issuer URI. LDAP uses the configured stable LDAP trust-domain identifier.';
 
 -- ---------------------------------------------------------------------------
 -- LOCAL credential store input final lifecycle shape
