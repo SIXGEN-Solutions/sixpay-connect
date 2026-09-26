@@ -4,7 +4,7 @@
 ### Status
 
 ```text
-AUTH-1 — CONTRACT PREPARED; HUMAN APPROVAL BY LA REGIONALE REQUIRED
+AUTH-1 — APPROVED BASELINE FOR MICROSOFT ACTIVE DIRECTORY
 ```
 
 ### Authoritative revision
@@ -81,12 +81,12 @@ No secret value is stored in this document or anywhere in Git.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Primary directory URL | YES | `TO_BE_CONFIRMED` |
-| Secondary/failover directory URL(s) | NO/IF_AVAILABLE | `TO_BE_CONFIRMED` |
-| Protocol | YES | `TO_BE_CONFIRMED` (`ldap://` / `ldaps://`) |
-| Port(s) | YES | `TO_BE_CONFIRMED` |
-| Environment scope | YES | `TO_BE_CONFIRMED` |
-| DNS ownership/resolution requirements | YES | `TO_BE_CONFIRMED` |
+| Primary directory URL | YES | `CONFIGURABLE_PER_ENVIRONMENT` |
+| Secondary/failover directory URL(s) | NO/IF_AVAILABLE | `CONFIGURABLE_LIST`; currently optional pending bank topology |
+| Protocol | YES | `LDAPS` |
+| Port(s) | YES | `CONFIGURABLE`; standard LDAPS default may be supplied by deployment configuration |
+| Environment scope | YES | `CONFIGURABLE_PER_ENVIRONMENT` |
+| DNS ownership/resolution requirements | YES | `BANK_MANAGED / RUNTIME_RESOLUTION_REQUIRED` |
 
 The bank must identify endpoints by environment where applicable
 (sandbox/integration/preproduction/production).
@@ -110,13 +110,13 @@ Unencrypted LDAP authentication is **not approved by AUTH-1**.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| TLS/LDAPS mandatory | YES | `TO_BE_CONFIRMED` |
-| LDAPS or StartTLS | YES | `TO_BE_CONFIRMED` |
-| Minimum TLS version | YES | `TO_BE_CONFIRMED` |
-| Server certificate hostname/SAN expectation | YES | `TO_BE_CONFIRMED` |
-| Private/public CA model | YES | `TO_BE_CONFIRMED` |
-| CA chain delivery mechanism | YES | `TO_BE_CONFIRMED` |
-| Certificate expiry/renewal ownership | YES | `TO_BE_CONFIRMED` |
+| TLS/LDAPS mandatory | YES | `APPROVED` |
+| LDAPS or StartTLS | YES | `LDAPS` |
+| Minimum TLS version | YES | `CONFIGURABLE`; bank/runtime policy applies |
+| Server certificate hostname/SAN expectation | YES | `REQUIRED` |
+| Private/public CA model | YES | `TRUSTED_CA_REQUIRED` |
+| CA chain delivery mechanism | YES | `CONFIGURABLE_TRUSTSTORE / RUNTIME_TRUST_MATERIAL` |
+| Certificate expiry/renewal ownership | YES | `BANK/INFRASTRUCTURE_OWNED` |
 
 ### 5.2 Trust material
 
@@ -148,13 +148,13 @@ AUTH-1 does not choose one without bank evidence.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Bind mechanism | YES | `TO_BE_CONFIRMED` |
-| Service account required | YES | `TO_BE_CONFIRMED` |
-| Service account identifier format | IF_APPLICABLE | `TO_BE_CONFIRMED` |
-| Service account least-privilege requirements | IF_APPLICABLE | `TO_BE_CONFIRMED` |
-| Anonymous search allowed | YES | `TO_BE_CONFIRMED` |
-| User re-bind required for password verification | YES | `TO_BE_CONFIRMED` |
-| SASL/simple bind/other | YES | `TO_BE_CONFIRMED` |
+| Bind mechanism | YES | `SERVICE_ACCOUNT_SEARCH + USER_CREDENTIAL_VERIFICATION` |
+| Service account required | YES | `YES` |
+| Service account identifier format | IF_APPLICABLE | `CONFIGURABLE` |
+| Service account least-privilege requirements | IF_APPLICABLE | `READ_ONLY_USER_SEARCH` |
+| Anonymous search allowed | YES | `NO` |
+| User re-bind required for password verification | YES | `YES` |
+| SASL/simple bind/other | YES | `CONFIGURABLE_ACTIVE_DIRECTORY_BIND_MODE`; no anonymous bind |
 
 AUTH-1 stores no service-account password.
 
@@ -173,12 +173,12 @@ The bank/SIXPAY teams must approve:
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Secret system of record | YES | `TO_BE_CONFIRMED` |
-| Secret owner | YES | `TO_BE_CONFIRMED` |
-| Retrieval/injection mechanism | YES | `TO_BE_CONFIRMED` |
-| Rotation frequency/policy | YES | `TO_BE_CONFIRMED` |
-| Rotation without application rebuild | YES | `TO_BE_CONFIRMED` |
-| Emergency credential-revocation procedure | YES | `TO_BE_CONFIRMED` |
+| Secret system of record | YES | `RUNTIME_SECRET_SOURCE`; concrete product deferred |
+| Secret owner | YES | `BANK/SIXPAY_OPERATIONS` |
+| Retrieval/injection mechanism | YES | `RUNTIME_INJECTION`; never Git |
+| Rotation frequency/policy | YES | `IMPROVEMENT_PROPOSAL_PENDING`; capability must allow replacement without code change |
+| Rotation without application rebuild | YES | `TARGET_REQUIRED`; implementation deferred |
+| Emergency credential-revocation procedure | YES | `OPERATIONS_PROCEDURE_TO_DEFINE` |
 
 AUTH-1 does not assume Vault unless La Régionale explicitly approves it.
 
@@ -188,12 +188,12 @@ AUTH-1 does not assume Vault unless La Régionale explicitly approves it.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Base DN | YES | `TO_BE_CONFIRMED` |
-| User search base | YES | `TO_BE_CONFIRMED` |
-| Search scope | YES | `TO_BE_CONFIRMED` |
-| User search filter | YES | `TO_BE_CONFIRMED` |
+| Base DN | YES | `CONFIGURABLE` |
+| User search base | YES | `CONFIGURABLE`; prefer the narrowest OU subtree containing eligible human users |
+| Search scope | YES | `SUBTREE` within configured user search base |
+| User search filter | YES | `CONFIGURABLE`; default semantic `(sAMAccountName={0})`, escaped parameter, exactly one match required |
 | Escaping/injection protection requirements | YES | `APPROVED BY SIXPAY BASELINE` |
-| Expected maximum result count for login search | YES | `TO_BE_CONFIRMED` |
+| Expected maximum result count for login search | YES | `1` |
 
 User lookup must resolve exactly one intended human identity. Ambiguous results
 must fail closed.
@@ -202,11 +202,11 @@ must fail closed.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Human login attribute(s) | YES | `TO_BE_CONFIRMED` |
-| Case-sensitivity rule | YES | `TO_BE_CONFIRMED` |
-| Normalization rule | YES | `TO_BE_CONFIRMED` |
-| Display-name attribute | NO | `TO_BE_CONFIRMED` |
-| Username/display attribute used by SIXPAY | YES | `TO_BE_CONFIRMED` |
+| Human login attribute(s) | YES | `sAMAccountName` default, configurable |
+| Case-sensitivity rule | YES | `CASE_INSENSITIVE_NORMALIZATION` |
+| Normalization rule | YES | `TRIM + LOWERCASE_FOR_LOOKUP_INPUT`; original directory value retained for display |
+| Display-name attribute | NO | `displayName` default, configurable |
+| Username/display attribute used by SIXPAY | YES | `sAMAccountName` default, configurable |
 
 AUTH-1 does not assume `uid`, `cn`, `mail`, `sAMAccountName` or
 `userPrincipalName`.
@@ -229,10 +229,10 @@ AUTH-1 must obtain the concrete bank-approved mapping.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Stable immutable LDAP attribute used as `subject` | YES | `TO_BE_CONFIRMED` |
-| Attribute persistence across rename/move | YES | `TO_BE_CONFIRMED` |
-| Attribute uniqueness scope | YES | `TO_BE_CONFIRMED` |
-| Attribute exposure/read permission | YES | `TO_BE_CONFIRMED` |
+| Stable immutable LDAP attribute used as `subject` | YES | `objectGUID` default for Active Directory, configurable |
+| Attribute persistence across rename/move | YES | `REQUIRED`; `objectGUID` selected for this property |
+| Attribute uniqueness scope | YES | `DIRECTORY/TRUST_DOMAIN` |
+| Attribute exposure/read permission | YES | `REQUIRED_FOR_SERVICE_ACCOUNT` |
 
 The stable subject must not silently change when:
 
@@ -251,10 +251,10 @@ directories.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| LDAP logical trust-domain identifier | YES | `TO_BE_CONFIRMED` |
-| Stability across server failover | YES | `TO_BE_CONFIRMED` |
-| Stability across endpoint/DNS change | YES | `TO_BE_CONFIRMED` |
-| Uniqueness across multiple directories | YES | `TO_BE_CONFIRMED` |
+| LDAP logical trust-domain identifier | YES | `regionale-ldap` default, configurable |
+| Stability across server failover | YES | `REQUIRED` |
+| Stability across endpoint/DNS change | YES | `REQUIRED` |
+| Uniqueness across multiple directories | YES | `REQUIRED` |
 
 This logical identifier becomes the LDAP `ExternalIdentity.issuer` /
 `security_user_identities.provider` value.
@@ -281,8 +281,8 @@ group-to-role mapping.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| LDAP group information exposed | NO | `TO_BE_CONFIRMED` |
-| Group attribute/search model | IF_NEEDED_LATER | `TO_BE_CONFIRMED` |
+| LDAP group information exposed | NO | `NOT_REQUIRED_FOR_AUTHENTICATION` |
+| Group attribute/search model | IF_NEEDED_LATER | `DEFERRED` |
 | Automatic group -> SIXPAY authority mapping | YES | `FORBIDDEN` |
 
 ## 11. LDAP account state semantics
@@ -291,12 +291,12 @@ La Régionale must document what directory state is visible and authoritative.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Disabled account detection | YES | `TO_BE_CONFIRMED` |
-| Locked account detection | YES | `TO_BE_CONFIRMED` |
-| Password-expired state exposed | YES | `TO_BE_CONFIRMED` |
-| Password-must-change state exposed | NO/IF_AVAILABLE | `TO_BE_CONFIRMED` |
-| Expired account semantics | YES | `TO_BE_CONFIRMED` |
-| Authentication error distinctions safe to expose to SIXPAY | YES | `TO_BE_CONFIRMED` |
+| Disabled account detection | YES | `ENABLED_WHEN_EXPOSED_BY_AD`; fail closed |
+| Locked account detection | YES | `ENABLED_WHEN_EXPOSED_BY_AD`; fail closed |
+| Password-expired state exposed | YES | `SUPPORTED_WHEN_EXPOSED_BY_AD`; configurable mapping |
+| Password-must-change state exposed | NO/IF_AVAILABLE | `SUPPORTED_WHEN_EXPOSED_BY_AD`; configurable mapping |
+| Expired account semantics | YES | `FAIL_CLOSED` |
+| Authentication error distinctions safe to expose to SIXPAY | YES | `INTERNAL_CLASSIFICATION_ONLY`; external response remains generic |
 
 SIXPAY must fail closed when LDAP authentication cannot establish a valid,
 enabled identity.
@@ -310,14 +310,14 @@ AUTH-1 requires explicit operational values.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Connect timeout | YES | `TO_BE_CONFIRMED` |
-| Read/operation timeout | YES | `TO_BE_CONFIRMED` |
-| Authentication overall timeout budget | YES | `TO_BE_CONFIRMED` |
-| Retry allowed | YES | `TO_BE_CONFIRMED` |
-| Retry count/backoff | IF_ALLOWED | `TO_BE_CONFIRMED` |
-| Multi-server/failover behavior | IF_AVAILABLE | `TO_BE_CONFIRMED` |
-| Server selection order | IF_MULTI_SERVER | `TO_BE_CONFIRMED` |
-| Health-check expectations | YES | `TO_BE_CONFIRMED` |
+| Connect timeout | YES | `3s` default, configurable |
+| Read/operation timeout | YES | `5s` default, configurable |
+| Authentication overall timeout budget | YES | `10s` default, configurable |
+| Retry allowed | YES | `ONLY_ACROSS_CONFIGURED_ALTERNATE_ENDPOINTS`; no credential spraying |
+| Retry count/backoff | IF_ALLOWED | `BOUNDED_BY_ENDPOINT_COUNT`; configurable backoff |
+| Multi-server/failover behavior | IF_AVAILABLE | `CONFIGURABLE_ORDERED_ENDPOINT_LIST`; single endpoint allowed initially |
+| Server selection order | IF_MULTI_SERVER | `CONFIGURATION_ORDER` |
+| Health-check expectations | YES | `CONNECTIVITY/TLS_READINESS_TO_BE_EXPOSED_BY_RUNTIME` |
 | Directory-unavailable behavior | YES | `FAIL CLOSED` |
 
 Authentication retries must not create credential spraying or lockout
@@ -332,13 +332,13 @@ service.
 
 | Item | Required | Bank value/status |
 |---|---:|---|
-| Source SIXPAY subnet/host scope | YES | `TO_BE_CONFIRMED` |
-| Destination LDAP host(s) | YES | `TO_BE_CONFIRMED` |
-| Destination port(s) | YES | `TO_BE_CONFIRMED` |
-| Firewall opening approved | YES | `TO_BE_CONFIRMED` |
-| Routing/VPN/private-network path | YES | `TO_BE_CONFIRMED` |
-| DNS resolution validated from SIXPAY runtime | YES | `TO_BE_CONFIRMED` |
-| TLS handshake validated from SIXPAY runtime | YES | `TO_BE_CONFIRMED` |
+| Source SIXPAY subnet/host scope | YES | `CONFIRMED_REACHABLE_BY_LA_REGIONALE` |
+| Destination LDAP host(s) | YES | `CONFIGURABLE` |
+| Destination port(s) | YES | `CONFIGURABLE` |
+| Firewall opening approved | YES | `APPROVED/CONFIRMED` |
+| Routing/VPN/private-network path | YES | `CONFIRMED_AVAILABLE`; exact topology environment-owned |
+| DNS resolution validated from SIXPAY runtime | YES | `REQUIRED_BEFORE_ENVIRONMENT_GO_LIVE` |
+| TLS handshake validated from SIXPAY runtime | YES | `REQUIRED_BEFORE_ENVIRONMENT_GO_LIVE` |
 
 Network availability from a developer workstation is not sufficient evidence.
 
@@ -424,8 +424,8 @@ SIXPAY security/architecture approval
 Until then:
 
 ```text
-AUTH-1 = PREPARED_PENDING_BANK_APPROVAL
-LDAP runtime implementation = BLOCKED_FOR_PRODUCTION_CONTRACT
+AUTH-1 = APPROVED_BASELINE
+LDAP runtime implementation = AUTHORIZED_TO_PROCEED_WITH_APPROVED_BASELINE
 ```
 
 Development spikes using non-production mocks may be prepared separately, but
@@ -470,7 +470,8 @@ keys.
 [ ] SIXPAY architecture/security review approved
 ```
 
-Only then may AUTH-1 be classified:
+Human decisions have now been supplied for the Microsoft Active Directory baseline.
+AUTH-1 is classified:
 
 ```text
 AUTH-1 — APPROVED
@@ -486,3 +487,40 @@ AUTH-2 — LDAP Authentication Adapter
 
 AUTH-2 may implement the provider-neutral LDAP adapter using the approved
 connectivity, trust, search and stable-identity rules from this contract.
+
+
+## 21. Approved Microsoft Active Directory profile
+
+The human-approved AUTH-1 profile is:
+
+```text
+directoryType            = MICROSOFT_ACTIVE_DIRECTORY
+transport                = LDAPS
+endpointUrls             = configurable per environment
+baseDn                   = configurable
+userSearchBase           = configurable, narrowest eligible human-user subtree preferred
+userSearchFilter         = configurable; default semantic (sAMAccountName={0})
+loginAttribute           = sAMAccountName (configurable)
+displayAttribute         = displayName (configurable)
+subjectAttribute         = objectGUID (configurable but mandatory)
+trustDomain              = regionale-ldap (configurable)
+serviceAccount           = required, read-only search privilege
+userCredentialCheck      = required after unique lookup
+connectTimeout           = 3s default, configurable
+readTimeout              = 5s default, configurable
+overallAuthentication    = 10s default, configurable
+multiServer              = ordered configurable endpoint list
+directoryUnavailable     = fail closed
+groupToAuthorityMapping  = forbidden
+secretStorage            = runtime injection; never Git
+secretRotation           = improvement proposal deferred
+```
+
+`objectGUID` must be normalized to a stable textual representation before
+constructing `ExternalIdentity.subject`. The full Distinguished Name may be
+used transiently to perform the user bind but is not the canonical SIXPAY
+external subject.
+
+The human gate from La Régionale is recorded as approved for this baseline.
+Environment-specific endpoint, DN, certificate and secret values remain runtime
+configuration and are not committed.

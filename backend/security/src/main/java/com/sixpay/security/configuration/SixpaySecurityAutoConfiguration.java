@@ -1,12 +1,14 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.api.controller.AuthenticationSessionController;
+import com.sixpay.security.application.port.input.AuthenticateLdapIdentityUseCase;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
@@ -109,6 +111,25 @@ public class SixpaySecurityAutoConfiguration {
         return new OidcAuthenticationAdapter(
                 externalIdentityResolver,
                 auditPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(
+            AuthenticateLdapIdentityUseCase.class
+    )
+    @ConditionalOnProperty(
+            prefix =
+                    "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    AuthenticateLdapIdentityUseCase
+    ldapAuthenticationProvider(
+            AuthenticationCapabilitiesProperties properties
+    ) {
+        return new ActiveDirectoryLdapAuthenticationAdapter(
+                properties.ldap()
         );
     }
 
