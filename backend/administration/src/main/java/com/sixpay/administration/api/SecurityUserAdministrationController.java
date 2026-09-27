@@ -138,6 +138,19 @@ public class SecurityUserAdministrationController {
         );
     }
 
+    @PostMapping("/{userId}/identities/ldap")
+    public SecurityUserDetail linkLdap(
+            @PathVariable UUID userId,
+            @Valid @RequestBody LinkLdapIdentityRequest request
+    ) {
+        return useCase.linkLdapIdentity(
+                userId,
+                request.trustDomain(),
+                request.stableSubject(),
+                actorSubject()
+        );
+    }
+
     @DeleteMapping("/{userId}/identities/{identityId}")
     public SecurityUserDetail unlinkExternalIdentity(
             @PathVariable UUID userId,

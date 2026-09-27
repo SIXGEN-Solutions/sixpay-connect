@@ -7,9 +7,11 @@
 
 Baseline SHA: `0da070eb22166f45cacc52d11c58ffa41d920491`.
 
-This lot does not add a frontend screen and does not amend the physical
-`security-user-administration-api-v1` contract while that contract remains
-`PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed=false`.
+This lot does not add a frontend screen. The human AUTH-7 decision
+explicitly includes the LDAP administrative linking operation in the physical
+`security-user-administration-api-v1` contract. The contract remains
+`PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed=false`; adding this
+operation does not authorize contract-driven code generation.
 
 ## Canonical workflow
 
@@ -154,8 +156,27 @@ directory user data.
 
 ## Contract boundary
 
-The current internal Security User Administration physical contract documents
-OIDC linking only and remains:
+The internal Security User Administration physical contract now documents the
+explicit ADMIN-only LDAP linking operation:
+
+```text
+POST /internal/api/v1/administration/users/{userId}/identities/ldap
+DELETE /internal/api/v1/administration/users/{userId}/identities/{identityId}
+```
+
+The POST accepts only the durable LDAP link coordinates:
+
+```json
+{
+  "trustDomain": "regionale-ldap",
+  "stableSubject": "<immutable objectGUID>"
+}
+```
+
+DN, username, email and LDAP groups are deliberately excluded from the durable
+link payload.
+
+The contract remains:
 
 ```text
 lifecycleStatus: ACTIVE_MVP
@@ -164,9 +185,8 @@ generationPolicy: REFERENCE_ONLY
 codeGenerationAllowed: false
 ```
 
-AUTH-7 therefore prepares the Security application workflow and runbook without
-adding a new public/internal HTTP LDAP-link endpoint. Exposing that operation
-through the Administration API requires explicit human contract approval.
+The human AUTH-7 decision authorizes this contract amendment and matching
+implementation only. It does not authorize contract-driven generation.
 
 ## Database
 
@@ -180,6 +200,17 @@ UNIQUE(user_id, identity_type, provider)
 ```
 
 The durable identity remains `(LDAP, trust-domain, stable subject)`.
+
+## HTTP administration closure
+
+An ADMIN can now invoke the LDAP link workflow through the Administration
+boundary. The controller delegates to the existing Security-owned
+`linkLdapIdentity(...)` use case. Unlink remains generic for OIDC and LDAP.
+
+No LDAP credential verification is performed by the administration endpoint:
+credential verification remains the responsibility of the LDAP authentication
+provider at login time. Linking is an explicit administrative association of a
+trusted stable directory identity with a canonical SIXPAY account.
 
 ## Validation
 
