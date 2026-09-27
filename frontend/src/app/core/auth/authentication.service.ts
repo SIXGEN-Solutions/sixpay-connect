@@ -83,10 +83,17 @@ export class AuthenticationService {
 
   readonly isStandaloneMode = authenticationEnvironment.standalone;
 
-  readonly localEnabled = authenticationEnvironment.local.enabled;
+  readonly localEnabled = computed(
+    () => this.backendCapabilitiesState()?.localEnabled ?? authenticationEnvironment.local.enabled,
+  );
 
-  readonly oidcEnabled = authenticationEnvironment.oidc.enabled;
-  readonly ldapEnabled = authenticationEnvironment.ldap.enabled;
+  readonly oidcEnabled = computed(
+    () => this.backendCapabilitiesState()?.oidcEnabled ?? authenticationEnvironment.oidc.enabled,
+  );
+
+  readonly ldapEnabled = computed(
+    () => this.backendCapabilitiesState()?.ldapEnabled ?? authenticationEnvironment.ldap.enabled,
+  );
 
   readonly isLocalEnabled = this.localEnabled;
   readonly isOidcEnabled = this.oidcEnabled;
@@ -139,7 +146,7 @@ export class AuthenticationService {
   }
 
   loginLocal(request: LocalLoginRequest, returnUrl = '/'): Observable<void> {
-    if (!this.localEnabled) {
+    if (!this.localEnabled()) {
       return throwError(() => new Error('Local authentication is not enabled'));
     }
 
@@ -187,7 +194,7 @@ export class AuthenticationService {
   }
 
   loginLdap(request: LdapLoginRequest, returnUrl = '/'): Observable<void> {
-    if (!this.ldapEnabled) {
+    if (!this.ldapEnabled()) {
       return throwError(() => new Error('LDAP authentication is not enabled'));
     }
 
@@ -204,7 +211,7 @@ export class AuthenticationService {
   }
 
   loginOidc(returnUrl = '/'): void {
-    if (!this.oidcEnabled) {
+    if (!this.oidcEnabled()) {
       return;
     }
 
@@ -261,7 +268,7 @@ export class AuthenticationService {
   }
 
   private initializeAuthentication(): void {
-    if (!this.localEnabled && !this.oidcEnabled && !this.ldapEnabled) {
+    if (!this.localEnabled() && !this.oidcEnabled() && !this.ldapEnabled()) {
       this.readyState.next(true);
       return;
     }
@@ -286,7 +293,7 @@ export class AuthenticationService {
   }
 
   private tryExistingOidcSession(): void {
-    if (!this.oidcEnabled || !this.oidc) {
+    if (!this.oidcEnabled() || !this.oidc) {
       this.resolveAnonymousState();
       return;
     }
@@ -356,9 +363,9 @@ export class AuthenticationService {
 
     this.backendCapabilitiesState.set(
       session.capabilities ?? {
-        localEnabled: this.localEnabled,
-        oidcEnabled: this.oidcEnabled,
-        ldapEnabled: this.ldapEnabled,
+        localEnabled: this.localEnabled(),
+        oidcEnabled: this.oidcEnabled(),
+        ldapEnabled: this.ldapEnabled(),
       },
     );
 

@@ -52,6 +52,30 @@ flags:
       []
     detection:
       - "ANGULAR_ENVIRONMENT"
+  - id: AUTHENTICATION_LDAP_ENABLED
+    key: "authentication.ldap.enabled"
+    owner: FRONTEND_AUTH_RUNTIME
+    category: AUTHENTICATION_OR_SECURITY
+    lifecycleStatus: ACTIVE
+    changePolicy: REVIEW_REQUIRED
+    runtimeSourceOfTruth: IMPLEMENTATION_CONFIGURATION
+    sources:
+      - "frontend/src/environments/environment.development.ts"
+      - "frontend/src/environments/environment.integration.ts"
+      - "frontend/src/environments/environment.netlify.ts"
+      - "frontend/src/environments/environment.ts"
+    observedProfiles:
+      - "development"
+      - "integration"
+      - "netlify"
+      - "production"
+    observedValues:
+      - "false"
+      - "true"
+    environmentVariables:
+      []
+    detection:
+      - "ANGULAR_ENVIRONMENT"
   - id: AUTHENTICATION_STANDALONE
     key: "authentication.standalone"
     owner: FRONTEND_AUTH_RUNTIME

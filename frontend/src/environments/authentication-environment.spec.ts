@@ -41,6 +41,45 @@ describe('validateAuthenticationEnvironment', () => {
     ).not.toThrow();
   });
 
+  it('accepts simultaneous Local and LDAP production authentication', () => {
+    expect(() =>
+      validateAuthenticationEnvironment(
+        productionEnvironment({
+          standalone: false,
+          local: { enabled: true },
+          oidc: { enabled: false },
+          ldap: { enabled: true },
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts simultaneous OIDC and LDAP production authentication', () => {
+    expect(() =>
+      validateAuthenticationEnvironment(
+        productionEnvironment({
+          standalone: false,
+          local: { enabled: false },
+          oidc: configuredOidc(true),
+          ldap: { enabled: true },
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts simultaneous Local, OIDC and LDAP production authentication', () => {
+    expect(() =>
+      validateAuthenticationEnvironment(
+        productionEnvironment({
+          standalone: false,
+          local: { enabled: true },
+          oidc: configuredOidc(true),
+          ldap: { enabled: true },
+        }),
+      ),
+    ).not.toThrow();
+  });
+
   it('accepts LDAP-only production authentication', () => {
     expect(() =>
       validateAuthenticationEnvironment(

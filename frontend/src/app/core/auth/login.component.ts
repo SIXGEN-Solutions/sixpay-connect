@@ -33,7 +33,7 @@ import { AuthenticationService } from './authentication.service';
             </p>
           }
 
-          @if (authentication.localEnabled) {
+          @if (authentication.localEnabled()) {
             <form class="sp-local-login-form" [formGroup]="form" (ngSubmit)="loginLocal()">
               <mat-form-field appearance="outline">
                 <mat-label>Email / Nom d’utilisateur</mat-label>
@@ -67,9 +67,9 @@ import { AuthenticationService } from './authentication.service';
           }
 
           @if (
-            (authentication.localEnabled && authentication.oidcEnabled) ||
-            (authentication.localEnabled && authentication.ldapEnabled) ||
-            (authentication.oidcEnabled && authentication.ldapEnabled)
+            (authentication.localEnabled() && authentication.oidcEnabled()) ||
+            (authentication.localEnabled() && authentication.ldapEnabled()) ||
+            (authentication.oidcEnabled() && authentication.ldapEnabled())
           ) {
             <div class="sp-auth-divider" aria-hidden="true">
               <span></span>
@@ -78,7 +78,7 @@ import { AuthenticationService } from './authentication.service';
             </div>
           }
 
-          @if (authentication.oidcEnabled) {
+          @if (authentication.oidcEnabled()) {
             <section class="sp-sso-login">
               <sp-button icon="login" variant="secondary" (buttonClick)="loginOidc()">
                 Se connecter avec SSO
@@ -86,7 +86,7 @@ import { AuthenticationService } from './authentication.service';
             </section>
           }
 
-          @if (authentication.ldapEnabled) {
+          @if (authentication.ldapEnabled()) {
             <form class="sp-ldap-login" [formGroup]="ldapForm" (ngSubmit)="loginLdap()">
               <mat-form-field appearance="outline">
                 <mat-label>Identifiant annuaire</mat-label>
@@ -121,9 +121,9 @@ import { AuthenticationService } from './authentication.service';
           }
 
           @if (
-            !authentication.localEnabled &&
-            !authentication.oidcEnabled &&
-            !authentication.ldapEnabled &&
+            !authentication.localEnabled() &&
+            !authentication.oidcEnabled() &&
+            !authentication.ldapEnabled() &&
             authentication.isStandaloneMode
           ) {
             <p>La session de démonstration SIXPAY est active.</p>
@@ -237,7 +237,7 @@ export class LoginComponent {
   }
 
   protected loginLocal(): void {
-    if (!this.authentication.localEnabled || this.form.invalid) {
+    if (!this.authentication.localEnabled() || this.form.invalid) {
       return;
     }
 
@@ -257,7 +257,7 @@ export class LoginComponent {
   }
 
   protected loginLdap(): void {
-    if (!this.authentication.ldapEnabled || this.ldapForm.invalid) {
+    if (!this.authentication.ldapEnabled() || this.ldapForm.invalid) {
       return;
     }
 
@@ -277,7 +277,7 @@ export class LoginComponent {
   }
 
   protected loginOidc(): void {
-    if (!this.authentication.oidcEnabled) {
+    if (!this.authentication.oidcEnabled()) {
       return;
     }
 
