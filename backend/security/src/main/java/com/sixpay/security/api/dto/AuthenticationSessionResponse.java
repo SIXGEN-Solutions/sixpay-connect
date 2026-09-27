@@ -17,6 +17,7 @@ public record AuthenticationSessionResponse(
         Set<String> roles,
         Set<String> permissions,
         AuthenticationMethod authenticationMethod,
-        boolean passwordChangeRequired
+        boolean passwordChangeRequired,
+        AuthenticationCapabilitiesResponse capabilities
 ) {
 }

@@ -2,14 +2,20 @@ export const SIXPAY_ROLES = ['ADMIN', 'MANAGER', 'PARTNER', 'AUDITOR'] as const;
 
 export type SixpayRole = (typeof SIXPAY_ROLES)[number];
 
-export type ActiveAuthenticationMethod = 'local' | 'oidc' | null;
+export type ActiveAuthenticationMethod = 'local' | 'oidc' | 'ldap' | null;
 
-export type BackendAuthenticationMethod = 'LOCAL' | 'OIDC';
+export type BackendAuthenticationMethod = 'LOCAL' | 'OIDC' | 'LDAP';
 
 export interface AuthenticatedIdentity {
   readonly subject: string;
   readonly roles: ReadonlySet<SixpayRole>;
   readonly permissions: ReadonlySet<string>;
+}
+
+export interface AuthenticationCapabilities {
+  readonly localEnabled: boolean;
+  readonly oidcEnabled: boolean;
+  readonly ldapEnabled: boolean;
 }
 
 export interface LocalLoginRequest {
@@ -36,7 +42,13 @@ export interface AuthenticationSessionResponse {
   readonly authenticationMethod: BackendAuthenticationMethod;
 
   /**
-   * LOCAL only. OIDC lifecycle remains owned by the IdP.
+   * Backend-authoritative authentication capabilities available in this runtime.
+   * Optional only during rolling upgrades.
+   */
+  readonly capabilities?: AuthenticationCapabilities;
+
+  /**
+   * LOCAL only. External providers keep password lifecycle outside SIXPAY.
    */
   readonly passwordChangeRequired?: boolean;
 }

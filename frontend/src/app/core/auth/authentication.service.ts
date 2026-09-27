@@ -56,6 +56,11 @@ export class AuthenticationService {
   private readonly activeAuthenticationMethodState = signal<ActiveAuthenticationMethod>(null);
 
   private readonly passwordChangeRequiredState = signal(false);
+  private readonly backendCapabilitiesState = signal<{
+    localEnabled: boolean;
+    oidcEnabled: boolean;
+    ldapEnabled: boolean;
+  } | null>(null);
 
   private readonly readyState = new ReplaySubject<boolean>(1);
 
@@ -63,6 +68,7 @@ export class AuthenticationService {
   readonly username = this.usernameState.asReadonly();
   readonly activeAuthenticationMethod = this.activeAuthenticationMethodState.asReadonly();
   readonly passwordChangeRequired = this.passwordChangeRequiredState.asReadonly();
+  readonly backendCapabilities = this.backendCapabilitiesState.asReadonly();
 
   readonly isAuthenticated = computed(() => this.identityState() !== null);
 
@@ -79,11 +85,14 @@ export class AuthenticationService {
   readonly localEnabled = authenticationEnvironment.local.enabled;
 
   readonly oidcEnabled = authenticationEnvironment.oidc.enabled;
+  readonly ldapEnabled = authenticationEnvironment.ldap.enabled;
 
   readonly isLocalEnabled = this.localEnabled;
   readonly isOidcEnabled = this.oidcEnabled;
+  readonly isLdapEnabled = this.ldapEnabled;
   readonly isLocalMode = this.localEnabled;
   readonly isOidcMode = this.oidcEnabled;
+  readonly isLdapMode = this.ldapEnabled;
 
   constructor() {
     if (this.isStandaloneMode) {
@@ -234,11 +243,12 @@ export class AuthenticationService {
   }
 
   private initializeAuthentication(): void {
-    if (!this.localEnabled && !this.oidcEnabled) {
+    if (!this.localEnabled && !this.oidcEnabled && !this.ldapEnabled) {
       this.readyState.next(true);
       return;
     }
 
+    // /api/v1/auth/me remains authoritative for LOCAL, OIDC and LDAP sessions.
     this.tryExistingBackendSession();
   }
 
@@ -325,6 +335,14 @@ export class AuthenticationService {
     });
 
     this.usernameState.set(session.username);
+
+    this.backendCapabilitiesState.set(
+      session.capabilities ?? {
+        localEnabled: this.localEnabled,
+        oidcEnabled: this.oidcEnabled,
+        ldapEnabled: this.ldapEnabled,
+      },
+    );
 
     const authenticationMethod = session.authenticationMethod.toLowerCase() as Exclude<
       ActiveAuthenticationMethod,
@@ -430,6 +448,7 @@ export class AuthenticationService {
     this.usernameState.set(null);
     this.activeAuthenticationMethodState.set(null);
     this.passwordChangeRequiredState.set(false);
+    this.backendCapabilitiesState.set(null);
   }
 
   private get storage(): Storage | undefined {

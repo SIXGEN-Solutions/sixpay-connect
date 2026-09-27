@@ -66,7 +66,11 @@ import { AuthenticationService } from './authentication.service';
             </form>
           }
 
-          @if (authentication.localEnabled && authentication.oidcEnabled) {
+          @if (
+            (authentication.localEnabled && authentication.oidcEnabled) ||
+            (authentication.localEnabled && authentication.ldapEnabled) ||
+            (authentication.oidcEnabled && authentication.ldapEnabled)
+          ) {
             <div class="sp-auth-divider" aria-hidden="true">
               <span></span>
               <strong>OU</strong>
@@ -82,9 +86,20 @@ import { AuthenticationService } from './authentication.service';
             </section>
           }
 
+          @if (authentication.ldapEnabled) {
+            <section class="sp-ldap-login">
+              <p class="sp-auth-message">
+                Authentification annuaire d'entreprise disponible. Le parcours de connexion LDAP
+                sera active lorsque le mecanisme d'entree utilisateur valide par la banque sera
+                defini.
+              </p>
+            </section>
+          }
+
           @if (
             !authentication.localEnabled &&
             !authentication.oidcEnabled &&
+            !authentication.ldapEnabled &&
             authentication.isStandaloneMode
           ) {
             <p>La session de démonstration SIXPAY est active.</p>
@@ -106,7 +121,8 @@ import { AuthenticationService } from './authentication.service';
 
     mat-card-content,
     .sp-local-login-form,
-    .sp-sso-login {
+    .sp-sso-login,
+    .sp-ldap-login {
       display: grid;
       gap: var(--sp-space-4);
       padding-top: var(--sp-space-4);

@@ -9,6 +9,7 @@ describe('validateAuthenticationEnvironment', () => {
           standalone: false,
           local: { enabled: true },
           oidc: { enabled: false },
+          ldap: { enabled: false },
         }),
       ),
     ).not.toThrow();
@@ -21,6 +22,7 @@ describe('validateAuthenticationEnvironment', () => {
           standalone: false,
           local: { enabled: false },
           oidc: configuredOidc(true),
+          ldap: { enabled: false },
         }),
       ),
     ).not.toThrow();
@@ -33,18 +35,33 @@ describe('validateAuthenticationEnvironment', () => {
           standalone: false,
           local: { enabled: true },
           oidc: configuredOidc(true),
+          ldap: { enabled: false },
         }),
       ),
     ).not.toThrow();
   });
 
-  it('rejects production when neither Local nor OIDC is enabled', () => {
+  it('accepts LDAP-only production authentication', () => {
     expect(() =>
       validateAuthenticationEnvironment(
         productionEnvironment({
           standalone: false,
           local: { enabled: false },
           oidc: { enabled: false },
+          ldap: { enabled: true },
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects production when no human authentication capability is enabled', () => {
+    expect(() =>
+      validateAuthenticationEnvironment(
+        productionEnvironment({
+          standalone: false,
+          local: { enabled: false },
+          oidc: { enabled: false },
+          ldap: { enabled: false },
         }),
       ),
     ).toThrowError('At least one production authentication capability must be enabled');
@@ -57,6 +74,7 @@ describe('validateAuthenticationEnvironment', () => {
           standalone: true,
           local: { enabled: false },
           oidc: { enabled: false },
+          ldap: { enabled: false },
         }),
       ),
     ).toThrowError('Standalone authentication is not allowed in production');
@@ -69,6 +87,7 @@ describe('validateAuthenticationEnvironment', () => {
           standalone: false,
           local: { enabled: false },
           oidc: { enabled: true },
+          ldap: { enabled: false },
         }),
       ),
     ).toThrowError('OIDC authority must be configured when OIDC is enabled');
@@ -83,6 +102,7 @@ describe('validateAuthenticationEnvironment', () => {
         standalone: true,
         local: { enabled: false },
         oidc: { enabled: false },
+        ldap: { enabled: false },
       },
     };
 
