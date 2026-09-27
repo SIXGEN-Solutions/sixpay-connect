@@ -1,6 +1,8 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.api.controller.AuthenticationSessionController;
+import com.sixpay.security.api.controller.LdapAuthenticationController;
+import com.sixpay.security.api.error.LdapAuthenticationExceptionHandler;
 import com.sixpay.security.application.port.input.AuthenticateLdapIdentityUseCase;
 import com.sixpay.security.application.port.input.AuthenticateLdapUserUseCase;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
@@ -56,7 +58,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
         LocalAuthenticationConfiguration.class,
         IdentityLinkingConfiguration.class,
         PartnerMachineIdentityConfiguration.class,
-        AuthenticationSessionController.class
+        AuthenticationSessionController.class,
+        LdapAuthenticationController.class,
+        LdapAuthenticationExceptionHandler.class
 })
 @ConditionalOnClass({
         HttpSecurity.class,
@@ -379,6 +383,21 @@ public class SixpaySecurityAutoConfiguration {
                                                         )
                                 );
                             }
+
+                            if (capabilities
+                                    .ldapEnabled()) {
+                                csrf.ignoringRequestMatchers(
+                                        request ->
+                                                HttpMethod.POST
+                                                        .matches(
+                                                                request.getMethod()
+                                                        )
+                                                        && "/api/v1/auth/login/ldap"
+                                                        .equals(
+                                                                request.getRequestURI()
+                                                        )
+                                );
+                            }
                         }
                 )
                 .authorizeHttpRequests(
@@ -415,6 +434,16 @@ public class SixpaySecurityAutoConfiguration {
                                         .requestMatchers(
                                                 HttpMethod.POST,
                                                 "/api/v1/auth/login"
+                                        )
+                                        .permitAll();
+                            }
+
+                            if (capabilities
+                                    .ldapEnabled()) {
+                                authorize
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/v1/auth/login/ldap"
                                         )
                                         .permitAll();
                             }

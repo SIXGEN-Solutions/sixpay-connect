@@ -87,13 +87,37 @@ import { AuthenticationService } from './authentication.service';
           }
 
           @if (authentication.ldapEnabled) {
-            <section class="sp-ldap-login">
-              <p class="sp-auth-message">
-                Authentification annuaire d'entreprise disponible. Le parcours de connexion LDAP
-                sera active lorsque le mecanisme d'entree utilisateur valide par la banque sera
-                defini.
-              </p>
-            </section>
+            <form class="sp-ldap-login" [formGroup]="ldapForm" (ngSubmit)="loginLdap()">
+              <mat-form-field appearance="outline">
+                <mat-label>Identifiant annuaire</mat-label>
+                <input matInput type="text" autocomplete="username" formControlName="username" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Mot de passe annuaire</mat-label>
+                <input
+                  matInput
+                  type="password"
+                  autocomplete="current-password"
+                  formControlName="password"
+                />
+              </mat-form-field>
+
+              @if (ldapInvalidCredentials()) {
+                <p class="sp-auth-error" role="alert">
+                  Identifiant annuaire ou mot de passe incorrect.
+                </p>
+              }
+
+              <sp-button
+                icon="login"
+                variant="secondary"
+                type="submit"
+                [disabled]="ldapForm.invalid || ldapSubmitting()"
+              >
+                {{ ldapSubmitting() ? 'Connexion…' : 'Se connecter avec l’annuaire' }}
+              </sp-button>
+            </form>
           }
 
           @if (
@@ -174,6 +198,8 @@ export class LoginComponent {
 
   protected readonly submitting = signal(false);
   protected readonly invalidCredentials = signal(false);
+  protected readonly ldapSubmitting = signal(false);
+  protected readonly ldapInvalidCredentials = signal(false);
 
   protected readonly sessionExpired =
     this.route.snapshot.queryParamMap.get('sessionExpired') === 'true';
@@ -181,6 +207,17 @@ export class LoginComponent {
   private readonly returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
 
   protected readonly form = new FormGroup({
+    username: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+  });
+
+  protected readonly ldapForm = new FormGroup({
     username: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required],
@@ -214,6 +251,26 @@ export class LoginComponent {
         error: (error: unknown) => {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             this.invalidCredentials.set(true);
+          }
+        },
+      });
+  }
+
+  protected loginLdap(): void {
+    if (!this.authentication.ldapEnabled || this.ldapForm.invalid) {
+      return;
+    }
+
+    this.ldapInvalidCredentials.set(false);
+    this.ldapSubmitting.set(true);
+
+    this.authentication
+      .loginLdap(this.ldapForm.getRawValue(), this.returnUrl)
+      .pipe(finalize(() => this.ldapSubmitting.set(false)))
+      .subscribe({
+        error: (error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.ldapInvalidCredentials.set(true);
           }
         },
       });

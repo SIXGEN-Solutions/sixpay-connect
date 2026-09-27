@@ -212,6 +212,37 @@ credential verification remains the responsibility of the LDAP authentication
 provider at login time. Linking is an explicit administrative association of a
 trusted stable directory identity with a canonical SIXPAY account.
 
+## LDAP runtime login boundary
+
+LDAP credential authentication is exposed by the Security runtime boundary:
+
+```text
+POST /api/v1/auth/login/ldap
+```
+
+The request contains only the transient directory credentials required to
+authenticate:
+
+```json
+{
+  "username": "<directory-login>",
+  "password": "<transient-password>"
+}
+```
+
+The password is never persisted by SIXPAY. Successful LDAP authentication
+resolves the pre-linked durable LDAP identity to the canonical
+`SixpayUserAccount`, loads SIXPAY-owned roles/permissions and establishes the
+same backend session used by LOCAL and OIDC.
+
+`GET /api/v1/auth/me` remains the single frontend session source of truth.
+Logout remains `POST /api/v1/auth/logout`.
+
+The LDAP runtime endpoint is intentionally outside the
+`security-user-administration-api-v1` contract, consistent with that contract's
+existing scope constraint. No administration-contract status or generation
+policy is changed by this runtime boundary.
+
 ## Validation
 
 Targeted:

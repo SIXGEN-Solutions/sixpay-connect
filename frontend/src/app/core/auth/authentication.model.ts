@@ -23,6 +23,11 @@ export interface LocalLoginRequest {
   readonly password: string;
 }
 
+export interface LdapLoginRequest {
+  readonly username: string;
+  readonly password: string;
+}
+
 export interface LocalPasswordChangeRequest {
   readonly currentPassword: string;
   readonly newPassword: string;

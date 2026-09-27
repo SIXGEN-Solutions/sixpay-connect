@@ -22,6 +22,7 @@ import {
   ActiveAuthenticationMethod,
   AuthenticatedIdentity,
   AuthenticationSessionResponse,
+  LdapLoginRequest,
   LocalLoginRequest,
   LocalPasswordChangeRequest,
   normalizeSixpayPermissions,
@@ -181,6 +182,23 @@ export class AuthenticationService {
         this.setCanonicalSession(session);
       }),
       tap(() => this.completePasswordChangeNavigation(mandatoryChange)),
+      map(() => undefined),
+    );
+  }
+
+  loginLdap(request: LdapLoginRequest, returnUrl = '/'): Observable<void> {
+    if (!this.ldapEnabled) {
+      return throwError(() => new Error('LDAP authentication is not enabled'));
+    }
+
+    this.storage?.setItem(RETURN_URL_STORAGE_KEY, this.safeReturnUrl(returnUrl));
+
+    return this.authenticationClient.loginLdap(request).pipe(
+      tap((session) => {
+        this.errorService.clear();
+        this.setCanonicalSession(session);
+      }),
+      tap(() => this.completeLoginNavigation()),
       map(() => undefined),
     );
   }
