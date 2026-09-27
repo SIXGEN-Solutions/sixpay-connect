@@ -1,12 +1,12 @@
 # SIXPAY CONNECT — Security Golden Test Coverage
 
-## Phase
+## Current authentication baseline
 
 ```text
-Dual Authentication — Local + OIDC
-DA-10 — Password lifecycle
-DA-11 — Integration/security tests
-DA-12 — Documentation + validation gate
+Hybrid Authentication — LOCAL + OIDC + LDAP
+Canonical SIXPAY principal and backend session
+SIXPAY-owned roles and permissions
+LOCAL-only SIXPAY password lifecycle
 ```
 
 ## Golden reference
@@ -32,7 +32,9 @@ behavioral evidence > test-count inflation
 Core model / policies          COVERED
 LOCAL authentication           COVERED
 OIDC authentication boundary   COVERED
-Hybrid coexistence             COVERED
+LDAP authentication boundary   COVERED
+LDAP failure non-disclosure    COVERED
+Hybrid provider coexistence    COVERED
 Canonical principal            COVERED
 Authorization                  COVERED
 HTTP security infrastructure   COVERED
@@ -45,12 +47,15 @@ Integration/security matrix    COVERED
 Documentation validation       COVERED
 ```
 
-Overall:
+Overall static coverage:
 
 ```text
-SECURITY            = COVERED
-DUAL AUTHENTICATION = COVERED
+SECURITY                              = COVERED
+HYBRID AUTHENTICATION LOCAL/OIDC/LDAP = COVERED
 ```
+
+Final closure still requires successful execution of the applicable validation
+commands; this document does not manufacture execution evidence.
 
 ## DA-10 Password lifecycle evidence
 
@@ -106,6 +111,9 @@ AuthenticationCapabilityMatrixIT
 LocalAuthenticationSessionIT
 OidcAuthenticationProviderIT
 HybridAuthenticationIT
+LdapAuthenticationFailureIT
+LdapCanonicalAuthenticationServiceTest
+ActiveDirectoryLdapAuthenticationAdapterTest
 SecurityAuthorizationBoundaryIT
 ```
 
@@ -119,18 +127,22 @@ AuditingAuthenticationEntryPointTest
 Covered behavior:
 
 ```text
-LOCAL/OIDC capability matrix
+LOCAL/OIDC/LDAP capability matrix
 LOCAL session lifecycle
 OIDC Bearer authentication
+LDAP canonical session lifecycle
+LDAP logout and /auth/me
+generic LDAP 401 for invalid credentials, unlinked identity and disabled account
 external identity linking boundary
 disabled-user rejection
 OIDC success/failure audit
-hybrid coexistence
+three-provider coexistence
 canonical authorization convergence
-provider role/scope isolation
+provider role/scope/group isolation
 role/permission authorization
 Angular session CSRF
 Bearer CSRF boundary
+LOCAL-only password lifecycle
 ```
 
 ## DA-12 Documentation + validation gate
@@ -217,8 +229,8 @@ SECURITY                                    = COVERED
 DUAL AUTHENTICATION                         = COVERED
 ```
 
-Final feature status after all validation commands are green:
+Final feature status after all applicable validation commands are green:
 
 ```text
-DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED
+HYBRID AUTHENTICATION — LOCAL + OIDC + LDAP = CLOSED
 ```

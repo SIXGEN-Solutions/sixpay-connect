@@ -4,30 +4,23 @@
 ### Status
 
 ```text
-AUTH-5 — IMPLEMENTATION PREPARED; LDAP LOGIN UX DECISION DEFERRED
+AUTH-5 — IMPLEMENTED; FINAL VALIDATION REQUIRED
 ```
 
-### Baseline
+### Current baseline
 
-- Repository: `SIXGEN-Solutions/sixpay-connect`
-- Baseline SHA: `26d1cc1f9dd41d62b9164b584596d92353cb00fa`
-- Prerequisite: AUTH-4 capability/runtime configuration
-- New LDAP login endpoint: **NO**
-- LDAP credential UX: **NOT DECIDED BY THIS LOT**
+- Capability owner: Security
+- Frontend session source of truth: `GET /api/v1/auth/me`
+- Runtime methods: `LOCAL`, `OIDC`, `LDAP`
+- LDAP runtime login: `POST /api/v1/auth/login/ldap`
 
-## Session source of truth
+## Unified session source of truth
 
-`GET /api/v1/auth/me` remains the canonical frontend session source.
+`GET /api/v1/auth/me` is the canonical frontend session source for LOCAL,
+OIDC and LDAP.
 
-The canonical session model supports:
-
-```text
-LOCAL
-OIDC
-LDAP
-```
-
-The session response also exposes backend runtime capabilities:
+The canonical response exposes the active authentication method plus backend
+runtime capabilities:
 
 ```text
 localEnabled
@@ -35,42 +28,46 @@ oidcEnabled
 ldapEnabled
 ```
 
-Capabilities indicate available authentication mechanisms only. They never
-grant SIXPAY roles or permissions.
+After a backend session exists, these backend capabilities are authoritative.
+Before session establishment, the Angular environment is only the bootstrap
+fallback used to present available login mechanisms.
+
+## Frontend authentication flows
+
+```text
+LOCAL credentials
+    -> POST /api/v1/auth/login
+    -> canonical SIXPAY session
+
+OIDC bearer
+    -> POST /api/v1/auth/session/oidc
+    -> canonical SIXPAY session
+
+LDAP credentials
+    -> POST /api/v1/auth/login/ldap
+    -> canonical SIXPAY session
+
+all providers
+    -> GET /api/v1/auth/me
+    -> SIXPAY roles / permissions / active method
+```
+
+The login component presents only enabled providers. LDAP uses its dedicated
+directory credential form. LDAP credentials are transient and are not retained
+as frontend authorization state.
+
+Logout remains provider-neutral at the backend through
+`POST /api/v1/auth/logout`. OIDC may additionally revoke/log off its provider
+tokens client-side. LOCAL and LDAP have no provider token lifecycle in the SPA.
 
 ## Authorization independence
 
-Roles and permissions continue to come exclusively from the canonical SIXPAY
-user/session. Frontend guards remain independent from the authentication
-provider.
+Roles and permissions come exclusively from the canonical SIXPAY session.
+Frontend guards remain authentication-provider neutral. LDAP groups and OIDC
+provider roles/scopes never become SIXPAY authorities implicitly.
 
-LDAP groups are never interpreted as SIXPAY authorities.
-
-## Bootstrap flow
-
-```text
-existing SIXPAY session?
-    yes -> use /api/v1/auth/me
-    no  -> expose enabled providers
-```
-
-The existing OIDC bootstrap/exchange remains unchanged.
-
-LOCAL keeps its existing SIXPAY login path.
-
-LDAP is represented as an available capability and as a possible active session
-method, but AUTH-5 does not invent how LDAP credentials are collected or
-submitted.
-
-## Deferred decision
-
-The current sources do not establish whether LDAP authentication uses:
-
-- a SIXPAY username/password form backed by an LDAP-specific endpoint; or
-- another bank-approved interaction mechanism.
-
-Therefore AUTH-5 deliberately creates no LDAP login endpoint and no executable
-LDAP credential form.
+The SIXPAY LOCAL password-change lifecycle applies only when the active method
+is LOCAL. OIDC and LDAP password lifecycle remains provider-owned.
 
 ## Validation
 

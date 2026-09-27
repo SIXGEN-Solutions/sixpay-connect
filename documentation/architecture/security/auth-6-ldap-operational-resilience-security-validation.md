@@ -2,11 +2,13 @@
 ## LDAP Operational Resilience & Security Validation
 
 ### Status
-`AUTH-6 — VALIDATION BASELINE PREPARED`
+`AUTH-6 — IMPLEMENTED BASELINE; ENVIRONMENT AND FINAL VALIDATION REQUIRED`
 
-Baseline SHA: `725c1985b60982e809dcbc18f1ef382619753191`.
+Original baseline SHA: `725c1985b60982e809dcbc18f1ef382619753191`.
 
-AUTH-6 changes no production authentication behavior, endpoint, schema or LDAP login UX.
+The current Security baseline now includes the LDAP runtime login boundary and
+unified session integration. AUTH-6 remains the operational/resilience evidence
+baseline; it does not claim real-directory validation that has not been run.
 
 ## Automated repository coverage
 - LDAPS-only configuration and bounded connect/read/overall timeouts;
@@ -16,7 +18,9 @@ AUTH-6 changes no production authentication behavior, endpoint, schema or LDAP l
 - trust-domain mismatch rejection;
 - SIXPAY-owned authorities only, never LDAP-group-derived authorities;
 - provider capability matrix and zero-provider secured-runtime rejection;
-- Local/OIDC regressions and provider coexistence;
+- Local/OIDC/LDAP regressions and three-provider coexistence;
+- generic HTTP 401 non-disclosure for invalid LDAP credentials, unlinked identity and disabled SIXPAY account;
+- LDAP login -> canonical session -> `/auth/me` -> logout lifecycle;
 - absence of LDAP provider internals in business modules;
 - absence of application logging in the LDAP adapter.
 

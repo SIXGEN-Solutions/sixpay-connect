@@ -86,12 +86,28 @@ physical contracts.
 
 ## Angular environments
 
+The Angular authentication model supports the same three human capabilities as
+the backend:
+
 ```text
-production  -> api  / local + OIDC
-integration -> api  / local
+LOCAL
+OIDC
+LDAP
+```
+
+The committed environment files contain deployment defaults, not the complete
+capability matrix. At the current baseline:
+
+```text
+production  -> api  / LOCAL + OIDC enabled, LDAP disabled by default
+integration -> api  / LOCAL enabled, OIDC + LDAP disabled by default
 development -> mock / standalone
 netlify     -> mock / standalone
 ```
+
+LDAP may be enabled for an applicable API-backed deployment only when its
+backend runtime/trust configuration is available. Backend session capabilities
+become authoritative after session establishment.
 
 Production and integration must never silently fall back to mock data.
 

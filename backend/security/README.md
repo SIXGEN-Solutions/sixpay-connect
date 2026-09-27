@@ -24,10 +24,16 @@ authenticated identity to SIXPAY roles and permissions.
 Authentication and session endpoints:
 
     /api/v1/auth/login
-    /api/v1/auth/me
+    /api/v1/auth/login/ldap
     /api/v1/auth/session/oidc
+    /api/v1/auth/me
     /api/v1/auth/logout
     /api/v1/auth/password/change
+
+LOCAL, OIDC and LDAP converge on the same canonical SIXPAY principal and
+backend session. LDAP credentials are transient and directory-owned; SIXPAY
+does not persist them and never derives application authorities from LDAP
+groups.
 
 Administration exposes user-management HTTP boundaries while Security owns the
 underlying users, identities, credentials and authorization data.
