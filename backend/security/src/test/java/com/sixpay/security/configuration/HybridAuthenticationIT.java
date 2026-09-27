@@ -7,6 +7,7 @@ import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -99,6 +100,15 @@ class HybridAuthenticationIT {
     @MockitoBean
     private LocalAuthenticationUserSpringDataRepository
             localAuthenticationUserSpringDataRepository;
+
+    /*
+     * This focused Security context deliberately disables JPA repository
+     * auto-configuration. Partner machine identity persistence is outside the
+     * test scope, so its repository boundary is supplied as a test double.
+     */
+    @MockitoBean
+    private PartnerMachineIdentitySpringDataRepository
+            partnerMachineIdentityRepository;
 
     @Test
     void localAuthenticationRemainsAvailableWhenOidcIsAlsoEnabled()

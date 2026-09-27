@@ -46,6 +46,27 @@ class AuthenticationCapabilitiesPropertiesTest {
         )).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void ldapTimeoutsUseApprovedBoundedDefaults() {
+        var p = properties(false, false, true);
+        assertThat(p.ldap().connectTimeout()).isEqualTo(Duration.ofSeconds(3));
+        assertThat(p.ldap().readTimeout()).isEqualTo(Duration.ofSeconds(5));
+        assertThat(p.ldap().authenticationTimeout()).isEqualTo(Duration.ofSeconds(10));
+    }
+
+    @Test
+    void rejectsMissingServiceCredentialWhenLdapIsEnabled() {
+        assertThatThrownBy(() -> new AuthenticationCapabilitiesProperties(
+                local(false), oidc(false),
+                new AuthenticationCapabilitiesProperties.Ldap(
+                        true, List.of("ldaps://ad.example.test:636"),
+                        "DC=example,DC=test", "OU=Users",
+                        null,null,null,null,null,
+                        "CN=sixpay,OU=Service Accounts", null,
+                        null,null,null)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private static AuthenticationCapabilitiesProperties properties(boolean local, boolean oidc, boolean ldap) {
         return new AuthenticationCapabilitiesProperties(local(local), oidc(oidc), ldap ? ldapEnabled() : ldapDisabled());
     }

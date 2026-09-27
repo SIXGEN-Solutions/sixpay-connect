@@ -160,4 +160,16 @@ class ActiveDirectoryLdapAuthenticationAdapterTest {
                         LdapAuthenticationFailedException.class
                 );
     }
+    @Test
+    void rejectsMissingStableSubject() {
+        assertThatThrownBy(() -> ActiveDirectoryLdapAuthenticationAdapter.objectGuid(null))
+                .isInstanceOf(LdapAuthenticationFailedException.class);
+    }
+
+    @Test
+    void rejectsEmptyStableSubject() {
+        assertThatThrownBy(() -> ActiveDirectoryLdapAuthenticationAdapter.objectGuid(new byte[0]))
+                .isInstanceOf(LdapAuthenticationFailedException.class);
+    }
+
 }

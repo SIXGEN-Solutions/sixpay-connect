@@ -375,17 +375,17 @@ l’expérience mais ne constitue jamais une protection suffisante.
 
 Règles d’identité :
 
-- Local et OIDC convergent vers une identité canonique SIXPAY ;
+- Local, OIDC et LDAP convergent vers une identité canonique SIXPAY ;
 - l’IdP prouve l’identité ; SIXPAY possède les rôles et permissions métier ;
 - les claims provider ne deviennent pas implicitement des autorités SIXPAY ;
 - les modules métier consomment uniquement le principal canonique et restent
-  indépendants de Local/OIDC ;
+  indépendants de Local/OIDC/LDAP ;
 - `standalone` reste réservé au développement ou à la démonstration contrôlée ;
-- une configuration de production sans Local ni OIDC est invalide.
+- une configuration sécurisée exige au moins un provider humain actif ; les runtimes techniques explicitement non sécurisés peuvent n'en activer aucun.
 
 Règles de session :
 
-- la session applicative backend unifiée est la source d’état pour Local et OIDC ;
+- la session applicative backend unifiée est la source d’état pour Local, OIDC et LDAP ;
 - le bearer OIDC sert uniquement à établir la session SIXPAY prévue ;
 - les appels métier normaux utilisent la session backend sécurisée ;
 - le frontend initialise d’abord la session SIXPAY existante, puis le parcours

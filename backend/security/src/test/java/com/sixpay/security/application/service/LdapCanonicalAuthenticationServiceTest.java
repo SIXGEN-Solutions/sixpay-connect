@@ -57,6 +57,29 @@ class LdapCanonicalAuthenticationServiceTest {
         assertThat(ldap).isEqualTo(local);
     }
 
+    @Test
+    void trustDomainMismatchFailsClosed() {
+        var a=account(USER,"user",SixpayUserAccountStatus.ACTIVE);
+        var r=resolver(Map.of(key("regionale-ldap","s1"),
+                link(a,AuthenticationIdentityType.LDAP,"regionale-ldap","s1")));
+        assertThatThrownBy(() -> service("other-ldap","s1",r)
+                .authenticate(new LdapAuthenticationCommand("user","pwd")))
+                .isInstanceOf(ExternalIdentityNotLinkedException.class);
+    }
+
+    @Test
+    void ldapNeverDerivesAuthoritiesFromProviderGroups() {
+        var a=account(USER,"user",SixpayUserAccountStatus.ACTIVE);
+        var r=resolver(Map.of(key("regionale-ldap","s1"),
+                link(a,AuthenticationIdentityType.LDAP,"regionale-ldap","s1")));
+        var user=service("regionale-ldap","s1",r)
+                .authenticate(new LdapAuthenticationCommand("user","pwd"));
+        assertThat(user.roles()).containsExactly("ADMIN");
+        assertThat(user.permissions()).containsExactly("SCOPE_payment.read");
+        assertThat(user.authorities()).doesNotContain(
+                "DOMAIN_ADMINS","LDAP_ADMIN","ROLE_DOMAIN_ADMINS");
+    }
+
     private static LdapCanonicalAuthenticationService service(String provider,String subject,LinkedExternalIdentityResolver r) {
         return new LdapCanonicalAuthenticationService(
                 c -> new LdapAuthenticationResult(AuthenticationIdentityType.LDAP,new ExternalIdentity(provider,subject,c.username())), r);
