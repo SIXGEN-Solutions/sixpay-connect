@@ -943,6 +943,42 @@ contracts:
         - "Subscription endpoints remain outside this physical contract"
         - "Customer close is logical, not physical deletion"
 
+  - id: "security-authentication-runtime-api-v1"
+    path: "documentation/contracts/internal/security-authentication-runtime-api-v1.yaml"
+    domain: "security"
+    businessOwner: "security"
+    deliveryBoundary: "security"
+    securityOwner: "security"
+    capability: "SECURITY_AUTHENTICATION_RUNTIME"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    security:
+      authentication: ["LOCAL_CREDENTIALS", "OIDC_BEARER", "LDAP_CREDENTIALS", "SIXPAY_SESSION"]
+      authorization: "SIXPAY_ROLES_AND_PERMISSIONS"
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: false
+      purpose:
+        - "Establish the canonical SIXPAY session through LOCAL authentication"
+        - "Establish the canonical SIXPAY session through LDAP authentication"
+        - "Establish the canonical SIXPAY session from an authenticated OIDC principal"
+        - "Read and terminate the canonical SIXPAY session"
+        - "Change the current user's LOCAL password from an authenticated LOCAL session"
+      constraints:
+        - "LOCAL, OIDC and LDAP converge on one canonical SIXPAY principal and session model"
+        - "SIXPAY remains authoritative for application roles and permissions"
+        - "LDAP groups never derive SIXPAY roles or permissions"
+        - "OIDC and LDAP password lifecycle remains provider-owned"
+        - "User administration and identity linking remain outside this contract"
+        - "security-user-administration-api-v1 remains unchanged"
+        - "This contract is reference-only and must not trigger code generation"
+
   - id: "security-user-administration-api-v1"
     path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
     domain: "security"

@@ -194,6 +194,8 @@ activeContractCapabilities:
       path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
     - id: "customer-management-query-api-v1"
       path: "documentation/contracts/internal/customer-management-query-api-v1.yaml"
+    - id: "security-authentication-runtime-api-v1"
+      path: "documentation/contracts/internal/security-authentication-runtime-api-v1.yaml"
     - id: "security-user-administration-api-v1"
       path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
     - id: "dynamic-settings-management-api-v1"
