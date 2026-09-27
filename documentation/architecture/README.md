@@ -24,6 +24,7 @@ surface.
 | Internal architecture | `documentation/architecture/internal/` |
 | Feature-flag registry | `documentation/architecture/configuration/FEATURE_FLAG_REGISTRY.yaml` |
 | Accounting T1 architecture | `documentation/architecture/accounting/ACCOUNTING_T1_ARCHITECTURE.md` |
+| LDAP administration/provisioning runbook | `documentation/architecture/security/auth-7-ldap-administration-provisioning-operational-runbook.md` |
 
 ## Golden business-module reference
 
