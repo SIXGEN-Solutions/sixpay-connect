@@ -29,22 +29,6 @@ spring:
           lob:
             non_contextual_creation: true
 
-  mail:
-    host: ${SIXPAY_SMTP_HOST:localhost}
-    port: ${SIXPAY_SMTP_PORT:1025}
-    username: ${SIXPAY_SMTP_USERNAME:}
-    password: ${SIXPAY_SMTP_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: ${SIXPAY_SMTP_AUTH:false}
-          starttls:
-            enable: ${SIXPAY_SMTP_STARTTLS:false}
-            required: ${SIXPAY_SMTP_STARTTLS_REQUIRED:false}
-          connectiontimeout: ${SIXPAY_SMTP_CONNECTION_TIMEOUT_MS:5000}
-          timeout: ${SIXPAY_SMTP_READ_TIMEOUT_MS:5000}
-          writetimeout: ${SIXPAY_SMTP_WRITE_TIMEOUT_MS:5000}
-
 springdoc:
   api-docs:
     enabled: true

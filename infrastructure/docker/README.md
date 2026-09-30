@@ -55,6 +55,12 @@ Backend health: http://localhost:8080/actuator/health
 PostgreSQL:     localhost:15432
 ```
 
+Payment confirmation / OTP is delegated by SIXPAY to the Core Banking
+`PaymentConfirmationGateway`. This SIXPAY stack does not run an SMTP server for
+OTP delivery. The Notification module's independent operational or partner
+email capabilities require an explicitly configured SMTP provider when they are
+intentionally enabled.
+
 Follow logs:
 
 ```bash
