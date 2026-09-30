@@ -3,21 +3,29 @@ name: sixpay-connect
 services:
   postgres:
     image: postgres:15
-    container_name: local-postgres
+    container_name: staging-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-sixpay}
-      POSTGRES_USER: ${POSTGRES_USER:-sixpay}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_local_only}
+      POSTGRES_DB: ${POSTGRES_DB:-sixpaydb}
+      POSTGRES_USER: ${POSTGRES_USER:-sixpay_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_password}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - sixpay-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sixpay} -d ${POSTGRES_DB:-sixpay}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sixpay_user} -d ${POSTGRES_DB:-sixpaydb}"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 5s
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: sixpay-mailpit
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
 
   backend:
@@ -27,18 +35,35 @@ services:
     image: sixpay-connect-backend:local
     container_name: sixpay-backend
     environment:
-      SPRING_PROFILES_ACTIVE: local-auth
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-sixpay}?currentSchema=sixpay
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-sixpay}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_local_only}
+      SPRING_PROFILES_ACTIVE: standalone,integration
+
+      # Use the SIXPAY runtime properties defined by application-standalone.yml.
+      SIXPAY_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-sixpaydb}?currentSchema=sixpay
+      SIXPAY_DB_USERNAME: ${POSTGRES_USER:-sixpay_user}
+      SIXPAY_DB_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_password}
+
+      # Flyway owns schema creation/evolution; Hibernate validates only.
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      SIXPAY_SESSION_COOKIE_SECURE: "false"
+
+      # Local SMTP sink used by notification/OTP flows.
+      # Never use localhost here: from the backend container localhost is the backend itself.
+      SIXPAY_SMTP_HOST: mailpit
+      SIXPAY_SMTP_PORT: "1025"
+      SIXPAY_SMTP_AUTH: "false"
+      SIXPAY_SMTP_STARTTLS: "false"
+      SIXPAY_SMTP_STARTTLS_REQUIRED: "false"
+
+      # Explicit for readability; the sandbox profile also enables this capability.
+      SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED: "false"
+
       SERVER_PORT: "8080"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
       interval: 10s
