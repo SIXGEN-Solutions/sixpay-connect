@@ -1,0 +1,34 @@
+spring:
+  config:
+    import:
+      - classpath:config/security/ldap-common.yml
+      - classpath:application-payment-banking-capabilities.yml
+
+  datasource:
+    url: ${SIXPAY_DB_URL}
+    username: ${SIXPAY_DB_USERNAME}
+    password: ${SIXPAY_DB_PASSWORD}
+
+sixpay:
+  reporting:
+    audit-export:
+      storage-directory: ${SIXPAY_REPORTING_AUDIT_EXPORT_STORAGE_DIRECTORY:/var/lib/sixpay/audit-exports}
+      retrieval-base-uri: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI:https://audit-artifacts.preproduction.local/}
+      retention: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION:PT1H}
+    audit-query:
+      cursor-hmac-key: ${SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY}
+  security:
+    authentication:
+      local:
+        enabled: false
+      oidc:
+        enabled: false
+      ldap:
+        enabled: true
+  payment:
+    banking:
+      amplitude:
+        confirmation:
+          base-url: ${AMPLITUDE_PAYMENT_BASE_URL:http://host.docker.internal:9092}
+          connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT:10s}

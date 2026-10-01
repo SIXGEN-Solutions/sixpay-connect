@@ -3,7 +3,8 @@ WORKDIR /workspace
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-RUN npm run build -- --configuration integration
+ARG BUILD_CONFIGURATION=integration
+RUN npm run build -- --configuration ${BUILD_CONFIGURATION}
 
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
