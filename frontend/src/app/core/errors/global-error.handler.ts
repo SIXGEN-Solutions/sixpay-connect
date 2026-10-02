@@ -17,8 +17,8 @@ export class GlobalErrorHandler implements ErrorHandler {
       retryAfterSeconds: null,
     });
 
-    // Keep the original error observable in browser diagnostics without
-    // rethrowing it and without changing the application's error flow.
-    console.error('[SIXPAY] Unhandled frontend error', error);
+    // On évite de relancer l'exception ici pour ne pas
+    // provoquer une boucle d'erreurs globales.
+    void error;
   }
 }
