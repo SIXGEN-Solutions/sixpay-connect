@@ -44,7 +44,9 @@ export class AuthenticationService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
 
-  private readonly oidc = inject(OidcSecurityService, { optional: true });
+  private readonly oidc = authenticationEnvironment.oidc.enabled
+    ? inject(OidcSecurityService)
+    : null;
 
   private readonly authenticationClient = inject(LocalAuthenticationClient);
 
