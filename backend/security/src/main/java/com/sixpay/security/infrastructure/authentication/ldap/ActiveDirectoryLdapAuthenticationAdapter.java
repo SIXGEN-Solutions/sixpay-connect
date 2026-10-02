@@ -154,6 +154,13 @@ public final class ActiveDirectoryLdapAuthenticationAdapter
 
         java.util.Hashtable<String, Object> environment =
                 new java.util.Hashtable<>();
+        if ("objectGUID".equalsIgnoreCase(properties.subjectAttribute())) {
+            environment.put(
+                    "java.naming.ldap.attributes.binary",
+                    properties.subjectAttribute()
+            );
+        }
+
         environment.put(
                 "com.sun.jndi.ldap.connect.timeout",
                 String.valueOf(
