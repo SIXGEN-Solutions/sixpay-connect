@@ -73,6 +73,14 @@ materialized as a separate YAML profile matrix. Reusable runtime fragments under
 
 LDAP secrets are runtime-injected and have no repository default.
 
+Initial privileged provisioning follows the same ownership boundary: Security
+owns the one-shot LDAP administrator bootstrap semantics, transaction and
+persistence ports; Bootstrap may only trigger that Security application port
+from runtime configuration. Bootstrap must never access Security repositories,
+JPA entities or infrastructure adapters directly. The bootstrap is disabled by
+default, requires an empty canonical user store, provisions no LOCAL credential,
+and must fail closed if left enabled after initial provisioning.
+
 ## Springdoc/OpenAPI
 
 Bootstrap owns runtime Springdoc and `GroupedOpenApi` assembly.

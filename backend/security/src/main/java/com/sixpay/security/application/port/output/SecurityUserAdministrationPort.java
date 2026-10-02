@@ -21,6 +21,8 @@ public interface SecurityUserAdministrationPort {
 
     List<SecurityUserSummary> listUsers();
 
+    long countUsers();
+
     SecurityUserDetail getUser(UUID userId);
 
     void updateUser(

@@ -106,6 +106,11 @@ public final class JpaSecurityUserAdministrationAdapter
     }
 
     @Override
+    public long countUsers() {
+        return userRepository.count();
+    }
+
+    @Override
     public SecurityUserDetail getUser(UUID userId) {
         SecurityUserAccountJpaEntity account = requireUser(userId);
 

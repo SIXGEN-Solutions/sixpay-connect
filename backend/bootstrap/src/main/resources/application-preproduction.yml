@@ -25,6 +25,14 @@ sixpay:
         enabled: false
       ldap:
         enabled: true
+    bootstrap:
+      ldap-admin:
+        enabled: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_ENABLED:false}
+        user-id: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USER_ID:}
+        username: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USERNAME:}
+        email: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_EMAIL:}
+        trust-domain: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_TRUST_DOMAIN:}
+        stable-subject: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_STABLE_SUBJECT:}
   payment:
     banking:
       amplitude:

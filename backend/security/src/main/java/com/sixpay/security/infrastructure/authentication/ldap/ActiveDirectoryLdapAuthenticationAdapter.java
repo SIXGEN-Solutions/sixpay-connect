@@ -106,6 +106,7 @@ public final class ActiveDirectoryLdapAuthenticationAdapter
             }
 
             DirectoryUser user = users.getFirst();
+
             requireAuthenticatable(user.accountState());
 
             contextSource(
