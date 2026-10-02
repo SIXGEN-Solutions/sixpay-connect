@@ -7,7 +7,6 @@ import com.sixpay.payment.api.request.VerifyPaymentConfirmationRequest;
 import com.sixpay.payment.api.response.PaymentConfirmationResponse;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
 import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyPort;
-import com.sixpay.payment.application.port.input.CreatePaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ReadPaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ResendPaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.VerifyPaymentConfirmationUseCase;
@@ -38,7 +37,6 @@ public class PaymentConfirmationController {
 
     private static final String IDEMPOTENCY_REPLAYED = "Idempotency-Replayed";
 
-    private final CreatePaymentConfirmationUseCase createUseCase;
     private final ReadPaymentConfirmationUseCase readUseCase;
     private final VerifyPaymentConfirmationUseCase verifyUseCase;
     private final ResendPaymentConfirmationUseCase resendUseCase;
@@ -46,14 +44,12 @@ public class PaymentConfirmationController {
     private final CorrelationIdResolver correlationIdResolver;
 
     public PaymentConfirmationController(
-            CreatePaymentConfirmationUseCase createUseCase,
             ReadPaymentConfirmationUseCase readUseCase,
             VerifyPaymentConfirmationUseCase verifyUseCase,
             ResendPaymentConfirmationUseCase resendUseCase,
             PaymentConfirmationApiMapper mapper,
             CorrelationIdResolver correlationIdResolver
     ) {
-        this.createUseCase = createUseCase;
         this.readUseCase = readUseCase;
         this.verifyUseCase = verifyUseCase;
         this.resendUseCase = resendUseCase;
@@ -61,33 +57,6 @@ public class PaymentConfirmationController {
         this.correlationIdResolver = correlationIdResolver;
     }
 
-    @PostMapping
-    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.create')")
-    @Operation(
-            operationId = "createPaymentConfirmationChallenge",
-            summary = "Create and send a confirmation challenge"
-    )
-    public ResponseEntity<PaymentConfirmationResponse> create(
-            @PathVariable String paymentReference,
-            @RequestHeader(name = IntegrationHttpHeaders.IDEMPOTENCY_KEY)
-            @NotBlank @Size(max = 128) String idempotencyKey,
-            @RequestHeader(
-                    name = IntegrationHttpHeaders.CORRELATION_ID,
-                    required = false
-            )
-            @Size(max = 64) String correlationHeader
-    ) {
-        CorrelationId correlationId =
-                correlationIdResolver.resolve(correlationHeader);
-        var view = createUseCase.create(
-                mapper.toCreateCommand(
-                        paymentReference,
-                        correlationId,
-                        idempotencyKey
-                )
-        );
-        return okMutation(correlationId, view.replayed(), mapper.toResponse(view));
-    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.read')")

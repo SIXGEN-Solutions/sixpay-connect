@@ -22,6 +22,8 @@ import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
+import com.sixpay.common.time.TimeProvider;
+import java.time.Instant;
 import java.util.Objects;
 /** Application orchestration for Payment-confirmation operations. */
 @Service
@@ -65,17 +67,38 @@ public class PaymentConfirmationService
     public PaymentConfirmationView create(
             CreatePaymentConfirmationCommand command
     ) {
+        return createBefore(command, Instant.MAX, Instant::now);
+    }
+
+    public PaymentConfirmationView createBefore(
+            CreatePaymentConfirmationCommand command,
+            Instant deadlineAt,
+            TimeProvider timeProvider
+    ) {
         Objects.requireNonNull(command, "Create confirmation command");
+        Objects.requireNonNull(deadlineAt, "Confirmation deadline");
+        Objects.requireNonNull(timeProvider, "Time provider");
+        if (!Instant.MAX.equals(deadlineAt)
+                && !timeProvider.now().isBefore(deadlineAt)) {
+            throw new IllegalStateException(
+                    "Payment initiation deadline exceeded before OTP creation"
+            );
+        }
         Payment payment = requirePayment(command.paymentReference());
         requirePendingConfirmation(payment);
-        payment.toState()
+
+        ConfirmationChallenge existingChallenge = payment.toState()
                 .confirmationChallenge()
                 .filter(ConfirmationChallenge::active)
-                .ifPresent(existing -> {
-                    throw new IllegalStateException(
-                            "Payment already has an active confirmation challenge"
-                    );
-                });
+                .orElse(null);
+
+        if (existingChallenge != null) {
+            return PaymentConfirmationView.fromExisting(
+                    payment.publicPaymentReference(),
+                    existingChallenge
+            );
+        }
+
         BankingRequestContext context = bankingContext(
                 payment,
                 command.correlationId()
@@ -89,13 +112,21 @@ public class PaymentConfirmationService
                         payment.id(),
                         payment.publicPaymentReference(),
                         command.idempotencyKey(),
-                        () -> confirmationGateway.create(
-                                new PaymentConfirmationGateway.CreateRequest(
-                                        payment,
-                                        context,
-                                        bankKey
-                                )
-                        ),
+                        () -> {
+                            if (!Instant.MAX.equals(deadlineAt)
+                                    && !timeProvider.now().isBefore(deadlineAt)) {
+                                throw new IllegalStateException(
+                                        "Payment initiation deadline exceeded before OTP creation"
+                                );
+                            }
+                            return confirmationGateway.create(
+                                    new PaymentConfirmationGateway.CreateRequest(
+                                            payment,
+                                            context,
+                                            bankKey
+                                    )
+                            );
+                        },
                         () -> confirmationGateway.recover(
                                 new PaymentConfirmationGateway.RecoveryRequest(
                                         context,

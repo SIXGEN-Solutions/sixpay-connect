@@ -5,7 +5,7 @@ info:
   description: |
     Canonical contract normalized from the existing Security User Administration implementation.
     It documents the ADMIN-only boundary for user accounts, authorization assignments,
-    local authentication, linked OIDC identities and local password reset.
+    local authentication, linked OIDC/LDAP identities and local password reset.
     Authentication runtime endpoints remain outside this contract.
   x-sixpay-contract:
     registryId: security-user-administration-api-v1
@@ -206,17 +206,44 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+  /internal/api/v1/administration/users/{userId}/identities/ldap:
+    post:
+      tags: [Security User Administration]
+      operationId: linkLdapIdentity
+      summary: Link a trusted LDAP identity to a canonical SIXPAY user
+      description: |
+        Links the stable LDAP identity `(LDAP, trustDomain, stableSubject)` to
+        the canonical SIXPAY account. For the approved Active Directory
+        profile, stableSubject is the immutable objectGUID. DN, username,
+        email and LDAP groups are not durable linking keys.
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters: [{$ref: '#/components/parameters/UserId'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LinkLdapIdentityRequest'}
+      responses:
+        '200':
+          description: Security user with linked LDAP identity
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
   /internal/api/v1/administration/users/{userId}/identities/{identityId}:
     delete:
       tags: [Security User Administration]
-      operationId: unlinkOidcIdentity
+      operationId: unlinkExternalIdentity
       x-sixpay-authorization: {requiredRoles: [ADMIN]}
       parameters:
         - {$ref: '#/components/parameters/UserId'}
         - {$ref: '#/components/parameters/IdentityId'}
       responses:
         '200':
-          description: Security user with identity unlinked
+          description: Security user with external OIDC or LDAP identity unlinked
           content:
             application/json:
               schema: {$ref: '#/components/schemas/SecurityUserDetail'}
@@ -248,7 +275,7 @@ components:
       enum: [ACTIVE, DISABLED]
     AuthenticationIdentityType:
       type: string
-      enum: [LOCAL, OIDC]
+      enum: [LOCAL, OIDC, LDAP]
     SecurityAuditEventType:
       type: string
       enum: [LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET, ACCOUNT_LOCKED, OIDC_LOGIN_SUCCESS, OIDC_LOGIN_FAILURE, IDENTITY_LINKED, IDENTITY_UNLINKED, AUTH_METHOD_ENABLED, AUTH_METHOD_DISABLED, USER_CREATED, USER_UPDATED, USER_ENABLED, USER_DISABLED, USER_DELETED]
@@ -298,6 +325,21 @@ components:
       properties:
         provider: {type: string, maxLength: 500}
         providerSubject: {type: string, maxLength: 255}
+    LinkLdapIdentityRequest:
+      type: object
+      required: [trustDomain, stableSubject]
+      additionalProperties: false
+      properties:
+        trustDomain:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Stable configured LDAP trust-domain identifier.
+        stableSubject:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Immutable LDAP subject; objectGUID for the approved Active Directory profile.
     SecurityUserSummary:
       type: object
       required: [id, username, status, localEnabled, oidcLinked]

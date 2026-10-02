@@ -283,3 +283,39 @@ Classification:
 DA-12 DOCUMENTATION + VALIDATION GATE = COVERED
 DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED
 ```
+
+## AUTH-13 FINAL HYBRID BASELINE
+
+The final human-authentication baseline extends the historical DA-12
+LOCAL/OIDC closure with the LDAP capability implemented by AUTH-12.
+
+```text
+LOCAL + OIDC + LDAP
+```
+
+All three mechanisms converge on the canonical SIXPAY principal and backend
+session. SIXPAY owns roles, permissions and business authorization.
+
+Password lifecycle ownership is explicit:
+
+```text
+LOCAL -> SIXPAY-owned password lifecycle
+OIDC  -> IdP-owned password lifecycle
+LDAP  -> directory/provider-owned password lifecycle
+```
+
+OIDC and LDAP password lifecycle are provider-owned. Neither provider exposes
+the SIXPAY LOCAL `passwordChangeRequired` lifecycle.
+
+LDAP groups and OIDC provider roles/scopes never become SIXPAY authorities
+implicitly.
+
+Final AUTH-13 closure marker, valid only after the applicable validation gates
+are green:
+
+```text
+HYBRID AUTHENTICATION — LOCAL + OIDC + LDAP = CLOSED
+```
+
+This addendum preserves the historical DA-12 evidence while defining the
+current final authentication baseline.

@@ -312,6 +312,80 @@ class SecurityUserAdministrationServiceTest {
     }
 
     @Test
+    void linksLdapIdentityUsingTrustDomainAndStableSubject() {
+        UUID userId = UUID.randomUUID();
+        when(administrationPort.getUser(userId))
+                .thenReturn(detail(
+                        userId,
+                        "ldap-user",
+                        Set.of("AUDITOR"),
+                        Set.of("payment.audit.read")
+                ));
+
+        service.linkLdapIdentity(
+                userId,
+                " regionale-ldap ",
+                " 00112233-4455-6677-8899-aabbccddeeff ",
+                "admin"
+        );
+
+        verify(administrationPort).linkExternalIdentity(
+                userId,
+                com.sixpay.security.domain.authentication.AuthenticationIdentityType.LDAP,
+                "regionale-ldap",
+                "00112233-4455-6677-8899-aabbccddeeff"
+        );
+
+        var audit = ArgumentCaptor.forClass(
+                com.sixpay.security.domain.administration.SecurityAuditEvent.class
+        );
+        verify(auditPort).record(audit.capture());
+        assertThat(audit.getValue().eventType())
+                .isEqualTo(SecurityAuditEventType.IDENTITY_LINKED);
+        assertThat(audit.getValue().provider())
+                .isEqualTo("regionale-ldap");
+        assertThat(audit.getValue().detail())
+                .isEqualTo("LDAP");
+    }
+
+    @Test
+    void unlinkExternalIdentityAuditsAdministrativeOperation() {
+        UUID userId = UUID.randomUUID();
+        UUID identityId = UUID.randomUUID();
+        when(administrationPort.getUser(userId))
+                .thenReturn(detail(
+                        userId,
+                        "ldap-user",
+                        Set.of("AUDITOR"),
+                        Set.of("payment.audit.read")
+                ));
+
+        service.unlinkExternalIdentity(userId, identityId, "admin");
+
+        verify(administrationPort).unlinkExternalIdentity(userId, identityId);
+        verify(auditPort).record(argThat(event ->
+                event.eventType() == SecurityAuditEventType.IDENTITY_UNLINKED
+                        && userId.equals(event.targetUserId())
+                        && "admin".equals(event.actorSubject())
+        ));
+    }
+
+    @Test
+    void ldapLinkRejectsBlankTrustDomainOrSubjectBeforePersistence() {
+        UUID userId = UUID.randomUUID();
+
+        assertThatThrownBy(() ->
+                service.linkLdapIdentity(userId, " ", "subject", "admin")
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() ->
+                service.linkLdapIdentity(userId, "regionale-ldap", " ", "admin")
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        verifyNoInteractions(administrationPort);
+    }
+
+    @Test
     void deletesExistingUserAfterWritingAudit() {
         UUID userId = UUID.randomUUID();
 

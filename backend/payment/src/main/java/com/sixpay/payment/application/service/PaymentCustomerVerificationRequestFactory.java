@@ -1,6 +1,7 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
+import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
@@ -20,7 +21,8 @@ public final class PaymentCustomerVerificationRequestFactory {
     public CustomerVerificationRequest from(
             Payment payment,
             UUID verificationId,
-            Instant requestedAt
+            Instant requestedAt,
+            Instant deadlineAt
     ) {
         Objects.requireNonNull(payment, "payment is required");
         Objects.requireNonNull(
@@ -28,6 +30,7 @@ public final class PaymentCustomerVerificationRequestFactory {
                 "verificationId is required"
         );
         Objects.requireNonNull(requestedAt, "requestedAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
 
         if (payment.status()
                 != PaymentStatus.BANKING_VERIFICATION_PENDING) {
@@ -51,16 +54,21 @@ public final class PaymentCustomerVerificationRequestFactory {
                 verificationId,
                 initiationContext.taxpayerIdentifier(),
                 initiationContext.debtorName(),
-                state.financialInstitutionCode().value(),
-                state.debtorAccountReference()
-                        .bindingFingerprint(),
-                state.debtorAccountReference()
-                        .integrationAccountToken(),
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::bindingFingerprint)
+                        .orElse(null),
+                state.optionalDebtorAccountReference()
+                        .map(DebtorAccountReference::integrationAccountToken)
+                        .orElse(null),
                 state.requestIdentity()
                         .correlationId()
                         .value(),
                 state.paymentId().value(),
-                requestedAt
+                requestedAt,
+                deadlineAt
         );
     }
 }

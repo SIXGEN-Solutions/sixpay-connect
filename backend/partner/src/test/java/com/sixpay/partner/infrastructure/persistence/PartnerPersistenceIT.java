@@ -67,6 +67,7 @@ class PartnerPersistenceIT {
     @Test
     void persistsPartnerAuditAndOutboxInPostgreSql() {
         var created = management.create(new CreatePartnerCommand(
+                "ACME_PAYMENTS",
                 "Acme Payments",
                 "Alice Ops",
                 "alice.ops@example.com",
@@ -78,6 +79,7 @@ class PartnerPersistenceIT {
 
         var entity = repository.findAggregateById(created.id()).orElseThrow();
 
+        assertThat(entity.partnerIdentifier()).isEqualTo("ACME_PAYMENTS");
         assertThat(entity.status()).isEqualTo(PartnerStatus.PENDING_VALIDATION);
         assertThat(entity.authorizedTransactionTypes()).containsExactly("PAYMENT");
         assertThat(auditRepository.count()).isOne();

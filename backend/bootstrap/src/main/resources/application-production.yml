@@ -1,0 +1,50 @@
+spring:
+  config:
+    import:
+      - classpath:config/security/ldap-common.yml
+      - classpath:config/security/oidc-common.yml
+  datasource:
+    url: ${SIXPAY_DB_URL}
+    username: ${SIXPAY_DB_USERNAME}
+    password: ${SIXPAY_DB_PASSWORD}
+    hikari:
+      schema: sixpay
+      maximum-pool-size: ${SIXPAY_DB_MAX_POOL_SIZE:20}
+      minimum-idle: ${SIXPAY_DB_MIN_IDLE:5}
+      connection-timeout: ${SIXPAY_DB_CONNECTION_TIMEOUT:20s}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: sixpay
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+sixpay:
+  security:
+    authentication:
+      policy:
+        require-provider: true
+      local:
+        enabled: ${SIXPAY_LOCAL_ENABLED:false}
+      oidc:
+        enabled: ${SIXPAY_OIDC_ENABLED:false}
+      ldap:
+        enabled: ${SIXPAY_LDAP_ENABLED:false}
+server:
+  servlet:
+    session:
+      timeout: ${SIXPAY_SESSION_TIMEOUT:30m}
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}

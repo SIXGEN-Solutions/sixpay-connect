@@ -54,3 +54,12 @@ domaine, sans simuler une capacité transverse inexistante.
 - Une panne du broker n'annule pas une décision métier validée.
 - Les consommateurs peuvent évoluer indépendamment.
 - La publication, le nettoyage et la rétention de l'outbox exigent encore un composant transverse explicitement conçu et validé.
+
+
+## Identité métier Partner
+
+`PartnerId` est l'UUID technique interne. `partnerIdentifier` est l'identifiant
+métier stable, obligatoire et unique, possédé par Partner. Sa résolution
+inter-module passe exclusivement par une surface applicative publique Partner.
+
+INIT-2A ne définit pas encore le lien Security/machine identity -> Partner.

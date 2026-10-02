@@ -17,7 +17,7 @@ public class PaymentCallbackProperties {
     private Duration maximumRetryDelay = Duration.ofHours(1);
     private String workerId = "payment-callback-worker";
     private String signingKeyId;
-    private String signingPrivateKeyPem;
+    private String signingSecret;
 
     public boolean isEnabled() {
         return enabled;
@@ -83,14 +83,14 @@ public class PaymentCallbackProperties {
         this.signingKeyId = signingKeyId;
     }
 
-    public String getSigningPrivateKeyPem() {
-        return signingPrivateKeyPem;
+    public String getSigningSecret() {
+        return signingSecret;
     }
 
-    public void setSigningPrivateKeyPem(
-            String signingPrivateKeyPem
+    public void setSigningSecret(
+            String signingSecret
     ) {
-        this.signingPrivateKeyPem = signingPrivateKeyPem;
+        this.signingSecret = signingSecret;
     }
 
     public void validateEnabledConfiguration() {
@@ -113,10 +113,15 @@ public class PaymentCallbackProperties {
                     "Callback signing key ID is required"
             );
         }
-        if (signingPrivateKeyPem == null
-                || signingPrivateKeyPem.isBlank()) {
+        if (signingSecret == null
+                || signingSecret.isBlank()) {
             throw new IllegalStateException(
-                    "Callback signing private key is required"
+                    "Callback signing secret is required"
+            );
+        }
+        if (maxAttempts > 12) {
+            throw new IllegalStateException(
+                    "Callback max attempts must not exceed 12"
             );
         }
     }

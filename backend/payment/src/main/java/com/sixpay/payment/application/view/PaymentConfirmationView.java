@@ -2,6 +2,7 @@ package com.sixpay.payment.application.view;
 
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.domain.model.ConfirmationBusinessCode;
+import com.sixpay.payment.domain.model.ConfirmationChallenge;
 import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
 import com.sixpay.payment.domain.model.ConfirmationDeliveryChannel;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
@@ -58,6 +59,30 @@ public record PaymentConfirmationView(
                 expiresAt,
                 verifiedAt,
                 false
+        );
+    }
+
+    /**
+     * Projects an already durable challenge without contacting Core Banking.
+     *
+     * <p>An internal initiation retry that reaches an already ACTIVE challenge
+     * is a stable replay and must never create a second bank challenge.</p>
+     */
+    public static PaymentConfirmationView fromExisting(
+            PublicPaymentReference paymentReference,
+            ConfirmationChallenge challenge
+    ) {
+        Objects.requireNonNull(challenge, "Confirmation challenge");
+
+        return new PaymentConfirmationView(
+                paymentReference,
+                challenge.status(),
+                challenge.businessCode(),
+                challenge.deliveryChannel(),
+                challenge.sentAt(),
+                challenge.expiresAt(),
+                challenge.verifiedAt(),
+                true
         );
     }
 

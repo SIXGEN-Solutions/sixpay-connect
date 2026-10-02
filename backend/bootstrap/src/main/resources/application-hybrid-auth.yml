@@ -10,6 +10,7 @@ spring:
     import:
       - classpath:config/security/local-auth-common.yml
       - classpath:config/security/oidc-common.yml
+      - classpath:config/security/ldap-common.yml
 
 sixpay:
   security:

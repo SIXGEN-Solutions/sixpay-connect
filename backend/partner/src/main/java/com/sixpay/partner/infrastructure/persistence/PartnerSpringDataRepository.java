@@ -28,6 +28,12 @@ public interface PartnerSpringDataRepository
             @Param("partnerId") UUID partnerId
     );
 
+    @EntityGraph(attributePaths = {"authorizedTransactionTypes", "validationThresholds"})
+    @Query("select distinct partner from PartnerJpaEntity partner where partner.partnerIdentifier = :partnerIdentifier")
+    Optional<PartnerJpaEntity> findAggregateByPartnerIdentifier(
+            @Param("partnerIdentifier") String partnerIdentifier
+    );
+
     @EntityGraph(attributePaths = "authorizedTransactionTypes")
     @Query(
             "select distinct partner "

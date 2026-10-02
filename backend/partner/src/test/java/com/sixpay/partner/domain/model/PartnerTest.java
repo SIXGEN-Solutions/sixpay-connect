@@ -20,6 +20,7 @@ class PartnerTest {
     void createsPartnerPendingValidationAndRaisesEvent() {
         var partner = newPartner();
 
+        assertThat(partner.partnerIdentifier().value()).isEqualTo("ACME_PAYMENTS");
         assertThat(partner.status()).isEqualTo(PartnerStatus.PENDING_VALIDATION);
         assertThat(partner.pullDomainEvents())
                 .singleElement()
@@ -85,6 +86,7 @@ class PartnerTest {
     private static Partner newPartner() {
         return Partner.create(
                 new PartnerId(UUID.fromString("8ec6a427-406f-4f93-b271-cbc819a4c1dd")),
+                new PartnerIdentifier("ACME_PAYMENTS"),
                 new PartnerName("Acme Payments"),
                 new TechnicalContact("Alice Ops", "alice.ops@example.com"),
                 new AuthorizedPerimeter(Set.of("PAYMENT")),

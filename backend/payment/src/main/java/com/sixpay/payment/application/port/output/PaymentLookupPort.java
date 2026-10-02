@@ -24,8 +24,18 @@ public interface PaymentLookupPort {
             ExternalPaymentReference externalPaymentReference
     );
 
+    Optional<Payment> findByPartnerIdentifierAndExternalPaymentReference(
+            String partnerIdentifier,
+            ExternalPaymentReference externalPaymentReference
+    );
+
     boolean existsBySourceAndExternalPaymentReference(
             PaymentSource source,
+            ExternalPaymentReference externalPaymentReference
+    );
+
+    boolean existsByPartnerIdentifierAndExternalPaymentReference(
+            String partnerIdentifier,
             ExternalPaymentReference externalPaymentReference
     );
 }

@@ -2,13 +2,17 @@ package com.sixpay.payment.infrastructure.banking.amplitude.confirmation.configu
 
 import com.sixpay.integration.http.HttpTimeoutPolicy;
 import com.sixpay.integration.http.StandardRestClientFactory;
+import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.AmplitudePaymentConfirmationClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.DedicatedAmplitudePaymentConfirmationAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.mapper.AmplitudePaymentConfirmationMapper;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.validation.AmplitudePaymentConfirmationResponseValidator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
@@ -28,9 +32,12 @@ public class AmplitudePaymentConfirmationConfiguration {
 
     @Bean
     ConfirmationAccessTokenProvider confirmationAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
+            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
             AmplitudePaymentConfirmationProperties properties
     ) {
+        if (!properties.security().oauth2Enabled()) return () -> null;
+        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
+        if (manager == null) throw new IllegalStateException("OAuth2 manager required when confirmation OAuth2 is enabled");
         return new OAuth2ConfirmationAccessTokenProvider(manager, properties);
     }
 
@@ -43,8 +50,10 @@ public class AmplitudePaymentConfirmationConfiguration {
         return factory.create(
                 properties.baseUrl(),
                 new HttpTimeoutPolicy(properties.connectTimeout(), properties.readTimeout()),
-                sslBundles.getBundle(properties.security().sslBundle()).createSslContext(),
-                List.of()
+                properties.security().mtlsEnabled()
+                        ? sslBundles.getBundle(properties.security().sslBundle()).createSslContext() : null,
+                List.of(),
+                properties.security().allowInsecureHttp()
         );
     }
 
@@ -75,5 +84,13 @@ public class AmplitudePaymentConfirmationConfiguration {
                 validator,
                 objectMapper
         );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(PaymentConfirmationGateway.class)
+    PaymentConfirmationGateway paymentConfirmationGateway(
+            AmplitudePaymentConfirmationClient client
+    ) {
+        return new DedicatedAmplitudePaymentConfirmationAdapter(client);
     }
 }

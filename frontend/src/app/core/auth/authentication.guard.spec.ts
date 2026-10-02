@@ -108,6 +108,27 @@ describe('authenticationGuard', () => {
     expect(await executeGuard('/payments')).toBe(true);
   });
 
+  it('does not apply LOCAL password restriction to LDAP session', async () => {
+    const authentication = {
+      ready$: of(true),
+      isAuthenticated: () => true,
+      activeAuthenticationMethod: () => 'ldap',
+      passwordChangeRequired: () => true,
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthenticationService,
+          useValue: authentication,
+        },
+      ],
+    });
+
+    expect(await executeGuard('/payments')).toBe(true);
+  });
+
   function executeGuard(url: string): Promise<boolean | UrlTree> {
     return TestBed.runInInjectionContext(() =>
       firstValueFrom(

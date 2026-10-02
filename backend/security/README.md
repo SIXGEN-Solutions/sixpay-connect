@@ -9,6 +9,7 @@ linking, password lifecycle and security-audit capabilities.
 
 - local authentication and session management;
 - OIDC session integration;
+- Microsoft Active Directory authentication provider baseline over LDAPS;
 - JWT resource-server authority conversion;
 - SIXPAY-owned roles and permissions;
 - local password change and reset support;
@@ -23,10 +24,16 @@ authenticated identity to SIXPAY roles and permissions.
 Authentication and session endpoints:
 
     /api/v1/auth/login
-    /api/v1/auth/me
+    /api/v1/auth/login/ldap
     /api/v1/auth/session/oidc
+    /api/v1/auth/me
     /api/v1/auth/logout
     /api/v1/auth/password/change
+
+LOCAL, OIDC and LDAP converge on the same canonical SIXPAY principal and
+backend session. LDAP credentials are transient and directory-owned; SIXPAY
+does not persist them and never derives application authorities from LDAP
+groups.
 
 Administration exposes user-management HTTP boundaries while Security owns the
 underlying users, identities, credentials and authorization data.
@@ -67,3 +74,30 @@ Administration exposes management HTTP boundaries but does not own these tables.
 
 Schema:
 backend/security/src/main/resources/db/migration/V700__security_baseline.sql
+
+
+## Partner M2M machine identity
+
+Partner system callers are not represented by `AuthenticatedUser`. Security
+exposes `CurrentMachineIdentityProvider` for trusted technical subjects and owns
+the durable `security_partner_machine_identities` association to a Partner
+business identifier. Partner status and Partner business identity remain owned
+by Partner.
+
+
+## LDAP / Active Directory
+
+AUTH-2 introduces the Security-owned Active Directory authentication provider.
+
+Its responsibility stops at:
+
+```text
+credentials -> AD authentication -> LDAP ExternalIdentity
+```
+
+Identity linking, SIXPAY account creation, role/permission assignment and
+backend session creation are not part of AUTH-2. LDAP groups never become
+SIXPAY authorities implicitly.
+
+Runtime LDAP endpoints, DN values, trust material and service-account secrets
+are environment configuration and must not be committed.

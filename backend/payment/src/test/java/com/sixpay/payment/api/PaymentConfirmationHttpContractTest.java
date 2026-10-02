@@ -4,7 +4,6 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.request.VerifyPaymentConfirmationRequest;
-import com.sixpay.payment.application.port.input.CreatePaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ReadPaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ResendPaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.VerifyPaymentConfirmationUseCase;
@@ -28,10 +27,8 @@ class PaymentConfirmationHttpContractTest {
             "11111111-1111-4111-8111-111111111111";
 
     @Test
-    void mutationResponsesExposeReplayMetadataAndReadDoesNot() {
-        CreatePaymentConfirmationUseCase createUseCase =
-                mock(CreatePaymentConfirmationUseCase.class);
-        ReadPaymentConfirmationUseCase readUseCase =
+    void verifyAndResendExposeReplayMetadataAndReadDoesNot() {
+ReadPaymentConfirmationUseCase readUseCase =
                 mock(ReadPaymentConfirmationUseCase.class);
         VerifyPaymentConfirmationUseCase verifyUseCase =
                 mock(VerifyPaymentConfirmationUseCase.class);
@@ -41,29 +38,19 @@ class PaymentConfirmationHttpContractTest {
 
         CorrelationId correlationId = CorrelationId.of(CORRELATION_ID);
         when(resolver.resolve(null)).thenReturn(correlationId);
-        when(createUseCase.create(any())).thenReturn(view(false));
         when(readUseCase.read(any())).thenReturn(view(false));
         when(verifyUseCase.verify(any())).thenReturn(view(true));
         when(resendUseCase.resend(any())).thenReturn(view(true));
 
         PaymentConfirmationController controller =
                 new PaymentConfirmationController(
-                        createUseCase,
                         readUseCase,
                         verifyUseCase,
                         resendUseCase,
                         new PaymentConfirmationApiMapper(),
                         resolver
                 );
-
-        ResponseEntity<?> create = controller.create(
-                PAYMENT_REFERENCE,
-                "create-key-0001",
-                null
-        );
-        assertReplayHeader(create, "false");
-
-        ResponseEntity<?> read = controller.read(PAYMENT_REFERENCE, null);
+ResponseEntity<?> read = controller.read(PAYMENT_REFERENCE, null);
         assertThat(
                 read.getHeaders().getFirst("Idempotency-Replayed")
         ).isNull();

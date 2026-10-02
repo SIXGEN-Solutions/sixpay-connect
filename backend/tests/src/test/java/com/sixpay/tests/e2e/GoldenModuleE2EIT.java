@@ -102,6 +102,7 @@ class GoldenModuleE2EIT {
     void partnerApprovalIsDeliveredExactlyOnceAcrossTheGoldenFlow() {
         var partner = partnerManagement.create(new CreatePartnerCommand(
                 "Golden Partner",
+                "GOLDEN-E2E-PARTNER",
                 "Alice Operations",
                 "alice.ops@example.com",
                 Set.of("PAYMENT"),

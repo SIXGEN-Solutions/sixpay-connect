@@ -20,6 +20,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
 
     private static final int MAX_REASON_LENGTH = 500;
 
+    private final PartnerIdentifier partnerIdentifier;
     private final PartnerName legalName;
     private final TechnicalContact technicalContact;
     private final AuthorizedPerimeter authorizedPerimeter;
@@ -32,6 +33,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
 
     private Partner(
             PartnerId id,
+            PartnerIdentifier partnerIdentifier,
             PartnerName legalName,
             TechnicalContact technicalContact,
             AuthorizedPerimeter authorizedPerimeter,
@@ -42,6 +44,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
             Collection<ValidationThreshold> thresholds
     ) {
         super(id);
+        this.partnerIdentifier = Objects.requireNonNull(partnerIdentifier, "partnerIdentifier is required");
         this.legalName = Objects.requireNonNull(legalName, "legalName is required");
         this.technicalContact = Objects.requireNonNull(technicalContact, "technicalContact is required");
         this.authorizedPerimeter = Objects.requireNonNull(authorizedPerimeter, "authorizedPerimeter is required");
@@ -55,6 +58,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
 
     public static Partner create(
             PartnerId id,
+            PartnerIdentifier partnerIdentifier,
             PartnerName legalName,
             TechnicalContact technicalContact,
             AuthorizedPerimeter authorizedPerimeter,
@@ -62,6 +66,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
     ) {
         var partner = new Partner(
                 id,
+                partnerIdentifier,
                 legalName,
                 technicalContact,
                 authorizedPerimeter,
@@ -77,6 +82,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
 
     public static Partner reconstitute(
             PartnerId id,
+            PartnerIdentifier partnerIdentifier,
             PartnerName legalName,
             TechnicalContact technicalContact,
             AuthorizedPerimeter authorizedPerimeter,
@@ -88,6 +94,7 @@ public final class Partner extends AggregateRoot<PartnerId> {
     ) {
         return new Partner(
                 id,
+                partnerIdentifier,
                 legalName,
                 technicalContact,
                 authorizedPerimeter,
@@ -221,6 +228,10 @@ public final class Partner extends AggregateRoot<PartnerId> {
         }
         return java.util.Currency.getInstance(
                 currency.strip().toUpperCase(java.util.Locale.ROOT)).getCurrencyCode();
+    }
+
+    public PartnerIdentifier partnerIdentifier() {
+        return partnerIdentifier;
     }
 
     public PartnerName legalName() {

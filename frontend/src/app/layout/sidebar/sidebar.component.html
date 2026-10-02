@@ -1,17 +1,36 @@
-<nav aria-label="Navigation principale">
-  <mat-nav-list>
-    @for (item of navigation.items(); track item.route) {
-      <a
-        mat-list-item
-        [routerLink]="item.route"
-        routerLinkActive="sp-sidebar__link--active"
-        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-      >
-        <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
-        <span matListItemTitle>{{ item.label }}</span>
-      </a>
-    }
-  </mat-nav-list>
+<aside class="sp-sidebar" [class.sp-sidebar--collapsed]="collapsed()">
+  <div class="sp-sidebar__brand">
+    <span class="sp-sidebar__mark" aria-hidden="true">
+      <mat-icon>account_balance</mat-icon>
+    </span>
+    <div class="sp-sidebar__brand-copy">
+      <strong>SIXPAY CONNECT</strong>
+      <span>Banking Command Center</span>
+    </div>
+  </div>
 
-  <sp-role-simulator />
-</nav>
+  <nav aria-label="Navigation principale" class="sp-sidebar__nav">
+    <mat-nav-list>
+      @for (item of navigation.items(); track item.route; let index = $index) {
+        @if (showSection(index)) {
+          <div class="sp-sidebar__section">{{ sectionFor(item.route) }}</div>
+        }
+
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="sp-sidebar__link--active"
+          [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+          [attr.title]="collapsed() ? item.label : null"
+        >
+          <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </nav>
+
+  <div class="sp-sidebar__role-simulator">
+    <sp-role-simulator />
+  </div>
+</aside>

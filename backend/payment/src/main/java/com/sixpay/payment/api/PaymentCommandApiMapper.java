@@ -7,7 +7,6 @@ import com.sixpay.payment.api.response.PaymentMoneyResponse;
 import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.view.InitiateDebitResult;
-import com.sixpay.payment.application.view.PaymentConfirmationChallengeView;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -46,14 +45,16 @@ public final class PaymentCommandApiMapper {
                 request.claimType(),
                 request.taxpayerIdentifier(),
                 request.requestedExecutionAt(),
-                request.beneficiaries().stream()
-                        .map(beneficiary ->
-                                new InitiateDebitBeneficiaryCommand(
-                                        beneficiary.rib(),
-                                        beneficiary.amount()
+                request.beneficiaries() == null
+                        ? java.util.List.of()
+                        : request.beneficiaries().stream()
+                                .map(beneficiary ->
+                                        new InitiateDebitBeneficiaryCommand(
+                                                beneficiary.rib(),
+                                                beneficiary.amount()
+                                        )
                                 )
-                        )
-                        .toList(),
+                                .toList(),
                 request.callbackUrl(),
                 idempotencyKey,
                 correlationId
@@ -72,36 +73,21 @@ public final class PaymentCommandApiMapper {
     ) {
         Objects.requireNonNull(result, "InitiateDebit result");
 
-        PaymentConfirmationChallengeView challenge =
-                result.confirmationChallenge();
-
         return new InitiateDebitResponse(
                 "200",
                 "Payment order initiated successfully",
                 "Success",
                 result.paymentReference().value(),
                 result.endToEndId(),
-                challenge == null
-                        ? null
-                        : challenge.bankOperationId(),
+                null,
                 money(result.totalAmount()),
-                challenge == null
-                        ? null
-                        : money(challenge.fees()),
-                challenge == null
-                        ? null
-                        : money(challenge.netAmount()),
+                null,
+                null,
                 result.initiatedAt(),
-                challenge == null
-                        ? null
-                        : challenge.validityInMinutes(),
-                challenge == null
-                        ? null
-                        : challenge.transactionNumber(),
-                challenge == null
-                        ? null
-                        : challenge.transactionQrCode(),
-                result.status(),
+                null,
+                null,
+                null,
+                result.status().name(),
                 "Awaiting customer confirmation via OTP/SMS"
         );
     }

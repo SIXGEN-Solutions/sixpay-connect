@@ -28,8 +28,9 @@ public final class PaymentInitiationCanonicalizer {
 
         StringBuilder value = new StringBuilder(1024);
 
-        append(value, command.partnerLoginName());
-        append(value, command.authenticatedPartnerLoginName());
+        // AppID is the canonical Partner business identifier.
+        // LoginName is compatibility metadata and the authenticated subject
+        // is transport/security identity; neither changes the business request.
         append(value, command.applicationId());
         append(value, command.endToEndId());
         append(value, decimal(command.totalAmount()));

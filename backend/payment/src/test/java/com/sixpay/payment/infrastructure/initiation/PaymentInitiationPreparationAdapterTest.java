@@ -71,17 +71,10 @@ class PaymentInitiationPreparationAdapterTest {
                 .requestFingerprint().value())
                 .isEqualTo("a".repeat(64));
 
-        var debtor = intent.debtorAccountReference();
-
-        assertThat(debtor.financialInstitutionCode().value())
-                .isEqualTo("10005");
-        assertThat(debtor.maskedDisplay())
-                .isEqualTo("RIB-****-0112");
-        assertThat(debtor.integrationAccountToken())
-                .startsWith("acct:v1:")
-                .doesNotContain(command.debtorRib());
-        assertThat(debtor.bindingFingerprint())
-                .matches("^v1:[0-9a-f]{64}$");
+        assertThat(intent.financialInstitutionCode())
+                .isNull();
+        assertThat(intent.debtorAccountReference())
+                .isNull();
 
         assertThat(intent.treasuryAllocationIntent()
                 .allocations())

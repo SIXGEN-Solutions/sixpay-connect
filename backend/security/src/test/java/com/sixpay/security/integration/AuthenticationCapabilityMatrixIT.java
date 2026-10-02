@@ -8,6 +8,7 @@ import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.junit.jupiter.api.Test;
@@ -193,6 +194,14 @@ class AuthenticationCapabilityMatrixIT {
             SixpaySecurityAutoConfiguration.class
     )
     static class CapabilityMatrixTestApplication {
+
+        @Bean
+        PartnerMachineIdentitySpringDataRepository
+        partnerMachineIdentitySpringDataRepository() {
+            return mock(
+                    PartnerMachineIdentitySpringDataRepository.class
+            );
+        }
 
         @Bean
         SecurityAuditPort securityAuditPort() {

@@ -1,96 +1,36 @@
 package com.sixpay.payment.application.view;
 
+import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
 import com.sixpay.payment.domain.model.PaymentId;
-import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
-
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 
-/**
- * Stable application result for the contracted InitiateDebit operation.
- *
- * <p>The confirmation challenge is optional until the core-banking contract is
- * approved. SIXPAY never fabricates bank identifiers, fees or QR data.</p>
- */
+/** Stable application result for the contracted InitiateDebit operation. */
 public record InitiateDebitResult(
         PaymentId paymentId,
         PublicPaymentReference paymentReference,
         String endToEndId,
         Money totalAmount,
         Instant initiatedAt,
-        PaymentStatus status,
-        PaymentConfirmationChallengeView confirmationChallenge
+        InitiateDebitStatus status,
+        PaymentConfirmationView confirmationChallenge
 ) {
-
     public InitiateDebitResult {
-        paymentId = Objects.requireNonNull(
-                paymentId,
-                "Payment ID"
-        );
-        paymentReference = Objects.requireNonNull(
-                paymentReference,
-                "Payment reference"
-        );
-        endToEndId = requireText(
-                endToEndId,
-                "End-to-end ID"
-        );
-        totalAmount = Objects.requireNonNull(
-                totalAmount,
-                "Total amount"
-        );
-        initiatedAt = Objects.requireNonNull(
-                initiatedAt,
-                "Initiated instant"
-        );
-        status = Objects.requireNonNull(
-                status,
-                "Payment status"
-        );
-
-        if (status != PaymentStatus.RECEIVED) {
-            throw new IllegalArgumentException(
-                    "InitiateDebit result must be RECEIVED"
-            );
-        }
+        paymentId = Objects.requireNonNull(paymentId, "Payment ID");
+        paymentReference = Objects.requireNonNull(paymentReference, "Payment reference");
+        if (endToEndId == null || endToEndId.isBlank()) throw new IllegalArgumentException("End-to-end ID must not be blank");
+        endToEndId = endToEndId.trim();
+        totalAmount = Objects.requireNonNull(totalAmount, "Total amount");
+        initiatedAt = Objects.requireNonNull(initiatedAt, "Initiated instant");
+        status = Objects.requireNonNull(status, "InitiateDebit status");
+        confirmationChallenge = Objects.requireNonNull(confirmationChallenge, "Confirmation challenge");
+        if (status != InitiateDebitStatus.AWAITING_OTP) throw new IllegalArgumentException("InitiateDebit result must be AWAITING_OTP");
+        if (confirmationChallenge.status() != ConfirmationChallengeStatus.ACTIVE) throw new IllegalArgumentException("AWAITING_OTP requires an ACTIVE confirmation challenge");
+        if (!paymentReference.equals(confirmationChallenge.paymentReference())) throw new IllegalArgumentException("Confirmation challenge must belong to the initiated Payment");
     }
-
-    public static InitiateDebitResult accepted(
-            PaymentId paymentId,
-            PublicPaymentReference paymentReference,
-            String endToEndId,
-            Money totalAmount,
-            Instant initiatedAt
-    ) {
-        return new InitiateDebitResult(
-                paymentId,
-                paymentReference,
-                endToEndId,
-                totalAmount,
-                initiatedAt,
-                PaymentStatus.RECEIVED,
-                null
-        );
-    }
-
-    public Optional<PaymentConfirmationChallengeView>
-            optionalConfirmationChallenge() {
-        return Optional.ofNullable(confirmationChallenge);
-    }
-
-    private static String requireText(
-            String value,
-            String label
-    ) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(
-                    label + " must not be blank"
-            );
-        }
-
-        return value.trim();
+    public static InitiateDebitResult awaitingOtp(PaymentId paymentId, PublicPaymentReference paymentReference, String endToEndId, Money totalAmount, Instant initiatedAt, PaymentConfirmationView challenge) {
+        return new InitiateDebitResult(paymentId, paymentReference, endToEndId, totalAmount, initiatedAt, InitiateDebitStatus.AWAITING_OTP, challenge);
     }
 }
