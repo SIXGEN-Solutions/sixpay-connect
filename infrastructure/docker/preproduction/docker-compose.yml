@@ -93,9 +93,6 @@ services:
       SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI:-https://audit-artifacts.preproduction.local/}
       SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION:-PT1H}
       JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/opt/sixpay/trust/sixpay-cacerts -Djavax.net.ssl.trustStorePassword=changeit"
-      SIXPAY_LDAP_AUTHENTICATION_TIMEOUT: ${SIXPAY_LDAP_AUTHENTICATION_TIMEOUT:-60s}
-      SIXPAY_LDAP_CONNECT_TIMEOUT: ${SIXPAY_LDAP_CONNECT_TIMEOUT:-10s}
-      SIXPAY_LDAP_READ_TIMEOUT: ${SIXPAY_LDAP_READ_TIMEOUT:-20s}
     extra_hosts: ["host.docker.internal:host-gateway"]
     ports: ["${BACKEND_PORT:-28080}:8080"]
     volumes:
