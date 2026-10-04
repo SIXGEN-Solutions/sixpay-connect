@@ -3,18 +3,20 @@ info:
   title: SIXPAY CONNECT - Internal Security User Administration API
   version: 1.0.0
   description: |
-    Canonical contract normalized from the existing Security User Administration implementation.
-    It documents the ADMIN-only boundary for user accounts, authorization assignments,
-    local authentication, linked OIDC/LDAP identities and local password reset.
-    Authentication runtime endpoints remain outside this contract.
+    Canonical ADMIN-only contract for SIXPAY Security user administration.
+    It covers canonical user accounts, authorization assignments, local authentication,
+    linked OIDC/LDAP identities, LDAP/Active Directory user discovery and transactional
+    LDAP provisioning into SIXPAY. Authentication runtime endpoints remain outside
+    this contract. LDAP/Active Directory remains authoritative for directory identity
+    and credentials; SIXPAY remains authoritative for application roles and permissions.
   x-sixpay-contract:
     registryId: security-user-administration-api-v1
     gate: FS-2_REPOSITORY_BASELINE_CONSOLIDATION
     phaseStep: FS-2.1.3
     lifecycleStatus: ACTIVE_MVP
-    approvalStatus: PENDING_APPROVAL
-    generationPolicy: REFERENCE_ONLY
-    codeGenerationAllowed: false
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
     domain: security
     businessOwner: security
     deliveryBoundary: administration
@@ -31,6 +33,68 @@ security:
 tags:
   - name: Security User Administration
 paths:
+  /internal/api/v1/administration/directory-users/{username}:
+    get:
+      tags: [Security User Administration]
+      operationId: getDirectoryUser
+      summary: Resolve one LDAP/Active Directory user by configured login identifier
+      description: |
+        Performs an ADMIN-only, read-only directory lookup using the configured LDAP
+        service account. The lookup never asks for or receives the directory user's
+        password and never mutates SIXPAY state. The first approved search mode is an
+        exact lookup by the configured directory login identifier. Fuzzy, name, email
+        and bulk searches are outside this contract version.
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters:
+        - {$ref: '#/components/parameters/DirectoryUsername'}
+      responses:
+        '200':
+          description: Directory identity verified
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DirectoryUserView'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/DirectoryUserNotFound'}
+        '409': {$ref: '#/components/responses/DirectoryUserAmbiguous'}
+        '503': {$ref: '#/components/responses/DirectoryUnavailable'}
+  /internal/api/v1/administration/directory-users/{username}/provisioning:
+    post:
+      tags: [Security User Administration]
+      operationId: provisionDirectoryUser
+      summary: Provision one verified LDAP/Active Directory identity into SIXPAY
+      description: |
+        Creates the canonical SIXPAY user, assigns SIXPAY-owned roles and permissions,
+        links the immutable LDAP identity and records the administrative audit through
+        one server-side application boundary. The server re-resolves the directory
+        identity before mutation. The request never contains a directory password,
+        trustDomain or objectGUID. No LDAP group is converted into a SIXPAY role or
+        permission. An existing SIXPAY username is an explicit conflict and is never
+        auto-linked.
+      x-sixpay-authorization: {requiredRoles: [ADMIN]}
+      parameters:
+        - {$ref: '#/components/parameters/DirectoryUsername'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProvisionDirectoryUserRequest'}
+      responses:
+        '201':
+          description: Directory user provisioned as a canonical SIXPAY user
+          headers:
+            Location: {schema: {type: string, format: uri}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SecurityUserDetail'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/DirectoryUserNotFound'}
+        '409': {$ref: '#/components/responses/ProvisioningConflict'}
+        '422': {$ref: '#/components/responses/DirectoryUserNotProvisionable'}
+        '503': {$ref: '#/components/responses/DirectoryUnavailable'}
   /internal/api/v1/administration/users:
     get:
       tags: [Security User Administration]
@@ -264,11 +328,39 @@ components:
       in: path
       required: true
       schema: {type: string, format: uuid}
+    DirectoryUsername:
+      name: username
+      in: path
+      required: true
+      description: |
+        Exact directory login identifier using the configured LDAP/Active Directory
+        login attribute. Other search modes are intentionally outside this contract version.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 150
   responses:
-    BadRequest: {description: Validation or request error}
-    Unauthorized: {description: Authentication required}
-    Forbidden: {description: ROLE_ADMIN is required}
-    NotFound: {description: Security user or identity not found}
+    BadRequest:
+      description: Validation or request error
+    Unauthorized:
+      description: Authentication required
+    Forbidden:
+      description: ROLE_ADMIN is required
+    NotFound:
+      description: Security user or identity not found
+    DirectoryUserNotFound:
+      description: No directory user matches the requested identifier
+    DirectoryUserAmbiguous:
+      description: The configured exact directory lookup resolved more than one entry
+    DirectoryUnavailable:
+      description: The configured LDAP/Active Directory service is unavailable or the lookup cannot be completed safely
+    DirectoryUserNotProvisionable:
+      description: Directory identity exists but its account state is not provisionable
+    ProvisioningConflict:
+      description: |
+        Provisioning conflict. This includes an LDAP identity already linked to SIXPAY
+        or an existing SIXPAY username. Existing SIXPAY accounts are never auto-linked
+        by this operation.
   schemas:
     SecurityUserAccountStatus:
       type: string
@@ -276,9 +368,64 @@ components:
     AuthenticationIdentityType:
       type: string
       enum: [LOCAL, OIDC, LDAP]
+    DirectoryAccountStatus:
+      type: string
+      description: |
+        Normalized LDAP/Active Directory account state exposed to administrators.
+        Only ACTIVE is provisionable by this contract version.
+      enum:
+        - ACTIVE
+        - DISABLED
+        - LOCKED
+        - EXPIRED
+        - PASSWORD_EXPIRED
+        - PASSWORD_CHANGE_REQUIRED
     SecurityAuditEventType:
       type: string
       enum: [LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET, ACCOUNT_LOCKED, OIDC_LOGIN_SUCCESS, OIDC_LOGIN_FAILURE, IDENTITY_LINKED, IDENTITY_UNLINKED, AUTH_METHOD_ENABLED, AUTH_METHOD_DISABLED, USER_CREATED, USER_UPDATED, USER_ENABLED, USER_DISABLED, USER_DELETED]
+    DirectoryUserView:
+      type: object
+      additionalProperties: false
+      required: [username, displayName, email, accountStatus, stableSubject]
+      properties:
+        username:
+          type: string
+          maxLength: 150
+          description: Directory login identifier resolved by the configured exact lookup.
+        displayName:
+          type: [string, 'null']
+          maxLength: 255
+          description: Display name returned by the directory when available.
+        email:
+          type: [string, 'null']
+          format: email
+          maxLength: 320
+          description: Email returned by the directory when available.
+        accountStatus:
+          $ref: '#/components/schemas/DirectoryAccountStatus'
+        stableSubject:
+          type: string
+          maxLength: 255
+          readOnly: true
+          description: |
+            Immutable technical directory subject transported by the API; objectGUID
+            for the approved Active Directory profile. It is not an administrator-editable
+            field and is not accepted by the provisioning request.
+    ProvisionDirectoryUserRequest:
+      type: object
+      additionalProperties: false
+      required: [roles, permissions]
+      properties:
+        roles:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 100}
+          description: SIXPAY-owned roles selected explicitly by the administrator.
+        permissions:
+          type: array
+          uniqueItems: true
+          items: {type: string, maxLength: 150}
+          description: SIXPAY-owned permissions selected explicitly by the administrator.
     CreateSecurityUserRequest:
       type: object
       required: [username, roles, permissions, localAuthenticationEnabled]
