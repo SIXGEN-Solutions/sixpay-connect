@@ -2,13 +2,18 @@ package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.port.input.BootstrapLdapAdministratorUseCase;
+import com.sixpay.security.application.port.input.DirectoryUserLookupUseCase;
+import com.sixpay.security.application.port.input.ProvisionLdapSecurityUserUseCase;
 import com.sixpay.security.application.port.input.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.output.LdapSecurityUserProvisioningPort;
 import com.sixpay.security.application.port.output.PasswordHistoryPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.port.output.SecurityUserAdministrationPort;
 import com.sixpay.security.application.service.LdapAdministratorBootstrapService;
+import com.sixpay.security.application.service.ProvisionLdapSecurityUserService;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
+import com.sixpay.security.infrastructure.administration.JpaLdapSecurityUserProvisioningAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityAuditAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityUserAdministrationAdapter;
 import com.sixpay.security.infrastructure.administration.SecurityAuditJpaEntity;
@@ -91,6 +96,32 @@ public class SecurityAdministrationConfiguration {
         PasswordEncoder encoder = encoderProvider.getIfAvailable(() -> new BCryptPasswordEncoder(12));
         return new SecurityUserAdministrationService(
                 administrationPort, auditPort, encoder, passwordPolicy, passwordHistoryPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LdapSecurityUserProvisioningPort.class)
+    LdapSecurityUserProvisioningPort ldapSecurityUserProvisioningPort(
+            SecurityUserAccountSpringDataRepository userRepository,
+            SecurityUserIdentitySpringDataRepository identityRepository,
+            SecurityUserAdministrationUseCase administrationUseCase
+    ) {
+        return new JpaLdapSecurityUserProvisioningAdapter(
+                userRepository,
+                identityRepository,
+                administrationUseCase
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ProvisionLdapSecurityUserUseCase.class)
+    ProvisionLdapSecurityUserUseCase provisionLdapSecurityUserUseCase(
+            DirectoryUserLookupUseCase directoryLookup,
+            LdapSecurityUserProvisioningPort provisioningPort
+    ) {
+        return new ProvisionLdapSecurityUserService(
+                directoryLookup,
+                provisioningPort
         );
     }
 
