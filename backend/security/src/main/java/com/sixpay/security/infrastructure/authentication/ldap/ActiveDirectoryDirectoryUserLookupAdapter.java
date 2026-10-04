@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
-public final class ActiveDirectoryDirectoryUserLookupAdapter
+public class ActiveDirectoryDirectoryUserLookupAdapter
         implements DirectoryUserLookupPort {
 
     private static final int UF_ACCOUNTDISABLE = 0x0002;
