@@ -5,13 +5,17 @@ import com.sixpay.security.api.controller.LdapAuthenticationController;
 import com.sixpay.security.api.error.LdapAuthenticationExceptionHandler;
 import com.sixpay.security.application.port.input.AuthenticateLdapIdentityUseCase;
 import com.sixpay.security.application.port.input.AuthenticateLdapUserUseCase;
+import com.sixpay.security.application.port.input.DirectoryUserLookupUseCase;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
+import com.sixpay.security.application.port.output.DirectoryUserLookupPort;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
+import com.sixpay.security.application.service.DirectoryUserLookupService;
 import com.sixpay.security.application.service.LdapCanonicalAuthenticationService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryDirectoryUserLookupAdapter;
 import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
@@ -131,6 +135,48 @@ public class SixpaySecurityAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(ActiveDirectoryDirectoryUserLookupAdapter.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    ActiveDirectoryDirectoryUserLookupAdapter
+    activeDirectoryDirectoryUserLookupAdapter(
+            AuthenticationCapabilitiesProperties properties
+    ) {
+        return new ActiveDirectoryDirectoryUserLookupAdapter(
+                properties.ldap()
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupPort.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    DirectoryUserLookupPort directoryUserLookupPort(
+            ActiveDirectoryDirectoryUserLookupAdapter adapter
+    ) {
+        return adapter;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    DirectoryUserLookupUseCase directoryUserLookupUseCase(
+            DirectoryUserLookupPort lookupPort
+    ) {
+        return new DirectoryUserLookupService(lookupPort);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(
             AuthenticateLdapIdentityUseCase.class
     )
@@ -142,10 +188,12 @@ public class SixpaySecurityAutoConfiguration {
     )
     AuthenticateLdapIdentityUseCase
     ldapAuthenticationProvider(
-            AuthenticationCapabilitiesProperties properties
+            AuthenticationCapabilitiesProperties properties,
+            ActiveDirectoryDirectoryUserLookupAdapter directoryLookup
     ) {
         return new ActiveDirectoryLdapAuthenticationAdapter(
-                properties.ldap()
+                properties.ldap(),
+                directoryLookup
         );
     }
 
