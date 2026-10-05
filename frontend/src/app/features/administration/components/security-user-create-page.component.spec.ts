@@ -63,6 +63,13 @@ describe('SecurityUserCreatePageComponent', () => {
     fixture.detectChanges();
   });
 
+  it('supports LDAP as an explicit authentication identity type', () => {
+    const ldapType: import('../models/security-user-administration').AuthenticationIdentityType =
+      'LDAP';
+
+    expect(ldapType).toBe('LDAP');
+  });
+
   it('keeps LOCAL as the default creation workflow', () => {
     expect(fixture.nativeElement.textContent).toContain('Créer l’utilisateur Local');
     expect(fixture.nativeElement.textContent).not.toContain('Identité Active Directory trouvée');
@@ -162,6 +169,38 @@ describe('SecurityUserCreatePageComponent', () => {
     clickButton('Provisionner dans SIXPAY');
 
     expect(fixture.nativeElement.textContent).toContain('Aucun rattachement automatique');
+  });
+
+  it('renders SIXPAY roles and permissions selectors in LDAP mode', () => {
+    selectLdapMode();
+    setLdapUsername('jane.doe');
+    submitDirectoryLookup();
+
+    const roleSelect = fixture.nativeElement.querySelector(
+      'mat-select[formControlName="roles"]',
+    ) as HTMLElement | null;
+    const permissionSelect = fixture.nativeElement.querySelector(
+      'mat-select[formControlName="permissions"]',
+    ) as HTMLElement | null;
+
+    expect(roleSelect).not.toBeNull();
+    expect(permissionSelect).not.toBeNull();
+  });
+
+  it('shows a generic API failure without exposing directory internals', () => {
+    service.lookupDirectoryUser.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 500, error: {} })),
+    );
+
+    selectLdapMode();
+    setLdapUsername('jane.doe');
+    submitDirectoryLookup();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'La recherche Active Directory n’a pas pu être effectuée.',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('serviceAccount');
+    expect(fixture.nativeElement.textContent).not.toContain('objectGUID');
   });
 
   it('navigates to the canonical user detail after LDAP provisioning', () => {

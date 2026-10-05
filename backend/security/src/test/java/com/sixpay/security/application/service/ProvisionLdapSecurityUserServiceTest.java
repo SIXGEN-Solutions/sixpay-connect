@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -136,6 +137,75 @@ class ProvisionLdapSecurityUserServiceTest {
         verify(port, never()).createCanonicalLdapUser(
                 any(), any(), anySet(), anySet(), anyString()
         );
+    }
+
+    @Test
+    void passesRolesAndPermissionsToCanonicalCreationWithoutLocalCredentialMaterial() {
+        LdapSecurityUserProvisioningPort port =
+                mock(LdapSecurityUserProvisioningPort.class);
+
+        when(port.createCanonicalLdapUser(
+                any(), any(), anySet(), anySet(), anyString()
+        )).thenReturn(mock(SecurityUserDetail.class));
+
+        new ProvisionLdapSecurityUserService(
+                query -> profile(DirectoryAccountStatus.ACTIVE),
+                port
+        ).provision(
+                new ProvisionLdapSecurityUserCommand(
+                        "jane.doe",
+                        Set.of("ADMIN"),
+                        Set.of("payment.read"),
+                        "admin-subject"
+                )
+        );
+
+        var profileCaptor =
+                org.mockito.ArgumentCaptor.forClass(
+                        DirectoryUserProfile.class
+                );
+
+        verify(port).createCanonicalLdapUser(
+                any(UUID.class),
+                profileCaptor.capture(),
+                eq(Set.of("ADMIN")),
+                eq(Set.of("payment.read")),
+                eq("admin-subject")
+        );
+
+        assertThat(profileCaptor.getValue().stableSubject())
+                .isEqualTo("00112233-4455-6677-8899-aabbccddeeff");
+    }
+
+    @Test
+    void refusesEachNonProvisionableDirectoryStateBeforePersistence() {
+        for (DirectoryAccountStatus status : Set.of(
+                DirectoryAccountStatus.DISABLED,
+                DirectoryAccountStatus.LOCKED,
+                DirectoryAccountStatus.EXPIRED,
+                DirectoryAccountStatus.PASSWORD_EXPIRED,
+                DirectoryAccountStatus.PASSWORD_CHANGE_REQUIRED
+        )) {
+            LdapSecurityUserProvisioningPort port =
+                    mock(LdapSecurityUserProvisioningPort.class);
+
+            assertThatThrownBy(
+                    () -> new ProvisionLdapSecurityUserService(
+                            query -> profile(status),
+                            port
+                    ).provision(
+                            new ProvisionLdapSecurityUserCommand(
+                                    "jane.doe",
+                                    Set.of(),
+                                    Set.of(),
+                                    "admin"
+                            )
+                    )
+            )
+                    .isInstanceOf(LdapUserNotProvisionableException.class);
+
+            verifyNoInteractions(port);
+        }
     }
 
     private static DirectoryUserProfile profile(
