@@ -1,4 +1,4 @@
-package com.sixpay.security.application.exception;
+package com.sixpay.security.application.port.input;
 
 public final class LdapProvisioningConflictException extends RuntimeException {
     public enum Reason {

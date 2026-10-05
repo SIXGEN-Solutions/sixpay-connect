@@ -1,5 +1,8 @@
 package com.sixpay.security.infrastructure.authentication.ldap;
 
+import com.sixpay.security.application.port.input.DirectoryUnavailableException;
+import com.sixpay.security.application.port.input.DirectoryUserAmbiguousException;
+import com.sixpay.security.application.port.input.DirectoryUserNotFoundException;
 import com.sixpay.security.application.exception.LdapAuthenticationFailedException;
 import com.sixpay.security.application.model.DirectoryAccountStatus;
 import com.sixpay.security.application.model.DirectoryUserProfile;
@@ -75,8 +78,11 @@ public class ActiveDirectoryDirectoryUserLookupAdapter
 
             requireWithinBudget(deadlineNanos);
 
-            if (users.size() != 1) {
-                throw new LdapAuthenticationFailedException();
+            if (users.isEmpty()) {
+                throw new DirectoryUserNotFoundException();
+            }
+            if (users.size() > 1) {
+                throw new DirectoryUserAmbiguousException();
             }
 
             DirectoryUser user = users.getFirst();
@@ -89,10 +95,12 @@ public class ActiveDirectoryDirectoryUserLookupAdapter
                     user.stableSubject(),
                     accountStatus(user.accountState(), now.get())
             );
-        } catch (LdapAuthenticationFailedException exception) {
+        } catch (DirectoryUserNotFoundException
+                | DirectoryUserAmbiguousException
+                | LdapAuthenticationFailedException exception) {
             throw exception;
         } catch (Exception exception) {
-            throw new LdapAuthenticationFailedException(exception);
+            throw new DirectoryUnavailableException(exception);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.sixpay.security.infrastructure.administration;
 
-import com.sixpay.security.application.exception.LdapProvisioningConflictException;
+import com.sixpay.security.application.port.input.LdapProvisioningConflictException;
 import com.sixpay.security.application.model.DirectoryUserProfile;
 import com.sixpay.security.application.model.SecurityUserDetail;
 import com.sixpay.security.application.port.input.CreateSecurityUserCommand;

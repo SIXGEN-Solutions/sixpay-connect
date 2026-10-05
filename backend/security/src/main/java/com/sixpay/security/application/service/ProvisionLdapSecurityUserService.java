@@ -1,7 +1,7 @@
 package com.sixpay.security.application.service;
 
-import com.sixpay.security.application.exception.LdapProvisioningConflictException;
-import com.sixpay.security.application.exception.LdapUserNotProvisionableException;
+import com.sixpay.security.application.port.input.LdapProvisioningConflictException;
+import com.sixpay.security.application.port.input.LdapUserNotProvisionableException;
 import com.sixpay.security.application.model.DirectoryAccountStatus;
 import com.sixpay.security.application.model.DirectoryUserProfile;
 import com.sixpay.security.application.model.SecurityUserDetail;

@@ -1,4 +1,4 @@
-package com.sixpay.security.application.exception;
+package com.sixpay.security.application.port.input;
 
 import com.sixpay.security.application.model.DirectoryAccountStatus;
 
