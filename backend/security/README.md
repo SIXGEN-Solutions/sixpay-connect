@@ -87,17 +87,50 @@ by Partner.
 
 ## LDAP / Active Directory
 
-AUTH-2 introduces the Security-owned Active Directory authentication provider.
+Security owns LDAP/Active Directory authentication semantics, directory
+discovery, stable identity mapping and the application-level provisioning
+operation used by Administration.
 
-Its responsibility stops at:
+The authentication path is:
 
 ```text
-credentials -> AD authentication -> LDAP ExternalIdentity
+transient credentials
+    -> AD authentication
+    -> immutable LDAP identity (trust-domain + objectGUID)
+    -> canonical SIXPAY account
+    -> SIXPAY-owned roles / permissions
+    -> canonical SIXPAY session
 ```
 
-Identity linking, SIXPAY account creation, role/permission assignment and
-backend session creation are not part of AUTH-2. LDAP groups never become
-SIXPAY authorities implicitly.
+The administrative provisioning path is distinct:
 
-Runtime LDAP endpoints, DN values, trust material and service-account secrets
-are environment configuration and must not be committed.
+```text
+ADMIN exact directory lookup
+    -> read-only directory projection
+    -> explicit SIXPAY roles / permissions
+    -> server-side directory revalidation
+    -> canonical SIXPAY account with LOCAL authentication disabled
+    -> LDAP identity link
+    -> Security audit
+```
+
+Only a normalized `ACTIVE` directory account is provisionable. Existing LDAP
+identity links and existing SIXPAY usernames are explicit conflicts; an
+existing SIXPAY account is never auto-linked by the provisioning operation.
+
+For Active Directory, the durable external identity is the configured trust
+domain plus immutable `objectGUID`. Username, DN, email, display name and LDAP
+groups are not durable linking keys. LDAP groups never become SIXPAY roles or
+permissions.
+
+Administration exposes the HTTP boundary, but it consumes only Security public
+application surfaces. LDAP implementation classes, directory access and
+Security persistence remain owned by Security.
+
+All LDAP semantic properties remain under `sixpay.security.*`. Bootstrap is
+the sole physical owner of runtime `application*.yml` files and composes the
+LDAP runtime configuration under `backend/bootstrap/src/main/resources`.
+
+LDAP service-account DN/password, trust material and other secrets are supplied
+at runtime. Secret properties have no repository fallback/default value and
+must never be logged, returned by APIs or committed.

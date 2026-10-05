@@ -20,7 +20,19 @@ Security user administration:
 
 ```text
 /internal/api/v1/administration/users
+GET  /internal/api/v1/administration/directory-users/{username}
+POST /internal/api/v1/administration/directory-users/{username}/provisioning
 ```
+
+The directory lookup and provisioning endpoints are ADMIN-only delivery
+boundaries over Security-owned application capabilities. Directory lookup is
+read-only. Provisioning re-resolves the selected directory identity server-side
+before mutation, assigns only explicit SIXPAY roles/permissions and never
+derives authorities from LDAP groups.
+
+The Administration frontend uses this boundary from the canonical
+`Administration > Utilisateurs` workflow. It does not expose LDAP bind
+configuration, service-account credentials or an editable `objectGUID`.
 
 Operational queries:
 
@@ -49,7 +61,13 @@ GET /internal/api/v1/incidents/{incidentId}
 
 ## Boundaries
 
-- Security owns canonical users, identities and authorization.
+- Security owns canonical users, identities, LDAP directory discovery,
+  provisioning semantics, roles, permissions and authentication.
+- Administration owns the HTTP/UI delivery boundary and depends only on
+  reviewed Security public application surfaces.
+- Administration must not depend on Security infrastructure, LDAP/JNDI classes,
+  Security JPA entities or Security repositories.
+- LDAP groups never determine SIXPAY roles or permissions.
 - Reporting owns immutable Payment audit queries and exports.
 - Administration owns operational incidents and dynamic-setting persistence.
 - Cross-module collaboration uses application ports.

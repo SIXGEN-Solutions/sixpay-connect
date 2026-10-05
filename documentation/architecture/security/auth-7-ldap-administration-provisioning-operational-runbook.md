@@ -1,267 +1,331 @@
-# SIXPAY CONNECT — AUTH-7
-## LDAP Administration / Provisioning & Operational Runbook
+# SIXPAY CONNECT — LDAP Administration / Provisioning Operational Runbook
 
-### Status
+## Status
 
-`AUTH-7 — ADMINISTRATION WORKFLOW BASELINE PREPARED; VALIDATION REQUIRED`
+Canonical current-state operational documentation for LDAP/Active Directory
+administrative provisioning.
 
-Baseline SHA: `0da070eb22166f45cacc52d11c58ffa41d920491`.
+The authoritative implementation revision is selected at task/runtime level;
+this document does not pin a feature branch or temporary SHA.
 
-This lot does not add a frontend screen. The human AUTH-7 decision
-explicitly includes the LDAP administrative linking operation in the physical
-`security-user-administration-api-v1` contract. The contract remains
-`PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed=false`; adding this
-operation does not authorize contract-driven code generation.
-
-## Canonical workflow
-
-```text
-user exists in trusted LDAP/AD
-        ↓
-canonical SIXPAY account exists
-        ↓
-LDAP identity is linked by:
-  identityType = LDAP
-  provider = configured stable trust-domain
-  providerSubject = immutable LDAP subject (objectGUID)
-        ↓
-SIXPAY-owned roles / permissions are assigned to the canonical account
-        ↓
-LDAP credential verification succeeds
-        ↓
-linked canonical SIXPAY account is ACTIVE
-        ↓
-authentication is authorized
-```
-
-LDAP proves identity. SIXPAY owns authorization.
-
-## Administrative creation / linking procedure
-
-1. Confirm the employee/user exists in the trusted directory.
-2. Obtain the immutable directory subject configured by AUTH-1/AUTH-2
-   (`objectGUID` for the approved Active Directory profile).
-3. Create or select the canonical `SixpayUserAccount`.
-4. Assign only approved SIXPAY roles/permissions to that canonical account.
-5. Link the LDAP external identity to the account using:
-   - identity type `LDAP`;
-   - configured LDAP trust-domain;
-   - stable immutable subject.
-6. Verify the account is `ACTIVE`.
-7. Validate authentication using the LDAP provider.
-
-Never link automatically by email, username, display name, DN or LDAP group.
-
-## DN / username changes
-
-DN and username are directory attributes, not the durable identity key.
-
-If the user's DN or login name changes while the LDAP stable subject and trust
-domain remain unchanged, the existing SIXPAY identity link remains valid.
-No relink is required.
-
-A change of trust-domain or stable subject is a distinct external identity and
-must follow the reviewed unlink/relink procedure.
-
-## Unlink / relink
-
-Unlinking removes only the selected external identity link. It does not delete
-the canonical SIXPAY account and does not alter its roles/permissions.
-
-Relinking requires the same explicit administrative workflow as first linking.
-The unique `(identity_type, provider, provider_subject)` constraint prevents one
-LDAP identity from being linked to multiple SIXPAY accounts.
-
-LOCAL identities are not processed by the external unlink path.
-
-## SIXPAY account disablement
-
-`SixpayUserAccount.status = DISABLED` is an immediate SIXPAY authorization
-barrier. Even if LDAP credentials remain valid, canonical identity resolution
-must reject the disabled SIXPAY account.
-
-Re-enabling the account does not recreate or infer LDAP links; existing durable
-links remain governed by their persisted identity record.
-
-## User disabled or removed in LDAP
-
-LDAP account state is checked by the LDAP authentication adapter before
-canonical SIXPAY identity resolution.
-
-Disabled, locked, expired or password-expired directory accounts fail closed.
-A removed user also fails LDAP lookup/authentication and therefore cannot create
-a SIXPAY session.
-
-SIXPAY does not automatically delete the canonical account or identity link
-when the directory user disappears. Administrative cleanup is explicit and
-audited so that transient directory outages are never mistaken for deletion.
-
-## Linking audit
-
-Administrative link/unlink operations produce append-only Security audit
-events:
-
-- `IDENTITY_LINKED`;
-- `IDENTITY_UNLINKED`.
-
-The audit records the administrative actor, target SIXPAY user, provider/trust
-domain where applicable, operation type and UTC timestamp.
-
-Passwords, LDAP bind credentials, DN values, tokens and directory secrets must
-not be written to audit detail or application logs.
-
-## LDAP outage runbook
-
-When LDAP is unavailable:
-
-1. confirm the configured LDAP capability is enabled;
-2. inspect health/technical metrics without exposing credentials or user data;
-3. verify DNS/network/TLS reachability to configured LDAPS endpoints;
-4. distinguish certificate failure, timeout and directory unavailability;
-5. do not bypass LDAP authentication or auto-link another identity;
-6. do not convert LDAP groups into SIXPAY authorities;
-7. restore the directory/TLS/network dependency;
-8. re-test with a controlled account;
-9. record the operational incident according to the existing incident process.
-
-LOCAL or OIDC may continue only when they are independently enabled and
-authorized for the affected user. LDAP failure never silently changes a user's
-authentication method.
-
-## Health and observability
-
-LDAP observability must expose dependency state, not identity data.
-
-Allowed signals include:
-
-- provider enabled/disabled;
-- endpoint availability as an aggregate status;
-- connect/read/overall timeout failures;
-- TLS/certificate handshake failures;
-- authentication success/failure counters with bounded labels;
-- failover attempt/success counters;
-- latency distributions without usernames, DNs, subjects or account IDs.
-
-Forbidden observability data include:
-
-- password/service-account secret;
-- user DN;
-- objectGUID/provider subject;
-- username/email as metric labels;
-- LDAP search result payloads;
-- session/token material.
-
-A health endpoint must never expose LDAP credentials, full endpoint secrets or
-directory user data.
-
-## Contract boundary
-
-The internal Security User Administration physical contract now documents the
-explicit ADMIN-only LDAP linking operation:
-
-```text
-POST /internal/api/v1/administration/users/{userId}/identities/ldap
-DELETE /internal/api/v1/administration/users/{userId}/identities/{identityId}
-```
-
-The POST accepts only the durable LDAP link coordinates:
-
-```json
-{
-  "trustDomain": "regionale-ldap",
-  "stableSubject": "<immutable objectGUID>"
-}
-```
-
-DN, username, email and LDAP groups are deliberately excluded from the durable
-link payload.
-
-The contract remains:
+The registered administration contract is
+`security-user-administration-api-v1` with:
 
 ```text
 lifecycleStatus: ACTIVE_MVP
-approvalStatus: PENDING_APPROVAL
-generationPolicy: REFERENCE_ONLY
-codeGenerationAllowed: false
+approvalStatus: APPROVED
+generationPolicy: ACTIVE
+codeGenerationAllowed: true
 ```
 
-The human AUTH-7 decision authorizes this contract amendment and matching
-implementation only. It does not authorize contract-driven generation.
+The contract registry remains authoritative for these lifecycle and generation
+attributes.
 
-## Database
+## Ownership
 
-No schema evolution is required.
+Security owns:
 
-`security_user_identities` already supports `LDAP` and enforces:
+- LDAP/Active Directory authentication semantics;
+- exact directory-user discovery;
+- directory account-state normalization;
+- stable external identity mapping;
+- canonical SIXPAY users and LDAP identity links;
+- SIXPAY roles and permissions;
+- provisioning transaction and Security audit.
+
+Administration owns the ADMIN-only HTTP and frontend delivery boundary. It
+uses reviewed Security public application surfaces and does not access Security
+infrastructure, LDAP/JNDI implementation classes, JPA entities or repositories.
+
+Bootstrap is the sole physical owner of runtime `application*.yml`
+configuration. Security remains the semantic owner of `sixpay.security.*`.
+
+## Canonical administrative provisioning flow
 
 ```text
-UNIQUE(identity_type, provider, provider_subject)
-UNIQUE(user_id, identity_type, provider)
+ADMIN authenticated in SIXPAY
+        |
+Administration > Utilisateurs
+        |
+choose LDAP / Active Directory
+        |
+exact lookup by configured directory login identifier
+        |
+read-only directory projection
+(username, displayName, email, accountStatus)
+        |
+administrator selects SIXPAY roles / permissions
+        |
+POST provisioning
+        |
+Security re-resolves directory identity
+        |
+require directory accountStatus = ACTIVE
+        |
+check immutable LDAP identity conflict
+        |
+check canonical SIXPAY username conflict
+        |
+create canonical SIXPAY account
+LOCAL authentication disabled
+        |
+link (LDAP, trust-domain, objectGUID)
+        |
+persist SIXPAY roles / permissions
+        |
+emit Security audit
 ```
 
-The durable identity remains `(LDAP, trust-domain, stable subject)`.
+The frontend does not submit LDAP credentials, trust-domain or objectGUID in
+the provisioning request. The server obtains and validates directory identity
+data itself.
 
-## HTTP administration closure
+An existing LDAP identity is `ALREADY_PROVISIONED`. An existing SIXPAY
+username for a different/unlinked directory identity is `USERNAME_CONFLICT`.
+Provisioning never auto-links an existing canonical account.
 
-An ADMIN can now invoke the LDAP link workflow through the Administration
-boundary. The controller delegates to the existing Security-owned
-`linkLdapIdentity(...)` use case. Unlink remains generic for OIDC and LDAP.
+## Directory discovery
 
-No LDAP credential verification is performed by the administration endpoint:
-credential verification remains the responsibility of the LDAP authentication
-provider at login time. Linking is an explicit administrative association of a
-trusted stable directory identity with a canonical SIXPAY account.
+The approved discovery mode is an exact lookup by the configured LDAP login
+identifier.
 
-## LDAP runtime login boundary
+The Administration projection contains:
 
-LDAP credential authentication is exposed by the Security runtime boundary:
+- username;
+- display name when available;
+- email when available;
+- normalized directory account status;
+- immutable stable subject as read-only API transport data.
+
+For the approved Active Directory profile, the stable subject is `objectGUID`.
+The Administration UI does not expose it as an editable value.
+
+Fuzzy search, bulk synchronization and LDAP-group-driven provisioning are not
+part of this contract version.
+
+## Directory account states
+
+Normalized states are:
 
 ```text
-POST /api/v1/auth/login/ldap
+ACTIVE
+DISABLED
+LOCKED
+EXPIRED
+PASSWORD_EXPIRED
+PASSWORD_CHANGE_REQUIRED
 ```
 
-The request contains only the transient directory credentials required to
-authenticate:
+Only `ACTIVE` is provisionable.
+
+Disabled, locked, expired or password-constrained directory identities fail
+closed. A directory outage must never be interpreted as user deletion or as
+authorization to bypass LDAP.
+
+## Identity and authorization invariant
+
+LDAP/Active Directory proves directory identity. SIXPAY owns application
+authorization.
+
+The durable Active Directory link is:
+
+```text
+identityType = LDAP
+provider     = configured trust-domain
+subject      = immutable objectGUID
+```
+
+DN, username, email, display name and LDAP groups are not durable identity-link
+keys.
+
+**LDAP groups are never converted implicitly into SIXPAY roles or
+permissions.** Roles and permissions are selected and persisted through
+SIXPAY-owned administration.
+
+## Login after provisioning
+
+After provisioning, LDAP login follows the Security authentication runtime:
+
+```text
+LDAP credentials
+    -> directory authentication
+    -> stable LDAP identity
+    -> linked canonical SIXPAY account
+    -> account ACTIVE check
+    -> SIXPAY roles / permissions
+    -> canonical SIXPAY session
+```
+
+LDAP credentials remain transient and directory-owned. SIXPAY does not persist
+the LDAP user's password.
+
+`GET /api/v1/auth/me` remains the frontend session source of truth after
+authentication.
+
+## HTTP administration boundary
+
+Read-only discovery:
+
+```text
+GET /internal/api/v1/administration/directory-users/{username}
+```
+
+Provisioning:
+
+```text
+POST /internal/api/v1/administration/directory-users/{username}/provisioning
+```
+
+The provisioning body contains only SIXPAY-owned authorization assignments:
 
 ```json
 {
-  "username": "<directory-login>",
-  "password": "<transient-password>"
+  "roles": ["<approved SIXPAY role>"],
+  "permissions": ["<approved SIXPAY permission>"]
 }
 ```
 
-The password is never persisted by SIXPAY. Successful LDAP authentication
-resolves the pre-linked durable LDAP identity to the canonical
-`SixpayUserAccount`, loads SIXPAY-owned roles/permissions and establishes the
-same backend session used by LOCAL and OIDC.
+The request does not accept an LDAP password, service-account credential,
+trust-domain or objectGUID.
 
-`GET /api/v1/auth/me` remains the single frontend session source of truth.
-Logout remains `POST /api/v1/auth/logout`.
+Existing generic identity administration remains available through the
+registered user-administration contract; it does not change the canonical
+directory-provisioning flow above.
 
-The LDAP runtime endpoint is intentionally outside the
-`security-user-administration-api-v1` contract, consistent with that contract's
-existing scope constraint. No administration-contract status or generation
-policy is changed by this runtime boundary.
+## Runtime configuration
+
+LDAP semantic configuration remains under:
+
+```text
+sixpay.security.authentication.ldap.*
+```
+
+Physical runtime YAML remains under Bootstrap, including:
+
+```text
+backend/bootstrap/src/main/resources/config/security/ldap-common.yml
+```
+
+The LDAP service-account credentials are runtime injected:
+
+```text
+SIXPAY_LDAP_SERVICE_ACCOUNT_DN
+SIXPAY_LDAP_SERVICE_ACCOUNT_PASSWORD
+```
+
+These secret properties must not have repository default/fallback values.
+Secrets must not be committed, returned by APIs, written to audit detail or
+logged.
+
+Non-secret configuration may have reviewed defaults where already defined by
+the runtime baseline. No separate YAML profile matrix is introduced for LDAP
+provider combinations.
+
+## LDAP outage runbook
+
+When directory discovery or authentication is unavailable:
+
+1. confirm the LDAP capability is enabled for the runtime;
+2. inspect dependency health and technical metrics without identity data;
+3. verify DNS/network/TLS reachability to configured LDAPS endpoints;
+4. distinguish timeout, TLS/certificate and provider-unavailable failures;
+5. do not bypass LDAP authentication;
+6. do not auto-link another identity;
+7. do not derive roles from LDAP groups;
+8. restore the directory/network/trust dependency;
+9. re-test with a controlled non-production account;
+10. record the operational incident through the existing incident process.
+
+Other independently enabled authentication providers may continue according to
+their own configuration; LDAP failure does not silently change a user's
+authentication method.
+
+## Observability and sensitive data
+
+Allowed operational signals include aggregate provider availability, bounded
+timeout/TLS/failover metrics and authentication success/failure counters with
+non-sensitive labels.
+
+Do not expose in logs, metrics, audit detail, health responses or frontend
+messages:
+
+- LDAP passwords or service-account secrets;
+- bind configuration secrets;
+- user DN;
+- objectGUID/stable subject;
+- LDAP search-result payloads;
+- session or token material.
+
+## Persistence and concurrency
+
+Security owns the canonical persistence. The existing schema protects the
+identity and username invariants with unique constraints, including the stable
+external identity tuple and normalized canonical username.
+
+A concurrent provisioning attempt must therefore result in one canonical
+account/link and a deterministic business conflict for the competing request;
+it must never create two canonical users for the same LDAP identity.
+
+No schema evolution is introduced by this documentation lot.
 
 ## Validation
 
-Targeted:
+Run targeted validations before global gates.
+
+Backend Security:
 
 ```bash
 cd backend
-mvn -pl security -Dtest=SecurityUserAdministrationServiceTest,LdapCanonicalAuthenticationServiceTest,ActiveDirectoryLdapAuthenticationAdapterTest test
-mvn -pl security -am test
-mvn -pl administration,bootstrap -am test
+mvn -pl security -am -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+Administration:
+
+```bash
+cd backend
+mvn -pl administration -am -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+Frontend Administration:
+
+```bash
+cd frontend
+npx ng test --watch=false --include="src/app/features/administration/components/security-user-create-page.component.spec.ts"
+npx ng test --watch=false --include="src/app/features/administration/services/security-user-administration.service.spec.ts"
+npm run lint
+```
+
+Configuration/documentation gates:
+
+```bash
+py scripts/verify_configuration_consolidation.py
+py scripts/verify_spring_configuration_hygiene.py
+py scripts/verify_documentation_contract_references.py
+py scripts/verify_documentation_final.py
+```
+
+Global gates:
+
+```bash
+cd backend
 mvn verify
 ```
 
-Repository root:
+```bash
+cd frontend
+npm run verify:quality
+```
+
+Repository-level validation:
 
 ```bash
 py scripts/verify_master_prompt_input_manifest.py
+py scripts/verify_master_engineering_prompt.py
 py scripts/verify_repository_hygiene.py
-py scripts/verify_documentation_final.py
 py scripts/verify_baseline.py
+git diff --check
+git status --short
 ```
 
-No validation result is claimed until commands finish with exit code `0`.
+A validation is reported as passed only after its command exits successfully.
+Docker-dependent full-test gates remain subject to the local environment.
