@@ -5,12 +5,24 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   CreateSecurityUserRequest,
+  DirectoryUserView,
+  ProvisionDirectoryUserRequest,
   SecurityUserDetail,
   UpdateSecurityUserRequest,
 } from '../models/security-user-administration';
 import { SecurityUserAdministrationService } from './security-user-administration.service';
 
 const API = '/internal/api/v1/administration/users';
+const DIRECTORY_API = '/internal/api/v1/administration/directory-users';
+
+const DIRECTORY_USER: DirectoryUserView = {
+  username: 'jane.doe',
+  displayName: 'Jane Doe',
+  email: 'jane.doe@example.com',
+  accountStatus: 'ACTIVE',
+  stableSubject: '9a3d04ff-8a64-4de2-bd35-bcd7730b8e8f',
+};
+
 const USER: SecurityUserDetail = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   username: 'admin',
@@ -50,6 +62,43 @@ describe('SecurityUserAdministrationService', () => {
     expect(call.request.method).toBe('POST');
     expect(call.request.body).toEqual(request);
     call.flush(USER);
+    http.verify();
+  });
+
+  it('looks up an exact directory user without exposing directory credentials', () => {
+    service
+      .lookupDirectoryUser('jane.doe')
+      .subscribe((directoryUser) => expect(directoryUser).toEqual(DIRECTORY_USER));
+
+    const call = http.expectOne(`${DIRECTORY_API}/jane.doe`);
+    expect(call.request.method).toBe('GET');
+    call.flush(DIRECTORY_USER);
+    http.verify();
+  });
+
+  it('provisions a directory user with SIXPAY roles and permissions only', () => {
+    const request: ProvisionDirectoryUserRequest = {
+      roles: ['OPS'],
+      permissions: ['payment.read'],
+    };
+
+    service.provisionLdapUser('jane.doe', request).subscribe((user) => expect(user).toEqual(USER));
+
+    const call = http.expectOne(`${DIRECTORY_API}/jane.doe/provisioning`);
+    expect(call.request.method).toBe('POST');
+    expect(call.request.body).toEqual(request);
+    expect(call.request.body).not.toHaveProperty('stableSubject');
+    expect(call.request.body).not.toHaveProperty('trustDomain');
+    expect(call.request.body).not.toHaveProperty('password');
+    call.flush(USER);
+    http.verify();
+  });
+
+  it('URL-encodes the directory login identifier', () => {
+    service.lookupDirectoryUser('john doe').subscribe();
+    const call = http.expectOne(`${DIRECTORY_API}/john%20doe`);
+    expect(call.request.method).toBe('GET');
+    call.flush(DIRECTORY_USER);
     http.verify();
   });
 

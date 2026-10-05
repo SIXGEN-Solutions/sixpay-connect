@@ -1,5 +1,5 @@
 export type SecurityUserStatus = 'ACTIVE' | 'DISABLED';
-export type AuthenticationIdentityType = 'LOCAL' | 'OIDC';
+export type AuthenticationIdentityType = 'LOCAL' | 'OIDC' | 'LDAP';
 
 export interface SecurityUserSummary {
   readonly id: string;
@@ -57,3 +57,21 @@ export interface UpdateSecurityUserRequest {
   readonly roles: readonly string[];
   readonly permissions: readonly string[];
 }
+
+export type DirectoryAccountStatus =
+  'ACTIVE' | 'DISABLED' | 'LOCKED' | 'EXPIRED' | 'PASSWORD_EXPIRED' | 'PASSWORD_CHANGE_REQUIRED';
+
+export interface DirectoryUserView {
+  readonly username: string;
+  readonly displayName: string | null;
+  readonly email: string | null;
+  readonly accountStatus: DirectoryAccountStatus;
+  readonly stableSubject: string;
+}
+
+export interface ProvisionDirectoryUserRequest {
+  readonly roles: readonly string[];
+  readonly permissions: readonly string[];
+}
+
+export type LdapProvisioningConflictReason = 'ALREADY_PROVISIONED' | 'USERNAME_CONFLICT';
