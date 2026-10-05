@@ -61,11 +61,13 @@ public final class AmplitudeCustomerVerificationMapper {
                         null,
                         null
                 ),
-                new AmplitudeAccountVerificationSubject(
-                        query.bankingAccountAccessReference().value(),
-                        null,
-                        null
-                ),
+                query.bankingAccountAccessReference() == null
+                        ? null
+                        : new AmplitudeAccountVerificationSubject(
+                                query.bankingAccountAccessReference().value(),
+                                null,
+                                null
+                        ),
                 REQUIRED_KYC_FIELDS,
                 query.requestedAt()
         );

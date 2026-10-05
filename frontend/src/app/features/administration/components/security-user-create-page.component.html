@@ -1,73 +1,189 @@
 <sp-toolbar
-  title="Créer un utilisateur SIXPAY"
-  description="Créez le compte canonique puis choisissez ses rôles, ses permissions et son accès Local initial."
+  title="Ajouter un utilisateur SIXPAY"
+  description="Créez un utilisateur Local ou provisionnez une identité LDAP / Active Directory dans le compte canonique SIXPAY."
 />
 
-<sp-card title="Compte et autorisations">
-  <form class="sp-security-user-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <div class="sp-security-user-form__grid">
+<sp-card title="Mode de création">
+  <mat-button-toggle-group
+    aria-label="Mode de création de l’utilisateur"
+    [value]="mode()"
+    (change)="selectMode($event.value)"
+  >
+    <mat-button-toggle value="LOCAL">Local</mat-button-toggle>
+    <mat-button-toggle value="LDAP">LDAP / Active Directory</mat-button-toggle>
+  </mat-button-toggle-group>
+</sp-card>
+
+@if (mode() === 'LOCAL') {
+  <sp-card title="Compte Local et autorisations">
+    <form
+      class="sp-security-user-form"
+      [formGroup]="localForm"
+      (ngSubmit)="submitLocal()"
+      novalidate
+    >
+      <div class="sp-security-user-form__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nom utilisateur</mat-label>
+          <input matInput formControlName="username" maxlength="150" autocomplete="username" />
+          <sp-form-error errorId="username-error" [message]="localFieldError('username')" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Courriel</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            maxlength="320"
+            autocomplete="email"
+          />
+          <sp-form-error errorId="email-error" [message]="localFieldError('email')" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="sp-security-user-form__wide">
+          <mat-label>Rôles SIXPAY</mat-label>
+          <mat-select formControlName="roles" multiple>
+            @for (role of availableRoles; track role) {
+              <mat-option [value]="role">{{ role }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="sp-security-user-form__wide">
+          <mat-label>Permissions</mat-label>
+          <mat-select formControlName="permissions" multiple>
+            @for (permission of availablePermissions; track permission) {
+              <mat-option [value]="permission">{{ permission }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-checkbox formControlName="localAuthenticationEnabled">
+        Activer l’authentification Local à la création
+      </mat-checkbox>
+
+      @if (localForm.controls.localAuthenticationEnabled.value) {
+        <mat-form-field appearance="outline">
+          <mat-label>Mot de passe initial</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="initialPassword"
+            autocomplete="new-password"
+            maxlength="200"
+          />
+          <mat-hint>12 caractères minimum.</mat-hint>
+          <sp-form-error
+            errorId="initialPassword-error"
+            [message]="localFieldError('initialPassword')"
+          />
+        </mat-form-field>
+      }
+
+      <div class="sp-security-user-form__actions">
+        <sp-button type="submit" icon="add" [disabled]="submitting()">
+          {{ submitting() ? 'Création…' : 'Créer l’utilisateur Local' }}
+        </sp-button>
+        <a routerLink="/administration/users">Annuler</a>
+      </div>
+    </form>
+  </sp-card>
+} @else {
+  <sp-card title="Rechercher dans Active Directory">
+    <form
+      class="sp-security-user-form"
+      [formGroup]="ldapForm"
+      (ngSubmit)="lookupDirectoryUser()"
+      novalidate
+    >
       <mat-form-field appearance="outline">
-        <mat-label>Nom utilisateur</mat-label>
-        <input matInput formControlName="username" maxlength="150" autocomplete="username" />
-        <sp-form-error errorId="username-error" [message]="fieldError('username')" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Courriel</mat-label>
-        <input matInput type="email" formControlName="email" maxlength="320" autocomplete="email" />
-        <sp-form-error errorId="email-error" [message]="fieldError('email')" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="sp-security-user-form__wide">
-        <mat-label>Rôles SIXPAY</mat-label>
-        <mat-select formControlName="roles" multiple>
-          @for (role of availableRoles; track role) {
-            <mat-option [value]="role">
-              {{ role }}
-            </mat-option>
-          }
-        </mat-select>
-        <mat-hint> Sélectionnez un ou plusieurs rôles reconnus par SIXPAY. </mat-hint>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="sp-security-user-form__wide">
-        <mat-label>Permissions</mat-label>
-        <mat-select formControlName="permissions" multiple>
-          @for (permission of availablePermissions; track permission) {
-            <mat-option [value]="permission">
-              {{ permission }}
-            </mat-option>
-          }
-        </mat-select>
-        <mat-hint> Les permissions sont stockées sans le préfixe Spring SCOPE_. </mat-hint>
-      </mat-form-field>
-    </div>
-
-    <mat-checkbox formControlName="localAuthenticationEnabled">
-      Activer l’authentification Local à la création
-    </mat-checkbox>
-
-    @if (form.controls.localAuthenticationEnabled.value) {
-      <mat-form-field appearance="outline">
-        <mat-label>Mot de passe initial</mat-label>
+        <mat-label>Identifiant Active Directory</mat-label>
         <input
           matInput
-          type="password"
-          formControlName="initialPassword"
-          autocomplete="new-password"
-          maxlength="200"
+          formControlName="username"
+          maxlength="150"
+          autocomplete="off"
+          [readonly]="ldapState() === 'loading' || submitting()"
         />
-        <mat-hint>12 caractères minimum.</mat-hint>
-        <sp-form-error errorId="initialPassword-error" [message]="fieldError('initialPassword')" />
+        <mat-hint>Recherche exacte selon l’attribut de connexion LDAP configuré.</mat-hint>
+        <sp-form-error errorId="ldap-username-error" [message]="ldapUsernameError()" />
       </mat-form-field>
-    }
 
-    <div class="sp-security-user-form__actions">
-      <sp-button type="submit" icon="add" [disabled]="submitting()">
-        {{ submitting() ? 'Création…' : 'Créer l’utilisateur' }}
-      </sp-button>
+      <div class="sp-security-user-form__actions">
+        <sp-button type="submit" [disabled]="ldapState() === 'loading' || submitting()">
+          {{ ldapState() === 'loading' ? 'Recherche…' : 'Rechercher' }}
+        </sp-button>
+        <a routerLink="/administration/users">Annuler</a>
+      </div>
+    </form>
+  </sp-card>
 
-      <a routerLink="/administration/users"> Annuler </a>
-    </div>
-  </form>
-</sp-card>
+  @if (directoryUser(); as directory) {
+    <sp-card title="Identité Active Directory trouvée">
+      <dl class="sp-security-user-form__identity">
+        <div>
+          <dt>Nom utilisateur</dt>
+          <dd>{{ directory.username }}</dd>
+        </div>
+        <div>
+          <dt>Nom affiché</dt>
+          <dd>{{ directory.displayName ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Courriel</dt>
+          <dd>{{ directory.email ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>État AD</dt>
+          <dd>{{ directory.accountStatus }}</dd>
+        </div>
+      </dl>
+
+      <p class="sp-security-user-form__hint">
+        Les attributs Active Directory affichés sont en lecture seule. Les groupes LDAP ne
+        déterminent jamais les rôles ou permissions SIXPAY.
+      </p>
+    </sp-card>
+
+    <sp-card title="Autorisations SIXPAY">
+      <div class="sp-security-user-form" [formGroup]="ldapForm">
+        <mat-form-field appearance="outline">
+          <mat-label>Rôles SIXPAY</mat-label>
+          <mat-select formControlName="roles" multiple>
+            @for (role of availableRoles; track role) {
+              <mat-option [value]="role">{{ role }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Permissions</mat-label>
+          <mat-select formControlName="permissions" multiple>
+            @for (permission of availablePermissions; track permission) {
+              <mat-option [value]="permission">{{ permission }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="sp-security-user-form__actions">
+          <sp-button
+            type="button"
+            icon="add"
+            [disabled]="!canProvisionLdap()"
+            (click)="provisionLdapUser()"
+          >
+            {{ submitting() ? 'Provisioning…' : 'Provisionner dans SIXPAY' }}
+          </sp-button>
+        </div>
+      </div>
+    </sp-card>
+  }
+
+  @if (ldapMessage(); as message) {
+    <sp-card title="État du provisioning">
+      <p role="status" aria-live="polite">{{ message }}</p>
+    </sp-card>
+  }
+}

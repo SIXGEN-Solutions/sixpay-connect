@@ -5,6 +5,7 @@ import com.sixpay.common.context.CorrelationId;
 import java.util.Set;
 
 public record CreatePartnerCommand(
+        String partnerIdentifier,
         String legalName,
         String technicalContactName,
         String technicalContactEmail,

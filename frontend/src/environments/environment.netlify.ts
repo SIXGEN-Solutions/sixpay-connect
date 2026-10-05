@@ -14,6 +14,9 @@ export const environment = {
     oidc: {
       enabled: false,
     },
+    ldap: {
+      enabled: false,
+    },
     standaloneUser: {
       subject: 'sixpay-netlify-demo',
       roles: ['ADMIN'],

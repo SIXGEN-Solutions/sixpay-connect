@@ -102,15 +102,11 @@ public final class RestAmplitudePaymentConfirmationClient implements AmplitudePa
             Object body
     ) {
         try {
-            String payload = restClient.post()
-                    .uri(path)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .header(
-                            HttpHeaders.AUTHORIZATION,
-                            "Bearer " + tokenProvider.accessToken()
-                    )
-                    .header(
+            RestClient.RequestBodySpec httpRequest = restClient.post()
+                    .uri(path).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON);
+            String token = tokenProvider.accessToken();
+            if (token != null && !token.isBlank()) httpRequest.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+            String payload = httpRequest.header(
                             properties.contract().correlationHeader(),
                             context.correlationId().value()
                     )
@@ -152,8 +148,10 @@ public final class RestAmplitudePaymentConfirmationClient implements AmplitudePa
             RestClient.RequestHeadersSpec<?> spec,
             BankingRequestContext context
     ) {
-        return spec
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenProvider.accessToken())
+        String token = tokenProvider.accessToken();
+        RestClient.RequestHeadersSpec<?> request = spec;
+        if (token != null && !token.isBlank()) request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        return request
                 .header(properties.contract().correlationHeader(), context.correlationId().value())
                 .header(properties.contract().institutionHeader(), context.financialInstitutionCode().value());
     }

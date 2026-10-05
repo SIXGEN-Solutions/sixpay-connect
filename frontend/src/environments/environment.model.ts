@@ -11,6 +11,9 @@ export interface AuthenticationEnvironment {
     readonly clientId?: string;
     readonly scope?: string;
   };
+  readonly ldap: {
+    readonly enabled: boolean;
+  };
   readonly standaloneUser?: {
     readonly subject: string;
     readonly roles: readonly string[];

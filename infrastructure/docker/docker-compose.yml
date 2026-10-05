@@ -1,32 +1,70 @@
 name: sixpay-connect
 
 services:
-
   postgres:
-    image: postgres:16.3
-    container_name: sixpay-postgres
-
+    image: postgres:15
+    container_name: staging-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-sixpay}
-      POSTGRES_USER: ${POSTGRES_USER:-sixpay}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_dev}
-
+      POSTGRES_DB: ${POSTGRES_DB:-sixpaydb}
+      POSTGRES_USER: ${POSTGRES_USER:-sixpay_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_password}
     ports:
-      - "${POSTGRES_PORT:-15432}:15432"
-
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - sixpay-postgres-data:/var/lib/postgresql/data
-
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-sixpay} -d ${POSTGRES_DB:-sixpay}"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sixpay_user} -d ${POSTGRES_DB:-sixpaydb}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
 
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: sixpay-connect-backend:local
+    container_name: sixpay-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: standalone,integration
+
+      # Use the SIXPAY runtime properties defined by application-standalone.yml.
+      SIXPAY_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-sixpaydb}?currentSchema=sixpay
+      SIXPAY_DB_USERNAME: ${POSTGRES_USER:-sixpay_user}
+      SIXPAY_DB_PASSWORD: ${POSTGRES_PASSWORD:-sixpay_password}
+
+      # Flyway owns schema creation/evolution; Hibernate validates only.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
+      # Explicit for readability; the sandbox profile also enables this capability.
+      SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED: "false"
+
+      SERVER_PORT: "8080"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    image: sixpay-connect-frontend:local
+    container_name: sixpay-frontend
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

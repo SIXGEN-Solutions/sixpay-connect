@@ -253,7 +253,7 @@ def main():
         "verify_feature_flag_registry.py",
         "verify_configuration_final.py",
         "npm run verify:contract-consolidation",
-        "npm run verify:sixpay",
+        "npm run verify:quality",
         "mvn verify",
         "mvn -Pfull-tests clean verify",
     ]

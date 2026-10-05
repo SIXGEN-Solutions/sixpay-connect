@@ -6,7 +6,6 @@ import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
 import com.sixpay.payment.domain.model.CallbackEndpoint;
-import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
 import com.sixpay.payment.domain.model.FinancialInstitutionCode;
@@ -79,10 +78,7 @@ public final class PaymentInitiationPreparationAdapter
         UUID generatedId = identifierGenerator.generate();
         PaymentId paymentId = new PaymentId(generatedId);
 
-        FinancialInstitutionCode institution =
-                FinancialInstitutionCode.of(
-                        institutionCode(command.debtorRib())
-                );
+        FinancialInstitutionCode institution = null;
 
         Money total = Money.of(
                 command.totalAmount(),
@@ -110,7 +106,7 @@ public final class PaymentInitiationPreparationAdapter
                         command.correlationId()
                 ),
                 institution,
-                debtorReference(command, institution),
+                null,
                 total,
                 allocations,
                 EvidenceFingerprint.of(
@@ -140,24 +136,6 @@ public final class PaymentInitiationPreparationAdapter
      * Binding the hash to the partner prevents equal RIBs received from two
      * partners from sharing the same integration token.
      */
-    private static DebtorAccountReference debtorReference(
-            InitiateDebitCommand command,
-            FinancialInstitutionCode institution
-    ) {
-        String hash = sha256(
-                command.partnerLoginName()
-                        + "|"
-                        + command.debtorRib()
-        );
-
-        return new DebtorAccountReference(
-                institution,
-                "acct:v1:" + hash,
-                maskedRib(command.debtorRib()),
-                "v1:" + hash
-        );
-    }
-
     private static List<TreasuryAllocation> allocations(
             InitiateDebitCommand command
     ) {
@@ -217,28 +195,6 @@ public final class PaymentInitiationPreparationAdapter
                 : command.partnerLoginName()
                 + ":"
                 + command.applicationId();
-    }
-
-    private static String institutionCode(String rib) {
-        int separator = rib.indexOf('-');
-
-        if (separator <= 0) {
-            throw new IllegalArgumentException(
-                    "Debtor RIB must start with an institution code"
-            );
-        }
-
-        return rib.substring(0, separator)
-                .toUpperCase(Locale.ROOT);
-    }
-
-    private static String maskedRib(String rib) {
-        String compact = rib.replace("-", "");
-        String suffix = compact.length() <= 4
-                ? compact
-                : compact.substring(compact.length() - 4);
-
-        return "RIB-****-" + suffix;
     }
 
     private static PublicPaymentReference publicReference(

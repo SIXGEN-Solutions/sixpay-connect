@@ -33,8 +33,8 @@ class PaymentInitiationContextTest {
     }
 
     @Test
-    void applicationIdIsOptional() {
-        PaymentInitiationContext context =
+    void applicationIdIsRequired() {
+        assertThatThrownBy(() ->
                 new PaymentInitiationContext(
                         "TRESOR_PAY",
                         null,
@@ -45,9 +45,10 @@ class PaymentInitiationContextTest {
                         CallbackEndpoint.of(
                                 "https://tresorpay.cm/callback"
                         )
-                );
-
-        assertThat(context.optionalApplicationId()).isEmpty();
+                )
+        )
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Application ID");
     }
 
     @Test

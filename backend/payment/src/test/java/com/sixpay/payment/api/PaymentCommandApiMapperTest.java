@@ -46,7 +46,7 @@ class PaymentCommandApiMapperTest {
     @Test
     void omitsUnavailableBankChallengeData() {
         InitiateDebitResult result =
-                InitiateDebitResult.accepted(
+                InitiateDebitResult.awaitingOtp(
                         new PaymentId(UUID.randomUUID()),
                         PublicPaymentReference.of(
                                 "PAY-1234567890ABCDEFGHJKMNPQRS"
@@ -58,13 +58,23 @@ class PaymentCommandApiMapperTest {
                         ),
                         Instant.parse(
                                 "2026-08-03T10:30:00Z"
+                        ),
+                        new com.sixpay.payment.application.view.PaymentConfirmationView(
+                                PublicPaymentReference.of("PAY-1234567890ABCDEFGHJKMNPQRS"),
+                                com.sixpay.payment.domain.model.ConfirmationChallengeStatus.ACTIVE,
+                                com.sixpay.payment.domain.model.ConfirmationBusinessCode.CHALLENGE_ACTIVE,
+                                null,
+                                Instant.parse("2026-08-03T10:30:01Z"),
+                                Instant.parse("2026-08-03T10:35:01Z"),
+                                null,
+                                false
                         )
                 );
 
         var response = mapper.toResponse(result);
 
-        assertThat(response.status().name())
-                .isEqualTo("RECEIVED");
+        assertThat(response.status())
+                .isEqualTo("AWAITING_OTP");
         assertThat(response.bankOperationId()).isNull();
         assertThat(response.fees()).isNull();
         assertThat(response.transactionQrCode()).isNull();

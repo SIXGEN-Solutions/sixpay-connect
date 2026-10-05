@@ -1,11 +1,19 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
+import com.sixpay.security.application.port.input.BootstrapLdapAdministratorUseCase;
+import com.sixpay.security.application.port.input.DirectoryUserLookupUseCase;
+import com.sixpay.security.application.port.input.ProvisionLdapSecurityUserUseCase;
 import com.sixpay.security.application.port.input.SecurityUserAdministrationUseCase;
+import com.sixpay.security.application.port.output.LdapSecurityUserProvisioningPort;
 import com.sixpay.security.application.port.output.PasswordHistoryPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.port.output.SecurityUserAdministrationPort;
+import com.sixpay.security.application.service.LdapAdministratorBootstrapService;
+import com.sixpay.security.application.service.ProvisionLdapSecurityUserService;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
+import com.sixpay.security.infrastructure.administration.JpaLdapSecurityUserProvisioningAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityAuditAdapter;
 import com.sixpay.security.infrastructure.administration.JpaSecurityUserAdministrationAdapter;
 import com.sixpay.security.infrastructure.administration.SecurityAuditJpaEntity;
@@ -15,6 +23,7 @@ import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAud
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountJpaEntity;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserAccountSpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserIdentityJpaEntity;
+import com.sixpay.security.infrastructure.authentication.identity.JpaLinkedIdentityAdapter;
 import com.sixpay.security.infrastructure.authentication.identity.SecurityUserIdentitySpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.persistence.JpaPasswordHistoryAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserJpaEntity;
@@ -22,6 +31,8 @@ import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthen
 import com.sixpay.security.infrastructure.authentication.persistence.PasswordHistoryJpaEntity;
 import com.sixpay.security.infrastructure.authentication.persistence.PasswordHistorySpringDataRepository;
 import org.springframework.beans.factory.ObjectProvider;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentityJpaEntity;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -36,12 +47,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EntityScan(basePackageClasses = {
         SecurityUserAccountJpaEntity.class, SecurityUserIdentityJpaEntity.class,
         LocalAuthenticationUserJpaEntity.class, PasswordHistoryJpaEntity.class,
-        AuthenticationAuditJpaEntity.class, SecurityAuditJpaEntity.class
+        AuthenticationAuditJpaEntity.class, SecurityAuditJpaEntity.class,
+        PartnerMachineIdentityJpaEntity.class
 })
 @EnableJpaRepositories(basePackageClasses = {
         SecurityUserAccountSpringDataRepository.class, SecurityUserIdentitySpringDataRepository.class,
         LocalAuthenticationUserSpringDataRepository.class, PasswordHistorySpringDataRepository.class,
-        AuthenticationAuditSpringDataRepository.class, SecurityAuditSpringDataRepository.class
+        AuthenticationAuditSpringDataRepository.class, SecurityAuditSpringDataRepository.class,
+        PartnerMachineIdentitySpringDataRepository.class
 })
 public class SecurityAdministrationConfiguration {
     @Bean @ConditionalOnMissingBean(SecurityAuditPort.class)
@@ -83,6 +96,52 @@ public class SecurityAdministrationConfiguration {
         PasswordEncoder encoder = encoderProvider.getIfAvailable(() -> new BCryptPasswordEncoder(12));
         return new SecurityUserAdministrationService(
                 administrationPort, auditPort, encoder, passwordPolicy, passwordHistoryPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LdapSecurityUserProvisioningPort.class)
+    LdapSecurityUserProvisioningPort ldapSecurityUserProvisioningPort(
+            SecurityUserAccountSpringDataRepository userRepository,
+            SecurityUserIdentitySpringDataRepository identityRepository,
+            SecurityUserAdministrationUseCase administrationUseCase
+    ) {
+        return new JpaLdapSecurityUserProvisioningAdapter(
+                userRepository,
+                identityRepository,
+                administrationUseCase
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ProvisionLdapSecurityUserUseCase.class)
+    ProvisionLdapSecurityUserUseCase provisionLdapSecurityUserUseCase(
+            DirectoryUserLookupUseCase directoryLookup,
+            LdapSecurityUserProvisioningPort provisioningPort
+    ) {
+        return new ProvisionLdapSecurityUserService(
+                directoryLookup,
+                provisioningPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(FindLinkedIdentityPort.class)
+    FindLinkedIdentityPort findLinkedIdentityPort(
+            SecurityUserIdentitySpringDataRepository identityRepository
+    ) {
+        return new JpaLinkedIdentityAdapter(identityRepository);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(BootstrapLdapAdministratorUseCase.class)
+    BootstrapLdapAdministratorUseCase bootstrapLdapAdministratorUseCase(
+            SecurityUserAdministrationPort administrationPort,
+            SecurityUserAdministrationUseCase administrationUseCase
+    ) {
+        return new LdapAdministratorBootstrapService(
+                administrationPort,
+                administrationUseCase
         );
     }
 }

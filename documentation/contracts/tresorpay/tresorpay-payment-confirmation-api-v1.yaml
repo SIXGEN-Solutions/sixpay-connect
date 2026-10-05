@@ -8,14 +8,15 @@ info:
     Inbound contract used by TRESOR PAY to interact with the customer
     confirmation phase of an already initiated SIXPAY Payment.
 
-    Payment initiation, banking customer/account/KYC verification,
-    confirmation challenge creation, OTP verification, funds control and posting
-    are distinct ordered steps.
+    Payment initiation owns the initial confirmation-challenge creation.
+    The Payment request is durably persisted first, banking customer/account/KYC
+    verification must complete with outcome VERIFIED, and SIXPAY then creates
+    and persists the initial bank-owned challenge before `initiateDebit` returns
+    `AWAITING_OTP`.
 
-    The Payment request is durably persisted first. Banking customer/account/KYC
-    verification must then complete with outcome VERIFIED before any confirmation
-    challenge may be created or sent. A REJECTED or INDETERMINATE banking
-    verification outcome must not produce an OTP challenge.
+    TRESOR PAY therefore does not create the initial challenge through this API.
+    This API retains only read/recovery of the current challenge, synchronous
+    OTP verification and resend/replacement.
 
     La Regionale remains authoritative for OTP generation, storage, delivery
     and verification. SIXPAY never persists the OTP value.
@@ -49,7 +50,6 @@ info:
         - "OAUTH2_BEARER_JWT"
         - "MUTUAL_TLS"
       requiredScopes:
-        createPaymentConfirmationChallenge: "payment.confirmation.create"
         verifyPaymentConfirmationChallenge: "payment.confirmation.verify"
         resendPaymentConfirmationChallenge: "payment.confirmation.resend"
         getPaymentConfirmationChallenge: "payment.confirmation.read"
@@ -87,45 +87,6 @@ tags:
 
 paths:
   /v1/payments/{paymentReference}/confirmation-challenge:
-    post:
-      tags: [Payment Confirmation]
-      operationId: createPaymentConfirmationChallenge
-      summary: Create and send a confirmation challenge
-      description: |
-        Requests creation and delivery of a confirmation challenge for an
-        existing Payment whose banking customer/account/KYC verification has
-        already completed with outcome VERIFIED. TRESOR PAY does not resend
-        customer, account, amount, currency, phone number or email data in this
-        operation. SIXPAY derives the bound context from the Payment and its
-        verified banking evidence; La Regionale chooses the active contact and
-        delivery channel. If the prerequisite banking verification is absent,
-        REJECTED or INDETERMINATE, SIXPAY must not request OTP creation or
-        delivery.
-      parameters:
-        - $ref: '#/components/parameters/PaymentReference'
-        - $ref: '#/components/parameters/IdempotencyKey'
-        - $ref: '#/components/parameters/CorrelationId'
-      responses:
-        '200':
-          description: Stable functional create/send result.
-          headers:
-            X-Correlation-ID:
-              $ref: '#/components/headers/CorrelationId'
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaymentConfirmationChallengeResponse'
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-        '429': { $ref: '#/components/responses/TooManyRequests' }
-        '500': { $ref: '#/components/responses/InternalServerError' }
-        '503': { $ref: '#/components/responses/ServiceUnavailable' }
-
     get:
       tags: [Payment Confirmation]
       operationId: getPaymentConfirmationChallenge
@@ -263,7 +224,7 @@ components:
       in: header
       required: true
       description: |
-        Opaque identifier for one logical create, verify or resend operation.
+        Opaque identifier for one logical verify or resend operation.
         Same key plus same logical request returns the original result. Same key
         plus a different logical request is a conflict. The value must not carry
         OTP, customer, bank-account or credential data.

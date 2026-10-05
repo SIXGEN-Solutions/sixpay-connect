@@ -1,5 +1,6 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.input.PartnerMachineIdentityQueryUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
@@ -74,6 +75,9 @@ class SecurityAuthorizationBoundaryIT {
 
     @MockitoBean
     private SecurityAuditPort securityAuditPort;
+
+    @MockitoBean
+    private PartnerMachineIdentityQueryUseCase partnerMachineIdentityQueryUseCase;
 
     @Test
     void anonymousRequestIsRejectedAtAuthenticationBoundary()

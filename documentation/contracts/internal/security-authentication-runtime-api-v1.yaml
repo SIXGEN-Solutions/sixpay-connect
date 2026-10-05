@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Security Authentication Runtime API
+  version: 1.0.0
+  description: |
+    Canonical contract for the already implemented SIXPAY human-authentication runtime.
+    LOCAL, OIDC and LDAP converge on the same canonical SIXPAY principal and backend
+    session representation. User administration and identity linking remain outside.
+  x-sixpay-contract:
+    registryId: security-authentication-runtime-api-v1
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: security
+    businessOwner: security
+    deliveryBoundary: security
+    securityOwner: security
+    capability: SECURITY_AUTHENTICATION_RUNTIME
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: RESTRICTED
+    sourceSystem: SIXPAY
+    systemOfRecord: SIXPAY
+
+tags:
+  - name: Security Authentication Runtime
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Security Authentication Runtime]
+      operationId: loginLocal
+      summary: Establish the canonical SIXPAY session with LOCAL credentials
+      description: Available only when LOCAL authentication is enabled.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LocalLoginRequest'}
+      responses:
+        '200':
+          description: Canonical SIXPAY session established
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthenticationSessionResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/login/ldap:
+    post:
+      tags: [Security Authentication Runtime]
+      operationId: loginLdap
+      summary: Establish the canonical SIXPAY session with LDAP credentials
+      description: |
+        Available only when LDAP authentication is enabled. LDAP proves the external
+        identity; SIXPAY resolves the durable LDAP identity link and SIXPAY-owned
+        roles/permissions before establishing the canonical session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LdapLoginRequest'}
+      responses:
+        '200':
+          description: Canonical SIXPAY session established
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthenticationSessionResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/session/oidc:
+    post:
+      tags: [Security Authentication Runtime]
+      operationId: establishOidcSession
+      summary: Convert an authenticated OIDC bearer principal into the canonical SIXPAY session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Canonical SIXPAY session established
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthenticationSessionResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/me:
+    get:
+      tags: [Security Authentication Runtime]
+      operationId: getCurrentAuthenticationSession
+      summary: Read the canonical authenticated SIXPAY session
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current canonical SIXPAY session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthenticationSessionResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Security Authentication Runtime]
+      operationId: logout
+      summary: Terminate the canonical SIXPAY session
+      security:
+        - sessionCookie: []
+      parameters:
+        - {$ref: '#/components/parameters/XsrfToken'}
+      responses:
+        '204': {description: Session terminated}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/v1/auth/password/change:
+    post:
+      tags: [Security Authentication Runtime]
+      operationId: changeLocalPassword
+      summary: Change the current user's LOCAL password
+      description: |
+        Requires an active LOCAL session. OIDC and LDAP password lifecycle remains
+        provider-owned. Administrative password reset remains outside this contract.
+      security:
+        - sessionCookie: []
+      parameters:
+        - {$ref: '#/components/parameters/XsrfToken'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LocalPasswordChangeRequest'}
+      responses:
+        '204': {description: LOCAL password changed and the same session promoted}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {description: Current session is not a LOCAL authentication session}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  parameters:
+    XsrfToken:
+      name: X-XSRF-TOKEN
+      in: header
+      required: true
+      description: CSRF token corresponding to the SIXPAY XSRF-TOKEN cookie.
+      schema: {type: string, minLength: 1}
+  responses:
+    BadRequest: {description: Request validation failed}
+    Unauthorized: {description: Authentication failed or an authenticated SIXPAY principal is required}
+    Forbidden: {description: Security or CSRF policy rejected the request}
+  schemas:
+    AuthenticationMethod:
+      type: string
+      enum: [LOCAL, OIDC, LDAP]
+    LocalLoginRequest:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username: {type: string, minLength: 1}
+        password: {type: string, minLength: 1, writeOnly: true}
+    LdapLoginRequest:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username: {type: string, minLength: 1}
+        password: {type: string, minLength: 1, writeOnly: true}
+    LocalPasswordChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: {type: string, minLength: 1, writeOnly: true}
+        newPassword:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Effective password policy is enforced by the configurable Security password policy.
+    AuthenticationCapabilitiesResponse:
+      type: object
+      additionalProperties: false
+      required: [localEnabled, oidcEnabled, ldapEnabled]
+      properties:
+        localEnabled: {type: boolean}
+        oidcEnabled: {type: boolean}
+        ldapEnabled: {type: boolean}
+    AuthenticationSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [authenticated, subject, username, roles, permissions, authenticationMethod, passwordChangeRequired, capabilities]
+      properties:
+        authenticated: {type: boolean, const: true}
+        subject: {type: string}
+        username: {type: string}
+        roles:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        permissions:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        authenticationMethod: {$ref: '#/components/schemas/AuthenticationMethod'}
+        passwordChangeRequired:
+          type: boolean
+          description: LOCAL-only restriction; false for OIDC and LDAP.
+        capabilities: {$ref: '#/components/schemas/AuthenticationCapabilitiesResponse'}

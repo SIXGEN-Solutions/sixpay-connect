@@ -5,6 +5,7 @@ import com.sixpay.security.application.exception.SixpayUserDisabledException;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
 import com.sixpay.security.domain.authentication.ExternalIdentity;
@@ -82,6 +83,15 @@ class OidcAuthenticationProviderIT {
 
     @MockitoBean
     private SecurityAuditPort securityAuditPort;
+
+    /*
+     * This focused Security context deliberately disables JPA repository
+     * auto-configuration. Partner machine identity persistence is outside the
+     * test scope, so its repository boundary is supplied as a test double.
+     */
+    @MockitoBean
+    private PartnerMachineIdentitySpringDataRepository
+            partnerMachineIdentityRepository;
 
     @Test
     void authenticatesBearerUsingOnlySixpayOwnedAuthorization()

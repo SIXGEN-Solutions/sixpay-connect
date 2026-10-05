@@ -10,6 +10,7 @@ import com.sixpay.partner.application.command.PartnerDecision;
 import com.sixpay.partner.application.command.ReactivatePartnerCommand;
 import com.sixpay.partner.application.command.SuspendPartnerCommand;
 import com.sixpay.partner.application.exception.PartnerNotFoundException;
+import com.sixpay.partner.application.port.input.PartnerIdentityQueryUseCase;
 import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
 import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
 import com.sixpay.partner.application.port.output.PartnerAuditRecord;
@@ -21,6 +22,7 @@ import com.sixpay.partner.application.port.output.PartnerThresholdHistory;
 import com.sixpay.partner.application.port.output.PartnerThresholdHistoryRecord;
 import com.sixpay.partner.application.view.PartnerAuditPage;
 import com.sixpay.partner.application.view.PartnerAuditView;
+import com.sixpay.partner.application.view.PartnerIdentityView;
 import com.sixpay.partner.application.view.PartnerView;
 import com.sixpay.partner.domain.event.PartnerCreated;
 import com.sixpay.partner.domain.event.PartnerDomainEvent;
@@ -28,6 +30,7 @@ import com.sixpay.partner.domain.event.PartnerStatusChanged;
 import com.sixpay.partner.domain.event.PartnerThresholdConfigured;
 import com.sixpay.partner.domain.model.AuthorizedPerimeter;
 import com.sixpay.partner.domain.model.Partner;
+import com.sixpay.partner.domain.model.PartnerIdentifier;
 import com.sixpay.partner.domain.model.PartnerId;
 import com.sixpay.partner.domain.model.PartnerName;
 import com.sixpay.partner.domain.model.TechnicalContact;
@@ -48,7 +51,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class PartnerApplicationService implements PartnerManagementUseCase, PartnerQueryUseCase {
+public class PartnerApplicationService implements PartnerManagementUseCase, PartnerQueryUseCase, PartnerIdentityQueryUseCase {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(PartnerApplicationService.class);
@@ -93,6 +96,7 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
         var now = timeProvider.now();
         var partner = Partner.create(
                 new PartnerId(identifierGenerator.generate()),
+                new PartnerIdentifier(command.partnerIdentifier()),
                 new PartnerName(command.legalName()),
                 new TechnicalContact(command.technicalContactName(), command.technicalContactEmail()),
                 AuthorizedPerimeter.of(command.authorizedTransactionTypes()),
@@ -263,6 +267,13 @@ public class PartnerApplicationService implements PartnerManagementUseCase, Part
                 ? 0
                 : ((result.totalElements() - 1) / size) + 1;
         return new PartnerAuditPage(items, page, size, result.totalElements(), totalPages);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<PartnerIdentityView> findByPartnerIdentifier(String partnerIdentifier) {
+        return partnerRepository.findByPartnerIdentifier(new PartnerIdentifier(partnerIdentifier))
+                .map(PartnerIdentityView::from);
     }
 
     private Partner load(PartnerId partnerId) {

@@ -17,5 +17,8 @@ export const environment = {
       clientId: 'sixpay-connect-frontend',
       scope: 'openid profile email roles offline_access',
     },
+    ldap: {
+      enabled: false,
+    },
   },
 } satisfies AppEnvironment;
