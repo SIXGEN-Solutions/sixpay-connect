@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public final class JpaLdapSecurityUserProvisioningAdapter
+public class JpaLdapSecurityUserProvisioningAdapter
         implements LdapSecurityUserProvisioningPort {
 
     private final SecurityUserAccountSpringDataRepository userRepository;

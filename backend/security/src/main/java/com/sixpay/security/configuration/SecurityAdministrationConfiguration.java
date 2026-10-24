@@ -11,6 +11,7 @@ import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.port.output.SecurityUserAdministrationPort;
 import com.sixpay.security.application.service.LdapAdministratorBootstrapService;
 import com.sixpay.security.application.service.ProvisionLdapSecurityUserService;
+import com.sixpay.security.application.service.DisabledLdapSecurityUserProvisioningService;
 import com.sixpay.security.application.service.SecurityUserAdministrationService;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.administration.JpaLdapSecurityUserProvisioningAdapter;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentityJpaEntity;
 import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -115,6 +117,11 @@ public class SecurityAdministrationConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ProvisionLdapSecurityUserUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
     ProvisionLdapSecurityUserUseCase provisionLdapSecurityUserUseCase(
             DirectoryUserLookupUseCase directoryLookup,
             LdapSecurityUserProvisioningPort provisioningPort
@@ -123,6 +130,18 @@ public class SecurityAdministrationConfiguration {
                 directoryLookup,
                 provisioningPort
         );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ProvisionLdapSecurityUserUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "false",
+            matchIfMissing = true
+    )
+    ProvisionLdapSecurityUserUseCase disabledProvisionLdapSecurityUserUseCase() {
+        return new DisabledLdapSecurityUserProvisioningService();
     }
 
     @Bean

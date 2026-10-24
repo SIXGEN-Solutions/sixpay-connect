@@ -12,6 +12,7 @@ import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
 import com.sixpay.security.application.service.DirectoryUserLookupService;
+import com.sixpay.security.application.service.DisabledDirectoryUserLookupService;
 import com.sixpay.security.application.service.LdapCanonicalAuthenticationService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
@@ -174,6 +175,18 @@ public class SixpaySecurityAutoConfiguration {
             DirectoryUserLookupPort lookupPort
     ) {
         return new DirectoryUserLookupService(lookupPort);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "false",
+            matchIfMissing = true
+    )
+    DirectoryUserLookupUseCase disabledDirectoryUserLookupUseCase() {
+        return new DisabledDirectoryUserLookupService();
     }
 
     @Bean
