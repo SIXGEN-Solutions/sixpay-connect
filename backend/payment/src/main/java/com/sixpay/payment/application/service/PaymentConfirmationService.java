@@ -1,4 +1,5 @@
 package com.sixpay.payment.application.service;
+
 import com.sixpay.payment.application.command.CreatePaymentConfirmationCommand;
 import com.sixpay.payment.application.command.ResendPaymentConfirmationCommand;
 import com.sixpay.payment.application.command.VerifyPaymentConfirmationCommand;
@@ -23,9 +24,13 @@ import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import com.sixpay.common.time.TimeProvider;
+
 import java.time.Instant;
 import java.util.Objects;
-/** Application orchestration for Payment-confirmation operations. */
+
+/**
+ * Application orchestration for Payment-confirmation operations.
+ */
 @Service
 @ConditionalOnBean({
         PaymentConfirmationGateway.class,
@@ -40,6 +45,7 @@ public class PaymentConfirmationService
     private final PaymentAuthorizationService authorizationService;
     private final PaymentConfirmationGateway confirmationGateway;
     private final PaymentConfirmationIdempotencyPort idempotencyPort;
+
     public PaymentConfirmationService(
             PaymentLookupPort paymentLookupPort,
             PaymentAuthorizationService authorizationService,
@@ -63,6 +69,42 @@ public class PaymentConfirmationService
                 "Payment confirmation idempotency port"
         );
     }
+
+    private static void requirePendingConfirmation(Payment payment) {
+        if (payment.status() != PaymentStatus.PENDING_CONFIRMATION) {
+            throw new IllegalStateException(
+                    "Payment confirmation operation requires "
+                            + "PENDING_CONFIRMATION"
+            );
+        }
+    }
+
+    private static ConfirmationChallenge requireCurrentChallenge(
+            Payment payment
+    ) {
+        return payment.toState()
+                .confirmationChallenge()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Payment has no current confirmation challenge"
+                ));
+    }
+
+    private static BankingRequestContext bankingContext(
+            Payment payment,
+            com.sixpay.common.context.CorrelationId correlationId
+    ) {
+        return new BankingRequestContext(
+                correlationId,
+                payment.toState().financialInstitutionCode()
+        );
+    }
+
+    private static BankingIdempotencyKey bankingIdempotencyKey(
+            String value
+    ) {
+        return new BankingIdempotencyKey(value);
+    }
+
     @Override
     public PaymentConfirmationView create(
             CreatePaymentConfirmationCommand command
@@ -154,6 +196,7 @@ public class PaymentConfirmationService
                 idempotencyResult.replayed()
         );
     }
+
     @Override
     public PaymentConfirmationView read(
             ReadPaymentConfirmationQuery query
@@ -179,6 +222,7 @@ public class PaymentConfirmationService
                 result
         );
     }
+
     @Override
     public PaymentConfirmationView verify(
             VerifyPaymentConfirmationCommand command
@@ -221,30 +265,30 @@ public class PaymentConfirmationService
 
             if (result.status()
                     == com.sixpay.payment.domain.model
-                            .ConfirmationChallengeStatus.VERIFIED) {
+                    .ConfirmationChallengeStatus.VERIFIED) {
                 java.time.Instant verifiedAt =
-                    result.optionalVerifiedAt().orElseThrow(
-                            () -> new IllegalStateException(
-                                    "VERIFIED confirmation requires verifiedAt"
-                            )
-                    );
+                        result.optionalVerifiedAt().orElseThrow(
+                                () -> new IllegalStateException(
+                                        "VERIFIED confirmation requires verifiedAt"
+                                )
+                        );
 
-            ConfirmationChallenge verifiedChallenge =
-                    new ConfirmationChallenge(
-                            result.challengeReference(),
-                            challenge.binding(),
-                            result.status(),
-                            result.businessCode(),
-                            result.deliveryChannel(),
-                            result.sentAt(),
-                            result.expiresAt(),
-                            verifiedAt
-                    );
+                ConfirmationChallenge verifiedChallenge =
+                        new ConfirmationChallenge(
+                                result.challengeReference(),
+                                challenge.binding(),
+                                result.status(),
+                                result.businessCode(),
+                                result.deliveryChannel(),
+                                result.sentAt(),
+                                result.expiresAt(),
+                                verifiedAt
+                        );
 
-            authorizationService.startAuthorization(
-                    payment.id(),
-                    verifiedChallenge
-            );
+                authorizationService.startAuthorization(
+                        payment.id(),
+                        verifiedChallenge
+                );
             }
             return PaymentConfirmationView.from(
                     payment.publicPaymentReference(),
@@ -255,6 +299,7 @@ public class PaymentConfirmationService
             java.util.Arrays.fill(otp, '\0');
         }
     }
+
     @Override
     public PaymentConfirmationView resend(
             ResendPaymentConfirmationCommand command
@@ -315,6 +360,7 @@ public class PaymentConfirmationService
                 idempotencyResult.replayed()
         );
     }
+
     private Payment requirePayment(
             PublicPaymentReference paymentReference
     ) {
@@ -323,36 +369,5 @@ public class PaymentConfirmationService
                 .orElseThrow(() -> new IllegalStateException(
                         "Payment not found: " + paymentReference
                 ));
-    }
-    private static void requirePendingConfirmation(Payment payment) {
-        if (payment.status() != PaymentStatus.PENDING_CONFIRMATION) {
-            throw new IllegalStateException(
-                    "Payment confirmation operation requires "
-                            + "PENDING_CONFIRMATION"
-            );
-        }
-    }
-    private static ConfirmationChallenge requireCurrentChallenge(
-            Payment payment
-    ) {
-        return payment.toState()
-                .confirmationChallenge()
-                .orElseThrow(() -> new IllegalStateException(
-                        "Payment has no current confirmation challenge"
-                ));
-    }
-    private static BankingRequestContext bankingContext(
-            Payment payment,
-            com.sixpay.common.context.CorrelationId correlationId
-    ) {
-        return new BankingRequestContext(
-                correlationId,
-                payment.toState().financialInstitutionCode()
-        );
-    }
-    private static BankingIdempotencyKey bankingIdempotencyKey(
-            String value
-    ) {
-        return new BankingIdempotencyKey(value);
     }
 }

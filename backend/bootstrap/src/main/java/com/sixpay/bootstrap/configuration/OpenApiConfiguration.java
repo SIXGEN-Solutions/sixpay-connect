@@ -108,6 +108,8 @@ public class OpenApiConfiguration {
                         "/internal/api/v1/administration/integrations",
                         "/internal/api/v1/administration/dynamic-settings",
                         "/internal/api/v1/administration/dynamic-settings/**",
+                        "/internal/api/v1/administration/directory-users",
+                        "/internal/api/v1/administration/directory-users/**",
                         "/internal/api/v1/incidents",
                         "/internal/api/v1/incidents/**"
                 )

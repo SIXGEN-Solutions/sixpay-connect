@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.logging.Logger;
+
 /**
  * HTTP entry point for partner-initiated debit orders.
  *
@@ -33,6 +35,8 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "mutualTLS")
 @SecurityRequirement(name = "oauth2")
 public class PaymentCommandController {
+
+    Logger log = Logger.getLogger(PaymentCommandController.class.getName());
 
     private final PaymentInitiationUseCase initiationUseCase;
     private final PaymentCommandApiMapper mapper;
