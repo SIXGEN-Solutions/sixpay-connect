@@ -10,6 +10,14 @@ import org.springframework.context.annotation.Configuration;
 public class PaymentCustomerIntegrationConfiguration {
 
     @Bean
+    @ConditionalOnBean(com.sixpay.customer.management.application.port.input.ResolveCustomerSubscriptionUseCase.class)
+    com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort
+    paymentCustomerSubscriptionPort(
+            com.sixpay.customer.management.application.port.input.ResolveCustomerSubscriptionUseCase resolver) {
+        return new PaymentCustomerSubscriptionModuleAdapter(resolver);
+    }
+
+    @Bean
     @ConditionalOnBean(VerifyCustomerUseCase.class)
     CustomerVerificationPort customerVerificationPort(
             VerifyCustomerUseCase verifyCustomerUseCase
