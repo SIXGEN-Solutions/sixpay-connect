@@ -113,6 +113,26 @@ class PaymentInitiationCanonicalizerTest {
     }
 
     @Test
+    void clientReferenceChangesCanonicalBusinessRequest() {
+        InitiateDebitCommand original = command(List.of(beneficiary(
+                "10005-00001-TRESDGI-97", "600000")));
+        InitiateDebitCommand changed = new InitiateDebitCommand(
+                original.partnerLoginName(),
+                original.authenticatedPartnerLoginName(),
+                original.resolvedPartnerIdentifier(),
+                "DIFFERENT-CLIENT-REFERENCE",
+                original.applicationId(), original.endToEndId(),
+                original.totalAmount(), original.currency(),
+                original.debtorRib(), original.debtorName(),
+                original.claimType(), original.taxpayerIdentifier(),
+                original.requestedExecutionAt(), original.beneficiaries(),
+                original.callbackUrl(), original.idempotencyKey(),
+                original.correlationId());
+        assertThat(canonicalizer.canonicalize(changed))
+                .isNotEqualTo(canonicalizer.canonicalize(original));
+    }
+
+    @Test
     void canonicalRequestNeverContainsIdempotencyKey() {
         InitiateDebitCommand command =
                 command(

@@ -67,6 +67,12 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
         if (received.status() != PaymentStatus.RECEIVED)
             throw new IllegalStateException("InitiateDebit must first durably persist Payment in RECEIVED");
         failIfDeadlineExpired(received.paymentId(), prepared.receivedAt());
+        if (prepared.intent().initiationContext().taxpayerIdentifier() == null) {
+            throw new IllegalArgumentException(
+                    "NUI is optional in the HTTP contract, but customer verification "
+                            + "requires a banking-resolvable NUI for this MVP"
+            );
+        }
         PaymentWorkflowResult pending = coordinator.mutate(received.paymentId(), payment -> {
             if (payment.status() == PaymentStatus.RECEIVED) payment.startBankingVerification(timeProvider.now());
         });

@@ -33,11 +33,35 @@ class PaymentInitiationContextTest {
     }
 
     @Test
-    void applicationIdIsRequired() {
-        assertThatThrownBy(() ->
+    void applicationIdIsOptional() {
+        PaymentInitiationContext context =
                 new PaymentInitiationContext(
                         "TRESOR_PAY",
                         null,
+                        "Société ABC SARL",
+                        ClaimType.IM7,
+                        "100200300",
+                        Instant.parse("2026-08-03T10:30:00Z"),
+                        CallbackEndpoint.of(
+                                "https://tresorpay.cm/callback"
+                        )
+                );
+
+        assertThat(context.applicationId()).isNull();
+
+        assertThat(context.optionalApplicationId())
+                .isEmpty();
+
+        assertThat(context.claimType())
+                .isEqualTo(ClaimType.IM7);
+    }
+
+    @Test
+    void rejectsInvalidApplicationIdWhenProvided() {
+        assertThatThrownBy(() ->
+                new PaymentInitiationContext(
+                        "TRESOR_PAY",
+                        "INVALID APP ID!",
                         "Société ABC SARL",
                         ClaimType.IM7,
                         "100200300",

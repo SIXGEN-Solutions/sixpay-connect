@@ -29,6 +29,7 @@ class PaymentCommandApiMapperTest {
         var command = mapper.toCommand(
                 request,
                 "TRESOR_PAY",
+                "TP_APP_001",
                 "IDEMPOTENCY-001",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"
@@ -39,6 +40,10 @@ class PaymentCommandApiMapperTest {
                 .isEqualTo("TRESOR_PAY");
         assertThat(command.authenticatedPartnerLoginName())
                 .isEqualTo("TRESOR_PAY");
+        assertThat(command.clientReference())
+                .isEqualTo("CLIENT-2026-00045678");
+        assertThat(command.resolvedPartnerIdentifier())
+                .isEqualTo("TP_APP_001");
         assertThat(command.beneficiaries())
                 .hasSize(1);
     }
@@ -80,10 +85,30 @@ class PaymentCommandApiMapperTest {
         assertThat(response.transactionQrCode()).isNull();
     }
 
+    @Test
+    void acceptsOptionalPartnerDataAtApiBoundary() {
+        InitiateDebitRequest minimal = new InitiateDebitRequest(
+                null, null, "CLIENT-123", "PAY-123",
+                new BigDecimal("100.00"), null, null, null,
+                ClaimType.AVI, null, null, null,
+                "https://partner.example/callback"
+        );
+        var command = mapper.toCommand(
+                minimal, "machine-subject", "PARTNER_DEMO",
+                "IDEMPOTENCY-002",
+                CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        );
+        assertThat(command.applicationId()).isNull();
+        assertThat(command.taxpayerIdentifier()).isNull();
+        assertThat(command.requestedExecutionAt()).isNull();
+        assertThat(command.currency()).isEqualTo("XAF");
+    }
+
     private static InitiateDebitRequest request() {
         return new InitiateDebitRequest(
                 "TRESOR_PAY",
                 "TP_APP_001",
+                "CLIENT-2026-00045678",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
                 "XAF",

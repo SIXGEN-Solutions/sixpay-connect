@@ -30,24 +30,15 @@ public record PaymentInitiationContext(
         partnerLoginName = normalizeOptionalIdentifier(
                 partnerLoginName
         );
-        applicationId = requireIdentifier(
-                applicationId,
-                "Application ID"
-        );
+        applicationId = normalizeOptionalIdentifier(applicationId);
         debtorName = normalizeOptionalText(
                 debtorName,
                 200,
                 "Debtor name"
         );
         claimType = Objects.requireNonNull(claimType, "Claim type");
-        taxpayerIdentifier = requireText(
-                taxpayerIdentifier,
-                64,
-                "Taxpayer identifier"
-        );
-        requestedExecutionAt = Objects.requireNonNull(
-                requestedExecutionAt,
-                "Requested execution instant"
+        taxpayerIdentifier = normalizeOptionalText(
+                taxpayerIdentifier, 64, "Taxpayer identifier"
         );
         callbackEndpoint = Objects.requireNonNull(
                 callbackEndpoint,

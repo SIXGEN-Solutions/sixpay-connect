@@ -30,10 +30,13 @@ public final class PartnerIdentityAlignmentService {
                 authenticatedSubject,
                 "authenticatedSubject"
         );
-        String declared = requireText(
-                declaredPartnerIdentifier,
-                "declaredPartnerIdentifier"
-        );
+        String declared = declaredPartnerIdentifier == null
+                || declaredPartnerIdentifier.isBlank()
+                ? null
+                : requireText(
+                        declaredPartnerIdentifier,
+                        "declaredPartnerIdentifier"
+                );
 
         ResolvedPartnerIdentity authenticated =
                 resolutionPort.resolveAuthenticatedPartner(subject)
@@ -53,6 +56,10 @@ public final class PartnerIdentityAlignmentService {
                     "Authenticated Partner is not authorized "
                             + "for new transactions"
             );
+        }
+
+        if (declared == null) {
+            return authenticated;
         }
 
         ResolvedPartnerIdentity declaredIdentity =

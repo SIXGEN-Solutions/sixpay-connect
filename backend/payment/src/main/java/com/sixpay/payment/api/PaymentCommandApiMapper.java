@@ -28,6 +28,7 @@ public final class PaymentCommandApiMapper {
     public InitiateDebitCommand toCommand(
             InitiateDebitRequest request,
             String authenticatedPartnerLoginName,
+            String resolvedPartnerIdentifier,
             String idempotencyKey,
             CorrelationId correlationId
     ) {
@@ -36,6 +37,8 @@ public final class PaymentCommandApiMapper {
         return new InitiateDebitCommand(
                 request.loginName(),
                 authenticatedPartnerLoginName,
+                resolvedPartnerIdentifier,
+                request.clientReference(),
                 request.applicationId(),
                 request.endToEndId(),
                 request.totalAmount(),

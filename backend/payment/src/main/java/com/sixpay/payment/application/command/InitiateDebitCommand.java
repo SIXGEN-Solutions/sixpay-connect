@@ -18,6 +18,8 @@ import java.util.Objects;
 public record InitiateDebitCommand(
         String partnerLoginName,
         String authenticatedPartnerLoginName,
+        String resolvedPartnerIdentifier,
+        String clientReference,
         String applicationId,
         String endToEndId,
         BigDecimal totalAmount,
@@ -35,6 +37,31 @@ public record InitiateDebitCommand(
 
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
+    /** Backward-compatible constructor for existing Java callers. */
+    public InitiateDebitCommand(
+            String partnerLoginName,
+            String authenticatedPartnerLoginName,
+            String applicationId,
+            String endToEndId,
+            BigDecimal totalAmount,
+            String currency,
+            String debtorRib,
+            String debtorName,
+            ClaimType claimType,
+            String taxpayerIdentifier,
+            Instant requestedExecutionAt,
+            List<InitiateDebitBeneficiaryCommand> beneficiaries,
+            String callbackUrl,
+            String idempotencyKey,
+            CorrelationId correlationId
+    ) {
+        this(partnerLoginName, authenticatedPartnerLoginName,
+                applicationId, endToEndId, applicationId, endToEndId,
+                totalAmount, currency, debtorRib, debtorName, claimType,
+                taxpayerIdentifier, requestedExecutionAt, beneficiaries,
+                callbackUrl, idempotencyKey, correlationId);
+    }
+
     public InitiateDebitCommand {
         partnerLoginName = normalizeOptional(
                 partnerLoginName,
@@ -46,7 +73,17 @@ public record InitiateDebitCommand(
                 64,
                 "Authenticated partner login name"
         );
-        applicationId = requireText(
+        resolvedPartnerIdentifier = requireText(
+                resolvedPartnerIdentifier,
+                64,
+                "Resolved Partner identifier"
+        );
+        clientReference = requireText(
+                clientReference,
+                128,
+                "Client reference"
+        );
+        applicationId = normalizeOptional(
                 applicationId,
                 64,
                 "Application ID"
@@ -81,14 +118,10 @@ public record InitiateDebitCommand(
                 claimType,
                 "Claim type"
         );
-        taxpayerIdentifier = requireText(
+        taxpayerIdentifier = normalizeOptional(
                 taxpayerIdentifier,
                 64,
                 "Taxpayer identifier"
-        );
-        requestedExecutionAt = Objects.requireNonNull(
-                requestedExecutionAt,
-                "Requested execution instant"
         );
         callbackUrl = requireText(
                 callbackUrl,

@@ -103,7 +103,7 @@ public class PaymentCommandController {
          * The authoritative business check is between the authenticated M2M
          * caller resolved to Partner and request.AppID.
          */
-        partnerIdentityAlignmentService.requireConsistentPartner(
+        var resolvedPartner = partnerIdentityAlignmentService.requireConsistentPartner(
                 authenticatedPartner,
                 request.applicationId()
         );
@@ -112,6 +112,7 @@ public class PaymentCommandController {
                 mapper.toCommand(
                         request,
                         authenticatedPartner,
+                        resolvedPartner.partnerIdentifier(),
                         idempotencyKey,
                         correlationId
                 )

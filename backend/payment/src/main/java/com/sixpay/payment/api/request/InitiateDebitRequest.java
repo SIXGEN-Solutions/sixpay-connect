@@ -19,14 +19,17 @@ import java.util.List;
  */
 public record InitiateDebitRequest(
         @JsonProperty("LoginName")
-        @NotBlank
         @Size(max = 64)
         String loginName,
 
         @JsonProperty("AppID")
-        @NotBlank
         @Size(max = 64)
         String applicationId,
+
+        @JsonProperty("referenceClient")
+        @NotBlank
+        @Size(max = 128)
+        String clientReference,
 
         @JsonProperty("endToEndId")
         @NotBlank
@@ -57,12 +60,10 @@ public record InitiateDebitRequest(
         ClaimType claimType,
 
         @JsonProperty("NUI")
-        @NotBlank
         @Size(max = 64)
         String taxpayerIdentifier,
 
         @JsonProperty("dateExecution")
-        @NotNull
         Instant requestedExecutionAt,
 
         @JsonProperty("beneficiaires")
@@ -75,6 +76,21 @@ public record InitiateDebitRequest(
         @Pattern(regexp = "^https://.+$")
         String callbackUrl
 ) {
+
+    /** Backward-compatible constructor for existing Java tests/callers. */
+    public InitiateDebitRequest(
+            String loginName, String applicationId, String endToEndId,
+            BigDecimal totalAmount, String currency, String debtorRib,
+            String debtorName, ClaimType claimType, String taxpayerIdentifier,
+            Instant requestedExecutionAt,
+            List<InitiateDebitBeneficiaryRequest> beneficiaries,
+            String callbackUrl
+    ) {
+        this(loginName, applicationId, endToEndId, endToEndId,
+                totalAmount, currency, debtorRib, debtorName, claimType,
+                taxpayerIdentifier, requestedExecutionAt, beneficiaries,
+                callbackUrl);
+    }
 
     public InitiateDebitRequest {
         beneficiaries = beneficiaries == null

@@ -191,8 +191,8 @@ public final class PaymentInitiationPreparationAdapter
             InitiateDebitCommand command
     ) {
         return command.applicationId() == null
-                ? command.partnerLoginName()
-                : command.partnerLoginName()
+                ? command.resolvedPartnerIdentifier()
+                : command.resolvedPartnerIdentifier()
                 + ":"
                 + command.applicationId();
     }
