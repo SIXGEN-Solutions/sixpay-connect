@@ -75,6 +75,61 @@ class CustomerSubscriptionResolutionTest {
                 .isInstanceOf(CustomerDomainException.class);
     }
 
+    @Test
+    void rejectsSuspendedSubscription() {
+        var subscription = activeSubscription();
+        subscription.suspend("suspended", NOW.plusSeconds(2));
+        when(subscriptions.findById(subscriptionId)).thenReturn(Optional.of(subscription));
+        assertThatThrownBy(() -> service.resolve(subscriptionId.value(), partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+        verifyNoInteractions(customers);
+    }
+
+    @Test
+    void rejectsClosedSubscription() {
+        var subscription = activeSubscription();
+        subscription.close("closed", NOW.plusSeconds(2));
+        when(subscriptions.findById(subscriptionId)).thenReturn(Optional.of(subscription));
+        assertThatThrownBy(() -> service.resolve(subscriptionId.value(), partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+        verifyNoInteractions(customers);
+    }
+
+    @Test
+    void rejectsInactiveCustomer() {
+        when(subscriptions.findById(subscriptionId)).thenReturn(Optional.of(activeSubscription()));
+        var customer = customer("NIU-001");
+        customer.suspend("suspended", NOW.plusSeconds(2));
+        when(customers.findById(customerId)).thenReturn(Optional.of(customer));
+        assertThatThrownBy(() -> service.resolve(subscriptionId.value(), partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+    }
+
+    @Test
+    void rejectsMissingCustomer() {
+        when(subscriptions.findById(subscriptionId)).thenReturn(Optional.of(activeSubscription()));
+        when(customers.findById(customerId)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.resolve(subscriptionId.value(), partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+    }
+
+    @Test
+    void returnsSameSubscriptionForMultipleTrustedApplicationsOfSamePartner() {
+        // Customer deliberately does not receive applicationId: authorization of
+        // each application belongs to Security before invoking this use case.
+        when(subscriptions.findById(subscriptionId)).thenReturn(Optional.of(activeSubscription()));
+        when(customers.findById(customerId)).thenReturn(Optional.of(customer("NIU-001")));
+        var firstApplication = service.resolve(subscriptionId.value(), partnerId);
+        var secondApplication = service.resolve(subscriptionId.value(), partnerId);
+        assertThat(firstApplication).isEqualTo(secondApplication);
+        assertThat(firstApplication.partnerId()).isEqualTo(partnerId);
+        assertThat(firstApplication.bankingAccountReference()).isEqualTo("ACC-001");
+    }
+
     private CustomerSubscription pendingSubscription() {
         return CustomerSubscription.create(subscriptionId, customerId, partnerId, accountId, NOW);
     }

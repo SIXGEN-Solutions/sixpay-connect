@@ -106,10 +106,26 @@ caller must supply the authenticated partner UUID; a partner/application header
 alone is not authentication.
 
 The result includes optional NIU, optional banking customer number, canonical
-banking customer reference and canonical bank account reference. A raw RIB is
-**not stored** in the examined `CustomerBankAccount` model; the canonical
-bank account reference must not be mislabeled as RIB.
+banking customer reference and `bankingAccountReference`. By approved SIXPAY
+business convention, `bankingAccountReference` represents the RIB: there is no
+second `rib` field or database column. Any provider-specific naming or format
+translation belongs to the owning banking adapter, subject to its contract.
 
 C1 deliberately does not change the customer-verification identity/value objects,
 Amplitude API contract or Payment orchestration. Those changes require separate
 contract and security approval before the subsequent integration lot.
+
+### Partner and application scope (C1 decision)
+
+A CustomerSubscription is valid for **all authenticated applications belonging
+to its partner**. Customer resolves the subscription using `referenceClient`
+(the existing `CustomerSubscriptionId`) and the **trusted authenticated partner
+UUID**. Customer does not bind subscriptions to individual application IDs and
+does not authorize applications: Security must authenticate and authorize the
+calling application and establish its partner before this port is invoked.
+Application-provided IDs or headers must never be treated as proof of partner
+ownership. The resolution rejects missing, inactive or cross-partner subscriptions,
+inactive customers and missing subscription-bound bank accounts.
+
+Payment integration, removal of mandatory NIU from the banking-verification flow,
+and changes to verification contracts/DTOs belong to P3, not this C1 patch.
