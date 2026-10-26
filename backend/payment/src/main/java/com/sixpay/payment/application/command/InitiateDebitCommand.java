@@ -37,31 +37,6 @@ public record InitiateDebitCommand(
 
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
-    /** Backward-compatible constructor for existing Java callers. */
-    public InitiateDebitCommand(
-            String partnerLoginName,
-            String authenticatedPartnerLoginName,
-            String applicationId,
-            String endToEndId,
-            BigDecimal totalAmount,
-            String currency,
-            String debtorRib,
-            String debtorName,
-            ClaimType claimType,
-            String taxpayerIdentifier,
-            Instant requestedExecutionAt,
-            List<InitiateDebitBeneficiaryCommand> beneficiaries,
-            String callbackUrl,
-            String idempotencyKey,
-            CorrelationId correlationId
-    ) {
-        this(partnerLoginName, authenticatedPartnerLoginName,
-                applicationId, endToEndId, applicationId, endToEndId,
-                totalAmount, currency, debtorRib, debtorName, claimType,
-                taxpayerIdentifier, requestedExecutionAt, beneficiaries,
-                callbackUrl, idempotencyKey, correlationId);
-    }
-
     public InitiateDebitCommand {
         partnerLoginName = normalizeOptional(
                 partnerLoginName,
