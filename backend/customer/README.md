@@ -91,3 +91,25 @@ CustomerSubscription record.
 
 Schema:
 backend/customer/src/main/resources/db/migration/V200__customer_baseline.sql
+
+## C1 — Internal subscription resolution for Payment
+
+`referenceClient` is the existing `CustomerSubscriptionId` (UUID); no additional
+identifier or database column is created. Customer exposes an **in-process**
+`ResolveCustomerSubscriptionUseCase` taking the reference and the **authenticated**
+partner UUID. Its result is an application DTO, not a JPA entity.
+
+Resolution enforces partner ownership, `ACTIVE` subscription, `ACTIVE` customer
+and membership of the bank account selected by the subscription. Failures are
+reported without exposing another partner's subscription details. The trusted
+caller must supply the authenticated partner UUID; a partner/application header
+alone is not authentication.
+
+The result includes optional NIU, optional banking customer number, canonical
+banking customer reference and canonical bank account reference. A raw RIB is
+**not stored** in the examined `CustomerBankAccount` model; the canonical
+bank account reference must not be mislabeled as RIB.
+
+C1 deliberately does not change the customer-verification identity/value objects,
+Amplitude API contract or Payment orchestration. Those changes require separate
+contract and security approval before the subsequent integration lot.
