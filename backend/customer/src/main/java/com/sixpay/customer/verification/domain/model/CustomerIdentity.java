@@ -13,14 +13,21 @@ import java.util.Objects;
  */
 public record CustomerIdentity(
         CustomerNiu niu,
-        String legalName
+        String legalName,
+        String bankingCustomerReference,
+        String customerNumber
 ) implements ValueObject {
 
     private static final int MIN_LEGAL_NAME_LENGTH = 2;
     private static final int MAX_LEGAL_NAME_LENGTH = 200;
 
     public CustomerIdentity {
-        niu = Objects.requireNonNull(niu, "niu is required");
+        bankingCustomerReference = normalize(bankingCustomerReference);
+        customerNumber = normalize(customerNumber);
+        if (niu == null && bankingCustomerReference == null && customerNumber == null) {
+            throw new CustomerVerificationDomainException(
+                    "At least one banking customer identifier is required");
+        }
 
         if (legalName == null) {
             throw new CustomerVerificationDomainException(
@@ -55,7 +62,21 @@ public record CustomerIdentity(
             CustomerNiu niu,
             String legalName
     ) {
-        return new CustomerIdentity(niu, legalName);
+        return new CustomerIdentity(niu, legalName, null, null);
+    }
+
+    public static CustomerIdentity of(
+            CustomerNiu niu, String legalName,
+            String bankingCustomerReference, String customerNumber) {
+        return new CustomerIdentity(niu, legalName, bankingCustomerReference, customerNumber);
+    }
+
+    public CustomerIdentity(CustomerNiu niu, String legalName) {
+        this(niu, legalName, null, null);
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     @Override

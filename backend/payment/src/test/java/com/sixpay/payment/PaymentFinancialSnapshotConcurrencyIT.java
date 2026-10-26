@@ -1,5 +1,8 @@
+
 package com.sixpay.payment;
 
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.payment.domain.model.*;
 import com.sixpay.payment.domain.model.financial.*;
@@ -8,16 +11,21 @@ import com.sixpay.payment.infrastructure.persistence.PaymentPersistenceException
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
+
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -33,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(
         classes = PaymentFinancialSnapshotConcurrencyIT.TestApplication.class,
@@ -64,23 +73,28 @@ class PaymentFinancialSnapshotConcurrencyIT {
     @Test
     void concurrentSameSnapshotProducesOneLogicalSnapshot()
             throws Exception {
+
         PaymentFinancialEventSnapshot snapshot = finalizedSnapshot(
                 UUID.fromString("b806c2d1-1847-4a45-8f06-e050cf011001")
         );
+
         insertPayment(snapshot.paymentId().value());
 
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
 
         try (var executor = Executors.newFixedThreadPool(2)) {
+
             Future<?> first = executor.submit(
                     () -> saveAfterBarrier(snapshot, ready, start)
             );
+
             Future<?> second = executor.submit(
                     () -> saveAfterBarrier(snapshot, ready, start)
             );
 
             assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+
             start.countDown();
 
             consumeAllowingConstraintRace(first);
@@ -97,6 +111,7 @@ class PaymentFinancialSnapshotConcurrencyIT {
     @Test
     void concurrentDifferentSnapshotsNeverReplaceExistingSnapshot()
             throws Exception {
+
         UUID paymentUuid =
                 UUID.fromString("b806c2d1-1847-4a45-8f06-e050cf011002");
 
@@ -106,26 +121,31 @@ class PaymentFinancialSnapshotConcurrencyIT {
                         paymentUuid,
                         "vault:creditor:0001"
                 );
+
         PaymentFinancialEventSnapshot secondSnapshot =
                 finalizedSnapshot(
                         UUID.fromString("c906c2d1-1847-4a45-8f06-e050cf011002"),
                         paymentUuid,
                         "vault:creditor:0002"
                 );
+
         insertPayment(paymentUuid);
 
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
 
         try (var executor = Executors.newFixedThreadPool(2)) {
+
             Future<?> first = executor.submit(
                     () -> saveAfterBarrier(firstSnapshot, ready, start)
             );
+
             Future<?> second = executor.submit(
                     () -> saveAfterBarrier(secondSnapshot, ready, start)
             );
 
             assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+
             start.countDown();
 
             consumeAllowingConstraintRace(first);
@@ -155,9 +175,12 @@ class PaymentFinancialSnapshotConcurrencyIT {
     private static void consumeAllowingConstraintRace(
             Future<?> future
     ) throws Exception {
+
         try {
             future.get(10, TimeUnit.SECONDS);
+
         } catch (java.util.concurrent.ExecutionException exception) {
+
             Throwable cause = exception.getCause();
 
             assertThat(cause)
@@ -174,6 +197,7 @@ class PaymentFinancialSnapshotConcurrencyIT {
     }
 
     private void insertPayment(UUID paymentId) {
+
         String paymentReference =
                 "PAY-" + paymentId
                         .toString()
@@ -225,12 +249,14 @@ class PaymentFinancialSnapshotConcurrencyIT {
     }
 
     private static void await(CountDownLatch latch) {
+
         try {
             if (!latch.await(5, TimeUnit.SECONDS)) {
                 throw new IllegalStateException(
                         "Timed out waiting for concurrency barrier"
                 );
             }
+
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(exception);
@@ -252,8 +278,10 @@ class PaymentFinancialSnapshotConcurrencyIT {
             UUID paymentUuid,
             String creditor
     ) {
+
         Instant createdAt =
                 Instant.parse("2026-09-06T18:00:00Z");
+
         Money amount =
                 Money.of(new BigDecimal("1000.00"), "XAF");
 
@@ -286,6 +314,7 @@ class PaymentFinancialSnapshotConcurrencyIT {
                         createdAt.plusSeconds(1)
                 )
         );
+
         snapshot.addEntry(
                 new PaymentFinancialEntrySnapshot(
                         UUID.randomUUID(),
@@ -296,16 +325,42 @@ class PaymentFinancialSnapshotConcurrencyIT {
                         createdAt.plusSeconds(1)
                 )
         );
+
         snapshot.finalizeAt(createdAt.plusSeconds(2));
+
         return snapshot;
+    }
+
+    /*
+     * Test-specific Spring configuration.
+     *
+     * The Payment module is tested independently from Bootstrap.
+     * External module ports are mocked because this test only
+     * verifies concurrent financial snapshot persistence.
+     */
+    @org.springframework.boot.test.context.TestConfiguration(
+            proxyBeanMethods = false
+    )
+    static class ExternalPortTestConfiguration {
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return mock(PaymentCustomerSubscriptionPort.class);
+        }
+
+        @Bean
+        PartnerIdentityResolutionPort partnerIdentityResolutionPort() {
+            return mock(PartnerIdentityResolutionPort.class);
+        }
     }
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(PaymentModuleConfiguration.class)
+    @Import(ExternalPortTestConfiguration.class)
     static class TestApplication {
 
-        @org.springframework.context.annotation.Bean
+        @Bean
         CurrentUserProvider currentUserProvider() {
             return () -> Optional.<AuthenticatedUser>empty();
         }

@@ -30,7 +30,25 @@ class PaymentInitiationOrchestrationServiceTest {
     }
 
     private static InitiateDebitCommand command() {
-        return new InitiateDebitCommand("TRESOR_PAY", "TRESOR_PAY", "TP_APP_001", "AVI-2025-00045678", new BigDecimal("600000"), "XAF", "10005-00001-12345678901-12", "Société ABC SARL", ClaimType.AVI, "100200300", NOW, List.of(new InitiateDebitBeneficiaryCommand("10005-00001-TRESDGI-97", new BigDecimal("600000"))), "https://tresorpay.cm/callback", "IDEMPOTENCY-00000001", CorrelationId.of("11111111-1111-1111-1111-111111111111"));
+        return new InitiateDebitCommand(
+                "TRESOR_PAY",
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                "XAF",
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                NOW,
+                List.of(new InitiateDebitBeneficiaryCommand("10005-00001-TRESDGI-97", new BigDecimal("600000"))),
+                "https://tresorpay.cm/callback",
+                "IDEMPOTENCY-00000001",
+                CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        );
     }
 
     @Test

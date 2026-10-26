@@ -18,6 +18,8 @@ public record CustomerVerificationRequest(
         String financialInstitutionCode,
         String accountBindingFingerprint,
         String integrationAccountToken,
+        String bankingCustomerReference,
+        String customerNumber,
         String correlationId,
         UUID causationId,
         Instant requestedAt,
@@ -29,7 +31,12 @@ public record CustomerVerificationRequest(
                 verificationId,
                 "verificationId is required"
         );
-        customerNiu = requireText(customerNiu, "customerNiu");
+        customerNiu = normalizeOptional(customerNiu);
+        bankingCustomerReference = normalizeOptional(bankingCustomerReference);
+        customerNumber = normalizeOptional(customerNumber);
+        if (customerNiu == null && bankingCustomerReference == null && customerNumber == null) {
+            throw new IllegalArgumentException("At least one banking customer identifier is required");
+        }
         customerLegalName = normalizeOptional(
                 customerLegalName
         );
@@ -62,8 +69,20 @@ public record CustomerVerificationRequest(
     ) {
         this(verificationId, customerNiu, customerLegalName,
                 financialInstitutionCode, accountBindingFingerprint,
-                integrationAccountToken, correlationId, causationId,
+                integrationAccountToken, null, null, correlationId, causationId,
                 requestedAt, Instant.MAX);
+    }
+
+    public CustomerVerificationRequest(
+            UUID verificationId, String customerNiu, String customerLegalName,
+            String financialInstitutionCode, String accountBindingFingerprint,
+            String integrationAccountToken, String correlationId,
+            UUID causationId, Instant requestedAt, Instant deadlineAt
+    ) {
+        this(verificationId, customerNiu, customerLegalName,
+                financialInstitutionCode, accountBindingFingerprint,
+                integrationAccountToken, null, null, correlationId, causationId,
+                requestedAt, deadlineAt);
     }
 
     private static String normalizeOptional(String value) {

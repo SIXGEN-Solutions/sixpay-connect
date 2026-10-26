@@ -1,6 +1,8 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
@@ -17,6 +19,16 @@ import java.util.UUID;
  */
 @Component
 public final class PaymentCustomerVerificationRequestFactory {
+    private final PaymentCustomerSubscriptionPort subscriptions;
+    private final PartnerIdentityResolutionPort partners;
+
+    public PaymentCustomerVerificationRequestFactory(
+            PaymentCustomerSubscriptionPort subscriptions,
+            PartnerIdentityResolutionPort partners) {
+        this.subscriptions = Objects.requireNonNull(subscriptions);
+        this.partners = Objects.requireNonNull(partners);
+    }
+
 
     public CustomerVerificationRequest from(
             Payment payment,
@@ -50,19 +62,28 @@ public final class PaymentCustomerVerificationRequestFactory {
                                 )
                         );
 
+        // The persisted Partner business identifier is resolved to the canonical UUID.
+        // Customer enforces subscription ownership, eligibility and active customer.
+        var partner = partners.findByPartnerIdentifier(initiationContext.applicationId())
+                .orElseThrow(() -> new IllegalStateException("Payment Partner is unavailable"));
+        if (!partner.acceptsNewTransactions()) {
+            throw new IllegalStateException("Payment Partner is not authorized");
+        }
+        var subscription = subscriptions.resolve(
+                UUID.fromString(state.externalSubscriptionReference().value()),
+                partner.partnerId());
+        if (!subscription.partnerId().equals(partner.partnerId())) {
+            throw new IllegalStateException("CustomerSubscription Partner mismatch");
+        }
         return new CustomerVerificationRequest(
                 verificationId,
-                initiationContext.taxpayerIdentifier(),
-                initiationContext.debtorName(),
-                state.optionalFinancialInstitutionCode()
-                        .map(code -> code.value())
-                        .orElse(null),
-                state.optionalDebtorAccountReference()
-                        .map(DebtorAccountReference::bindingFingerprint)
-                        .orElse(null),
-                state.optionalDebtorAccountReference()
-                        .map(DebtorAccountReference::integrationAccountToken)
-                        .orElse(null),
+                subscription.niu(),
+                subscription.legalName(),
+                subscription.financialInstitutionCode(),
+                subscription.accountBindingFingerprint(),
+                subscription.bankingAccountReference(),
+                subscription.bankingCustomerReference(),
+                subscription.customerNumber(),
                 state.requestIdentity()
                         .correlationId()
                         .value(),

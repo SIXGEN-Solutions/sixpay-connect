@@ -87,8 +87,11 @@ public final class CustomerVerificationModuleAdapter
                 new CustomerVerificationId(request.verificationId()),
                 CustomerVerificationSubject.of(
                         CustomerIdentity.of(
-                                CustomerNiu.of(request.customerNiu()),
-                                request.customerLegalName()
+                                request.customerNiu() == null
+                                        ? null : CustomerNiu.of(request.customerNiu()),
+                                request.customerLegalName(),
+                                request.bankingCustomerReference(),
+                                request.customerNumber()
                         )
                 ),
                 FinancialInstitutionCode.of(

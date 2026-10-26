@@ -41,7 +41,7 @@ class PaymentCommandApiMapperTest {
         assertThat(command.authenticatedPartnerLoginName())
                 .isEqualTo("TRESOR_PAY");
         assertThat(command.clientReference())
-                .isEqualTo("CLIENT-2026-00045678");
+                .isEqualTo("7a7185d1-3c0a-43e0-8b64-a9407f910001");
         assertThat(command.resolvedPartnerIdentifier())
                 .isEqualTo("TP_APP_001");
         assertThat(command.beneficiaries())
@@ -88,7 +88,7 @@ class PaymentCommandApiMapperTest {
     @Test
     void acceptsOptionalPartnerDataAtApiBoundary() {
         InitiateDebitRequest minimal = new InitiateDebitRequest(
-                null, null, "CLIENT-123", "PAY-123",
+                null, null, "7a7185d1-3c0a-43e0-8b64-a9407f910001", "PAY-123",
                 new BigDecimal("100.00"), null, null, null,
                 ClaimType.AVI, null, null, null,
                 "https://partner.example/callback"
@@ -108,7 +108,7 @@ class PaymentCommandApiMapperTest {
         return new InitiateDebitRequest(
                 "TRESOR_PAY",
                 "TP_APP_001",
-                "CLIENT-2026-00045678",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
                 "XAF",

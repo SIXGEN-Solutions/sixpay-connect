@@ -54,9 +54,10 @@ public final class AmplitudeCustomerVerificationMapper {
         return new AmplitudeCustomerVerificationRequest(
                 query.financialInstitutionCode().value(),
                 new AmplitudeCustomerVerificationSubject(
-                        null,
-                        null,
-                        query.subject().identity().niu().value(),
+                        query.subject().identity().bankingCustomerReference(),
+                        query.subject().identity().customerNumber(),
+                        query.subject().identity().niu() == null ? null
+                                : query.subject().identity().niu().value(),
                         query.subject().identity().legalName(),
                         null,
                         null

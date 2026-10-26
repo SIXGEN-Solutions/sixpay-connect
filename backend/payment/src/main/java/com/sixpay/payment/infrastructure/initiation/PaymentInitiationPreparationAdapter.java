@@ -114,7 +114,7 @@ public final class PaymentInitiationPreparationAdapter
                 ),
                 new PaymentInitiationContext(
                         command.partnerLoginName(),
-                        command.applicationId(),
+                        command.resolvedPartnerIdentifier(),
                         command.debtorName(),
                         command.claimType(),
                         command.taxpayerIdentifier(),

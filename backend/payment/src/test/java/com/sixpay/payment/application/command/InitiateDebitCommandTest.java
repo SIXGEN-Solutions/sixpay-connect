@@ -53,13 +53,22 @@ class InitiateDebitCommandTest {
     @Test
     void defaultsMissingCurrencyToXafForMvp() {
         InitiateDebitCommand command = new InitiateDebitCommand(
-                "TRESOR_PAY", "TRESOR_PAY", "TP_APP_001",
-                "AVI-2025-00045678", new BigDecimal("600000"), null,
-                "10005-00001-12345678901-12", "Société ABC SARL",
-                ClaimType.AVI, "100200300",
+                "TRESOR_PAY",
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                null,
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
                 Instant.parse("2026-08-03T10:30:00Z"),
                 List.of(beneficiary("600000")),
-                "https://tresorpay.cm/callback", "idem-001",
+                "https://tresorpay.cm/callback",
+                "idem-001",
                 CorrelationId.of("11111111-1111-1111-1111-111111111111")
         );
         assertThat(command.currency()).isEqualTo("XAF");
@@ -68,13 +77,22 @@ class InitiateDebitCommandTest {
     @Test
     void preservesSuppliedIsoCurrencyForCoreBankingValidation() {
         InitiateDebitCommand command = new InitiateDebitCommand(
-                "TRESOR_PAY", "TRESOR_PAY", "TP_APP_001",
-                "AVI-2025-00045678", new BigDecimal("600000"), "EUR",
-                "10005-00001-12345678901-12", "Société ABC SARL",
-                ClaimType.AVI, "100200300",
+                "TRESOR_PAY",
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                "EUR",
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
                 Instant.parse("2026-08-03T10:30:00Z"),
                 List.of(beneficiary("600000")),
-                "https://tresorpay.cm/callback", "idem-001",
+                "https://tresorpay.cm/callback",
+                "idem-001",
                 CorrelationId.of("11111111-1111-1111-1111-111111111111")
         );
 
@@ -85,28 +103,30 @@ class InitiateDebitCommandTest {
     void loginNameDoesNotAuthenticatePartnerMachineCaller() {
         InitiateDebitCommand command =
                 new InitiateDebitCommand(
-                        "DISPLAY_LOGIN_ONLY",
-                        "machine-subject-001",
-                        "TP_APP_001",
-                        "AVI-2025-00045678",
-                        new BigDecimal("600000"),
-                        "XAF",
-                        "10005-00001-12345678901-12",
-                        "Société ABC SARL",
-                        ClaimType.AVI,
-                        "100200300",
-                        Instant.parse(
+                "DISPLAY_LOGIN_ONLY",
+                "machine-subject-001",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                "XAF",
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                Instant.parse(
                                 "2026-08-03T10:30:00Z"
                         ),
-                        List.of(
+                List.of(
                                 beneficiary("600000")
                         ),
-                        "https://tresorpay.cm/callback",
-                        "idem-001",
-                        CorrelationId.of(
+                "https://tresorpay.cm/callback",
+                "idem-001",
+                CorrelationId.of(
                                 "11111111-1111-1111-1111-111111111111"
                         )
-                );
+        );
 
         assertThat(command.partnerLoginName())
                 .isEqualTo("DISPLAY_LOGIN_ONLY");
@@ -121,6 +141,8 @@ class InitiateDebitCommandTest {
         return new InitiateDebitCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 totalAmount,

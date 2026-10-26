@@ -224,21 +224,10 @@ class PaymentCustomerVerificationWorkflowArchitectureTest {
                         "UUID.randomUUID("
                 )
         );
-        assertTrue(
-                factory.contains(
-                        "optionalDebtorAccountReference()"
-                )
-        );
-        assertTrue(
-                factory.contains(
-                        "DebtorAccountReference::integrationAccountToken"
-                )
-        );
-        assertTrue(
-                factory.contains(
-                        "DebtorAccountReference::bindingFingerprint"
-                )
-        );
+        // P3: references originate from CustomerSubscription, not Payment input.
+        assertTrue(factory.contains("subscriptions.resolve("));
+        assertTrue(factory.contains("subscription.bankingAccountReference()"));
+        assertTrue(factory.contains("subscription.accountBindingFingerprint()"));
         assertTrue(
                 factory.contains(
                         "correlationId()"

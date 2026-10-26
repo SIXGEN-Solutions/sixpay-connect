@@ -156,6 +156,8 @@ class PaymentInitiationPreparationAdapterTest {
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
                 "AVI-2025-00045678",
                 total,
                 "XAF",
