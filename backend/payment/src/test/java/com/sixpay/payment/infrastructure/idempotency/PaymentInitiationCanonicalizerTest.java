@@ -133,6 +133,26 @@ class PaymentInitiationCanonicalizerTest {
     }
 
     @Test
+    void absentOptionalFieldsAreDeterministic() {
+        InitiateDebitCommand original = command(List.of(beneficiary(
+                "10005-00001-TRESDGI-97", "600000")));
+        InitiateDebitCommand absent = new InitiateDebitCommand(
+                original.partnerLoginName(),
+                original.authenticatedPartnerLoginName(),
+                original.resolvedPartnerIdentifier(),
+                original.clientReference(),
+                null, original.endToEndId(), original.totalAmount(),
+                original.currency(), null, null, original.claimType(),
+                null, null, original.beneficiaries(), original.callbackUrl(),
+                original.idempotencyKey(), original.correlationId());
+
+        assertThat(canonicalizer.canonicalize(absent))
+                .isEqualTo(canonicalizer.canonicalize(absent));
+        assertThat(canonicalizer.canonicalize(absent))
+                .isNotEqualTo(canonicalizer.canonicalize(original));
+    }
+
+    @Test
     void canonicalRequestNeverContainsIdempotencyKey() {
         InitiateDebitCommand command =
                 command(

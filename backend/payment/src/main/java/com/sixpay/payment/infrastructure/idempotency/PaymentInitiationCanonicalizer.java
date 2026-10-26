@@ -75,10 +75,14 @@ public final class PaymentInitiationCanonicalizer {
             StringBuilder target,
             String value
     ) {
-        String normalized = value == null ? "" : value;
-        target.append(normalized.length())
+        if (value == null) {
+            target.append("N|");
+            return;
+        }
+        target.append('V')
+                .append(value.length())
                 .append(':')
-                .append(normalized)
+                .append(value)
                 .append('|');
     }
 }

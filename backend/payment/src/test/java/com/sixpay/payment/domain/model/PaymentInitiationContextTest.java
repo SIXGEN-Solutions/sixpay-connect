@@ -76,6 +76,19 @@ class PaymentInitiationContextTest {
     }
 
     @Test
+    void optionalFieldsRemainAbsentWithoutSyntheticValues() {
+        PaymentInitiationContext context = new PaymentInitiationContext(
+                null, null, null, ClaimType.AVI, null, null,
+                CallbackEndpoint.of("https://tresorpay.cm/callback"));
+
+        assertThat(context.optionalPartnerLoginName()).isEmpty();
+        assertThat(context.optionalApplicationId()).isEmpty();
+        assertThat(context.optionalDebtorName()).isEmpty();
+        assertThat(context.optionalTaxpayerIdentifier()).isEmpty();
+        assertThat(context.optionalRequestedExecutionAt()).isEmpty();
+    }
+
+    @Test
     void callbackMustUseHttps() {
         assertThatThrownBy(() ->
                 CallbackEndpoint.of(

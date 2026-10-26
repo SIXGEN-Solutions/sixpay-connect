@@ -50,6 +50,22 @@ public record PaymentInitiationContext(
         return Optional.ofNullable(applicationId);
     }
 
+    public Optional<String> optionalPartnerLoginName() {
+        return Optional.ofNullable(partnerLoginName);
+    }
+
+    public Optional<String> optionalDebtorName() {
+        return Optional.ofNullable(debtorName);
+    }
+
+    public Optional<String> optionalTaxpayerIdentifier() {
+        return Optional.ofNullable(taxpayerIdentifier);
+    }
+
+    public Optional<Instant> optionalRequestedExecutionAt() {
+        return Optional.ofNullable(requestedExecutionAt);
+    }
+
     private static String requireIdentifier(
             String value,
             String label
