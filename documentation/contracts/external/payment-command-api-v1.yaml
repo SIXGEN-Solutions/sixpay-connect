@@ -216,9 +216,8 @@ components:
           description: Optional non-authenticating compatibility metadata
         referenceClient:
           type: string
-          minLength: 1
-          maxLength: 128
-          description: Required client reference, distinct from endToEndId
+          format: uuid
+          description: CustomerSubscriptionId (UUID), authoritative subscription identity; distinct from endToEndId
         AppID:
           type: [string, 'null']
           minLength: 1

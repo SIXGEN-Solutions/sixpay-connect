@@ -184,17 +184,13 @@ public final class PaymentInitiationPreparationAdapter
     }
 
     /**
-     * Derives the external TresorPay subscription identity. This is not the
-     * local CustomerSubscription aggregate identifier owned by Customer.
+     * Retains the Customer-owned CustomerSubscriptionId UUID supplied as
+     * referenceClient; this is not derived from Partner or application IDs.
      */
     private static String subscriptionReference(
             InitiateDebitCommand command
     ) {
-        return command.applicationId() == null
-                ? command.resolvedPartnerIdentifier()
-                : command.resolvedPartnerIdentifier()
-                + ":"
-                + command.applicationId();
+        return command.clientReference();
     }
 
     private static PublicPaymentReference publicReference(
