@@ -32,6 +32,27 @@ class InitiateDebitCommandTest {
     }
 
     @Test
+    void rejectsNonUuidCustomerSubscriptionReference() {
+        assertThatThrownBy(() -> new InitiateDebitCommand(
+                "PARTNER", "machine-subject", "PARTNER_ID", "SUB-LEGACY-001",
+                "APP", "AVI-2025-00045678", new BigDecimal("600000"), "XAF",
+                null, "Société ABC SARL", ClaimType.AVI, "100200300",
+                Instant.parse("2026-08-03T10:30:00Z"),
+                List.of(beneficiary("600000")), "https://example.org/callback",
+                "idem-001", CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void keepsSubscriptionUuidDistinctFromEndToEndBusinessReference() {
+        var command = command(new BigDecimal("600000"), List.of(beneficiary("600000")));
+        assertThat(command.clientReference())
+                .isEqualTo("7a7185d1-3c0a-43e0-8b64-a9407f910001");
+        assertThat(command.endToEndId()).isEqualTo("AVI-2025-00045678");
+        assertThat(command.resolvedPartnerIdentifier()).isEqualTo("TP_APP_001");
+    }
+
+    @Test
     void rejectsBeneficiarySumDifferentFromTotal() {
         assertThatThrownBy(() ->
                 command(

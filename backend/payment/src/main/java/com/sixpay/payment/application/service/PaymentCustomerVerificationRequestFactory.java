@@ -69,9 +69,14 @@ public final class PaymentCustomerVerificationRequestFactory {
         if (!partner.acceptsNewTransactions()) {
             throw new IllegalStateException("Payment Partner is not authorized");
         }
+        UUID requestedSubscriptionId = UUID.fromString(
+                state.externalSubscriptionReference().value());
         var subscription = subscriptions.resolve(
-                UUID.fromString(state.externalSubscriptionReference().value()),
+                requestedSubscriptionId,
                 partner.partnerId());
+        if (!subscription.subscriptionId().equals(requestedSubscriptionId)) {
+            throw new IllegalStateException("CustomerSubscription reference mismatch");
+        }
         if (!subscription.partnerId().equals(partner.partnerId())) {
             throw new IllegalStateException("CustomerSubscription Partner mismatch");
         }
