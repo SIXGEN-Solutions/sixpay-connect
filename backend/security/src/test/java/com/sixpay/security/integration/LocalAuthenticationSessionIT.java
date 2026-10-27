@@ -3,6 +3,7 @@ package com.sixpay.security.integration;
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
 import com.sixpay.security.application.port.input.LocalLoginCommand;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
@@ -89,6 +90,13 @@ class LocalAuthenticationSessionIT {
     @MockitoBean
     private AuthenticateLocalUserUseCase
             authenticateLocalUserUseCase;
+
+    /*
+     * Identity linking persistence is outside the scope
+     * of this focused LOCAL authentication/session test.
+     */
+    @MockitoBean
+    private FindLinkedIdentityPort findLinkedIdentityPort;
 
     /*
      * LocalAuthenticationConfiguration also imports the password-change
