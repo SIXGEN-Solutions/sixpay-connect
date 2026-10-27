@@ -164,9 +164,9 @@ contracts:
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
-    generationPolicy: "REFERENCE_ONLY"
-    codeGenerationAllowed: false
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
     security:
       active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
       conditional: ["TRANSPORT_API_KEY", "ANTI_REPLAY_HEADERS"]
@@ -182,8 +182,8 @@ contracts:
         - "Customer owns CustomerSubscription"
         - "Initiation preparation deadline defaults to 30 seconds and is configurable"
         - "Idempotency-Key and endToEndId remain distinct"
-    approvalPrerequisite:
-      - "Payment, Integration and Security approval of the aligned contract"
+    approvalEvidence:
+      - "Explicit project-owner authorization to approve payment-command-api-v1 in this task"
 
   - id: "tresorpay-payment-status-query-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
