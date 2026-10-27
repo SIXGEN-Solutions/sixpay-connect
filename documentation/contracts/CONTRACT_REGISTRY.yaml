@@ -137,51 +137,53 @@ contracts:
   - id: "tresorpay-payment-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
     domain: "payment"
-    capability: "PAYMENT_REQUEST"
+    capability: "PAYMENT_RECOVERY"
     direction: "TRESOR_PAY_TO_SIXPAY"
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "APPROVED"
-    generationPolicy: "ACTIVE"
-    codeGenerationAllowed: true
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
     security:
-      active:
-        - "BEARER_AUTHORIZATION_TOKEN"
-        - "SUBSCRIPTION_KEY"
-        - "LOCAL_SIGNED_TOKEN_VALIDATION"
-      deferred:
-        - "OAUTH2_CLIENT_CREDENTIALS"
-        - "MUTUAL_TLS"
+      active: ["BEARER_AUTHORIZATION_TOKEN"]
     mvpUsage:
       included: true
       purpose:
-        - "Receive a TRESOR PAY payment order"
-        - "Enforce idempotency and correlation"
-        - "Durably persist Payment before any Amplitude call"
-        - "Use required NIU as the primary banking customer-resolution pivot"
-        - "Allow debtor-account input to be absent before authoritative Core Banking resolution"
-        - "Complete VERIFIED banking customer/account/KYC preparation before response"
-        - "Create and durably persist the initial bank-owned OTP challenge before returning AWAITING_OTP"
-        - "Expose read-only Payment recovery when the initiation response is lost or uncertain"
+        - "Read-only recovery of existing Payment by paymentReference"
       constraints:
-        - "TRESOR PAY remains the subscription system of record"
-        - "No local subscription validation"
-        - "Subscription authorization is attested by a short-lived signed JWT"
-        - "No synchronous TRESOR PAY subscription-verification call in the MVP"
-        - "Treasury beneficiaries must resolve to bank-controlled configuration"
-        - "Credentials are forbidden in the JSON payload"
-        - "Request AppID is the canonical Partner business identifier"
-        - "X-TresorPay-App-Id remains independent transport metadata; equality with AppID is not required"
-        - "Successful initiation returns only after the initial confirmation challenge is ACTIVE"
-        - "The initiation preparation deadline is 30 seconds and remains runtime-configurable"
-        - "Deadline exhaustion before an ACTIVE challenge records the Payment as failed with a technical cause and forbids late challenge creation"
-        - "GET Payment recovery is read-only and never triggers OTP or financial replay"
+        - "No Payment initiation on the legacy path"
+        - "No banking verification, OTP creation, posting or financial replay"
+        - "Customer owns CustomerSubscription"
+
+  - id: "payment-command-api-v1"
+    path: "documentation/contracts/external/payment-command-api-v1.yaml"
+    domain: "payment"
+    capability: "PAYMENT_INITIATION"
+    direction: "TRESORPAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    security:
+      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      conditional: ["TRANSPORT_API_KEY", "ANTI_REPLAY_HEADERS"]
+    mvpUsage:
+      included: true
+      purpose:
+        - "Initiate Payment via POST /v1/payments/initiate"
+        - "Resolve CustomerSubscription through referenceClient and authenticated Partner"
+        - "Create bank-owned ACTIVE OTP challenge before returning AWAITING_OTP"
+      constraints:
+        - "AppID is required and must match authenticated Partner"
+        - "NUI is optional compatibility input; subscription supplies authoritative banking identity"
+        - "Customer owns CustomerSubscription"
+        - "Initiation preparation deadline defaults to 30 seconds and is configurable"
+        - "Idempotency-Key and endToEndId remain distinct"
     approvalPrerequisite:
-      - "TRESOR PAY contract owner approval"
-      - "SIXPAY Payment and Integration approval"
-      - "Security approval"
-      - "Completion and approval of the full Payment Contract Pack"
+      - "Payment, Integration and Security approval of the aligned contract"
 
   - id: "tresorpay-payment-status-query-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"

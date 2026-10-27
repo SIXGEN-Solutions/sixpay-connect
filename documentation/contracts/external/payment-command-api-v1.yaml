@@ -12,9 +12,9 @@ info:
     registryId: payment-command-api-v1
     phase: "3"
     lot: "3.16"
-    lifecycleStatus: DRAFT_IMPLEMENTATION_READY
+    lifecycleStatus: ACTIVE_MVP
     approvalStatus: PENDING_APPROVAL
-    generationPolicy: CONTRACT_FIRST
+    generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
     domain: payment
     capability: PAYMENT_INITIATION
@@ -38,13 +38,11 @@ paths:
       description: |
         Idempotency-Key identifies the HTTP replay boundary. endToEndId is the
         durable business reference; both values are independent. referenceClient
-        is required. AppID is an optional declared Partner identifier and is
+        is required. AppID is a required declared Partner identifier and is
         checked against the authenticated Partner when supplied. LoginName
         is optional compatibility metadata. The independent transport header
         X-TresorPay-App-Id remains required. Beneficiary amounts must sum
-        exactly to montantTotal when supplied. NUI may be omitted from the
-        HTTP request, but Customer Verification currently requires a resolvable
-        NIU; requests without one cannot complete the MVP initiation flow.
+        exactly to montantTotal when supplied. NUI is optional compatibility input. Customer Verification resolves authoritative banking identifiers from the Customer-owned CustomerSubscription identified by referenceClient.
         The callback is never executed in this HTTP transaction.
       parameters:
         - $ref: '#/components/parameters/RequiredIdempotencyKey'
@@ -204,6 +202,7 @@ components:
       additionalProperties: false
       required:
         - referenceClient
+        - AppID
         - endToEndId
         - montantTotal
         - typeCreance
@@ -219,10 +218,10 @@ components:
           format: uuid
           description: CustomerSubscriptionId (UUID), authoritative subscription identity; distinct from endToEndId
         AppID:
-          type: [string, 'null']
+          type: string
           minLength: 1
           maxLength: 64
-          description: Optional declared Partner business identifier; validated when supplied
+          description: Required Partner business identifier; validated against the authenticated Partner
         endToEndId:
           type: string
           minLength: 1
