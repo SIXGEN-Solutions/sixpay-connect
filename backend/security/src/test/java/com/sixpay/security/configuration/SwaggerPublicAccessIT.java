@@ -1,6 +1,7 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.application.port.input.PartnerMachineIdentityQueryUseCase;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,9 @@ class SwaggerPublicAccessIT {
 
     @MockitoBean
     private PartnerMachineIdentityQueryUseCase partnerMachineIdentityQueryUseCase;
+
+    @MockitoBean
+    private FindLinkedIdentityPort findLinkedIdentityPort;
 
     @Test
     void swaggerUiIndexIsPublic() throws Exception {

@@ -105,7 +105,10 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
         );
         if (challenge.status() != ConfirmationChallengeStatus.ACTIVE)
             throw new IllegalStateException("InitiateDebit may return only after an ACTIVE confirmation challenge");
-        return InitiateDebitResult.awaitingOtp(received.paymentId(), received.publicPaymentReference(), command.endToEndId(), Money.of(command.totalAmount(), command.currency()), prepared.receivedAt(), challenge);
+
+        return InitiateDebitResult.awaitingOtp(received.paymentId(), received.publicPaymentReference(),
+                command.endToEndId(), Money.of(command.totalAmount(),
+                        command.currency()), prepared.receivedAt(), challenge);
     }
 
     private void failIfDeadlineExpired(PaymentId paymentId, Instant receivedAt) {

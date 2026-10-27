@@ -1,5 +1,6 @@
 package com.sixpay.payment;
 
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
@@ -9,6 +10,7 @@ import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyDecision;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyHasher;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyReplayStore;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -638,6 +640,11 @@ class PaymentIdempotencyFoundationIT {
         @Bean
         CurrentUserProvider currentUserProvider() {
             return () -> Optional.<AuthenticatedUser>empty();
+        }
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return Mockito.mock(PaymentCustomerSubscriptionPort.class);
         }
     }
 }

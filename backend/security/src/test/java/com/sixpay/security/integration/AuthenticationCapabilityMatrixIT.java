@@ -2,6 +2,7 @@ package com.sixpay.security.integration;
 
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.port.output.PasswordHistoryPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
@@ -12,6 +13,7 @@ import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineI
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
@@ -211,11 +213,17 @@ class AuthenticationCapabilityMatrixIT {
         }
 
         @Bean
+        FindLinkedIdentityPort findLinkedIdentityPort() {
+            return Mockito.mock(FindLinkedIdentityPort.class);
+        }
+/*
+        @Bean
         ExternalIdentityResolver externalIdentityResolver() {
             return mock(
                     ExternalIdentityResolver.class
             );
         }
+        */
 
         @Bean
         JwtDecoder jwtDecoder() {
