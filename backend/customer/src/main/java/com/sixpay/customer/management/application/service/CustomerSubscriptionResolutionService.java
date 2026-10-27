@@ -16,7 +16,7 @@ import java.util.UUID;
 /** In-process Customer boundary: no Payment or Partner persistence dependencies. */
 @Service
 @Transactional(readOnly = true)
-public final class CustomerSubscriptionResolutionService implements ResolveCustomerSubscriptionUseCase {
+public class CustomerSubscriptionResolutionService implements ResolveCustomerSubscriptionUseCase {
     private final CustomerSubscriptionRepository subscriptions;
     private final CustomerRepository customers;
 
