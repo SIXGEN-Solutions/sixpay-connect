@@ -37,6 +37,14 @@ public class PaymentReceptionService {
         );
     }
 
+    /** Existing durable initiation, used to resume the original Payment. */
+    public java.util.Optional<Payment> findExisting(String partnerIdentifier,
+            String externalReference) {
+        return paymentLookupPort.findByPartnerIdentifierAndExternalPaymentReference(
+                partnerIdentifier,
+                com.sixpay.payment.domain.model.ExternalPaymentReference.of(externalReference));
+    }
+
     /**
      * Creates a Payment, records reception and confirmation-request domain
      * events, then persists the aggregate, audit trail and outbox atomically.

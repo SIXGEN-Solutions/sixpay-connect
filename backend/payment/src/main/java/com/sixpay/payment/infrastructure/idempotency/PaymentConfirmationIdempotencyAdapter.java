@@ -211,9 +211,9 @@ public class PaymentConfirmationIdempotencyAdapter
                     );
 
             case IN_PROGRESS ->
-                    throw new IllegalStateException(
-                            "Payment confirmation operation is already in progress"
-                    );
+                    PaymentConfirmationIdempotencyResult.executed(
+                            recover(operation, paymentId, idempotencyKey.value(),
+                                    begin.requestHash(), recovery));
 
             case OUTCOME_UNKNOWN ->
                     PaymentConfirmationIdempotencyResult.executed(

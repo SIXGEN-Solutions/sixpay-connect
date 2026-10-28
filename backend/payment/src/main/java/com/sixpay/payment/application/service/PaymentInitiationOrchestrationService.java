@@ -61,54 +61,72 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
     }
 
     private InitiateDebitResult initiateNew(InitiateDebitCommand command, String requestHash) {
-        Instant receivedAt = timeProvider.now();
-        PreparedPaymentInitiation prepared = preparationPort.prepare(command, requestHash, receivedAt);
-        PaymentWorkflowResult received = receptionService.receive(prepared.paymentId(), prepared.publicPaymentReference(), prepared.intent(), prepared.receivedAt());
-        if (received.status() != PaymentStatus.RECEIVED)
-            throw new IllegalStateException("InitiateDebit must first durably persist Payment in RECEIVED");
-        failIfDeadlineExpired(received.paymentId(), prepared.receivedAt());
-        PaymentWorkflowResult pending = coordinator.mutate(received.paymentId(), payment -> {
-            if (payment.status() == PaymentStatus.RECEIVED) payment.startBankingVerification(timeProvider.now());
-        });
-        if (pending.status() != PaymentStatus.BANKING_VERIFICATION_PENDING)
-            throw new IllegalStateException("InitiateDebit must enter BANKING_VERIFICATION_PENDING");
-        PaymentCustomerVerificationService customer = customerProvider.getIfAvailable();
-        if (customer == null) throw new IllegalStateException("Customer Verification bridge is unavailable");
-        PaymentWorkflowResult verified;
-        try {
-            verified = customer.verifyCustomer(
-                    received.paymentId(),
-                    timeProvider.now(),
-                    initiationDeadline.deadlineAt(prepared.receivedAt()),
-                    policies
-            );
-        } catch (PaymentCustomerVerificationRetryableException failure) {
-            if (initiationDeadline.expired(prepared.receivedAt(), timeProvider.now())) {
-                failInitiationDeadline(received.paymentId(), timeProvider.now());
-            }
-            throw failure;
+        var existing = receptionService.findExisting(command.applicationId(), command.endToEndId());
+        PaymentId paymentId;
+        com.sixpay.payment.domain.model.PublicPaymentReference reference;
+        Instant receivedAt;
+        PaymentStatus status;
+        if (existing.isPresent()) {
+            var payment = existing.orElseThrow();
+            if (!payment.toState().requestIdentity().requestFingerprint().value().equals(requestHash)
+                    || !payment.toState().requestIdentity().idempotencyKey().value()
+                            .equals(command.idempotencyKey()))
+                throw new IllegalStateException("Initiation retry does not match original Payment identity");
+            paymentId = payment.id();
+            reference = payment.publicPaymentReference();
+            receivedAt = payment.toState().receivedAt();
+            status = payment.status();
+        } else {
+            Instant now = timeProvider.now();
+            PreparedPaymentInitiation prepared = preparationPort.prepare(command, requestHash, now);
+            PaymentWorkflowResult received = receptionService.receive(
+                    prepared.paymentId(), prepared.publicPaymentReference(), prepared.intent(), prepared.receivedAt());
+            if (received.status() != PaymentStatus.RECEIVED)
+                throw new IllegalStateException("InitiateDebit requires persisted RECEIVED");
+            paymentId = received.paymentId();
+            reference = received.publicPaymentReference();
+            receivedAt = prepared.receivedAt();
+            status = PaymentStatus.RECEIVED;
         }
-        failIfDeadlineExpired(received.paymentId(), prepared.receivedAt());
-        if (verified.status() != PaymentStatus.PENDING_CONFIRMATION)
-            throw new IllegalStateException("InitiateDebit requires VERIFIED banking preparation before OTP creation; actual=" + verified.status());
+        // All Payment persistence is committed by its independent adapter before I/O.
+        if (status != PaymentStatus.PENDING_CONFIRMATION)
+            failIfDeadlineExpired(paymentId, receivedAt);
+        if (status == PaymentStatus.RECEIVED) {
+            PaymentWorkflowResult pending = coordinator.mutate(paymentId, payment -> {
+                if (payment.status() == PaymentStatus.RECEIVED)
+                    payment.startBankingVerification(timeProvider.now());
+            });
+            status = pending.status();
+        }
+        if (status == PaymentStatus.BANKING_VERIFICATION_PENDING) {
+            PaymentCustomerVerificationService customer = customerProvider.getIfAvailable();
+            if (customer == null) throw new IllegalStateException("Customer Verification bridge unavailable");
+            PaymentWorkflowResult verified;
+            try {
+                verified = customer.verifyCustomer(paymentId, timeProvider.now(),
+                        initiationDeadline.deadlineAt(receivedAt), policies);
+            } catch (PaymentCustomerVerificationRetryableException failure) {
+                if (initiationDeadline.expired(receivedAt, timeProvider.now()))
+                    failInitiationDeadline(paymentId, timeProvider.now());
+                throw failure;
+            }
+            status = verified.status();
+        }
+        if (status != PaymentStatus.PENDING_CONFIRMATION)
+            throw new IllegalStateException("Initiation requires verified banking preparation, actual=" + status);
         PaymentConfirmationService confirmation = confirmationProvider.getIfAvailable();
-        if (confirmation == null) throw new IllegalStateException("Payment Confirmation bridge is unavailable");
-        failIfDeadlineExpired(received.paymentId(), prepared.receivedAt());
-        PaymentConfirmationView challenge = confirmation.createBefore(
-                new CreatePaymentConfirmationCommand(
-                        received.publicPaymentReference(),
-                        command.correlationId(),
-                        IdempotencyKey.of(command.idempotencyKey())
-                ),
-                initiationDeadline.deadlineAt(prepared.receivedAt()),
-                timeProvider
-        );
+        if (confirmation == null) throw new IllegalStateException("Payment Confirmation bridge unavailable");
+        CreatePaymentConfirmationCommand confirmationCommand =
+                new CreatePaymentConfirmationCommand(reference, command.correlationId(),
+                        IdempotencyKey.of(command.idempotencyKey()));
+        PaymentConfirmationView challenge = initiationDeadline.expired(receivedAt, timeProvider.now())
+                ? confirmation.recoverInitiation(confirmationCommand)
+                : confirmation.createBefore(confirmationCommand,
+                        initiationDeadline.deadlineAt(receivedAt), timeProvider);
         if (challenge.status() != ConfirmationChallengeStatus.ACTIVE)
-            throw new IllegalStateException("InitiateDebit may return only after an ACTIVE confirmation challenge");
-
-        return InitiateDebitResult.awaitingOtp(received.paymentId(), received.publicPaymentReference(),
-                command.endToEndId(), Money.of(command.totalAmount(),
-                        command.currency()), prepared.receivedAt(), challenge);
+            throw new IllegalStateException("Initiation requires ACTIVE challenge");
+        return InitiateDebitResult.awaitingOtp(paymentId, reference, command.endToEndId(),
+                Money.of(command.totalAmount(), command.currency()), receivedAt, challenge);
     }
 
     private void failIfDeadlineExpired(PaymentId paymentId, Instant receivedAt) {

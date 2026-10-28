@@ -222,6 +222,14 @@ public class PaymentIdempotencyEntity {
         );
     }
 
+    /** Preserve original request identity and payment linkage when resumed. */
+    void claimRecovery(Instant claimedAt) {
+        if (status != Status.IN_PROGRESS && status != Status.OUTCOME_UNKNOWN)
+            throw new IllegalStateException("Only unresolved operations may be reclaimed");
+        status = Status.IN_PROGRESS;
+        updatedAt = Objects.requireNonNull(claimedAt);
+    }
+
     void complete(
             UUID paymentId,
             String responseStatus,

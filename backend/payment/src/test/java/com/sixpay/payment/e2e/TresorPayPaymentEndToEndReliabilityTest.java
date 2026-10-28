@@ -104,11 +104,22 @@ class TresorPayPaymentEndToEndReliabilityTest {
                 "com/sixpay/payment/PaymentIdempotencyFoundationIT.java"
         );
 
+        String transactions = source(
+                "com/sixpay/payment/infrastructure/idempotency/"
+                        + "PaymentInitiationIdempotencyTransactions.java"
+        );
+
         assertThat(adapter)
-                .contains("case REPLAY ->")
-                .contains("replay(decision)")
-                .contains("replayStore.completeScoped(")
-                .contains("findCompletedReplayForPayment(");
+                .contains("@Transactional(propagation = Propagation.NEVER)")
+                .contains("case REPLAY -> replay(begin.decision())")
+                .contains("transactions.begin(command, hash)")
+                .contains("transactions.complete(command, hash");
+        assertThat(transactions)
+                .contains("@Transactional(propagation = Propagation.REQUIRES_NEW)")
+                .contains("executePartnerPaymentReferenceLocked(")
+                .contains("executeScopedLocked(")
+                .contains("findCompletedReplayForPayment(")
+                .contains("completeScoped(");
 
         assertThat(recovery)
                 .contains("Read-only recovery view")

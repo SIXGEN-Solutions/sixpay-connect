@@ -132,7 +132,8 @@ class PaymentInitiationOrchestrationServiceTest {
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.initiateDebit(cmd))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("requires VERIFIED banking preparation");
+                .hasMessageContaining("requires verified banking preparation")
+                .hasMessageContaining("actual=REJECTED");
         Mockito.verifyNoInteractions(confirmation);
     }
 }

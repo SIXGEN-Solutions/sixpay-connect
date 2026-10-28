@@ -197,6 +197,32 @@ public class PaymentConfirmationService
         );
     }
 
+    /** Recover an interrupted initiation without ever making a new create POST. */
+    public PaymentConfirmationView recoverInitiation(CreatePaymentConfirmationCommand command) {
+        Objects.requireNonNull(command);
+        Payment payment = requirePayment(command.paymentReference());
+        requirePendingConfirmation(payment);
+        ConfirmationChallenge existing = payment.toState().confirmationChallenge()
+                .filter(ConfirmationChallenge::active).orElse(null);
+        if (existing != null) return PaymentConfirmationView.fromExisting(
+                payment.publicPaymentReference(), existing);
+        BankingRequestContext context = bankingContext(payment, command.correlationId());
+        BankingIdempotencyKey bankKey = bankingIdempotencyKey(command.idempotencyKey().value());
+        PaymentConfirmationIdempotencyResult recovered = idempotencyPort.executeCreate(
+                payment.id(), payment.publicPaymentReference(), command.idempotencyKey(),
+                () -> { throw new IllegalStateException(
+                        "Recovery cannot issue a new bank challenge POST"); },
+                () -> confirmationGateway.recover(
+                        new PaymentConfirmationGateway.RecoveryRequest(context, bankKey)));
+        PaymentConfirmationBankResult result = recovered.result();
+        ConfirmationChallenge challenge = PaymentConfirmationChallengeFactory.fromBankResult(
+                result, PaymentConfirmationChallengeFactory.requireBinding(payment));
+        authorizationService.attachConfirmationChallenge(payment.id(), challenge,
+                PaymentConfirmationChallengeFactory.observationInstant(payment, result));
+        return PaymentConfirmationView.from(payment.publicPaymentReference(),
+                result, recovered.replayed());
+    }
+
     @Override
     public PaymentConfirmationView read(
             ReadPaymentConfirmationQuery query

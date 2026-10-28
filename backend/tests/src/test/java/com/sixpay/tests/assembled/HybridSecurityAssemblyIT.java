@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
@@ -36,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(
-        classes = HybridSecurityAssemblyIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles({

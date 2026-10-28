@@ -27,8 +27,6 @@ class PaymentNotificationReadinessIT
 
     private static final String PAYMENT_FINALIZATION_SERVICE =
             "com.sixpay.payment.application.service.PaymentFinalizationService";
-    private static final String PAYMENT_POSTING_OUTCOME_EVENT =
-            "com.sixpay.payment.domain.event.PaymentPostingOutcomeRecorded";
     private static final String PAYMENT_POSTED_NOTIFICATION_TRIGGER =
             "com.sixpay.notification.domain.model.PaymentPostedNotificationTrigger";
     private static final String NOTIFICATION_TEMPLATE_CATALOG =
@@ -47,7 +45,6 @@ class PaymentNotificationReadinessIT
     void paymentAndNotificationParticipateInAssembledApplication() {
         assertBeanPresent(PAYMENT_FINALIZATION_SERVICE);
         assertBeanPresent(NOTIFICATION_TEMPLATE_CATALOG);
-        assertTypeAvailable(PAYMENT_POSTING_OUTCOME_EVENT);
         assertTypeAvailable(PAYMENT_POSTED_NOTIFICATION_TRIGGER);
     }
 

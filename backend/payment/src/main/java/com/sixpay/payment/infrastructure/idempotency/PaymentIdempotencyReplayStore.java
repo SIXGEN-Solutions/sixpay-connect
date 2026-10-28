@@ -78,6 +78,23 @@ public class PaymentIdempotencyReplayStore {
         };
     }
 
+    /** Claim a stale initiation record without losing its original key or
+     * completed result. Caller holds both partner/reference and key locks. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean reclaimScopedAfter(String partnerIdentifier, String operation,
+            String idempotencyKey, String requestHash, Instant staleBefore,
+            Instant claimedAt) {
+        PaymentIdempotencyEntity entity = requireExistingScoped(
+                partnerIdentifier, operation, idempotencyKey);
+        requireSameHash(entity, operation, idempotencyKey, requestHash);
+        if ((entity.status() != PaymentIdempotencyEntity.Status.IN_PROGRESS
+                    && entity.status() != PaymentIdempotencyEntity.Status.OUTCOME_UNKNOWN)
+                || entity.updatedAt().isAfter(staleBefore)) return false;
+        entity.claimRecovery(claimedAt);
+        repository.saveAndFlush(entity);
+        return true;
+    }
+
     @Transactional(propagation = Propagation.MANDATORY)
     public void completeScoped(
             String partnerIdentifier,

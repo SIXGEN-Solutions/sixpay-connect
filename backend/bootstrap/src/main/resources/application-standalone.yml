@@ -2,6 +2,7 @@ spring:
   config:
     import:
       - classpath:application-notification-operational.yml
+      - classpath:application-customer-projection-outbox.yml
       - classpath:config/payment/tresorpay-common.yml
 
   datasource:
