@@ -351,6 +351,31 @@ class PaymentIdempotencyFoundationIT {
     }
 
     @Test
+    void rollsBackScopedInitiationIdempotencyWhenRequestFails() {
+        String partner = "PARTNER-" + UUID.randomUUID();
+        String key = "failed-initiation-" + UUID.randomUUID();
+        String hash = hasher.hash("initial-request");
+
+        assertThatThrownBy(() -> inTransaction(() ->
+                coordinator.executeScopedLocked(partner, "PAYMENT_INITIATE_DEBIT", key, () -> {
+                    assertThat(replayStore.beginScoped(
+                            partner, "PAYMENT_INITIATE_DEBIT", key, hash, now()
+                    ).kind()).isEqualTo(PaymentIdempotencyDecision.Kind.NEW);
+                    throw new IllegalStateException("simulated initiation failure");
+                })
+        )).isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("simulated initiation failure");
+
+        PaymentIdempotencyDecision afterRollback = inTransactionWithResult(() ->
+                coordinator.executeScopedLocked(partner, "PAYMENT_INITIATE_DEBIT", key,
+                        () -> replayStore.beginScoped(
+                                partner, "PAYMENT_INITIATE_DEBIT", key, hash, now().plusSeconds(1))
+                )
+        );
+        assertThat(afterRollback.kind()).isEqualTo(PaymentIdempotencyDecision.Kind.NEW);
+    }
+
+    @Test
     void serializesConcurrentTransactionsForSamePartnerPaymentReferenceAcrossDifferentKeys()
             throws Exception {
         String partnerIdentifier = "PARTNER-" + UUID.randomUUID();
