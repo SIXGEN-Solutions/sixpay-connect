@@ -99,4 +99,40 @@ class PaymentInitiationOrchestrationServiceTest {
         assertThat(result.confirmationChallenge().status()).isEqualTo(ConfirmationChallengeStatus.ACTIVE);
         Mockito.verify(confirmation, Mockito.times(1)).createBefore(any(), any(), any());
     }
+
+    @Test
+    void rejectsBankingVerificationWithoutCreatingOtpChallenge() {
+        PaymentInitiationIdempotencyPort idem = Mockito.mock(PaymentInitiationIdempotencyPort.class);
+        PaymentInitiationPreparationPort prep = Mockito.mock(PaymentInitiationPreparationPort.class);
+        PaymentReceptionService reception = Mockito.mock(PaymentReceptionService.class);
+        PaymentMutationCoordinator coordinator = Mockito.mock(PaymentMutationCoordinator.class);
+        PaymentCustomerVerificationService customer = Mockito.mock(PaymentCustomerVerificationService.class);
+        PaymentConfirmationService confirmation = Mockito.mock(PaymentConfirmationService.class);
+        PaymentPolicyBundle policies = Mockito.mock(PaymentPolicyBundle.class);
+        @SuppressWarnings("unchecked") ObjectProvider<PaymentCustomerVerificationService> cp = Mockito.mock(ObjectProvider.class);
+        @SuppressWarnings("unchecked") ObjectProvider<PaymentConfirmationService> fp = Mockito.mock(ObjectProvider.class);
+        InitiateDebitCommand cmd = command();
+        PaymentId id = new PaymentId(UUID.randomUUID());
+        PublicPaymentReference ref = PublicPaymentReference.of("PAY-1234567890ABCDEFGHJKMNPQRS");
+        NewPaymentIntent intent = Mockito.mock(NewPaymentIntent.class);
+        when(idem.execute(any(), any())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked") Function<String, InitiateDebitResult> action = invocation.getArgument(1);
+            return action.apply("a".repeat(64));
+        });
+        when(prep.prepare(cmd, "a".repeat(64), NOW)).thenReturn(new PreparedPaymentInitiation(id, ref, intent, NOW));
+        when(reception.receive(id, ref, intent, NOW)).thenReturn(flow(id, ref, PaymentStatus.RECEIVED, 1));
+        when(coordinator.mutate(any(), any())).thenReturn(flow(id, ref, PaymentStatus.BANKING_VERIFICATION_PENDING, 2));
+        when(cp.getIfAvailable()).thenReturn(customer);
+        when(customer.verifyCustomer(any(), any(), any(), any())).thenReturn(flow(id, ref, PaymentStatus.REJECTED, 3));
+        when(fp.getIfAvailable()).thenReturn(confirmation);
+
+        PaymentInitiationOrchestrationService service = new PaymentInitiationOrchestrationService(
+                idem, prep, reception, coordinator, cp, fp, policies,
+                () -> NOW, new PaymentInitiationDeadline(java.time.Duration.ofSeconds(30)));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.initiateDebit(cmd))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("requires VERIFIED banking preparation");
+        Mockito.verifyNoInteractions(confirmation);
+    }
 }

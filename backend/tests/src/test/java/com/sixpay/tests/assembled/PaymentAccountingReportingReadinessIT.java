@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.tests.support.CrossModulePostgreSqlTestSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -21,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * contract.</p>
  */
 @SpringBootTest(
-        classes = AssembledApplicationContextIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("assembled-test")

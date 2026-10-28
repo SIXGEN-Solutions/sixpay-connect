@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.tests.support.CrossModulePostgreSqlTestSupport;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * gap.</p>
  */
 @SpringBootTest(
-        classes = AssembledApplicationContextIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("assembled-test")
@@ -144,6 +145,23 @@ class PilotCriticalFlowMatrixIT
         assertThat(PILOT_MATRIX)
                 .anyMatch(flow -> flow.state() == ExpectedState.WIRED)
                 .anyMatch(flow -> flow.state() == ExpectedState.EXPLICITLY_UNWIRED);
+    }
+
+    @Test
+    void inspectCustomerUseCaseBeans() {
+        System.out.println(
+                "VerifyCustomerUseCase beans = " +
+                        context.getBeanNamesForType(
+                                com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase.class
+                        ).length
+        );
+
+        System.out.println(
+                "ObserveCustomerUseCase beans = " +
+                        context.getBeanNamesForType(
+                                com.sixpay.customer.observation.application.port.input.ObserveCustomerUseCase.class
+                        ).length
+        );
     }
 
     private void assertExpectation(FlowExpectation expectation) {
