@@ -487,6 +487,153 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
         );
     }
 
+
+    @Test
+    void genericAndCallbackClaimsHaveIndependentDurableProgress() {
+        PaymentOutboxEntity entity = entity(event("55555555"), aggregate("eeeeeeee"), BASE);
+        // The callback relay consumes the logical Payment domain-event stream.
+        repository.saveAndFlush(entity);
+        jdbc.update("UPDATE payment_outbox_events SET event_type = 'payment.domain-event' WHERE event_id = ?",
+                entity.eventId());
+        List<PaymentOutboxClaim> generic = claimService.claimAvailable(
+                BASE.plusSeconds(1), BASE.minusSeconds(120), 10, "generic");
+        assertEquals(1, generic.size());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            PaymentOutboxEntity claimed = repository.findById(entity.eventId()).orElseThrow();
+            claimed.markPublished(BASE.plusSeconds(2));
+            repository.flush();
+        });
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            List<PaymentOutboxEntity> callback = repository.lockCallbackClaimable(
+                    BASE.plusSeconds(3), BASE.minusSeconds(120), 10);
+            assertEquals(1, callback.size());
+            callback.getFirst().claimCallback(BASE.plusSeconds(3), "callback");
+            repository.flush();
+        });
+        PaymentOutboxEntity persisted = repository.findById(entity.eventId()).orElseThrow();
+        assertEquals(PaymentOutboxEntity.Status.PUBLISHED, persisted.status());
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING, persisted.callbackStatus());
+    }
+
+    @Test
+    void callbackPublicationDoesNotConsumeGenericDelivery() {
+        PaymentOutboxEntity entity = entity(event("66666666"), aggregate("ffffffff"), BASE);
+        repository.saveAndFlush(entity);
+        jdbc.update("UPDATE payment_outbox_events SET event_type = 'payment.domain-event' WHERE event_id = ?",
+                entity.eventId());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var callback = repository.lockCallbackClaimable(
+                    BASE.plusSeconds(1), BASE.minusSeconds(120), 10);
+            assertEquals(1, callback.size());
+            callback.getFirst().claimCallback(BASE.plusSeconds(1), "callback");
+            callback.getFirst().markCallbackPublished(BASE.plusSeconds(2));
+            repository.flush();
+        });
+        var generic = claimService.claimAvailable(BASE.plusSeconds(3), BASE.minusSeconds(120),
+                10, "generic");
+        assertEquals(1, generic.size());
+        var persisted = repository.findById(entity.eventId()).orElseThrow();
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING, persisted.status());
+        assertEquals(PaymentOutboxEntity.Status.PUBLISHED, persisted.callbackStatus());
+    }
+
+    @Test
+    void callbackFailureRetriesWithoutAlteringGenericProgress() {
+        PaymentOutboxEntity entity = entity(event("77777777"), aggregate("bbbbbbbb"), BASE);
+        repository.saveAndFlush(entity);
+        jdbc.update("UPDATE payment_outbox_events SET event_type = 'payment.domain-event' WHERE event_id = ?",
+                entity.eventId());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var callback = repository.lockCallbackClaimable(
+                    BASE.plusSeconds(1), BASE.minusSeconds(120), 1);
+            assertEquals(1, callback.size());
+            callback.getFirst().claimCallback(BASE.plusSeconds(1), "callback");
+            callback.getFirst().markCallbackFailed("timeout", BASE.plusSeconds(2),
+                    BASE.plusSeconds(10));
+            repository.flush();
+        });
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            assertTrue(repository.lockCallbackClaimable(BASE.plusSeconds(3),
+                    BASE.minusSeconds(120), 1).isEmpty());
+            var due = repository.lockCallbackClaimable(BASE.plusSeconds(11),
+                    BASE.minusSeconds(120), 1);
+            assertEquals(1, due.size());
+            due.getFirst().claimCallback(BASE.plusSeconds(11), "callback");
+            repository.flush();
+        });
+        var persisted = repository.findById(entity.eventId()).orElseThrow();
+        assertEquals(2, persisted.callbackAttemptCount());
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING, persisted.callbackStatus());
+        assertEquals(PaymentOutboxEntity.Status.PENDING, persisted.status());
+    }
+
+    @Test
+    void genericAndCallbackClaimCanRunConcurrentlyForSameEvent() throws Exception {
+        PaymentOutboxEntity entity = entity(event("12345678"), aggregate("abcdabcd"), BASE);
+        repository.saveAndFlush(entity);
+        jdbc.update("UPDATE payment_outbox_events SET event_type = 'payment.domain-event' WHERE event_id = ?",
+                entity.eventId());
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var generic = executor.submit(() -> {
+                start.await();
+                for (int n = 0; n < 30; n++) {
+                    var claimed = claimService.claimAvailable(BASE.plusSeconds(1),
+                            BASE.minusSeconds(120), 1, "generic");
+                    if (!claimed.isEmpty()) return claimed;
+                    Thread.sleep(20);
+                }
+                return List.<PaymentOutboxClaim>of();
+            });
+            var callback = executor.submit(() -> {
+                start.await();
+                for (int n = 0; n < 30; n++) {
+                    var ids = new TransactionTemplate(transactionManager).execute(tx -> {
+                        var claimed = repository.lockCallbackClaimable(BASE.plusSeconds(1),
+                                BASE.minusSeconds(120), 1);
+                        for (var row : claimed) row.claimCallback(BASE.plusSeconds(1), "callback");
+                        repository.flush();
+                        return claimed.stream().map(PaymentOutboxEntity::eventId).toList();
+                    });
+                    if (ids != null && !ids.isEmpty()) return ids;
+                    Thread.sleep(20);
+                }
+                return List.<UUID>of();
+            });
+            start.countDown();
+            assertEquals(1, generic.get().size());
+            assertEquals(1, callback.get().size());
+        }
+        var persisted = repository.findById(entity.eventId()).orElseThrow();
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING, persisted.status());
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING, persisted.callbackStatus());
+    }
+
+    @Test
+    void callbackClaimRespectsPerPaymentOrdering() {
+        UUID payment = aggregate("aaaaaaaa");
+        PaymentOutboxEntity first = entity(event("88888888"), payment, BASE);
+        PaymentOutboxEntity second = entity(event("99999999"), payment, BASE.plusSeconds(1));
+        repository.saveAllAndFlush(List.of(first, second));
+        jdbc.update("UPDATE payment_outbox_events SET event_type = 'payment.domain-event' "
+                + "WHERE event_id IN (?, ?)", first.eventId(), second.eventId());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var claimed = repository.lockCallbackClaimable(BASE.plusSeconds(3),
+                    BASE.minusSeconds(120), 10);
+            assertEquals(1, claimed.size());
+            assertEquals(first.eventId(), claimed.getFirst().eventId());
+            claimed.getFirst().claimCallback(BASE.plusSeconds(3), "callback");
+            claimed.getFirst().markCallbackPublished(BASE.plusSeconds(4));
+            repository.flush();
+        });
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var next = repository.lockCallbackClaimable(BASE.plusSeconds(5),
+                    BASE.minusSeconds(120), 10);
+            assertEquals(1, next.size());
+            assertEquals(second.eventId(), next.getFirst().eventId());
+        });
+    }
+
     private PaymentOutboxEntity entity(
             UUID eventId,
             UUID aggregateId,

@@ -47,14 +47,14 @@ public class PaymentCallbackOutboxCoordinator {
         );
 
         List<PaymentOutboxEntity> entities =
-                repository.lockClaimable(
+                repository.lockCallbackClaimable(
                         now,
                         staleBefore,
                         properties.getBatchSize()
                 );
 
         entities.forEach(entity ->
-                entity.claim(
+                entity.claimCallback(
                         now,
                         properties.getWorkerId()
                 )
@@ -70,7 +70,7 @@ public class PaymentCallbackOutboxCoordinator {
                                 entity.eventType(),
                                 entity.correlationId(),
                                 entity.occurredAt(),
-                                entity.attemptCount()
+                                entity.callbackAttemptCount()
                         )
                 )
                 .toList();
@@ -79,7 +79,7 @@ public class PaymentCallbackOutboxCoordinator {
     @Transactional
     public void markPublished(UUID eventId) {
         PaymentOutboxEntity entity = requireOwned(eventId);
-        entity.markPublished(timeProvider.now());
+        entity.markCallbackPublished(timeProvider.now());
     }
 
     @Transactional
@@ -92,11 +92,11 @@ public class PaymentCallbackOutboxCoordinator {
         Instant now = timeProvider.now();
 
         if (attemptCount >= properties.getMaxAttempts()) {
-            entity.markDead(message(failure), now);
+            entity.markCallbackDead(message(failure), now);
             return;
         }
 
-        entity.markFailed(
+        entity.markCallbackFailed(
                 message(failure),
                 now,
                 now.plus(retryDelay(attemptCount))
@@ -113,10 +113,10 @@ public class PaymentCallbackOutboxCoordinator {
                         )
                 );
 
-        if (entity.status()
+        if (entity.callbackStatus()
                 != PaymentOutboxEntity.Status.PROCESSING
                 || !properties.getWorkerId()
-                .equals(entity.claimedBy())) {
+                .equals(entity.callbackClaimedBy())) {
             throw new IllegalStateException(
                     "Outbox event is not owned by this callback worker"
             );

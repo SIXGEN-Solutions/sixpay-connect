@@ -188,12 +188,15 @@ class TresorPayPaymentEndToEndReliabilityTest {
                 .contains("coordinator.markPublished(");
 
         assertThat(coordinator)
-                .contains("repository.lockClaimable(")
-                .contains("entity.claim(")
-                .contains("entity.markFailed(")
+                .contains("repository.lockCallbackClaimable(")
+                .contains("entity.claimCallback(")
+                .contains("entity.markCallbackFailed(")
                 .contains("now.plus(retryDelay(attemptCount))")
                 .contains("properties.getMaxAttempts()")
-                .contains("entity.markDead(");
+                .contains("entity.markCallbackDead(")
+                .contains("entity.markCallbackPublished(")
+                .contains("entity.callbackStatus()")
+                .contains("entity.callbackClaimedBy()");
 
         assertThat(relayTest)
                 .contains("transportFailureSchedulesRetryAndDoesNotPublish")
