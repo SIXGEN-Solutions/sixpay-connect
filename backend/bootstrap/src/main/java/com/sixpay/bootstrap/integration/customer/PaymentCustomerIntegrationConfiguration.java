@@ -18,7 +18,7 @@ public class PaymentCustomerIntegrationConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(VerifyCustomerUseCase.class)
+    //@ConditionalOnBean(VerifyCustomerUseCase.class)
     CustomerVerificationPort customerVerificationPort(
             VerifyCustomerUseCase verifyCustomerUseCase
     ) {

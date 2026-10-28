@@ -84,10 +84,10 @@ class PilotCriticalFlowMatrixIT
                     OBSERVED_CUSTOMER_PROJECTION_SERVICE,
                     "the assembled composition root must expose the projection service"
             ),
-            FlowExpectation.explicitlyUnwired(
-                    "Payment -> Accounting",
+            FlowExpectation.wired(
+                    "Accounting candidate source foundation",
                     ACCOUNTING_CANDIDATE_SOURCE,
-                    "INT-11 remains contract-dependent; the harness must not invent an adapter"
+                    "Accounting-owned candidate source exists; INT-11 remains contract-dependent"
             ),
             FlowExpectation.wired(
                     "Reporting payment audit read model",
@@ -148,20 +148,18 @@ class PilotCriticalFlowMatrixIT
     }
 
     @Test
-    void inspectCustomerUseCaseBeans() {
-        System.out.println(
-                "VerifyCustomerUseCase beans = " +
-                        context.getBeanNamesForType(
-                                com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase.class
-                        ).length
-        );
+    void customerUseCasesAreRegisteredInAssembledContext() {
+        assertThat(context.getBeansOfType(
+                com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase.class
+        ))
+                .as("Customer verification use case must exist in the assembled context")
+                .isNotEmpty();
 
-        System.out.println(
-                "ObserveCustomerUseCase beans = " +
-                        context.getBeanNamesForType(
-                                com.sixpay.customer.observation.application.port.input.ObserveCustomerUseCase.class
-                        ).length
-        );
+        assertThat(context.getBeansOfType(
+                com.sixpay.customer.observation.application.port.input.ObserveCustomerUseCase.class
+        ))
+                .as("Customer observation use case must exist when persistence is enabled")
+                .isNotEmpty();
     }
 
     private void assertExpectation(FlowExpectation expectation) {

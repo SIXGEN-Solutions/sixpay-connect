@@ -1,15 +1,5 @@
 package com.sixpay.bootstrap.integration.customer.outbox;
 
-import com.sixpay.bootstrap.integration.customer
-        .ObservedCustomerProjectionModuleAdapter;
-import com.sixpay.bootstrap.integration.customer.mapper
-        .PaymentProjectionEventCommandMapper;
-import com.sixpay.customer.observation.application.port.input
-        .ObserveCustomerUseCase;
-import com.sixpay.payment.application.port.output
-        .ObservedCustomerProjectionPort;
-import com.sixpay.payment.application.service
-        .PaymentObservedCustomerProjectionRequestFactory;
 import com.sixpay.payment.application.service
         .PaymentObservedCustomerProjectionService;
 import com.sixpay.payment.infrastructure.outbox
@@ -23,8 +13,8 @@ import com.sixpay.payment.infrastructure.outbox.serialization
 import com.sixpay.payment.infrastructure.outbox.serialization
         .PaymentOutboxEventTypeRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnBean;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition
         .ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition
@@ -39,7 +29,11 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Clock;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnBean(ObserveCustomerUseCase.class)
+@ConditionalOnProperty(
+        prefix = "sixpay.customer.observation.persistence",
+        name = "enabled",
+        havingValue = "true"
+)
 @EnableScheduling
 @EnableConfigurationProperties(
         CustomerProjectionOutboxProperties.class
@@ -66,48 +60,9 @@ public class PaymentObservedCustomerOutboxConfiguration {
         );
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    PaymentProjectionEventCommandMapper
-            paymentProjectionEventCommandMapper() {
-        return new PaymentProjectionEventCommandMapper();
-    }
 
-    @Bean
-    @ConditionalOnMissingBean(
-            ObservedCustomerProjectionPort.class
-    )
-    ObservedCustomerProjectionPort
-            observedCustomerProjectionPort(
-                    ObserveCustomerUseCase useCase,
-                    PaymentProjectionEventCommandMapper mapper
-            ) {
-        return new ObservedCustomerProjectionModuleAdapter(
-                useCase,
-                mapper
-        );
-    }
 
-    @Bean
-    @ConditionalOnMissingBean
-    PaymentObservedCustomerProjectionRequestFactory
-            paymentObservedCustomerProjectionRequestFactory() {
-        return new PaymentObservedCustomerProjectionRequestFactory();
-    }
 
-    @Bean
-    @ConditionalOnMissingBean
-    PaymentObservedCustomerProjectionService
-            paymentObservedCustomerProjectionService(
-                    ObservedCustomerProjectionPort port,
-                    PaymentObservedCustomerProjectionRequestFactory
-                            factory
-            ) {
-        return new PaymentObservedCustomerProjectionService(
-                port,
-                factory
-        );
-    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -170,7 +125,7 @@ public class PaymentObservedCustomerOutboxConfiguration {
             customerProjectionOutboxHealthIndicator(
                     PaymentOutboxRepository repository,
                     CustomerProjectionOutboxProperties properties,
-                    Clock clock
+                    @Qualifier("customerProjectionOutboxClock") Clock clock
             ) {
         return new CustomerProjectionOutboxHealthIndicator(
                 repository,
@@ -194,7 +149,7 @@ public class PaymentObservedCustomerOutboxConfiguration {
                     CustomerProjectionOutboxProperties properties,
                     CustomerProjectionOutboxMetrics metrics,
                     PaymentOutboxRepository repository,
-                    Clock clock
+                    @Qualifier("customerProjectionOutboxClock") Clock clock
             ) {
         return new PaymentObservedCustomerOutboxScheduler(
                 dispatcher,
