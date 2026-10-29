@@ -3,6 +3,7 @@ export const PARTNER_DECISIONS = ['APPROVE', 'REJECT'] as const;
 export type PartnerDecision = (typeof PARTNER_DECISIONS)[number];
 
 export interface CreatePartnerRequest {
+  readonly partnerIdentifier: string;
   readonly legalName: string;
   readonly technicalContactName: string;
   readonly technicalContactEmail: string;

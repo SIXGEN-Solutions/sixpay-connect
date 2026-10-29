@@ -2,22 +2,9 @@ package com.sixpay.payment.infrastructure.banking.amplitude.confirmation;
 
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationBankResult;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
-import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.configuration.AmplitudePaymentConfirmationProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-@Component
-@ConditionalOnProperty(
-        prefix = AmplitudePaymentConfirmationProperties.PREFIX,
-        name = "enabled",
-        havingValue = "true"
-)
-@ConditionalOnBean(AmplitudePaymentConfirmationClient.class)
-@ConditionalOnMissingBean(PaymentConfirmationGateway.class)
 public final class DedicatedAmplitudePaymentConfirmationAdapter implements PaymentConfirmationGateway {
     private final AmplitudePaymentConfirmationClient client;
 

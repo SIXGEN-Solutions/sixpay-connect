@@ -2,8 +2,6 @@ package com.sixpay.payment.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sixpay.payment.domain.model.PaymentStatus;
-
 import java.time.Instant;
 
 /**
@@ -51,7 +49,7 @@ public record InitiateDebitResponse(
         String transactionQrCode,
 
         @JsonProperty("Status")
-        PaymentStatus status,
+        String status,
 
         @JsonProperty("NextStep")
         String nextStep

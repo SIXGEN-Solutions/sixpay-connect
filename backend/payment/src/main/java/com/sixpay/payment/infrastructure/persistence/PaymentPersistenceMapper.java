@@ -125,6 +125,12 @@ public final class PaymentPersistenceMapper {
                 || !entity.externalPaymentReference().equals(
                 state.externalPaymentReference().value()
         )
+                || !Objects.equals(
+                entity.partnerIdentifier(),
+                state.initiationContext()
+                        .map(context -> context.applicationId())
+                        .orElse(null)
+        )
                 || entity.status() != state.status()
                 || entity.businessVersion()
                 != state.businessVersion()

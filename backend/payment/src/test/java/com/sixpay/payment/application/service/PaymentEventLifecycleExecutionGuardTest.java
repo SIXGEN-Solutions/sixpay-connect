@@ -123,8 +123,36 @@ class PaymentEventLifecycleExecutionGuardTest {
 
         assertThat(result.stateChanged()).isFalse();
 
+        // Losing an optimistic authorization race may consume a context read,
+        // but must never issue a second financial POST or finalize an outcome.
         verifyNoInteractions(
-                contextService,
+                executionPort,
+                finalizationService,
+                recoveryPort
+        );
+        org.mockito.Mockito.verify(contextService).resolve(
+                fixture.context,
+                fixture.requestedAt
+        );
+    }
+
+    @Test
+    void missingBankingContextNeverReservesPostingInstruction() {
+        Fixture fixture = fixture();
+        when(fixture.payment.status())
+                .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
+        when(contextService.resolve(fixture.context, fixture.requestedAt))
+                .thenThrow(new IllegalStateException("Core Banking context unavailable"));
+
+        assertThatThrownBy(() -> service().execute(
+                fixture.paymentId, fixture.instruction,
+                fixture.context, fixture.requestedAt, policies
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Core Banking context unavailable");
+
+        verifyNoInteractions(
+                postingPreparationService,
                 executionPort,
                 finalizationService,
                 recoveryPort

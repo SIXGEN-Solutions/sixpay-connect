@@ -37,6 +37,14 @@ public class PaymentReceptionService {
         );
     }
 
+    /** Existing durable initiation, used to resume the original Payment. */
+    public java.util.Optional<Payment> findExisting(String partnerIdentifier,
+            String externalReference) {
+        return paymentLookupPort.findByPartnerIdentifierAndExternalPaymentReference(
+                partnerIdentifier,
+                com.sixpay.payment.domain.model.ExternalPaymentReference.of(externalReference));
+    }
+
     /**
      * Creates a Payment, records reception and confirmation-request domain
      * events, then persists the aggregate, audit trail and outbox atomically.
@@ -55,16 +63,27 @@ public class PaymentReceptionService {
         Objects.requireNonNull(intent, "New Payment intent");
         Objects.requireNonNull(receivedAt, "Received instant");
 
-        if (paymentLookupPort
-                .existsBySourceAndExternalPaymentReference(
-                        intent.source(),
-                        intent.externalPaymentReference()
-                )) {
+        String partnerIdentifier =
+                intent.initiationContext() == null
+                        ? null
+                        : intent.initiationContext().applicationId();
+
+        boolean alreadyExists =
+                partnerIdentifier == null
+                        ? paymentLookupPort
+                                .existsBySourceAndExternalPaymentReference(
+                                        intent.source(),
+                                        intent.externalPaymentReference()
+                                )
+                        : paymentLookupPort
+                                .existsByPartnerIdentifierAndExternalPaymentReference(
+                                        partnerIdentifier,
+                                        intent.externalPaymentReference()
+                                );
+
+        if (alreadyExists) {
             throw new IllegalStateException(
-                    "Payment already exists for source "
-                            + intent.source()
-                            + " and external reference "
-                            + intent.externalPaymentReference()
+                    "Payment already exists for Partner/external reference"
             );
         }
 

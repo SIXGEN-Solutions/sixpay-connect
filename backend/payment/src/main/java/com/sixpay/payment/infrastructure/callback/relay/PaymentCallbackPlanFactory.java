@@ -1,211 +1,142 @@
 package com.sixpay.payment.infrastructure.callback.relay;
 
 import com.sixpay.common.context.CorrelationId;
-import com.sixpay.payment.application.port.output.callback
-        .PaymentStatusCallbackDelivery;
-import com.sixpay.payment.application.port.output.callback
-        .PaymentStatusCallbackMessage;
+import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackDelivery;
+import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackMessage;
+import com.sixpay.payment.domain.model.BankPostingReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
+import com.sixpay.payment.domain.event.PaymentEndOfDayConfirmationRecorded;
+import com.sixpay.payment.domain.event.PaymentEventOutcomeRecorded;
+import com.sixpay.payment.domain.model.evidence.EndOfDayConfirmationSnapshot;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcomeSnapshot;
+import com.sixpay.payment.domain.model.evidence.TfjStatus;
 import com.sixpay.payment.domain.repository.PaymentRepository;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditAdapter;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditEntry;
-import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Component
-@ConditionalOnProperty(
-        prefix = "sixpay.payment.callback",
-        name = "enabled",
-        havingValue = "true"
-)
+@ConditionalOnProperty(prefix = "sixpay.payment.callback", name = "enabled", havingValue = "true")
 public class PaymentCallbackPlanFactory {
-
     private final PaymentRepository paymentRepository;
     private final PaymentAuditAdapter auditAdapter;
 
-    public PaymentCallbackPlanFactory(
-            PaymentRepository paymentRepository,
-            PaymentAuditAdapter auditAdapter
-    ) {
-        this.paymentRepository =
-                Objects.requireNonNull(paymentRepository);
-        this.auditAdapter =
-                Objects.requireNonNull(auditAdapter);
+    public PaymentCallbackPlanFactory(PaymentRepository paymentRepository, PaymentAuditAdapter auditAdapter) {
+        this.paymentRepository = Objects.requireNonNull(paymentRepository);
+        this.auditAdapter = Objects.requireNonNull(auditAdapter);
     }
 
-    public PaymentCallbackPlan create(
-            ClaimedPaymentOutboxEvent event
-    ) {
-        List<PaymentAuditEntry> audit = auditAdapter
-                .findByPaymentId(event.paymentId())
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparingLong(
-                                        PaymentAuditEntry
-                                                ::businessVersion
-                                )
-                                .thenComparingInt(
-                                        PaymentAuditEntry
-                                                ::eventSequence
-                                )
-                )
+    public PaymentCallbackPlan create(ClaimedPaymentOutboxEvent event) {
+        List<PaymentAuditEntry> audit = auditAdapter.findByPaymentId(event.paymentId()).stream()
+                .sorted(Comparator.comparingLong(PaymentAuditEntry::businessVersion).thenComparingInt(PaymentAuditEntry::eventSequence))
                 .toList();
-
         int currentIndex = indexOf(audit, event);
+        if (currentIndex < 0) throw new IllegalStateException("Outbox event has no matching audit entry");
+        PaymentAuditEntry current = audit.get(currentIndex);
+        if (!isLastEventOfVersion(audit, currentIndex)) return PaymentCallbackPlan.skip();
+        String callbackType = callbackType(current);
+        if (callbackType == null) return PaymentCallbackPlan.skip();
 
-        if (currentIndex < 0) {
-            throw new IllegalStateException(
-                    "Outbox event has no matching audit entry"
-            );
-        }
-
-        PaymentAuditEntry current =
-                audit.get(currentIndex);
-
-        if (!isLastEventOfVersion(audit, currentIndex)
-                || current.paymentStatus()
-                == PaymentStatus.RECEIVED
-                || current.paymentStatus()
-                == PaymentStatus.PENDING_CONFIRMATION) {
-            return PaymentCallbackPlan.skip();
-        }
-
-        PaymentStatus previousStatus =
-                previousDistinctStatus(
-                        audit,
-                        currentIndex,
-                        current.paymentStatus()
-                );
-
-        if (previousStatus == null) {
-            return PaymentCallbackPlan.skip();
-        }
-
-        Payment payment = paymentRepository
-                .findById(
-                        new PaymentId(event.paymentId())
-                )
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Missing Payment for callback"
-                        )
-                );
-
+        Payment payment = paymentRepository.findById(new PaymentId(event.paymentId()))
+                .orElseThrow(() -> new IllegalStateException("Missing Payment for callback"));
         PaymentState state = payment.toState();
+        PaymentInitiationContext context = state.initiationContext().orElse(null);
+        if (context == null) return PaymentCallbackPlan.skip();
 
-        PaymentInitiationContext context = state
-                .initiationContext()
-                .orElse(null);
-
-        if (context == null) {
-            return PaymentCallbackPlan.skip();
-        }
-
-        PaymentStatusCallbackMessage message =
-                new PaymentStatusCallbackMessage(
-                        event.eventId(),
-                        "PAYMENT_STATUS_CHANGED",
-                        event.occurredAt(),
-                        state.publicPaymentReference().value(),
-                        state.externalPaymentReference().value(),
-                        state.bankPostingReference()
-                                .map(Object::toString)
-                                .orElse(null),
-                        previousStatus,
-                        current.paymentStatus(),
-                        state.failure()
-                                .map(Object::toString)
-                                .orElse(null),
-                        description(
-                                previousStatus,
-                                current.paymentStatus()
-                        ),
-                        null
-                );
-
-        return PaymentCallbackPlan.deliver(
-                new PaymentStatusCallbackDelivery(
-                        context.callbackEndpoint().value(),
-                        CorrelationId.of(
-                                event.correlationId()
-                        ),
-                        message
-                )
-        );
+        return PaymentCallbackPlan.deliver(new PaymentStatusCallbackDelivery(
+                context.callbackEndpoint().value(),
+                CorrelationId.of(event.correlationId()),
+                UUID.randomUUID(),
+                event.attemptCount(),
+                buildMessage(event, current, state, callbackType)
+        ));
     }
 
-    private static int indexOf(
-            List<PaymentAuditEntry> audit,
-            ClaimedPaymentOutboxEvent event
-    ) {
-        for (int index = 0;
-             index < audit.size();
-             index++) {
-            if (audit.get(index)
-                    .eventId()
-                    .equals(event.eventId())) {
-                return index;
+    private static PaymentStatusCallbackMessage buildMessage(ClaimedPaymentOutboxEvent event, PaymentAuditEntry current, PaymentState state, String callbackType) {
+        Object data;
+        if (PaymentStatusCallbackMessage.CUT_CREDITED.equals(callbackType)) {
+            PaymentEventOutcomeSnapshot outcome = state.paymentEventOutcomeEvidence()
+                    .filter(snapshot -> snapshot.outcome() == PaymentEventOutcome.COMPLETED)
+                    .orElseThrow(() -> new IllegalStateException("CUT_CREDITED requires durable COMPLETED Payment event outcome"));
+            BankPostingReference bankReference = state.bankPostingReference()
+                    .orElseThrow(() -> new IllegalStateException("CUT_CREDITED requires bank posting reference"));
+            data = new PaymentStatusCallbackMessage.CutCreditedData(
+                    new PaymentStatusCallbackMessage.MoneyData(
+                            state.requestedAmount().amount().stripTrailingZeros().toPlainString(),
+                            state.requestedAmount().currency().getCurrencyCode()),
+                    bankReference.principalPostingReference(),
+                    outcome.observedAt(),
+                    "POSTED_PENDING_TFJ",
+                    false);
+        } else {
+            EndOfDayConfirmationSnapshot tfj = state.endOfDayConfirmationEvidence()
+                    .filter(snapshot -> snapshot.tfjStatus() == TfjStatus.INTEGRATED)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "TREASURY_INTEGRATED requires durable integrated TFJ evidence"));
+            if (state.status() != PaymentStatus.TREASURY_INTEGRATED) {
+                throw new IllegalStateException(
+                        "TREASURY_INTEGRATED requires durable Payment finality");
             }
+            data = new PaymentStatusCallbackMessage.TreasuryIntegratedData(
+                    tfj.businessDate(),
+                    tfj.principalBankPostingReference(),
+                    tfj.confirmationId().value(),
+                    tfj.tfjBatchReference().orElse(null),
+                    tfj.matchedAt());
+        }
+        return new PaymentStatusCallbackMessage(
+                "1.0",
+                event.eventId(),
+                callbackType,
+                event.occurredAt(),
+                UUID.fromString(event.correlationId()),
+                current.causationId(),
+                event.paymentId(),
+                state.publicPaymentReference().value(),
+                state.externalPaymentReference().value(),
+                state.financialInstitutionCode().value(),
+                current.businessVersion(),
+                data);
+    }
+
+    private static String callbackType(PaymentAuditEntry current) {
+        if (current.paymentStatus() == PaymentStatus.TREASURY_INTEGRATED) {
+            return PaymentEndOfDayConfirmationRecorded.class.getSimpleName()
+                    .equals(current.eventType())
+                    ? PaymentStatusCallbackMessage.TREASURY_INTEGRATED
+                    : null;
+        }
+
+        if (current.paymentStatus() != PaymentStatus.POSTED_PENDING_TFJ) {
+            return null;
+        }
+
+        return PaymentEventOutcomeRecorded.class.getSimpleName().equals(current.eventType())
+                ? PaymentStatusCallbackMessage.CUT_CREDITED
+                : null;
+    }
+
+    private static int indexOf(List<PaymentAuditEntry> audit, ClaimedPaymentOutboxEvent event) {
+        for (int index = 0; index < audit.size(); index++) {
+            if (audit.get(index).eventId().equals(event.eventId())) return index;
         }
         return -1;
     }
 
-    private static boolean isLastEventOfVersion(
-            List<PaymentAuditEntry> audit,
-            int currentIndex
-    ) {
-        PaymentAuditEntry current =
-                audit.get(currentIndex);
-
-        return audit.stream()
-                .filter(entry ->
-                        entry.businessVersion()
-                                == current.businessVersion()
-                )
-                .mapToInt(
-                        PaymentAuditEntry::eventSequence
-                )
-                .max()
-                .orElse(current.eventSequence())
-                == current.eventSequence();
-    }
-
-    private static PaymentStatus previousDistinctStatus(
-            List<PaymentAuditEntry> audit,
-            int currentIndex,
-            PaymentStatus currentStatus
-    ) {
-        for (int index = currentIndex - 1;
-             index >= 0;
-             index--) {
-            PaymentStatus candidate =
-                    audit.get(index).paymentStatus();
-
-            if (candidate != currentStatus) {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private static String description(
-            PaymentStatus previous,
-            PaymentStatus current
-    ) {
-        return "Payment status changed from "
-                + previous
-                + " to "
-                + current;
+    private static boolean isLastEventOfVersion(List<PaymentAuditEntry> audit, int currentIndex) {
+        PaymentAuditEntry current = audit.get(currentIndex);
+        return audit.stream().filter(entry -> entry.businessVersion() == current.businessVersion())
+                .mapToInt(PaymentAuditEntry::eventSequence).max().orElse(current.eventSequence()) == current.eventSequence();
     }
 }

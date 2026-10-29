@@ -331,3 +331,35 @@ Classification:
 ```text
 DA-11 DUAL AUTHENTICATION INTEGRATION/SECURITY = COVERED
 ```
+
+## AUTH-12 LDAP EXTENSION
+
+AUTH-12 extends the historical DA-11 LOCAL/OIDC closure with LDAP without
+replacing the canonical SIXPAY principal, authorization model or backend
+session model.
+
+Canonical LDAP evidence:
+
+```text
+LdapAuthenticationFailureIT
+LdapCanonicalAuthenticationServiceTest
+ActiveDirectoryLdapAuthenticationAdapterTest
+HybridAuthenticationIT
+```
+
+The extension proves:
+
+```text
+LDAP authentication resolves a linked canonical SIXPAY identity
+unlinked LDAP identity is rejected
+disabled canonical SIXPAY account is rejected
+invalid credentials, unlinked identity and disabled account expose the same generic 401
+LDAP groups never become SIXPAY business authorities
+LDAP login creates the canonical backend session
+/api/v1/auth/me exposes the LDAP session
+logout invalidates the LDAP-backed SIXPAY session
+LOCAL, OIDC and LDAP coexist while SIXPAY remains authorization owner
+```
+
+This addendum extends DA-11 evidence; it does not rewrite the historical
+DA-11 lot classification.

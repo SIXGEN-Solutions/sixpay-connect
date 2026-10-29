@@ -13,4 +13,19 @@ public interface PaymentIdempotencyRepository
                     String operation,
                     String idempotencyKey
             );
+
+    Optional<PaymentIdempotencyEntity>
+            findByPartnerIdentifierAndOperationAndIdempotencyKey(
+                    String partnerIdentifier,
+                    String operation,
+                    String idempotencyKey
+            );
+
+    Optional<PaymentIdempotencyEntity>
+            findFirstByPartnerIdentifierAndOperationAndPaymentIdAndStatus(
+                    String partnerIdentifier,
+                    String operation,
+                    UUID paymentId,
+                    PaymentIdempotencyEntity.Status status
+            );
 }

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SIXPAY CONNECT Partner API
-  version: 1.1.0
+  version: 1.2.0
   description: Frozen HTTP contract for the Golden Partner module.
 servers:
   - url: /
@@ -391,11 +391,17 @@ components:
       type: object
       additionalProperties: false
       required:
+        - partnerIdentifier
         - legalName
         - technicalContactName
         - technicalContactEmail
         - authorizedTransactionTypes
       properties:
+        partnerIdentifier:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Stable and unique business identifier owned by Partner.
         legalName:
           type: string
           minLength: 1
@@ -522,6 +528,7 @@ components:
       additionalProperties: false
       required:
         - id
+        - partnerIdentifier
         - legalName
         - technicalContactName
         - technicalContactEmail
@@ -534,6 +541,10 @@ components:
         id:
           type: string
           format: uuid
+        partnerIdentifier:
+          type: string
+          minLength: 1
+          maxLength: 64
         legalName:
           type: string
         technicalContactName:

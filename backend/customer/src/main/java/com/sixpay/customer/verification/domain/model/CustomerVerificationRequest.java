@@ -40,10 +40,7 @@ public record CustomerVerificationRequest(
                 financialInstitutionCode,
                 "financialInstitutionCode is required"
         );
-        accountBindingFingerprint = Objects.requireNonNull(
-                accountBindingFingerprint,
-                "accountBindingFingerprint is required"
-        );
+        // INIT-3: may be absent before NIU-first account resolution.
         context = Objects.requireNonNull(
                 context,
                 "context is required"

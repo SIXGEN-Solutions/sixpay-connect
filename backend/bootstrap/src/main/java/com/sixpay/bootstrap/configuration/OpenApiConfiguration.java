@@ -29,6 +29,13 @@ import org.springframework.context.annotation.Configuration;
         description =
                 "OAuth2 access token issued for SIXPAY CONNECT"
 )
+@SecurityScheme(
+        name = "subscriptionKey",
+        type = SecuritySchemeType.APIKEY,
+        in = io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER,
+        paramName = "X-Subscription-Key",
+        description = "TRESOR PAY MVP subscription key"
+)
 public class OpenApiConfiguration {
 
     @Bean
@@ -79,6 +86,7 @@ public class OpenApiConfiguration {
                 .displayName("Payment API")
                 .pathsToMatch(
                         "/v1/payments/**",
+                        "/api/v1/integrations/tresorpay/payments/**",
                         "/internal/api/v1/payments/**"
                 )
                 .pathsToExclude(
@@ -100,6 +108,8 @@ public class OpenApiConfiguration {
                         "/internal/api/v1/administration/integrations",
                         "/internal/api/v1/administration/dynamic-settings",
                         "/internal/api/v1/administration/dynamic-settings/**",
+                        "/internal/api/v1/administration/directory-users",
+                        "/internal/api/v1/administration/directory-users/**",
                         "/internal/api/v1/incidents",
                         "/internal/api/v1/incidents/**"
                 )

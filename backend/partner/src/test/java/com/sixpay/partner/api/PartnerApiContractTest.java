@@ -58,6 +58,7 @@ class PartnerApiContractTest {
     void freezesPublicResponseFieldNames() {
         assertRecordFields(PartnerResponse.class,
                 "id",
+                "partnerIdentifier",
                 "legalName",
                 "technicalContactName",
                 "technicalContactEmail",

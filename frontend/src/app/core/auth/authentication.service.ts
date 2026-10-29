@@ -22,6 +22,7 @@ import {
   ActiveAuthenticationMethod,
   AuthenticatedIdentity,
   AuthenticationSessionResponse,
+  LdapLoginRequest,
   LocalLoginRequest,
   LocalPasswordChangeRequest,
   normalizeSixpayPermissions,
@@ -43,7 +44,9 @@ export class AuthenticationService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
 
-  private readonly oidc = inject(OidcSecurityService, { optional: true });
+  private readonly oidc = authenticationEnvironment.oidc.enabled
+    ? inject(OidcSecurityService)
+    : null;
 
   private readonly authenticationClient = inject(LocalAuthenticationClient);
 
@@ -56,6 +59,11 @@ export class AuthenticationService {
   private readonly activeAuthenticationMethodState = signal<ActiveAuthenticationMethod>(null);
 
   private readonly passwordChangeRequiredState = signal(false);
+  private readonly backendCapabilitiesState = signal<{
+    localEnabled: boolean;
+    oidcEnabled: boolean;
+    ldapEnabled: boolean;
+  } | null>(null);
 
   private readonly readyState = new ReplaySubject<boolean>(1);
 
@@ -63,6 +71,7 @@ export class AuthenticationService {
   readonly username = this.usernameState.asReadonly();
   readonly activeAuthenticationMethod = this.activeAuthenticationMethodState.asReadonly();
   readonly passwordChangeRequired = this.passwordChangeRequiredState.asReadonly();
+  readonly backendCapabilities = this.backendCapabilitiesState.asReadonly();
 
   readonly isAuthenticated = computed(() => this.identityState() !== null);
 
@@ -76,14 +85,24 @@ export class AuthenticationService {
 
   readonly isStandaloneMode = authenticationEnvironment.standalone;
 
-  readonly localEnabled = authenticationEnvironment.local.enabled;
+  readonly localEnabled = computed(
+    () => this.backendCapabilitiesState()?.localEnabled ?? authenticationEnvironment.local.enabled,
+  );
 
-  readonly oidcEnabled = authenticationEnvironment.oidc.enabled;
+  readonly oidcEnabled = computed(
+    () => this.backendCapabilitiesState()?.oidcEnabled ?? authenticationEnvironment.oidc.enabled,
+  );
+
+  readonly ldapEnabled = computed(
+    () => this.backendCapabilitiesState()?.ldapEnabled ?? authenticationEnvironment.ldap.enabled,
+  );
 
   readonly isLocalEnabled = this.localEnabled;
   readonly isOidcEnabled = this.oidcEnabled;
+  readonly isLdapEnabled = this.ldapEnabled;
   readonly isLocalMode = this.localEnabled;
   readonly isOidcMode = this.oidcEnabled;
+  readonly isLdapMode = this.ldapEnabled;
 
   constructor() {
     if (this.isStandaloneMode) {
@@ -129,7 +148,7 @@ export class AuthenticationService {
   }
 
   loginLocal(request: LocalLoginRequest, returnUrl = '/'): Observable<void> {
-    if (!this.localEnabled) {
+    if (!this.localEnabled()) {
       return throwError(() => new Error('Local authentication is not enabled'));
     }
 
@@ -176,8 +195,25 @@ export class AuthenticationService {
     );
   }
 
+  loginLdap(request: LdapLoginRequest, returnUrl = '/'): Observable<void> {
+    if (!this.ldapEnabled()) {
+      return throwError(() => new Error('LDAP authentication is not enabled'));
+    }
+
+    this.storage?.setItem(RETURN_URL_STORAGE_KEY, this.safeReturnUrl(returnUrl));
+
+    return this.authenticationClient.loginLdap(request).pipe(
+      tap((session) => {
+        this.errorService.clear();
+        this.setCanonicalSession(session);
+      }),
+      tap(() => this.completeLoginNavigation()),
+      map(() => undefined),
+    );
+  }
+
   loginOidc(returnUrl = '/'): void {
-    if (!this.oidcEnabled) {
+    if (!this.oidcEnabled()) {
       return;
     }
 
@@ -234,11 +270,12 @@ export class AuthenticationService {
   }
 
   private initializeAuthentication(): void {
-    if (!this.localEnabled && !this.oidcEnabled) {
+    if (!this.localEnabled() && !this.oidcEnabled() && !this.ldapEnabled()) {
       this.readyState.next(true);
       return;
     }
 
+    // /api/v1/auth/me remains authoritative for LOCAL, OIDC and LDAP sessions.
     this.tryExistingBackendSession();
   }
 
@@ -258,7 +295,7 @@ export class AuthenticationService {
   }
 
   private tryExistingOidcSession(): void {
-    if (!this.oidcEnabled || !this.oidc) {
+    if (!this.oidcEnabled() || !this.oidc) {
       this.resolveAnonymousState();
       return;
     }
@@ -325,6 +362,14 @@ export class AuthenticationService {
     });
 
     this.usernameState.set(session.username);
+
+    this.backendCapabilitiesState.set(
+      session.capabilities ?? {
+        localEnabled: this.localEnabled(),
+        oidcEnabled: this.oidcEnabled(),
+        ldapEnabled: this.ldapEnabled(),
+      },
+    );
 
     const authenticationMethod = session.authenticationMethod.toLowerCase() as Exclude<
       ActiveAuthenticationMethod,
@@ -430,6 +475,7 @@ export class AuthenticationService {
     this.usernameState.set(null);
     this.activeAuthenticationMethodState.set(null);
     this.passwordChangeRequiredState.set(false);
+    this.backendCapabilitiesState.set(null);
   }
 
   private get storage(): Storage | undefined {

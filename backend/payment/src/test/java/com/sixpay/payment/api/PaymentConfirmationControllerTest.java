@@ -36,7 +36,6 @@ class PaymentConfirmationControllerTest {
                         "/v1/payments/{paymentReference}/confirmation-challenge"
                 );
 
-        assertScopeAndPost("create", "payment.confirmation.create", "");
         assertScopeAndPost("verify", "payment.confirmation.verify", "/verify");
         assertScopeAndPost("resend", "payment.confirmation.resend", "/resend");
 
@@ -62,7 +61,7 @@ class PaymentConfirmationControllerTest {
                         method.getAnnotation(PostMapping.class) != null
                                 || method.getAnnotation(GetMapping.class) != null
                 ).count()
-        ).isEqualTo(4);
+        ).isEqualTo(3);
     }
 
     private static void assertScopeAndPost(

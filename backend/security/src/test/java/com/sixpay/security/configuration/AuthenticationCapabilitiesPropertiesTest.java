@@ -1,87 +1,111 @@
 package com.sixpay.security.configuration;
 
 import org.junit.jupiter.api.Test;
-
 import java.time.Duration;
-
+import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AuthenticationCapabilitiesPropertiesTest {
-
     private static final int DEFAULT_MAXIMUM_FAILED_ATTEMPTS = 5;
-    private static final Duration DEFAULT_LOCK_DURATION =
-            Duration.ofMinutes(15);
+    private static final Duration DEFAULT_LOCK_DURATION = Duration.ofMinutes(15);
     private static final int DEFAULT_BCRYPT_STRENGTH = 12;
 
     @Test
-    void defaultsBothCapabilitiesToDisabled() {
+    void representsNoProviderForNonSecuredTechnicalRuntime() {
         AuthenticationCapabilitiesProperties properties =
-                new AuthenticationCapabilitiesProperties(
-                        null,
-                        null
-                );
+                properties(false, false, false);
 
-        assertThat(properties.localEnabled()).isFalse();
-        assertThat(properties.oidcEnabled()).isFalse();
-        assertThat(properties.hybridEnabled()).isFalse();
+        assertCapabilities(properties, false, false, false, false, 0);
+        assertThat(properties.anyProviderEnabled()).isFalse();
+    }
+
+    @Test void supportsLocalOnly() { assertCapabilities(properties(true,false,false), true,false,false,false,1); }
+    @Test void supportsOidcOnly() { assertCapabilities(properties(false,true,false), false,true,false,false,1); }
+    @Test void supportsLdapOnly() { assertCapabilities(properties(false,false,true), false,false,true,false,1); }
+    @Test void supportsLocalAndOidc() { assertCapabilities(properties(true,true,false), true,true,false,true,2); }
+    @Test void supportsLocalAndLdap() { assertCapabilities(properties(true,false,true), true,false,true,true,2); }
+    @Test void supportsOidcAndLdap() { assertCapabilities(properties(false,true,true), false,true,true,true,2); }
+    @Test void supportsAllProviders() { assertCapabilities(properties(true,true,true), true,true,true,true,3); }
+
+    @Test
+    void rejectsPlainLdapWhenCapabilityIsEnabled() {
+        assertThatThrownBy(() -> new AuthenticationCapabilitiesProperties(
+                local(false),
+                oidc(false),
+                new AuthenticationCapabilitiesProperties.Ldap(
+                        true,
+                        List.of("ldap://ad.example.test:389"),
+                        "DC=example,DC=test",
+                        "OU=Users",
+                        null,null,null,null,null,
+                        "CN=sixpay,OU=Service Accounts",
+                        "runtime-secret",
+                        null,null,null
+                )
+        )).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void supportsLocalOnly() {
-        AuthenticationCapabilitiesProperties properties =
-                new AuthenticationCapabilitiesProperties(
-                        local(true),
-                        new AuthenticationCapabilitiesProperties.Oidc(
-                                false,
-                                null
-                        )
-                );
-
-        assertThat(properties.localEnabled()).isTrue();
-        assertThat(properties.oidcEnabled()).isFalse();
-        assertThat(properties.hybridEnabled()).isFalse();
+    void ldapTimeoutsUseApprovedBoundedDefaults() {
+        var p = properties(false, false, true);
+        assertThat(p.ldap().connectTimeout()).isEqualTo(Duration.ofSeconds(3));
+        assertThat(p.ldap().readTimeout()).isEqualTo(Duration.ofSeconds(5));
+        assertThat(p.ldap().authenticationTimeout()).isEqualTo(Duration.ofSeconds(10));
     }
 
     @Test
-    void supportsOidcOnly() {
-        AuthenticationCapabilitiesProperties properties =
-                new AuthenticationCapabilitiesProperties(
-                        local(false),
-                        new AuthenticationCapabilitiesProperties.Oidc(
-                                true,
-                                "sixpay"
-                        )
-                );
-
-        assertThat(properties.localEnabled()).isFalse();
-        assertThat(properties.oidcEnabled()).isTrue();
-        assertThat(properties.hybridEnabled()).isFalse();
+    void rejectsMissingServiceCredentialWhenLdapIsEnabled() {
+        assertThatThrownBy(() -> new AuthenticationCapabilitiesProperties(
+                local(false), oidc(false),
+                new AuthenticationCapabilitiesProperties.Ldap(
+                        true, List.of("ldaps://ad.example.test:636"),
+                        "DC=example,DC=test", "OU=Users",
+                        null,null,null,null,null,
+                        "CN=sixpay,OU=Service Accounts", null,
+                        null,null,null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test
-    void supportsHybridLocalAndOidc() {
-        AuthenticationCapabilitiesProperties properties =
-                new AuthenticationCapabilitiesProperties(
-                        local(true),
-                        new AuthenticationCapabilitiesProperties.Oidc(
-                                true,
-                                "sixpay"
-                        )
-                );
-
-        assertThat(properties.localEnabled()).isTrue();
-        assertThat(properties.oidcEnabled()).isTrue();
-        assertThat(properties.hybridEnabled()).isTrue();
+    private static AuthenticationCapabilitiesProperties properties(boolean local, boolean oidc, boolean ldap) {
+        return new AuthenticationCapabilitiesProperties(local(local), oidc(oidc), ldap ? ldapEnabled() : ldapDisabled());
     }
 
-    private static AuthenticationCapabilitiesProperties.Local local(
-            boolean enabled
-    ) {
-        return new AuthenticationCapabilitiesProperties.Local(
-                enabled,
-                DEFAULT_MAXIMUM_FAILED_ATTEMPTS,
-                DEFAULT_LOCK_DURATION,
-                DEFAULT_BCRYPT_STRENGTH
+    private static AuthenticationCapabilitiesProperties.Local local(boolean enabled) {
+        return new AuthenticationCapabilitiesProperties.Local(enabled, DEFAULT_MAXIMUM_FAILED_ATTEMPTS, DEFAULT_LOCK_DURATION, DEFAULT_BCRYPT_STRENGTH);
+    }
+
+    private static AuthenticationCapabilitiesProperties.Oidc oidc(boolean enabled) {
+        return new AuthenticationCapabilitiesProperties.Oidc(enabled, enabled ? "sixpay" : null);
+    }
+
+    private static AuthenticationCapabilitiesProperties.Ldap ldapEnabled() {
+        return new AuthenticationCapabilitiesProperties.Ldap(
+                true,
+                List.of("ldaps://ad.example.test:636"),
+                "DC=example,DC=test",
+                "OU=Users",
+                null,null,null,null,null,
+                "CN=sixpay,OU=Service Accounts",
+                "runtime-secret",
+                null,null,null
         );
+    }
+
+    private static AuthenticationCapabilitiesProperties.Ldap ldapDisabled() {
+        return new AuthenticationCapabilitiesProperties.Ldap(
+                false, List.of(), null,null,null,null,null,null,null,null,null,null,null,null
+        );
+    }
+
+    private static void assertCapabilities(
+            AuthenticationCapabilitiesProperties properties,
+            boolean local, boolean oidc, boolean ldap, boolean hybrid, int count
+    ) {
+        assertThat(properties.localEnabled()).isEqualTo(local);
+        assertThat(properties.oidcEnabled()).isEqualTo(oidc);
+        assertThat(properties.ldapEnabled()).isEqualTo(ldap);
+        assertThat(properties.hybridEnabled()).isEqualTo(hybrid);
+        assertThat(properties.enabledProviderCount()).isEqualTo(count);
     }
 }

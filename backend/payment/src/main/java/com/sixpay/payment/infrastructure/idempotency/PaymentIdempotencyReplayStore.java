@@ -31,6 +31,117 @@ public class PaymentIdempotencyReplayStore {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public PaymentIdempotencyDecision beginScoped(
+            String partnerIdentifier,
+            String operation,
+            String idempotencyKey,
+            String requestHash,
+            Instant startedAt
+    ) {
+        validate(operation, idempotencyKey, requestHash);
+        requirePartnerIdentifier(partnerIdentifier);
+        Objects.requireNonNull(startedAt, "Idempotency start instant");
+
+        Optional<PaymentIdempotencyEntity> existing =
+                repository.findByPartnerIdentifierAndOperationAndIdempotencyKey(
+                        partnerIdentifier.strip(),
+                        operation,
+                        idempotencyKey
+                );
+
+        if (existing.isEmpty()) {
+            repository.saveAndFlush(
+                    PaymentIdempotencyEntity.startScoped(
+                            partnerIdentifier.strip(),
+                            operation,
+                            idempotencyKey,
+                            requestHash,
+                            startedAt
+                    )
+            );
+            return PaymentIdempotencyDecision.newRequest();
+        }
+
+        PaymentIdempotencyEntity entity = existing.orElseThrow();
+        requireSameHash(entity, operation, idempotencyKey, requestHash);
+
+        return switch (entity.status()) {
+            case COMPLETED -> PaymentIdempotencyDecision.replay(entity);
+            case IN_PROGRESS -> PaymentIdempotencyDecision.inProgress();
+            case OUTCOME_UNKNOWN ->
+                    PaymentIdempotencyDecision.outcomeUnknown(entity);
+            case FAILED -> {
+                entity.restart(startedAt);
+                repository.saveAndFlush(entity);
+                yield PaymentIdempotencyDecision.newRequest();
+            }
+        };
+    }
+
+    /** Claim a stale initiation record without losing its original key or
+     * completed result. Caller holds both partner/reference and key locks. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean reclaimScopedAfter(String partnerIdentifier, String operation,
+            String idempotencyKey, String requestHash, Instant staleBefore,
+            Instant claimedAt) {
+        PaymentIdempotencyEntity entity = requireExistingScoped(
+                partnerIdentifier, operation, idempotencyKey);
+        requireSameHash(entity, operation, idempotencyKey, requestHash);
+        if ((entity.status() != PaymentIdempotencyEntity.Status.IN_PROGRESS
+                    && entity.status() != PaymentIdempotencyEntity.Status.OUTCOME_UNKNOWN)
+                || entity.updatedAt().isAfter(staleBefore)) return false;
+        entity.claimRecovery(claimedAt);
+        repository.saveAndFlush(entity);
+        return true;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void completeScoped(
+            String partnerIdentifier,
+            String operation,
+            String idempotencyKey,
+            String requestHash,
+            UUID paymentId,
+            String responseStatus,
+            String responsePayload,
+            Instant completedAt
+    ) {
+        PaymentIdempotencyEntity entity = requireExistingScoped(
+                partnerIdentifier,
+                operation,
+                idempotencyKey
+        );
+        requireSameHash(entity, operation, idempotencyKey, requestHash);
+        entity.complete(
+                paymentId,
+                responseStatus,
+                responsePayload,
+                completedAt
+        );
+        repository.saveAndFlush(entity);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PaymentIdempotencyDecision>
+            findCompletedReplayForPayment(
+                    String partnerIdentifier,
+                    String operation,
+                    UUID paymentId
+            ) {
+        requirePartnerIdentifier(partnerIdentifier);
+        Objects.requireNonNull(paymentId, "Payment ID");
+
+        return repository
+                .findFirstByPartnerIdentifierAndOperationAndPaymentIdAndStatus(
+                        partnerIdentifier.strip(),
+                        operation,
+                        paymentId,
+                        PaymentIdempotencyEntity.Status.COMPLETED
+                )
+                .map(PaymentIdempotencyDecision::replay);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public PaymentIdempotencyDecision begin(
             String operation,
             String idempotencyKey,
@@ -300,6 +411,29 @@ public class PaymentIdempotencyReplayStore {
                                 PaymentIdempotencyDecision.inProgress();
                     };
                 });
+    }
+
+    private PaymentIdempotencyEntity requireExistingScoped(
+            String partnerIdentifier,
+            String operation,
+            String idempotencyKey
+    ) {
+        requirePartnerIdentifier(partnerIdentifier);
+        return repository
+                .findByPartnerIdentifierAndOperationAndIdempotencyKey(
+                        partnerIdentifier.strip(),
+                        operation,
+                        idempotencyKey
+                )
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Scoped idempotency record does not exist"
+                        )
+                );
+    }
+
+    private static void requirePartnerIdentifier(String value) {
+        requireText(value, 64, "Partner identifier");
     }
 
     private PaymentIdempotencyEntity requireExisting(

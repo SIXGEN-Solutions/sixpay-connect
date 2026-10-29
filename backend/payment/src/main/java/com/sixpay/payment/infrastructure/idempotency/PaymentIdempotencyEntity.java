@@ -7,7 +7,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -19,13 +18,6 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "payment_idempotency",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_payment_idempotency_operation_key",
-                columnNames = {
-                        "operation",
-                        "idempotency_key"
-                }
-        ),
         indexes = {
                 @Index(
                         name = "idx_payment_idempotency_status_updated",
@@ -53,6 +45,13 @@ public class PaymentIdempotencyEntity {
             updatable = false
     )
     private UUID id;
+
+    @Column(
+            name = "partner_identifier",
+            updatable = false,
+            length = 64
+    )
+    private String partnerIdentifier;
 
     @Column(
             name = "operation",
@@ -149,6 +148,27 @@ public class PaymentIdempotencyEntity {
     protected PaymentIdempotencyEntity() {
     }
 
+    static PaymentIdempotencyEntity startScoped(
+            String partnerIdentifier,
+            String operation,
+            String idempotencyKey,
+            String requestHash,
+            Instant startedAt
+    ) {
+        PaymentIdempotencyEntity entity = start(
+                operation,
+                idempotencyKey,
+                requestHash,
+                startedAt
+        );
+        entity.partnerIdentifier = requireText(
+                partnerIdentifier,
+                64,
+                "Partner identifier"
+        );
+        return entity;
+    }
+
     static PaymentIdempotencyEntity start(
             String operation,
             String idempotencyKey,
@@ -200,6 +220,14 @@ public class PaymentIdempotencyEntity {
                 restartedAt,
                 "Idempotency restart instant"
         );
+    }
+
+    /** Preserve original request identity and payment linkage when resumed. */
+    void claimRecovery(Instant claimedAt) {
+        if (status != Status.IN_PROGRESS && status != Status.OUTCOME_UNKNOWN)
+            throw new IllegalStateException("Only unresolved operations may be reclaimed");
+        status = Status.IN_PROGRESS;
+        updatedAt = Objects.requireNonNull(claimedAt);
     }
 
     void complete(

@@ -87,24 +87,32 @@ public final class CustomerVerificationModuleAdapter
                 new CustomerVerificationId(request.verificationId()),
                 CustomerVerificationSubject.of(
                         CustomerIdentity.of(
-                                CustomerNiu.of(request.customerNiu()),
-                                request.customerLegalName()
+                                request.customerNiu() == null
+                                        ? null : CustomerNiu.of(request.customerNiu()),
+                                request.customerLegalName(),
+                                request.bankingCustomerReference(),
+                                request.customerNumber()
                         )
                 ),
                 FinancialInstitutionCode.of(
                         request.financialInstitutionCode()
                 ),
-                AccountBindingFingerprint.of(
-                        request.accountBindingFingerprint()
-                ),
-                BankingAccountAccessReference.of(
-                        request.integrationAccountToken()
-                ),
+                request.accountBindingFingerprint() == null
+                        ? null
+                        : AccountBindingFingerprint.of(
+                                request.accountBindingFingerprint()
+                        ),
+                request.integrationAccountToken() == null
+                        ? null
+                        : BankingAccountAccessReference.of(
+                                request.integrationAccountToken()
+                        ),
                 CustomerVerificationContext.of(
                         CorrelationId.of(request.correlationId()),
                         request.causationId()
                 ),
-                request.requestedAt()
+                request.requestedAt(),
+                request.deadlineAt()
         );
     }
 
@@ -130,9 +138,17 @@ public final class CustomerVerificationModuleAdapter
                         )
                         .toList(),
                 result.evidenceFingerprint().value(),
-                result.accountBindingFingerprint().value(),
+                result.accountBindingFingerprint() == null
+                        ? null
+                        : result.accountBindingFingerprint().value(),
                 result.customerReference(),
                 result.accountReference(),
+                result.accountOptional()
+                        .map(account -> account.financialInstitutionCode())
+                        .orElse(null),
+                result.accountOptional()
+                        .map(account -> account.maskedAccountIdentifier())
+                        .orElse(null),
                 result.observedAt(),
                 result.validUntil(),
                 result.completedAt()

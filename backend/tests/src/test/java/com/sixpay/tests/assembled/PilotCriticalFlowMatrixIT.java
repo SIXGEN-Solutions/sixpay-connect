@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.tests.support.CrossModulePostgreSqlTestSupport;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * gap.</p>
  */
 @SpringBootTest(
-        classes = AssembledApplicationContextIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("assembled-test")
@@ -83,10 +84,10 @@ class PilotCriticalFlowMatrixIT
                     OBSERVED_CUSTOMER_PROJECTION_SERVICE,
                     "the assembled composition root must expose the projection service"
             ),
-            FlowExpectation.explicitlyUnwired(
-                    "Payment -> Accounting",
+            FlowExpectation.wired(
+                    "Accounting candidate source foundation",
                     ACCOUNTING_CANDIDATE_SOURCE,
-                    "INT-11 remains contract-dependent; the harness must not invent an adapter"
+                    "Accounting-owned candidate source exists; INT-11 remains contract-dependent"
             ),
             FlowExpectation.wired(
                     "Reporting payment audit read model",
@@ -144,6 +145,21 @@ class PilotCriticalFlowMatrixIT
         assertThat(PILOT_MATRIX)
                 .anyMatch(flow -> flow.state() == ExpectedState.WIRED)
                 .anyMatch(flow -> flow.state() == ExpectedState.EXPLICITLY_UNWIRED);
+    }
+
+    @Test
+    void customerUseCasesAreRegisteredInAssembledContext() {
+        assertThat(context.getBeansOfType(
+                com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase.class
+        ))
+                .as("Customer verification use case must exist in the assembled context")
+                .isNotEmpty();
+
+        assertThat(context.getBeansOfType(
+                com.sixpay.customer.observation.application.port.input.ObserveCustomerUseCase.class
+        ))
+                .as("Customer observation use case must exist when persistence is enabled")
+                .isNotEmpty();
     }
 
     private void assertExpectation(FlowExpectation expectation) {

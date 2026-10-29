@@ -71,7 +71,8 @@ public interface PaymentEventExecutionPort {
             List<PaymentEventExecutionCheck> checks,
             String bankReference,
             FailureCode reasonCode,
-            Instant observedAt
+            Instant observedAt,
+            LocalDate accountingDate
     ) {
         public PaymentEventExecutionResult {
             if (paymentReference == null || paymentReference.isBlank()) {
@@ -81,6 +82,18 @@ public interface PaymentEventExecutionPort {
             outcome = Objects.requireNonNull(outcome, "Payment event outcome");
             checks = List.copyOf(Objects.requireNonNull(checks, "Payment execution checks"));
             observedAt = Objects.requireNonNull(observedAt, "Observed at");
+        }
+
+        public PaymentEventExecutionResult(
+                String paymentReference,
+                PaymentEventOutcome outcome,
+                List<PaymentEventExecutionCheck> checks,
+                String bankReference,
+                FailureCode reasonCode,
+                Instant observedAt
+        ) {
+            this(paymentReference, outcome, checks, bankReference, reasonCode,
+                    observedAt, null);
         }
     }
 

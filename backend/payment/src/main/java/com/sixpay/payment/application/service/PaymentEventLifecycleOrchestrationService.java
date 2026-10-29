@@ -116,6 +116,14 @@ public class PaymentEventLifecycleOrchestrationService {
             );
         }
 
+        // Resolve read/allocator context before reserving the one-shot POST.
+        // An unavailable context must not strand the Payment in POSTING_PENDING.
+        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
+                contextService.resolve(
+                        bankingContext,
+                        requestedAt
+                );
+
         PaymentWorkflowResult authorization =
                 postingPreparationService.authorizePaymentEventPosting(
                         paymentId,
@@ -126,12 +134,6 @@ public class PaymentEventLifecycleOrchestrationService {
         if (!authorization.stateChanged()) {
             return authorization;
         }
-
-        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
-                contextService.resolve(
-                        bankingContext,
-                        requestedAt
-                );
 
         PaymentEventExecutionPort.PaymentEventExecutionResult providerResult;
         try {
@@ -206,7 +208,8 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN) {
+        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN
+                && payment.status() != PaymentStatus.POSTING_PENDING) {
             throw PaymentDomainException.invalidTransition(
                     payment.status(),
                     "recoverPaymentEvent"
@@ -220,6 +223,7 @@ public class PaymentEventLifecycleOrchestrationService {
 
         PaymentFinancialEventSnapshot snapshot =
                 requireFinalizedSnapshot(paymentId);
+        requireInstructionMatchesSnapshot(instruction, snapshot);
 
         PaymentEventRecoveryPort.PaymentEventRecoveryResult recovery =
                 recoveryPort.recover(
@@ -256,15 +260,32 @@ public class PaymentEventLifecycleOrchestrationService {
                         "Recovery observation source"
                 );
 
+        // An UNKNOWN lookup does not establish a financial result. Keep the
+        // original reservation; never send a second financial POST.
+        if (payment.status() == PaymentStatus.POSTING_PENDING
+                && recovery.status() == PaymentEventRecoveryPort.PaymentEventRecoveryStatus.UNKNOWN) {
+            return PaymentWorkflowResult.from(payment, false);
+        }
+
+        java.time.LocalDate originalDate = providerResult.accountingDate();
+        if (originalDate == null) {
+            if (payment.status() == PaymentStatus.POSTING_PENDING) {
+                // An existing operation's accounting date must come from the
+                // bank's recovered operation, not today's accounting date.
+                throw new IllegalStateException(
+                        "Conclusive Core Banking recovery requires original accountingDate"
+                );
+            }
+            originalDate = payment.toState()
+                    .paymentEventOutcomeEvidence().orElseThrow().accountingDate();
+        }
+
         return finalizationService.resolvePaymentEventOutcome(
                 paymentId,
                 outcomeMapper.toSnapshot(
                         instruction,
                         providerResult,
-                        payment.toState()
-                                .paymentEventOutcomeEvidence()
-                                .orElseThrow()
-                                .accountingDate(),
+                        originalDate,
                         source
                 ),
                 failureFor(

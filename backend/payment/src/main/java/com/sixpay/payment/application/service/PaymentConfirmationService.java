@@ -1,4 +1,5 @@
 package com.sixpay.payment.application.service;
+
 import com.sixpay.payment.application.command.CreatePaymentConfirmationCommand;
 import com.sixpay.payment.application.command.ResendPaymentConfirmationCommand;
 import com.sixpay.payment.application.command.VerifyPaymentConfirmationCommand;
@@ -22,8 +23,14 @@ import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
+import com.sixpay.common.time.TimeProvider;
+
+import java.time.Instant;
 import java.util.Objects;
-/** Application orchestration for Payment-confirmation operations. */
+
+/**
+ * Application orchestration for Payment-confirmation operations.
+ */
 @Service
 @ConditionalOnBean({
         PaymentConfirmationGateway.class,
@@ -38,6 +45,7 @@ public class PaymentConfirmationService
     private final PaymentAuthorizationService authorizationService;
     private final PaymentConfirmationGateway confirmationGateway;
     private final PaymentConfirmationIdempotencyPort idempotencyPort;
+
     public PaymentConfirmationService(
             PaymentLookupPort paymentLookupPort,
             PaymentAuthorizationService authorizationService,
@@ -61,21 +69,78 @@ public class PaymentConfirmationService
                 "Payment confirmation idempotency port"
         );
     }
+
+    private static void requirePendingConfirmation(Payment payment) {
+        if (payment.status() != PaymentStatus.PENDING_CONFIRMATION) {
+            throw new IllegalStateException(
+                    "Payment confirmation operation requires "
+                            + "PENDING_CONFIRMATION"
+            );
+        }
+    }
+
+    private static ConfirmationChallenge requireCurrentChallenge(
+            Payment payment
+    ) {
+        return payment.toState()
+                .confirmationChallenge()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Payment has no current confirmation challenge"
+                ));
+    }
+
+    private static BankingRequestContext bankingContext(
+            Payment payment,
+            com.sixpay.common.context.CorrelationId correlationId
+    ) {
+        return new BankingRequestContext(
+                correlationId,
+                payment.toState().financialInstitutionCode()
+        );
+    }
+
+    private static BankingIdempotencyKey bankingIdempotencyKey(
+            String value
+    ) {
+        return new BankingIdempotencyKey(value);
+    }
+
     @Override
     public PaymentConfirmationView create(
             CreatePaymentConfirmationCommand command
     ) {
+        return createBefore(command, Instant.MAX, Instant::now);
+    }
+
+    public PaymentConfirmationView createBefore(
+            CreatePaymentConfirmationCommand command,
+            Instant deadlineAt,
+            TimeProvider timeProvider
+    ) {
         Objects.requireNonNull(command, "Create confirmation command");
+        Objects.requireNonNull(deadlineAt, "Confirmation deadline");
+        Objects.requireNonNull(timeProvider, "Time provider");
+        if (!Instant.MAX.equals(deadlineAt)
+                && !timeProvider.now().isBefore(deadlineAt)) {
+            throw new IllegalStateException(
+                    "Payment initiation deadline exceeded before OTP creation"
+            );
+        }
         Payment payment = requirePayment(command.paymentReference());
         requirePendingConfirmation(payment);
-        payment.toState()
+
+        ConfirmationChallenge existingChallenge = payment.toState()
                 .confirmationChallenge()
                 .filter(ConfirmationChallenge::active)
-                .ifPresent(existing -> {
-                    throw new IllegalStateException(
-                            "Payment already has an active confirmation challenge"
-                    );
-                });
+                .orElse(null);
+
+        if (existingChallenge != null) {
+            return PaymentConfirmationView.fromExisting(
+                    payment.publicPaymentReference(),
+                    existingChallenge
+            );
+        }
+
         BankingRequestContext context = bankingContext(
                 payment,
                 command.correlationId()
@@ -89,13 +154,21 @@ public class PaymentConfirmationService
                         payment.id(),
                         payment.publicPaymentReference(),
                         command.idempotencyKey(),
-                        () -> confirmationGateway.create(
-                                new PaymentConfirmationGateway.CreateRequest(
-                                        payment,
-                                        context,
-                                        bankKey
-                                )
-                        ),
+                        () -> {
+                            if (!Instant.MAX.equals(deadlineAt)
+                                    && !timeProvider.now().isBefore(deadlineAt)) {
+                                throw new IllegalStateException(
+                                        "Payment initiation deadline exceeded before OTP creation"
+                                );
+                            }
+                            return confirmationGateway.create(
+                                    new PaymentConfirmationGateway.CreateRequest(
+                                            payment,
+                                            context,
+                                            bankKey
+                                    )
+                            );
+                        },
                         () -> confirmationGateway.recover(
                                 new PaymentConfirmationGateway.RecoveryRequest(
                                         context,
@@ -123,6 +196,33 @@ public class PaymentConfirmationService
                 idempotencyResult.replayed()
         );
     }
+
+    /** Recover an interrupted initiation without ever making a new create POST. */
+    public PaymentConfirmationView recoverInitiation(CreatePaymentConfirmationCommand command) {
+        Objects.requireNonNull(command);
+        Payment payment = requirePayment(command.paymentReference());
+        requirePendingConfirmation(payment);
+        ConfirmationChallenge existing = payment.toState().confirmationChallenge()
+                .filter(ConfirmationChallenge::active).orElse(null);
+        if (existing != null) return PaymentConfirmationView.fromExisting(
+                payment.publicPaymentReference(), existing);
+        BankingRequestContext context = bankingContext(payment, command.correlationId());
+        BankingIdempotencyKey bankKey = bankingIdempotencyKey(command.idempotencyKey().value());
+        PaymentConfirmationIdempotencyResult recovered = idempotencyPort.executeCreate(
+                payment.id(), payment.publicPaymentReference(), command.idempotencyKey(),
+                () -> { throw new IllegalStateException(
+                        "Recovery cannot issue a new bank challenge POST"); },
+                () -> confirmationGateway.recover(
+                        new PaymentConfirmationGateway.RecoveryRequest(context, bankKey)));
+        PaymentConfirmationBankResult result = recovered.result();
+        ConfirmationChallenge challenge = PaymentConfirmationChallengeFactory.fromBankResult(
+                result, PaymentConfirmationChallengeFactory.requireBinding(payment));
+        authorizationService.attachConfirmationChallenge(payment.id(), challenge,
+                PaymentConfirmationChallengeFactory.observationInstant(payment, result));
+        return PaymentConfirmationView.from(payment.publicPaymentReference(),
+                result, recovered.replayed());
+    }
+
     @Override
     public PaymentConfirmationView read(
             ReadPaymentConfirmationQuery query
@@ -148,6 +248,7 @@ public class PaymentConfirmationService
                 result
         );
     }
+
     @Override
     public PaymentConfirmationView verify(
             VerifyPaymentConfirmationCommand command
@@ -190,30 +291,35 @@ public class PaymentConfirmationService
 
             if (result.status()
                     == com.sixpay.payment.domain.model
-                            .ConfirmationChallengeStatus.VERIFIED) {
+                    .ConfirmationChallengeStatus.VERIFIED) {
+                if (!challenge.challengeReference().equals(result.challengeReference())) {
+                    throw new IllegalStateException(
+                            "Bank-verified challenge does not match current Payment challenge"
+                    );
+                }
                 java.time.Instant verifiedAt =
-                    result.optionalVerifiedAt().orElseThrow(
-                            () -> new IllegalStateException(
-                                    "VERIFIED confirmation requires verifiedAt"
-                            )
-                    );
+                        result.optionalVerifiedAt().orElseThrow(
+                                () -> new IllegalStateException(
+                                        "VERIFIED confirmation requires verifiedAt"
+                                )
+                        );
 
-            ConfirmationChallenge verifiedChallenge =
-                    new ConfirmationChallenge(
-                            result.challengeReference(),
-                            challenge.binding(),
-                            result.status(),
-                            result.businessCode(),
-                            result.deliveryChannel(),
-                            result.sentAt(),
-                            result.expiresAt(),
-                            verifiedAt
-                    );
+                ConfirmationChallenge verifiedChallenge =
+                        new ConfirmationChallenge(
+                                result.challengeReference(),
+                                challenge.binding(),
+                                result.status(),
+                                result.businessCode(),
+                                result.deliveryChannel(),
+                                result.sentAt(),
+                                result.expiresAt(),
+                                verifiedAt
+                        );
 
-            authorizationService.startAuthorization(
-                    payment.id(),
-                    verifiedChallenge
-            );
+                authorizationService.startAuthorization(
+                        payment.id(),
+                        verifiedChallenge
+                );
             }
             return PaymentConfirmationView.from(
                     payment.publicPaymentReference(),
@@ -224,6 +330,7 @@ public class PaymentConfirmationService
             java.util.Arrays.fill(otp, '\0');
         }
     }
+
     @Override
     public PaymentConfirmationView resend(
             ResendPaymentConfirmationCommand command
@@ -284,6 +391,7 @@ public class PaymentConfirmationService
                 idempotencyResult.replayed()
         );
     }
+
     private Payment requirePayment(
             PublicPaymentReference paymentReference
     ) {
@@ -292,36 +400,5 @@ public class PaymentConfirmationService
                 .orElseThrow(() -> new IllegalStateException(
                         "Payment not found: " + paymentReference
                 ));
-    }
-    private static void requirePendingConfirmation(Payment payment) {
-        if (payment.status() != PaymentStatus.PENDING_CONFIRMATION) {
-            throw new IllegalStateException(
-                    "Payment confirmation operation requires "
-                            + "PENDING_CONFIRMATION"
-            );
-        }
-    }
-    private static ConfirmationChallenge requireCurrentChallenge(
-            Payment payment
-    ) {
-        return payment.toState()
-                .confirmationChallenge()
-                .orElseThrow(() -> new IllegalStateException(
-                        "Payment has no current confirmation challenge"
-                ));
-    }
-    private static BankingRequestContext bankingContext(
-            Payment payment,
-            com.sixpay.common.context.CorrelationId correlationId
-    ) {
-        return new BankingRequestContext(
-                correlationId,
-                payment.toState().financialInstitutionCode()
-        );
-    }
-    private static BankingIdempotencyKey bankingIdempotencyKey(
-            String value
-    ) {
-        return new BankingIdempotencyKey(value);
     }
 }

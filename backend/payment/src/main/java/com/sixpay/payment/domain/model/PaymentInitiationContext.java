@@ -27,21 +27,18 @@ public record PaymentInitiationContext(
             Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
 
     public PaymentInitiationContext {
-        partnerLoginName = requireIdentifier(
-                partnerLoginName,
-                "Partner login name"
+        partnerLoginName = normalizeOptionalIdentifier(
+                partnerLoginName
         );
         applicationId = normalizeOptionalIdentifier(applicationId);
-        debtorName = requireText(debtorName, 200, "Debtor name");
-        claimType = Objects.requireNonNull(claimType, "Claim type");
-        taxpayerIdentifier = requireText(
-                taxpayerIdentifier,
-                64,
-                "Taxpayer identifier"
+        debtorName = normalizeOptionalText(
+                debtorName,
+                200,
+                "Debtor name"
         );
-        requestedExecutionAt = Objects.requireNonNull(
-                requestedExecutionAt,
-                "Requested execution instant"
+        claimType = Objects.requireNonNull(claimType, "Claim type");
+        taxpayerIdentifier = normalizeOptionalText(
+                taxpayerIdentifier, 64, "Taxpayer identifier"
         );
         callbackEndpoint = Objects.requireNonNull(
                 callbackEndpoint,
@@ -51,6 +48,22 @@ public record PaymentInitiationContext(
 
     public Optional<String> optionalApplicationId() {
         return Optional.ofNullable(applicationId);
+    }
+
+    public Optional<String> optionalPartnerLoginName() {
+        return Optional.ofNullable(partnerLoginName);
+    }
+
+    public Optional<String> optionalDebtorName() {
+        return Optional.ofNullable(debtorName);
+    }
+
+    public Optional<String> optionalTaxpayerIdentifier() {
+        return Optional.ofNullable(taxpayerIdentifier);
+    }
+
+    public Optional<Instant> optionalRequestedExecutionAt() {
+        return Optional.ofNullable(requestedExecutionAt);
     }
 
     private static String requireIdentifier(
@@ -71,6 +84,17 @@ public record PaymentInitiationContext(
             return null;
         }
         return requireIdentifier(value, "Application ID");
+    }
+
+    private static String normalizeOptionalText(
+            String value,
+            int maximumLength,
+            String label
+    ) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return requireText(value, maximumLength, label);
     }
 
     private static String requireText(

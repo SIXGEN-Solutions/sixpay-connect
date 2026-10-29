@@ -40,7 +40,14 @@ public interface SecurityUserAdministrationUseCase {
             String actorSubject
     );
 
-    SecurityUserDetail unlinkOidcIdentity(
+    SecurityUserDetail linkLdapIdentity(
+            UUID userId,
+            String trustDomain,
+            String stableSubject,
+            String actorSubject
+    );
+
+    SecurityUserDetail unlinkExternalIdentity(
             UUID userId,
             UUID identityId,
             String actorSubject

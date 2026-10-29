@@ -40,6 +40,7 @@ describe('PartnerApiClient', () => {
 
   it('creates and reads a partner with the frozen paths', () => {
     const createRequest = {
+      partnerIdentifier: 'ACME_PAYMENTS',
       legalName: 'Acme Payments',
       technicalContactName: 'Alice Ops',
       technicalContactEmail: 'alice.ops@example.com',
@@ -159,6 +160,7 @@ describe('PartnerApiClient', () => {
   function partnerResponse(): PartnerResponse {
     return {
       id: partnerId,
+      partnerIdentifier: 'ACME_PAYMENTS',
       legalName: 'Acme Payments',
       technicalContactName: 'Alice Ops',
       technicalContactEmail: 'alice.ops@example.com',

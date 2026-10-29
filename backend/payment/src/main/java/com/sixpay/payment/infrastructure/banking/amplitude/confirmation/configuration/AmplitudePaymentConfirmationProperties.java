@@ -32,12 +32,10 @@ public record AmplitudePaymentConfirmationProperties(
             throw new IllegalArgumentException("baseUrl must be absolute");
         }
         boolean https = "https".equalsIgnoreCase(baseUrl.getScheme());
-        boolean loopback = "http".equalsIgnoreCase(baseUrl.getScheme())
-                && ("localhost".equalsIgnoreCase(baseUrl.getHost())
-                || "127.0.0.1".equals(baseUrl.getHost())
-                || "::1".equals(baseUrl.getHost()));
-        if (!https && !loopback) {
-            throw new IllegalArgumentException("baseUrl must use HTTPS except for loopback tests");
+        boolean allowedHttp = security != null && security.allowInsecureHttp()
+                && "http".equalsIgnoreCase(baseUrl.getScheme());
+        if (!https && !allowedHttp) {
+            throw new IllegalArgumentException("baseUrl must use HTTPS unless insecure HTTP is explicitly enabled");
         }
         validatePath(createPath, "createPath");
         validatePath(challengePath, "challengePath");
@@ -57,7 +55,17 @@ public record AmplitudePaymentConfirmationProperties(
         }
     }
 
-    public record Security(@NotBlank String oauth2RegistrationId, @NotBlank String sslBundle) { }
+    public record Security(boolean oauth2Enabled, boolean mtlsEnabled, boolean allowInsecureHttp,
+                           String oauth2RegistrationId, String sslBundle) {
+        public Security {
+            if (oauth2Enabled && (oauth2RegistrationId == null || oauth2RegistrationId.isBlank()))
+                throw new IllegalArgumentException("oauth2RegistrationId is required when OAuth2 is enabled");
+            if (mtlsEnabled && (sslBundle == null || sslBundle.isBlank()))
+                throw new IllegalArgumentException("sslBundle is required when mTLS is enabled");
+            if (allowInsecureHttp && (oauth2Enabled || mtlsEnabled))
+                throw new IllegalArgumentException("insecure HTTP cannot be combined with OAuth2 or mTLS");
+        }
+    }
     public record Contract(
             @NotBlank String idempotencyHeader,
             @NotBlank String correlationHeader,

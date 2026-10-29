@@ -28,6 +28,7 @@ class PaymentOutboxArchitectureTest {
                 "PaymentOutboxCompletionService.java",
                 "PaymentOutboxEntity.java",
                 "PaymentOutboxMappingException.java",
+                "PaymentOutboxMessageSource.java",
                 "PaymentOutboxRepository.java",
                 "package-info.java"
         );

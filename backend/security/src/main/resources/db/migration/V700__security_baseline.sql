@@ -54,7 +54,7 @@ CREATE TABLE security_user_identities (
         REFERENCES security_user_accounts (id)
         ON DELETE CASCADE,
     CONSTRAINT ck_security_user_identity_type
-        CHECK (identity_type IN ('LOCAL', 'OIDC')),
+        CHECK (identity_type IN ('LOCAL', 'OIDC', 'LDAP')),
     CONSTRAINT ck_security_user_identity_provider
         CHECK (NULLIF(BTRIM(provider), '') IS NOT NULL),
     CONSTRAINT ck_security_user_identity_subject
@@ -74,7 +74,7 @@ COMMENT ON TABLE security_user_identities IS
     'Authentication identities linked to canonical SIXPAY users. No automatic email linking.';
 
 COMMENT ON COLUMN security_user_identities.provider IS
-    'LOCAL uses SIXPAY. OIDC uses the exact trusted issuer URI.';
+    'LOCAL uses SIXPAY. OIDC uses the exact trusted issuer URI. LDAP uses the configured stable LDAP trust-domain identifier.';
 
 -- ---------------------------------------------------------------------------
 -- LOCAL credential store input final lifecycle shape
@@ -188,6 +188,40 @@ COMMENT ON TABLE security_user_roles IS
 
 COMMENT ON TABLE security_user_permissions IS
     'SIXPAY-owned business permissions independent from Local or OIDC authentication.';
+
+-- ---------------------------------------------------------------------------
+-- Partner machine identities
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE security_partner_machine_identities (
+    id UUID PRIMARY KEY,
+    machine_subject VARCHAR(255) NOT NULL,
+    partner_identifier VARCHAR(64) NOT NULL,
+    enabled BOOLEAN NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT uk_security_partner_machine_identity_subject
+        UNIQUE (machine_subject),
+    CONSTRAINT ck_security_partner_machine_identity_subject
+        CHECK (NULLIF(BTRIM(machine_subject), '') IS NOT NULL),
+    CONSTRAINT ck_security_partner_machine_identity_partner_identifier
+        CHECK (NULLIF(BTRIM(partner_identifier), '') IS NOT NULL),
+    CONSTRAINT ck_security_partner_machine_identity_timestamps
+        CHECK (updated_at >= created_at)
+);
+
+CREATE INDEX ix_security_partner_machine_identity_partner
+    ON security_partner_machine_identities (partner_identifier);
+
+CREATE INDEX ix_security_partner_machine_identity_enabled_subject
+    ON security_partner_machine_identities (enabled, machine_subject);
+
+COMMENT ON TABLE security_partner_machine_identities IS
+    'Security-owned mapping from authenticated technical machine subjects to stable Partner business identifiers.';
+
+COMMENT ON COLUMN security_partner_machine_identities.partner_identifier IS
+    'Stable Partner business identifier resolved later through Partner public application surfaces.';
 
 -- ---------------------------------------------------------------------------
 -- Password history

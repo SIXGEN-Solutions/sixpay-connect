@@ -10,6 +10,7 @@ import { PartnersService } from './partners.service';
 
 const response: PartnerResponse = {
   id: 'partner-id',
+  partnerIdentifier: 'GOLDEN_PARTNER',
   legalName: 'Golden Partner',
   technicalContactName: 'Alice',
   technicalContactEmail: 'alice@example.test',

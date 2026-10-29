@@ -106,6 +106,11 @@ public final class JpaSecurityUserAdministrationAdapter
     }
 
     @Override
+    public long countUsers() {
+        return userRepository.count();
+    }
+
+    @Override
     public SecurityUserDetail getUser(UUID userId) {
         SecurityUserAccountJpaEntity account = requireUser(userId);
 
@@ -235,44 +240,51 @@ public final class JpaSecurityUserAdministrationAdapter
     }
 
     @Override
-    public void linkOidcIdentity(
+    public void linkExternalIdentity(
             UUID userId,
+            AuthenticationIdentityType identityType,
             String provider,
             String providerSubject
     ) {
-        if (provider == null
+        if (identityType == null
+                || identityType == AuthenticationIdentityType.LOCAL
+                || provider == null
                 || provider.isBlank()
                 || providerSubject == null
                 || providerSubject.isBlank()) {
             throw new IllegalArgumentException(
-                    "OIDC provider and subject are required"
+                    "External identity type, provider and subject are required"
             );
         }
 
+        String normalizedProvider = provider.trim();
+        String normalizedSubject = providerSubject.trim();
+
         if (identityRepository
                 .existsByIdentityTypeAndProviderAndProviderSubject(
-                        AuthenticationIdentityType.OIDC,
-                        provider,
-                        providerSubject
+                        identityType,
+                        normalizedProvider,
+                        normalizedSubject
                 )) {
             throw new IllegalStateException(
-                    "OIDC identity is already linked"
+                    "External identity is already linked"
             );
         }
 
         SecurityUserAccountJpaEntity account = requireUser(userId);
         identityRepository.save(
-                SecurityUserIdentityJpaEntity.linkedOidc(
+                SecurityUserIdentityJpaEntity.linkedExternal(
                         account,
-                        provider.trim(),
-                        providerSubject.trim(),
+                        identityType,
+                        normalizedProvider,
+                        normalizedSubject,
                         Instant.now()
                 )
         );
     }
 
     @Override
-    public void unlinkOidcIdentity(
+    public void unlinkExternalIdentity(
             UUID userId,
             UUID identityId
     ) {
@@ -285,10 +297,9 @@ public final class JpaSecurityUserAdministrationAdapter
                         );
 
         if (!identity.getUserAccount().getId().equals(userId)
-                || identity.getIdentityType()
-                != AuthenticationIdentityType.OIDC) {
+                || identity.getIdentityType() == AuthenticationIdentityType.LOCAL) {
             throw new IllegalArgumentException(
-                    "Identity is not an OIDC identity of the requested user"
+                    "Identity is not an external identity of the requested user"
             );
         }
 

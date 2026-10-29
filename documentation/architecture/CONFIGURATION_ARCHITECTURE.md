@@ -54,8 +54,32 @@ runtime configuration.
 
 ## Authentication
 
-Bootstrap owns OAuth2/session runtime assembly. Security owns the semantics and
-validation of Security configuration.
+Bootstrap owns OAuth2/session/LDAP physical runtime assembly. Security owns the
+semantics and validation of Security configuration.
+
+Human authentication is capability-based:
+
+```text
+sixpay.security.authentication.local.enabled
+sixpay.security.authentication.oidc.enabled
+sixpay.security.authentication.ldap.enabled
+```
+
+All non-empty provider combinations are supported. A secured runtime with all three providers disabled is invalid. Technical runtimes such as `standalone` may intentionally run without a human authentication provider.
+
+Existing runtime profiles are preserved; provider combinations must not be
+materialized as a separate YAML profile matrix. Reusable runtime fragments under
+`config/security/` carry provider-specific physical configuration.
+
+LDAP secrets are runtime-injected and have no repository default.
+
+Initial privileged provisioning follows the same ownership boundary: Security
+owns the one-shot LDAP administrator bootstrap semantics, transaction and
+persistence ports; Bootstrap may only trigger that Security application port
+from runtime configuration. Bootstrap must never access Security repositories,
+JPA entities or infrastructure adapters directly. The bootstrap is disabled by
+default, requires an empty canonical user store, provisions no LOCAL credential,
+and must fail closed if left enabled after initial provisioning.
 
 ## Springdoc/OpenAPI
 
@@ -70,12 +94,28 @@ physical contracts.
 
 ## Angular environments
 
+The Angular authentication model supports the same three human capabilities as
+the backend:
+
 ```text
-production  -> api  / local + OIDC
-integration -> api  / local
+LOCAL
+OIDC
+LDAP
+```
+
+The committed environment files contain deployment defaults, not the complete
+capability matrix. At the current baseline:
+
+```text
+production  -> api  / LOCAL + OIDC enabled, LDAP disabled by default
+integration -> api  / LOCAL enabled, OIDC + LDAP disabled by default
 development -> mock / standalone
 netlify     -> mock / standalone
 ```
+
+LDAP may be enabled for an applicable API-backed deployment only when its
+backend runtime/trust configuration is available. Backend session capabilities
+become authoritative after session establishment.
 
 Production and integration must never silently fall back to mock data.
 

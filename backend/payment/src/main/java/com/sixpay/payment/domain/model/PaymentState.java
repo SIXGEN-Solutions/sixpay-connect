@@ -70,14 +70,8 @@ public final class PaymentState implements ValueObject {
                 builder.requestIdentity,
                 "Request identity"
         );
-        financialInstitutionCode = Objects.requireNonNull(
-                builder.financialInstitutionCode,
-                "Financial institution code"
-        );
-        debtorAccountReference = Objects.requireNonNull(
-                builder.debtorAccountReference,
-                "Debtor account reference"
-        );
+        financialInstitutionCode = builder.financialInstitutionCode;
+        debtorAccountReference = builder.debtorAccountReference;
         requestedAmount = Objects.requireNonNull(
                 builder.requestedAmount,
                 "Requested amount"
@@ -132,9 +126,11 @@ public final class PaymentState implements ValueObject {
                     "Payment source must be TRESOR_PAY"
             );
         }
-        if (!financialInstitutionCode.equals(
-                debtorAccountReference.financialInstitutionCode()
-        )) {
+        if (debtorAccountReference != null
+                && (financialInstitutionCode == null
+                || !financialInstitutionCode.equals(
+                        debtorAccountReference.financialInstitutionCode()
+                ))) {
             throw new IllegalArgumentException(
                     "Debtor-account institution must match Payment"
             );
@@ -627,11 +623,36 @@ public final class PaymentState implements ValueObject {
     }
 
     public FinancialInstitutionCode financialInstitutionCode() {
+        if (financialInstitutionCode == null) {
+            throw new IllegalStateException(
+                    "Financial institution has not been resolved"
+            );
+        }
         return financialInstitutionCode;
     }
 
+    public Optional<FinancialInstitutionCode> optionalFinancialInstitutionCode() {
+        return Optional.ofNullable(financialInstitutionCode);
+    }
+
+    /**
+     * Returns the canonical debtor account for account-bound processing.
+     *
+     * <p>Pre-resolution NIU flows must use
+     * {@link #optionalDebtorAccountReference()}.</p>
+     */
     public DebtorAccountReference debtorAccountReference() {
+        if (debtorAccountReference == null) {
+            throw new IllegalStateException(
+                    "Canonical debtor account has not been resolved"
+            );
+        }
         return debtorAccountReference;
+    }
+
+    public Optional<DebtorAccountReference>
+            optionalDebtorAccountReference() {
+        return Optional.ofNullable(debtorAccountReference);
     }
 
     public Money requestedAmount() {
@@ -767,7 +788,8 @@ public final class PaymentState implements ValueObject {
                 && financialInstitutionCode.equals(
                         that.financialInstitutionCode
                 )
-                && debtorAccountReference.equals(
+                && Objects.equals(
+                        debtorAccountReference,
                         that.debtorAccountReference
                 )
                 && requestedAmount.equals(that.requestedAmount)

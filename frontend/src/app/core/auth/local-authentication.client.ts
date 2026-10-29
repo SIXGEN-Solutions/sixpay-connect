@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import {
   AuthenticationSessionResponse,
+  LdapLoginRequest,
   LocalLoginRequest,
   LocalPasswordChangeRequest,
 } from './authentication.model';
@@ -22,6 +23,12 @@ export class LocalAuthenticationClient {
 
   login(request: LocalLoginRequest): Observable<AuthenticationSessionResponse> {
     return this.http.post<AuthenticationSessionResponse>(`${AUTH_API_PATH}/login`, request, {
+      withCredentials: true,
+    });
+  }
+
+  loginLdap(request: LdapLoginRequest): Observable<AuthenticationSessionResponse> {
+    return this.http.post<AuthenticationSessionResponse>(`${AUTH_API_PATH}/login/ldap`, request, {
       withCredentials: true,
     });
   }

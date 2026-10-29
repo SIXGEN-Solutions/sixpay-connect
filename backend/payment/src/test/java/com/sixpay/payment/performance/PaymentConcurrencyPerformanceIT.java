@@ -1,5 +1,6 @@
 package com.sixpay.payment.performance;
 
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConcurrencyCoordinator;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyDecision;
@@ -14,6 +15,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.RollbackException;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -692,6 +694,11 @@ class PaymentConcurrencyPerformanceIT {
         @Bean
         CurrentUserProvider currentUserProvider() {
             return Optional::<AuthenticatedUser>empty;
+        }
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return Mockito.mock(PaymentCustomerSubscriptionPort.class);
         }
     }
 }

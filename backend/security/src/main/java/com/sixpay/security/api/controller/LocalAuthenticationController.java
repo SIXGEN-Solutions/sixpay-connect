@@ -5,6 +5,7 @@ import com.sixpay.security.api.dto.LocalLoginRequest;
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.input.LocalLoginCommand;
 import com.sixpay.security.authentication.AuthenticatedUser;
+import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.domain.authentication.AuthenticationMethod;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,13 +35,16 @@ public final class LocalAuthenticationController {
 
     private final AuthenticateLocalUserUseCase authenticateLocalUser;
     private final SpringSecuritySessionManager sessionManager;
+    private final AuthenticationCapabilitiesProperties capabilities;
 
     public LocalAuthenticationController(
             AuthenticateLocalUserUseCase authenticateLocalUser,
-            SpringSecuritySessionManager sessionManager
+            SpringSecuritySessionManager sessionManager,
+            AuthenticationCapabilitiesProperties capabilities
     ) {
         this.authenticateLocalUser = Objects.requireNonNull(authenticateLocalUser);
         this.sessionManager = Objects.requireNonNull(sessionManager);
+        this.capabilities = Objects.requireNonNull(capabilities);
     }
 
     @PostMapping("/login")
@@ -67,7 +71,8 @@ public final class LocalAuthenticationController {
         return ResponseEntity.ok(
                 AuthenticationSessionController.toResponse(
                         authenticatedUser,
-                        AuthenticationMethod.LOCAL
+                        AuthenticationMethod.LOCAL,
+                        capabilities
                 )
         );
     }

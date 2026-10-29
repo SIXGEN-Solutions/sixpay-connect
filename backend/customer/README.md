@@ -91,3 +91,41 @@ CustomerSubscription record.
 
 Schema:
 backend/customer/src/main/resources/db/migration/V200__customer_baseline.sql
+
+## C1 — Internal subscription resolution for Payment
+
+`referenceClient` is the existing `CustomerSubscriptionId` (UUID); no additional
+identifier or database column is created. Customer exposes an **in-process**
+`ResolveCustomerSubscriptionUseCase` taking the reference and the **authenticated**
+partner UUID. Its result is an application DTO, not a JPA entity.
+
+Resolution enforces partner ownership, `ACTIVE` subscription, `ACTIVE` customer
+and membership of the bank account selected by the subscription. Failures are
+reported without exposing another partner's subscription details. The trusted
+caller must supply the authenticated partner UUID; a partner/application header
+alone is not authentication.
+
+The result includes optional NIU, optional banking customer number, canonical
+banking customer reference and `bankingAccountReference`. By approved SIXPAY
+business convention, `bankingAccountReference` represents the RIB: there is no
+second `rib` field or database column. Any provider-specific naming or format
+translation belongs to the owning banking adapter, subject to its contract.
+
+C1 deliberately does not change the customer-verification identity/value objects,
+Amplitude API contract or Payment orchestration. Those changes require separate
+contract and security approval before the subsequent integration lot.
+
+### Partner and application scope (C1 decision)
+
+A CustomerSubscription is valid for **all authenticated applications belonging
+to its partner**. Customer resolves the subscription using `referenceClient`
+(the existing `CustomerSubscriptionId`) and the **trusted authenticated partner
+UUID**. Customer does not bind subscriptions to individual application IDs and
+does not authorize applications: Security must authenticate and authorize the
+calling application and establish its partner before this port is invoked.
+Application-provided IDs or headers must never be treated as proof of partner
+ownership. The resolution rejects missing, inactive or cross-partner subscriptions,
+inactive customers and missing subscription-bound bank accounts.
+
+Payment integration, removal of mandatory NIU from the banking-verification flow,
+and changes to verification contracts/DTOs belong to P3, not this C1 patch.

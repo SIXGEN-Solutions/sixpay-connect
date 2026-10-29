@@ -20,14 +20,14 @@ public record PaymentBankingVerificationRequested(
 
     public PaymentBankingVerificationRequested {
         metadata = Objects.requireNonNull(metadata, "Event metadata");
-        financialInstitutionCode = Objects.requireNonNull(financialInstitutionCode, "financialInstitutionCode");
-        debtorAccountBindingFingerprint = Objects.requireNonNull(debtorAccountBindingFingerprint, "debtorAccountBindingFingerprint");
-        debtorAccountBindingFingerprint = debtorAccountBindingFingerprint.strip();
-        if (debtorAccountBindingFingerprint.isEmpty() || debtorAccountBindingFingerprint.length() > 256) {
-            throw new IllegalArgumentException("debtorAccountBindingFingerprint has an invalid length");
-        }
-        if (!debtorAccountBindingFingerprint.matches("^v1:[0-9a-f]{64}$")) {
-            throw new IllegalArgumentException("debtorAccountBindingFingerprint has an invalid format");
+        if (debtorAccountBindingFingerprint != null) {
+            debtorAccountBindingFingerprint = debtorAccountBindingFingerprint.strip();
+            if (debtorAccountBindingFingerprint.isEmpty() || debtorAccountBindingFingerprint.length() > 256) {
+                throw new IllegalArgumentException("debtorAccountBindingFingerprint has an invalid length");
+            }
+            if (!debtorAccountBindingFingerprint.matches("^v1:[0-9a-f]{64}$")) {
+                throw new IllegalArgumentException("debtorAccountBindingFingerprint has an invalid format");
+            }
         }
         requestedAt = Objects.requireNonNull(requestedAt, "requestedAt");
     }

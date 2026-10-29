@@ -235,6 +235,58 @@ class SecurityAuthenticationConfigurationArchitectureTest {
     }
 
     @Test
+    void ldapRuntimeConfigurationRemainsOwnedByBootstrap()
+            throws Exception {
+
+        String ldapRuntime =
+                Files.readString(
+                        BOOTSTRAP_RESOURCES.resolve(
+                                "config/security/ldap-common.yml"
+                        )
+                );
+
+        assertTrue(
+                ldapRuntime.contains(
+                        "service-account-password: ${SIXPAY_LDAP_SERVICE_ACCOUNT_PASSWORD}"
+                ),
+                "LDAP service-account secret must come from runtime injection"
+        );
+
+        assertTrue(
+                !ldapRuntime.contains(
+                        "SIXPAY_LDAP_SERVICE_ACCOUNT_PASSWORD:"
+                ),
+                "LDAP service-account secret must not have a repository default"
+        );
+    }
+
+    @Test
+    void authenticationProfilesDoNotExplodeIntoProviderCombinations()
+            throws Exception {
+
+        try (var profiles = Files.list(BOOTSTRAP_RESOURCES)) {
+            List<String> names =
+                    profiles.filter(Files::isRegularFile)
+                            .map(path -> path.getFileName().toString())
+                            .filter(name ->
+                                    name.startsWith("application-")
+                                            && name.endsWith(".yml")
+                            )
+                            .toList();
+
+            assertTrue(
+                    names.stream().noneMatch(name ->
+                            name.contains("ldap-only")
+                                    || name.contains("local-ldap")
+                                    || name.contains("oidc-ldap")
+                                    || name.contains("local-oidc-ldap")
+                    ),
+                    "Authentication combinations must remain capability-based"
+            );
+        }
+    }
+
+    @Test
     void otherBusinessModulesDoNotConsumeSecurityConfigurationDirectly()
             throws Exception {
 

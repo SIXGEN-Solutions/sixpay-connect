@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -32,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * bootstrap from contaminating focused cross-module tests.</p>
  */
 @SpringBootTest(
-        classes = AssembledApplicationContextIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("assembled-test")
@@ -151,6 +152,7 @@ class AssembledApplicationContextIT {
      * class at compile time. Test packages are deliberately excluded by using
      * explicit production package roots.
      */
+   /*
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ComponentScan(basePackages = {
@@ -163,8 +165,10 @@ class AssembledApplicationContextIT {
             "com.sixpay.notification",
             "com.sixpay.administration",
             "com.sixpay.security",
-            "com.sixpay.integration"
+            "com.sixpay.integration",
+            "com.sixpay.bootstrap"
     })
     static class TestApplication {
     }
+    */
 }

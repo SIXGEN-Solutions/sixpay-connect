@@ -32,6 +32,27 @@ class InitiateDebitCommandTest {
     }
 
     @Test
+    void rejectsNonUuidCustomerSubscriptionReference() {
+        assertThatThrownBy(() -> new InitiateDebitCommand(
+                "PARTNER", "machine-subject", "PARTNER_ID", "SUB-LEGACY-001",
+                "APP", "AVI-2025-00045678", new BigDecimal("600000"), "XAF",
+                null, "Société ABC SARL", ClaimType.AVI, "100200300",
+                Instant.parse("2026-08-03T10:30:00Z"),
+                List.of(beneficiary("600000")), "https://example.org/callback",
+                "idem-001", CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void keepsSubscriptionUuidDistinctFromEndToEndBusinessReference() {
+        var command = command(new BigDecimal("600000"), List.of(beneficiary("600000")));
+        assertThat(command.clientReference())
+                .isEqualTo("7a7185d1-3c0a-43e0-8b64-a9407f910001");
+        assertThat(command.endToEndId()).isEqualTo("AVI-2025-00045678");
+        assertThat(command.resolvedPartnerIdentifier()).isEqualTo("TP_APP_001");
+    }
+
+    @Test
     void rejectsBeneficiarySumDifferentFromTotal() {
         assertThatThrownBy(() ->
                 command(
@@ -51,38 +72,87 @@ class InitiateDebitCommandTest {
     }
 
     @Test
-    void rejectsPartnerIdentityMismatch() {
-        assertThatThrownBy(() ->
+    void defaultsMissingCurrencyToXafForMvp() {
+        InitiateDebitCommand command = new InitiateDebitCommand(
+                "TRESOR_PAY",
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                null,
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                Instant.parse("2026-08-03T10:30:00Z"),
+                List.of(beneficiary("600000")),
+                "https://tresorpay.cm/callback",
+                "idem-001",
+                CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        );
+        assertThat(command.currency()).isEqualTo("XAF");
+    }
+
+    @Test
+    void preservesSuppliedIsoCurrencyForCoreBankingValidation() {
+        InitiateDebitCommand command = new InitiateDebitCommand(
+                "TRESOR_PAY",
+                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                "EUR",
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                Instant.parse("2026-08-03T10:30:00Z"),
+                List.of(beneficiary("600000")),
+                "https://tresorpay.cm/callback",
+                "idem-001",
+                CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        );
+
+        assertThat(command.currency()).isEqualTo("EUR");
+    }
+
+    @Test
+    void loginNameDoesNotAuthenticatePartnerMachineCaller() {
+        InitiateDebitCommand command =
                 new InitiateDebitCommand(
-                        "TRESOR_PAY",
-                        "OTHER_PARTNER",
-                        "TP_APP_001",
-                        "AVI-2025-00045678",
-                        new BigDecimal("600000"),
-                        "XAF",
-                        "10005-00001-12345678901-12",
-                        "Société ABC SARL",
-                        ClaimType.AVI,
-                        "100200300",
-                        Instant.parse(
+                "DISPLAY_LOGIN_ONLY",
+                "machine-subject-001",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "TP_APP_001",
+                "AVI-2025-00045678",
+                new BigDecimal("600000"),
+                "XAF",
+                "10005-00001-12345678901-12",
+                "Société ABC SARL",
+                ClaimType.AVI,
+                "100200300",
+                Instant.parse(
                                 "2026-08-03T10:30:00Z"
                         ),
-                        List.of(
+                List.of(
                                 beneficiary("600000")
                         ),
-                        "https://tresorpay.cm/callback",
-                        "idem-001",
-                        CorrelationId.of(
+                "https://tresorpay.cm/callback",
+                "idem-001",
+                CorrelationId.of(
                                 "11111111-1111-1111-1111-111111111111"
                         )
-                )
-        )
-                .isInstanceOf(
-                        IllegalArgumentException.class
-                )
-                .hasMessageContaining(
-                        "authenticated partner identity"
-                );
+        );
+
+        assertThat(command.partnerLoginName())
+                .isEqualTo("DISPLAY_LOGIN_ONLY");
+        assertThat(command.authenticatedPartnerLoginName())
+                .isEqualTo("machine-subject-001");
     }
 
     private InitiateDebitCommand command(
@@ -92,6 +162,8 @@ class InitiateDebitCommandTest {
         return new InitiateDebitCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 totalAmount,

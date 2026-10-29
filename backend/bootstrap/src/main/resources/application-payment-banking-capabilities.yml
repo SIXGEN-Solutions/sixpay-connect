@@ -80,6 +80,9 @@ sixpay:
           connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT}
           read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
           security:
+            oauth2-enabled: ${AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED:true}
+            mtls-enabled: ${AMPLITUDE_CONFIRMATION_MTLS_ENABLED:true}
+            allow-insecure-http: ${AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:

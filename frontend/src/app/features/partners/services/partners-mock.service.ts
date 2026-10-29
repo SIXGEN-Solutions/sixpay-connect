@@ -126,6 +126,7 @@ export class PartnersMockService {
     const now = new Date().toISOString();
     const created: PartnerResponse = {
       id: crypto.randomUUID(),
+      partnerIdentifier: request.partnerIdentifier,
       legalName: request.legalName,
       technicalContactName: request.technicalContactName,
       technicalContactEmail: request.technicalContactEmail,
@@ -314,6 +315,7 @@ function partner(
 
   return {
     id,
+    partnerIdentifier: `MOCK_PARTNER_${String(index).padStart(3, '0')}`,
     legalName,
     technicalContactName: `${legalName} Operations`,
     technicalContactEmail: `operations${index}@example.test`,

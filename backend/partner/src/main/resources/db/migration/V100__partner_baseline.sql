@@ -7,6 +7,7 @@
 
 CREATE TABLE partners (
     id UUID PRIMARY KEY,
+    partner_identifier VARCHAR(64) NOT NULL,
     legal_name VARCHAR(200) NOT NULL,
     technical_contact_name VARCHAR(150) NOT NULL,
     technical_contact_email VARCHAR(254) NOT NULL,
@@ -15,6 +16,8 @@ CREATE TABLE partners (
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
+    CONSTRAINT uk_partners_partner_identifier
+        UNIQUE (partner_identifier),
     CONSTRAINT ck_partners_status
         CHECK (status IN ('PENDING_VALIDATION', 'ACTIVE', 'REJECTED', 'SUSPENDED')),
     CONSTRAINT ck_partners_rejection_reason

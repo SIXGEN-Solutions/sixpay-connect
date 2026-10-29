@@ -33,7 +33,7 @@ import { AuthenticationService } from './authentication.service';
             </p>
           }
 
-          @if (authentication.localEnabled) {
+          @if (authentication.localEnabled()) {
             <form class="sp-local-login-form" [formGroup]="form" (ngSubmit)="loginLocal()">
               <mat-form-field appearance="outline">
                 <mat-label>Email / Nom d’utilisateur</mat-label>
@@ -66,7 +66,11 @@ import { AuthenticationService } from './authentication.service';
             </form>
           }
 
-          @if (authentication.localEnabled && authentication.oidcEnabled) {
+          @if (
+            (authentication.localEnabled() && authentication.oidcEnabled()) ||
+            (authentication.localEnabled() && authentication.ldapEnabled()) ||
+            (authentication.oidcEnabled() && authentication.ldapEnabled())
+          ) {
             <div class="sp-auth-divider" aria-hidden="true">
               <span></span>
               <strong>OU</strong>
@@ -74,7 +78,7 @@ import { AuthenticationService } from './authentication.service';
             </div>
           }
 
-          @if (authentication.oidcEnabled) {
+          @if (authentication.oidcEnabled()) {
             <section class="sp-sso-login">
               <sp-button icon="login" variant="secondary" (buttonClick)="loginOidc()">
                 Se connecter avec SSO
@@ -82,9 +86,44 @@ import { AuthenticationService } from './authentication.service';
             </section>
           }
 
+          @if (authentication.ldapEnabled()) {
+            <form class="sp-ldap-login" [formGroup]="ldapForm" (ngSubmit)="loginLdap()">
+              <mat-form-field appearance="outline">
+                <mat-label>Identifiant annuaire</mat-label>
+                <input matInput type="text" autocomplete="username" formControlName="username" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Mot de passe annuaire</mat-label>
+                <input
+                  matInput
+                  type="password"
+                  autocomplete="current-password"
+                  formControlName="password"
+                />
+              </mat-form-field>
+
+              @if (ldapInvalidCredentials()) {
+                <p class="sp-auth-error" role="alert">
+                  Identifiant annuaire ou mot de passe incorrect.
+                </p>
+              }
+
+              <sp-button
+                icon="login"
+                variant="secondary"
+                type="submit"
+                [disabled]="ldapForm.invalid || ldapSubmitting()"
+              >
+                {{ ldapSubmitting() ? 'Connexion…' : 'Se connecter avec l’annuaire' }}
+              </sp-button>
+            </form>
+          }
+
           @if (
-            !authentication.localEnabled &&
-            !authentication.oidcEnabled &&
+            !authentication.localEnabled() &&
+            !authentication.oidcEnabled() &&
+            !authentication.ldapEnabled() &&
             authentication.isStandaloneMode
           ) {
             <p>La session de démonstration SIXPAY est active.</p>
@@ -106,7 +145,8 @@ import { AuthenticationService } from './authentication.service';
 
     mat-card-content,
     .sp-local-login-form,
-    .sp-sso-login {
+    .sp-sso-login,
+    .sp-ldap-login {
       display: grid;
       gap: var(--sp-space-4);
       padding-top: var(--sp-space-4);
@@ -158,6 +198,8 @@ export class LoginComponent {
 
   protected readonly submitting = signal(false);
   protected readonly invalidCredentials = signal(false);
+  protected readonly ldapSubmitting = signal(false);
+  protected readonly ldapInvalidCredentials = signal(false);
 
   protected readonly sessionExpired =
     this.route.snapshot.queryParamMap.get('sessionExpired') === 'true';
@@ -165,6 +207,17 @@ export class LoginComponent {
   private readonly returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
 
   protected readonly form = new FormGroup({
+    username: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+  });
+
+  protected readonly ldapForm = new FormGroup({
     username: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required],
@@ -184,7 +237,7 @@ export class LoginComponent {
   }
 
   protected loginLocal(): void {
-    if (!this.authentication.localEnabled || this.form.invalid) {
+    if (!this.authentication.localEnabled() || this.form.invalid) {
       return;
     }
 
@@ -203,8 +256,28 @@ export class LoginComponent {
       });
   }
 
+  protected loginLdap(): void {
+    if (!this.authentication.ldapEnabled() || this.ldapForm.invalid) {
+      return;
+    }
+
+    this.ldapInvalidCredentials.set(false);
+    this.ldapSubmitting.set(true);
+
+    this.authentication
+      .loginLdap(this.ldapForm.getRawValue(), this.returnUrl)
+      .pipe(finalize(() => this.ldapSubmitting.set(false)))
+      .subscribe({
+        error: (error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.ldapInvalidCredentials.set(true);
+          }
+        },
+      });
+  }
+
   protected loginOidc(): void {
-    if (!this.authentication.oidcEnabled) {
+    if (!this.authentication.oidcEnabled()) {
       return;
     }
 

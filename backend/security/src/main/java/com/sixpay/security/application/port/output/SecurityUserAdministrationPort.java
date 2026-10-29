@@ -21,6 +21,8 @@ public interface SecurityUserAdministrationPort {
 
     List<SecurityUserSummary> listUsers();
 
+    long countUsers();
+
     SecurityUserDetail getUser(UUID userId);
 
     void updateUser(
@@ -43,13 +45,14 @@ public interface SecurityUserAdministrationPort {
             String bcryptHash
     );
 
-    void linkOidcIdentity(
+    void linkExternalIdentity(
             UUID userId,
+            com.sixpay.security.domain.authentication.AuthenticationIdentityType identityType,
             String provider,
             String providerSubject
     );
 
-    void unlinkOidcIdentity(
+    void unlinkExternalIdentity(
             UUID userId,
             UUID identityId
     );

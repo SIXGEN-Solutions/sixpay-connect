@@ -1,30 +1,41 @@
 <section class="sp-dashboard" aria-labelledby="dashboard-title">
-  <sp-toolbar
-    title="Tableau de bord"
-    description="Vue opérationnelle mockée de SIXPAY CONNECT — Phase 7.0."
-  />
+  <header class="sp-dashboard__intro">
+    <div>
+      <p class="sp-dashboard__eyebrow">Banking Command Center</p>
+      <h1 id="dashboard-title">Bonjour, {{ authentication.username() ?? 'Utilisateur' }}</h1>
+      <p>Vue opérationnelle • Aujourd’hui</p>
+    </div>
+
+    <a routerLink="/payments" class="sp-dashboard__primary-link">
+      Voir les paiements
+      <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+    </a>
+  </header>
 
   <div class="sp-kpi-grid">
-    <sp-card title="Paiements du jour">
+    <sp-card title="Volume aujourd’hui">
       <strong class="sp-kpi">1 248</strong>
-      <span>+8,4 % vs hier</span>
+      <span class="sp-kpi__trend sp-kpi__trend--positive">+8,4 % vs hier</span>
     </sp-card>
+
     <sp-card title="Taux de succès">
       <strong class="sp-kpi">97,8 %</strong>
-      <span>Objectif ≥ 97 %</span>
+      <span class="sp-kpi__trend">Stable • objectif ≥ 97 %</span>
     </sp-card>
-    <sp-card title="Échecs">
-      <strong class="sp-kpi">27</strong>
-      <span>12 nécessitent une analyse</span>
-    </sp-card>
-    <sp-card title="En traitement">
+
+    <sp-card title="En attente">
       <strong class="sp-kpi">14</strong>
-      <span>5 depuis plus de 2 minutes</span>
+      <span class="sp-kpi__trend">5 depuis plus de 2 minutes</span>
+    </sp-card>
+
+    <sp-card title="Incidents">
+      <strong class="sp-kpi">2</strong>
+      <span class="sp-kpi__trend sp-kpi__trend--critical">1 critique</span>
     </sp-card>
   </div>
 
   <div class="sp-dashboard-grid">
-    <sp-card title="Activité des dernières heures" subtitle="Volume mocké">
+    <sp-card title="Évolution des paiements" subtitle="Activité récente">
       <div class="sp-bars" aria-label="Histogramme mocké des paiements">
         @for (height of [48, 65, 56, 82, 74, 92, 68, 77, 96, 84, 71, 88]; track $index) {
           <span [style.height.%]="height"></span>
@@ -32,16 +43,40 @@
       </div>
     </sp-card>
 
-    <sp-card title="État des intégrations">
+    <sp-card title="Alertes opérationnelles" subtitle="État des intégrations">
       <ul class="sp-health-list">
-        <li><mat-icon>check_circle</mat-icon> TresorPay <strong>Disponible</strong></li>
-        <li><mat-icon>check_circle</mat-icon> Amplitude <strong>Disponible</strong></li>
-        <li><mat-icon>warning</mat-icon> Comptabilisation <strong>Dégradée</strong></li>
+        <li class="sp-health-list__ok">
+          <mat-icon>check_circle</mat-icon>
+          <span>TresorPay</span>
+          <strong>Disponible</strong>
+        </li>
+        <li class="sp-health-list__ok">
+          <mat-icon>check_circle</mat-icon>
+          <span>Amplitude</span>
+          <strong>Disponible</strong>
+        </li>
+        <li class="sp-health-list__warning">
+          <mat-icon>warning</mat-icon>
+          <span>Comptabilisation</span>
+          <strong>Dégradée</strong>
+        </li>
       </ul>
     </sp-card>
   </div>
 
-  <sp-card title="Paiements récents">
+  <section class="sp-dashboard__table-panel" aria-labelledby="recent-payments-title">
+    <div class="sp-dashboard__section-heading">
+      <div>
+        <span class="sp-dashboard__eyebrow">Activité récente</span>
+        <h2 id="recent-payments-title">Transactions récentes</h2>
+      </div>
+
+      <a routerLink="/payments">
+        Voir tout
+        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+    </div>
+
     <div class="sp-table-scroll">
       <table class="sp-table">
         <thead>
@@ -61,12 +96,20 @@
               <td>{{ payment.customer }}</td>
               <td>{{ payment.amount }}</td>
               <td>
-                <span class="sp-status">{{ payment.status }}</span>
+                <span
+                  class="sp-status"
+                  [class.sp-status--success]="payment.status === 'SUCCESS'"
+                  [class.sp-status--pending]="payment.status === 'PROCESSING'"
+                  [class.sp-status--error]="payment.status === 'FAILED'"
+                >
+                  <span class="sp-status__dot" aria-hidden="true"></span>
+                  {{ payment.status }}
+                </span>
               </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
-  </sp-card>
+  </section>
 </section>

@@ -14,6 +14,9 @@ export const environment = {
     oidc: {
       enabled: false,
     },
+    ldap: {
+      enabled: false,
+    },
     standaloneUser: {
       subject: 'local-security-user',
       roles: ['ADMIN'],

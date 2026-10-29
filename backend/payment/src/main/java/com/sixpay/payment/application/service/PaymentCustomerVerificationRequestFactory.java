@@ -1,6 +1,9 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
+import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
@@ -16,11 +19,22 @@ import java.util.UUID;
  */
 @Component
 public final class PaymentCustomerVerificationRequestFactory {
+    private final PaymentCustomerSubscriptionPort subscriptions;
+    private final PartnerIdentityResolutionPort partners;
+
+    public PaymentCustomerVerificationRequestFactory(
+            PaymentCustomerSubscriptionPort subscriptions,
+            PartnerIdentityResolutionPort partners) {
+        this.subscriptions = Objects.requireNonNull(subscriptions);
+        this.partners = Objects.requireNonNull(partners);
+    }
+
 
     public CustomerVerificationRequest from(
             Payment payment,
             UUID verificationId,
-            Instant requestedAt
+            Instant requestedAt,
+            Instant deadlineAt
     ) {
         Objects.requireNonNull(payment, "payment is required");
         Objects.requireNonNull(
@@ -28,6 +42,7 @@ public final class PaymentCustomerVerificationRequestFactory {
                 "verificationId is required"
         );
         Objects.requireNonNull(requestedAt, "requestedAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
 
         if (payment.status()
                 != PaymentStatus.BANKING_VERIFICATION_PENDING) {
@@ -47,20 +62,39 @@ public final class PaymentCustomerVerificationRequestFactory {
                                 )
                         );
 
+        // The persisted Partner business identifier is resolved to the canonical UUID.
+        // Customer enforces subscription ownership, eligibility and active customer.
+        var partner = partners.findByPartnerIdentifier(initiationContext.applicationId())
+                .orElseThrow(() -> new IllegalStateException("Payment Partner is unavailable"));
+        if (!partner.acceptsNewTransactions()) {
+            throw new IllegalStateException("Payment Partner is not authorized");
+        }
+        UUID requestedSubscriptionId = UUID.fromString(
+                state.externalSubscriptionReference().value());
+        var subscription = subscriptions.resolve(
+                requestedSubscriptionId,
+                partner.partnerId());
+        if (!subscription.subscriptionId().equals(requestedSubscriptionId)) {
+            throw new IllegalStateException("CustomerSubscription reference mismatch");
+        }
+        if (!subscription.partnerId().equals(partner.partnerId())) {
+            throw new IllegalStateException("CustomerSubscription Partner mismatch");
+        }
         return new CustomerVerificationRequest(
                 verificationId,
-                initiationContext.taxpayerIdentifier(),
-                initiationContext.debtorName(),
-                state.financialInstitutionCode().value(),
-                state.debtorAccountReference()
-                        .bindingFingerprint(),
-                state.debtorAccountReference()
-                        .integrationAccountToken(),
+                subscription.niu(),
+                subscription.legalName(),
+                subscription.financialInstitutionCode(),
+                subscription.accountBindingFingerprint(),
+                subscription.bankingAccountReference(),
+                subscription.bankingCustomerReference(),
+                subscription.customerNumber(),
                 state.requestIdentity()
                         .correlationId()
                         .value(),
                 state.paymentId().value(),
-                requestedAt
+                requestedAt,
+                deadlineAt
         );
     }
 }

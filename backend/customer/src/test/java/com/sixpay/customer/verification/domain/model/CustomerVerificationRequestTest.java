@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CustomerVerificationRequestTest {
@@ -68,17 +69,6 @@ class CustomerVerificationRequestTest {
                         valid.verificationId(),
                         valid.subject(),
                         valid.financialInstitutionCode(),
-                        null,
-                        valid.context(),
-                        valid.requestedAt()
-                )
-        );
-        assertThrows(
-                NullPointerException.class,
-                () -> new CustomerVerificationRequest(
-                        valid.verificationId(),
-                        valid.subject(),
-                        valid.financialInstitutionCode(),
                         valid.accountBindingFingerprint(),
                         null,
                         valid.requestedAt()
@@ -95,6 +85,23 @@ class CustomerVerificationRequestTest {
                         null
                 )
         );
+    }
+
+    @Test
+    void acceptsNiuFirstRequestWithoutPreResolvedAccountBinding() {
+        CustomerVerificationRequest valid = validRequest();
+
+        CustomerVerificationRequest request =
+                new CustomerVerificationRequest(
+                        valid.verificationId(),
+                        valid.subject(),
+                        valid.financialInstitutionCode(),
+                        null,
+                        valid.context(),
+                        valid.requestedAt()
+                );
+
+        assertNull(request.accountBindingFingerprint());
     }
 
     private static CustomerVerificationRequest validRequest() {

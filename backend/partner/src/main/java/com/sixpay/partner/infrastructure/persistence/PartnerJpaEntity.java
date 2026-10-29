@@ -26,6 +26,9 @@ public class PartnerJpaEntity {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
+    @Column(name = "partner_identifier", nullable = false, unique = true, length = 64)
+    private String partnerIdentifier;
+
     @Column(name = "legal_name", nullable = false, length = 200)
     private String legalName;
 
@@ -79,6 +82,7 @@ public class PartnerJpaEntity {
     }
 
     public void synchronize(Partner partner) {
+        partnerIdentifier = partner.partnerIdentifier().value();
         legalName = partner.legalName().value();
         technicalContactName = partner.technicalContact().name();
         technicalContactEmail = partner.technicalContact().email();
@@ -99,6 +103,10 @@ public class PartnerJpaEntity {
 
     public UUID id() {
         return id;
+    }
+
+    public String partnerIdentifier() {
+        return partnerIdentifier;
     }
 
     public String legalName() {

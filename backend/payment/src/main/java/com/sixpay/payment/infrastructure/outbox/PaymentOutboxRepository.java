@@ -1,6 +1,8 @@
 package com.sixpay.payment.infrastructure.outbox;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -106,6 +108,42 @@ public interface PaymentOutboxRepository
     Optional<Instant> findOldestOutstandingOccurredAt(
             @Param("eventType") String eventType
     );
+
+
+    /** Callback claims are independent of the generic publication status. */
+    @Query(value = """
+            SELECT candidate.*
+              FROM payment_outbox_events candidate
+             WHERE candidate.event_type = 'payment.domain-event'
+               AND (
+                   (candidate.callback_status IN ('PENDING', 'FAILED')
+                    AND candidate.callback_next_attempt_at <= :now)
+                   OR (candidate.callback_status = 'PROCESSING'
+                       AND candidate.callback_claimed_at < :staleBefore)
+               )
+               AND NOT EXISTS (
+                   SELECT 1 FROM payment_outbox_events predecessor
+                    WHERE predecessor.aggregate_id = candidate.aggregate_id
+                      AND predecessor.event_type = candidate.event_type
+                      AND (predecessor.occurred_at < candidate.occurred_at
+                           OR (predecessor.occurred_at = candidate.occurred_at
+                               AND predecessor.event_id < candidate.event_id))
+                      AND predecessor.callback_status NOT IN ('PUBLISHED', 'DEAD')
+               )
+             ORDER BY candidate.occurred_at, candidate.event_id
+             FOR UPDATE OF candidate SKIP LOCKED
+             LIMIT :batchSize
+            """, nativeQuery = true)
+    List<PaymentOutboxEntity> lockCallbackClaimable(
+            @Param("now") Instant now,
+            @Param("staleBefore") Instant staleBefore,
+            @Param("batchSize") int batchSize
+    );
+
+    /** Locks callback row while verifying fencing token and completing an attempt. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from PaymentOutboxEntity e where e.eventId = :eventId")
+    Optional<PaymentOutboxEntity> lockForCallbackCompletion(@Param("eventId") UUID eventId);
 
     boolean existsByEventId(UUID eventId);
 }

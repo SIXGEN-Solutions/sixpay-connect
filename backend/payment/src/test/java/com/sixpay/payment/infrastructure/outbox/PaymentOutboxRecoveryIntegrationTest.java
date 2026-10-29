@@ -2,6 +2,7 @@ package com.sixpay.payment.infrastructure.outbox;
 
 import com.sixpay.payment.infrastructure.outbox.claim
         .PaymentOutboxClaimService;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
@@ -345,6 +347,11 @@ class PaymentOutboxRecoveryIntegrationTest {
 
     @TestConfiguration(proxyBeanMethods = false)
     static class SecurityTestConfiguration {
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return mock(PaymentCustomerSubscriptionPort.class);
+        }
 
         @Bean
         CurrentUserProvider currentUserProvider() {

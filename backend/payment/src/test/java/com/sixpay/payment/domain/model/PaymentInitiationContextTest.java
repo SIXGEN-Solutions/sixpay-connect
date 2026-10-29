@@ -47,7 +47,45 @@ class PaymentInitiationContextTest {
                         )
                 );
 
+        assertThat(context.applicationId()).isNull();
+
+        assertThat(context.optionalApplicationId())
+                .isEmpty();
+
+        assertThat(context.claimType())
+                .isEqualTo(ClaimType.IM7);
+    }
+
+    @Test
+    void rejectsInvalidApplicationIdWhenProvided() {
+        assertThatThrownBy(() ->
+                new PaymentInitiationContext(
+                        "TRESOR_PAY",
+                        "INVALID APP ID!",
+                        "Société ABC SARL",
+                        ClaimType.IM7,
+                        "100200300",
+                        Instant.parse("2026-08-03T10:30:00Z"),
+                        CallbackEndpoint.of(
+                                "https://tresorpay.cm/callback"
+                        )
+                )
+        )
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Application ID");
+    }
+
+    @Test
+    void optionalFieldsRemainAbsentWithoutSyntheticValues() {
+        PaymentInitiationContext context = new PaymentInitiationContext(
+                null, null, null, ClaimType.AVI, null, null,
+                CallbackEndpoint.of("https://tresorpay.cm/callback"));
+
+        assertThat(context.optionalPartnerLoginName()).isEmpty();
         assertThat(context.optionalApplicationId()).isEmpty();
+        assertThat(context.optionalDebtorName()).isEmpty();
+        assertThat(context.optionalTaxpayerIdentifier()).isEmpty();
+        assertThat(context.optionalRequestedExecutionAt()).isEmpty();
     }
 
     @Test

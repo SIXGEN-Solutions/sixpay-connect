@@ -1,15 +1,27 @@
 package com.sixpay.security.configuration;
 
 import com.sixpay.security.api.controller.AuthenticationSessionController;
+import com.sixpay.security.api.controller.LdapAuthenticationController;
+import com.sixpay.security.api.error.LdapAuthenticationExceptionHandler;
+import com.sixpay.security.application.port.input.AuthenticateLdapIdentityUseCase;
+import com.sixpay.security.application.port.input.AuthenticateLdapUserUseCase;
+import com.sixpay.security.application.port.input.DirectoryUserLookupUseCase;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
+import com.sixpay.security.application.port.output.DirectoryUserLookupPort;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.application.service.CurrentSessionService;
+import com.sixpay.security.application.service.DirectoryUserLookupService;
+import com.sixpay.security.application.service.DisabledDirectoryUserLookupService;
+import com.sixpay.security.application.service.LdapCanonicalAuthenticationService;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
+import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryDirectoryUserLookupAdapter;
+import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
+import com.sixpay.security.infrastructure.authentication.subscription.TresorPaySubscriptionKeyFilter;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -30,6 +42,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
@@ -41,13 +54,18 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @AutoConfiguration
 @EnableMethodSecurity
-@EnableConfigurationProperties(
-        AuthenticationCapabilitiesProperties.class
-)
+@EnableConfigurationProperties({
+        AuthenticationCapabilitiesProperties.class,
+        AuthenticationProviderPolicyProperties.class,
+        TresorPaySubscriptionKeyProperties.class
+})
 @Import({
         LocalAuthenticationConfiguration.class,
         IdentityLinkingConfiguration.class,
-        AuthenticationSessionController.class
+        PartnerMachineIdentityConfiguration.class,
+        AuthenticationSessionController.class,
+        LdapAuthenticationController.class,
+        LdapAuthenticationExceptionHandler.class
 })
 @ConditionalOnClass({
         HttpSecurity.class,
@@ -58,6 +76,15 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
                 ConditionalOnWebApplication.Type.SERVLET
 )
 public class SixpaySecurityAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(AuthenticationProviderPolicyValidator.class)
+    AuthenticationProviderPolicyValidator authenticationProviderPolicyValidator(
+            AuthenticationCapabilitiesProperties capabilities,
+            AuthenticationProviderPolicyProperties policy
+    ) {
+        return new AuthenticationProviderPolicyValidator(capabilities, policy);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -105,6 +132,98 @@ public class SixpaySecurityAutoConfiguration {
         return new OidcAuthenticationAdapter(
                 externalIdentityResolver,
                 auditPort
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ActiveDirectoryDirectoryUserLookupAdapter.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    ActiveDirectoryDirectoryUserLookupAdapter
+    activeDirectoryDirectoryUserLookupAdapter(
+            AuthenticationCapabilitiesProperties properties
+    ) {
+        return new ActiveDirectoryDirectoryUserLookupAdapter(
+                properties.ldap()
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupPort.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    DirectoryUserLookupPort directoryUserLookupPort(
+            ActiveDirectoryDirectoryUserLookupAdapter adapter
+    ) {
+        return adapter;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    DirectoryUserLookupUseCase directoryUserLookupUseCase(
+            DirectoryUserLookupPort lookupPort
+    ) {
+        return new DirectoryUserLookupService(lookupPort);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DirectoryUserLookupUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "false",
+            matchIfMissing = true
+    )
+    DirectoryUserLookupUseCase disabledDirectoryUserLookupUseCase() {
+        return new DisabledDirectoryUserLookupService();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(
+            AuthenticateLdapIdentityUseCase.class
+    )
+    @ConditionalOnProperty(
+            prefix =
+                    "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    AuthenticateLdapIdentityUseCase
+    ldapAuthenticationProvider(
+            AuthenticationCapabilitiesProperties properties,
+            ActiveDirectoryDirectoryUserLookupAdapter directoryLookup
+    ) {
+        return new ActiveDirectoryLdapAuthenticationAdapter(
+                properties.ldap(),
+                directoryLookup
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuthenticateLdapUserUseCase.class)
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.authentication.ldap",
+            name = "enabled",
+            havingValue = "true"
+    )
+    AuthenticateLdapUserUseCase authenticateLdapUserUseCase(
+            AuthenticateLdapIdentityUseCase ldapAuthentication,
+            ExternalIdentityResolver identityResolver
+    ) {
+        return new LdapCanonicalAuthenticationService(
+                ldapAuthentication,
+                identityResolver
         );
     }
 
@@ -194,6 +313,27 @@ public class SixpaySecurityAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "sixpay.security.tresorpay.subscription-key",
+            name = "enabled",
+            havingValue = "true"
+    )
+    TresorPaySubscriptionKeyFilter
+    tresorPaySubscriptionKeyFilter(
+            TresorPaySubscriptionKeyProperties properties,
+            SecurityAuditPort securityAuditPort
+    ) {
+        AuditingAuthenticationEntryPoint entryPoint =
+                new AuditingAuthenticationEntryPoint(securityAuditPort);
+
+        return new TresorPaySubscriptionKeyFilter(
+                candidate -> properties.value().equals(candidate),
+                entryPoint
+        );
+    }
+
+    @Bean
     @ConditionalOnMissingBean(
             SecurityFilterChain.class
     )
@@ -211,7 +351,9 @@ public class SixpaySecurityAutoConfiguration {
             SecurityAuditPort
                     securityAuditPort,
             RestrictedLocalSessionFilter
-                    restrictedLocalSessionFilter
+                    restrictedLocalSessionFilter,
+            ObjectProvider<TresorPaySubscriptionKeyFilter>
+                    tresorPaySubscriptionKeyFilterProvider
     ) throws Exception {
 
         RequestMatcher bearerRequest =
@@ -302,6 +444,21 @@ public class SixpaySecurityAutoConfiguration {
                                                         )
                                 );
                             }
+
+                            if (capabilities
+                                    .ldapEnabled()) {
+                                csrf.ignoringRequestMatchers(
+                                        request ->
+                                                HttpMethod.POST
+                                                        .matches(
+                                                                request.getMethod()
+                                                        )
+                                                        && "/api/v1/auth/login/ldap"
+                                                        .equals(
+                                                                request.getRequestURI()
+                                                        )
+                                );
+                            }
                         }
                 )
                 .authorizeHttpRequests(
@@ -342,6 +499,16 @@ public class SixpaySecurityAutoConfiguration {
                                         .permitAll();
                             }
 
+                            if (capabilities
+                                    .ldapEnabled()) {
+                                authorize
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/v1/auth/login/ldap"
+                                        )
+                                        .permitAll();
+                            }
+
                             authorize
                                     .anyRequest()
                                     .authenticated();
@@ -356,6 +523,16 @@ public class SixpaySecurityAutoConfiguration {
                         restrictedLocalSessionFilter,
                         ExceptionTranslationFilter.class
                 );
+
+        TresorPaySubscriptionKeyFilter tresorPaySubscriptionKeyFilter =
+                tresorPaySubscriptionKeyFilterProvider.getIfAvailable();
+
+        if (tresorPaySubscriptionKeyFilter != null) {
+            http.addFilterBefore(
+                    tresorPaySubscriptionKeyFilter,
+                    BasicAuthenticationFilter.class
+            );
+        }
 
         if (capabilities
                 .oidcEnabled()) {

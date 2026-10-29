@@ -104,7 +104,8 @@ public final class AmplitudePaymentEventAdapter
                 result.reasonCode() == null
                         ? null
                         : FailureCode.of(result.reasonCode()),
-                result.observedAt()
+                result.observedAt(),
+                result.accountingDate()
         );
     }
 

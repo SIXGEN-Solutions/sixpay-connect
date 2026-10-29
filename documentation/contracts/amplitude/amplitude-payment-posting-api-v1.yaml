@@ -385,6 +385,13 @@ components:
         reasonCode:
           type: [string, 'null']
           maxLength: 64
+        accountingDate:
+          type: [string, 'null']
+          format: date
+          description: >-
+            Original accounting date recorded for this Payment event by Core Banking.
+            Conclusive recovery results (COMPLETED or REJECTED) must return it;
+            UNKNOWN may return null. Never recompute it at lookup time.
         observedAt:
           type: string
           format: date-time

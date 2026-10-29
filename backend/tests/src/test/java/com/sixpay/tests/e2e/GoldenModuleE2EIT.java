@@ -1,9 +1,11 @@
 package com.sixpay.tests.e2e;
 
+import com.sixpay.bootstrap.integration.customer.PartnerSubscriptionEligibilityAdapter;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.common.messaging.outbox.OutboxMessageSource;
 import com.sixpay.common.messaging.transport.IntegrationEventTransport;
+import com.sixpay.customer.configuration.CustomerModuleConfiguration;
 import com.sixpay.integration.messaging.outbox.OutboxRelay;
 import com.sixpay.integration.messaging.properties.OutboxRelayProperties;
 import com.sixpay.notification.application.model.PartnerDecisionNotification;
@@ -21,6 +23,7 @@ import com.sixpay.partner.application.command.DecidePartnerCommand;
 import com.sixpay.partner.application.command.PartnerDecision;
 import com.sixpay.partner.application.port.input.PartnerManagementUseCase;
 import com.sixpay.partner.domain.model.PartnerId;
+import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,6 +105,7 @@ class GoldenModuleE2EIT {
     void partnerApprovalIsDeliveredExactlyOnceAcrossTheGoldenFlow() {
         var partner = partnerManagement.create(new CreatePartnerCommand(
                 "Golden Partner",
+                "GOLDEN-E2E-PARTNER",
                 "Alice Operations",
                 "alice.ops@example.com",
                 Set.of("PAYMENT"),
@@ -273,6 +277,8 @@ class GoldenModuleE2EIT {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration(exclude = {
+            PaymentModuleConfiguration.class,
+            CustomerModuleConfiguration.class,
             OperationalNotificationPersistenceAutoConfiguration.class,
             OperationalNotificationEmailAutoConfiguration.class,
             OperationalNotificationApplicationAutoConfiguration.class,

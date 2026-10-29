@@ -55,9 +55,28 @@ public class SecurityUserIdentityJpaEntity {
             String providerSubject,
             Instant now
     ) {
-        return linked(
+        return linkedExternal(
                 account,
                 AuthenticationIdentityType.OIDC,
+                provider,
+                providerSubject,
+                now
+        );
+    }
+
+    public static SecurityUserIdentityJpaEntity linkedExternal(
+            SecurityUserAccountJpaEntity account,
+            AuthenticationIdentityType identityType,
+            String provider,
+            String providerSubject,
+            Instant now
+    ) {
+        if (identityType == AuthenticationIdentityType.LOCAL) {
+            throw new IllegalArgumentException("LOCAL identity uses linkedLocal");
+        }
+        return linked(
+                account,
+                identityType,
                 provider,
                 providerSubject,
                 now

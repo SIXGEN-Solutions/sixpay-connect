@@ -47,14 +47,14 @@ public class PaymentCallbackOutboxCoordinator {
         );
 
         List<PaymentOutboxEntity> entities =
-                repository.lockClaimable(
+                repository.lockCallbackClaimable(
                         now,
                         staleBefore,
                         properties.getBatchSize()
                 );
 
         entities.forEach(entity ->
-                entity.claim(
+                entity.claimCallback(
                         now,
                         properties.getWorkerId()
                 )
@@ -70,16 +70,16 @@ public class PaymentCallbackOutboxCoordinator {
                                 entity.eventType(),
                                 entity.correlationId(),
                                 entity.occurredAt(),
-                                entity.attemptCount()
+                                entity.callbackAttemptCount()
                         )
                 )
                 .toList();
     }
 
     @Transactional
-    public void markPublished(UUID eventId) {
-        PaymentOutboxEntity entity = requireOwned(eventId);
-        entity.markPublished(timeProvider.now());
+    public void markPublished(UUID eventId, int claimAttempt) {
+        PaymentOutboxEntity entity = requireOwned(eventId, claimAttempt);
+        entity.markCallbackPublished(timeProvider.now());
     }
 
     @Transactional
@@ -88,41 +88,39 @@ public class PaymentCallbackOutboxCoordinator {
             int attemptCount,
             Throwable failure
     ) {
-        PaymentOutboxEntity entity = requireOwned(eventId);
+        PaymentOutboxEntity entity = requireOwned(eventId, attemptCount);
         Instant now = timeProvider.now();
 
         if (attemptCount >= properties.getMaxAttempts()) {
-            entity.markDead(message(failure), now);
+            entity.markCallbackDead(message(failure), now);
             return;
         }
 
-        entity.markFailed(
+        entity.markCallbackFailed(
                 message(failure),
                 now,
                 now.plus(retryDelay(attemptCount))
         );
     }
 
-    private PaymentOutboxEntity requireOwned(UUID eventId) {
+    private PaymentOutboxEntity requireOwned(UUID eventId, int claimAttempt) {
         PaymentOutboxEntity entity = repository
-                .findById(eventId)
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Missing claimed outbox event "
-                                        + eventId
-                        )
-                );
-
-        if (entity.status()
-                != PaymentOutboxEntity.Status.PROCESSING
-                || !properties.getWorkerId()
-                .equals(entity.claimedBy())) {
-            throw new IllegalStateException(
-                    "Outbox event is not owned by this callback worker"
-            );
+                .lockForCallbackCompletion(eventId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Missing claimed outbox event " + eventId));
+        if (entity.callbackStatus() != PaymentOutboxEntity.Status.PROCESSING
+                || !properties.getWorkerId().equals(entity.callbackClaimedBy())
+                || entity.callbackAttemptCount() != claimAttempt) {
+            throw new StaleCallbackClaimException(eventId, claimAttempt);
         }
-
         return entity;
+    }
+
+    /** The attempt is no longer authoritative; never acknowledge or retry it. */
+    static final class StaleCallbackClaimException extends IllegalStateException {
+        StaleCallbackClaimException(UUID eventId, int attempt) {
+            super("Stale callback claim: event=" + eventId + ", attempt=" + attempt);
+        }
     }
 
     private Duration retryDelay(int attemptCount) {

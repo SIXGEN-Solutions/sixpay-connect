@@ -20,7 +20,7 @@ class PaymentInitiationReplayCodecTest {
                 new PaymentInitiationReplayCodec();
 
         InitiateDebitResult original =
-                InitiateDebitResult.accepted(
+                InitiateDebitResult.awaitingOtp(
                         new PaymentId(UUID.randomUUID()),
                         PublicPaymentReference.of(
                                 "PAY-1234567890ABCDEFGHJKMNPQRS"
@@ -32,6 +32,16 @@ class PaymentInitiationReplayCodecTest {
                         ),
                         Instant.parse(
                                 "2026-08-03T10:30:00Z"
+                        ),
+                        new com.sixpay.payment.application.view.PaymentConfirmationView(
+                                PublicPaymentReference.of("PAY-1234567890ABCDEFGHJKMNPQRS"),
+                                com.sixpay.payment.domain.model.ConfirmationChallengeStatus.ACTIVE,
+                                com.sixpay.payment.domain.model.ConfirmationBusinessCode.CHALLENGE_ACTIVE,
+                                null,
+                                Instant.parse("2026-08-03T10:30:01Z"),
+                                Instant.parse("2026-08-03T10:35:01Z"),
+                                null,
+                                false
                         )
                 );
 

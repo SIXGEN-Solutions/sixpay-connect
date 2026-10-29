@@ -76,3 +76,11 @@ Partner owns these production tables:
 
 Schema:
 backend/partner/src/main/resources/db/migration/V100__partner_baseline.sql
+
+
+## Business identity
+
+`PartnerId` is the internal UUID. `partnerIdentifier` is the mandatory, stable
+and unique Partner business identity. Cross-module resolution uses Partner
+public application surfaces only. Security/machine identity linking remains
+outside INIT-2A.
