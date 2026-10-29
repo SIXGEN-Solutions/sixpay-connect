@@ -116,6 +116,14 @@ public class PaymentEventLifecycleOrchestrationService {
             );
         }
 
+        // Resolve read/allocator context before reserving the one-shot POST.
+        // An unavailable context must not strand the Payment in POSTING_PENDING.
+        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
+                contextService.resolve(
+                        bankingContext,
+                        requestedAt
+                );
+
         PaymentWorkflowResult authorization =
                 postingPreparationService.authorizePaymentEventPosting(
                         paymentId,
@@ -126,12 +134,6 @@ public class PaymentEventLifecycleOrchestrationService {
         if (!authorization.stateChanged()) {
             return authorization;
         }
-
-        PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
-                contextService.resolve(
-                        bankingContext,
-                        requestedAt
-                );
 
         PaymentEventExecutionPort.PaymentEventExecutionResult providerResult;
         try {
