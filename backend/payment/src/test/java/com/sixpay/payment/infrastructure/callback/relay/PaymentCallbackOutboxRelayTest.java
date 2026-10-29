@@ -57,7 +57,7 @@ class PaymentCallbackOutboxRelayTest {
         ).publishAvailableCallbacks();
 
         verify(transport).send(delivery);
-        verify(coordinator).markPublished(EVENT_ID);
+        verify(coordinator).markPublished(EVENT_ID, event.attemptCount());
         verify(coordinator, never()).markFailed(
                 Mockito.any(),
                 Mockito.anyInt(),
@@ -94,7 +94,7 @@ class PaymentCallbackOutboxRelayTest {
         ).publishAvailableCallbacks();
 
         verify(transport, never()).send(Mockito.any());
-        verify(coordinator).markPublished(EVENT_ID);
+        verify(coordinator).markPublished(EVENT_ID, event.attemptCount());
     }
 
     @Test
@@ -139,7 +139,7 @@ class PaymentCallbackOutboxRelayTest {
                 failure
         );
         verify(coordinator, never())
-                .markPublished(EVENT_ID);
+                .markPublished(EVENT_ID, event.attemptCount());
     }
 
     private static ClaimedPaymentOutboxEvent event() {

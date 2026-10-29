@@ -77,8 +77,8 @@ public class PaymentCallbackOutboxCoordinator {
     }
 
     @Transactional
-    public void markPublished(UUID eventId) {
-        PaymentOutboxEntity entity = requireOwned(eventId);
+    public void markPublished(UUID eventId, int claimAttempt) {
+        PaymentOutboxEntity entity = requireOwned(eventId, claimAttempt);
         entity.markCallbackPublished(timeProvider.now());
     }
 
@@ -88,7 +88,7 @@ public class PaymentCallbackOutboxCoordinator {
             int attemptCount,
             Throwable failure
     ) {
-        PaymentOutboxEntity entity = requireOwned(eventId);
+        PaymentOutboxEntity entity = requireOwned(eventId, attemptCount);
         Instant now = timeProvider.now();
 
         if (attemptCount >= properties.getMaxAttempts()) {
@@ -103,26 +103,24 @@ public class PaymentCallbackOutboxCoordinator {
         );
     }
 
-    private PaymentOutboxEntity requireOwned(UUID eventId) {
+    private PaymentOutboxEntity requireOwned(UUID eventId, int claimAttempt) {
         PaymentOutboxEntity entity = repository
-                .findById(eventId)
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Missing claimed outbox event "
-                                        + eventId
-                        )
-                );
-
-        if (entity.callbackStatus()
-                != PaymentOutboxEntity.Status.PROCESSING
-                || !properties.getWorkerId()
-                .equals(entity.callbackClaimedBy())) {
-            throw new IllegalStateException(
-                    "Outbox event is not owned by this callback worker"
-            );
+                .lockForCallbackCompletion(eventId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Missing claimed outbox event " + eventId));
+        if (entity.callbackStatus() != PaymentOutboxEntity.Status.PROCESSING
+                || !properties.getWorkerId().equals(entity.callbackClaimedBy())
+                || entity.callbackAttemptCount() != claimAttempt) {
+            throw new StaleCallbackClaimException(eventId, claimAttempt);
         }
-
         return entity;
+    }
+
+    /** The attempt is no longer authoritative; never acknowledge or retry it. */
+    static final class StaleCallbackClaimException extends IllegalStateException {
+        StaleCallbackClaimException(UUID eventId, int attempt) {
+            super("Stale callback claim: event=" + eventId + ", attempt=" + attempt);
+        }
     }
 
     private Duration retryDelay(int attemptCount) {

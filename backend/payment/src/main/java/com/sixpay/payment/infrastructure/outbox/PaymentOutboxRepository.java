@@ -1,6 +1,8 @@
 package com.sixpay.payment.infrastructure.outbox;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -137,6 +139,11 @@ public interface PaymentOutboxRepository
             @Param("staleBefore") Instant staleBefore,
             @Param("batchSize") int batchSize
     );
+
+    /** Locks callback row while verifying fencing token and completing an attempt. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from PaymentOutboxEntity e where e.eventId = :eventId")
+    Optional<PaymentOutboxEntity> lockForCallbackCompletion(@Param("eventId") UUID eventId);
 
     boolean existsByEventId(UUID eventId);
 }

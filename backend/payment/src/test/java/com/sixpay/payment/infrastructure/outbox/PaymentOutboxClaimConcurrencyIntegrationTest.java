@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -632,6 +633,90 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
             assertEquals(1, next.size());
             assertEquals(second.eventId(), next.getFirst().eventId());
         });
+    }
+
+    @Test
+    void staleCallbackAcknowledgementsAreRejectedAfterLeaseRecovery() {
+        PaymentOutboxEntity row = entity(event("a1a1a1a1"), aggregate("b1b1b1b1"), BASE);
+        repository.saveAndFlush(row);
+        jdbc.update("UPDATE payment_outbox_events SET event_type='payment.domain-event' WHERE event_id=?", row.eventId());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var rows = repository.lockCallbackClaimable(BASE.plusSeconds(1), BASE.minusSeconds(120), 1);
+            assertEquals(1, rows.size());
+            rows.getFirst().claimCallback(BASE.plusSeconds(1), "same-worker");
+            repository.flush();
+        });
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var rows = repository.lockCallbackClaimable(BASE.plusSeconds(40), BASE.plusSeconds(10), 1);
+            assertEquals(1, rows.size());
+            rows.getFirst().claimCallback(BASE.plusSeconds(40), "same-worker");
+            repository.flush();
+        });
+        var settings = new com.sixpay.payment.infrastructure.callback.PaymentCallbackProperties();
+        settings.setWorkerId("same-worker");
+        var coordinator = new com.sixpay.payment.infrastructure.callback.relay.PaymentCallbackOutboxCoordinator(
+                repository, settings, () -> BASE.plusSeconds(41));
+        var transactions = new TransactionTemplate(transactionManager);
+        assertThrows(IllegalStateException.class, () -> transactions.executeWithoutResult(tx ->
+                coordinator.markPublished(row.eventId(), 1)));
+        assertThrows(IllegalStateException.class, () -> transactions.executeWithoutResult(tx ->
+                coordinator.markFailed(row.eventId(), 1,
+                        new IllegalStateException("stale failure"))));
+        assertEquals(PaymentOutboxEntity.Status.PROCESSING,
+                repository.findById(row.eventId()).orElseThrow().callbackStatus());
+        transactions.executeWithoutResult(tx -> coordinator.markPublished(row.eventId(), 2));
+        var stored = repository.findById(row.eventId()).orElseThrow();
+        assertEquals(PaymentOutboxEntity.Status.PUBLISHED, stored.callbackStatus());
+        assertEquals(PaymentOutboxEntity.Status.PENDING, stored.status());
+        assertEquals(2, stored.callbackAttemptCount());
+    }
+
+    @Test
+    void callbackTimeoutRetryAndGenericPublicationCompleteIndependently() {
+        PaymentOutboxEntity row = entity(event("a2a2a2a2"), aggregate("b2b2b2b2"), BASE);
+        repository.saveAndFlush(row);
+        jdbc.update("UPDATE payment_outbox_events SET event_type='payment.domain-event' WHERE event_id=?", row.eventId());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var rows = repository.lockCallbackClaimable(BASE.plusSeconds(1), BASE.minusSeconds(120), 1);
+            assertEquals(1, rows.size());
+            rows.getFirst().claimCallback(BASE.plusSeconds(1), "callback");
+            repository.flush();
+        });
+        var settings = new com.sixpay.payment.infrastructure.callback.PaymentCallbackProperties();
+        settings.setWorkerId("callback");
+        var now = new java.util.concurrent.atomic.AtomicReference<>(BASE.plusSeconds(2));
+        var callbacks = new com.sixpay.payment.infrastructure.callback.relay.PaymentCallbackOutboxCoordinator(
+                repository, settings, now::get);
+        var transactions = new TransactionTemplate(transactionManager);
+        transactions.executeWithoutResult(tx -> callbacks.markFailed(
+                row.eventId(), 1, new java.net.SocketTimeoutException("response lost")));
+        var generic = claimService.claimAvailable(BASE.plusSeconds(3), BASE.minusSeconds(120), 1, "generic");
+        assertEquals(1, generic.size());
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            var locked = repository.findById(row.eventId()).orElseThrow();
+            locked.markPublished(BASE.plusSeconds(3));
+            repository.flush();
+        });
+        assertEquals(PaymentOutboxEntity.Status.FAILED,
+                repository.findById(row.eventId()).orElseThrow().callbackStatus());
+        now.set(BASE.plusSeconds(20));
+        int recoveredCount = transactions.execute(
+                tx -> callbacks.claim().size()
+        );
+
+        assertEquals(1, recoveredCount);
+
+        assertEquals(
+                2,
+                repository.findById(row.eventId())
+                        .orElseThrow()
+                        .callbackAttemptCount()
+        );
+        transactions.executeWithoutResult(tx -> callbacks.markPublished(row.eventId(), 2));
+        var stored = repository.findById(row.eventId()).orElseThrow();
+        assertEquals(PaymentOutboxEntity.Status.PUBLISHED, stored.status());
+        assertEquals(PaymentOutboxEntity.Status.PUBLISHED, stored.callbackStatus());
+        assertEquals(2, stored.callbackAttemptCount());
     }
 
     private PaymentOutboxEntity entity(

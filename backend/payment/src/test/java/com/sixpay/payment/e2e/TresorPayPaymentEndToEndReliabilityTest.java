@@ -80,7 +80,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
         assertThat(relay)
                 .contains("coordinator.claim()")
                 .contains("transport.send(plan.delivery())")
-                .contains("coordinator.markPublished(event.eventId())")
+                .contains("coordinator.markPublished(event.eventId(), event.attemptCount())")
                 .contains("coordinator.markFailed(");
     }
 
@@ -201,7 +201,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
         assertThat(relayTest)
                 .contains("transportFailureSchedulesRetryAndDoesNotPublish")
                 .contains("markFailed(")
-                .contains("markPublished(EVENT_ID)");
+                .contains("markPublished(EVENT_ID, event.attemptCount())");
 
         assertThat(atomicity)
                 .contains("commitsPaymentAndOutboxAtomically")
