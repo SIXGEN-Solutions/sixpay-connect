@@ -1877,10 +1877,12 @@ public final class Payment {
         }
 
         if (authoritativeResolution) {
-            requireStatus(
-                    "resolvePaymentEventOutcome",
-                    PaymentStatus.POSTING_OUTCOME_UNKNOWN
-            );
+            if (state.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN
+                    && state.status() != PaymentStatus.POSTING_PENDING) {
+                throw PaymentDomainException.conflict(
+                        "resolvePaymentEventOutcome requires POSTING_OUTCOME_UNKNOWN or POSTING_PENDING"
+                );
+            }
             if (evidence.observationSource()
                     == PaymentEventObservationSource.DIRECT_RESPONSE) {
                 throw PaymentDomainException.rejected(
