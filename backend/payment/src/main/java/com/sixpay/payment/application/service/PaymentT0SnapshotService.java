@@ -102,6 +102,19 @@ public final class PaymentT0SnapshotService {
             Payment payment,
             TreasuryAccountReference treasuryAccount
     ) {
+        // Never reuse a persisted snapshot with incomplete or inconsistent T0 legs.
+        if (snapshot.status() != com.sixpay.payment.domain.model.financial.FinancialSnapshotStatus.FINALIZED
+                || snapshot.entries().size() != 2
+                || snapshot.entries().get(0).sequence() != 1
+                || snapshot.entries().get(0).direction() != FinancialEntryDirection.DEBIT
+                || snapshot.entries().get(1).sequence() != 2
+                || snapshot.entries().get(1).direction() != FinancialEntryDirection.CREDIT
+                || !snapshot.entries().get(0).accountReference().equals(snapshot.debtorAccountReference())
+                || !snapshot.entries().get(1).accountReference().equals(snapshot.creditorAccountReference())
+                || !snapshot.entries().get(0).amount().equals(snapshot.requestedAmount())
+                || !snapshot.entries().get(1).amount().equals(snapshot.requestedAmount())) {
+            throw new IllegalStateException("Existing T0 financial snapshot has invalid debit/credit legs");
+        }
         if (!snapshot.paymentId().equals(payment.id())
                 || !snapshot.publicPaymentReference().equals(
                         payment.publicPaymentReference()
