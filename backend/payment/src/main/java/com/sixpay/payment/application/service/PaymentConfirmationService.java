@@ -292,6 +292,11 @@ public class PaymentConfirmationService
             if (result.status()
                     == com.sixpay.payment.domain.model
                     .ConfirmationChallengeStatus.VERIFIED) {
+                if (!challenge.challengeReference().equals(result.challengeReference())) {
+                    throw new IllegalStateException(
+                            "Bank-verified challenge does not match current Payment challenge"
+                    );
+                }
                 java.time.Instant verifiedAt =
                         result.optionalVerifiedAt().orElseThrow(
                                 () -> new IllegalStateException(

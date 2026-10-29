@@ -45,6 +45,37 @@ class PaymentConfirmationE2EBehaviorTest {
     }
 
     @Test
+    void verifiedResponseForDifferentChallengeNeverStartsAuthorization() {
+        Fixture f = fixture();
+        PaymentConfirmationBankResult result =
+                result("CHALLENGE-OTHER", ConfirmationChallengeStatus.VERIFIED,
+                        ConfirmationBusinessCode.OTP_VERIFIED, NOW.plusSeconds(10));
+        when(f.idempotency.executeVerify(any(), eq(REF), any(), any(char[].class), any()))
+                .thenReturn(PaymentConfirmationIdempotencyResult.executed(result));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> f.service.verify(verifyCommand()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("does not match current Payment challenge");
+        verify(f.authorization, never()).startAuthorization(any(PaymentId.class),
+                any(ConfirmationChallenge.class));
+    }
+
+    @Test
+    void verifyBankUnavailableNeverStartsAuthorization() {
+        Fixture f = fixture();
+        when(f.idempotency.executeVerify(any(), eq(REF), any(), any(char[].class), any()))
+                .thenThrow(new IllegalStateException("bank unavailable"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> f.service.verify(verifyCommand()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("bank unavailable");
+        verify(f.authorization, never()).startAuthorization(any(PaymentId.class),
+                any(ConfirmationChallenge.class));
+    }
+
+    @Test
     void verifyExpiredNeverStartsAuthorization() {
         Fixture f = fixture();
         PaymentConfirmationBankResult result =
