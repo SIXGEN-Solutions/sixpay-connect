@@ -21,6 +21,30 @@ import static org.mockito.Mockito.*;
 class CustomerEnrollmentServiceTest {
 
     @Test
+    void missingBankingLookupMustNotInvokeVerificationOrPersistCustomer() {
+        BankingCustomerLookupPort lookup = query -> {
+            throw new com.sixpay.customer.configuration.CustomerCapabilityUnavailableException(
+                    "Customer banking lookup is not configured");
+        };
+        VerifyCustomerUseCase verification = mock(VerifyCustomerUseCase.class);
+        CustomerEnrollmentIdGenerator ids = mock(CustomerEnrollmentIdGenerator.class);
+        CustomerEnrollmentTimeProvider time = mock(CustomerEnrollmentTimeProvider.class);
+        CustomerRepository repository = mock(CustomerRepository.class);
+
+        CustomerEnrollmentService service = new CustomerEnrollmentService(
+                lookup, verification, ids, time, repository);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.enroll(
+                new EnrollCustomerCommand(
+                        "SIXPAY_BANK", "NIU-001", null, "ACC-001",
+                        UUID.randomUUID().toString())))
+                .isInstanceOf(com.sixpay.customer.configuration.CustomerCapabilityUnavailableException.class)
+                .hasMessage("Customer banking lookup is not configured");
+
+        verifyNoInteractions(verification, ids, time, repository);
+    }
+
+    @Test
     void lookupThenFreshVerificationThenCreatesCustomer() {
         BankingCustomerLookupPort lookup = mock(BankingCustomerLookupPort.class);
         VerifyCustomerUseCase verification = mock(VerifyCustomerUseCase.class);
