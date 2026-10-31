@@ -4,7 +4,6 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.customer.management.application.port.input.EnrollCustomerCommand;
 import com.sixpay.customer.management.application.port.input.EnrollCustomerResult;
 import com.sixpay.customer.management.application.port.input.EnrollCustomerUseCase;
-import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
 import com.sixpay.customer.management.application.port.output.CustomerEnrollmentIdGenerator;
 import com.sixpay.customer.management.application.port.output.CustomerEnrollmentTimeProvider;
 import com.sixpay.customer.management.domain.exception.CustomerDomainException;
@@ -16,8 +15,6 @@ import com.sixpay.customer.management.domain.repository.CustomerRepository;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
-import com.sixpay.customer.verification.application.port.output.BankingAccountAccessReference;
-import com.sixpay.customer.verification.domain.model.AccountBindingFingerprint;
 import com.sixpay.customer.verification.domain.model.CustomerIdentity;
 import com.sixpay.customer.verification.domain.model.CustomerNiu;
 import com.sixpay.customer.verification.domain.model.CustomerVerificationContext;
@@ -29,6 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -37,20 +38,17 @@ import java.util.UUID;
 public class CustomerEnrollmentService
         implements EnrollCustomerUseCase {
 
-    private final BankingCustomerLookupPort lookupPort;
     private final VerifyCustomerUseCase verifyCustomerUseCase;
     private final CustomerEnrollmentIdGenerator idGenerator;
     private final CustomerEnrollmentTimeProvider timeProvider;
     private final CustomerRepository customerRepository;
 
     public CustomerEnrollmentService(
-            BankingCustomerLookupPort lookupPort,
             VerifyCustomerUseCase verifyCustomerUseCase,
             CustomerEnrollmentIdGenerator idGenerator,
             CustomerEnrollmentTimeProvider timeProvider,
             CustomerRepository customerRepository
     ) {
-        this.lookupPort = Objects.requireNonNull(lookupPort);
         this.verifyCustomerUseCase = Objects.requireNonNull(verifyCustomerUseCase);
         this.idGenerator = Objects.requireNonNull(idGenerator);
         this.timeProvider = Objects.requireNonNull(timeProvider);
@@ -61,55 +59,48 @@ public class CustomerEnrollmentService
     public EnrollCustomerResult enroll(EnrollCustomerCommand command) {
         Objects.requireNonNull(command, "command is required");
 
-        var profile = lookupPort.lookup(
-                new BankingCustomerLookupPort.BankingCustomerLookupQuery(
-                        command.financialInstitutionCode(),
-                        command.niu(),
-                        command.customerNumber(),
-                        command.accountReference(),
-                        command.correlationId()
+        Instant requestedAt = timeProvider.now();
+        VerifyCustomerResult verification = verifyCustomerUseCase.verify(
+                new VerifyCustomerCommand(
+                        new CustomerVerificationId(idGenerator.nextId()),
+                        CustomerVerificationSubject.of(CustomerIdentity.of(
+                                command.niu() == null ? null : CustomerNiu.of(command.niu()),
+                                null, null, command.customerNumber())),
+                        FinancialInstitutionCode.of(command.financialInstitutionCode()),
+                        null,
+                        null,
+                        CustomerVerificationContext.of(
+                                CorrelationId.of(command.correlationId()), null),
+                        requestedAt
                 )
         );
 
-        Instant requestedAt = timeProvider.now();
-
-        VerifyCustomerResult verification =
-                verifyCustomerUseCase.verify(
-                        new VerifyCustomerCommand(
-                                new CustomerVerificationId(idGenerator.nextId()),
-                                CustomerVerificationSubject.of(
-                                        CustomerIdentity.of(
-                                                CustomerNiu.of(profile.niu()),
-                                                profile.legalName()
-                                        )
-                                ),
-                                FinancialInstitutionCode.of(
-                                        profile.financialInstitutionCode()
-                                ),
-                                AccountBindingFingerprint.of(
-                                        profile.account()
-                                                .accountBindingFingerprint()
-                                ),
-                                BankingAccountAccessReference.of(
-                                        profile.account()
-                                                .bankingAccountAccessReference()
-                                ),
-                                CustomerVerificationContext.of(
-                                        CorrelationId.of(
-                                                command.correlationId()
-                                        ),
-                                        null
-                                ),
-                                requestedAt
-                        )
-                );
-
         requireFreshVerifiedEvidence(verification, requestedAt);
+
+        var identity = verification.identityOptional().orElseThrow(() ->
+                new CustomerDomainException("verified banking identity is required"));
+        var bankAccount = verification.accountOptional().orElseThrow(() ->
+                new CustomerDomainException("verified banking account is required"));
+        if (!command.financialInstitutionCode().equals(identity.financialInstitutionCode())
+                || !identity.financialInstitutionCode().equals(bankAccount.financialInstitutionCode())
+                || !verification.customerReference().equals(identity.customerReference())
+                || !verification.customerReference().equals(bankAccount.customerReference())
+                || !verification.accountReference().equals(bankAccount.accountReference())
+                || !command.accountReference().equals(bankAccount.accountReference())
+                || (command.niu() != null && !command.niu().equals(identity.niu()))
+                || (command.customerNumber() != null
+                        && !command.customerNumber().equals(identity.customerNumber()))) {
+            throw new CustomerDomainException("banking enrollment identity or account mismatch");
+        }
+        if (bankAccount.retrievedAt().isAfter(verification.completedAt())
+                || identity.retrievedAt().isAfter(verification.completedAt())) {
+            throw new CustomerDomainException("banking enrollment evidence timeline is invalid");
+        }
 
         if (customerRepository
                 .existsByFinancialInstitutionCodeAndBankingCustomerReference(
-                        profile.financialInstitutionCode(),
-                        profile.customerReference()
+                        identity.financialInstitutionCode(),
+                        identity.customerReference()
                 )) {
             throw new CustomerDomainException(
                     "customer is already enrolled input SIXPAY"
@@ -123,29 +114,47 @@ public class CustomerEnrollmentService
                 CustomerBankAccount.create(
                         new CustomerBankAccountId(idGenerator.nextId()),
                         customerId,
-                        profile.account().accountReference(),
-                        verification.accountBindingFingerprint().value(),
-                        profile.account().maskedAccountIdentifier(),
-                        profile.account().currency(),
-                        profile.account().accountType(),
+                        bankAccount.accountReference(),
+                        stableAccountFingerprint(identity.financialInstitutionCode(),
+                                identity.customerReference(), bankAccount.accountReference()),
+                        bankAccount.maskedAccountIdentifier(),
+                        bankAccount.currency(),
+                        bankAccount.accountType(),
                         verification.observedAt()
                 );
 
         Customer customer = Customer.create(
                 customerId,
-                profile.financialInstitutionCode(),
-                profile.customerReference(),
-                profile.customerNumber(),
-                profile.niu(),
-                profile.legalName(),
-                profile.email(),
-                profile.phoneNumber(),
+                identity.financialInstitutionCode(),
+                identity.customerReference(),
+                identity.customerNumber(),
+                identity.niu(),
+                identity.legalName(),
+                identity.email(),
+                identity.phoneNumber(),
                 account,
                 requestedAt
         );
 
         Customer persisted = customerRepository.save(customer);
         return new EnrollCustomerResult(persisted);
+    }
+
+    // Binding fingerprint is stable for the verified bank/customer/account tuple,
+    // unlike the per-verification evidence fingerprint. No raw account value is stored.
+    private static String stableAccountFingerprint(
+            String institution, String customerReference, String accountReference) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String canonical = "SIXPAY-ACCOUNT-BINDING-v1\n"
+                    + institution.length() + ":" + institution
+                    + customerReference.length() + ":" + customerReference
+                    + accountReference.length() + ":" + accountReference;
+            return "v1:" + HexFormat.of().formatHex(
+                    digest.digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 
     private static void requireFreshVerifiedEvidence(

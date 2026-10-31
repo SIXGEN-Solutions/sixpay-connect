@@ -25,8 +25,6 @@ public record VerifyCustomerCommand(
         verificationId = Objects.requireNonNull(verificationId, "verificationId is required");
         subject = Objects.requireNonNull(subject, "subject is required");
         financialInstitutionCode = Objects.requireNonNull(financialInstitutionCode, "financialInstitutionCode is required");
-        accountBindingFingerprint = Objects.requireNonNull(accountBindingFingerprint, "accountBindingFingerprint is required");
-        bankingAccountAccessReference = Objects.requireNonNull(bankingAccountAccessReference, "bankingAccountAccessReference is required");
         context = Objects.requireNonNull(context, "context is required");
         requestedAt = Objects.requireNonNull(requestedAt, "requestedAt is required");
         deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");

@@ -29,32 +29,27 @@ public record CustomerIdentity(
                     "At least one banking customer identifier is required");
         }
 
-        if (legalName == null) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name is required"
-            );
-        }
-
-        legalName = legalName
-                .strip()
-                .replaceAll("\\s+", " ");
-
-        if (legalName.length() < MIN_LEGAL_NAME_LENGTH) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must contain at least "
-                            + MIN_LEGAL_NAME_LENGTH + " characters"
-            );
-        }
-        if (legalName.length() > MAX_LEGAL_NAME_LENGTH) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must not exceed "
-                            + MAX_LEGAL_NAME_LENGTH + " characters"
-            );
-        }
-        if (legalName.chars().anyMatch(Character::isISOControl)) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must not contain control characters"
-            );
+        if (legalName != null) {
+            legalName = legalName
+                    .strip()
+                    .replaceAll("\\s+", " ");
+            if (legalName.length() < MIN_LEGAL_NAME_LENGTH) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must contain at least "
+                                + MIN_LEGAL_NAME_LENGTH + " characters"
+                );
+            }
+            if (legalName.length() > MAX_LEGAL_NAME_LENGTH) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must not exceed "
+                                + MAX_LEGAL_NAME_LENGTH + " characters"
+                );
+            }
+            if (legalName.chars().anyMatch(Character::isISOControl)) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must not contain control characters"
+                );
+            }
         }
     }
 
