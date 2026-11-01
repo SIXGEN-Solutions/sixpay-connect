@@ -202,7 +202,7 @@ public final class BankingVerificationHttpTestSupport {
 
     public static String partialJson() {
         String checks = checksJson("PASS").replace(
-                ",{\"type\":\"REQUIRED_KYC_VERIFIED\",\"result\":\"PASS\"}",
+                ",{\"type\":\"ACCOUNT_EXISTS\",\"result\":\"PASS\"}",
                 ""
         );
         return responseJson("INDETERMINATE", checks, false);

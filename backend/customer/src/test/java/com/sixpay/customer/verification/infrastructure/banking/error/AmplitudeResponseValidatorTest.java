@@ -63,6 +63,52 @@ class AmplitudeResponseValidatorTest {
                 );
     }
 
+
+    @Test
+    void acceptsEightCoreChecksWhenNeitherIdentityNorKycWasRequested() {
+        var response = withChecks(response("VERIFIED"),
+                checks("PASS").stream()
+                        .filter(check -> !check.type().equals("IDENTITY_MATCHES"))
+                        .filter(check -> !check.type().startsWith("REQUIRED_KYC_"))
+                        .toList());
+        assertThat(validator.validate(response, false, false)).isNotNull();
+    }
+
+    @Test
+    void failsClosedWhenRequestedIdentityOrKycChecksAreAbsent() {
+        var coreOnly = withChecks(response("VERIFIED"), checks("PASS").stream()
+                .filter(check -> !check.type().equals("IDENTITY_MATCHES"))
+                .filter(check -> !check.type().startsWith("REQUIRED_KYC_"))
+                .toList());
+        assertThatThrownBy(() -> validator.validate(coreOnly, true, false))
+                .isInstanceOf(AmplitudeInvalidResponseException.class);
+        assertThatThrownBy(() -> validator.validate(coreOnly, false, true))
+                .isInstanceOf(AmplitudeInvalidResponseException.class);
+        assertThatThrownBy(() -> validator.validate(withChecks(coreOnly,
+                coreOnly.checks().subList(1, coreOnly.checks().size())), false, false))
+                .isInstanceOf(AmplitudeInvalidResponseException.class);
+    }
+
+    @Test
+    void rejectsFailedOrUnknownChecksEvenWhenOptional() {
+        for (String bad : List.of("FAIL", "UNKNOWN")) {
+            var all = new java.util.ArrayList<>(checks("PASS"));
+            all.set(3, new AmplitudeVerificationCheckResponse("IDENTITY_MATCHES", bad, null,
+                    Instant.parse("2026-08-30T20:01:00Z")));
+            var invalid = withChecks(response("VERIFIED"), all);
+            assertThatThrownBy(() -> validator.validate(invalid, false, false))
+                    .isInstanceOf(AmplitudeInvalidResponseException.class);
+        }
+    }
+
+    private static AmplitudeCustomerVerificationResponse withChecks(
+            AmplitudeCustomerVerificationResponse r,
+            List<AmplitudeVerificationCheckResponse> checks) {
+        return new AmplitudeCustomerVerificationResponse(r.verificationId(), r.verifiedAt(),
+                r.source(), r.outcome(), r.customerReference(), r.accountReference(),
+                checks, r.identity(), r.account());
+    }
+
     private static AmplitudeCustomerVerificationResponse response(
             String outcome
     ) {

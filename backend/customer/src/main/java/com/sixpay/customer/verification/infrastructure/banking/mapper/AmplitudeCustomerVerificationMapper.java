@@ -45,13 +45,10 @@ public final class AmplitudeCustomerVerificationMapper {
         Objects.requireNonNull(query, "query is required");
 
         var identity = query.subject().identity();
-        List<String> requestedFields = new java.util.ArrayList<>();
-        if (identity.niu() != null) {
-            requestedFields.add("niu");
-        }
-        if (identity.legalName() != null && !identity.legalName().isBlank()) {
-            requestedFields.add("legalName");
-        }
+        // NIU and account-holder comparisons have dedicated verification checks.
+        // They are not requested KYC attributes; no KYC requirement is carried
+        // by BankingVerificationQuery today.
+        List<String> requestedFields = List.of();
 
         return new AmplitudeCustomerVerificationRequest(
                 query.financialInstitutionCode().value(),

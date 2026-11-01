@@ -26,6 +26,8 @@ public final class RequiredVerificationChecksPolicy {
             // The identity-name comparison is conditional on caller-provided evidence.
             // The banking adapter enforces it when expectedAccountHolder is present.
             if (required != VerificationCheckType.IDENTITY_MATCHES
+                    && required != VerificationCheckType.REQUIRED_KYC_PRESENT
+                    && required != VerificationCheckType.REQUIRED_KYC_VERIFIED
                     && !byType.containsKey(required)) missing.add(required);
         }
         if (!missing.isEmpty())

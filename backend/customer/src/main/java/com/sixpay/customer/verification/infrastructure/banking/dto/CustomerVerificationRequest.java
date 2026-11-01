@@ -18,11 +18,13 @@ public record CustomerVerificationRequest(
         Objects.requireNonNull(request, "request is required");
         var customer = request.customer();
         var account = request.account();
+        System.out.println("request.requiredKycFields(): " + request.requiredKycFields());
         return new CustomerVerificationRequest(
                 account == null ? null : account.accountReference(),
                 customer == null ? null : customer.niu(),
                 customer == null ? null : customer.legalName(),
                 request.requiredKycFields(),
+                //List.of(),
                 request.requestedAt()
         );
     }

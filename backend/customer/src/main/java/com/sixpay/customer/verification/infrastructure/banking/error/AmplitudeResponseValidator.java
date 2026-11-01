@@ -42,13 +42,22 @@ public final class AmplitudeResponseValidator {
     public AmplitudeCustomerVerificationResponse validate(
             AmplitudeCustomerVerificationResponse response
     ) {
-        return validate(response, true);
+        return validate(response, true, true);
     }
 
     /** Identity comparison is mandatory only when the request supplies an expected holder. */
     public AmplitudeCustomerVerificationResponse validate(
             AmplitudeCustomerVerificationResponse response,
             boolean identityComparisonRequested
+    ) {
+        return validate(response, identityComparisonRequested, true);
+    }
+
+    /** Require KYC checks only if the outbound request actually demands them. */
+    public AmplitudeCustomerVerificationResponse validate(
+            AmplitudeCustomerVerificationResponse response,
+            boolean identityComparisonRequested,
+            boolean kycRequested
     ) {
         if (response == null) {
             throw invalid("Amplitude response body is empty");
@@ -109,6 +118,10 @@ public final class AmplitudeResponseValidator {
         missing.removeAll(observedTypes);
         if (!identityComparisonRequested) {
             missing.remove("IDENTITY_MATCHES");
+        }
+        if (!kycRequested) {
+            missing.remove("REQUIRED_KYC_PRESENT");
+            missing.remove("REQUIRED_KYC_VERIFIED");
         }
         if (!missing.isEmpty()) {
             throw invalid(
