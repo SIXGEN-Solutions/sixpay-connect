@@ -6,7 +6,7 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RegionalBankAccountWireResponseTest {
+class BankAccountTest {
 
     private final JsonMapper mapper = JsonMapper.builder().build();
 
@@ -20,7 +20,7 @@ class RegionalBankAccountWireResponseTest {
                   "dou":"2024-10-05", "sin":42.25, "typ":"CURRENT",
                   "sde":46.75, "suf":"00", "status":"ACTIVE"
                 }
-                """, RegionalBankAccountWireResponse.class);
+                """, BankAccount.class);
         assertThat(account.accountReference()).isEqualTo("00001-04942231051-47");
         assertThat(account.cli()).isEqualTo("0494223");
         assertThat(account.dev()).isEqualTo("001");
@@ -35,7 +35,7 @@ class RegionalBankAccountWireResponseTest {
 
     @Test
     void missingAccountReferenceComponentsFailClosed() {
-        var account = new RegionalBankAccountWireResponse(
+        var account = new BankAccount(
                 "123", "00001", "001", null, null, "C001", "A", null, null,
                 null, null, null, null, null, "UNKNOWN");
         assertThatThrownBy(account::accountReference)

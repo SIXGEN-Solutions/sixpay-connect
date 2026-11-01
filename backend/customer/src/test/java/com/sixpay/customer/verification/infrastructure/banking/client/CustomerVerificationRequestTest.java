@@ -3,7 +3,7 @@ package com.sixpay.customer.verification.infrastructure.banking.client;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeAccountVerificationSubject;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationRequest;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationSubject;
-import com.sixpay.customer.verification.infrastructure.banking.dto.RegionalCustomerVerificationWireRequest;
+import com.sixpay.customer.verification.infrastructure.banking.dto.CustomerVerificationRequest;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RegionalCustomerVerificationWireRequestTest {
+class CustomerVerificationRequestTest {
     @Test
     void serializesApprovedRegionalTopLevelFieldsWithoutLegacyNestedObjects() throws Exception {
         var request = new AmplitudeCustomerVerificationRequest(
@@ -23,7 +23,7 @@ class RegionalCustomerVerificationWireRequestTest {
                 List.of("niu", "legalName"),
                 Instant.parse("2026-11-01T03:10:00Z")
         );
-        var wire = RegionalCustomerVerificationWireRequest.from(request);
+        var wire = CustomerVerificationRequest.from(request);
         var json = JsonMapper.builder().build().writeValueAsString(wire);
         var node = JsonMapper.builder().build().readTree(json);
         assertEquals("00001-04942231051-47", node.get("accountReference").asText());

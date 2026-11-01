@@ -8,7 +8,7 @@ import java.time.LocalDate;
  * This is a wire DTO, not SIXPAY's persisted customer account.
  * Values such as dev remain bank-native and are never guessed or ISO-converted.
  */
-public record RegionalBankAccountWireResponse(
+public record BankAccount(
         String ncp,
         String age,
         String dev,
