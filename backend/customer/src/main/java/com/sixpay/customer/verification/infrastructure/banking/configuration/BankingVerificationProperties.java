@@ -26,7 +26,6 @@ public record BankingVerificationProperties(
         @Min(1) @Max(5) int maxAttempts,
         @NotNull Duration retryBackoff,
         @NotNull Duration evidenceTtl,
-        @NotNull @Valid Security security,
         @NotNull @Valid Contract contract
 ) {
     public static final String PREFIX =
@@ -64,19 +63,6 @@ public record BankingVerificationProperties(
                 evidenceTtl,
                 "evidenceTtl"
         );
-    }
-
-    public record Security(
-            @NotBlank String oauth2RegistrationId,
-            @NotBlank String sslBundle
-    ) {
-        public Security {
-            oauth2RegistrationId = required(
-                    oauth2RegistrationId,
-                    "oauth2RegistrationId"
-            );
-            sslBundle = required(sslBundle, "sslBundle");
-        }
     }
 
     public record Contract(

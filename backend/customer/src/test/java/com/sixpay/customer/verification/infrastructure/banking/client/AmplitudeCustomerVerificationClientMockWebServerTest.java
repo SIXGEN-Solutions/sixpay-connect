@@ -39,10 +39,6 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                         3,
                         Duration.ofMillis(10),
                         Duration.ofMinutes(5),
-                        new BankingVerificationProperties.Security(
-                                "core-banking-customer-verification",
-                                "core-banking-client"
-                        ),
                         new BankingVerificationProperties.Contract(
                                 "provisional-v1",
                                 Set.of("00"),
@@ -54,7 +50,6 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                 RestClient.builder()
                         .baseUrl(server.url("/").toString())
                         .build(),
-                () -> "sandbox-token",
                 properties,
                 JsonMapper.builder().build()
         );
@@ -66,7 +61,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
     }
 
     @Test
-    void sendsBearerCorrelationAndRequestHeaders() throws Exception {
+    void sendsCorrelationAndRequestHeadersWithoutBearer() throws Exception {
         server.enqueue(json(200, successBody()));
 
         client.verify(
@@ -82,8 +77,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath())
                 .isEqualTo("/api/v1/customer-verifications");
-        assertThat(recorded.getHeader("Authorization"))
-                .isEqualTo("Bearer sandbox-token");
+        assertThat(recorded.getHeader("Authorization")).isNull();
         assertThat(recorded.getHeader("X-Correlation-ID"))
                 .isEqualTo("corr-001");
         assertThat(recorded.getHeader("X-Request-ID"))

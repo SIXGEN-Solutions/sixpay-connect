@@ -12,9 +12,7 @@ import com.sixpay.integration.http.StandardRestClientFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.*;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -30,21 +28,9 @@ import java.util.List;
 public class AmplitudeCustomerVerificationConfiguration {
 
     @Bean
-    CoreBankingAccessTokenProvider coreBankingAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
-            BankingVerificationProperties properties
-    ) {
-        return new OAuth2CoreBankingAccessTokenProvider(
-                manager,
-                properties
-        );
-    }
-
-    @Bean
     RestClient amplitudeCustomerVerificationRestClient(
             StandardRestClientFactory factory,
-            BankingVerificationProperties properties,
-            SslBundles sslBundles
+            BankingVerificationProperties properties
     ) {
         return factory.create(
                 properties.baseUrl(),
@@ -52,10 +38,9 @@ public class AmplitudeCustomerVerificationConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                sslBundles.getBundle(
-                        properties.security().sslBundle()
-                ).createSslContext(),
-                List.of()
+                null,
+                List.of(),
+                true
         );
     }
 
@@ -76,22 +61,19 @@ public class AmplitudeCustomerVerificationConfiguration {
     @Bean
     com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupClient
             amplitudeCustomerLookupClient(
-                    RestClient amplitudeCustomerVerificationRestClient,
-                    CoreBankingAccessTokenProvider tokenProvider) {
+                    RestClient amplitudeCustomerVerificationRestClient) {
         return new com.sixpay.customer.management.infrastructure.banking.amplitude.RestAmplitudeCustomerLookupClient(
-                amplitudeCustomerVerificationRestClient, tokenProvider);
+                amplitudeCustomerVerificationRestClient);
     }
 
     @Bean
     AmplitudeCustomerVerificationClient amplitudeCustomerVerificationClient(
             RestClient amplitudeCustomerVerificationRestClient,
-            CoreBankingAccessTokenProvider tokenProvider,
             BankingVerificationProperties properties,
             ObjectMapper objectMapper
     ) {
         return new AmplitudeCustomerVerificationClient(
                 amplitudeCustomerVerificationRestClient,
-                tokenProvider,
                 properties,
                 objectMapper
         );

@@ -1,7 +1,6 @@
 package com.sixpay.customer.management.infrastructure.banking.amplitude;
 
 import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
-import com.sixpay.customer.verification.infrastructure.banking.client.CoreBankingAccessTokenProvider;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeBankAccountResponse;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerIdentityResponse;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
@@ -14,11 +13,9 @@ import java.util.Objects;
 /** Read-only lookup over the approved Amplitude Customer and Account GET contract. */
 public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustomerLookupClient {
     private final RestClient restClient;
-    private final CoreBankingAccessTokenProvider tokens;
 
-    public RestAmplitudeCustomerLookupClient(RestClient restClient, CoreBankingAccessTokenProvider tokens) {
+    public RestAmplitudeCustomerLookupClient(RestClient restClient) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokens = Objects.requireNonNull(tokens);
     }
 
     @Override
@@ -92,7 +89,6 @@ public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustome
     }
 
     private void authenticate(HttpHeaders headers, String correlationId) {
-        headers.setBearerAuth(tokens.accessToken());
         headers.set(IntegrationHttpHeaders.CORRELATION_ID, correlationId);
     }
     private static boolean blank(String s) { return s == null || s.isBlank(); }

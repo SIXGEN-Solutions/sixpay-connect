@@ -32,7 +32,6 @@ class PaymentInitiationDeadlineBankingBoundaryTest {
                 "/api/v1/customer-verifications",
                 Duration.ofSeconds(1), Duration.ofSeconds(1),
                 1, Duration.ofMillis(10), Duration.ofMinutes(5),
-                new BankingVerificationProperties.Security("registration","bundle"),
                 new BankingVerificationProperties.Contract(
                         "1.0.0", Set.of("00"), Set.of("01"))
         );

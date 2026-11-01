@@ -24,8 +24,20 @@ class CustomerBankingProfileSeparationTest {
     @Test
     void customerBankingSettingsDoNotEnableEndUserAuthentication() throws Exception {
         String banking = read("application-customer-banking.yml");
-        assertTrue(banking.contains("authorization-grant-type: client_credentials"));
-        assertTrue(banking.contains("core-banking-client:"));
+
+        // La capacité bancaire Customer reste configurable.
+        assertTrue(banking.contains("verification:"));
+        assertTrue(banking.contains("banking:"));
+        assertTrue(banking.contains("enabled:"));
+
+        // Aucun mécanisme OAuth2 ou mTLS technique ne doit être réintroduit.
+        assertFalse(banking.contains("authorization-grant-type: client_credentials"));
+        assertFalse(banking.contains("core-banking-client:"));
+        assertFalse(banking.contains("CORE_BANKING_KEYSTORE_"));
+        assertFalse(banking.contains("CORE_BANKING_TRUSTSTORE_"));
+        assertFalse(banking.contains("CORE_BANKING_OAUTH2_"));
+
+        // La configuration bancaire ne pilote pas l'authentification des utilisateurs.
         assertFalse(banking.contains("sixpay.security.authentication"));
         assertFalse(banking.contains("on-profile:"));
     }

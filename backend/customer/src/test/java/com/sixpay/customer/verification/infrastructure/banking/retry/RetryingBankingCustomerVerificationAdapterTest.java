@@ -203,10 +203,6 @@ class RetryingBankingCustomerVerificationAdapterTest {
                 3,
                 Duration.ofMillis(1),
                 Duration.ofMinutes(5),
-                new BankingVerificationProperties.Security(
-                        "core-banking",
-                        "core-banking-client"
-                ),
                 new BankingVerificationProperties.Contract(
                         "test-v1",
                         Set.of("00", "200"),

@@ -33,7 +33,7 @@ class RestAmplitudeCustomerLookupClientTest {
                     "restrictions":[],"source":"AMPLITUDE","retrievedAt":"2026-10-01T12:00:00Z"}],"resultCount":1}
                     """));
             var client = new RestAmplitudeCustomerLookupClient(
-                    RestClient.builder().baseUrl(server.url("/").toString()).build(), () -> "token");
+                    RestClient.builder().baseUrl(server.url("/").toString()).build());
             var result = client.lookup(new BankingCustomerLookupPort.BankingCustomerLookupQuery(
                     "LRB", "N-1", null, "A-1", UUID.randomUUID().toString()));
             assertThat(result.customerReference()).isEqualTo("C-1");
@@ -41,7 +41,7 @@ class RestAmplitudeCustomerLookupClientTest {
             var search = server.takeRequest();
             assertThat(search.getMethod()).isEqualTo("GET");
             assertThat(search.getPath()).startsWith("/api/v1/customers?");
-            assertThat(search.getHeader("Authorization")).isEqualTo("Bearer token");
+            assertThat(search.getHeader("Authorization")).isNull();
             assertThat(server.takeRequest().getPath()).isEqualTo("/api/v1/customers/C-1");
             assertThat(server.takeRequest().getPath()).isEqualTo("/api/v1/customers/C-1/accounts");
         }
@@ -53,7 +53,7 @@ class RestAmplitudeCustomerLookupClientTest {
             server.start();
             server.enqueue(json("{\"customers\":[],\"resultCount\":0}"));
             var client = new RestAmplitudeCustomerLookupClient(
-                    RestClient.builder().baseUrl(server.url("/").toString()).build(), () -> "token");
+                    RestClient.builder().baseUrl(server.url("/").toString()).build());
             assertThatThrownBy(() -> client.lookup(new BankingCustomerLookupPort.BankingCustomerLookupQuery(
                     "LRB", "N-1", null, "A-1", "corr-1")))
                     .isInstanceOf(IllegalStateException.class);

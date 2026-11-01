@@ -83,10 +83,6 @@ public final class BankingVerificationHttpTestSupport {
                 maxAttempts,
                 Duration.ofMillis(1),
                 Duration.ofMinutes(5),
-                new BankingVerificationProperties.Security(
-                        "core-banking-test",
-                        "core-banking-test"
-                ),
                 new BankingVerificationProperties.Contract(
                         "test-v1",
                         Set.of(
@@ -137,7 +133,6 @@ public final class BankingVerificationHttpTestSupport {
         AmplitudeCustomerVerificationClient client =
                 new AmplitudeCustomerVerificationClient(
                         restClient,
-                        () -> "test-access-token",
                         properties,
                         new ObjectMapper()
                 );

@@ -1,31 +1,3 @@
-spring:
-  security:
-    oauth2:
-      client:
-        provider:
-          core-banking:
-            token-uri: ${CORE_BANKING_OAUTH2_TOKEN_URI}
-        registration:
-          core-banking-customer-verification:
-            provider: core-banking
-            authorization-grant-type: client_credentials
-            client-id: ${CORE_BANKING_OAUTH2_CLIENT_ID}
-            client-secret: ${CORE_BANKING_OAUTH2_CLIENT_SECRET}
-            scope: ${CORE_BANKING_OAUTH2_SCOPE:amplitude.customer.read,amplitude.account.read}
-
-  ssl:
-    bundle:
-      jks:
-        core-banking-client:
-          keystore:
-            location: ${CORE_BANKING_KEYSTORE_LOCATION}
-            password: ${CORE_BANKING_KEYSTORE_PASSWORD}
-            type: ${CORE_BANKING_KEYSTORE_TYPE:PKCS12}
-          truststore:
-            location: ${CORE_BANKING_TRUSTSTORE_LOCATION}
-            password: ${CORE_BANKING_TRUSTSTORE_PASSWORD}
-            type: ${CORE_BANKING_TRUSTSTORE_TYPE:PKCS12}
-
 sixpay:
   customer:
     verification:
@@ -38,9 +10,6 @@ sixpay:
         max-attempts: ${CORE_BANKING_MAX_ATTEMPTS:3}
         retry-backoff: ${CORE_BANKING_RETRY_BACKOFF:250ms}
         evidence-ttl: ${CORE_BANKING_EVIDENCE_TTL:5m}
-        security:
-          oauth2-registration-id: ${CORE_BANKING_OAUTH2_REGISTRATION_ID:core-banking-customer-verification}
-          ssl-bundle: ${CORE_BANKING_SSL_BUNDLE:core-banking-client}
         contract:
           version: ${CORE_BANKING_CUSTOMER_VERIFICATION_CONTRACT_VERSION:1.0.0}
           success-codes:
