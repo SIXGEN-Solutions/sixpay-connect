@@ -42,6 +42,14 @@ public final class AmplitudeResponseValidator {
     public AmplitudeCustomerVerificationResponse validate(
             AmplitudeCustomerVerificationResponse response
     ) {
+        return validate(response, true);
+    }
+
+    /** Identity comparison is mandatory only when the request supplies an expected holder. */
+    public AmplitudeCustomerVerificationResponse validate(
+            AmplitudeCustomerVerificationResponse response,
+            boolean identityComparisonRequested
+    ) {
         if (response == null) {
             throw invalid("Amplitude response body is empty");
         }
@@ -97,12 +105,19 @@ public final class AmplitudeResponseValidator {
             }
         }
 
-        if (!observedTypes.equals(REQUIRED_CHECK_TYPES)) {
-            Set<String> missing = new HashSet<>(REQUIRED_CHECK_TYPES);
-            missing.removeAll(observedTypes);
+        Set<String> missing = new HashSet<>(REQUIRED_CHECK_TYPES);
+        missing.removeAll(observedTypes);
+        if (!identityComparisonRequested) {
+            missing.remove("IDENTITY_MATCHES");
+        }
+        if (!missing.isEmpty()) {
             throw invalid(
                     "Amplitude verification checks are incomplete; missing=" + missing
             );
+        }
+        if ("VERIFIED".equals(outcome) && checks.stream().anyMatch(
+                check -> !"PASS".equals(required(check.result(), "check result")))) {
+            throw invalid("VERIFIED outcome contains non-PASS checks");
         }
 
         if ("VERIFIED".equals(outcome)) {

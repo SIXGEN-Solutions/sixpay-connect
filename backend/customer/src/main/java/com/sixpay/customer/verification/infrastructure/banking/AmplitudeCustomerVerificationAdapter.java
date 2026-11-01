@@ -48,7 +48,9 @@ public final class AmplitudeCustomerVerificationAdapter
                                     query.context()
                                             .correlationId()
                                             .value()
-                            )
+                            ),
+                            query.subject().identity().legalName() != null
+                                    && !query.subject().identity().legalName().isBlank()
                     )
             );
         } catch (RuntimeException failure) {
