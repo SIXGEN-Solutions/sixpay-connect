@@ -163,6 +163,11 @@ public final class AmplitudeResponseValidator {
                         "Amplitude account is required for VERIFIED outcome"
                 );
 
+        System.out.println("customerReference: " +customerReference);
+        System.out.println("identity.customerReference(): " + identity.customerReference());
+        System.out.println("account.customerReference(): " +account.customerReference());
+        System.out.println("account.accountReference(): " +account.accountReference());
+        System.out.println("accountReference: " + accountReference);
         if (!customerReference.equals(identity.customerReference())
                 || !customerReference.equals(account.customerReference())
                 || !accountReference.equals(account.accountReference())) {

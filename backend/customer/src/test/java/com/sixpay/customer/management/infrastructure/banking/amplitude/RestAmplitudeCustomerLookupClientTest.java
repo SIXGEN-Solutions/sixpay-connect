@@ -28,16 +28,18 @@ class RestAmplitudeCustomerLookupClientTest {
                     "kycStatus":"COMPLETE","kycFields":[],"source":"AMPLITUDE","retrievedAt":"2026-10-01T12:00:00Z"}
                     """));
             server.enqueue(json("""
-                    {"accounts":[{"accountReference":"A-1","customerReference":"C-1","financialInstitutionCode":"LRB",
-                    "maskedAccountIdentifier":"****0001","currency":"XAF","accountType":"CURRENT","status":"ACTIVE",
-                    "restrictions":[],"source":"AMPLITUDE","retrievedAt":"2026-10-01T12:00:00Z"}],"resultCount":1}
+                    {"accounts":[{"ncp":"00012345678","age":"00001","dev":"001","cha":"10",
+                    "clc":"07","cli":"C-1","inti":"Customer One","ife":"I","cfe":"C",
+                    "sin":12.5,"typ":"CURRENT","sde":15.5,"suf":"00","status":"ACTIVE"}],"resultCount":1}
                     """));
             var client = new RestAmplitudeCustomerLookupClient(
                     RestClient.builder().baseUrl(server.url("/").toString()).build());
             var result = client.lookup(new BankingCustomerLookupPort.BankingCustomerLookupQuery(
-                    "LRB", "N-1", null, "A-1", UUID.randomUUID().toString()));
+                    "LRB", "N-1", null, "00001-00012345678-07", UUID.randomUUID().toString()));
             assertThat(result.customerReference()).isEqualTo("C-1");
-            assertThat(result.account().accountReference()).isEqualTo("A-1");
+            assertThat(result.account().accountReference()).isEqualTo("00001-00012345678-07");
+            assertThat(result.account().currency()).isEqualTo("001");
+            assertThat(result.account().accountType()).isEqualTo("CURRENT");
             var search = server.takeRequest();
             assertThat(search.getMethod()).isEqualTo("GET");
             assertThat(search.getPath()).startsWith("/api/v1/customers?");

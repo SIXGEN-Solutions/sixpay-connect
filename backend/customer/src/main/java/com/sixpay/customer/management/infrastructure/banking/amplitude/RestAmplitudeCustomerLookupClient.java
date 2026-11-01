@@ -1,12 +1,13 @@
 package com.sixpay.customer.management.infrastructure.banking.amplitude;
 
 import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
-import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeBankAccountResponse;
+import com.sixpay.customer.verification.infrastructure.banking.dto.BankAccount;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerIdentityResponse;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestClient;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -68,14 +69,13 @@ public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustome
         if (accounts == null || accounts.accounts() == null) {
             throw new IllegalStateException("Banking account search response is missing");
         }
-        List<AmplitudeBankAccountResponse> selected = accounts.accounts().stream()
+        List<BankAccount> selected = accounts.accounts().stream()
                 .filter(a -> query.accountReference().equals(a.accountReference())).toList();
         if (selected.size() != 1) {
             throw new IllegalStateException("Banking account reference must identify exactly one account");
         }
         var account = selected.get(0);
-        if (!summary.customerReference().equals(account.customerReference())
-                || !query.financialInstitutionCode().equals(account.financialInstitutionCode())) {
+        if (!summary.customerReference().equals(account.cli())) {
             throw new IllegalStateException("Banking account ownership mismatch");
         }
         return new BankingCustomerLookupPort.BankingCustomerProfile(
@@ -84,8 +84,17 @@ public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustome
                 identity.email(), identity.phoneNumber(),
                 new BankingCustomerLookupPort.BankingAccount(
                         account.accountReference(), null, null,
-                        account.maskedAccountIdentifier(), account.currency(),
-                        account.accountType(), account.retrievedAt()));
+                        maskedAccountNumber(account.ncp()), account.dev(),
+                        account.typ(), Instant.now()));
+    }
+
+    // Presentation metadata derived locally. Not a bank-provided masked identifier.
+    private static String maskedAccountNumber(String ncp) {
+        if (blank(ncp)) {
+            throw new IllegalStateException("Bank account number is missing");
+        }
+        String trimmed = ncp.strip();
+        return "****" + trimmed.substring(Math.max(0, trimmed.length() - 4));
     }
 
     private void authenticate(HttpHeaders headers, String correlationId) {
@@ -95,5 +104,5 @@ public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustome
     public record SearchResult(List<CustomerSummary> customers, Integer resultCount) {}
     public record CustomerSummary(String customerReference, String customerNumber,
                                   String financialInstitutionCode, String niu, String legalName) {}
-    public record AccountSearchResult(List<AmplitudeBankAccountResponse> accounts, Integer resultCount) {}
+    public record AccountSearchResult(List<BankAccount> accounts, Integer resultCount) {}
 }
