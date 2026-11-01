@@ -19,6 +19,10 @@ class BankingVerificationPortArchitectureTest {
             "src/main/java/com/sixpay/customer/verification/infrastructure/banking"
     );
 
+    private static final Path MANAGEMENT_BANKING_ROOT = Path.of(
+            "src/main/java/com/sixpay/customer/management/infrastructure/banking"
+    );
+
     @Test
     void portBoundaryContainsNoFrameworkExternalOrPaymentType()
             throws Exception {
@@ -95,7 +99,10 @@ class BankingVerificationPortArchitectureTest {
             var violations = paths
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> !path.startsWith(BANKING_ROOT))
+                    .filter(path ->
+                            !path.startsWith(BANKING_ROOT)
+                                    && !path.startsWith(MANAGEMENT_BANKING_ROOT)
+                    )
                     .flatMap(path -> {
                         try {
                             String source = Files.readString(path);

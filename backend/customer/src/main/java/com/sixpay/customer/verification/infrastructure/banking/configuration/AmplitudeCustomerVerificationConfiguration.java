@@ -74,6 +74,15 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
+    com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupClient
+            amplitudeCustomerLookupClient(
+                    RestClient amplitudeCustomerVerificationRestClient,
+                    CoreBankingAccessTokenProvider tokenProvider) {
+        return new com.sixpay.customer.management.infrastructure.banking.amplitude.RestAmplitudeCustomerLookupClient(
+                amplitudeCustomerVerificationRestClient, tokenProvider);
+    }
+
+    @Bean
     AmplitudeCustomerVerificationClient amplitudeCustomerVerificationClient(
             RestClient amplitudeCustomerVerificationRestClient,
             CoreBankingAccessTokenProvider tokenProvider,

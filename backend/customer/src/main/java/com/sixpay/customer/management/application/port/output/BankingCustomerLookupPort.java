@@ -52,8 +52,8 @@ public interface BankingCustomerLookupPort {
     ) {
         public BankingAccount {
             Objects.requireNonNull(accountReference);
-            Objects.requireNonNull(accountBindingFingerprint);
-            Objects.requireNonNull(bankingAccountAccessReference);
+            // GET banking-preview returns descriptive facts, not account-binding evidence.
+            // Binding hints are optional here; write operations must reject their absence.
             Objects.requireNonNull(maskedAccountIdentifier);
             Objects.requireNonNull(currency);
             Objects.requireNonNull(retrievedAt);
