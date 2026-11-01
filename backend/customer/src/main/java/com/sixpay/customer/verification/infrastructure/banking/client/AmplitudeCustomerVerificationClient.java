@@ -2,6 +2,7 @@ package com.sixpay.customer.verification.infrastructure.banking.client;
 
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationRequest;
+import com.sixpay.customer.verification.infrastructure.banking.dto.RegionalCustomerVerificationWireRequest;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
 import com.sixpay.customer.verification.infrastructure.banking.error.*;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
@@ -61,7 +62,7 @@ public final class AmplitudeCustomerVerificationClient {
                                     IntegrationHttpHeaders.CORRELATION_ID,
                                     correlationId
                             )
-                            .body(request)
+                            .body(RegionalCustomerVerificationWireRequest.from(request))
                             .retrieve()
                             .body(
                                     AmplitudeCustomerVerificationResponse.class
