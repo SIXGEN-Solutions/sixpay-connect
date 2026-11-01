@@ -16,12 +16,12 @@ public record RegionalCustomerVerificationWireRequest(
             AmplitudeCustomerVerificationRequest request
     ) {
         Objects.requireNonNull(request, "request is required");
-        var customer = Objects.requireNonNull(request.customer(), "customer is required");
-        var account = Objects.requireNonNull(request.account(), "account is required");
+        var customer = request.customer();
+        var account = request.account();
         return new RegionalCustomerVerificationWireRequest(
-                account.accountReference(),
-                customer.niu(),
-                customer.legalName(),
+                account == null ? null : account.accountReference(),
+                customer == null ? null : customer.niu(),
+                customer == null ? null : customer.legalName(),
                 request.requiredKycFields(),
                 request.requestedAt()
         );

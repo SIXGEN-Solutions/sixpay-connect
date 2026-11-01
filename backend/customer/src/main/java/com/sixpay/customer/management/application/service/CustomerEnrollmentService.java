@@ -13,6 +13,7 @@ import com.sixpay.customer.management.domain.model.CustomerBankAccountId;
 import com.sixpay.customer.management.domain.model.CustomerId;
 import com.sixpay.customer.management.domain.repository.CustomerRepository;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
+import com.sixpay.customer.verification.application.port.output.BankingAccountAccessReference;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerResult;
 import com.sixpay.customer.verification.application.port.input.VerifyCustomerUseCase;
 import com.sixpay.customer.verification.domain.model.CustomerIdentity;
@@ -68,7 +69,7 @@ public class CustomerEnrollmentService
                                 null, null, command.customerNumber())),
                         FinancialInstitutionCode.of(command.financialInstitutionCode()),
                         null,
-                        null,
+                        BankingAccountAccessReference.of(command.accountReference()),
                         CustomerVerificationContext.of(
                                 CorrelationId.of(command.correlationId()), null),
                         requestedAt

@@ -24,13 +24,6 @@ import java.util.Objects;
 
 public final class AmplitudeCustomerVerificationMapper {
 
-    private static final List<String> REQUIRED_KYC_FIELDS = List.of(
-            "niu",
-            "legalName",
-            "phoneNumber",
-            "email"
-    );
-
     private final Duration defaultEvidenceTtl;
 
     public AmplitudeCustomerVerificationMapper(
@@ -51,6 +44,15 @@ public final class AmplitudeCustomerVerificationMapper {
     ) {
         Objects.requireNonNull(query, "query is required");
 
+        var identity = query.subject().identity();
+        List<String> requestedFields = new java.util.ArrayList<>();
+        if (identity.niu() != null) {
+            requestedFields.add("niu");
+        }
+        if (identity.legalName() != null && !identity.legalName().isBlank()) {
+            requestedFields.add("legalName");
+        }
+
         return new AmplitudeCustomerVerificationRequest(
                 query.financialInstitutionCode().value(),
                 new AmplitudeCustomerVerificationSubject(
@@ -69,7 +71,7 @@ public final class AmplitudeCustomerVerificationMapper {
                                 null,
                                 null
                         ),
-                REQUIRED_KYC_FIELDS,
+                List.copyOf(requestedFields),
                 query.requestedAt()
         );
     }

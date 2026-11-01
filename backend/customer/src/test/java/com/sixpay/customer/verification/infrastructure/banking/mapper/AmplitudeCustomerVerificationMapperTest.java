@@ -67,12 +67,7 @@ class AmplitudeCustomerVerificationMapperTest {
         assertThat(request.account().accountReference())
                 .isEqualTo("ACCOUNT-CANONICAL-001");
         assertThat(request.requiredKycFields())
-                .containsExactly(
-                        "niu",
-                        "legalName",
-                        "phoneNumber",
-                        "email"
-                );
+                .containsExactly("niu", "legalName");
         assertThat(request.requestedAt()).isEqualTo(requestedAt);
     }
 

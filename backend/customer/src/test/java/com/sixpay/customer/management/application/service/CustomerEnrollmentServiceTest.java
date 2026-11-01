@@ -19,6 +19,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+import com.sixpay.customer.verification.application.port.input.VerifyCustomerCommand;
 
 class CustomerEnrollmentServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-22T20:00:00Z");
@@ -68,7 +70,11 @@ class CustomerEnrollmentServiceTest {
         assertThat(result.customer().defaultBankAccount()).isPresent();
         assertThat(result.customer().defaultBankAccount().orElseThrow()
                 .accountBindingFingerprint()).matches("v1:[0-9a-f]{64}");
-        verify(verification, times(1)).verify(any());
+        ArgumentCaptor<VerifyCustomerCommand> captured =
+                ArgumentCaptor.forClass(VerifyCustomerCommand.class);
+        verify(verification, times(1)).verify(captured.capture());
+        assertThat(captured.getValue().bankingAccountAccessReference().value())
+                .isEqualTo("ACC-001");
         verify(repository).save(any());
     }
 
