@@ -372,7 +372,7 @@ CREATE TABLE customer_management_bank_account (
     banking_account_reference VARCHAR(100) NOT NULL,
     account_binding_fingerprint VARCHAR(128) NOT NULL,
     masked_account_identifier VARCHAR(100) NOT NULL,
-    currency VARCHAR(3) NOT NULL,
+    dev VARCHAR(3) NOT NULL,
     account_type VARCHAR(40),
     default_account BOOLEAN NOT NULL,
     verified_at TIMESTAMPTZ NOT NULL,
@@ -391,8 +391,6 @@ CREATE TABLE customer_management_bank_account (
             customer_id,
             account_binding_fingerprint
         ),
-    CONSTRAINT ck_customer_management_currency
-        CHECK (currency ~ '^[A-Z]{3}$'),
     CONSTRAINT ck_customer_management_fingerprint
         CHECK (
             account_binding_fingerprint
