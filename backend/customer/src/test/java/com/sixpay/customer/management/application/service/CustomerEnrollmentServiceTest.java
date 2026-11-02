@@ -35,7 +35,6 @@ class CustomerEnrollmentServiceTest {
     private CustomerEnrollmentService service() {
         when(time.now()).thenReturn(NOW);
         when(ids.nextId()).thenReturn(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-        when(lookup.lookup(any())).thenReturn(consulted("ACC-001", "XAF"));
         return new CustomerEnrollmentService(verification, lookup, ids, time, repository);
     }
 
@@ -55,6 +54,10 @@ class CustomerEnrollmentServiceTest {
     }
 
     private VerifyCustomerResult verified(String accountReference) {
+        return verified(accountReference, "XAF");
+    }
+
+    private VerifyCustomerResult verified(String accountReference, String currency) {
         VerifyCustomerResult result = mock(VerifyCustomerResult.class);
         when(result.outcome()).thenReturn(VerificationOutcome.VERIFIED);
         when(result.observedAt()).thenReturn(NOW);
@@ -68,7 +71,7 @@ class CustomerEnrollmentServiceTest {
                         "VERIFIED", List.of(), NOW, NOW)));
         when(result.accountOptional()).thenReturn(java.util.Optional.of(
                 new VerifiedBankingAccount(accountReference, "CUST-001", "SIXPAY_BANK",
-                        "****0001", "XAF", "CURRENT", "ACTIVE", List.of(), NOW)));
+                        "****0001", currency, "CURRENT", "ACTIVE", List.of(), NOW)));
         return result;
     }
 
@@ -89,39 +92,40 @@ class CustomerEnrollmentServiceTest {
         assertThat(captured.getValue().bankingAccountAccessReference().value())
                 .isEqualTo("ACC-001");
         assertThat(result.customer().defaultBankAccount().orElseThrow()
-                .maskedAccountIdentifier()).isEqualTo("****4321");
+                .maskedAccountIdentifier()).isEqualTo("****0001");
         assertThat(result.customer().defaultBankAccount().orElseThrow()
-                .accountType()).isEqualTo("SAVINGS");
-        verify(lookup).lookup(any());
+                .accountType()).isEqualTo("CURRENT");
+        verifyNoInteractions(lookup);
         verify(repository).save(any());
     }
 
     @Test
-    void mismatchedConsultedAccountDoesNotPersist() {
+    void verifiedEnrollmentDoesNotConsultBankingLookup() {
         var service = service();
         VerifyCustomerResult verifiedResult = verified("ACC-001");
+        when(verification.verify(any())).thenReturn(verifiedResult);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        when(verification.verify(any()))
-                .thenReturn(verifiedResult);
-        when(lookup.lookup(any())).thenReturn(consulted("OTHER-ACCOUNT", "XAF"));
-        assertThatThrownBy(() -> service.enroll(command()))
-                .isInstanceOf(CustomerDomainException.class)
-                .hasMessageContaining("verified and consulted");
-        verify(repository, never()).save(any());
+        var result = service.enroll(command());
+
+        assertThat(result.customer().defaultBankAccount()).isPresent();
+        verifyNoInteractions(lookup);
+        verify(repository).save(any());
     }
 
     @Test
-    void bankNativeCurrencyWithoutApprovedMappingCannotPersist() {
+    void bankNativeCurrencyIsPersistedWithoutIsoConversion() {
         var service = service();
-        VerifyCustomerResult verifiedResult = verified("ACC-001");
+        VerifyCustomerResult verifiedResult = verified("ACC-001", "001");
+        when(verification.verify(any())).thenReturn(verifiedResult);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        when(verification.verify(any()))
-                .thenReturn(verifiedResult);
-        when(lookup.lookup(any())).thenReturn(consulted("ACC-001", "001"));
-        assertThatThrownBy(() -> service.enroll(command()))
-                .isInstanceOf(CustomerDomainException.class)
-                .hasMessageContaining("ISO-4217");
-        verify(repository, never()).save(any());
+        var result = service.enroll(command());
+
+        assertThat(result.customer().defaultBankAccount().orElseThrow().currency())
+                .isEqualTo("001");
+        verifyNoInteractions(lookup);
+        verify(repository).save(any());
     }
 
     @Test

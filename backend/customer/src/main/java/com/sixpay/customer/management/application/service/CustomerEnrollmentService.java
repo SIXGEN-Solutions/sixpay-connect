@@ -102,27 +102,7 @@ public class CustomerEnrollmentService
             throw new CustomerDomainException("banking enrollment evidence timeline is invalid");
         }
 
-        // Verification is authorization evidence; the GET lookup supplies account
-        // presentation data. Neither response may silently override references.
-        var consulted = Objects.requireNonNull(bankingLookupPort.lookup(
-                new BankingCustomerLookupPort.BankingCustomerLookupQuery(
-                        command.financialInstitutionCode(), command.niu(),
-                        command.customerNumber(), command.accountReference(),
-                        command.correlationId())), "banking customer lookup returned null");
-        var consultedAccount = Objects.requireNonNull(consulted.account(),
-                "banking account lookup returned null");
-        if (!identity.financialInstitutionCode().equals(consulted.financialInstitutionCode())
-                || !identity.customerReference().equals(consulted.customerReference())
-                || !Objects.equals(identity.niu(), consulted.niu())
-                || (command.customerNumber() != null
-                        && !command.customerNumber().equals(consulted.customerNumber()))
-                || !bankAccount.accountReference().equals(consultedAccount.accountReference())
-                || !command.accountReference().equals(consultedAccount.accountReference())) {
-            throw new CustomerDomainException("verified and consulted banking references differ");
-        }
-        // 'dev' is bank-native: CustomerBankAccount validates ISO-4217.
-        // An unapproved mapping (e.g. '001' -> currency) must fail closed.
-
+        // The VERIFIED banking response is the sole source for enrollment.
         if (customerRepository
                 .existsByFinancialInstitutionCodeAndBankingCustomerReference(
                         identity.financialInstitutionCode(),
@@ -143,9 +123,9 @@ public class CustomerEnrollmentService
                         bankAccount.accountReference(),
                         stableAccountFingerprint(identity.financialInstitutionCode(),
                                 identity.customerReference(), bankAccount.accountReference()),
-                        consultedAccount.maskedAccountIdentifier(),
-                        consultedAccount.currency(),
-                        consultedAccount.accountType(),
+                        bankAccount.maskedAccountIdentifier(),
+                        bankAccount.currency(),
+                        bankAccount.accountType(),
                         verification.observedAt()
                 );
 

@@ -3,8 +3,6 @@ package com.sixpay.customer.management.domain.model;
 import com.sixpay.customer.management.domain.exception.CustomerDomainException;
 
 import java.time.Instant;
-import java.util.Currency;
-import java.util.Locale;
 import java.util.Objects;
 
 public final class CustomerBankAccount {
@@ -43,7 +41,8 @@ public final class CustomerBankAccount {
                 accountBindingFingerprint, "accountBindingFingerprint", MAX_FINGERPRINT_LENGTH);
         this.maskedAccountIdentifier = requireText(
                 maskedAccountIdentifier, "maskedAccountIdentifier", MAX_MASKED_IDENTIFIER_LENGTH);
-        this.currency = normalizeCurrency(currency);
+        // Preserve the Core Banking native dev code as received (e.g. "001").
+        this.currency = requireBankCurrency(currency);
         this.accountType = normalizeOptionalText(
                 accountType, "accountType", MAX_ACCOUNT_TYPE_LENGTH);
         this.defaultAccount = defaultAccount;
@@ -147,15 +146,11 @@ public final class CustomerBankAccount {
         return normalized;
     }
 
-    private static String normalizeCurrency(String value) {
-        String normalized = requireText(value, "currency", 3)
-                .toUpperCase(Locale.ROOT);
-        try {
-            return Currency.getInstance(normalized).getCurrencyCode();
-        } catch (IllegalArgumentException exception) {
-            throw new CustomerDomainException(
-                    "currency must be a valid ISO-4217 code");
+    private static String requireBankCurrency(String value) {
+        if (value == null || value.isBlank()) {
+            throw new CustomerDomainException("currency (bank dev) is required");
         }
+        return value.strip();
     }
 
     public CustomerBankAccountId id() {
