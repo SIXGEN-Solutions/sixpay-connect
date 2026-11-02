@@ -157,37 +157,24 @@ public final class AmplitudeResponseValidator {
                         response.identity(),
                         "Amplitude identity is required for VERIFIED outcome"
                 );
-        AmplitudeBankAccountResponse account =
+        BankAccount account =
                 Objects.requireNonNull(
                         response.account(),
                         "Amplitude account is required for VERIFIED outcome"
                 );
 
-        System.out.println("customerReference: " +customerReference);
-        System.out.println("identity.customerReference(): " + identity.customerReference());
-        System.out.println("account.customerReference(): " +account.customerReference());
-        System.out.println("account.accountReference(): " +account.accountReference());
-        System.out.println("accountReference: " + accountReference);
         if (!customerReference.equals(identity.customerReference())
-                || !customerReference.equals(account.customerReference())
+                || !customerReference.equals(account.cli())
                 || !accountReference.equals(account.accountReference())) {
             throw invalid(
                     "Amplitude VERIFIED banking references are inconsistent"
             );
         }
 
-        if (!"AMPLITUDE".equals(required(identity.source(), "identity source"))
-                || !"AMPLITUDE".equals(
-                required(account.source(), "account source")
-        )) {
-            throw invalid("Amplitude VERIFIED nested source is invalid");
+        if (!"AMPLITUDE".equals(required(identity.source(), "identity source"))) {
+            throw invalid("Amplitude VERIFIED identity source is invalid");
         }
 
-        if (identity.kycFields() == null) {
-            throw invalid(
-                    "Amplitude VERIFIED identity kycFields are required"
-            );
-        }
     }
 
     private static String required(

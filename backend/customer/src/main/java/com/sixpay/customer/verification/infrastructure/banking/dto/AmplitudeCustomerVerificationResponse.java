@@ -13,7 +13,7 @@ public record AmplitudeCustomerVerificationResponse(
         String accountReference,
         List<AmplitudeVerificationCheckResponse> checks,
         AmplitudeCustomerIdentityResponse identity,
-        AmplitudeBankAccountResponse account
+        BankAccount account
 ) {
     @Override
     public String toString() {

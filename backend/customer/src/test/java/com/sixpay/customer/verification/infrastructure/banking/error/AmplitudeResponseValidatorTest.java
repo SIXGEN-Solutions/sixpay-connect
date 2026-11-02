@@ -121,7 +121,7 @@ class AmplitudeResponseValidatorTest {
                 "AMPLITUDE",
                 outcome,
                 "CUST-0001",
-                "ACC-0001",
+                "00001-0001-47",
                 checks("PASS"),
                 new AmplitudeCustomerIdentityResponse(
                         "CUST-0001",
@@ -137,17 +137,9 @@ class AmplitudeResponseValidatorTest {
                         "AMPLITUDE",
                         instant
                 ),
-                new AmplitudeBankAccountResponse(
-                        "ACC-0001",
-                        "CUST-0001",
-                        "AMPLITUDE",
-                        "****0001",
-                        "XAF",
-                        "CURRENT",
-                        "ACTIVE",
-                        List.of(),
-                        "AMPLITUDE",
-                        instant
+                new BankAccount(
+                        "0001", "00001", "001", null, "47", "CUST-0001",
+                        null, null, null, null, null, "CURRENT", null, null, "ACTIVE"
                 )
         );
     }

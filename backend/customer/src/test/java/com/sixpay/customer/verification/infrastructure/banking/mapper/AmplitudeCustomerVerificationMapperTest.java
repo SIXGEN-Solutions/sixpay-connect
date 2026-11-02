@@ -84,7 +84,7 @@ class AmplitudeCustomerVerificationMapperTest {
         assertThat(response.customerReference())
                 .isEqualTo("CUST-0001");
         assertThat(response.accountReference())
-                .isEqualTo("ACC-0001");
+                .isEqualTo("00001-0001-47");
         assertThat(response.identity().phoneNumber())
                 .isEqualTo("+237690000001");
         assertThat(response.identity().email())
@@ -97,7 +97,7 @@ class AmplitudeCustomerVerificationMapperTest {
                                 && field.verified()
                 );
         assertThat(response.account().accountReference())
-                .isEqualTo("ACC-0001");
+                .isEqualTo("00001-0001-47");
         assertThat(response.validUntil())
                 .isEqualTo(verifiedAt.plus(Duration.ofMinutes(5)));
     }
@@ -156,7 +156,7 @@ class AmplitudeCustomerVerificationMapperTest {
                 "AMPLITUDE",
                 "VERIFIED",
                 "CUST-0001",
-                "ACC-0001",
+                "00001-0001-47",
                 checks,
                 new AmplitudeCustomerIdentityResponse(
                         "CUST-0001",
@@ -172,17 +172,9 @@ class AmplitudeCustomerVerificationMapperTest {
                         "AMPLITUDE",
                         verifiedAt
                 ),
-                new AmplitudeBankAccountResponse(
-                        "ACC-0001",
-                        "CUST-0001",
-                        "AMPLITUDE",
-                        "****0001",
-                        "XAF",
-                        "CURRENT",
-                        "ACTIVE",
-                        List.of(),
-                        "AMPLITUDE",
-                        verifiedAt
+                new BankAccount(
+                        "0001", "00001", "001", null, "47", "CUST-0001",
+                        null, null, null, null, null, "CURRENT", null, null, "ACTIVE"
                 )
         );
     }

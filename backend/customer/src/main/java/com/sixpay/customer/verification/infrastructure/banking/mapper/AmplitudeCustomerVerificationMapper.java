@@ -112,7 +112,7 @@ public final class AmplitudeCustomerVerificationMapper {
                 response.customerReference(),
                 response.accountReference(),
                 toInternalIdentity(response.identity()),
-                toInternalAccount(response.account())
+                toInternalAccount(response.account(), response.identity(), response.verifiedAt())
         );
     }
 
@@ -186,24 +186,36 @@ public final class AmplitudeCustomerVerificationMapper {
     }
 
     private static VerifiedBankingAccount toInternalAccount(
-            AmplitudeBankAccountResponse account
+            BankAccount account,
+            AmplitudeCustomerIdentityResponse identity,
+            Instant verifiedAt
     ) {
         if (account == null) {
             return null;
         }
-
+        System.out.println("identity: " + identity);
+        System.out.println("account.ncp(): " + account.ncp());
+        System.out.println("account.dev(): " + account.dev());
+        System.out.println("account.typ(): " + account.typ());
+        System.out.println("account.status(): " +account.status());
+        if (identity == null || account.ncp() == null || account.ncp().isBlank()
+                || account.dev() == null || account.dev().isBlank()
+                || account.typ() == null || account.typ().isBlank()
+                || account.status() == null || account.status().isBlank()) {
+            throw new CustomerVerificationDomainException(
+                    "Regional verified account fields are missing");
+        }
+        String ncp = account.ncp().strip();
         return new VerifiedBankingAccount(
                 account.accountReference(),
-                account.customerReference(),
-                account.financialInstitutionCode(),
-                account.maskedAccountIdentifier(),
-                account.currency(),
-                account.accountType(),
+                account.cli(),
+                identity.financialInstitutionCode(),
+                "****" + ncp.substring(Math.max(0, ncp.length() - 4)),
+                account.dev(),
+                account.typ(),
                 account.status(),
-                account.restrictions() == null
-                        ? List.of()
-                        : account.restrictions(),
-                account.retrievedAt()
+                List.of(),
+                verifiedAt
         );
     }
 
@@ -334,33 +346,27 @@ public final class AmplitudeCustomerVerificationMapper {
                         ));
     }
 
-    private static String canonicalAccount(
-            AmplitudeBankAccountResponse account
-    ) {
+    private static String canonicalAccount(BankAccount account) {
         if (account == null) {
             return "null";
         }
-
-        return account.accountReference()
-                + "|" + account.customerReference()
-                + "|" + account.financialInstitutionCode()
-                + "|" + account.maskedAccountIdentifier()
-                + "|" + account.currency()
-                + "|" + account.accountType()
-                + "|" + account.status()
-                + "|" + account.retrievedAt()
-                + "|"
-                + (account.restrictions() == null
-                ? ""
-                : account.restrictions().stream()
-                        .sorted()
-                        .reduce(
-                                "",
-                                (left, right) ->
-                                        left.isEmpty()
-                                                ? right
-                                                : left + "," + right
-                        ));
+        // Fingerprint covers bank-native wire facts, not fabricated metadata.
+        return String.join("|",
+                String.valueOf(account.ncp()),
+                String.valueOf(account.age()),
+                String.valueOf(account.dev()),
+                String.valueOf(account.cha()),
+                String.valueOf(account.clc()),
+                String.valueOf(account.cli()),
+                String.valueOf(account.inti()),
+                String.valueOf(account.ife()),
+                String.valueOf(account.cfe()),
+                String.valueOf(account.dou()),
+                String.valueOf(account.sin()),
+                String.valueOf(account.typ()),
+                String.valueOf(account.sde()),
+                String.valueOf(account.suf()),
+                String.valueOf(account.status()));
     }
 
     private static String required(

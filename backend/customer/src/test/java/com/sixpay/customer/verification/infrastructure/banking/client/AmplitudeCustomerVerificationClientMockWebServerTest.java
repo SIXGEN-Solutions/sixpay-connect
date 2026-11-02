@@ -187,7 +187,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                   "source":"AMPLITUDE",
                   "outcome":"VERIFIED",
                   "customerReference":"CUST-001",
-                  "accountReference":"ACC-001",
+                  "accountReference":"10005-00001-12",
                   "checks":[
                     {"type":"CUSTOMER_EXISTS","result":"PASS"},
                     {"type":"ACCOUNT_EXISTS","result":"PASS"},
@@ -207,16 +207,13 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                     "retrievedAt":"2026-08-06T14:00:00Z"
                   },
                   "account":{
-                    "accountReference":"ACC-001",
-                    "customerReference":"CUST-001",
-                    "financialInstitutionCode":"LRB",
-                    "maskedAccountIdentifier":"****0001",
-                    "currency":"XAF",
-                    "accountType":"CURRENT",
-                    "status":"ACTIVE",
-                    "restrictions":[],
-                    "source":"AMPLITUDE",
-                    "retrievedAt":"2026-08-06T14:00:00Z"
+                    "age":"10005",
+                    "ncp":"00001",
+                    "clc":"12",
+                    "cli":"CUST-001",
+                    "dev":"001",
+                    "typ":"CURRENT",
+                    "status":"ACTIVE"
                   }
                 }
                 """;
