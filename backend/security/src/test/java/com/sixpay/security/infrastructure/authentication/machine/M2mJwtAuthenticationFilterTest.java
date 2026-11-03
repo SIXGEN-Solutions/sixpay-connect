@@ -52,6 +52,7 @@ class M2mJwtAuthenticationFilterTest {
             var authentication = SecurityContextHolder.getContext().getAuthentication();
             assertThat(authentication.getAuthorities())
                     .extracting("authority").containsExactly("SCOPE_payment.initiate");
+            assertThat(authentication.getName()).isEqualTo("sixpay-partner-test");
             observed.set((AuthenticatedMachineIdentity) authentication.getPrincipal());
         };
         filter.doFilter(request("ok"), response, chain);
@@ -64,6 +65,7 @@ class M2mJwtAuthenticationFilterTest {
         var response = new MockHttpServletResponse();
         filter.doFilter(request(null), response, (req, res) -> fail("must not proceed"));
         assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getErrorMessage()).isNull();
     }
 
     @Test
@@ -72,6 +74,7 @@ class M2mJwtAuthenticationFilterTest {
         var response = new MockHttpServletResponse();
         filter.doFilter(request("bad"), response, (req, res) -> fail("must not proceed"));
         assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getErrorMessage()).isNull();
     }
 
     @Test
@@ -80,6 +83,19 @@ class M2mJwtAuthenticationFilterTest {
         var response = new MockHttpServletResponse();
         filter.doFilter(request("no-scope"), response, (req, res) -> fail("must not proceed"));
         assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getErrorMessage()).isNull();
+    }
+
+    @Test
+    void acceptsTabSeparatedScopes() throws Exception {
+        when(decoder.decode("multiple-scopes"))
+                .thenReturn(jwt("payment.read\tpayment.initiate", "sixpay-partner-test"));
+        var response = new MockHttpServletResponse();
+        var reached = new java.util.concurrent.atomic.AtomicBoolean();
+        filter.doFilter(request("multiple-scopes"), response,
+                (req, res) -> reached.set(true));
+        assertThat(reached).isTrue();
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test

@@ -64,6 +64,11 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
         return text == null || text.isBlank();
     }
 
+    private static void reject(HttpServletResponse response, int status) {
+        response.setStatus(status);
+        response.setContentLength(0);
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !isInitiateRequest(request);
@@ -76,7 +81,7 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
         String authorization = request.getHeader("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")
                 || authorization.substring(7).isBlank()) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "M2M Bearer token required");
+            reject(response, HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
@@ -84,14 +89,14 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             jwt = decoder.decode(authorization.substring(7).strip());
         } catch (JwtException exception) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid M2M token");
+            reject(response, HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         String scope = jwt.getClaimAsString("scope");
-        if (blank(scope) || Arrays.stream(scope.strip().split("\s+"))
+        if (blank(scope) || Arrays.stream(scope.strip().split("\\s+"))
                 .noneMatch(SCOPE::equals)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "M2M scope not granted");
+            reject(response, HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -99,7 +104,7 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
         // service-account 'sub' is a different, potentially recreated UUID.
         String clientId = jwt.getClaimAsString("azp");
         if (blank(clientId)) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "M2M client identity missing");
+            reject(response, HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 

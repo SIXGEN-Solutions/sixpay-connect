@@ -10,12 +10,17 @@ import com.sixpay.common.validation.Preconditions;
  */
 public record AuthenticatedMachineIdentity(
         String subject
-) {
+) implements java.security.Principal {
 
     public AuthenticatedMachineIdentity {
         subject = Preconditions.requireNonBlank(
                 subject,
                 "Authenticated machine subject must not be blank"
         );
+    }
+
+    @Override
+    public String getName() {
+        return subject;
     }
 }
