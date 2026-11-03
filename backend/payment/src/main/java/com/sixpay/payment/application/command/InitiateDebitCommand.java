@@ -38,11 +38,6 @@ public record InitiateDebitCommand(
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
     public InitiateDebitCommand {
-        partnerLoginName = normalizeOptional(
-                partnerLoginName,
-                64,
-                "Partner login name"
-        );
         authenticatedPartnerLoginName = requireText(
                 authenticatedPartnerLoginName,
                 64,

@@ -33,6 +33,23 @@ class PaymentInitiationContextTest {
     }
 
     @Test
+    void optionalLoginNameIsNotValidatedAsApplicationIdentifier() {
+        PaymentInitiationContext context = new PaymentInitiationContext(
+                "Tresor PAY (compatibility metadata)!",
+                "TP_APP_001",
+                null,
+                ClaimType.AVI,
+                null,
+                null,
+                CallbackEndpoint.of("https://tresorpay.cm/callback")
+        );
+
+        assertThat(context.partnerLoginName())
+                .isEqualTo("Tresor PAY (compatibility metadata)!");
+        assertThat(context.applicationId()).isEqualTo("TP_APP_001");
+    }
+
+    @Test
     void applicationIdIsOptional() {
         PaymentInitiationContext context =
                 new PaymentInitiationContext(
