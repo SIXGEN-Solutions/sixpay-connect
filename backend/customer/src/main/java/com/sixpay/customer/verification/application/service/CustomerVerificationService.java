@@ -14,6 +14,9 @@ import com.sixpay.customer.verification.domain.model.CustomerVerification;
 import com.sixpay.customer.verification.domain.model.VerificationOutcome;
 import com.sixpay.customer.verification.domain.model.CustomerVerificationRequest;
 import com.sixpay.customer.verification.domain.model.CustomerVerificationResult;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -37,6 +40,8 @@ public final class CustomerVerificationService
     private final CustomerVerificationDomainEventPublisher eventPublisher;
     private final CustomerVerificationEventIdGenerator eventIdGenerator;
     private final CustomerVerificationTimeProvider timeProvider;
+
+    private static final Logger log = LoggerFactory.getLogger(CustomerVerificationService.class);
 
     public CustomerVerificationService(
             BankingCustomerVerificationPort bankingPort,
@@ -130,6 +135,15 @@ public final class CustomerVerificationService
             VerifyCustomerCommand command,
             BankingVerificationResponse bankingResponse
     ) {
+        log.info(
+                "event=customer_account_binding_resolution "
+                        + "bindingSource={} verificationId={}",
+                command.accountBindingFingerprint() != null
+                        ? "REQUEST"
+                        : "BANKING_RESPONSE",
+                command.verificationId()
+        );
+
         if (command.accountBindingFingerprint() != null) {
             return command.accountBindingFingerprint();
         }

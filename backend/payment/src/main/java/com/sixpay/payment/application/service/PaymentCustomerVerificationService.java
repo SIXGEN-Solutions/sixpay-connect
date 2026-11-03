@@ -10,6 +10,9 @@ import com.sixpay.payment.application.port.output.PaymentCustomerVerificationIdG
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,8 @@ public final class PaymentCustomerVerificationService {
     private final CustomerVerificationFailureMapper failureMapper;
     private final PaymentCustomerVerificationIdGenerator idGenerator;
     private final ResolvedDebtorAccountReferenceFactory accountReferenceFactory;
+
+    private final Logger log = LoggerFactory.getLogger(PaymentCustomerVerificationService.class);
 
     public PaymentCustomerVerificationService(
             PaymentMutationCoordinator coordinator,
@@ -168,6 +173,27 @@ public final class PaymentCustomerVerificationService {
                                     .requestIdentity()
                                     .correlationId(),
                             response.completedAt()
+                    );
+
+                    var currentAccount = payment.toState()
+                            .optionalDebtorAccountReference();
+
+                    boolean bindingMatches = currentAccount
+                            .map(account ->
+                                    account.bindingFingerprint().equals(
+                                            snapshot.accountBindingFingerprint()
+                                    ))
+                            .orElse(false);
+                    log.info(
+                            "event=payment_banking_binding_check "
+                                    + "paymentId={} "
+                                    + "accountPresent={} "
+                                    + "bindingMatches={} "
+                                    + "outcome={}",
+                            paymentId,
+                            currentAccount.isPresent(),
+                            bindingMatches,
+                            response.outcome()
                     );
 
                     var failure = failureMapper.from(

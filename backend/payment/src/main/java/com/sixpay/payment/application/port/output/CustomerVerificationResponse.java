@@ -1,5 +1,10 @@
 package com.sixpay.payment.application.port.output;
 
+import com.sixpay.payment.application.service.ResolvedDebtorAccountReferenceFactory;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
@@ -112,6 +117,8 @@ public record CustomerVerificationResponse(
         return Optional.ofNullable(validUntil);
     }
 
+    private static final Logger log = LoggerFactory.getLogger(CustomerVerificationResponse.class);
+
     private static void validateChecks_bk(List<Check> checks) {
         if (checks.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException(
@@ -160,8 +167,16 @@ public record CustomerVerificationResponse(
         mandatory.remove(CheckType.REQUIRED_KYC_PRESENT);
         mandatory.remove(CheckType.REQUIRED_KYC_VERIFIED);
 
-        System.out.println("Actual: " + actual.stream().sorted());
-        System.out.println("mandatory: " + mandatory.stream().sorted());
+        log.info(
+                "event=customer_verification_checks "
+                        + "actual={} mandatory={} missing={}",
+                actual.stream().sorted().toList(),
+                mandatory.stream().sorted().toList(),
+                mandatory.stream()
+                        .filter(check -> !actual.contains(check))
+                        .sorted()
+                        .toList()
+        );
 
         if (!actual.containsAll(mandatory)) {
             throw new IllegalArgumentException(

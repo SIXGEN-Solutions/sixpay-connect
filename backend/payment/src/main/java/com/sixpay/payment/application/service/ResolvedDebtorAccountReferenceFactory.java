@@ -3,6 +3,9 @@ package com.sixpay.payment.application.service;
 import com.sixpay.payment.application.port.output.CustomerVerificationResponse;
 import com.sixpay.payment.domain.model.DebtorAccountReference;
 import com.sixpay.payment.domain.model.FinancialInstitutionCode;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -17,6 +20,8 @@ import java.util.Objects;
  */
 @Component
 public final class ResolvedDebtorAccountReferenceFactory {
+
+    private final Logger log = LoggerFactory.getLogger(ResolvedDebtorAccountReferenceFactory.class);
 
     public DebtorAccountReference from(
             CustomerVerificationResponse response
@@ -47,6 +52,18 @@ public final class ResolvedDebtorAccountReferenceFactory {
                 "maskedAccountIdentifier"
         );
 
+        log.info(
+                "event=payment_debtor_account_binding_created "
+                        + "fingerprintAlgorithm={} "
+                        + "institutionPresent={} "
+                        + "customerReferencePresent={} "
+                        + "accountReferencePresent={}",
+                "SHA256_PIPE_DELIMITED_V1",
+                !institution.isBlank(),
+                !customerReference.isBlank(),
+                !accountReference.isBlank()
+        );
+
         return new DebtorAccountReference(
                 FinancialInstitutionCode.of(institution),
                 accountReference,
@@ -60,9 +77,12 @@ public final class ResolvedDebtorAccountReferenceFactory {
             String customerReference,
             String accountReference
     ) {
-        String canonical = institution
-                + "|" + customerReference
-                + "|" + accountReference;
+        // Match the persisted CustomerBankAccount v1 fingerprint canonicalization.
+        // Keep the institution/customer/account binding invariant fail-closed.
+        String canonical = "SIXPAY-ACCOUNT-BINDING-v1\n"
+                + institution.length() + ":" + institution
+                + customerReference.length() + ":" + customerReference
+                + accountReference.length() + ":" + accountReference;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return "v1:" + HexFormat.of().formatHex(
