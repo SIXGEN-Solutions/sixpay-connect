@@ -304,20 +304,14 @@ public class PaymentConfirmationIdempotencyAdapter
             Supplier<PaymentConfirmationBankResult> newRequest,
             Supplier<PaymentConfirmationBankResult> recovery
     ) {
+        // Deliberately separate external I/O from local persistence. If the
+        // bank already succeeded but storing its result fails, do NOT mark the
+        // operation FAILED: the next attempt must recover with the original
+        // Idempotency-Key rather than create another challenge.
+        PaymentConfirmationBankResult result;
         try {
-            PaymentConfirmationBankResult result =
-                    Objects.requireNonNull(
-                            newRequest.get(),
-                            "Payment confirmation bank result"
-                    );
-            complete(
-                    operation,
-                    paymentId,
-                    idempotencyKey,
-                    requestHash,
-                    result
-            );
-            return result;
+            result = Objects.requireNonNull(
+                    newRequest.get(), "Payment confirmation bank result");
         } catch (PaymentConfirmationGateway.OutcomeUnknownException unknown) {
             transactions.markOutcomeUnknown(
                     operation,
@@ -328,22 +322,15 @@ public class PaymentConfirmationIdempotencyAdapter
                     unknown.getMessage(),
                     timeProvider.now()
             );
-            return recover(
-                    operation,
-                    paymentId,
-                    idempotencyKey,
-                    requestHash,
-                    recovery
-            );
+            return recover(operation, paymentId, idempotencyKey, requestHash, recovery);
         } catch (RuntimeException exception) {
-            fail(
-                    operation,
-                    idempotencyKey,
-                    requestHash,
-                    exception
-            );
+            fail(operation, idempotencyKey, requestHash, exception);
             throw exception;
         }
+        // An exception here leaves the previously committed IN_PROGRESS entry
+        // available for authoritative recovery; never classify it as FAILED.
+        complete(operation, paymentId, idempotencyKey, requestHash, result);
+        return result;
     }
 
     private PaymentConfirmationBankResult recover(
