@@ -30,6 +30,7 @@ public class CustomerSubscriptionResolutionService implements ResolveCustomerSub
     public ResolvedCustomerSubscription resolve(UUID referenceClient, UUID authenticatedPartnerId) {
         Objects.requireNonNull(referenceClient, "referenceClient is required");
         Objects.requireNonNull(authenticatedPartnerId, "authenticatedPartnerId is required");
+        System.out.println("referenceClient: " + referenceClient);
         var subscription = subscriptions.findById(new CustomerSubscriptionId(referenceClient))
                 .orElseThrow(() -> new CustomerDomainException("customer subscription unavailable"));
         // Do not disclose existence of a subscription belonging to a different partner.

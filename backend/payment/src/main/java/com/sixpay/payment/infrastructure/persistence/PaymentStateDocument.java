@@ -8,6 +8,7 @@ import com.sixpay.payment.domain.policy.ReversalInstructionIdentity;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Persistence-only representation of one complete immutable PaymentState.
@@ -56,6 +57,28 @@ record PaymentStateDocument(
 
     static final int CURRENT_SCHEMA_VERSION = 7;
 
+    /**
+     * PostgreSQL TIMESTAMPTZ is microsecond-precision. Floor the receipt
+     * boundary to avoid moving receipt after evidence at the same instant.
+     * This is a write-time canonical representation, not a read tolerance.
+     */
+    static Instant sqlReceivedAt(Instant value) {
+        return java.util.Objects.requireNonNull(value, "Received instant")
+                .truncatedTo(ChronoUnit.MICROS);
+    }
+
+    /**
+     * Round the upper temporal bound upwards: evidence accepted at an instant
+     * must not become later than updatedAt/finalizedAt when reconstituted.
+     */
+    static Instant sqlUpdatedOrFinalizedAt(Instant value) {
+        if (value == null) {
+            return null;
+        }
+        Instant micros = value.truncatedTo(ChronoUnit.MICROS);
+        return micros.equals(value) ? micros : micros.plus(1, ChronoUnit.MICROS);
+    }
+
     static PaymentStateDocument from(PaymentState state) {
         return new PaymentStateDocument(
                 CURRENT_SCHEMA_VERSION,
@@ -89,9 +112,9 @@ record PaymentStateDocument(
                 state.reversalEvidence().orElse(null),
                 state.failure().orElse(null),
                 state.businessVersion(),
-                state.receivedAt(),
-                state.updatedAt(),
-                state.finalizedAt().orElse(null)
+                sqlReceivedAt(state.receivedAt()),
+                sqlUpdatedOrFinalizedAt(state.updatedAt()),
+                sqlUpdatedOrFinalizedAt(state.finalizedAt().orElse(null))
         );
     }
 

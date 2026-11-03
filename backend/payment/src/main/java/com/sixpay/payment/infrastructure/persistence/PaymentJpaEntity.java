@@ -197,7 +197,8 @@ public class PaymentJpaEntity {
         entity.requestedAmount = state.requestedAmount().amount();
         entity.requestedCurrency =
                 state.requestedAmount().currency().getCurrencyCode();
-        entity.receivedAt = state.receivedAt();
+        entity.receivedAt = PaymentStateDocument.sqlReceivedAt(
+                state.receivedAt());
         entity.synchronize(state, statePayload);
         return entity;
     }
@@ -251,8 +252,10 @@ public class PaymentJpaEntity {
                         .orElse(null);
         status = state.status();
         businessVersion = state.businessVersion();
-        updatedAt = state.updatedAt();
-        finalizedAt = state.finalizedAt().orElse(null);
+        updatedAt = PaymentStateDocument.sqlUpdatedOrFinalizedAt(
+                state.updatedAt());
+        finalizedAt = PaymentStateDocument.sqlUpdatedOrFinalizedAt(
+                state.finalizedAt().orElse(null));
         statePayload = newStatePayload;
     }
 

@@ -3,6 +3,7 @@ package com.sixpay.payment.infrastructure.persistence;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.sixpay.payment.domain.model.Payment;
+import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -128,7 +129,7 @@ public final class PaymentPersistenceMapper {
                 || !Objects.equals(
                 entity.partnerIdentifier(),
                 state.initiationContext()
-                        .map(context -> context.applicationId())
+                        .map(PaymentInitiationContext::applicationId)
                         .orElse(null)
         )
                 || entity.status() != state.status()

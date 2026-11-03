@@ -84,6 +84,7 @@ public record CustomerVerificationResponse(
         );
 
         validateChecks(checks);
+
         validateOutcome(outcome, checks);
 
         if (validUntil != null
@@ -111,7 +112,7 @@ public record CustomerVerificationResponse(
         return Optional.ofNullable(validUntil);
     }
 
-    private static void validateChecks(List<Check> checks) {
+    private static void validateChecks_bk(List<Check> checks) {
         if (checks.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException(
                     "checks must not contain null"
@@ -135,6 +136,40 @@ public record CustomerVerificationResponse(
         }
     }
 
+    private static void validateChecks(List<Check> checks) {
+        if (checks.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException(
+                    "checks must not contain null"
+            );
+        }
+
+        Set<CheckType> actual = checks.stream()
+                .map(Check::type)
+                .collect(Collectors.toSet());
+
+        if (actual.size() != checks.size()) {
+            throw new IllegalArgumentException(
+                    "verification check types must be unique"
+            );
+        }
+
+        EnumSet<CheckType> mandatory =
+                EnumSet.allOf(CheckType.class);
+
+        //mandatory.remove(CheckType.IDENTITY_MATCHES);
+        mandatory.remove(CheckType.REQUIRED_KYC_PRESENT);
+        mandatory.remove(CheckType.REQUIRED_KYC_VERIFIED);
+
+        System.out.println("Actual: " + actual);
+        System.out.println("mandatory: " + mandatory);
+
+        if (!actual.containsAll(mandatory)) {
+            throw new IllegalArgumentException(
+                    "mandatory verification checks are missing"
+            );
+        }
+    }
+
     private static void validateOutcome(
             Outcome outcome,
             List<Check> checks
@@ -154,6 +189,8 @@ public record CustomerVerificationResponse(
                         ? Outcome.INDETERMINATE
                         : Outcome.VERIFIED;
 
+        System.out.println("outcome: " + outcome);
+        System.out.println("derived: " + derived);
         if (outcome != derived) {
             throw new IllegalArgumentException(
                     "outcome is inconsistent with checks"
