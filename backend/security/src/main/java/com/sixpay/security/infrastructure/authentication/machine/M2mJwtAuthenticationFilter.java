@@ -24,13 +24,15 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Partner M2M authentication for the approved payment-initiation boundary only.
+ * Partner M2M authentication for initiation and confirmation boundaries.
  * Human LOCAL, LDAP, and OIDC authentication does not use this filter.
  * The mTLS gateway requirement remains a separate mandatory contract control.
  */
 public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String AUTHORITY = "SCOPE_payment.initiate";
-    private static final String SCOPE = "payment.initiate";
+    private static final String INITIATE = "/v1/payments/initiate";
+    private static final String CHALLENGE_SUFFIX = "/confirmation-challenge";
+    private static final String VERIFY_SUFFIX = "/verify";
+    private static final String RESEND_SUFFIX = "/resend";
     private final JwtDecoder decoder;
 
     public M2mJwtAuthenticationFilter(JwtDecoder decoder) {
@@ -38,9 +40,42 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     public static boolean isInitiateRequest(HttpServletRequest request) {
-        return "POST".equals(request.getMethod())
-                && (request.getContextPath() + "/v1/payments/initiate")
-                        .equals(request.getRequestURI());
+        return "payment.initiate".equals(requiredScope(request));
+    }
+
+    /** Only exact approved paths/methods are M2M; no catch-all prefix match. */
+    public static boolean isPartnerM2mRequest(HttpServletRequest request) {
+        return requiredScope(request) != null;
+    }
+
+    static String requiredScope(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String context = request.getContextPath();
+        if (context != null && !context.isEmpty()) {
+            if (!path.startsWith(context + "/")) return null;
+            path = path.substring(context.length());
+        }
+        String method = request.getMethod();
+        if ("POST".equals(method) && INITIATE.equals(path)) {
+            return "payment.initiate";
+        }
+        String prefix = "/v1/payments/";
+        if (!path.startsWith(prefix)) return null;
+        String remainder = path.substring(prefix.length());
+        int slash = remainder.indexOf('/');
+        // An opaque public payment reference must occupy exactly one segment.
+        if (slash <= 0) return null;
+        String suffix = remainder.substring(slash);
+        if ("GET".equals(method) && CHALLENGE_SUFFIX.equals(suffix)) {
+            return "payment.confirmation.read";
+        }
+        if ("POST".equals(method) && (CHALLENGE_SUFFIX + VERIFY_SUFFIX).equals(suffix)) {
+            return "payment.confirmation.verify";
+        }
+        if ("POST".equals(method) && (CHALLENGE_SUFFIX + RESEND_SUFFIX).equals(suffix)) {
+            return "payment.confirmation.resend";
+        }
+        return null;
     }
 
     public static JwtDecoder decoder(String issuer, String jwkSetUri, String audience) {
@@ -71,7 +106,7 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !isInitiateRequest(request);
+        return !isPartnerM2mRequest(request);
     }
 
     @Override
@@ -93,9 +128,10 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        String required = requiredScope(request);
         String scope = jwt.getClaimAsString("scope");
-        if (blank(scope) || Arrays.stream(scope.strip().split("\\s+"))
-                .noneMatch(SCOPE::equals)) {
+        if (required == null || blank(scope) || Arrays.stream(scope.strip().split("\\s+"))
+                .noneMatch(required::equals)) {
             reject(response, HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -110,7 +146,7 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
 
         var machine = new AuthenticatedMachineIdentity(clientId.strip());
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
-                machine, null, List.of(new SimpleGrantedAuthority(AUTHORITY)));
+                machine, null, List.of(new SimpleGrantedAuthority("SCOPE_" + required)));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         try {
             chain.doFilter(request, response);

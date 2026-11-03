@@ -116,5 +116,78 @@ class M2mJwtAuthenticationFilterTest {
         verifyNoInteractions(decoder);
     }
 
+    @Test
+    void authenticatesAllConfirmationOperationsWithTheirOwnScopes() throws Exception {
+        String reference = "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        String base = "/v1/payments/" + reference + "/confirmation-challenge";
+        String[][] operations = {
+                {"GET", base, "payment.confirmation.read"},
+                {"POST", base + "/verify", "payment.confirmation.verify"},
+                {"POST", base + "/resend", "payment.confirmation.resend"}
+        };
+        for (String[] operation : operations) {
+            var request = new MockHttpServletRequest(operation[0], operation[1]);
+            request.addHeader("Authorization", "Bearer ok");
+            when(decoder.decode("ok")).thenReturn(jwt(operation[2], "client-a"));
+            var response = new MockHttpServletResponse();
+            var reached = new java.util.concurrent.atomic.AtomicBoolean();
+            filter.doFilter(request, response, (req, res) -> {
+                assertThat(SecurityContextHolder.getContext().getAuthentication()
+                        .getAuthorities()).extracting("authority")
+                        .containsExactly("SCOPE_" + operation[2]);
+                reached.set(true);
+            });
+            assertThat(reached).isTrue();
+            assertThat(response.getStatus()).isEqualTo(200);
+            clearInvocations(decoder);
+        }
+    }
+
+    @Test
+    void confirmationRoutesRejectMissingJwtAndWrongScopeBeforeController() throws Exception {
+        String uri = "/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge/verify";
+        var missing = new MockHttpServletRequest("POST", uri);
+        var missingResponse = new MockHttpServletResponse();
+        filter.doFilter(missing, missingResponse, (req,res) -> fail("must reject"));
+        assertThat(missingResponse.getStatus()).isEqualTo(401);
+
+        var wrong = new MockHttpServletRequest("POST", uri);
+        wrong.addHeader("Authorization", "Bearer wrong");
+        when(decoder.decode("wrong")).thenReturn(jwt("payment.initiate", "client-a"));
+        var wrongResponse = new MockHttpServletResponse();
+        filter.doFilter(wrong, wrongResponse, (req,res) -> fail("must reject"));
+        assertThat(wrongResponse.getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    void confirmationRejectsInvalidJwtAndMissingAzp() throws Exception {
+        String uri = "/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge";
+        var invalid = new MockHttpServletRequest("GET", uri);
+        invalid.addHeader("Authorization", "Bearer invalid-confirmation");
+        when(decoder.decode("invalid-confirmation"))
+                .thenThrow(new BadJwtException("bad signature"));
+        var invalidResponse = new MockHttpServletResponse();
+        filter.doFilter(invalid, invalidResponse, (req,res) -> fail("must reject"));
+        assertThat(invalidResponse.getStatus()).isEqualTo(401);
+
+        var noAzp = new MockHttpServletRequest("GET", uri);
+        noAzp.addHeader("Authorization", "Bearer no-azp-confirmation");
+        when(decoder.decode("no-azp-confirmation"))
+                .thenReturn(jwt("payment.confirmation.read", ""));
+        var noAzpResponse = new MockHttpServletResponse();
+        filter.doFilter(noAzp, noAzpResponse, (req,res) -> fail("must reject"));
+        assertThat(noAzpResponse.getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    void unknownPaymentRoutesAreNotIntercepted() throws Exception {
+        var request = new MockHttpServletRequest("GET", "/v1/payments/sample/other");
+        var reached = new java.util.concurrent.atomic.AtomicBoolean();
+        filter.doFilter(request, new MockHttpServletResponse(),
+                (req, res) -> reached.set(true));
+        assertThat(reached).isTrue();
+        verifyNoInteractions(decoder);
+    }
+
     private static void fail(String message) { throw new AssertionError(message); }
 }

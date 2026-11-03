@@ -60,7 +60,8 @@ public class PaymentConfirmationController {
 
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.read')")
+    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.read') "
+            + "and @paymentConfirmationPartnerAccessGuard.isAllowed(#p0)")
     @Operation(
             operationId = "getPaymentConfirmationChallenge",
             summary = "Read the current confirmation challenge"
@@ -82,7 +83,8 @@ public class PaymentConfirmationController {
     }
 
     @PostMapping("/verify")
-    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.verify')")
+    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.verify') "
+            + "and @paymentConfirmationPartnerAccessGuard.isAllowed(#p0)")
     @Operation(
             operationId = "verifyPaymentConfirmationChallenge",
             summary = "Verify the customer OTP"
@@ -112,7 +114,8 @@ public class PaymentConfirmationController {
     }
 
     @PostMapping("/resend")
-    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.resend')")
+    @PreAuthorize("hasAuthority('SCOPE_payment.confirmation.resend') "
+            + "and @paymentConfirmationPartnerAccessGuard.isAllowed(#p0)")
     @Operation(
             operationId = "resendPaymentConfirmationChallenge",
             summary = "Replace and resend the confirmation challenge"

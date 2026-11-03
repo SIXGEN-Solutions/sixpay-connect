@@ -247,6 +247,7 @@ contracts:
       purpose:
         - "Read the current normalized challenge state created during Payment initiation"
         - "Synchronously verify the customer OTP"
+        - "Require M2M machine identity, operation scope and Payment Partner ownership before confirmation banking calls"
         - "Replace and resend the current challenge"
         - "Read the current normalized challenge state"
         - "Enforce idempotency and authoritative recovery semantics"

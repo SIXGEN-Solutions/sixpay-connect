@@ -40,7 +40,7 @@ Keycloak Admin Console: http://localhost:8180/admin
 
 Realm: `sixpay-m2m-local`.
 Client: `sixpay-partner-test` (confidential service account, no user login).
-Optional client scope: `payment.initiate`.
+Optional client scopes: `payment.initiate`, `payment.confirmation.read`, `payment.confirmation.verify`, `payment.confirmation.resend`.
 
 The verifier fetches a token using `client_credentials` and explicitly requests
 `payment.initiate`. It then asks Keycloak's token introspection endpoint whether
@@ -115,3 +115,32 @@ and availability design. Termination of mutual TLS is expected to use the bank's
 approved gateway if available; no gateway choice or PKI configuration is made
 here. JWT, certificate and partner identity correlation must be verified in
 future M2M lots before any payment initiation is considered secure.
+
+## Confirmation scopes for local tests
+
+The existing confidential client `sixpay-partner-test` may request the
+following **optional** machine-only scopes. No human user, new client,
+role or secret is created:
+
+- `payment.initiate`
+- `payment.confirmation.read`
+- `payment.confirmation.verify`
+- `payment.confirmation.resend`
+
+Postman: request the scopes required for the operation as a space-separated
+value (for example `payment.confirmation.read payment.confirmation.verify`).
+With a new token, run this local check without exposing tokens or secrets:
+
+```powershell
+py verify_token.py --scope "payment.initiate payment.confirmation.read payment.confirmation.verify payment.confirmation.resend" --negative
+```
+
+**Important:** `--import-realm` only imports a realm that does not yet exist.
+Simply recreating a container does not reliably update an already persisted
+realm. For this disposable stack (no Docker volume configured), recreate
+it only if losing local Keycloak test data is acceptable. If a persistent
+realm exists, add the three optional client scopes through Keycloak Admin
+Console or a controlled Admin API change instead.
+
+These scope mappings do not prove authorization or payment ownership on SIXPAY.
+The backend M2M security implementation must recognize the same scopes.

@@ -21,6 +21,14 @@ info:
     La Regionale remains authoritative for OTP generation, storage, delivery
     and verification. SIXPAY never persists the OTP value.
 
+    All three confirmation operations use the same OAuth2 client-credentials
+    machine authentication boundary as initiateDebit. A validated M2M JWT
+    (issuer, audience, signature, expiry and azp client identifier) with the
+    operation-specific scope is required; human OIDC identities are not accepted.
+    SIXPAY resolves the authenticated technical client to a registered Partner
+    and checks ownership of the Payment before any Core Banking request.
+    The existing mTLS gateway requirement remains applicable.
+
     A successful HTTP response means that SIXPAY reached a stable result for
     the requested confirmation operation. The caller must still interpret
     `challengeStatus` and `businessCode`; HTTP success alone never establishes

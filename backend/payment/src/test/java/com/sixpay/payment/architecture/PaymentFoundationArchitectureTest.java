@@ -34,6 +34,7 @@ class PaymentFoundationArchitectureTest {
                 "PartnerIdentityResolutionException.java",
                 "PartnerIdentityResolutionFailure.java",
                 "PaymentAuthorizationService.java",
+                "PaymentConfirmationPartnerAccessGuard.java",
                 "PaymentConfirmationRevocationService.java",
                 "PaymentConfirmationService.java",
                 "PaymentCustomerVerificationRequestFactory.java",

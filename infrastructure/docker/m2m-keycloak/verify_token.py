@@ -49,6 +49,7 @@ def main():
     p = argparse.ArgumentParser(description="Verify local Keycloak M2M token issuance")
     p.add_argument("--base-url", default="http://127.0.0.1:8180")
     p.add_argument("--negative", action="store_true", help="Also verify invalid client secret is rejected")
+    p.add_argument("--scope", default=SCOPE, help="Space-separated optional client scopes to request")
     args = p.parse_args()
     u = urlsplit(args.base_url)
     if u.scheme not in {"http", "https"} or u.hostname not in {"localhost", "127.0.0.1", "::1"} or u.username or u.password or u.query or u.fragment or u.path not in {"", "/"}:
@@ -61,7 +62,7 @@ def main():
     introspect_url = args.base_url.rstrip("/") + "/realms/" + REALM + "/protocol/openid-connect/token/introspect"
     opener = build_opener(ProxyHandler({}))
     try:
-        with post_token(token_url, secret, SCOPE, opener) as resp:
+        with post_token(token_url, secret, args.scope, opener) as resp:
             token_doc = json.load(resp)
         access_token = token_doc.get("access_token")
         if not access_token or token_doc.get("token_type", "").lower() != "bearer":
@@ -76,8 +77,12 @@ def main():
         if inspected.get("active") is not True:
             raise RuntimeError("Token introspection: active != true")
         scopes = str(inspected.get("scope", "")).split()
-        if SCOPE not in scopes:
-            raise RuntimeError("Token introspection: payment.initiate scope missing")
+        requested_scopes = args.scope.split()
+        if not requested_scopes:
+            raise RuntimeError("At least one M2M scope must be requested")
+        missing_scopes = sorted(set(requested_scopes) - set(scopes))
+        if missing_scopes:
+            raise RuntimeError("Token introspection: requested M2M scope(s) missing: " + ", ".join(missing_scopes))
         if inspected.get("client_id") != CLIENT_ID:
             raise RuntimeError("Token introspection: unexpected client_id")
         audiences = inspected.get("aud", [])
@@ -85,10 +90,10 @@ def main():
             audiences = [audiences]
         if "sixpay-api" not in audiences:
             raise RuntimeError("Token introspection: sixpay-api audience missing")
-        print("PASS: M2M token issued, active, with payment.initiate, expected client_id and sixpay-api audience")
+        print("PASS: M2M token issued, active, with requested scopes, expected client_id and sixpay-api audience")
         if args.negative:
             try:
-                with post_token(token_url, secret + "-invalid", SCOPE, opener):
+                with post_token(token_url, secret + "-invalid", args.scope, opener):
                     raise RuntimeError("Invalid client secret was unexpectedly accepted")
             except HTTPError as exc:
                 if exc.code not in {400, 401}:

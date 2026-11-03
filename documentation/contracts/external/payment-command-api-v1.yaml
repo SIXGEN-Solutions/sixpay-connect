@@ -8,6 +8,9 @@ info:
     and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
     the JSON payload. The initial response is AWAITING_OTP after an ACTIVE
     bank-owned OTP challenge, and callbacks are asynchronous.
+    The confirmation read, verify and resend operations continue to use
+    the same machine-to-machine client-credentials security boundary,
+    with independent operation scopes and Payment Partner ownership checks.
   x-sixpay-contract:
     registryId: payment-command-api-v1
     phase: "3"

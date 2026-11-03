@@ -48,7 +48,17 @@ class TestLocalKeycloakConfiguration(unittest.TestCase):
         self.assertEqual(mappers[0]["config"]["access.token.claim"], "true")
 
     def test_payment_scope_declared_and_no_user_auth_modification(self):
-        self.assertEqual([x["name"] for x in self.realm["clientScopes"]], ["payment.initiate"])
+        expected_scopes = {
+            "payment.initiate",
+            "payment.confirmation.read",
+            "payment.confirmation.verify",
+            "payment.confirmation.resend",
+        }
+        self.assertEqual({x["name"] for x in self.realm["clientScopes"]}, expected_scopes)
+        self.assertEqual(set(self.realm["clients"][0]["optionalClientScopes"]), expected_scopes)
+        for scope in self.realm["clientScopes"]:
+            self.assertEqual(scope["protocol"], "openid-connect")
+            self.assertEqual(scope["attributes"]["include.in.token.scope"], "true")
         self.assertIn("127.0.0.1:", self.compose)
         self.assertIn("--import-realm", self.compose)
         self.assertNotIn("application-oidc.yml", self.compose)

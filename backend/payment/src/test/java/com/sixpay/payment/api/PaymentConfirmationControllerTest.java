@@ -43,7 +43,8 @@ class PaymentConfirmationControllerTest {
         assertThat(read.getAnnotation(GetMapping.class)).isNotNull();
         assertThat(read.getAnnotation(PreAuthorize.class).value())
                 .isEqualTo(
-                        "hasAuthority('SCOPE_payment.confirmation.read')"
+                        "hasAuthority('SCOPE_payment.confirmation.read') "
+                        + "and @paymentConfirmationPartnerAccessGuard.isAllowed(#p0)"
                 );
 
         assertThat(
@@ -79,7 +80,8 @@ class PaymentConfirmationControllerTest {
                                 : java.util.List.of(expectedPath)
                 );
         assertThat(method.getAnnotation(PreAuthorize.class).value())
-                .isEqualTo("hasAuthority('SCOPE_" + scope + "')");
+                .isEqualTo("hasAuthority('SCOPE_" + scope + "') "
+                        + "and @paymentConfirmationPartnerAccessGuard.isAllowed(#p0)");
     }
 
     private static Method method(String name) {

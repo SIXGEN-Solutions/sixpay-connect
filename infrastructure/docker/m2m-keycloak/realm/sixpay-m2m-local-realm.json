@@ -16,6 +16,33 @@
         "include.in.token.scope": "true",
         "display.on.consent.screen": "false"
       }
+    },
+    {
+      "name": "payment.confirmation.read",
+      "description": "SIXPAY payment.confirmation.read - machine client only",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "payment.confirmation.verify",
+      "description": "SIXPAY payment.confirmation.verify - machine client only",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "payment.confirmation.resend",
+      "description": "SIXPAY payment.confirmation.resend - machine client only",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
     }
   ],
   "clients": [
@@ -34,7 +61,10 @@
       "authorizationServicesEnabled": false,
       "fullScopeAllowed": false,
       "optionalClientScopes": [
-        "payment.initiate"
+        "payment.initiate",
+        "payment.confirmation.read",
+        "payment.confirmation.verify",
+        "payment.confirmation.resend"
       ],
       "protocolMappers": [
         {

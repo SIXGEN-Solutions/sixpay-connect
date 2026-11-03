@@ -517,6 +517,20 @@ public class SixpaySecurityAutoConfiguration {
                                         .permitAll();
                             }
 
+                            // When M2M is disabled, do not fall back to a human OIDC identity.
+                            if (!m2mEnabled) {
+                                authorize.requestMatchers(
+                                        HttpMethod.POST, "/v1/payments/initiate"
+                                ).denyAll();
+                                authorize.requestMatchers(
+                                        HttpMethod.GET, "/v1/payments/*/confirmation-challenge"
+                                ).denyAll();
+                                authorize.requestMatchers(
+                                        HttpMethod.POST,
+                                        "/v1/payments/*/confirmation-challenge/verify",
+                                        "/v1/payments/*/confirmation-challenge/resend"
+                                ).denyAll();
+                            }
                             authorize
                                     .anyRequest()
                                     .authenticated();
@@ -571,8 +585,8 @@ public class SixpaySecurityAutoConfiguration {
                                             auditingAuthenticationEntryPoint
                                     )
                                     .bearerTokenResolver(request ->
-                                            m2mEnabled && M2mJwtAuthenticationFilter
-                                                    .isInitiateRequest(request)
+                                            M2mJwtAuthenticationFilter
+                                                    .isPartnerM2mRequest(request)
                                                     ? null : userBearerResolver.resolve(request))
                                     .jwt(
                                             jwt ->
