@@ -96,9 +96,24 @@ public class PaymentMvpPolicyConfiguration {
             PolicyProfileMetadata metadata,
             EvidenceTemporalProfile temporal
     ) {
+        // CustomerVerificationResponse requires these nine banking checks.
+        // REQUIRED_KYC_PRESENT and REQUIRED_KYC_VERIFIED are conditional in
+        // Customer; do not demand them when no KYC attributes were requested.
+        // If the bank supplies KYC checks with FAIL/UNKNOWN, Customer's
+        // verification outcome still prevents an ACCEPT decision.
         return new BankingVerificationPolicyProfile(
                 metadata,
-                Set.of(BankingVerificationCheckType.values()),
+                Set.of(
+                        BankingVerificationCheckType.CUSTOMER_EXISTS,
+                        BankingVerificationCheckType.FINANCIAL_INSTITUTION_MATCHES,
+                        BankingVerificationCheckType.NIU_MATCHES,
+                        BankingVerificationCheckType.IDENTITY_MATCHES,
+                        BankingVerificationCheckType.ACCOUNT_EXISTS,
+                        BankingVerificationCheckType.ACCOUNT_BELONGS_TO_CUSTOMER,
+                        BankingVerificationCheckType.ACCOUNT_IS_ACTIVE,
+                        BankingVerificationCheckType.ACCOUNT_NOT_BLOCKED,
+                        BankingVerificationCheckType.ACCOUNT_NOT_OPPOSED
+                ),
                 temporal
         );
     }

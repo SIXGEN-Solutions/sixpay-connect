@@ -30,11 +30,21 @@ class PaymentMvpPolicyConfigurationTest {
                         .profileVersion()
         ).isEqualTo("v1");
 
+        // The same nine baseline checks are mandatory in the Payment
+        // transport response; KYC checks are conditional in Customer.
         assertThat(
                 bundle.bankingVerificationPolicyProfile()
                         .mandatoryChecks()
         ).containsExactlyInAnyOrder(
-                BankingVerificationCheckType.values()
+                BankingVerificationCheckType.CUSTOMER_EXISTS,
+                BankingVerificationCheckType.FINANCIAL_INSTITUTION_MATCHES,
+                BankingVerificationCheckType.NIU_MATCHES,
+                BankingVerificationCheckType.IDENTITY_MATCHES,
+                BankingVerificationCheckType.ACCOUNT_EXISTS,
+                BankingVerificationCheckType.ACCOUNT_BELONGS_TO_CUSTOMER,
+                BankingVerificationCheckType.ACCOUNT_IS_ACTIVE,
+                BankingVerificationCheckType.ACCOUNT_NOT_BLOCKED,
+                BankingVerificationCheckType.ACCOUNT_NOT_OPPOSED
         );
 
         assertThat(
