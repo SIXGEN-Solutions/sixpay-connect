@@ -9,7 +9,8 @@ import com.sixpay.payment.domain.model.ConfirmationChallengeReference;
 import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 @Component
-@ConditionalOnBean(PaymentOtpIdempotencyFingerprintSet.class)
 public class PaymentConfirmationIdempotencyAdapter
         implements PaymentConfirmationIdempotencyPort {
 
@@ -37,6 +37,23 @@ public class PaymentConfirmationIdempotencyAdapter
     private final PaymentConfirmationReplayCodec replayCodec;
     private final TimeProvider timeProvider;
 
+    /**
+     * Spring wiring: HMAC is optional for CREATE/REPLACE/REVOKE, but mandatory
+     * for VERIFY. The existing concrete constructor stays for unit tests.
+     */
+    @Autowired
+    public PaymentConfirmationIdempotencyAdapter(
+            PaymentConfirmationCanonicalizer canonicalizer,
+            PaymentIdempotencyHasher hasher,
+            ObjectProvider<PaymentOtpIdempotencyFingerprintSet> otpFingerprints,
+            PaymentConfirmationIdempotencyTransactions transactions,
+            PaymentConfirmationReplayCodec replayCodec,
+            TimeProvider timeProvider
+    ) {
+        this(canonicalizer, hasher, otpFingerprints.getIfAvailable(),
+                transactions, replayCodec, timeProvider);
+    }
+
     public PaymentConfirmationIdempotencyAdapter(
             PaymentConfirmationCanonicalizer canonicalizer,
             PaymentIdempotencyHasher hasher,
@@ -47,7 +64,7 @@ public class PaymentConfirmationIdempotencyAdapter
     ) {
         this.canonicalizer = Objects.requireNonNull(canonicalizer);
         this.hasher = Objects.requireNonNull(hasher);
-        this.otpFingerprints = Objects.requireNonNull(otpFingerprints);
+        this.otpFingerprints = otpFingerprints; // May be absent until VERIFY is enabled.
         this.transactions = Objects.requireNonNull(transactions);
         this.replayCodec = Objects.requireNonNull(replayCodec);
         this.timeProvider = Objects.requireNonNull(timeProvider);
@@ -84,6 +101,13 @@ public class PaymentConfirmationIdempotencyAdapter
             char[] otp,
             Supplier<PaymentConfirmationBankResult> newRequest
     ) {
+        // Fail closed before recording idempotency or calling the bank.
+        // Bank-owned OTP validation is never replaced by local verification.
+        if (otpFingerprints == null) {
+            throw new IllegalStateException(
+                    "Payment OTP verify idempotency HMAC key is not configured"
+            );
+        }
         List<String> candidates =
                 otpFingerprints.candidates(
                         paymentReference.value(),
