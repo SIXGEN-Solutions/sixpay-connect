@@ -21,7 +21,7 @@ import com.sixpay.payment.domain.model.ConfirmationChallenge;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import com.sixpay.common.time.TimeProvider;
 
@@ -32,10 +32,11 @@ import java.util.Objects;
  * Application orchestration for Payment-confirmation operations.
  */
 @Service
-@ConditionalOnBean({
-        PaymentConfirmationGateway.class,
-        PaymentConfirmationIdempotencyPort.class
-})
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.banking.amplitude.confirmation",
+        name = "enabled",
+        havingValue = "true"
+)
 public class PaymentConfirmationService
         implements CreatePaymentConfirmationUseCase,
         ReadPaymentConfirmationUseCase,

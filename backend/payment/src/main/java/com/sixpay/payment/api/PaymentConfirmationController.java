@@ -16,16 +16,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@ConditionalOnBean({
-        PaymentConfirmationGateway.class,
-        PaymentConfirmationIdempotencyPort.class
-})
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.banking.amplitude.confirmation",
+        name = "enabled",
+        havingValue = "true"
+)
 @RequestMapping("/v1/payments/{paymentReference}/confirmation-challenge")
 @Tag(
         name = "Payment Confirmation",

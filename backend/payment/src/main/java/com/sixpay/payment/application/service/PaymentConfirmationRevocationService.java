@@ -15,7 +15,7 @@ import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentStatus;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -30,10 +30,11 @@ import java.util.Objects;
  * revocation decision.</p>
  */
 @Service
-@ConditionalOnBean({
-        PaymentConfirmationGateway.class,
-        PaymentConfirmationIdempotencyPort.class
-})
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.banking.amplitude.confirmation",
+        name = "enabled",
+        havingValue = "true"
+)
 public class PaymentConfirmationRevocationService {
 
     private final PaymentLookupPort paymentLookupPort;
