@@ -160,8 +160,8 @@ public record CustomerVerificationResponse(
         mandatory.remove(CheckType.REQUIRED_KYC_PRESENT);
         mandatory.remove(CheckType.REQUIRED_KYC_VERIFIED);
 
-        System.out.println("Actual: " + actual);
-        System.out.println("mandatory: " + mandatory);
+        System.out.println("Actual: " + actual.stream().sorted());
+        System.out.println("mandatory: " + mandatory.stream().sorted());
 
         if (!actual.containsAll(mandatory)) {
             throw new IllegalArgumentException(

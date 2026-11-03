@@ -267,15 +267,20 @@ public final class Payment {
             return;
         }
 
-        PaymentState next = state.toBuilder()
-                .financialInstitutionCode(
-                        debtorAccountReference.financialInstitutionCode()
-                )
-                .debtorAccountReference(debtorAccountReference)
-                .updatedAt(resolvedAt)
-                .build();
+        PaymentState next = nextBuilder(
+                PaymentStatus.BANKING_VERIFICATION_PENDING,
+                resolvedAt
+        ).financialInstitutionCode(
+                debtorAccountReference.financialInstitutionCode()
+        ).debtorAccountReference(debtorAccountReference).build();
 
-        commit(next, List.of());
+        EventBatch batch = new EventBatch(next, resolvedAt);
+        commit(next, List.of(new PaymentDebtorAccountResolved(
+                batch.metadata(),
+                debtorAccountReference.bindingFingerprint(),
+                debtorAccountReference.maskedDisplay(),
+                resolvedAt
+        )));
     }
 
     /**
@@ -330,7 +335,13 @@ public final class Payment {
                 .failure(null)
                 .build();
 
-        commit(next, List.of());
+        EventBatch batch = new EventBatch(next, observedAt);
+        commit(next, List.of(new PaymentConfirmationChallengeRecorded(
+                batch.metadata(),
+                challenge.status(),
+                challenge.businessCode(),
+                observedAt
+        )));
     }
 
     public void recordCustomerConfirmation(

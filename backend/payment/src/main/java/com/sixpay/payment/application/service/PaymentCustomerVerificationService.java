@@ -175,10 +175,13 @@ public final class PaymentCustomerVerificationService {
                             response.completedAt()
                     );
 
+                    // Canonical bank-completion time is stable across replay.
+                    // It must not precede a debtor-account resolution performed
+                    // from the same Customer response.
                     payment.recordBankingVerification(
                             snapshot,
                             failure,
-                            decisionAt,
+                            response.completedAt(),
                             policies
                     );
                 }
