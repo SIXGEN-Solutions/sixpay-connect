@@ -109,11 +109,11 @@ components:
   schemas:
     CreateCustomerSubscriptionRequest:
       type: object
-      required: [customerId, partnerId, bankAccountId]
+      required: [customerId, partnerId]
       properties:
         customerId: {type: string, format: uuid}
         partnerId: {type: string, format: uuid}
-        bankAccountId: {type: string, format: uuid}
+        bankAccountId: {type: string, format: uuid, description: "Optional; defaults to the customer default bank account when omitted."}
     SubscriptionReasonRequest:
       type: object
       required: [reason]
