@@ -80,7 +80,12 @@ def main():
             raise RuntimeError("Token introspection: payment.initiate scope missing")
         if inspected.get("client_id") != CLIENT_ID:
             raise RuntimeError("Token introspection: unexpected client_id")
-        print("PASS: M2M token issued, active, with payment.initiate and expected client_id")
+        audiences = inspected.get("aud", [])
+        if isinstance(audiences, str):
+            audiences = [audiences]
+        if "sixpay-api" not in audiences:
+            raise RuntimeError("Token introspection: sixpay-api audience missing")
+        print("PASS: M2M token issued, active, with payment.initiate, expected client_id and sixpay-api audience")
         if args.negative:
             try:
                 with post_token(token_url, secret + "-invalid", SCOPE, opener):

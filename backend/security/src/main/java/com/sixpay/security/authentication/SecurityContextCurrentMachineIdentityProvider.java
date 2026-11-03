@@ -34,6 +34,9 @@ public final class SecurityContextCurrentMachineIdentityProvider
         if (authentication.getPrincipal() instanceof AuthenticatedUser) {
             return Optional.empty();
         }
+        if (authentication.getPrincipal() instanceof AuthenticatedMachineIdentity machine) {
+            return Optional.of(machine);
+        }
 
         return Optional.of(
                 new AuthenticatedMachineIdentity(authentication.getName())

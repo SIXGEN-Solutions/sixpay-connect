@@ -19,11 +19,13 @@ import com.sixpay.security.authentication.SecurityContextCurrentUserProvider;
 import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryDirectoryUserLookupAdapter;
 import com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
+import com.sixpay.security.infrastructure.authentication.machine.M2mJwtAuthenticationFilter;
 import com.sixpay.security.infrastructure.authentication.session.RestrictedLocalSessionFilter;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
 import com.sixpay.security.infrastructure.authentication.subscription.TresorPaySubscriptionKeyFilter;
 import com.sixpay.security.jwt.SixpayJwtAuthoritiesConverter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -42,6 +44,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -353,7 +357,11 @@ public class SixpaySecurityAutoConfiguration {
             RestrictedLocalSessionFilter
                     restrictedLocalSessionFilter,
             ObjectProvider<TresorPaySubscriptionKeyFilter>
-                    tresorPaySubscriptionKeyFilterProvider
+                    tresorPaySubscriptionKeyFilterProvider,
+            @Value("${sixpay.security.m2m.enabled:false}") boolean m2mEnabled,
+            @Value("${sixpay.security.m2m.issuer-uri:}") String m2mIssuer,
+            @Value("${sixpay.security.m2m.jwk-set-uri:}") String m2mJwkSetUri,
+            @Value("${sixpay.security.m2m.audience:}") String m2mAudience
     ) throws Exception {
 
         RequestMatcher bearerRequest =
@@ -534,8 +542,19 @@ public class SixpaySecurityAutoConfiguration {
             );
         }
 
+        if (m2mEnabled) {
+            http.addFilterBefore(
+                    new M2mJwtAuthenticationFilter(
+                            M2mJwtAuthenticationFilter.decoder(
+                                    m2mIssuer, m2mJwkSetUri, m2mAudience)),
+                    BearerTokenAuthenticationFilter.class);
+        }
+
         if (capabilities
                 .oidcEnabled()) {
+            // The human OIDC resource server must not reinterpret M2M Bearer
+            // tokens as human identities. All other requests are unchanged.
+            var userBearerResolver = new DefaultBearerTokenResolver();
             http.oauth2ResourceServer(
                     oauth2 ->
                             oauth2
@@ -551,6 +570,10 @@ public class SixpaySecurityAutoConfiguration {
                                     .authenticationEntryPoint(
                                             auditingAuthenticationEntryPoint
                                     )
+                                    .bearerTokenResolver(request ->
+                                            m2mEnabled && M2mJwtAuthenticationFilter
+                                                    .isInitiateRequest(request)
+                                                    ? null : userBearerResolver.resolve(request))
                                     .jwt(
                                             jwt ->
                                                     jwt.jwtAuthenticationConverter(

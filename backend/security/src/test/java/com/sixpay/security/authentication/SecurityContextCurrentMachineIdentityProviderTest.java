@@ -35,6 +35,18 @@ class SecurityContextCurrentMachineIdentityProviderTest {
     }
 
     @Test
+    void readsExplicitMachinePrincipal() {
+        var machine = new AuthenticatedMachineIdentity("sixpay-partner-test");
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(
+                        machine, null, List.of()
+                )
+        );
+        assertThat(provider.requireCurrentMachineIdentity().subject())
+                .isEqualTo("sixpay-partner-test");
+    }
+
+    @Test
     void doesNotTreatHumanSixpayUserAsMachineCaller() {
         AuthenticatedUser user = new AuthenticatedUser(
                 "user-subject",

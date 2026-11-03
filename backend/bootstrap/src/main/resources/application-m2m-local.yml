@@ -1,0 +1,9 @@
+# M2M-only local overlay: activate alongside the existing SIXPAY runtime profile.
+# No human LOCAL/LDAP/OIDC settings are changed. Do not use in production.
+sixpay:
+  security:
+    m2m:
+      enabled: ${SIXPAY_M2M_ENABLED:true}
+      issuer-uri: ${SIXPAY_M2M_ISSUER_URI:http://localhost:8180/realms/sixpay-m2m-local}
+      jwk-set-uri: ${SIXPAY_M2M_JWK_SET_URI:http://localhost:8180/realms/sixpay-m2m-local/protocol/openid-connect/certs}
+      audience: ${SIXPAY_M2M_AUDIENCE:sixpay-api}

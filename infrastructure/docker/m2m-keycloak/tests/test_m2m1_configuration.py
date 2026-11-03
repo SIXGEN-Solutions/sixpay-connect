@@ -38,6 +38,15 @@ class TestLocalKeycloakConfiguration(unittest.TestCase):
         self.assertEqual(mapper["config"]["access.token.claim"], "true")
         self.assertEqual(mapper["config"]["id.token.claim"], "false")
 
+    def test_sixpay_api_audience_for_m2m2(self):
+        client = self.realm["clients"][0]
+        mappers = [mapper for mapper in client.get("protocolMappers", [])
+                   if mapper.get("name") == "local-sixpay-api-audience"]
+        self.assertEqual(len(mappers), 1)
+        self.assertEqual(mappers[0]["protocolMapper"], "oidc-audience-mapper")
+        self.assertEqual(mappers[0]["config"]["included.custom.audience"], "sixpay-api")
+        self.assertEqual(mappers[0]["config"]["access.token.claim"], "true")
+
     def test_payment_scope_declared_and_no_user_auth_modification(self):
         self.assertEqual([x["name"] for x in self.realm["clientScopes"]], ["payment.initiate"])
         self.assertIn("127.0.0.1:", self.compose)
