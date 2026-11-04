@@ -15,13 +15,20 @@ import java.util.Objects;
 public final class SixpayAuthorizationGate {
 
     public SixpayAuthorizationGateResult evaluate(PaymentState state) {
-        return evaluate(state, null);
+        return evaluate(state, null, null);
     }
 
     public SixpayAuthorizationGateResult evaluate(
             PaymentState state,
-            PartnerAuthorizationView
-                    partnerAuthorization
+            PartnerAuthorizationView partnerAuthorization
+    ) {
+        return evaluate(state, partnerAuthorization, null);
+    }
+
+    public SixpayAuthorizationGateResult evaluate(
+            PaymentState state,
+            PartnerAuthorizationView partnerAuthorization,
+            PaymentAuthorizationRuntimeView runtime
     ) {
         Objects.requireNonNull(state, "Payment state");
 
@@ -36,7 +43,8 @@ public final class SixpayAuthorizationGate {
                     evaluateControl(
                             control,
                             state,
-                            partnerAuthorization
+                            partnerAuthorization,
+                            runtime
                     )
             );
         }
@@ -47,8 +55,8 @@ public final class SixpayAuthorizationGate {
     private AuthorizationControlResult evaluateControl(
             AuthorizationControl control,
             PaymentState state,
-            PartnerAuthorizationView
-                    partnerAuthorization
+            PartnerAuthorizationView partnerAuthorization,
+            PaymentAuthorizationRuntimeView runtime
     ) {
         AuthorizationControlSource source =
                 AuthorizationControlSourceMap.sourceFor(control);
@@ -110,6 +118,14 @@ public final class SixpayAuthorizationGate {
         }
 
         if (control == AuthorizationControl.SUBSCRIPTION_AUTHORIZED) {
+            if (runtime != null) {
+                if (state.authorizationEvidence().isPresent()
+                        && state.authorizationEvidence().orElseThrow().outcome()
+                                != AuthorizationDecisionOutcome.APPROVED) {
+                    return fail(control, "Previously rejected authorization evidence");
+                }
+                return evaluateRuntimeBinding(control, runtime.subscriptionAuthorized());
+            }
             return evaluateTrustedIntakeBinding(
                     control,
                     state,
@@ -119,6 +135,14 @@ public final class SixpayAuthorizationGate {
         }
 
         if (control == AuthorizationControl.APPLICATION_AUTHORIZED) {
+            if (runtime != null) {
+                if (state.authorizationEvidence().isPresent()
+                        && state.authorizationEvidence().orElseThrow().outcome()
+                                != AuthorizationDecisionOutcome.APPROVED) {
+                    return fail(control, "Previously rejected authorization evidence");
+                }
+                return evaluateRuntimeBinding(control, runtime.applicationAuthorized());
+            }
             return evaluateTrustedIntakeBinding(
                     control,
                     state,
@@ -147,6 +171,19 @@ public final class SixpayAuthorizationGate {
                 AuthorizationControlOutcome.UNRESOLVED,
                 source.evidence()
         );
+    }
+
+    private static AuthorizationControlResult evaluateRuntimeBinding(
+            AuthorizationControl control, Boolean authorized) {
+        if (authorized == null) {
+            return new AuthorizationControlResult(control,
+                    AuthorizationControlOutcome.UNRESOLVED,
+                    "Current authorization source is unavailable");
+        }
+        return authorized
+                ? new AuthorizationControlResult(control, AuthorizationControlOutcome.PASS,
+                        "Current local authorization is verified")
+                : fail(control, "Current local authorization is denied");
     }
 
     private AuthorizationControlResult evaluateTrustedIntakeBinding(

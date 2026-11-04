@@ -1,6 +1,10 @@
 package com.sixpay.bootstrap.integration.partner;
 
 import com.sixpay.partner.application.port.input.PartnerIdentityQueryUseCase;
+import com.sixpay.partner.application.port.input.PartnerQueryUseCase;
+import com.sixpay.customer.management.application.port.input.ResolveCustomerSubscriptionUseCase;
+import com.sixpay.payment.application.port.PartnerAuthorizationPort;
+import com.sixpay.payment.application.port.PaymentAuthorizationRuntimePort;
 import com.sixpay.payment.application.port.output.partner.AuthenticatedPartnerCallerPort;
 import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.application.service.PartnerIdentityAlignmentService;
@@ -36,6 +40,21 @@ public class PaymentPartnerIdentityConfiguration {
                 machineIdentityQuery,
                 partnerIdentityQueryUseCase
         );
+    }
+
+    @Bean
+    PartnerAuthorizationPort paymentPartnerAuthorizationPort(
+            PartnerIdentityQueryUseCase identities,
+            PartnerQueryUseCase partners) {
+        return new PaymentPartnerAuthorizationModuleAdapter(identities, partners);
+    }
+
+    @Bean
+    PaymentAuthorizationRuntimePort paymentAuthorizationRuntimePort(
+            PartnerMachineIdentityQueryUseCase machines,
+            PartnerIdentityQueryUseCase partners,
+            ResolveCustomerSubscriptionUseCase subscriptions) {
+        return new PaymentAuthorizationRuntimeModuleAdapter(machines, partners, subscriptions);
     }
 
     @Bean

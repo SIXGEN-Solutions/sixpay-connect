@@ -9,6 +9,8 @@ import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
 import com.sixpay.payment.application.port.PartnerAuthorizationPort;
+import com.sixpay.payment.application.port.PaymentAuthorizationRuntimePort;
+import com.sixpay.payment.domain.policy.PaymentAuthorizationRuntimeView;
 import com.sixpay.payment.domain.policy.PartnerAuthorizationView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,19 +30,18 @@ public class PaymentAuthorizationService {
     private final PaymentMutationCoordinator coordinator;
     private final SixpayAuthorizationGate authorizationGate;
     private final Optional<PartnerAuthorizationPort> partnerAuthorizationPort;
+    private final Optional<PaymentAuthorizationRuntimePort> runtimeAuthorizationPort;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentAuthorizationService.class);
 
     @Autowired
     public PaymentAuthorizationService(
             PaymentMutationCoordinator coordinator,
-            Optional<PartnerAuthorizationPort> partnerAuthorizationPort
+            Optional<PartnerAuthorizationPort> partnerAuthorizationPort,
+            PaymentAuthorizationRuntimePort runtimeAuthorizationPort
     ) {
-        this(
-                coordinator,
-                new SixpayAuthorizationGate(),
-                partnerAuthorizationPort
-        );
+        this(coordinator, new SixpayAuthorizationGate(),
+                partnerAuthorizationPort, Optional.of(runtimeAuthorizationPort));
     }
 
     PaymentAuthorizationService(
@@ -56,7 +57,8 @@ public class PaymentAuthorizationService {
                                 partnerAuthorizationPort,
                                 "Partner authorization port"
                         )
-                )
+                ),
+                Optional.empty()
         );
     }
 
@@ -64,6 +66,15 @@ public class PaymentAuthorizationService {
             PaymentMutationCoordinator coordinator,
             SixpayAuthorizationGate authorizationGate,
             Optional<PartnerAuthorizationPort> partnerAuthorizationPort
+    ) {
+        this(coordinator, authorizationGate, partnerAuthorizationPort, Optional.empty());
+    }
+
+    PaymentAuthorizationService(
+            PaymentMutationCoordinator coordinator,
+            SixpayAuthorizationGate authorizationGate,
+            Optional<PartnerAuthorizationPort> partnerAuthorizationPort,
+            Optional<PaymentAuthorizationRuntimePort> runtimeAuthorizationPort
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -74,9 +85,9 @@ public class PaymentAuthorizationService {
                 "SIXPAY authorization gate"
         );
         this.partnerAuthorizationPort = Objects.requireNonNull(
-                partnerAuthorizationPort,
-                "Partner authorization port"
-        );
+                partnerAuthorizationPort, "Partner authorization port");
+        this.runtimeAuthorizationPort = Objects.requireNonNull(
+                runtimeAuthorizationPort, "Runtime authorization port");
     }
 
     public PaymentWorkflowResult attachConfirmationChallenge(
@@ -118,19 +129,29 @@ public class PaymentAuthorizationService {
                     );
 
                     var state = payment.toState();
-                    PartnerAuthorizationView partnerAuthorization =
-                            partnerAuthorizationPort
-                                    .map(port -> port.resolve(
-                                            state.initiationContext()
-                                                    .orElseThrow()
-                                    ))
-                                    .orElse(null);
+                    PartnerAuthorizationView partnerAuthorization = null;
+                    try {
+                        if (partnerAuthorizationPort.isPresent()) {
+                            partnerAuthorization = partnerAuthorizationPort.get().resolve(
+                                    state.initiationContext().orElseThrow());
+                        }
+                    } catch (RuntimeException unavailable) {
+                        log.warn("Partner authorization unavailable for Payment");
+                    }
 
-                    SixpayAuthorizationGateResult result =
-                            authorizationGate.evaluate(
-                                    state,
-                                    partnerAuthorization
-                            );
+                    PaymentAuthorizationRuntimeView runtime = null;
+                    if (runtimeAuthorizationPort.isPresent()) {
+                        try {
+                            runtime = Objects.requireNonNull(
+                                    runtimeAuthorizationPort.get().resolve(state));
+                        } catch (RuntimeException unavailable) {
+                            log.warn("Runtime authorization unavailable for Payment");
+                            runtime = new PaymentAuthorizationRuntimeView(null, null);
+                        }
+                    }
+                    SixpayAuthorizationGateResult result = runtime == null
+                            ? authorizationGate.evaluate(state, partnerAuthorization)
+                            : authorizationGate.evaluate(state, partnerAuthorization, runtime);
 
                     result.results().forEach((control, evaluation) ->
                             log.info(
@@ -142,10 +163,15 @@ public class PaymentAuthorizationService {
                     );
 
                     if (result.rejected()) {
-                        throw new IllegalStateException(
-                                "SIXPAY authorization gate rejected "
-                                        + "the Payment after OTP verification"
-                        );
+                        // A verified OTP is a valid customer confirmation even when
+                        // current local authorization is denied. Persist confirmation,
+                        // but never authorize funds/posting. Legacy path retains its
+                        // previous explicit rejection until fully migrated.
+                        if (runtime == null) {
+                            throw new IllegalStateException(
+                                    "SIXPAY authorization gate rejected the Payment after OTP verification");
+                        }
+                        return;
                     }
 
                     if (result.incomplete()) {
