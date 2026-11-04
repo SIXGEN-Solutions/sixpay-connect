@@ -10,6 +10,8 @@ import com.sixpay.payment.domain.policy.SixpayAuthorizationGate;
 import com.sixpay.payment.domain.policy.SixpayAuthorizationGateResult;
 import com.sixpay.payment.application.port.PartnerAuthorizationPort;
 import com.sixpay.payment.domain.policy.PartnerAuthorizationView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,8 @@ public class PaymentAuthorizationService {
     private final PaymentMutationCoordinator coordinator;
     private final SixpayAuthorizationGate authorizationGate;
     private final Optional<PartnerAuthorizationPort> partnerAuthorizationPort;
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentAuthorizationService.class);
 
     @Autowired
     public PaymentAuthorizationService(
@@ -127,6 +131,15 @@ public class PaymentAuthorizationService {
                                     state,
                                     partnerAuthorization
                             );
+
+                    result.results().forEach((control, evaluation) ->
+                            log.info(
+                                    "Payment authorization control: control={}, outcome={}, reason={}",
+                                    control,
+                                    evaluation.outcome(),
+                                    evaluation.reason()
+                            )
+                    );
 
                     if (result.rejected()) {
                         throw new IllegalStateException(

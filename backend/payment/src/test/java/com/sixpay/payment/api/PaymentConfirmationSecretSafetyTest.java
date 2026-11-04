@@ -3,6 +3,9 @@ package com.sixpay.payment.api;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.sixpay.payment.api.request.VerifyPaymentConfirmationRequest;
 import com.sixpay.payment.api.response.PaymentConfirmationResponse;
 import org.junit.jupiter.api.Test;
@@ -63,6 +66,56 @@ class PaymentConfirmationSecretSafetyTest {
         assertThat(json)
                 .doesNotContain("654321")
                 .doesNotContain("otp");
+    }
+
+    @Test
+    void otpJsonStringDeserializesAndNeverSerializesBack() throws Exception {
+        ObjectMapper mapper = new ObjectMapper()
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        VerifyPaymentConfirmationRequest input = mapper.readValue(
+                "{\"otp\":\"012345\"}", VerifyPaymentConfirmationRequest.class);
+        assertThat(input.otp()).containsExactly('0', '1', '2', '3', '4', '5');
+        assertThat(input.toString()).doesNotContain("012345");
+        assertThat(mapper.writeValueAsString(input)).doesNotContain("012345", "otp");
+    }
+
+    @Test
+    void otpJsonArrayIsNotTheApprovedWireType() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mapper.readValue(
+                "{\"otp\":[\"267962\"]}", VerifyPaymentConfirmationRequest.class))
+                .isInstanceOf(JsonMappingException.class);
+    }
+
+    @Test
+    void otpOpenApiSchemaIsStringAndWriteOnly() {
+        var schemas = ModelConverters.getInstance()
+                .read(VerifyPaymentConfirmationRequest.class);
+
+        var schema = schemas.get("VerifyPaymentConfirmationRequest");
+
+        assertThat(schema).isNotNull();
+
+        io.swagger.v3.oas.models.media.Schema<?> property =
+                (io.swagger.v3.oas.models.media.Schema<?>)
+                        schema.getProperties().get("otp");
+
+        assertThat(property).isNotNull();
+        assertThat(property.getType()).isEqualTo("string");
+        assertThat(property.getWriteOnly()).isTrue();
+        assertThat(property.getMinLength()).isEqualTo(1);
+    }
+
+    @Test
+    void otpAccessorDocumentsWriteOnlyString() throws Exception {
+        Schema schema = VerifyPaymentConfirmationRequest.class
+                .getMethod("otp")
+                .getAnnotation(Schema.class);
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.type()).isEqualTo("string");
+        assertThat(schema.accessMode())
+                .isEqualTo(Schema.AccessMode.WRITE_ONLY);
     }
 
     @Test
