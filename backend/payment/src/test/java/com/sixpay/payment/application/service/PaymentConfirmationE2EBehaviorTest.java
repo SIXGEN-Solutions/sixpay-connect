@@ -125,6 +125,38 @@ class PaymentConfirmationE2EBehaviorTest {
         verify(f.authorization, never()).startAuthorization(any(PaymentId.class), any(ConfirmationChallenge.class));
     }
 
+    @Test
+    void directUseCaseCallCannotBypassObjectAuthorizationOrStartBankIo() {
+        Fixture f = fixture();
+        when(f.accessGuard.isAllowed(REF.value())).thenReturn(false);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> f.service.verify(verifyCommand()))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verifyNoInteractions(f.idempotency, f.gateway, f.authorization);
+    }
+
+    @Test
+    void directResendCallCannotBypassObjectAuthorizationOrStartBankIo() {
+        Fixture f = fixture();
+        when(f.accessGuard.isAllowed(REF.value())).thenReturn(false);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> f.service.resend(
+                new ResendPaymentConfirmationCommand(REF, CORRELATION,
+                        IdempotencyKey.of("resend-key-0001"))))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verifyNoInteractions(f.idempotency, f.gateway, f.authorization);
+    }
+
+    @Test
+    void directReadCallCannotBypassObjectAuthorizationOrStartBankIo() {
+        Fixture f = fixture();
+        when(f.accessGuard.isAllowed(REF.value())).thenReturn(false);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> f.service.read(
+                new com.sixpay.payment.application.query.ReadPaymentConfirmationQuery(
+                        REF, CORRELATION)))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verifyNoInteractions(f.idempotency, f.gateway, f.authorization);
+    }
+
     private static VerifyPaymentConfirmationCommand verifyCommand() {
         return new VerifyPaymentConfirmationCommand(
                 REF, CORRELATION, IdempotencyKey.of("verify-key-0001"),
@@ -137,6 +169,9 @@ class PaymentConfirmationE2EBehaviorTest {
         PaymentConfirmationGateway gateway = mock(PaymentConfirmationGateway.class);
         PaymentConfirmationIdempotencyPort idempotency =
                 mock(PaymentConfirmationIdempotencyPort.class);
+        PaymentConfirmationPartnerAccessGuard accessGuard =
+                mock(PaymentConfirmationPartnerAccessGuard.class);
+        when(accessGuard.isAllowed(REF.value())).thenReturn(true);
         Payment payment = mock(Payment.class);
         PaymentState state = mock(PaymentState.class);
         ConfirmationChallenge current = mock(ConfirmationChallenge.class);
@@ -157,8 +192,9 @@ class PaymentConfirmationE2EBehaviorTest {
         when(current.binding()).thenReturn(binding);
 
         return new Fixture(
-                new PaymentConfirmationService(lookup, authorization, gateway, idempotency),
-                authorization, idempotency, paymentId, currentReference, binding);
+                new PaymentConfirmationService(lookup, authorization, gateway, idempotency, accessGuard),
+                authorization, idempotency, paymentId, currentReference, binding,
+                accessGuard, gateway);
     }
 
     private static PaymentConfirmationBankResult result(
@@ -177,5 +213,7 @@ class PaymentConfirmationE2EBehaviorTest {
             PaymentConfirmationIdempotencyPort idempotency,
             PaymentId paymentId,
             ConfirmationChallengeReference currentReference,
-            ConfirmationChallengeBinding binding) {}
+            ConfirmationChallengeBinding binding,
+            PaymentConfirmationPartnerAccessGuard accessGuard,
+            PaymentConfirmationGateway gateway) {}
 }

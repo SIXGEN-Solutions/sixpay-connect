@@ -31,6 +31,7 @@ class PaymentConfirmationPartnerAccessGuardTest {
         when(payment.toState()).thenReturn(state);
         when(state.initiationContext()).thenReturn(Optional.of(context));
         when(context.applicationId()).thenReturn(owner);
+        when(context.partnerLoginName()).thenReturn("client-a");
     }
 
     @Test void missingMachineIdentityDeniesWithoutPaymentRead() {
@@ -65,6 +66,27 @@ class PaymentConfirmationPartnerAccessGuardTest {
                         PartnerIdentityResolutionFailure.PARTNER_IDENTITY_MISMATCH,
                         "Mismatch"));
         assertThat(guard.isAllowed(REFERENCE)).isFalse();
+    }
+
+    @Test void samePartnerDifferentTechnicalApplicationDeniedBeforeResolution() {
+        when(caller.currentAuthenticatedSubject()).thenReturn(Optional.of("client-b"));
+        paymentBelongsTo("partner-a");
+        assertThat(guard.isAllowed(REFERENCE)).isFalse();
+        verifyNoInteractions(alignment);
+    }
+
+    @Test void missingTrustedInitiatorBindingFailsClosed() {
+        when(caller.currentAuthenticatedSubject()).thenReturn(Optional.of("client-a"));
+        Payment payment = mock(Payment.class);
+        PaymentState state = mock(PaymentState.class);
+        PaymentInitiationContext context = mock(PaymentInitiationContext.class);
+        when(payments.findByPublicPaymentReference(PublicPaymentReference.of(REFERENCE)))
+                .thenReturn(Optional.of(payment));
+        when(payment.toState()).thenReturn(state);
+        when(state.initiationContext()).thenReturn(Optional.of(context));
+        when(context.applicationId()).thenReturn("partner-a");
+        assertThat(guard.isAllowed(REFERENCE)).isFalse();
+        verifyNoInteractions(alignment);
     }
 
     @Test void unauthorizedPartnerDeniesAccess() {

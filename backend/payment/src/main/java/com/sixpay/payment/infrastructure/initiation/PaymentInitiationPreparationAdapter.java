@@ -113,7 +113,9 @@ public final class PaymentInitiationPreparationAdapter
                         "v1:sha256:" + allocationHash
                 ),
                 new PaymentInitiationContext(
-                        command.partnerLoginName(),
+                        // Persist the authenticated OAuth2 client identity, never LoginName.
+                        // The legacy field name is retained for state compatibility.
+                        command.authenticatedPartnerLoginName(),
                         command.resolvedPartnerIdentifier(),
                         command.debtorName(),
                         command.claimType(),

@@ -10,7 +10,8 @@ import java.util.Objects;
 
 /**
  * Payment-owned object-level authorization for the three public confirmation
- * operations. Called by method security before service or bank I/O.
+ * operations. Called at the HTTP boundary and at the application
+ * use-case boundary, before idempotency or bank I/O.
  * Neither an HTTP partner header nor an untrusted public reference authorizes
  * access by itself. The original Payment partner binding is authoritative.
  */
@@ -38,10 +39,17 @@ public final class PaymentConfirmationPartnerAccessGuard {
             var payment = payments.findByPublicPaymentReference(
                     PublicPaymentReference.of(publicPaymentReference));
             if (payment.isEmpty()) return false;
-            String owner = payment.orElseThrow().toState().initiationContext()
-                    .map(PaymentInitiationContext::applicationId)
+            var context = payment.orElseThrow().toState().initiationContext()
                     .orElse(null);
-            if (owner == null || owner.isBlank()) return false;
+            if (context == null) return false;
+            String owner = context.applicationId();
+            String initiatingMachine = context.partnerLoginName();
+            if (owner == null || owner.isBlank()
+                    || initiatingMachine == null || initiatingMachine.isBlank()) return false;
+            // Strict initiating OAuth2 client isolation. The stored value
+            // comes from authenticated Security context at initiation.
+            // Older records without that trusted binding are denied.
+            if (!subject.equals(initiatingMachine)) return false;
             // Reuses the same registered machine -> Partner ID resolution as initiateDebit.
             // The stored owner is checked against the authenticated Partner ID.
             alignment.requireConsistentPartner(subject, owner);

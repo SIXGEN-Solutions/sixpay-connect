@@ -81,6 +81,10 @@ class PaymentInitiationPreparationAdapterTest {
                 .hasSize(2);
         assertThat(intent.initiationContext())
                 .isNotNull();
+        assertThat(intent.initiationContext().partnerLoginName())
+                .isEqualTo("TRESOR_PAY");
+        assertThat(intent.initiationContext().applicationId())
+                .isEqualTo("TP_APP_001");
         assertThat(intent.initiationContext()
                 .callbackEndpoint().value())
                 .isEqualTo(
@@ -153,7 +157,7 @@ class PaymentInitiationPreparationAdapterTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiateDebitCommand(
-                "TRESOR_PAY",
+                "UNTRUSTED_LOGIN",
                 "TRESOR_PAY",
                 "TP_APP_001",
                 "7a7185d1-3c0a-43e0-8b64-a9407f910001",

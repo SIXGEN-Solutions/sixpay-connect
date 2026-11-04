@@ -23,6 +23,7 @@ import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import com.sixpay.common.time.TimeProvider;
 
 import java.time.Instant;
@@ -46,12 +47,14 @@ public class PaymentConfirmationService
     private final PaymentAuthorizationService authorizationService;
     private final PaymentConfirmationGateway confirmationGateway;
     private final PaymentConfirmationIdempotencyPort idempotencyPort;
+    private final PaymentConfirmationPartnerAccessGuard confirmationAccessGuard;
 
     public PaymentConfirmationService(
             PaymentLookupPort paymentLookupPort,
             PaymentAuthorizationService authorizationService,
             PaymentConfirmationGateway confirmationGateway,
-            PaymentConfirmationIdempotencyPort idempotencyPort
+            PaymentConfirmationIdempotencyPort idempotencyPort,
+            PaymentConfirmationPartnerAccessGuard confirmationAccessGuard
     ) {
         this.paymentLookupPort = Objects.requireNonNull(
                 paymentLookupPort,
@@ -69,6 +72,14 @@ public class PaymentConfirmationService
                 idempotencyPort,
                 "Payment confirmation idempotency port"
         );
+        this.confirmationAccessGuard = Objects.requireNonNull(
+                confirmationAccessGuard, "Payment confirmation access guard");
+    }
+
+    private void requireInitiatingMachine(PublicPaymentReference reference) {
+        if (!confirmationAccessGuard.isAllowed(reference.value())) {
+            throw new AccessDeniedException("Payment confirmation access denied");
+        }
     }
 
     private static void requirePendingConfirmation(Payment payment) {
@@ -229,6 +240,7 @@ public class PaymentConfirmationService
             ReadPaymentConfirmationQuery query
     ) {
         Objects.requireNonNull(query, "Read confirmation query");
+        requireInitiatingMachine(query.paymentReference());
         Payment payment = requirePayment(query.paymentReference());
         ConfirmationChallenge challenge =
                 requireCurrentChallenge(payment);
@@ -255,6 +267,7 @@ public class PaymentConfirmationService
             VerifyPaymentConfirmationCommand command
     ) {
         Objects.requireNonNull(command, "Verify confirmation command");
+        requireInitiatingMachine(command.paymentReference());
         Payment payment = requirePayment(command.paymentReference());
         requirePendingConfirmation(payment);
         ConfirmationChallenge challenge =
@@ -337,6 +350,7 @@ public class PaymentConfirmationService
             ResendPaymentConfirmationCommand command
     ) {
         Objects.requireNonNull(command, "Resend confirmation command");
+        requireInitiatingMachine(command.paymentReference());
         Payment payment = requirePayment(command.paymentReference());
         requirePendingConfirmation(payment);
         ConfirmationChallenge challenge =
