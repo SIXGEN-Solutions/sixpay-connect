@@ -12,6 +12,7 @@ import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -357,7 +358,10 @@ class PaymentFinancialSnapshotConcurrencyIT {
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(PaymentModuleConfiguration.class)
-    @Import(ExternalPortTestConfiguration.class)
+    @Import({
+            ExternalPortTestConfiguration.class,
+            PaymentAuthorizationRuntimeTestConfiguration.class
+    })
     static class TestApplication {
 
         @Bean

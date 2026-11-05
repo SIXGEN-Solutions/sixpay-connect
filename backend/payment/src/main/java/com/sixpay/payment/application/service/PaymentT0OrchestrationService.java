@@ -89,7 +89,10 @@ public final class PaymentT0OrchestrationService {
                 != PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING) {
             return;
         }
-
+        System.out.println(
+                "Treasury resolution port available: "
+                        + (treasuryPortProvider.getIfAvailable() != null)
+        );
         PaymentTreasuryAccountResolutionPort treasuryPort =
                 treasuryPortProvider.getIfAvailable();
 

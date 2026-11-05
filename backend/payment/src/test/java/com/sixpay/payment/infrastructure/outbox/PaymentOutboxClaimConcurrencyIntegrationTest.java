@@ -3,6 +3,7 @@ package com.sixpay.payment.infrastructure.outbox;
 import com.sixpay.payment.infrastructure.outbox.claim.PaymentOutboxClaim;
 import com.sixpay.payment.infrastructure.outbox.claim.PaymentOutboxClaimService;
 import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.PaymentAuthorizationRuntimePort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -829,6 +830,14 @@ class PaymentOutboxClaimConcurrencyIntegrationTest {
         @Bean
         PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
             return mock(PaymentCustomerSubscriptionPort.class);
+        }
+
+        // The outbox concurrency scenario does not exercise authorization.
+        // Keep the production runtime authorization port mandatory, while
+        // providing a non-invoked test double for this broad Spring context.
+        @Bean
+        PaymentAuthorizationRuntimePort paymentAuthorizationRuntimePort() {
+            return mock(PaymentAuthorizationRuntimePort.class);
         }
 
         @Bean

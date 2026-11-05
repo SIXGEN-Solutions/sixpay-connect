@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.RollbackException;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -684,6 +685,7 @@ class PaymentConcurrencyPerformanceIT {
                 .toUpperCase();
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(

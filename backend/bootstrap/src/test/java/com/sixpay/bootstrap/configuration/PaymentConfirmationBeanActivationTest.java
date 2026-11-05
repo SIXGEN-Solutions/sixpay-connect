@@ -7,6 +7,7 @@ import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.application.port.output.banking.PaymentConfirmationGateway;
 import com.sixpay.payment.application.port.output.idempotency.PaymentConfirmationIdempotencyPort;
 import com.sixpay.payment.application.service.PaymentAuthorizationService;
+import com.sixpay.payment.application.service.PaymentConfirmationPartnerAccessGuard;
 import com.sixpay.payment.application.service.PaymentConfirmationRevocationService;
 import com.sixpay.payment.application.service.PaymentConfirmationService;
 import com.sixpay.payment.application.service.PaymentFinalizationService;
@@ -33,6 +34,8 @@ class PaymentConfirmationBeanActivationTest {
                 )
                 .withBean(PaymentLookupPort.class, () -> mock(PaymentLookupPort.class))
                 .withBean(PaymentAuthorizationService.class, () -> mock(PaymentAuthorizationService.class))
+                .withBean(PaymentConfirmationPartnerAccessGuard.class,
+                        () -> mock(PaymentConfirmationPartnerAccessGuard.class))
                 .withBean(PaymentConfirmationIdempotencyPort.class, () -> mock(PaymentConfirmationIdempotencyPort.class))
                 .withBean(PaymentConfirmationGateway.class, () -> mock(PaymentConfirmationGateway.class))
                 .withBean(PaymentFinalizationService.class, () -> mock(PaymentFinalizationService.class))
@@ -73,7 +76,13 @@ class PaymentConfirmationBeanActivationTest {
                 .withPropertyValues("sixpay.payment.banking.amplitude.confirmation.enabled=true")
                 .withBean(PaymentLookupPort.class, () -> mock(PaymentLookupPort.class))
                 .withBean(PaymentAuthorizationService.class, () -> mock(PaymentAuthorizationService.class))
+                .withBean(PaymentConfirmationPartnerAccessGuard.class,
+                        () -> mock(PaymentConfirmationPartnerAccessGuard.class))
                 .withBean(PaymentConfirmationIdempotencyPort.class, () -> mock(PaymentConfirmationIdempotencyPort.class))
-                .run(context -> assertThat(context).hasFailed());
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasStackTraceContaining("PaymentConfirmationGateway");
+                });
     }
 }

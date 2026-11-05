@@ -5,6 +5,7 @@ import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscr
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -259,6 +260,7 @@ class PaymentEndToEndIntegrationIT {
                 .toUpperCase();
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(PaymentModuleConfiguration.class)

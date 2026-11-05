@@ -8,6 +8,7 @@ import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -289,6 +290,7 @@ class PaymentProjectionAdaptersIT {
                 """.formatted(correlationId);
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(

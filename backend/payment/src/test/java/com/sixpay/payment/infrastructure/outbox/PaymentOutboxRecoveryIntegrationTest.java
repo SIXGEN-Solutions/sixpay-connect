@@ -3,6 +3,7 @@ package com.sixpay.payment.infrastructure.outbox;
 import com.sixpay.payment.infrastructure.outbox.claim
         .PaymentOutboxClaimService;
 import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.PaymentAuthorizationRuntimePort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -351,6 +352,14 @@ class PaymentOutboxRecoveryIntegrationTest {
         @Bean
         PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
             return mock(PaymentCustomerSubscriptionPort.class);
+        }
+
+        // The full Payment component set is discovered in this SpringBootTest.
+        // Runtime business authorization is not under test in this Outbox fixture.
+        // Keep the production dependency mandatory; only isolate this test context.
+        @Bean
+        PaymentAuthorizationRuntimePort paymentAuthorizationRuntimePort() {
+            return mock(PaymentAuthorizationRuntimePort.class);
         }
 
         @Bean

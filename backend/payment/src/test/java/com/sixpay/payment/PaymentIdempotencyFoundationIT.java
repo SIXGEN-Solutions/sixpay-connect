@@ -9,6 +9,7 @@ import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictE
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyDecision;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyHasher;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyReplayStore;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -655,6 +656,7 @@ class PaymentIdempotencyFoundationIT {
                 .toUpperCase();
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(
