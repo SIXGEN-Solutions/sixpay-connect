@@ -45,7 +45,8 @@ import static org.mockito.Mockito.mock;
         classes =
                 PaymentOutboxClaimConcurrencyIntegrationTest
                         .TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
+        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        properties = "sixpay.messaging.outbox.enabled=false"
 )
 class PaymentOutboxClaimConcurrencyIntegrationTest {
 

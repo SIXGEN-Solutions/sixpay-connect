@@ -2,3 +2,6 @@ sixpay:
   payment:
     tresorpay:
       enabled: false
+  messaging:
+    outbox:
+      enabled: false

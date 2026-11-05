@@ -1,5 +1,23 @@
 sixpay:
   payment:
+    treasury:
+      enabled: ${SIXPAY_PAYMENT_TREASURY_ENABLED:false}
+      accounts:
+        BANK_CM:
+          AVI:
+            configuration-id: TREASURY-BANK-CM-AVI
+            account-reference: ${TREASURY_BANK_CM_AVI_ACCOUNT_REF:}
+            version: "v1"
+
+          IM7:
+            configuration-id: TREASURY-BANK-CM-IM7
+            account-reference: ${TREASURY_BANK_CM_IM7_ACCOUNT_REF:}
+            version: "v1"
+
+          RNF:
+            configuration-id: TREASURY-BANK-CM-RNF
+            account-reference: ${TREASURY_BANK_CM_RNF_ACCOUNT_REF:}
+            version: "v1"
     banking:
       amplitude:
         reservation:

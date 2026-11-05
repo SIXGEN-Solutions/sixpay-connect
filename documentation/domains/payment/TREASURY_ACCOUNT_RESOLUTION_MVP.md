@@ -24,7 +24,7 @@ confirmation client configuration must be enabled in the deployment profile.
 
 ## Bank behavior
 
-`GET /getaccountinfo/{branchid}/{accountnumber}` is read-only and carries
+`GET /api/v1/getaccountinfo/{branchid}/{accountnumber}` is read-only and carries
 `X-Correlation-ID`. Both `SUCCESS` and `COMPTE_INEXISTANT` may be HTTP 200.
 Only `SUCCESS`, non-null `data`, and exact equality of `age`, `ncp` and `clc`
 against the configured account are accepted. Unknown codes, mismatches and
@@ -41,3 +41,17 @@ Payment failure-state policy. Never manually replay an event in `DEAD`.
 Direct acceptance of an unverified account is not implemented. It requires
 separate policy/security approval. This patch does not change the current
 OTP time-window policy or historical payment recovery procedure.
+
+## Regional V1 contract alignment
+
+The authoritative Regional contract operation is `getAccountByBranchAndNumber`
+with response `AccountLookupResult`. It uses native `BankAccount` BKCOM fields.
+SIXPAY retains its preexisting normalized `BankAccount` schema for other APIs;
+`RegionalBkcomBankAccount` is an explicit compatibility alias restricted to the
+new endpoint, not an alteration of existing customer-verification operations.
+The lookup requires `X-Correlation-ID`; `X-Financial-Institution-Code` is optional
+for this operation alone. The existing banking security configuration applies.
+
+The banking contract requires additional BKCOM fields compared with the early
+9-field sample response. A bank instance returning only that earlier sample is
+not fully compliant with the approved Regional OpenAPI schema.

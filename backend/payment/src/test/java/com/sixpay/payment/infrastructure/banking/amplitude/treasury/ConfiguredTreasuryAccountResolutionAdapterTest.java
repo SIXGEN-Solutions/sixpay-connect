@@ -31,8 +31,9 @@ class ConfiguredTreasuryAccountResolutionAdapterTest {
             when(bank.lookup(eq("00001"), eq(number), any())).thenReturn(
                     new TreasuryAccountLookupResponse("SUCCESS", "ok",
                             new TreasuryAccountLookupResponse.TreasuryBankAccount(
-                                    "00001", number, "01", "1234567", "001",
-                                    "N", "N", BigDecimal.ZERO, "105")));
+                                    number, "00001", "001", "", "01", "1234567",
+                                    "", "N", "N", null, BigDecimal.ZERO,
+                                    "105", BigDecimal.ZERO, "", "ACTIVE")));
             TreasuryAccountReference resolved = new ConfiguredTreasuryAccountResolutionAdapter(
                     props(), bank).resolve(payment(claim), Instant.parse("2026-11-04T12:00:00Z"));
             assertEquals("00001-" + number + "-01", resolved.accountToken());
@@ -56,8 +57,9 @@ class ConfiguredTreasuryAccountResolutionAdapterTest {
         when(bank.lookup(eq("00001"), anyString(), any())).thenReturn(
                 new TreasuryAccountLookupResponse("SUCCESS", "ok",
                         new TreasuryAccountLookupResponse.TreasuryBankAccount(
-                                "00001", "99999991051", "01", "1234567", "001",
-                                "N", "N", BigDecimal.ZERO, "105")));
+                                "99999991051", "00001", "001", "", "01", "1234567",
+                                "", "N", "N", null, BigDecimal.ZERO,
+                                "105", BigDecimal.ZERO, "", "ACTIVE")));
         assertThrows(IllegalStateException.class,
                 () -> new ConfiguredTreasuryAccountResolutionAdapter(props(), bank)
                         .resolve(payment(ClaimType.AVI), Instant.now()));

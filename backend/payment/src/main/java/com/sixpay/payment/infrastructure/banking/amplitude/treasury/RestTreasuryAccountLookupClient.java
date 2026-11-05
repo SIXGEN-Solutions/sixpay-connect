@@ -28,7 +28,7 @@ public final class RestTreasuryAccountLookupClient implements TreasuryAccountLoo
     ) {
         Objects.requireNonNull(correlationId, "correlationId");
         RestClient.RequestHeadersSpec<?> request = restClient.get()
-                .uri("/getaccountinfo/{branchid}/{accountnumber}", branchId, accountNumber)
+                .uri("/api/v1/getaccountinfo/{branchid}/{accountnumber}", branchId, accountNumber)
                 .header("X-Correlation-ID", correlationId.value());
         String token = tokenProvider.accessToken();
         if (token != null && !token.isBlank()) {
