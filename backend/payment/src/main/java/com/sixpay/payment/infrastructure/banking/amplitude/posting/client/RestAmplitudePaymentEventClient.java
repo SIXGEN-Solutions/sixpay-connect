@@ -51,11 +51,12 @@ public final class RestAmplitudePaymentEventClient
                             .uri(properties.postingPath())
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .header(
-                                    HttpHeaders.AUTHORIZATION,
-                                    "Bearer "
-                                            + tokenProvider.accessToken()
-                            )
+                            .headers(headers -> {
+                                String token = tokenProvider.accessToken();
+                                if (token != null && !token.isBlank()) {
+                                    headers.setBearerAuth(token);
+                                }
+                            })
                             .header(
                                     properties.contract().correlationHeader(),
                                     correlationId

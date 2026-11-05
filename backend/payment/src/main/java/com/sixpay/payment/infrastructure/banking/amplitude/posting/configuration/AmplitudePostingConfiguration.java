@@ -10,6 +10,7 @@ import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.Amplit
 import com.sixpay.payment.application.port.output.banking.PaymentEventContextPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
@@ -34,13 +35,18 @@ public class AmplitudePostingConfiguration {
 
     @Bean
     PostingAccessTokenProvider postingAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
+            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
             AmplitudePostingProperties properties
     ) {
-        return new OAuth2PostingAccessTokenProvider(
-                manager,
-                properties
-        );
+        if (!properties.security().oauth2Enabled()) {
+            return () -> null;
+        }
+        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
+        if (manager == null) {
+            throw new IllegalStateException(
+                    "OAuth2 manager required when posting OAuth2 is enabled");
+        }
+        return new OAuth2PostingAccessTokenProvider(manager, properties);
     }
 
     @Bean
@@ -55,10 +61,12 @@ public class AmplitudePostingConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                sslBundles.getBundle(
-                        properties.security().sslBundle()
-                ).createSslContext(),
-                List.of()
+                properties.security().mtlsEnabled()
+                        ? sslBundles.getBundle(properties.security().sslBundle())
+                                .createSslContext()
+                        : null,
+                List.of(),
+                properties.security().allowInsecureHttp()
         );
     }
 

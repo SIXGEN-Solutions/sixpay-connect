@@ -8,6 +8,7 @@ import com.sixpay.payment.infrastructure.banking.amplitude.release.mapper.Amplit
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.client.RestAmplitudeReversalClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.mapper.AmplitudeReversalMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
@@ -34,13 +35,19 @@ public class AmplitudeCompensationConfiguration {
     @Bean
     CompensationAccessTokenProvider
     compensationAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
+            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
             AmplitudeCompensationProperties properties
     ) {
+        if (!properties.security().oauth2Enabled()) {
+            return () -> null;
+        }
+        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
+        if (manager == null) {
+            throw new IllegalStateException(
+                    "OAuth2 manager required when compensation OAuth2 is enabled");
+        }
         return new OAuth2CompensationAccessTokenProvider(
-                manager,
-                properties.security().oauth2RegistrationId()
-        );
+                manager, properties.security().oauth2RegistrationId());
     }
 
     @Bean
@@ -55,10 +62,12 @@ public class AmplitudeCompensationConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                sslBundles.getBundle(
-                        properties.security().sslBundle()
-                ).createSslContext(),
-                List.of()
+                properties.security().mtlsEnabled()
+                        ? sslBundles.getBundle(properties.security().sslBundle())
+                                .createSslContext()
+                        : null,
+                List.of(),
+                properties.security().allowInsecureHttp()
         );
     }
 

@@ -92,6 +92,38 @@ class RestAmplitudePaymentEventClientTest {
         server.verify();
     }
 
+    @Test
+    void omitsAuthorizationHeaderWhenNoTokenIsConfigured() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        RestAmplitudePaymentEventClient client =
+                new RestAmplitudePaymentEventClient(
+                        builder.baseUrl("http://localhost").build(),
+                        () -> null,
+                        properties()
+                );
+
+        server.expect(requestTo("http://localhost/api/v1/payment-events"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(request -> org.junit.jupiter.api.Assertions.assertNull(
+                        request.getHeaders().getFirst(
+                                org.springframework.http.HttpHeaders.AUTHORIZATION
+                        )
+                ))
+                .andRespond(withSuccess(
+                        "{\"paymentReference\":\"PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV\","
+                                + "\"outcome\":\"COMPLETED\","
+                                + "\"checks\":[],"
+                                + "\"bankReference\":\"BK-1\","
+                                + "\"reasonCode\":null,"
+                                + "\"observedAt\":\"2026-09-06T18:00:05Z\"}",
+                        org.springframework.http.MediaType.APPLICATION_JSON));
+        client.execute(request(),
+                "11111111-1111-4111-8111-111111111111",
+                "LRB", "idem-1234567890123456");
+        server.verify();
+    }
+
     private static AmplitudePostingProperties properties() {
         return new AmplitudePostingProperties(
                 URI.create("http://localhost"),
