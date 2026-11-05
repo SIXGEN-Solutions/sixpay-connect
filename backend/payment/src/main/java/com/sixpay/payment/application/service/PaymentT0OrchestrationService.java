@@ -151,6 +151,7 @@ public final class PaymentT0OrchestrationService {
     ) {
         Payment payment = requirePayment(paymentId);
 
+        System.out.println("payment.status(): " + payment.status());
         if (payment.status() != PaymentStatus.APPROVED_FOR_POSTING
                 && payment.status() != PaymentStatus.POSTING_PENDING) {
             return;
@@ -181,10 +182,10 @@ public final class PaymentT0OrchestrationService {
 
         PaymentEventLifecycleOrchestrationService lifecycle =
                 lifecycleProvider.getIfAvailable();
-
+        System.out.println("lifecycleProvider: " + (lifecycle == null));
         if (lifecycle == null) {
             throw new IllegalStateException(
-                    "Payment T0 execution bridge is unavailable"
+                    "Payment Event execution bridge is unavailable"
             );
         }
 
