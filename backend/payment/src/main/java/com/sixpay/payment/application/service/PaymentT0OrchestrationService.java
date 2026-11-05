@@ -91,7 +91,7 @@ public final class PaymentT0OrchestrationService {
         }
         PaymentTreasuryAccountResolutionPort treasuryPort =
                 treasuryPortProvider.getIfAvailable();
-
+        System.out.println("*** TreasuryPortProvider *** " + (treasuryPort == null));
         if (treasuryPort == null) {
             throw new IllegalStateException(
                     "Treasury account resolution bridge is unavailable"
@@ -101,7 +101,7 @@ public final class PaymentT0OrchestrationService {
         Instant now = timeProvider.now();
         TreasuryAccountReference resolved =
                 treasuryPort.resolve(payment, now);
-
+        System.out.println("resolved: " + resolved);
         String evidenceCanonical =
                 payment.publicPaymentReference().value()
                         + "|" + payment.toState()
@@ -122,7 +122,7 @@ public final class PaymentT0OrchestrationService {
                         now,
                         now
                 );
-
+        System.out.println("metadata: " + metadata);
         TreasuryAccountResolutionSnapshot evidence =
                 new TreasuryAccountResolutionSnapshot(
                         resolved,
@@ -132,7 +132,8 @@ public final class PaymentT0OrchestrationService {
                         null,
                         metadata
                 );
-
+        System.out.println("evidence: " + evidence);
+        System.out.println("paymentId: " + paymentId);
         treasuryResolutionService.recordResolution(
                 paymentId,
                 evidence,
