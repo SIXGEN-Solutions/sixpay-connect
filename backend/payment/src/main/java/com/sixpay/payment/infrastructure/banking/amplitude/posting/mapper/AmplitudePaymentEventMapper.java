@@ -26,9 +26,8 @@ public final class AmplitudePaymentEventMapper {
             throw new IllegalArgumentException("Unsupported banking nature");
         }
         String currency = snapshot.requestedAmount().currency().getCurrencyCode();
-        if (!"XAF".equals(currency)) {
-            throw new IllegalArgumentException("Only approved XAF posting is supported");
-        }
+        System.out.println("currency: " + currency);
+
         List<PaymentFinancialEntrySnapshot> entries = snapshot.entries();
         if (entries.size() != 2) {
             throw new IllegalArgumentException("Exactly two financial snapshot entries required");
