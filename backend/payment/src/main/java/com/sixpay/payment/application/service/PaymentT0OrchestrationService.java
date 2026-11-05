@@ -174,11 +174,8 @@ public final class PaymentT0OrchestrationService {
 
         Instant now = timeProvider.now();
 
-        snapshotService.getOrCreateFinalized(
-                payment,
-                treasury,
-                now
-        );
+        // Persist event and frozen entries only during the final posting
+        // reservation, after local context validation and inside one transaction.
 
         PaymentEventLifecycleOrchestrationService lifecycle =
                 lifecycleProvider.getIfAvailable();

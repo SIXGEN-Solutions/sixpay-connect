@@ -10,6 +10,7 @@ import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.application.port.output.configuration.PaymentConfigurationParameterPort;
 import com.sixpay.payment.application.service.PaymentEventLifecycleOrchestrationService;
 import com.sixpay.payment.application.service.PaymentPostingPreparationService;
+import com.sixpay.payment.application.service.PaymentT0PostingReservationService;
 import com.sixpay.payment.application.service.PaymentFinalizationService;
 import com.sixpay.payment.application.service.PaymentEventContextService;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
@@ -141,6 +142,7 @@ public class AmplitudePostingConfiguration {
             PaymentLookupPort paymentLookupPort,
             PaymentFinancialSnapshotRepository snapshotRepository,
             PaymentPostingPreparationService postingPreparationService,
+            PaymentT0PostingReservationService reservationService,
             PaymentFinalizationService finalizationService,
             PaymentEventContextService contextService,
             PaymentEventExecutionPort executionPort,
@@ -150,6 +152,7 @@ public class AmplitudePostingConfiguration {
                 paymentLookupPort,
                 snapshotRepository,
                 postingPreparationService,
+                reservationService,
                 finalizationService,
                 contextService,
                 executionPort,

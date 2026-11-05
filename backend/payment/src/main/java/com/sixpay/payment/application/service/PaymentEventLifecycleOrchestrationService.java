@@ -30,6 +30,7 @@ public class PaymentEventLifecycleOrchestrationService {
     private final PaymentLookupPort paymentLookupPort;
     private final PaymentFinancialSnapshotRepository snapshotRepository;
     private final PaymentPostingPreparationService postingPreparationService;
+    private final PaymentT0PostingReservationService reservationService;
     private final PaymentFinalizationService finalizationService;
     private final PaymentEventContextService contextService;
     private final PaymentEventExecutionPort executionPort;
@@ -41,6 +42,7 @@ public class PaymentEventLifecycleOrchestrationService {
             PaymentLookupPort paymentLookupPort,
             PaymentFinancialSnapshotRepository snapshotRepository,
             PaymentPostingPreparationService postingPreparationService,
+            PaymentT0PostingReservationService reservationService,
             PaymentFinalizationService finalizationService,
             PaymentEventContextService contextService,
             PaymentEventExecutionPort executionPort,
@@ -50,6 +52,7 @@ public class PaymentEventLifecycleOrchestrationService {
         this.snapshotRepository = Objects.requireNonNull(snapshotRepository);
         this.postingPreparationService =
                 Objects.requireNonNull(postingPreparationService);
+        this.reservationService = Objects.requireNonNull(reservationService);
         this.finalizationService =
                 Objects.requireNonNull(finalizationService);
         this.contextService = Objects.requireNonNull(contextService);
@@ -71,15 +74,11 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-        PaymentFinancialEventSnapshot snapshot =
-                requireFinalizedSnapshot(paymentId);
-
-        requireInstructionMatchesSnapshot(
-                instruction,
-                snapshot
-        );
 
         if (payment.status() == PaymentStatus.POSTING_PENDING) {
+            PaymentFinancialEventSnapshot snapshot =
+                    requireFinalizedSnapshot(paymentId);
+            requireInstructionMatchesSnapshot(instruction, snapshot);
             PostingInstructionIdentity persistedInstruction =
                     payment.toState()
                             .postingInstruction()
@@ -114,16 +113,17 @@ public class PaymentEventLifecycleOrchestrationService {
         PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
                 contextService.resolve(requestedAt);
 
-        PaymentWorkflowResult authorization =
-                postingPreparationService.authorizePaymentEventPosting(
-                        paymentId,
-                        instruction,
-                        requestedAt
-                );
-
-        if (!authorization.stateChanged()) {
-            return authorization;
+        // Short local transaction: finalized snapshot + two frozen entries
+        // and the durable posting instruction are committed together.
+        // No external HTTP call is made inside that transaction.
+        PaymentFinancialEventSnapshot snapshot;
+        try {
+            snapshot = reservationService.reserve(
+                    paymentId, instruction, requestedAt);
+        } catch (PaymentT0PostingReservationService.ReservationLostException race) {
+            return PaymentWorkflowResult.from(requirePayment(paymentId), false);
         }
+        requireInstructionMatchesSnapshot(instruction, snapshot);
 
         PaymentEventExecutionPort.PaymentEventExecutionResult providerResult;
         try {

@@ -46,6 +46,8 @@ class PaymentEventLifecycleExecutionGuardTest {
     @Mock
     private PaymentPostingPreparationService postingPreparationService;
     @Mock
+    private PaymentT0PostingReservationService reservationService;
+    @Mock
     private PaymentFinalizationService finalizationService;
     @Mock
     private PaymentEventContextService contextService;
@@ -99,19 +101,12 @@ class PaymentEventLifecycleExecutionGuardTest {
         when(fixture.payment.status())
                 .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
 
-        when(postingPreparationService.authorizePaymentEventPosting(
-                fixture.paymentId,
-                fixture.instruction,
-                fixture.requestedAt
-        )).thenReturn(
-                new PaymentWorkflowResult(
-                        fixture.paymentId,
-                        fixture.reference,
-                        PaymentStatus.POSTING_PENDING,
-                        2L,
-                        false
-                )
-        );
+        when(fixture.payment.id()).thenReturn(fixture.paymentId);
+        when(fixture.payment.publicPaymentReference()).thenReturn(fixture.reference);
+        when(fixture.payment.businessVersion()).thenReturn(2L);
+        when(reservationService.reserve(
+                fixture.paymentId, fixture.instruction, fixture.requestedAt))
+                .thenThrow(new PaymentT0PostingReservationService.ReservationLostException());
 
         PaymentWorkflowResult result = service().execute(
                 fixture.paymentId,
@@ -123,8 +118,7 @@ class PaymentEventLifecycleExecutionGuardTest {
 
         assertThat(result.stateChanged()).isFalse();
 
-        // Losing an optimistic authorization race may consume a context read,
-        // but must never issue a second financial POST or finalize an outcome.
+        // A lost reservation rolls back newly staged entries and never issues POST.
         verifyNoInteractions(
                 executionPort,
                 finalizationService,
@@ -160,6 +154,9 @@ class PaymentEventLifecycleExecutionGuardTest {
     void sameKeyDifferentFinancialRequestIsConflictBeforeAnyBankCall() {
         Fixture fixture = fixture();
 
+        when(fixture.payment.status())
+                .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
+
         PostingInstructionIdentity conflicting =
                 new PostingInstructionIdentity(
                         fixture.instruction.instructionId(),
@@ -167,10 +164,19 @@ class PaymentEventLifecycleExecutionGuardTest {
                         fixture.instruction.amount(),
                         fixture.instruction.accountBindingFingerprint(),
                         EvidenceFingerprint.of(
-                                "v1:sha256:"
-                                        + "f".repeat(64)
+                                "v1:sha256:" + "f".repeat(64)
                         )
                 );
+
+        when(reservationService.reserve(
+                fixture.paymentId,
+                conflicting,
+                fixture.requestedAt
+        )).thenThrow(
+                new IllegalStateException(
+                        "Posting instruction conflicts with frozen T0 financial snapshot"
+                )
+        );
 
         assertThatThrownBy(() ->
                 service().execute(
@@ -181,12 +187,11 @@ class PaymentEventLifecycleExecutionGuardTest {
                         policies
                 )
         )
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("financial snapshot");
 
         verifyNoInteractions(
                 postingPreparationService,
-                contextService,
                 executionPort,
                 finalizationService,
                 recoveryPort
@@ -198,6 +203,7 @@ class PaymentEventLifecycleExecutionGuardTest {
                 paymentLookupPort,
                 snapshotRepository,
                 postingPreparationService,
+                reservationService,
                 finalizationService,
                 contextService,
                 executionPort,
@@ -221,18 +227,18 @@ class PaymentEventLifecycleExecutionGuardTest {
         PaymentFinancialEventSnapshot snapshot =
                 mock(PaymentFinancialEventSnapshot.class);
 
-        when(paymentLookupPort.findById(paymentId))
+        org.mockito.Mockito.lenient().when(paymentLookupPort.findById(paymentId))
                 .thenReturn(Optional.of(payment));
-        when(snapshotRepository.findByPaymentId(paymentId))
+        org.mockito.Mockito.lenient().when(snapshotRepository.findByPaymentId(paymentId))
                 .thenReturn(Optional.of(snapshot));
 
-        when(snapshot.status())
+        org.mockito.Mockito.lenient().when(snapshot.status())
                 .thenReturn(FinancialSnapshotStatus.FINALIZED);
-        when(snapshot.publicPaymentReference()).thenReturn(reference);
-        when(snapshot.requestedAmount()).thenReturn(amount);
-        when(snapshot.debtorAccountReference())
+        org.mockito.Mockito.lenient().when(snapshot.publicPaymentReference()).thenReturn(reference);
+        org.mockito.Mockito.lenient().when(snapshot.requestedAmount()).thenReturn(amount);
+        org.mockito.Mockito.lenient().when(snapshot.debtorAccountReference())
                 .thenReturn("vault:debtor:0001");
-        when(snapshot.creditorAccountReference())
+        org.mockito.Mockito.lenient().when(snapshot.creditorAccountReference())
                 .thenReturn("vault:creditor:0001");
 
         EvidenceFingerprint fingerprint =
