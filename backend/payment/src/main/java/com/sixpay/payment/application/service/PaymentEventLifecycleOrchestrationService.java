@@ -90,6 +90,7 @@ public class PaymentEventLifecycleOrchestrationService {
                                     )
                             );
 
+            System.out.println("Persisted instruction: " + persistedInstruction + "\ninstruction: " + instruction);
             if (!persistedInstruction.equals(instruction)) {
                 throw PaymentDomainException.conflict(
                         "A different posting instruction is already authorized"
@@ -151,7 +152,7 @@ public class PaymentEventLifecycleOrchestrationService {
                     policies
             );
         }
-
+        System.out.println("Provider result: " + providerResult);
         return finalizationService.recordPaymentEventOutcome(
                 paymentId,
                 outcomeMapper.toSnapshot(
