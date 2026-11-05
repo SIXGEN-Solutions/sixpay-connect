@@ -3,7 +3,6 @@ package com.sixpay.payment.infrastructure.banking.amplitude.posting.configuratio
 import com.sixpay.integration.http.HttpTimeoutPolicy;
 import com.sixpay.integration.http.StandardRestClientFactory;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventAdapter;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventContextAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventRecoveryAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
@@ -14,7 +13,6 @@ import com.sixpay.payment.application.service.PaymentPostingPreparationService;
 import com.sixpay.payment.application.service.PaymentFinalizationService;
 import com.sixpay.payment.application.service.PaymentEventContextService;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
-import com.sixpay.payment.application.port.output.banking.PaymentEventContextPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
 import org.springframework.beans.factory.ObjectProvider;
@@ -100,26 +98,6 @@ public class AmplitudePostingConfiguration {
     }
 
     @Bean
-    AmplitudePaymentEventContextClient amplitudePaymentEventContextClient(
-            RestClient amplitudePostingRestClient,
-            PostingAccessTokenProvider tokenProvider,
-            AmplitudePostingProperties properties
-    ) {
-        return new RestAmplitudePaymentEventContextClient(
-                amplitudePostingRestClient,
-                tokenProvider,
-                properties
-        );
-    }
-
-    @Bean
-    PaymentEventContextPort paymentEventContextPort(
-            AmplitudePaymentEventContextClient client
-    ) {
-        return new AmplitudePaymentEventContextAdapter(client);
-    }
-
-    @Bean
     AmplitudePaymentEventMapper amplitudePaymentEventMapper() {
         return new AmplitudePaymentEventMapper();
     }
@@ -153,10 +131,9 @@ public class AmplitudePostingConfiguration {
     // may not yet be registered when component conditions are evaluated.
     @Bean
     PaymentEventContextService paymentEventContextService(
-            PaymentConfigurationParameterPort parameterPort,
-            PaymentEventContextPort contextPort
+            PaymentConfigurationParameterPort parameterPort
     ) {
-        return new PaymentEventContextService(parameterPort, contextPort);
+        return new PaymentEventContextService(parameterPort);
     }
 
     @Bean

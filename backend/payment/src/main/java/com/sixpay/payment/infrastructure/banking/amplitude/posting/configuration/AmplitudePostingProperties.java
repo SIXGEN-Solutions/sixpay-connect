@@ -16,9 +16,6 @@ public record AmplitudePostingProperties(
         @NotBlank String postingPath,
         @NotBlank String paymentReferenceLookupPath,
         @NotBlank String idempotencyLookupPath,
-        @NotBlank String allocateEventNumberPath,
-        @NotBlank String accountingDatePath,
-        @NotBlank String nightModePath,
         @NotNull Duration connectTimeout,
         @NotNull Duration readTimeout,
         @NotNull @Valid Security security,
@@ -50,9 +47,6 @@ public record AmplitudePostingProperties(
         postingPath = validatePath(postingPath, "postingPath");
         paymentReferenceLookupPath = validatePath(paymentReferenceLookupPath, "paymentReferenceLookupPath");
         idempotencyLookupPath = validatePath(idempotencyLookupPath, "idempotencyLookupPath");
-        allocateEventNumberPath = validatePath(allocateEventNumberPath, "allocateEventNumberPath");
-        accountingDatePath = validatePath(accountingDatePath, "accountingDatePath");
-        nightModePath = validatePath(nightModePath, "nightModePath");
         if (connectTimeout == null
                 || connectTimeout.isZero()
                 || connectTimeout.isNegative()
@@ -63,6 +57,18 @@ public record AmplitudePostingProperties(
                     "Timeouts must be positive"
             );
         }
+    }
+
+    // Legacy direct constructor compatibility for existing Java tests; no GET endpoints used.
+    public AmplitudePostingProperties(
+            URI baseUrl, String postingPath, String paymentReferenceLookupPath,
+            String idempotencyLookupPath, String ignoredAllocationPath,
+            String ignoredAccountingDatePath, String ignoredNightModePath,
+            Duration connectTimeout, Duration readTimeout,
+            Security security, Contract contract
+    ) {
+        this(baseUrl, postingPath, paymentReferenceLookupPath,
+                idempotencyLookupPath, connectTimeout, readTimeout, security, contract);
     }
 
     public record Security(

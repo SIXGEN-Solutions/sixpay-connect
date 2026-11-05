@@ -40,10 +40,11 @@ public record PaymentEventOutcomeRecorded(
                 observationSource,
                 "Observation source"
         );
-        accountingDate = Objects.requireNonNull(
-                accountingDate,
-                "Accounting date"
-        );
+        // The Core Banking accounting date is only proven for COMPLETED.
+        if (outcome == PaymentEventOutcome.COMPLETED) {
+            accountingDate = Objects.requireNonNull(
+                    accountingDate, "COMPLETED outcome requires Core Banking dco");
+        }
         observedAt = Objects.requireNonNull(
                 observedAt,
                 "Observed instant"

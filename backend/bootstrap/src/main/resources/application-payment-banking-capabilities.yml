@@ -54,9 +54,6 @@ sixpay:
           posting-path: ${AMPLITUDE_POSTING_PATH:/api/v1/payment-events}
           payment-reference-lookup-path: ${AMPLITUDE_POSTING_PAYMENT_REFERENCE_LOOKUP_PATH:/api/v1/payment-events/{paymentReference}}
           idempotency-lookup-path: ${AMPLITUDE_POSTING_IDEMPOTENCY_LOOKUP_PATH:/api/v1/payment-events/idempotency/{idempotencyKey}}
-          allocate-event-number-path: ${AMPLITUDE_POSTING_ALLOCATE_EVENT_NUMBER_PATH:/api/v1/transactions/process/lastnumeroeveope/{operationCode}}
-          accounting-date-path: ${AMPLITUDE_POSTING_ACCOUNTING_DATE_PATH:/api/v1/nomenclature/getdatecomptable}
-          night-mode-path: ${AMPLITUDE_POSTING_NIGHT_MODE_PATH:/api/v1/kyc/process/modenuit}
           connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
           security:

@@ -130,10 +130,7 @@ class PaymentEventLifecycleExecutionGuardTest {
                 finalizationService,
                 recoveryPort
         );
-        org.mockito.Mockito.verify(contextService).resolve(
-                fixture.context,
-                fixture.requestedAt
-        );
+        org.mockito.Mockito.verify(contextService).resolve(fixture.requestedAt);
     }
 
     @Test
@@ -141,7 +138,7 @@ class PaymentEventLifecycleExecutionGuardTest {
         Fixture fixture = fixture();
         when(fixture.payment.status())
                 .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
-        when(contextService.resolve(fixture.context, fixture.requestedAt))
+        when(contextService.resolve(fixture.requestedAt))
                 .thenThrow(new IllegalStateException("Core Banking context unavailable"));
 
         assertThatThrownBy(() -> service().execute(

@@ -58,10 +58,7 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
         this.checks = canonicalChecks(checks);
         this.bankPostingReference = bankPostingReference;
         this.reasonCode = reasonCode;
-        this.accountingDate = Objects.requireNonNull(
-                accountingDate,
-                "Core Banking accounting date"
-        );
+        this.accountingDate = accountingDate;
         this.observedAt = Objects.requireNonNull(
                 observedAt,
                 "Payment event observation instant"
@@ -131,6 +128,10 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
 
         switch (outcome) {
             case COMPLETED -> {
+                if (accountingDate == null) {
+                    throw new IllegalArgumentException(
+                            "COMPLETED Payment event requires Core Banking dco");
+                }
                 if (!allPass) {
                     throw new IllegalArgumentException(
                             "COMPLETED Payment event requires all checks PASS"
@@ -215,7 +216,7 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
                         that.bankPostingReference
                 )
                 && Objects.equals(reasonCode, that.reasonCode)
-                && accountingDate.equals(that.accountingDate)
+                && Objects.equals(accountingDate, that.accountingDate)
                 && observedAt.equals(that.observedAt)
                 && observationSource == that.observationSource;
     }

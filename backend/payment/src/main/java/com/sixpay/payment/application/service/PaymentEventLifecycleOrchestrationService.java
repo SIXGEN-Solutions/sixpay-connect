@@ -22,7 +22,7 @@ import java.util.Objects;
  *
  * <p>The service consumes a finalized Payment financial snapshot and an already
  * Payment event context resolved by SIXPAY from Administration parameters
- * and Core Banking allocated context.
+ * while Core Banking owns event number, accounting date and night mode.
  * or retries the financial POST after an uncertain outcome.</p>
  */
 public class PaymentEventLifecycleOrchestrationService {
@@ -110,13 +110,9 @@ public class PaymentEventLifecycleOrchestrationService {
             );
         }
 
-        // Resolve read/allocator context before reserving the one-shot POST.
-        // An unavailable context must not strand the Payment in POSTING_PENDING.
+        // Resolve local configuration only; never perform bank-side GETs here.
         PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
-                contextService.resolve(
-                        bankingContext,
-                        requestedAt
-                );
+                contextService.resolve(requestedAt);
 
         PaymentWorkflowResult authorization =
                 postingPreparationService.authorizePaymentEventPosting(
@@ -158,7 +154,7 @@ public class PaymentEventLifecycleOrchestrationService {
                 outcomeMapper.toSnapshot(
                         instruction,
                         providerResult,
-                        mappingContext.accountingDate(),
+                        providerResult.accountingDate(),
                         PaymentEventObservationSource.DIRECT_RESPONSE
                 ),
                 failureFor(providerResult, FailureStage.POSTING),
@@ -262,16 +258,12 @@ public class PaymentEventLifecycleOrchestrationService {
         }
 
         java.time.LocalDate originalDate = providerResult.accountingDate();
-        if (originalDate == null) {
-            if (payment.status() == PaymentStatus.POSTING_PENDING) {
-                // An existing operation's accounting date must come from the
-                // bank's recovered operation, not today's accounting date.
-                throw new IllegalStateException(
-                        "Conclusive Core Banking recovery requires original accountingDate"
-                );
-            }
-            originalDate = payment.toState()
-                    .paymentEventOutcomeEvidence().orElseThrow().accountingDate();
+        // Never invent a banking date. A COMPLETED result must supply dco.
+        if (providerResult.outcome() == PaymentEventOutcome.COMPLETED
+                && originalDate == null) {
+            throw new IllegalStateException(
+                    "COMPLETED Core Banking recovery requires dco"
+            );
         }
 
         return finalizationService.resolvePaymentEventOutcome(
@@ -327,7 +319,7 @@ public class PaymentEventLifecycleOrchestrationService {
                 outcomeMapper.toSnapshot(
                         instruction,
                         syntheticUnknown,
-                        mappingContext.accountingDate(),
+                        null,
                         PaymentEventObservationSource.DIRECT_RESPONSE
                 ),
                 unknownFailure(

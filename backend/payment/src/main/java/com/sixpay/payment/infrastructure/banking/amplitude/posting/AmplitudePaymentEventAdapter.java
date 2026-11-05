@@ -45,9 +45,6 @@ public final class AmplitudePaymentEventAdapter
                                     command.snapshot(),
                                     new AmplitudePaymentEventMappingContext(
                                             context.operationCode(),
-                                            context.eventNumber(),
-                                            context.accountingDate(),
-                                            context.nightMode(),
                                             PAYMENT_NATURE,
                                             context.technicalUser(),
                                             context.requestedAt()
