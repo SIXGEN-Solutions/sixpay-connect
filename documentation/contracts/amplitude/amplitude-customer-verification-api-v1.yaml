@@ -90,6 +90,37 @@ tags:
     description: Fresh composite customer, KYC and account verification.
 
 paths:
+  /getaccountinfo/{branchid}/{accountnumber}:
+    get:
+      tags: [Accounts]
+      operationId: getTreasuryAccountInfo
+      summary: Retrieve the configured Treasury bank account
+      description: |-
+        Bank-native read-only lookup. HTTP 200 contains either SUCCESS with
+        account data or COMPTE_INEXISTANT with null data. SIXPAY requires an
+        exact age/ncp/clc match against the configured Treasury reference.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: branchid
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: accountnumber
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Bank-native account lookup result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreasuryAccountLookupResponse'
+
   /api/v1/customers:
     get:
       tags: [Customers]
@@ -517,6 +548,39 @@ components:
           type: integer
           minimum: 0
           maximum: 500
+
+    TreasuryAccountLookupResponse:
+      type: object
+      additionalProperties: false
+      required: [code, message, data]
+      properties:
+        code:
+          type: string
+          enum: [SUCCESS, COMPTE_INEXISTANT]
+        message:
+          type: string
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/TreasuryBankAccount'
+            - type: 'null'
+      description: |-
+        SUCCESS requires non-null data; COMPTE_INEXISTANT requires null data.
+        This correlation is checked by the SIXPAY adapter.
+
+    TreasuryBankAccount:
+      type: object
+      additionalProperties: false
+      required: [age, ncp, clc, cli, dev, ife, cfe, sin, typ]
+      properties:
+        age: { type: string }
+        ncp: { type: string }
+        clc: { type: string }
+        cli: { type: string }
+        dev: { type: string }
+        ife: { type: string }
+        cfe: { type: string }
+        sin: { type: number }
+        typ: { type: string }
 
     BankAccount:
       type: object

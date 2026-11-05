@@ -39,7 +39,8 @@ import static org.mockito.Mockito.mock;
         classes =
                 PaymentOutboxRecoveryIntegrationTest
                         .TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
+        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        properties = "sixpay.messaging.outbox.enabled=false"
 )
 class PaymentOutboxRecoveryIntegrationTest {
 

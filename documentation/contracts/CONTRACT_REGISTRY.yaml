@@ -340,6 +340,7 @@ contracts:
         - "Verify the banking customer and NIU"
         - "Retrieve canonical banking customer/account references, banking identity and required KYC facts"
         - "Find accounts and verify account ownership and status"
+        - "Read the configured Treasury account through GET /getaccountinfo/{branchid}/{accountnumber} for Payment T0 resolution"
         - "Detect blocks or oppositions"
         - "Provide the verified banking identity/contact facts required before Payment confirmation challenge creation"
       limitations:
