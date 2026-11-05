@@ -2,6 +2,12 @@ sixpay:
   payment:
     treasury:
       enabled: ${SIXPAY_PAYMENT_TREASURY_ENABLED:false}
+      # Deny by default. An authorized deployment must explicitly supply
+      # institution -> approved version(s) via its configuration overlay.
+      approval:
+        approved-versions-by-institution:
+          REGIONAL:
+            - "v1"
       accounts:
         REGIONAL:
           AVI:

@@ -36,6 +36,17 @@ A confirmed nonexistent account raises a dedicated exception; this bounded
 patch retains existing Outbox retry/dead handling rather than changing the
 Payment failure-state policy. Never manually replay an event in `DEAD`.
 
+## Treasury approval by deployment
+
+The Java policy contains no bank name or implicitly approved version. The
+`PaymentTreasuryApprovalProperties` allowlist is independent from the account
+configuration. Missing approval means **deny all** (Payment cannot advance to T0).
+Deployments explicitly authorize institution codes and approved configuration
+versions using `sixpay.payment.treasury.approval.approved-versions-by-institution`.
+A configured Treasury account is NOT proof of approval.
+
+See `TREASURY_APPROVAL_AND_OUTBOX_DIAGNOSTICS.md` for a deployment example.
+
 ## Deferred
 
 Direct acceptance of an unverified account is not implemented. It requires

@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Polls domain-owned Outboxes and delegates publication to the active
@@ -138,12 +139,36 @@ public final class OutboxRelay {
         }
     }
 
-    private static String safeFailureReason(
-            RuntimeException exception
-    ) {
-        String reason = exception.getClass().getSimpleName();
+    // Only a deliberately narrow, one-line diagnostic alphabet is persisted.
+    // Numeric identifiers, account references, emails, URLs, credentials and
+    // arbitrary provider messages fall back to the exception class name.
+    private static final Pattern SAFE_DIAGNOSTIC = Pattern.compile(
+            "[\\p{L}_ .:()\\-]{1,240}"
+    );
+
+    private static String safeFailureReason(RuntimeException exception) {
+        RuntimeException selected = exception;
+        Throwable candidate = exception;
+        // A listener may wrap a domain exception; prefer the deepest safe
+        // explanatory message, without persisting stack traces or raw payloads.
+        for (int depth = 0; candidate != null && depth < 8;
+                depth++, candidate = candidate.getCause()) {
+            if (candidate instanceof RuntimeException runtime
+                    && hasSafeMessage(runtime.getMessage())) {
+                selected = runtime;
+            }
+        }
+        String reason = selected.getClass().getSimpleName();
+        String message = selected.getMessage();
+        if (hasSafeMessage(message)) {
+            reason += ": " + message.strip();
+        }
         return reason.length() <= 1000
                 ? reason
                 : reason.substring(0, 1000);
+    }
+
+    private static boolean hasSafeMessage(String message) {
+        return message != null && SAFE_DIAGNOSTIC.matcher(message.strip()).matches();
     }
 }

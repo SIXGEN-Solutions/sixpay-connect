@@ -37,16 +37,14 @@ public final class ConfiguredTreasuryAccountResolutionAdapter
         var state = payment.toState();
         String institution = state.financialInstitutionCode().value();
         System.out.println("institution: " + institution);
-        var opclaimType = state.initiationContext();
-        System.out.println("opclaimType: " + opclaimType);
-        String claimType = opclaimType
+        String claimType = state.initiationContext()
                 .orElseThrow(() -> new IllegalStateException(
                         "Treasury resolution requires initiation context"))
                 .claimType().name();
         System.out.println("claimType: " + claimType);
-        System.out.println("properties.accounts(): " + properties.accounts());
+
         var byType = findInstitution(properties.accounts(), institution);
-        System.out.println("byType: " + byType);
+
         TreasuryResolutionProperties.Account configured = findClaim(byType, claimType);
         if (configured == null || blank(configured.configurationId())
                 || blank(configured.version()) || blank(configured.accountReference())) {
