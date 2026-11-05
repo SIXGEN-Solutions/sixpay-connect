@@ -4,6 +4,9 @@ import com.sixpay.common.identifier.IdentifierGenerator;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.TreasuryAccountReference;
 import com.sixpay.payment.domain.model.financial.FinancialEntryDirection;
+import com.sixpay.payment.domain.model.financial.BankingEntryDetails;
+import com.sixpay.payment.domain.model.financial.BankingEventDetails;
+import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.domain.model.financial.PaymentFinancialEntrySnapshot;
 import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
@@ -31,9 +34,14 @@ public final class PaymentT0SnapshotService {
     }
 
     public PaymentFinancialEventSnapshot getOrCreateFinalized(
-            Payment payment,
-            TreasuryAccountReference treasuryAccount,
-            Instant createdAt
+            Payment payment, TreasuryAccountReference treasuryAccount, Instant createdAt
+    ) {
+        return getOrCreateFinalized(payment, treasuryAccount, createdAt, null);
+    }
+
+    public PaymentFinancialEventSnapshot getOrCreateFinalized(
+            Payment payment, TreasuryAccountReference treasuryAccount, Instant createdAt,
+            PaymentEventExecutionPort.PaymentEventMappingContext bankingContext
     ) {
         Objects.requireNonNull(payment, "Payment");
         Objects.requireNonNull(treasuryAccount, "Treasury account");
@@ -65,7 +73,8 @@ public final class PaymentT0SnapshotService {
                         treasuryAccount.accountToken(),
                         payment.toState().requestedAmount(),
                         SNAPSHOT_VERSION,
-                        createdAt
+                        createdAt,
+                        eventDetails(payment, bankingContext)
                 );
 
         snapshot.addEntry(
@@ -77,7 +86,9 @@ public final class PaymentT0SnapshotService {
                                 .debtorAccountReference()
                                 .integrationAccountToken(),
                         payment.toState().requestedAmount(),
-                        createdAt
+                        createdAt,
+                        entryDetails(payment.toState().debtorAccountReference().integrationAccountToken(),
+                                payment.publicPaymentReference().value(), 1, bankingContext)
                 )
         );
 
@@ -88,13 +99,43 @@ public final class PaymentT0SnapshotService {
                         FinancialEntryDirection.CREDIT,
                         treasuryAccount.accountToken(),
                         payment.toState().requestedAmount(),
-                        createdAt
+                        createdAt,
+                        entryDetails(treasuryAccount.accountToken(),
+                                payment.publicPaymentReference().value(), 2, bankingContext)
                 )
         );
 
         snapshot.finalizeAt(createdAt);
 
         return repository.save(snapshot);
+    }
+
+    private static BankingEventDetails eventDetails(
+            Payment payment, PaymentEventExecutionPort.PaymentEventMappingContext context
+    ) {
+        if (context == null) return null; // compatibility path for pre-existing callers
+        var amount = payment.toState().requestedAmount().amount();
+        return new BankingEventDetails(context.operationCode(), "VIRPAY",
+                context.technicalUser(), amount, amount,
+                "PAIEMENT/" + payment.publicPaymentReference().value(),
+                null, null, null, null);
+    }
+
+    private static BankingEntryDetails entryDetails(
+            String account, String paymentReference, int sequence,
+            PaymentEventExecutionPort.PaymentEventMappingContext context
+    ) {
+        if (context == null) return null;
+        String[] parts = account.split("-", -1);
+        if (parts.length != 3 || java.util.Arrays.stream(parts).anyMatch(String::isBlank)) {
+            throw new IllegalArgumentException("Verified bank account must use age-ncp-clc");
+        }
+        return new BankingEntryDetails(
+                parts[0], null, parts[1], null, parts[2],
+                context.operationCode(), Integer.toString(sequence),
+                context.technicalUser(), null, null, null,
+                "PAIEMENT/" + paymentReference, null, null,
+                null, null, null, null, "VIRPAY", null);
     }
 
     private static void validateExisting(

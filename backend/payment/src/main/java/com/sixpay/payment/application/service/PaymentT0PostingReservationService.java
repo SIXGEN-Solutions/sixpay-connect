@@ -1,6 +1,7 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.port.output.PaymentLookupPort;
+import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentStatus;
@@ -40,6 +41,15 @@ public class PaymentT0PostingReservationService {
             PostingInstructionIdentity instruction,
             Instant requestedAt
     ) {
+        return reserve(paymentId, instruction, requestedAt, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentFinancialEventSnapshot reserve(
+            PaymentId paymentId, PostingInstructionIdentity instruction,
+            Instant requestedAt,
+            PaymentEventExecutionPort.PaymentEventMappingContext bankingContext
+    ) {
         Objects.requireNonNull(paymentId);
         Objects.requireNonNull(instruction);
         Objects.requireNonNull(requestedAt);
@@ -49,7 +59,7 @@ public class PaymentT0PostingReservationService {
             throw new ReservationLostException();
         }
         var treasury = payment.toState().treasuryAccountReference().orElseThrow();
-        var snapshot = snapshotService.getOrCreateFinalized(payment, treasury, requestedAt);
+        var snapshot = snapshotService.getOrCreateFinalized(payment, treasury, requestedAt, bankingContext);
         if (!instruction.amount().equals(snapshot.requestedAmount())
                 || !instruction.instructionFingerprint().equals(
                         PaymentT0FinancialRequestFingerprint.from(snapshot))) {

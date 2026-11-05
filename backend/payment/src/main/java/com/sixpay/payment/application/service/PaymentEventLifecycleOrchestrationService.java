@@ -119,7 +119,7 @@ public class PaymentEventLifecycleOrchestrationService {
         PaymentFinancialEventSnapshot snapshot;
         try {
             snapshot = reservationService.reserve(
-                    paymentId, instruction, requestedAt);
+                    paymentId, instruction, requestedAt, mappingContext);
         } catch (PaymentT0PostingReservationService.ReservationLostException race) {
             return PaymentWorkflowResult.from(requirePayment(paymentId), false);
         }

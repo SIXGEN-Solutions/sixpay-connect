@@ -1,6 +1,8 @@
 package com.sixpay.payment.infrastructure.persistence.financial;
 
 import com.sixpay.payment.domain.model.financial.FinancialSnapshotStatus;
+import com.sixpay.payment.domain.model.financial.BankingEventDetails;
+import java.time.LocalDate;
 import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -132,6 +134,36 @@ public class PaymentFinancialEventSnapshotJpaEntity {
     private List<PaymentFinancialEntrySnapshotJpaEntity>
             entries = new ArrayList<>();
 
+    @Column(name = "operation_code", updatable = false, length = 3)
+    private String operationCode;
+
+    @Column(name = "nature", updatable = false, length = 32)
+    private String nature;
+
+    @Column(name = "technical_user", updatable = false, length = 64)
+    private String technicalUser;
+
+    @Column(name = "debit_amount", updatable = false, precision = 38, scale = 18)
+    private BigDecimal debitAmount;
+
+    @Column(name = "credit_amount", updatable = false, precision = 38, scale = 18)
+    private BigDecimal creditAmount;
+
+    @Column(name = "event_label", updatable = false, length = 256)
+    private String eventLabel;
+
+    @Column(name = "bank_event_number", updatable = false, length = 32)
+    private String bankEventNumber;
+
+    @Column(name = "accounting_date", updatable = false)
+    private LocalDate accountingDate;
+
+    @Column(name = "operation_date", updatable = false)
+    private LocalDate operationDate;
+
+    @Column(name = "origin_branch", updatable = false, length = 20)
+    private String originBranch;
+
     protected PaymentFinancialEventSnapshotJpaEntity() {
     }
 
@@ -170,6 +202,19 @@ public class PaymentFinancialEventSnapshotJpaEntity {
         entity.createdAt = snapshot.createdAt();
         entity.finalizedAt =
                 snapshot.finalizedAt().orElseThrow();
+        BankingEventDetails bankingDetails = snapshot.bankingDetails();
+        if (bankingDetails != null) {
+            entity.operationCode = bankingDetails.operationCode();
+            entity.nature = bankingDetails.nature();
+            entity.technicalUser = bankingDetails.technicalUser();
+            entity.debitAmount = bankingDetails.debitAmount();
+            entity.creditAmount = bankingDetails.creditAmount();
+            entity.eventLabel = bankingDetails.eventLabel();
+            entity.bankEventNumber = bankingDetails.bankEventNumber();
+            entity.accountingDate = bankingDetails.accountingDate();
+            entity.operationDate = bankingDetails.operationDate();
+            entity.originBranch = bankingDetails.originBranch();
+        }
 
         snapshot.entries().stream()
                 .map(entry ->
@@ -179,6 +224,21 @@ public class PaymentFinancialEventSnapshotJpaEntity {
                 .forEach(entity.entries::add);
 
         return entity;
+    }
+
+    BankingEventDetails bankingDetails() {
+        if (operationCode == null && nature == null && technicalUser == null && debitAmount == null && creditAmount == null && eventLabel == null && bankEventNumber == null && accountingDate == null && operationDate == null && originBranch == null) return null;
+        return new BankingEventDetails(
+                operationCode,
+                nature,
+                technicalUser,
+                debitAmount,
+                creditAmount,
+                eventLabel,
+                bankEventNumber,
+                accountingDate,
+                operationDate,
+                originBranch);
     }
 
     UUID snapshotId() {

@@ -7,11 +7,11 @@ info:
   description: |
     Approved T0 target contract.
 
-    SIXPAY Payment freezes reduced immutable financial-event and financial-entry
-    snapshots, then its Amplitude anti-corruption layer maps those snapshots to
-    the provider event corresponding functionally to `bkeve` and `bkmvti[]`.
+    SIXPAY Payment freezes an immutable financial event and its two accounting
+    entries at T0. The T0 request transmits providerEvent only; the frozen
+    BKMVTI-compatible entry facts are retained locally for T1.
 
-    SIXPAY does not persist the complete historical Amplitude entity/table
+    SIXPAY persists only selected bank fields, not the complete historical Amplitude entity/table
     schema. The exact provider field subset/code tables remain a mapping
     implementation input and must be derived from approved bank evidence before
     provider DTO generation.
@@ -307,7 +307,6 @@ components:
         - paymentReference
         - snapshotVersion
         - providerEvent
-        - providerEntries
         - requestedAt
       properties:
         paymentReference:
@@ -323,16 +322,6 @@ components:
             approved field subset is supplied by the Payment-owned Amplitude
             mapping and must not be inferred from this placeholder schema.
           additionalProperties: true
-        providerEntries:
-          type: array
-          minItems: 1
-          description: |
-            Provider-specific reduced `bkmvti`-equivalent lines built from the
-            immutable SIXPAY financial-entry snapshots. Exact fields/code tables
-            require approved bank mapping evidence.
-          items:
-            type: object
-            additionalProperties: true
         requestedAt:
           type: string
           format: date-time

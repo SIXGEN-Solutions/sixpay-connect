@@ -32,6 +32,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -104,9 +106,17 @@ class PaymentEventLifecycleExecutionGuardTest {
         when(fixture.payment.id()).thenReturn(fixture.paymentId);
         when(fixture.payment.publicPaymentReference()).thenReturn(fixture.reference);
         when(fixture.payment.businessVersion()).thenReturn(2L);
+
+        mockBankingMappingContext(fixture);
+
         when(reservationService.reserve(
-                fixture.paymentId, fixture.instruction, fixture.requestedAt))
-                .thenThrow(new PaymentT0PostingReservationService.ReservationLostException());
+                eq(fixture.paymentId),
+                eq(fixture.instruction),
+                eq(fixture.requestedAt),
+                any(PaymentEventExecutionPort.PaymentEventMappingContext.class)
+        )).thenThrow(
+                new PaymentT0PostingReservationService.ReservationLostException()
+        );
 
         PaymentWorkflowResult result = service().execute(
                 fixture.paymentId,
@@ -118,13 +128,14 @@ class PaymentEventLifecycleExecutionGuardTest {
 
         assertThat(result.stateChanged()).isFalse();
 
-        // A lost reservation rolls back newly staged entries and never issues POST.
         verifyNoInteractions(
                 executionPort,
                 finalizationService,
                 recoveryPort
         );
-        org.mockito.Mockito.verify(contextService).resolve(fixture.requestedAt);
+
+        org.mockito.Mockito.verify(contextService)
+                .resolve(fixture.requestedAt);
     }
 
     @Test
@@ -167,11 +178,12 @@ class PaymentEventLifecycleExecutionGuardTest {
                                 "v1:sha256:" + "f".repeat(64)
                         )
                 );
-
+        mockBankingMappingContext(fixture);
         when(reservationService.reserve(
-                fixture.paymentId,
-                conflicting,
-                fixture.requestedAt
+                eq(fixture.paymentId),
+                eq(conflicting),
+                eq(fixture.requestedAt),
+                any(PaymentEventExecutionPort.PaymentEventMappingContext.class)
         )).thenThrow(
                 new IllegalStateException(
                         "Posting instruction conflicts with frozen T0 financial snapshot"
@@ -283,5 +295,16 @@ class PaymentEventLifecycleExecutionGuardTest {
             BankingRequestContext context,
             Instant requestedAt
     ) {
+    }
+
+    private void mockBankingMappingContext(Fixture fixture) {
+        when(contextService.resolve(fixture.requestedAt))
+                .thenReturn(
+                        new PaymentEventExecutionPort.PaymentEventMappingContext(
+                                "123",
+                                "SIXPAY",
+                                fixture.requestedAt
+                        )
+                );
     }
 }

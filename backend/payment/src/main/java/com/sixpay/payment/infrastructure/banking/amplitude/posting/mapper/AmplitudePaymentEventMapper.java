@@ -26,7 +26,8 @@ public final class AmplitudePaymentEventMapper {
             throw new IllegalArgumentException("Unsupported banking nature");
         }
         String currency = snapshot.requestedAmount().currency().getCurrencyCode();
-        System.out.println("currency: " + currency);
+        // ISO currency is stored in SIXPAY; the provider-specific DEV convention
+        // is still applied only at the wire boundary.
 
         List<PaymentFinancialEntrySnapshot> entries = snapshot.entries();
         if (entries.size() != 2) {
@@ -45,16 +46,27 @@ public final class AmplitudePaymentEventMapper {
         String paymentReference = snapshot.publicPaymentReference().value();
         var providerEvent = new AmplitudePaymentProviderEvent();
         providerEvent.setPaymentReference(paymentReference);
-        providerEvent.setOperationCode(context.operationCode());
+        var frozen = snapshot.bankingDetails();
+        providerEvent.setOperationCode(frozen != null && frozen.operationCode() != null
+                ? frozen.operationCode() : context.operationCode());
         // Bank DEV currency convention (001); SIXPAY financial snapshot remains ISO XAF.
         providerEvent.setCurrency("001");
-        providerEvent.setNature(context.nature());
-        providerEvent.setTechnicalUser(context.technicalUser());
+        providerEvent.setNature(frozen != null && frozen.nature() != null
+                ? frozen.nature() : context.nature());
+        providerEvent.setTechnicalUser(frozen != null && frozen.technicalUser() != null
+                ? frozen.technicalUser() : context.technicalUser());
         providerEvent.setDebtorAccountReference(snapshot.debtorAccountReference());
         providerEvent.setCreditorAccountReference(snapshot.creditorAccountReference());
         providerEvent.setDebitAmount(debit.amount().amount());
         providerEvent.setCreditAmount(credit.amount().amount());
-        providerEvent.setLabel("PAIEMENT/" + paymentReference);
+        providerEvent.setLabel(frozen != null && frozen.eventLabel() != null
+                ? frozen.eventLabel() : "PAIEMENT/" + paymentReference);
+        if (frozen != null) {
+            providerEvent.setEve(frozen.bankEventNumber());
+            providerEvent.setDco(frozen.accountingDate());
+            providerEvent.setDou(frozen.operationDate());
+            providerEvent.setAgsa(frozen.originBranch());
+        }
         return new AmplitudePaymentEventRequest(
                 paymentReference, snapshot.snapshotVersion(), providerEvent, context.requestedAt());
     }
