@@ -7,6 +7,12 @@ import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaym
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventRecoveryAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
+import com.sixpay.payment.application.service.PaymentEventLifecycleOrchestrationService;
+import com.sixpay.payment.application.service.PaymentPostingPreparationService;
+import com.sixpay.payment.application.service.PaymentFinalizationService;
+import com.sixpay.payment.application.service.PaymentEventContextService;
+import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
 import com.sixpay.payment.application.port.output.banking.PaymentEventContextPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
@@ -136,6 +142,30 @@ public class AmplitudePostingConfiguration {
             AmplitudePaymentEventMapper mapper
     ) {
         return new AmplitudePaymentEventAdapter(client, mapper);
+    }
+
+    // The Posting capability gates this service. Declare the bean here rather
+    // than applying @ConditionalOnBean to a component-scanned @Service: the
+    // latter may be evaluated before the execution/recovery ports are registered.
+    @Bean
+    PaymentEventLifecycleOrchestrationService paymentEventLifecycleOrchestrationService(
+            PaymentLookupPort paymentLookupPort,
+            PaymentFinancialSnapshotRepository snapshotRepository,
+            PaymentPostingPreparationService postingPreparationService,
+            PaymentFinalizationService finalizationService,
+            PaymentEventContextService contextService,
+            PaymentEventExecutionPort executionPort,
+            PaymentEventRecoveryPort recoveryPort
+    ) {
+        return new PaymentEventLifecycleOrchestrationService(
+                paymentLookupPort,
+                snapshotRepository,
+                postingPreparationService,
+                finalizationService,
+                contextService,
+                executionPort,
+                recoveryPort
+        );
     }
 
 }

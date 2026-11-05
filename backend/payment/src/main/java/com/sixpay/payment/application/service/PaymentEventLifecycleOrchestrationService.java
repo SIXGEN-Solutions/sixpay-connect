@@ -13,8 +13,6 @@ import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -27,11 +25,6 @@ import java.util.Objects;
  * and Core Banking allocated context.
  * or retries the financial POST after an uncertain outcome.</p>
  */
-@Service
-@ConditionalOnBean({
-        PaymentEventExecutionPort.class,
-        PaymentEventRecoveryPort.class
-})
 public class PaymentEventLifecycleOrchestrationService {
 
     private final PaymentLookupPort paymentLookupPort;
