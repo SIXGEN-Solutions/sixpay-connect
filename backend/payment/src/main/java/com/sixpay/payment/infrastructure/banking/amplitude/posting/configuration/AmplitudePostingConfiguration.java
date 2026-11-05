@@ -8,6 +8,7 @@ import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaym
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
 import com.sixpay.payment.application.port.output.PaymentLookupPort;
+import com.sixpay.payment.application.port.output.configuration.PaymentConfigurationParameterPort;
 import com.sixpay.payment.application.service.PaymentEventLifecycleOrchestrationService;
 import com.sixpay.payment.application.service.PaymentPostingPreparationService;
 import com.sixpay.payment.application.service.PaymentFinalizationService;
@@ -147,6 +148,17 @@ public class AmplitudePostingConfiguration {
     // The Posting capability gates this service. Declare the bean here rather
     // than applying @ConditionalOnBean to a component-scanned @Service: the
     // latter may be evaluated before the execution/recovery ports are registered.
+    // Register application orchestration explicitly with the Posting capability.
+    // Avoid @ConditionalOnBean on component-scanned services: port definitions
+    // may not yet be registered when component conditions are evaluated.
+    @Bean
+    PaymentEventContextService paymentEventContextService(
+            PaymentConfigurationParameterPort parameterPort,
+            PaymentEventContextPort contextPort
+    ) {
+        return new PaymentEventContextService(parameterPort, contextPort);
+    }
+
     @Bean
     PaymentEventLifecycleOrchestrationService paymentEventLifecycleOrchestrationService(
             PaymentLookupPort paymentLookupPort,

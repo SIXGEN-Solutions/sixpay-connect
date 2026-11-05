@@ -19,40 +19,4 @@ public class SixpayApplication {
         SpringApplication.run(SixpayApplication.class, args);
     }
 
-    @Bean
-    ApplicationRunner diagnosePostingBeans(
-            ApplicationContext context,
-            Environment environment
-    ) {
-        return args -> {
-            System.out.println(
-                    "Posting enabled: " +
-                            environment.getProperty(
-                                    "sixpay.payment.banking.amplitude.posting.enabled"
-                            )
-            );
-
-            System.out.println(
-                    "Execution port: " +
-                            Arrays.toString(context.getBeanNamesForType(
-                                    PaymentEventExecutionPort.class
-                            ))
-            );
-
-            System.out.println(
-                    "Recovery port: " +
-                            Arrays.toString(context.getBeanNamesForType(
-                                    PaymentEventRecoveryPort.class
-                            ))
-            );
-
-            System.out.println(
-                    "Lifecycle service: " +
-                            Arrays.toString(context.getBeanNamesForType(
-                                    PaymentEventLifecycleOrchestrationService.class
-                            ))
-            );
-        };
-    }
-
 }
