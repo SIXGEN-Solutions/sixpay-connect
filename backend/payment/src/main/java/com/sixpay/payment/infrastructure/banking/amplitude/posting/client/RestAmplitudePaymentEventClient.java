@@ -46,6 +46,8 @@ public final class RestAmplitudePaymentEventClient
         requireText(idempotencyKey, "idempotencyKey");
 
         try {
+            System.out.println("properties.postingPath(): " + properties.postingPath());
+            System.out.println("request: " + request.toString());
             AmplitudePaymentEventResult response =
                     restClient.post()
                             .uri(properties.postingPath())
@@ -75,7 +77,7 @@ public final class RestAmplitudePaymentEventClient
                             .body(
                                     AmplitudePaymentEventResult.class
                             );
-
+            System.out.println("Response: " + response);
             if (response == null) {
                 throw new AmplitudePaymentEventOutcomeUnknownException(
                         "Payment event response is empty",

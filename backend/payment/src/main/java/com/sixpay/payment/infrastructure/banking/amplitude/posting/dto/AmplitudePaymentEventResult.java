@@ -56,4 +56,17 @@ public class AmplitudePaymentEventResult {
     public LocalDate getDco() { return dco; }
     public void setDco(LocalDate value) { dco = value; }
     public LocalDate accountingDate() { return dco; }
+
+    @Override
+    public String toString() {
+        return "AmplitudePaymentEventResult{" +
+                "paymentReference='" + paymentReference + '\'' +
+                ", outcome='" + outcome + '\'' +
+                ", checks=" + checks +
+                ", bankReference='" + bankReference + '\'' +
+                ", reasonCode='" + reasonCode + '\'' +
+                ", observedAt=" + observedAt +
+                ", dco=" + dco +
+                '}';
+    }
 }

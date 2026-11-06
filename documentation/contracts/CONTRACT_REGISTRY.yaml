@@ -433,7 +433,7 @@ contracts:
         - "Freeze Payment-owned immutable reduced financial-event and financial-entry snapshots before provider submission"
         - "Map those snapshots to the provider Payment event payload corresponding to bkeve plus bkmvti lines"
         - "Execute POST /api/v1/payment-events as the single protected T0 Core Banking financial command"
-        - "Require all eight authoritative execution-time banking controls"
+        - "Require ACCOUNT_VALID, DEBIT_ALLOWED and AVAILABLE_FUNDS_SUFFICIENT to PASS for COMPLETED, plus PASS for every additional returned check"
         - "Require Core Banking atomic execution of debit and credit"
         - "Recover an uncertain outcome by Payment reference"
         - "Recover an uncertain outcome by original Idempotency-Key"

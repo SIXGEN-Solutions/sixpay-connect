@@ -74,7 +74,7 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-
+        System.out.println("****payment.status(): " + payment.status());
         if (payment.status() == PaymentStatus.POSTING_PENDING) {
             PaymentFinancialEventSnapshot snapshot =
                     requireFinalizedSnapshot(paymentId);

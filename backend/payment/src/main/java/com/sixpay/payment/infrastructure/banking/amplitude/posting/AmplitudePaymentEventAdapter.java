@@ -54,8 +54,11 @@ public final class AmplitudePaymentEventAdapter
                             command.context().financialInstitutionCode().value(),
                             command.idempotencyKey().value()
                     );
-
-            return toApplicationResult(providerResult);
+            System.out.println("Amplitude Payment event result: " + providerResult.toString());
+            PaymentEventExecutionResult applicationResult = toApplicationResult(providerResult);
+            System.out.println("Payment event execution result: " + applicationResult.toString());
+            return applicationResult;
+            //return toApplicationResult(providerResult);
         } catch (AmplitudePaymentEventOutcomeUnknownException exception) {
             throw new PaymentEventOutcomeUnknownException(
                     exception.getMessage(),

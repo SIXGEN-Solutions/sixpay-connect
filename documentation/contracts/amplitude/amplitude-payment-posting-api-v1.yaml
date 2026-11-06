@@ -335,7 +335,7 @@ components:
           type: string
           enum:
             - ACCOUNT_EXISTS
-            - ACCOUNT_ACTIVE
+            - ACCOUNT_VALID
             - DEBIT_ALLOWED
             - CURRENCY_SUPPORTED
             - AVAILABLE_FUNDS_SUFFICIENT
@@ -364,8 +364,15 @@ components:
           enum: [COMPLETED, REJECTED, UNKNOWN]
         checks:
           type: array
-          minItems: 8
+          description: >-
+            Execution-time checks actually returned by Core Banking. For COMPLETED,
+            ACCOUNT_VALID, DEBIT_ALLOWED and AVAILABLE_FUNDS_SUFFICIENT must be
+            present and PASS; every additional returned check must also PASS.
+            REJECTED requires at least one FAIL check. UNKNOWN may have no checks.
+            Types must be unique; absent checks must never be synthesized as PASS.
+          minItems: 0
           maxItems: 8
+          uniqueItems: true
           items:
             $ref: '#/components/schemas/PaymentExecutionCheck'
         bankReference:

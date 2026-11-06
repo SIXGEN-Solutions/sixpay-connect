@@ -24,6 +24,7 @@ public record AmplitudePostingProperties(
     public static final String PREFIX =
             "sixpay.payment.banking.amplitude.posting";
 
+    @org.springframework.boot.context.properties.bind.ConstructorBinding
     public AmplitudePostingProperties {
         if (baseUrl == null
                 || baseUrl.getScheme() == null
