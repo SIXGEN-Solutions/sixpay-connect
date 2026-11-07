@@ -70,7 +70,8 @@ public class PaymentCallbackOutboxCoordinator {
                                 entity.eventType(),
                                 entity.correlationId(),
                                 entity.occurredAt(),
-                                entity.callbackAttemptCount()
+                                entity.callbackAttemptCount(),
+                                entity.payload()
                         )
                 )
                 .toList();

@@ -142,6 +142,44 @@ class PaymentCallbackOutboxRelayTest {
                 .markPublished(EVENT_ID, event.attemptCount());
     }
 
+    @Test
+    void retryKeepsOneLogicalEventWhileUsingNewDeliveryId() {
+        PaymentCallbackOutboxCoordinator coordinator = Mockito.mock(PaymentCallbackOutboxCoordinator.class);
+        PaymentCallbackPlanFactory planFactory = Mockito.mock(PaymentCallbackPlanFactory.class);
+        PaymentStatusCallbackTransportPort transport = Mockito.mock(PaymentStatusCallbackTransportPort.class);
+        ClaimedPaymentOutboxEvent first = event();
+        ClaimedPaymentOutboxEvent second = new ClaimedPaymentOutboxEvent(
+                first.eventId(), first.paymentId(), first.eventType(),
+                first.correlationId(), first.occurredAt(), first.attemptCount() + 1,
+                first.payload());
+        PaymentStatusCallbackDelivery one = delivery();
+        PaymentStatusCallbackDelivery two = new PaymentStatusCallbackDelivery(
+                one.callbackUrl(), one.correlationId(), UUID.randomUUID(),
+                second.attemptCount(), one.message());
+        when(coordinator.claim()).thenReturn(List.of(first), List.of(second));
+        when(planFactory.create(first)).thenReturn(PaymentCallbackPlan.deliver(one));
+        when(planFactory.create(second)).thenReturn(PaymentCallbackPlan.deliver(two));
+        RuntimeException timeout = new RuntimeException("temporary HTTP timeout");
+        Mockito.doThrow(timeout).doNothing().when(transport)
+                .send(Mockito.any(PaymentStatusCallbackDelivery.class));
+
+        PaymentCallbackOutboxRelay relay = new PaymentCallbackOutboxRelay(
+                coordinator, planFactory, transport);
+        relay.publishAvailableCallbacks();
+        relay.publishAvailableCallbacks();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                one.message(), two.message(), "Immutable logical payload must be identical");
+        org.junit.jupiter.api.Assertions.assertEquals(
+                one.message().eventId(), two.message().eventId());
+        org.junit.jupiter.api.Assertions.assertNotEquals(
+                one.deliveryId(), two.deliveryId());
+        verify(transport).send(one);
+        verify(transport).send(two);
+        verify(coordinator).markFailed(EVENT_ID, first.attemptCount(), timeout);
+        verify(coordinator).markPublished(EVENT_ID, second.attemptCount());
+    }
+
     private static ClaimedPaymentOutboxEvent event() {
         return new ClaimedPaymentOutboxEvent(
                 EVENT_ID,
@@ -153,7 +191,8 @@ class PaymentCallbackOutboxRelayTest {
                 Instant.parse(
                         "2026-08-03T10:31:00Z"
                 ),
-                2
+                2,
+                "{}"
         );
     }
 

@@ -86,6 +86,20 @@ class PaymentCallbackPlanFactoryTest {
         assertThat(method.invoke(null, unrelated)).isNull();
     }
 
+    @Test
+    void cutCreditedEligibilityDoesNotRequireLastSequenceOfVersion() throws Exception {
+        var method = PaymentCallbackPlanFactory.class
+                .getDeclaredMethod("callbackType", PaymentAuditEntry.class);
+        method.setAccessible(true);
+        // Sequence 1 is followed by ImmediateResultAvailable and TFJ tracking.
+        PaymentAuditEntry first = audit(
+                PaymentEventOutcomeRecorded.class.getSimpleName(),
+                PaymentStatus.POSTED_PENDING_TFJ);
+        assertThat(first.eventSequence()).isEqualTo(1);
+        assertThat(method.invoke(null, first))
+                .isEqualTo(PaymentStatusCallbackMessage.CUT_CREDITED);
+    }
+
     private static PaymentAuditEntry audit(
             String eventType,
             PaymentStatus status
