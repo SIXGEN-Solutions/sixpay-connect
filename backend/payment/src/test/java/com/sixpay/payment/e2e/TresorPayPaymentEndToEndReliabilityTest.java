@@ -94,11 +94,11 @@ class TresorPayPaymentEndToEndReliabilityTest {
         );
         String recovery = source(
                 "com/sixpay/payment/application/service/"
-                        + "TresorPayPaymentRecoveryService.java"
+                        + "PaymentConsultationService.java"
         );
         String recoveryController = source(
                 "com/sixpay/payment/api/"
-                        + "TresorPayPaymentRecoveryController.java"
+                        + "PaymentConsultationController.java"
         );
         String idempotencyIt = testSource(
                 "com/sixpay/payment/PaymentIdempotencyFoundationIT.java"
@@ -130,7 +130,7 @@ class TresorPayPaymentEndToEndReliabilityTest {
 
         assertThat(recoveryController)
                 .contains("@GetMapping(\"/{paymentReference}\")")
-                .contains("getTresorPayPayment");
+                .contains("getPartnerPayment");
 
         assertThat(idempotencyIt)
                 .contains("replaysCompletedPaymentResult")

@@ -3,8 +3,8 @@ package com.sixpay.payment.api;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
-import com.sixpay.payment.api.response.TresorPayPaymentRecoveryResponse;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.api.response.PaymentConsultationResponse;
+import com.sixpay.payment.application.port.input.PaymentConsultationUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,23 +19,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * External TRESOR PAY recovery endpoint.
+ * Partner-agnostic read-only Payment consultation endpoint.
  */
 @RestController
-@RequestMapping("/api/v1/integrations/tresorpay/payments")
+@RequestMapping("/api/v1/integrations/payments")
 @Tag(
-        name = "TRESOR PAY payments",
-        description = "TRESOR PAY Payment recovery API"
+        name = "Partner payments",
+        description = "Partner Payment consultation API"
 )
 @SecurityRequirement(name = "bearerAuth")
-@SecurityRequirement(name = "subscriptionKey")
-public class TresorPayPaymentRecoveryController {
+@SecurityRequirement(name = "mutualTLS")
+public class PaymentConsultationController {
 
-    private final TresorPayPaymentRecoveryUseCase recoveryUseCase;
+    private final PaymentConsultationUseCase recoveryUseCase;
     private final CorrelationIdResolver correlationIdResolver;
 
-    public TresorPayPaymentRecoveryController(
-            TresorPayPaymentRecoveryUseCase recoveryUseCase,
+    public PaymentConsultationController(
+            PaymentConsultationUseCase recoveryUseCase,
             CorrelationIdResolver correlationIdResolver
     ) {
         this.recoveryUseCase = recoveryUseCase;
@@ -43,12 +43,12 @@ public class TresorPayPaymentRecoveryController {
     }
 
     @GetMapping("/{paymentReference}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('SCOPE_payment.read')")
     @Operation(
-            operationId = "getTresorPayPayment",
+            operationId = "getPartnerPayment",
             summary = "Recover the current SIXPAY Payment state"
     )
-    public ResponseEntity<TresorPayPaymentRecoveryResponse> getPayment(
+    public ResponseEntity<PaymentConsultationResponse> getPayment(
             @PathVariable
             @Pattern(regexp = "^PAY-[0-9A-HJKMNP-TV-Z]{26}$")
             String paymentReference,
@@ -68,12 +68,12 @@ public class TresorPayPaymentRecoveryController {
                         new PaymentNotFoundException(paymentReference)
                 );
 
-        var response = new TresorPayPaymentRecoveryResponse(
+        var response = new PaymentConsultationResponse(
                 view.paymentId(),
                 view.paymentReference(),
-                view.tresorPayPaymentReference(),
+                view.externalPaymentReference(),
                 view.status(),
-                new TresorPayPaymentRecoveryResponse.Money(
+                new PaymentConsultationResponse.Money(
                         view.amount().amount(),
                         view.amount().currency()
                 ),

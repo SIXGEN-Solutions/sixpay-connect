@@ -1,7 +1,7 @@
 package com.sixpay.payment.application.service;
 
-import com.sixpay.payment.application.view.TresorPayPaymentRecoveryView;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.application.view.PaymentConsultationView;
+import com.sixpay.payment.application.port.input.PaymentConsultationUseCase;
 import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
@@ -17,42 +17,50 @@ import java.util.Optional;
  * triggered by this service.</p>
  */
 @Service
-public final class TresorPayPaymentRecoveryService
-        implements TresorPayPaymentRecoveryUseCase {
+public final class PaymentConsultationService
+        implements PaymentConsultationUseCase {
 
     private final PaymentLookupPort paymentLookupPort;
+    private final PaymentConfirmationPartnerAccessGuard accessGuard;
 
-    public TresorPayPaymentRecoveryService(
-            PaymentLookupPort paymentLookupPort
+    public PaymentConsultationService(
+            PaymentLookupPort paymentLookupPort,
+            PaymentConfirmationPartnerAccessGuard accessGuard
     ) {
         this.paymentLookupPort = Objects.requireNonNull(
                 paymentLookupPort,
                 "Payment lookup port"
         );
+        this.accessGuard = Objects.requireNonNull(accessGuard, "Partner access guard");
     }
 
     @Override
-    public Optional<TresorPayPaymentRecoveryView> findByPaymentReference(
+    public Optional<PaymentConsultationView> findByPaymentReference(
             PublicPaymentReference paymentReference
     ) {
         Objects.requireNonNull(paymentReference, "Public Payment reference");
+        // Deny non-owned and unknown Payment references indistinguishably.
+        // This also rejects non-M2M callers; the HTTP scope is checked separately.
+        if (!accessGuard.isAllowed(paymentReference.value())) {
+            return Optional.empty();
+        }
 
         return paymentLookupPort
                 .findByPublicPaymentReference(paymentReference)
-                .map(TresorPayPaymentRecoveryService::toResponse);
+                .map(PaymentConsultationService::toResponse);
     }
 
-    private static TresorPayPaymentRecoveryView toResponse(
+    private static PaymentConsultationView toResponse(
             Payment payment
     ) {
         var state = payment.toState();
 
-        return new TresorPayPaymentRecoveryView(
+        return new PaymentConsultationView(
                 state.paymentId().value(),
                 state.publicPaymentReference().value(),
                 state.externalPaymentReference().value(),
                 state.status().name(),
-                new TresorPayPaymentRecoveryView.Money(
+                new PaymentConsultationView.Money(
                         state.requestedAmount().amount(),
                         state.requestedAmount()
                                 .currency()

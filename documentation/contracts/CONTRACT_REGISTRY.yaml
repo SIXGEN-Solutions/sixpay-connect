@@ -134,6 +134,32 @@ contracts:
         - "Domain-specific semantics remain owned by the setting domain"
         - "Rollback never deletes prior history"
 
+  # Proposed partner-neutral replacement. PENDING_APPROVAL: do not generate
+  # or deploy externally before contract/security approval and legacy disposition.
+  - id: "payment-consultation-api-v1"
+    path: "documentation/contracts/external/payment-consultation-api-v1.yaml"
+    domain: "payment"
+    capability: "PAYMENT_RECOVERY"
+    direction: "PARTNER_TO_SIXPAY"
+    sourceSystem: "REGISTERED_PARTNER"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    security:
+      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      requiredScopes:
+        read: "payment.read"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Read-only partner-owned SIXPAY Payment consultation by paymentReference"
+      constraints:
+        - "No Core Banking call or Payment mutation"
+        - "Object ownership is checked from authenticated M2M partner binding"
+        - "Prior TresorPay recovery contract requires separate retirement decision"
+
   - id: "tresorpay-payment-request-api-v1"
     path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
     domain: "payment"

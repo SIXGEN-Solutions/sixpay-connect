@@ -30,6 +30,9 @@ import java.util.List;
  */
 public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String INITIATE = "/v1/payments/initiate";
+    private static final String CONSULTATION_PREFIX = "/api/v1/integrations/payments/";
+    private static final java.util.regex.Pattern PAYMENT_REFERENCE =
+            java.util.regex.Pattern.compile("PAY-[0-9A-HJKMNP-TV-Z]{26}");
     private static final String CHALLENGE_SUFFIX = "/confirmation-challenge";
     private static final String VERIFY_SUFFIX = "/verify";
     private static final String RESEND_SUFFIX = "/resend";
@@ -56,6 +59,11 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
             path = path.substring(context.length());
         }
         String method = request.getMethod();
+        if ("GET".equals(method) && path.startsWith(CONSULTATION_PREFIX)
+                && PAYMENT_REFERENCE.matcher(
+                        path.substring(CONSULTATION_PREFIX.length())).matches()) {
+            return "payment.read";
+        }
         if ("POST".equals(method) && INITIATE.equals(path)) {
             return "payment.initiate";
         }

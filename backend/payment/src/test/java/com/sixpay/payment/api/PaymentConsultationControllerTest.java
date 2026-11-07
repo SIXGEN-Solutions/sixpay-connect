@@ -2,9 +2,9 @@ package com.sixpay.payment.api;
 
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.integration.http.CorrelationIdResolver;
-import com.sixpay.payment.api.response.TresorPayPaymentRecoveryResponse;
-import com.sixpay.payment.application.view.TresorPayPaymentRecoveryView;
-import com.sixpay.payment.application.port.input.TresorPayPaymentRecoveryUseCase;
+import com.sixpay.payment.api.response.PaymentConsultationResponse;
+import com.sixpay.payment.application.view.PaymentConsultationView;
+import com.sixpay.payment.application.port.input.PaymentConsultationUseCase;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -19,12 +19,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TresorPayPaymentRecoveryControllerTest {
+class PaymentConsultationControllerTest {
 
     @Test
     void returnsRecoveryViewAndEchoesCorrelationId() {
-        TresorPayPaymentRecoveryUseCase useCase =
-                mock(TresorPayPaymentRecoveryUseCase.class);
+        PaymentConsultationUseCase useCase =
+                mock(PaymentConsultationUseCase.class);
         CorrelationIdResolver resolver = mock(CorrelationIdResolver.class);
 
         String reference = "PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X";
@@ -33,12 +33,12 @@ class TresorPayPaymentRecoveryControllerTest {
         when(resolver.resolve(correlation))
                 .thenReturn(CorrelationId.of(correlation));
 
-        var view = new TresorPayPaymentRecoveryView(
+        var view = new PaymentConsultationView(
                 UUID.randomUUID(),
                 reference,
                 "AVI-DEMO-00045678",
                 "PENDING_CONFIRMATION",
-                new TresorPayPaymentRecoveryView.Money(
+                new PaymentConsultationView.Money(
                         new BigDecimal("600000"),
                         "XAF"
                 ),
@@ -51,7 +51,7 @@ class TresorPayPaymentRecoveryControllerTest {
                 PublicPaymentReference.of(reference)
         )).thenReturn(Optional.of(view));
 
-        var controller = new TresorPayPaymentRecoveryController(
+        var controller = new PaymentConsultationController(
                 useCase,
                 resolver
         );
@@ -62,8 +62,8 @@ class TresorPayPaymentRecoveryControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().paymentReference())
                 .isEqualTo(view.paymentReference());
-        assertThat(response.getBody().tresorPayPaymentReference())
-                .isEqualTo(view.tresorPayPaymentReference());
+        assertThat(response.getBody().externalPaymentReference())
+                .isEqualTo(view.externalPaymentReference());
         assertThat(response.getBody().status())
                 .isEqualTo(view.status());
         assertThat(response.getHeaders().getFirst("X-Correlation-ID"))
@@ -72,8 +72,8 @@ class TresorPayPaymentRecoveryControllerTest {
 
     @Test
     void throwsPaymentNotFoundForUnknownReference() {
-        TresorPayPaymentRecoveryUseCase useCase =
-                mock(TresorPayPaymentRecoveryUseCase.class);
+        PaymentConsultationUseCase useCase =
+                mock(PaymentConsultationUseCase.class);
         CorrelationIdResolver resolver = mock(CorrelationIdResolver.class);
 
         String reference = "PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X";
@@ -85,7 +85,7 @@ class TresorPayPaymentRecoveryControllerTest {
                 PublicPaymentReference.of(reference)
         )).thenReturn(Optional.empty());
 
-        var controller = new TresorPayPaymentRecoveryController(
+        var controller = new PaymentConsultationController(
                 useCase,
                 resolver
         );
@@ -99,7 +99,7 @@ class TresorPayPaymentRecoveryControllerTest {
 
     @Test
     void correlationHeaderIsDeclaredRequired() throws Exception {
-        var parameter = TresorPayPaymentRecoveryController.class
+        var parameter = PaymentConsultationController.class
                 .getMethod("getPayment", String.class, String.class)
                 .getParameters()[1];
 

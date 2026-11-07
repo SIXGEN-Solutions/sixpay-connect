@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Partner Payment Consultation API
+  version: 1.0.0
+  description: |
+    Read-only SIXPAY Payment state consultation by an authenticated partner
+    M2M client, including recovery when an asynchronous callback is not received.
+    The GET does not call Core Banking, create or verify OTP, initiate posting,
+    perform bank recovery, or change the Payment state. An authenticated client
+    may consult only a Payment tied to its registered Partner and the original
+    initiating machine identity (conservative current access policy).
+    The mTLS requirement is enforced at the ingress/gateway boundary.
+  x-sixpay-contract:
+    registryId: payment-consultation-api-v1
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    domain: payment
+    capability: PAYMENT_RECOVERY
+    direction: PARTNER_TO_SIXPAY
+servers:
+  - url: https://api.sixpay.example
+security:
+  - bearerAuth: []
+    mutualTLS: []
+tags:
+  - name: Partner Payment Consultation
+paths:
+  /api/v1/integrations/payments/{paymentReference}:
+    get:
+      tags: [Partner Payment Consultation]
+      operationId: getPartnerPayment
+      summary: Consult the current SIXPAY Payment state
+      description: |
+        Requires a valid M2M OAuth2 JWT with scope payment.read, a registered
+        caller and object-level Payment ownership. No banking I/O occurs.
+        Missing and non-visible Payments both return 404; missing/invalid JWT
+        returns 401 and insufficient scope returns 403.
+      parameters:
+        - name: paymentReference
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+        - name: X-Correlation-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current persisted SIXPAY Payment view
+          headers:
+            X-Correlation-ID:
+              schema: {type: string, format: uuid}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConsultationResponse'
+        '400': {description: Invalid request or paymentReference}
+        '401': {description: Missing or invalid M2M JWT}
+        '403': {description: Missing payment.read scope}
+        '404': {description: Payment absent or inaccessible to the caller}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth2 client_credentials JWT with payment.read scope
+    mutualTLS:
+      type: mutualTLS
+  schemas:
+    PaymentConsultationResponse:
+      type: object
+      required: [paymentId, paymentReference, externalPaymentReference, status, amount, receivedAt, updatedAt]
+      properties:
+        paymentId: {type: string, format: uuid}
+        paymentReference: {type: string, pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'}
+        externalPaymentReference: {type: string}
+        status:
+          type: string
+          description: Current SIXPAY Payment status, not the raw bank outcome
+        amount:
+          type: object
+          required: [amount, currency]
+          properties:
+            amount: {type: number}
+            currency: {type: string}
+        receivedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        finalizedAt: {type: [string, 'null'], format: date-time}

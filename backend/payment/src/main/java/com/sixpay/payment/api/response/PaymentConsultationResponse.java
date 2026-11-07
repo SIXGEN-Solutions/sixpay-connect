@@ -6,27 +6,27 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Public, read-only TRESOR PAY Payment recovery representation.
+ * Public, read-only Partner-neutral Payment consultation representation.
  *
  * <p>This response intentionally contains only the fields approved by the
- * TRESOR PAY Payment Request contract. It exposes no debtor-account value,
+ * Partner Payment Consultation contract. It exposes no debtor-account value,
  * internal evidence, OTP material or internal authorization detail.</p>
  */
-public record TresorPayPaymentRecoveryResponse(
+public record PaymentConsultationResponse(
         UUID paymentId,
         String paymentReference,
-        String tresorPayPaymentReference,
+        String externalPaymentReference,
         String status,
         Money amount,
         Instant receivedAt,
         Instant updatedAt,
         Instant finalizedAt
 ) {
-    public TresorPayPaymentRecoveryResponse {
+    public PaymentConsultationResponse {
         paymentId = Objects.requireNonNull(paymentId, "Payment ID");
         paymentReference = requireText(paymentReference, "Payment reference");
-        tresorPayPaymentReference = requireText(
-                tresorPayPaymentReference,
+        externalPaymentReference = requireText(
+                externalPaymentReference,
                 "TRESOR PAY Payment reference"
         );
         status = requireText(status, "Payment status");

@@ -86,7 +86,7 @@ public class OpenApiConfiguration {
                 .displayName("Payment API")
                 .pathsToMatch(
                         "/v1/payments/**",
-                        "/api/v1/integrations/tresorpay/payments/**",
+                        "/api/v1/integrations/payments/**",
                         "/internal/api/v1/payments/**"
                 )
                 .pathsToExclude(

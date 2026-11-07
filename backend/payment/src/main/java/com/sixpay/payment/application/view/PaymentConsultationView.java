@@ -5,20 +5,20 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public record TresorPayPaymentRecoveryView(
+public record PaymentConsultationView(
         UUID paymentId,
         String paymentReference,
-        String tresorPayPaymentReference,
+        String externalPaymentReference,
         String status,
         Money amount,
         Instant receivedAt,
         Instant updatedAt,
         Instant finalizedAt
 ) {
-    public TresorPayPaymentRecoveryView {
+    public PaymentConsultationView {
         paymentId = Objects.requireNonNull(paymentId, "Payment ID");
         paymentReference = requireText(paymentReference, "Payment reference");
-        tresorPayPaymentReference = requireText(tresorPayPaymentReference, "TRESOR PAY Payment reference");
+        externalPaymentReference = requireText(externalPaymentReference, "External Payment reference");
         status = requireText(status, "Payment status");
         amount = Objects.requireNonNull(amount, "Payment amount");
         receivedAt = Objects.requireNonNull(receivedAt, "Received instant");

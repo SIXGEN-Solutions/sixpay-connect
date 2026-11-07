@@ -13,7 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class TresorPayPaymentRecoveryServiceTest {
+class PaymentConsultationServiceTest {
 
     @Test
     void mapsAuthoritativePaymentStateToRecoveryView() {
@@ -24,7 +24,9 @@ class TresorPayPaymentRecoveryServiceTest {
         when(lookup.findByPublicPaymentReference(reference))
                 .thenReturn(Optional.of(payment));
 
-        var service = new TresorPayPaymentRecoveryService(lookup);
+        var guard = mock(PaymentConfirmationPartnerAccessGuard.class);
+        when(guard.isAllowed(reference.value())).thenReturn(true);
+        var service = new PaymentConsultationService(lookup, guard);
 
         var result = service.findByPaymentReference(reference);
 
@@ -37,7 +39,7 @@ class TresorPayPaymentRecoveryServiceTest {
                 .isEqualTo(state.paymentId().value());
         assertThat(view.paymentReference())
                 .isEqualTo(state.publicPaymentReference().value());
-        assertThat(view.tresorPayPaymentReference())
+        assertThat(view.externalPaymentReference())
                 .isEqualTo(state.externalPaymentReference().value());
         assertThat(view.status())
                 .isEqualTo(state.status().name());
@@ -65,10 +67,29 @@ class TresorPayPaymentRecoveryServiceTest {
         when(lookup.findByPublicPaymentReference(reference))
                 .thenReturn(Optional.empty());
 
-        var service = new TresorPayPaymentRecoveryService(lookup);
+        var guard = mock(PaymentConfirmationPartnerAccessGuard.class);
+        when(guard.isAllowed(reference.value())).thenReturn(true);
+        var service = new PaymentConsultationService(lookup, guard);
 
         assertThat(service.findByPaymentReference(reference)).isEmpty();
 
         verify(lookup).findByPublicPaymentReference(reference);
     }
+
+    @Test
+    void hidesPaymentWhenCallerDoesNotOwnIt() {
+        PaymentLookupPort lookup = mock(PaymentLookupPort.class);
+        PaymentConfirmationPartnerAccessGuard guard =
+                mock(PaymentConfirmationPartnerAccessGuard.class);
+        PublicPaymentReference reference = PublicPaymentReference.of(
+                "PAY-0H7Y5A2C9M6K4N8Q1R3T5V7W9X");
+        when(guard.isAllowed(reference.value())).thenReturn(false);
+
+        var result = new PaymentConsultationService(lookup, guard)
+                .findByPaymentReference(reference);
+
+        assertThat(result).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(lookup);
+    }
+
 }

@@ -189,5 +189,45 @@ class M2mJwtAuthenticationFilterTest {
         verifyNoInteractions(decoder);
     }
 
+    @Test
+    void consultationRequiresMachineJwtAndReadScope() throws Exception {
+        String uri = "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        var missing = new MockHttpServletRequest("GET", uri);
+        var responseMissing = new MockHttpServletResponse();
+        filter.doFilter(missing, responseMissing, (req,res) -> fail("must reject"));
+        assertThat(responseMissing.getStatus()).isEqualTo(401);
+
+        when(decoder.decode("wrong")).thenReturn(jwt("payment.initiate", "client-a"));
+        var wrong = new MockHttpServletRequest("GET", uri);
+        wrong.addHeader("Authorization", "Bearer wrong");
+        var responseWrong = new MockHttpServletResponse();
+        filter.doFilter(wrong, responseWrong, (req,res) -> fail("must reject"));
+        assertThat(responseWrong.getStatus()).isEqualTo(403);
+
+        when(decoder.decode("ok")).thenReturn(jwt("payment.read", "client-a"));
+        var ok = new MockHttpServletRequest("GET", uri);
+        ok.addHeader("Authorization", "Bearer ok");
+        var responseOk = new MockHttpServletResponse();
+        var reached = new java.util.concurrent.atomic.AtomicBoolean();
+        filter.doFilter(ok, responseOk, (req,res) -> {
+            assertThat(SecurityContextHolder.getContext().getAuthentication()
+                    .getAuthorities()).extracting("authority")
+                    .containsExactly("SCOPE_payment.read");
+            reached.set(true);
+        });
+        assertThat(reached).isTrue();
+        assertThat(responseOk.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void consultationOnlyInterceptsExactReferencePathAndGet() throws Exception {
+        var wrongMethod = new MockHttpServletRequest("POST",
+                "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV");
+        var extraSegment = new MockHttpServletRequest("GET",
+                "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/other");
+        assertThat(M2mJwtAuthenticationFilter.isPartnerM2mRequest(wrongMethod)).isFalse();
+        assertThat(M2mJwtAuthenticationFilter.isPartnerM2mRequest(extraSegment)).isFalse();
+    }
+
     private static void fail(String message) { throw new AssertionError(message); }
 }
