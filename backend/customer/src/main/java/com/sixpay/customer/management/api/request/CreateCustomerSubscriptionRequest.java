@@ -7,6 +7,6 @@ import java.util.UUID;
 public record CreateCustomerSubscriptionRequest(
         @NotNull UUID customerId,
         @NotNull UUID partnerId,
-        @NotNull UUID bankAccountId
+        UUID bankAccountId
 ) {
 }

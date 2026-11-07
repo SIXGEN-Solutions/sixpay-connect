@@ -120,6 +120,52 @@ public class PaymentRepositoryAdapter implements PaymentRepository, PaymentLooku
     }
 
     @Override
+    public Optional<Payment>
+            findByPartnerIdentifierAndExternalPaymentReference(
+                    String partnerIdentifier,
+                    ExternalPaymentReference externalPaymentReference
+            ) {
+        if (partnerIdentifier == null || partnerIdentifier.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Partner identifier is required"
+            );
+        }
+        Objects.requireNonNull(
+                externalPaymentReference,
+                "External Payment reference"
+        );
+
+        return springDataRepository
+                .findByPartnerIdentifierAndExternalPaymentReference(
+                        partnerIdentifier.strip(),
+                        externalPaymentReference.value()
+                )
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public boolean existsByPartnerIdentifierAndExternalPaymentReference(
+            String partnerIdentifier,
+            ExternalPaymentReference externalPaymentReference
+    ) {
+        if (partnerIdentifier == null || partnerIdentifier.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Partner identifier is required"
+            );
+        }
+        Objects.requireNonNull(
+                externalPaymentReference,
+                "External Payment reference"
+        );
+
+        return springDataRepository
+                .existsByPartnerIdentifierAndExternalPaymentReference(
+                        partnerIdentifier.strip(),
+                        externalPaymentReference.value()
+                );
+    }
+
+    @Override
     public boolean existsBySourceAndExternalPaymentReference(
             PaymentSource source,
             ExternalPaymentReference externalPaymentReference

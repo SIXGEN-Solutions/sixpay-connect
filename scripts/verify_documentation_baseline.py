@@ -77,7 +77,7 @@ REQUIRED_ARCHITECTURE_WORDING = {
     ],
     "documentation/architecture/TESTS_AND_GATES.md": [
         "mvn verify",
-        "npm run verify:sixpay",
+        "npm run verify:quality",
         "scripts/verify_baseline.py",
     ],
     "documentation/architecture/REPOSITORY_HYGIENE.md": [

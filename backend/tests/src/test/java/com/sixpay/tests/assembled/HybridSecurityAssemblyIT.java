@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
@@ -7,6 +8,7 @@ import com.sixpay.security.infrastructure.authentication.session.RestrictedLocal
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(
-        classes = HybridSecurityAssemblyIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles({
@@ -75,6 +77,7 @@ class HybridSecurityAssemblyIT {
     private AuthenticationCapabilitiesProperties capabilities;
 
     @Autowired
+    @Qualifier("requestMappingHandlerMapping")
     private RequestMappingHandlerMapping mappings;
 
     @Autowired

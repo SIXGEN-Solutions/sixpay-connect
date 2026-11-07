@@ -1,0 +1,14 @@
+{
+  "scenario": "T07-02",
+  "correlationId": "11111111-1111-4111-8111-111111111111",
+  "idempotencyKey": "t07-init-11111111-1111-4111-8111-111111111111",
+  "financialInstitutionCode": "LRB",
+  "amount": "1000.00",
+  "currency": "XAF",
+  "expectedOtpChallengeStatus": "ACTIVE",
+  "expectedPostingOutcome": "COMPLETED",
+  "expectedPaymentStatus": "POSTED_PENDING_TFJ",
+  "expectedSnapshotEntryCount": 2,
+  "expectedBankPostingPostCount": 1,
+  "note": "Fixture intentionnelle de validation, pas un payload API canonique"
+}

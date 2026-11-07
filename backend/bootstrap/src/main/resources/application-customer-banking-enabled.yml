@@ -1,0 +1,8 @@
+# Customer banking capability, independent of environment and user identity profiles.
+# Activate with SPRING_PROFILES_ACTIVE including customer-banking-enabled.
+spring:
+  config:
+    activate:
+      on-profile: customer-banking-enabled
+    import:
+      - classpath:application-customer-banking.yml

@@ -45,9 +45,6 @@ public final class AmplitudePaymentEventAdapter
                                     command.snapshot(),
                                     new AmplitudePaymentEventMappingContext(
                                             context.operationCode(),
-                                            context.eventNumber(),
-                                            context.accountingDate(),
-                                            context.nightMode(),
                                             PAYMENT_NATURE,
                                             context.technicalUser(),
                                             context.requestedAt()
@@ -57,8 +54,11 @@ public final class AmplitudePaymentEventAdapter
                             command.context().financialInstitutionCode().value(),
                             command.idempotencyKey().value()
                     );
-
-            return toApplicationResult(providerResult);
+            System.out.println("Amplitude Payment event result: " + providerResult.toString());
+            PaymentEventExecutionResult applicationResult = toApplicationResult(providerResult);
+            System.out.println("Payment event execution result: " + applicationResult.toString());
+            return applicationResult;
+            //return toApplicationResult(providerResult);
         } catch (AmplitudePaymentEventOutcomeUnknownException exception) {
             throw new PaymentEventOutcomeUnknownException(
                     exception.getMessage(),
@@ -104,7 +104,8 @@ public final class AmplitudePaymentEventAdapter
                 result.reasonCode() == null
                         ? null
                         : FailureCode.of(result.reasonCode()),
-                result.observedAt()
+                result.observedAt(),
+                result.accountingDate()
         );
     }
 

@@ -38,6 +38,7 @@
 
         <mapstruct.version>1.6.3</mapstruct.version>
         <springdoc.version>3.0.3</springdoc.version>
+        <cucumber.version>7.34.8</cucumber.version>
 
         <!-- Internal artifacts follow the SIXPAY release version -->
 
@@ -113,6 +114,23 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- Cucumber JVM - JUnit Platform -->
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-java</artifactId>
+                <version>${cucumber.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-junit-platform-engine</artifactId>
+                <version>${cucumber.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-spring</artifactId>
+                <version>${cucumber.version}</version>
             </dependency>
 
             <!-- ================================================= -->

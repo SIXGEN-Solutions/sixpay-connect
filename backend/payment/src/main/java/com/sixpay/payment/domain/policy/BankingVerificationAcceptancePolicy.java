@@ -1,8 +1,9 @@
 package com.sixpay.payment.domain.policy;
 
-import com.sixpay.payment.domain.model.evidence.BankingVerificationOutcome;
 import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
 import com.sixpay.payment.domain.model.evidence.EvidenceCheckResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -13,6 +14,8 @@ public final class BankingVerificationAcceptancePolicy {
 
     private final EvidenceTemporalValidityPolicy temporalPolicy =
             new EvidenceTemporalValidityPolicy();
+
+    private final Logger log = LoggerFactory.getLogger(BankingVerificationAcceptancePolicy.class);
 
     public PolicyDecision<EvidenceAcceptanceDecision> decide(
             PaymentBankingContext context,
@@ -28,8 +31,21 @@ public final class BankingVerificationAcceptancePolicy {
         if (!context.accountBindingFingerprint().equals(
                 evidence.accountBindingFingerprint()
         )) {
-            return result(profile, EvidenceAcceptanceDecision.CONFLICT,
-                    "ACCOUNT_BINDING_CONFLICT");
+            log.info(
+                    "event=banking_evidence_rejected "
+                            + "reason={} "
+                            + "bindingMatches={} "
+                            + "verificationOutcome={}",
+                    "ACCOUNT_BINDING_CONFLICT",
+                    false,
+                    evidence.outcome()
+            );
+
+            return result(
+                    profile,
+                    EvidenceAcceptanceDecision.CONFLICT,
+                    "ACCOUNT_BINDING_CONFLICT"
+            );
         }
 
         PolicyDecision<EvidenceTemporalDecision> temporal =

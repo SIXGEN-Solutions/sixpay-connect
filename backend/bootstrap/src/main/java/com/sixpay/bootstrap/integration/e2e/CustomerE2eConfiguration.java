@@ -4,7 +4,6 @@ import com.sixpay.customer.management.application.port.output.BankingCustomerLoo
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.AmplitudeCustomerVerificationClient;
-import com.sixpay.customer.verification.infrastructure.banking.client.CoreBankingAccessTokenProvider;
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.error.AmplitudeResponseValidator;
 import com.sixpay.customer.verification.infrastructure.banking.error.BankingVerificationErrorClassifier;
@@ -103,10 +102,6 @@ public class CustomerE2eConfiguration {
                         1,
                         Duration.ofMillis(50),
                         Duration.ofMinutes(5),
-                        new BankingVerificationProperties.Security(
-                                "cm9-e2e",
-                                "unused"
-                        ),
                         new BankingVerificationProperties.Contract(
                                 "v1",
                                 Set.of("00"),
@@ -119,13 +114,9 @@ public class CustomerE2eConfiguration {
                         .baseUrl(amplitudeBaseUrl)
                         .build();
 
-        CoreBankingAccessTokenProvider tokenProvider =
-                () -> "cm9-e2e-token";
-
         AmplitudeCustomerVerificationClient client =
                 new AmplitudeCustomerVerificationClient(
                         restClient,
-                        tokenProvider,
                         properties,
                         objectMapper
                 );

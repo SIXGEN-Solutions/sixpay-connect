@@ -1,13 +1,55 @@
 :host,
 .sp-dashboard {
   display: grid;
+  gap: var(--sp-space-5);
+}
+
+.sp-dashboard__intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: var(--sp-space-4);
+}
+
+.sp-dashboard__intro h1 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.7rem, 2vw, 2rem);
+}
+
+.sp-dashboard__intro p {
+  margin: 0;
+  color: var(--sp-color-text-muted);
+}
+
+.sp-dashboard__eyebrow {
+  color: var(--sp-color-primary) !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sp-dashboard__primary-link,
+.sp-dashboard__section-heading a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--sp-color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sp-dashboard__primary-link {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--sp-color-border);
+  border-radius: 0.65rem;
+  background: #fff;
 }
 
 .sp-kpi-grid,
 .sp-dashboard-grid {
   display: grid;
-  gap: var(--sp-space-3);
+  gap: var(--sp-space-4);
 }
 
 .sp-kpi-grid {
@@ -20,8 +62,22 @@
 
 .sp-kpi {
   display: block;
-  margin: var(--sp-space-2) 0;
+  margin: var(--sp-space-2) 0 0.4rem;
   font-size: 2rem;
+  line-height: 1;
+}
+
+.sp-kpi__trend {
+  color: var(--sp-color-text-muted);
+  font-size: 0.8rem;
+}
+
+.sp-kpi__trend--positive {
+  color: #16794b;
+}
+
+.sp-kpi__trend--critical {
+  color: #b42318;
 }
 
 .sp-bars {
@@ -34,15 +90,16 @@
 .sp-bars span {
   flex: 1;
   min-width: 0.5rem;
-  border-radius: 6px 6px 0 0;
+  border-radius: 5px 5px 0 0;
   background: var(--sp-color-primary);
   opacity: 0.75;
 }
 
 .sp-health-list {
   display: grid;
-  gap: var(--sp-space-3);
+  gap: var(--sp-space-2);
   padding: 0;
+  margin: 0;
   list-style: none;
 }
 
@@ -51,6 +108,41 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--sp-space-2);
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--sp-color-border);
+}
+
+.sp-health-list li:last-child {
+  border-bottom: 0;
+}
+
+.sp-health-list__ok mat-icon {
+  color: #16794b;
+}
+
+.sp-health-list__warning mat-icon {
+  color: #b97900;
+}
+
+.sp-dashboard__table-panel {
+  overflow: hidden;
+  border: 1px solid var(--sp-color-border);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.sp-dashboard__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-space-4);
+  padding: var(--sp-space-4) var(--sp-space-5);
+  border-bottom: 1px solid var(--sp-color-border);
+}
+
+.sp-dashboard__section-heading h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
 }
 
 .sp-table-scroll {
@@ -64,13 +156,66 @@
 
 .sp-table th,
 .sp-table td {
-  padding: var(--sp-space-2);
+  padding: 0.9rem var(--sp-space-5);
   text-align: left;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--sp-color-border);
+}
+
+.sp-table th {
+  color: var(--sp-color-text-muted);
+  background: #fbfcfd;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sp-table tbody tr:hover {
+  background: var(--sp-color-primary-container);
+}
+
+.sp-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sp-table a {
+  color: var(--sp-color-primary);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .sp-status {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: #344054;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.sp-status__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sp-status--success {
+  background: #ecfdf3;
+  color: #16794b;
+}
+
+.sp-status--pending {
+  background: #fffaeb;
+  color: #b97900;
+}
+
+.sp-status--error {
+  background: #fef3f2;
+  color: #b42318;
 }
 
 @media (max-width: 1024px) {
@@ -84,6 +229,12 @@
 }
 
 @media (max-width: 640px) {
+  .sp-dashboard__intro,
+  .sp-dashboard__section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .sp-kpi-grid {
     grid-template-columns: 1fr;
   }

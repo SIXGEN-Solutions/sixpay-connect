@@ -1,5 +1,6 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.input.PartnerMachineIdentityQueryUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.CurrentUserProvider;
@@ -39,7 +40,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
                 "sixpay.security.authentication.local.enabled=false",
-                "sixpay.security.authentication.oidc.enabled=true"
+                "sixpay.security.authentication.oidc.enabled=true",
+                "sixpay.security.tresorpay.subscription-key.enabled=true",
+                "sixpay.security.tresorpay.subscription-key.value=test-subscription-key"
         }
 )
 @AutoConfigureMockMvc
@@ -70,6 +73,15 @@ class SixpaySecurityAutoConfigurationTest {
      */
     @MockitoBean
     private ExternalIdentityResolver externalIdentityResolver;
+
+    /*
+     * This focused filter-chain test intentionally excludes JPA.
+     * Partner machine identity resolution is therefore supplied as the
+     * application boundary test double, exactly like the other
+     * persistence-backed Security collaborators.
+     */
+    @MockitoBean
+    private PartnerMachineIdentityQueryUseCase partnerMachineIdentityQueryUseCase;
 
     /*
      * DA-9 makes operational audit mandatory for OIDC authentication.

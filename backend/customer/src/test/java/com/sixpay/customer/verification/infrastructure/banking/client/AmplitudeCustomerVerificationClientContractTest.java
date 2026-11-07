@@ -53,7 +53,6 @@ class AmplitudeCustomerVerificationClientContractTest {
                 builder
                         .baseUrl(properties.baseUrl().toString())
                         .build(),
-                () -> "test-access-token",
                 properties,
                 new ObjectMapper()
         );
@@ -68,13 +67,7 @@ class AmplitudeCustomerVerificationClientContractTest {
                                         + "/api/v1/customer-verifications"
                         )
                 )
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(
-                        header(
-                                "Authorization",
-                                "Bearer test-access-token"
-                        )
-                )
+                .andExpect(method(HttpMethod.POST))
                 .andExpect(
                         header(
                                 "X-Correlation-ID",

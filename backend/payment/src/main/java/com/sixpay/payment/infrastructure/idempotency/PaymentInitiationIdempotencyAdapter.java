@@ -2,26 +2,27 @@ package com.sixpay.payment.infrastructure.idempotency;
 
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
 import com.sixpay.payment.application.port.output.idempotency
         .PaymentInitiationIdempotencyPort;
+import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.application.service
         .PaymentInitiationInProgressException;
 import com.sixpay.payment.application.view.InitiateDebitResult;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * PostgreSQL-backed idempotent execution adapter for InitiateDebit.
  *
- * <p>The transaction covers the idempotency record and the complete new-request
- * action. Consequently, a successful commit contains both the replayable
- * response and the Payment/audit/outbox writes; a failure rolls them back
- * together. A PostgreSQL advisory lock serializes concurrent calls for the
- * same operation and key.</p>
+ * <p>Initiation idempotency uses independently committed transactions.
+ * The banking workflow never runs in a wrapping transaction.</p>
  */
 @Component
 @ConditionalOnBean({
@@ -39,7 +40,9 @@ public class PaymentInitiationIdempotencyAdapter
     private final PaymentIdempotencyConcurrencyCoordinator coordinator;
     private final PaymentIdempotencyReplayStore replayStore;
     private final PaymentInitiationReplayCodec replayCodec;
+    private final PaymentLookupPort paymentLookupPort;
     private final TimeProvider timeProvider;
+    private final PaymentInitiationIdempotencyTransactions transactions;
 
     public PaymentInitiationIdempotencyAdapter(
             PaymentInitiationCanonicalizer canonicalizer,
@@ -47,7 +50,9 @@ public class PaymentInitiationIdempotencyAdapter
             PaymentIdempotencyConcurrencyCoordinator coordinator,
             PaymentIdempotencyReplayStore replayStore,
             PaymentInitiationReplayCodec replayCodec,
-            TimeProvider timeProvider
+            PaymentLookupPort paymentLookupPort,
+            TimeProvider timeProvider,
+            PaymentInitiationIdempotencyTransactions transactions
     ) {
         this.canonicalizer = Objects.requireNonNull(
                 canonicalizer,
@@ -74,105 +79,43 @@ public class PaymentInitiationIdempotencyAdapter
                 "Payment initiation replay codec"
         );
 
+        this.paymentLookupPort = Objects.requireNonNull(
+                paymentLookupPort,
+                "Payment lookup port"
+        );
+
         this.timeProvider = Objects.requireNonNull(
                 timeProvider,
                 "Time provider"
         );
+        this.transactions = Objects.requireNonNull(transactions);
     }
 
     /**
-     * Fingerprints canonical business content, serializes competing requests
-     * for the key, then either replays a completed response, rejects a
-     * still-running request, or executes and stores a new response.
-     *
-     * <p>An {@code OUTCOME_UNKNOWN} decision is not valid for the local
-     * PAYMENT_INITIATE_DEBIT operation. That state is reserved for external
-     * operations requiring authoritative recovery.</p>
+     * Runs the external workflow outside all database transactions; each
+     * idempotency decision commits separately. Stale same-key requests are
+     * reclaimed only after the grace interval, then resume existing Payment.
      */
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NEVER)
     public InitiateDebitResult execute(
             InitiateDebitCommand command,
             Function<String, InitiateDebitResult> newRequest
     ) {
-        Objects.requireNonNull(
-                command,
-                "InitiateDebit command"
-        );
-
-        Objects.requireNonNull(
-                newRequest,
-                "New-request action"
-        );
-
-        String requestHash = hasher.hash(
-                canonicalizer.canonicalize(command)
-        );
-
-        return coordinator.executeLocked(
-                OPERATION,
-                command.idempotencyKey(),
-                () -> executeLocked(
-                        command,
-                        requestHash,
-                        newRequest
-                )
-        );
-    }
-
-    private InitiateDebitResult executeLocked(
-            InitiateDebitCommand command,
-            String requestHash,
-            Function<String, InitiateDebitResult> newRequest
-    ) {
-        PaymentIdempotencyDecision decision =
-                replayStore.begin(
-                        OPERATION,
-                        command.idempotencyKey(),
-                        requestHash,
-                        timeProvider.now()
-                );
-
-        return switch (decision.kind()) {
-            case REPLAY ->
-                    replay(decision);
-
-            case IN_PROGRESS ->
-                    throw new PaymentInitiationInProgressException();
-
-            case OUTCOME_UNKNOWN ->
-                    throw new IllegalStateException(
-                            "PAYMENT_INITIATE_DEBIT cannot have an unknown external outcome"
-                    );
-
-            case NEW ->
-                    completeNew(
-                            command,
-                            requestHash,
-                            newRequest
-                    );
+        Objects.requireNonNull(command);
+        Objects.requireNonNull(newRequest);
+        String hash = hasher.hash(canonicalizer.canonicalize(command));
+        PaymentInitiationIdempotencyTransactions.Begin begin = transactions.begin(command, hash);
+        return switch (begin.decision().kind()) {
+            case REPLAY -> replay(begin.decision());
+            case IN_PROGRESS, OUTCOME_UNKNOWN -> throw new PaymentInitiationInProgressException();
+            case NEW -> {
+                InitiateDebitResult result = newRequest.apply(hash);
+                transactions.complete(command, hash, result.paymentId().value(),
+                        result.status().name(), replayCodec.encode(result));
+                yield result;
+            }
         };
-    }
-
-    private InitiateDebitResult completeNew(
-            InitiateDebitCommand command,
-            String requestHash,
-            Function<String, InitiateDebitResult> newRequest
-    ) {
-        InitiateDebitResult result =
-                newRequest.apply(requestHash);
-
-        replayStore.complete(
-                OPERATION,
-                command.idempotencyKey(),
-                requestHash,
-                result.paymentId().value(),
-                result.status().name(),
-                replayCodec.encode(result),
-                timeProvider.now()
-        );
-
-        return result;
     }
 
     /**

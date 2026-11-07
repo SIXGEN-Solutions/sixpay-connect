@@ -181,7 +181,7 @@ const authValidator = read('src/environments/authentication-environment.ts');
 for (const token of [
   'Standalone authentication is not allowed in production',
   'At least one production authentication capability must be enabled',
-  'Standalone authentication cannot be combined with Local or OIDC authentication',
+  'Standalone authentication cannot be combined with Local, OIDC or LDAP authentication',
   'OIDC authority must be configured when OIDC is enabled',
   'OIDC clientId must be configured when OIDC is enabled',
   'OIDC scope must be configured when OIDC is enabled',

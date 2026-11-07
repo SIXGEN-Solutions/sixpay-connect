@@ -1,11 +1,11 @@
 package com.sixpay.payment.configuration;
 
-import com.sixpay.payment.domain.model.FinancialInstitutionCode;
 import com.sixpay.payment.domain.model.FailureCategory;
 import com.sixpay.payment.domain.model.RetryDisposition;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.model.evidence.*;
 import com.sixpay.payment.domain.policy.*;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,13 +22,16 @@ import java.util.Set;
  * with these profiles. Connectivity settings do not belong here.</p>
  */
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(PaymentTreasuryApprovalProperties.class)
 public class PaymentMvpPolicyConfiguration {
 
     static final String PROFILE_ID = "payment-mvp";
     static final String PROFILE_VERSION = "v1";
 
     @Bean
-    PaymentPolicyBundle paymentMvpPolicyBundle() {
+    PaymentPolicyBundle paymentMvpPolicyBundle(
+            PaymentTreasuryApprovalProperties treasuryApproval
+    ) {
         PolicyProfileMetadata metadata = new PolicyProfileMetadata(
                 PROFILE_ID,
                 PROFILE_VERSION,
@@ -45,7 +48,7 @@ public class PaymentMvpPolicyConfiguration {
                 authorizationProfile(metadata),
                 bankingVerificationProfile(metadata, temporal),
                 fundsControlProfile(metadata, temporal),
-                treasuryResolutionProfile(metadata),
+                treasuryResolutionProfile(metadata, treasuryApproval),
                 postingAuthorizationProfile(metadata),
                 financialOutcomeProfile(metadata),
                 tfjProfile(metadata),
@@ -96,9 +99,24 @@ public class PaymentMvpPolicyConfiguration {
             PolicyProfileMetadata metadata,
             EvidenceTemporalProfile temporal
     ) {
+        // CustomerVerificationResponse requires these nine banking checks.
+        // REQUIRED_KYC_PRESENT and REQUIRED_KYC_VERIFIED are conditional in
+        // Customer; do not demand them when no KYC attributes were requested.
+        // If the bank supplies KYC checks with FAIL/UNKNOWN, Customer's
+        // verification outcome still prevents an ACCEPT decision.
         return new BankingVerificationPolicyProfile(
                 metadata,
-                Set.of(BankingVerificationCheckType.values()),
+                Set.of(
+                        BankingVerificationCheckType.CUSTOMER_EXISTS,
+                        BankingVerificationCheckType.FINANCIAL_INSTITUTION_MATCHES,
+                        BankingVerificationCheckType.NIU_MATCHES,
+                        BankingVerificationCheckType.IDENTITY_MATCHES,
+                        BankingVerificationCheckType.ACCOUNT_EXISTS,
+                        BankingVerificationCheckType.ACCOUNT_BELONGS_TO_CUSTOMER,
+                        BankingVerificationCheckType.ACCOUNT_IS_ACTIVE,
+                        BankingVerificationCheckType.ACCOUNT_NOT_BLOCKED,
+                        BankingVerificationCheckType.ACCOUNT_NOT_OPPOSED
+                ),
                 temporal
         );
     }
@@ -115,14 +133,12 @@ public class PaymentMvpPolicyConfiguration {
     }
 
     private static TreasuryResolutionPolicyProfile treasuryResolutionProfile(
-            PolicyProfileMetadata metadata
+            PolicyProfileMetadata metadata,
+            PaymentTreasuryApprovalProperties treasuryApproval
     ) {
         return new TreasuryResolutionPolicyProfile(
                 metadata,
-                Map.of(
-                        FinancialInstitutionCode.of("BANK_CM"),
-                        Set.of("v1")
-                )
+                treasuryApproval.approvedVersions()
         );
     }
 

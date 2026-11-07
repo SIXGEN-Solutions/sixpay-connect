@@ -71,23 +71,20 @@ class PaymentInitiationPreparationAdapterTest {
                 .requestFingerprint().value())
                 .isEqualTo("a".repeat(64));
 
-        var debtor = intent.debtorAccountReference();
-
-        assertThat(debtor.financialInstitutionCode().value())
-                .isEqualTo("10005");
-        assertThat(debtor.maskedDisplay())
-                .isEqualTo("RIB-****-0112");
-        assertThat(debtor.integrationAccountToken())
-                .startsWith("acct:v1:")
-                .doesNotContain(command.debtorRib());
-        assertThat(debtor.bindingFingerprint())
-                .matches("^v1:[0-9a-f]{64}$");
+        assertThat(intent.financialInstitutionCode())
+                .isNull();
+        assertThat(intent.debtorAccountReference())
+                .isNull();
 
         assertThat(intent.treasuryAllocationIntent()
                 .allocations())
                 .hasSize(2);
         assertThat(intent.initiationContext())
                 .isNotNull();
+        assertThat(intent.initiationContext().partnerLoginName())
+                .isEqualTo("TRESOR_PAY");
+        assertThat(intent.initiationContext().applicationId())
+                .isEqualTo("TP_APP_001");
         assertThat(intent.initiationContext()
                 .callbackEndpoint().value())
                 .isEqualTo(
@@ -160,8 +157,10 @@ class PaymentInitiationPreparationAdapterTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new InitiateDebitCommand(
+                "UNTRUSTED_LOGIN",
                 "TRESOR_PAY",
-                "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 total,

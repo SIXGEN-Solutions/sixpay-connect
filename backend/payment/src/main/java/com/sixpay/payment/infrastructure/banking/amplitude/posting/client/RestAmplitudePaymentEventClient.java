@@ -46,16 +46,19 @@ public final class RestAmplitudePaymentEventClient
         requireText(idempotencyKey, "idempotencyKey");
 
         try {
+            System.out.println("properties.postingPath(): " + properties.postingPath());
+            System.out.println("request: " + request.toString());
             AmplitudePaymentEventResult response =
                     restClient.post()
                             .uri(properties.postingPath())
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .header(
-                                    HttpHeaders.AUTHORIZATION,
-                                    "Bearer "
-                                            + tokenProvider.accessToken()
-                            )
+                            .headers(headers -> {
+                                String token = tokenProvider.accessToken();
+                                if (token != null && !token.isBlank()) {
+                                    headers.setBearerAuth(token);
+                                }
+                            })
                             .header(
                                     properties.contract().correlationHeader(),
                                     correlationId
@@ -74,7 +77,7 @@ public final class RestAmplitudePaymentEventClient
                             .body(
                                     AmplitudePaymentEventResult.class
                             );
-
+            System.out.println("Response: " + response);
             if (response == null) {
                 throw new AmplitudePaymentEventOutcomeUnknownException(
                         "Payment event response is empty",

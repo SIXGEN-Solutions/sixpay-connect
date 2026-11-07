@@ -55,7 +55,13 @@ public class CustomerSubscriptionService
         Customer customer = loadCustomer(customerId);
 
         requireCustomerEligible(customer);
-        requireAccountBelongsToCustomer(customer, bankAccountId);
+        CustomerBankAccountId effectiveBankAccountId = bankAccountId == null
+                ? customer.defaultBankAccount()
+                        .orElseThrow(() -> new CustomerDomainException(
+                                "customer has no default bank account"))
+                        .id()
+                : bankAccountId;
+        requireAccountBelongsToCustomer(customer, effectiveBankAccountId);
         requirePartnerActive(partnerId);
 
         if (subscriptionRepository
@@ -76,7 +82,7 @@ public class CustomerSubscriptionService
                         ),
                         customerId,
                         partnerId,
-                        bankAccountId,
+                        effectiveBankAccountId,
                         now
                 );
 

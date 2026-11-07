@@ -161,6 +161,33 @@ public class PaymentOutboxEntity {
     )
     private String claimedBy;
 
+
+    // Callback has an independent durable delivery lifecycle from generic publication.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "callback_status", nullable = false, length = 16)
+    private Status callbackStatus = Status.PENDING;
+
+    @Column(name = "callback_attempt_count", nullable = false)
+    private int callbackAttemptCount = 0;
+
+    @Column(name = "callback_next_attempt_at", nullable = false)
+    private Instant callbackNextAttemptAt;
+
+    @Column(name = "callback_claimed_at")
+    private Instant callbackClaimedAt;
+
+    @Column(name = "callback_claimed_by", length = 100)
+    private String callbackClaimedBy;
+
+    @Column(name = "callback_last_attempt_at")
+    private Instant callbackLastAttemptAt;
+
+    @Column(name = "callback_published_at")
+    private Instant callbackPublishedAt;
+
+    @Column(name = "callback_failure_reason", length = 1000)
+    private String callbackFailureReason;
+
     protected PaymentOutboxEntity() {
         // Required by JPA.
     }
@@ -233,6 +260,7 @@ public class PaymentOutboxEntity {
         status = Status.PENDING;
         attemptCount = 0;
         nextAttemptAt = createdAt;
+        callbackNextAttemptAt = createdAt;
     }
 
     public static PaymentOutboxEntity create(
@@ -423,6 +451,75 @@ public class PaymentOutboxEntity {
 
         return normalized;
     }
+
+
+    public void claimCallback(Instant at, String owner) {
+        Objects.requireNonNull(at, "Callback claim instant is required");
+        if (callbackStatus == Status.PUBLISHED || callbackStatus == Status.DEAD) {
+            throw new IllegalStateException("Terminal callback delivery cannot be claimed");
+        }
+        callbackStatus = Status.PROCESSING;
+        callbackAttemptCount++;
+        callbackLastAttemptAt = at;
+        callbackClaimedAt = at;
+        callbackClaimedBy = requireText(owner, 100, "Callback claim owner");
+    }
+
+    public void requireCallbackOwner(String owner) {
+        if (callbackStatus != Status.PROCESSING || !Objects.equals(callbackClaimedBy, owner)) {
+            throw new IllegalStateException("Callback delivery is not owned by this worker");
+        }
+    }
+
+    public void markCallbackPublished(Instant at) {
+        Objects.requireNonNull(at, "Callback publication instant is required");
+        requireCallbackProcessing();
+        callbackStatus = Status.PUBLISHED;
+        callbackPublishedAt = at;
+        callbackFailureReason = null;
+        callbackNextAttemptAt = at;
+        clearCallbackClaim();
+    }
+
+    public void markCallbackFailed(String reason, Instant failedAt, Instant retryAt) {
+        Objects.requireNonNull(failedAt, "Callback failure instant is required");
+        Objects.requireNonNull(retryAt, "Callback retry instant is required");
+        requireCallbackProcessing();
+        if (retryAt.isBefore(failedAt)) {
+            throw new IllegalArgumentException("Callback retry instant precedes failure");
+        }
+        callbackStatus = Status.FAILED;
+        callbackFailureReason = normalizeFailureReason(reason);
+        callbackLastAttemptAt = failedAt;
+        callbackNextAttemptAt = retryAt;
+        clearCallbackClaim();
+    }
+
+    public void markCallbackDead(String reason, Instant at) {
+        Objects.requireNonNull(at, "Callback dead instant is required");
+        requireCallbackProcessing();
+        callbackStatus = Status.DEAD;
+        callbackFailureReason = normalizeFailureReason(reason);
+        callbackLastAttemptAt = at;
+        callbackNextAttemptAt = at;
+        clearCallbackClaim();
+    }
+
+    private void requireCallbackProcessing() {
+        if (callbackStatus != Status.PROCESSING) {
+            throw new IllegalStateException("Callback completion requires PROCESSING status");
+        }
+    }
+
+    private void clearCallbackClaim() {
+        callbackClaimedAt = null;
+        callbackClaimedBy = null;
+    }
+
+    public Status callbackStatus() { return callbackStatus; }
+    public int callbackAttemptCount() { return callbackAttemptCount; }
+    public Instant callbackNextAttemptAt() { return callbackNextAttemptAt; }
+    public String callbackClaimedBy() { return callbackClaimedBy; }
 
     public UUID eventId() {
         return eventId;

@@ -30,7 +30,11 @@ class PaymentFoundationArchitectureTest {
 
         Set<String> authorizedServices = Set.of(
                 "CustomerVerificationFailureMapper.java",
+                "PartnerIdentityAlignmentService.java",
+                "PartnerIdentityResolutionException.java",
+                "PartnerIdentityResolutionFailure.java",
                 "PaymentAuthorizationService.java",
+                "PaymentConfirmationPartnerAccessGuard.java",
                 "PaymentConfirmationRevocationService.java",
                 "PaymentConfirmationService.java",
                 "PaymentCustomerVerificationRequestFactory.java",
@@ -41,6 +45,7 @@ class PaymentFoundationArchitectureTest {
                 "PaymentFinalizationService.java",
                 "PaymentFundsControlRequestFactory.java",
                 "PaymentFundsControlService.java",
+                "PaymentInitiationDeadline.java",
                 "PaymentInitiationOrchestrationService.java",
                 "PaymentInitiationInProgressException.java",
                 "PaymentMutationCoordinator.java",
@@ -54,11 +59,14 @@ class PaymentFoundationArchitectureTest {
                 "PaymentReconciliationService.java",
                 "PaymentT0IdentityFactory.java",
                 "PaymentT0OrchestrationService.java",
+                "PaymentT0PostingReservationService.java",
                 "PaymentT0RecoveryService.java",
                 "PaymentT0SnapshotService.java",
                 "PaymentTreasuryResolutionService.java",
                 "PaymentWorkflowResult.java",
+                "ResolvedDebtorAccountReferenceFactory.java",
                 "SecuredPaymentProjectionQueryService.java",
+                "TresorPayPaymentRecoveryService.java",
                 "package-info.java"
         );
 

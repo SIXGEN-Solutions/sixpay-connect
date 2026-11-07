@@ -9,6 +9,7 @@ record ClaimedPaymentOutboxEvent(
         String eventType,
         String correlationId,
         Instant occurredAt,
-        int attemptCount
+        int attemptCount,
+        String payload
 ) {
 }

@@ -29,9 +29,9 @@ import java.util.UUID;
                         columnNames = "public_payment_reference"
                 ),
                 @UniqueConstraint(
-                        name = "uk_payments_source_external_reference",
+                        name = "uk_payments_partner_external_reference",
                         columnNames = {
-                                "payment_source",
+                                "partner_identifier",
                                 "external_payment_reference"
                         }
                 )
@@ -87,6 +87,13 @@ public class PaymentJpaEntity {
     private String externalPaymentReference;
 
     @Column(
+            name = "partner_identifier",
+            updatable = false,
+            length = 64
+    )
+    private String partnerIdentifier;
+
+    @Column(
             name = "external_subscription_reference",
             nullable = false,
             updatable = false,
@@ -96,8 +103,7 @@ public class PaymentJpaEntity {
 
     @Column(
             name = "financial_institution_code",
-            nullable = false,
-            updatable = false,
+            nullable = true,
             length = 32
     )
     private String financialInstitutionCode;
@@ -178,14 +184,21 @@ public class PaymentJpaEntity {
         entity.source = state.source();
         entity.externalPaymentReference =
                 state.externalPaymentReference().value();
+        entity.partnerIdentifier =
+                state.initiationContext()
+                        .map(context -> context.applicationId())
+                        .orElse(null);
         entity.externalSubscriptionReference =
                 state.externalSubscriptionReference().value();
         entity.financialInstitutionCode =
-                state.financialInstitutionCode().value();
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null);
         entity.requestedAmount = state.requestedAmount().amount();
         entity.requestedCurrency =
                 state.requestedAmount().currency().getCurrencyCode();
-        entity.receivedAt = state.receivedAt();
+        entity.receivedAt = PaymentStateDocument.sqlReceivedAt(
+                state.receivedAt());
         entity.synchronize(state, statePayload);
         return entity;
     }
@@ -233,10 +246,16 @@ public class PaymentJpaEntity {
             );
         }
 
+        financialInstitutionCode =
+                state.optionalFinancialInstitutionCode()
+                        .map(code -> code.value())
+                        .orElse(null);
         status = state.status();
         businessVersion = state.businessVersion();
-        updatedAt = state.updatedAt();
-        finalizedAt = state.finalizedAt().orElse(null);
+        updatedAt = PaymentStateDocument.sqlUpdatedOrFinalizedAt(
+                state.updatedAt());
+        finalizedAt = PaymentStateDocument.sqlUpdatedOrFinalizedAt(
+                state.finalizedAt().orElse(null));
         statePayload = newStatePayload;
     }
 
@@ -254,6 +273,10 @@ public class PaymentJpaEntity {
 
     String externalPaymentReference() {
         return externalPaymentReference;
+    }
+
+    String partnerIdentifier() {
+        return partnerIdentifier;
     }
 
     PaymentStatus status() {

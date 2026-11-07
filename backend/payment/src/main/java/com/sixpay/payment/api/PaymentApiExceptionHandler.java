@@ -4,6 +4,7 @@ import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.response.PaymentProblemResponse;
 import com.sixpay.payment.application.exception.PaymentQueryUnavailableException;
 import com.sixpay.payment.application.security.PaymentAccessDeniedException;
+import com.sixpay.payment.infrastructure.idempotency.PaymentExternalReferenceConflictException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
 import com.sixpay.payment.infrastructure.tresorpay.TresorPayRequestRejectedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,6 +56,19 @@ public class PaymentApiExceptionHandler {
                         correlationId,
                         exception.retryAfterSeconds()
                 ));
+    }
+
+    @ExceptionHandler(PaymentExternalReferenceConflictException.class)
+    ResponseEntity<PaymentProblemResponse> paymentReferenceConflict(
+            PaymentExternalReferenceConflictException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "PAYMENT_REFERENCE_CONFLICT",
+                "External Payment reference is already associated with another request",
+                request
+        );
     }
 
     @ExceptionHandler(PaymentIdempotencyConflictException.class)

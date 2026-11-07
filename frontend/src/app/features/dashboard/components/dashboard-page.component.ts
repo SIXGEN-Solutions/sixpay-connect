@@ -1,17 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
+import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { SpCardComponent } from '../../../shared/components/card/sp-card.component';
-import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 
 @Component({
   selector: 'sp-dashboard-page',
-  imports: [MatIconModule, RouterLink, SpCardComponent, SpToolbarComponent],
+  imports: [MatIconModule, RouterLink, SpCardComponent],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss',
 })
 export class DashboardPageComponent {
+  protected readonly authentication = inject(AuthenticationService);
+
   protected readonly recentPayments = [
     {
       reference: 'PAY-2026-0001842',

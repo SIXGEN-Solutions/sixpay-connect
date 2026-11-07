@@ -7,13 +7,21 @@ export function validateAuthenticationEnvironment(environment: AppEnvironment): 
     throw new Error('Standalone authentication is not allowed in production');
   }
 
-  if (environment.production && !authentication.local.enabled && !authentication.oidc.enabled) {
+  if (
+    environment.production &&
+    !authentication.local.enabled &&
+    !authentication.oidc.enabled &&
+    !authentication.ldap.enabled
+  ) {
     throw new Error('At least one production authentication capability must be enabled');
   }
 
-  if (authentication.standalone && (authentication.local.enabled || authentication.oidc.enabled)) {
+  if (
+    authentication.standalone &&
+    (authentication.local.enabled || authentication.oidc.enabled || authentication.ldap.enabled)
+  ) {
     throw new Error(
-      'Standalone authentication cannot be combined with Local or OIDC authentication',
+      'Standalone authentication cannot be combined with Local, OIDC or LDAP authentication',
     );
   }
 
@@ -39,6 +47,10 @@ export function isLocalAuthenticationEnabled(authentication: AuthenticationEnvir
 
 export function isOidcAuthenticationEnabled(authentication: AuthenticationEnvironment): boolean {
   return authentication.oidc.enabled;
+}
+
+export function isLdapAuthenticationEnabled(authentication: AuthenticationEnvironment): boolean {
+  return authentication.ldap.enabled;
 }
 
 function requireNonBlank(value: string | undefined, message: string): void {

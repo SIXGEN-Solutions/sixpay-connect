@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CustomerBankAccountTest {
 
     @Test
-    void normalizesCurrencyAndOpaqueReferences() {
+    void preservesNativeCurrencyAndOpaqueReferences() {
         CustomerBankAccount account = CustomerBankAccount.create(
                 new CustomerBankAccountId(UUID.randomUUID()),
                 new CustomerId(UUID.randomUUID()),
@@ -26,19 +26,34 @@ class CustomerBankAccountTest {
 
         assertThat(account.bankingAccountReference())
                 .isEqualTo("BANK-ACCOUNT-001");
-        assertThat(account.currency()).isEqualTo("XAF");
+        assertThat(account.currency()).isEqualTo("xaf");
         assertThat(account.defaultAccount()).isFalse();
     }
 
     @Test
-    void rejectsInvalidCurrency() {
+    void acceptsNativeBankDevCode() {
+        CustomerBankAccount account = CustomerBankAccount.create(
+                new CustomerBankAccountId(UUID.randomUUID()),
+                new CustomerId(UUID.randomUUID()),
+                "00001-04942231051-47",
+                "fingerprint-001",
+                "****1051",
+                "001",
+                "CURRENT",
+                Instant.parse("2026-08-22T20:00:00Z")
+        );
+        assertThat(account.currency()).isEqualTo("001");
+    }
+
+    @Test
+    void rejectsMissingCurrency() {
         assertThatThrownBy(() -> CustomerBankAccount.create(
                 new CustomerBankAccountId(UUID.randomUUID()),
                 new CustomerId(UUID.randomUUID()),
                 "BANK-ACCOUNT-001",
                 "fingerprint-001",
                 "****001",
-                "INVALID",
+                " ",
                 null,
                 Instant.parse("2026-08-22T20:00:00Z")
         )).isInstanceOf(CustomerDomainException.class);

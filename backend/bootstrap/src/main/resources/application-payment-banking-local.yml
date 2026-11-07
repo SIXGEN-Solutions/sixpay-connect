@@ -1,0 +1,6 @@
+spring:
+  config:
+    activate:
+      on-profile: payment-banking-local
+    import:
+      - classpath:application-payment-banking-capabilities.yml

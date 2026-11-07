@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,15 +40,21 @@ class AmplitudePaymentEventMapperTest {
                 request.paymentReference()
         );
         assertEquals("v1", request.snapshotVersion());
-        assertEquals(2, request.providerEntries().size());
 
         assertEquals(
                 "VIRPAY",
                 request.providerEvent().nature()
         );
         assertEquals(
-                "XAF",
+                "001",
                 request.providerEvent().currency()
+        );
+        assertEquals(
+                "XAF",
+                finalizedSnapshot()
+                        .requestedAmount()
+                        .currency()
+                        .getCurrencyCode()
         );
         assertEquals(
                 "00001-12345678901-42",
@@ -59,32 +64,13 @@ class AmplitudePaymentEventMapperTest {
                 "00001-99999999999-17",
                 request.providerEvent().creditorAccountReference()
         );
-        assertEquals(
-                "2026-09-06/PAIEMENT/"
-                        + "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/"
-                        + "12345678901",
-                request.providerEvent().label()
-        );
-        assertTrue(request.providerEvent().nightMode());
+        assertEquals("PAIEMENT/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                request.providerEvent().label());
 
-        assertEquals(
-                "D",
-                request.providerEntries().get(0).direction()
-        );
-        assertEquals(
-                "C",
-                request.providerEntries().get(1).direction()
-        );
-        assertEquals(
-                0,
-                new BigDecimal("1000").compareTo(
-                        request.providerEntries().get(0).amount()
-                )
-        );
-        assertEquals(
-                request.providerEntries().get(0).amount(),
-                request.providerEntries().get(1).amount()
-        );
+        assertEquals(0, new BigDecimal("1000.00")
+                .compareTo(request.providerEvent().debitAmount()));
+        assertEquals(request.providerEvent().debitAmount(),
+                request.providerEvent().creditAmount());
     }
 
     @Test
@@ -118,15 +104,7 @@ class AmplitudePaymentEventMapperTest {
     @Test
     void rejectsNonApprovedNature() {
         AmplitudePaymentEventMappingContext invalid =
-                new AmplitudePaymentEventMappingContext(
-                        "PAY",
-                        101L,
-                        LocalDate.of(2026, 9, 6),
-                        false,
-                        "OTHER",
-                        "SIXPAY",
-                        T0.plusSeconds(2)
-                );
+                new AmplitudePaymentEventMappingContext("PAY", "OTHER", "SIXPAY", T0.plusSeconds(2));
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -185,34 +163,41 @@ class AmplitudePaymentEventMapperTest {
     }
 
     @Test
-    void requestContainsNoCommissionOrTaxFields() {
+    void requestLeavesOptionalCommissionAndTaxFieldsUnset()
+            throws IllegalAccessException {
+
         AmplitudePaymentEventRequest request =
                 mapper.toRequest(
                         finalizedSnapshot(),
                         context()
                 );
 
-        assertFalse(
-                request.providerEvent()
-                        .getClass()
-                        .getRecordComponents()
-                        .length == 0
-        );
+        var providerEvent = request.providerEvent();
+        var providerClass = providerEvent.getClass();
 
-        for (var component :
-                request.providerEvent()
-                        .getClass()
-                        .getRecordComponents()) {
-            assertFalse(
-                    component.getName()
-                            .toLowerCase()
-                            .contains("commission")
-            );
-            assertFalse(
-                    component.getName()
-                            .toLowerCase()
-                            .contains("tax")
-            );
+        assertFalse(providerClass.isRecord());
+
+        for (var field : providerClass.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(
+                    field.getModifiers()
+            )) {
+                continue;
+            }
+
+            String fieldName = field.getName()
+                    .toLowerCase(java.util.Locale.ROOT);
+
+            if (fieldName.contains("commission")
+                    || fieldName.contains("tax")) {
+
+                field.setAccessible(true);
+
+                org.junit.jupiter.api.Assertions.assertNull(
+                        field.get(providerEvent),
+                        "Optional field must remain unset: "
+                                + field.getName()
+                );
+            }
         }
     }
 
@@ -286,14 +271,6 @@ class AmplitudePaymentEventMapperTest {
     }
 
     private static AmplitudePaymentEventMappingContext context() {
-        return new AmplitudePaymentEventMappingContext(
-                "PAY",
-                101L,
-                LocalDate.of(2026, 9, 6),
-                true,
-                "VIRPAY",
-                "SIXPAY",
-                T0.plusSeconds(2)
-        );
+        return new AmplitudePaymentEventMappingContext("PAY", "VIRPAY", "SIXPAY", T0.plusSeconds(2));
     }
 }

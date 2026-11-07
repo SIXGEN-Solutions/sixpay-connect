@@ -41,14 +41,19 @@ public final class AmplitudeCustomerVerificationAdapter
         Objects.requireNonNull(query, "query is required");
 
         try {
+            var outbound = mapper.toExternalRequest(query);
             return mapper.toInternalResponse(
                     responseValidator.validate(
                             client.verify(
-                                    mapper.toExternalRequest(query),
+                                    outbound,
                                     query.context()
                                             .correlationId()
                                             .value()
-                            )
+                            ),
+                            query.subject().identity().legalName() != null
+                                    && !query.subject().identity().legalName().isBlank(),
+                            outbound.requiredKycFields() != null
+                                    && !outbound.requiredKycFields().isEmpty()
                     )
             );
         } catch (RuntimeException failure) {

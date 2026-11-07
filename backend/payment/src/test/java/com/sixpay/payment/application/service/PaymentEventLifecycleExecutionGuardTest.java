@@ -32,6 +32,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -45,6 +47,8 @@ class PaymentEventLifecycleExecutionGuardTest {
     private PaymentFinancialSnapshotRepository snapshotRepository;
     @Mock
     private PaymentPostingPreparationService postingPreparationService;
+    @Mock
+    private PaymentT0PostingReservationService reservationService;
     @Mock
     private PaymentFinalizationService finalizationService;
     @Mock
@@ -99,18 +103,19 @@ class PaymentEventLifecycleExecutionGuardTest {
         when(fixture.payment.status())
                 .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
 
-        when(postingPreparationService.authorizePaymentEventPosting(
-                fixture.paymentId,
-                fixture.instruction,
-                fixture.requestedAt
-        )).thenReturn(
-                new PaymentWorkflowResult(
-                        fixture.paymentId,
-                        fixture.reference,
-                        PaymentStatus.POSTING_PENDING,
-                        2L,
-                        false
-                )
+        when(fixture.payment.id()).thenReturn(fixture.paymentId);
+        when(fixture.payment.publicPaymentReference()).thenReturn(fixture.reference);
+        when(fixture.payment.businessVersion()).thenReturn(2L);
+
+        mockBankingMappingContext(fixture);
+
+        when(reservationService.reserve(
+                eq(fixture.paymentId),
+                eq(fixture.instruction),
+                eq(fixture.requestedAt),
+                any(PaymentEventExecutionPort.PaymentEventMappingContext.class)
+        )).thenThrow(
+                new PaymentT0PostingReservationService.ReservationLostException()
         );
 
         PaymentWorkflowResult result = service().execute(
@@ -124,7 +129,32 @@ class PaymentEventLifecycleExecutionGuardTest {
         assertThat(result.stateChanged()).isFalse();
 
         verifyNoInteractions(
-                contextService,
+                executionPort,
+                finalizationService,
+                recoveryPort
+        );
+
+        org.mockito.Mockito.verify(contextService)
+                .resolve(fixture.requestedAt);
+    }
+
+    @Test
+    void missingBankingContextNeverReservesPostingInstruction() {
+        Fixture fixture = fixture();
+        when(fixture.payment.status())
+                .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
+        when(contextService.resolve(fixture.requestedAt))
+                .thenThrow(new IllegalStateException("Core Banking context unavailable"));
+
+        assertThatThrownBy(() -> service().execute(
+                fixture.paymentId, fixture.instruction,
+                fixture.context, fixture.requestedAt, policies
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Core Banking context unavailable");
+
+        verifyNoInteractions(
+                postingPreparationService,
                 executionPort,
                 finalizationService,
                 recoveryPort
@@ -135,6 +165,9 @@ class PaymentEventLifecycleExecutionGuardTest {
     void sameKeyDifferentFinancialRequestIsConflictBeforeAnyBankCall() {
         Fixture fixture = fixture();
 
+        when(fixture.payment.status())
+                .thenReturn(PaymentStatus.APPROVED_FOR_POSTING);
+
         PostingInstructionIdentity conflicting =
                 new PostingInstructionIdentity(
                         fixture.instruction.instructionId(),
@@ -142,10 +175,20 @@ class PaymentEventLifecycleExecutionGuardTest {
                         fixture.instruction.amount(),
                         fixture.instruction.accountBindingFingerprint(),
                         EvidenceFingerprint.of(
-                                "v1:sha256:"
-                                        + "f".repeat(64)
+                                "v1:sha256:" + "f".repeat(64)
                         )
                 );
+        mockBankingMappingContext(fixture);
+        when(reservationService.reserve(
+                eq(fixture.paymentId),
+                eq(conflicting),
+                eq(fixture.requestedAt),
+                any(PaymentEventExecutionPort.PaymentEventMappingContext.class)
+        )).thenThrow(
+                new IllegalStateException(
+                        "Posting instruction conflicts with frozen T0 financial snapshot"
+                )
+        );
 
         assertThatThrownBy(() ->
                 service().execute(
@@ -156,12 +199,11 @@ class PaymentEventLifecycleExecutionGuardTest {
                         policies
                 )
         )
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("financial snapshot");
 
         verifyNoInteractions(
                 postingPreparationService,
-                contextService,
                 executionPort,
                 finalizationService,
                 recoveryPort
@@ -173,6 +215,7 @@ class PaymentEventLifecycleExecutionGuardTest {
                 paymentLookupPort,
                 snapshotRepository,
                 postingPreparationService,
+                reservationService,
                 finalizationService,
                 contextService,
                 executionPort,
@@ -196,18 +239,18 @@ class PaymentEventLifecycleExecutionGuardTest {
         PaymentFinancialEventSnapshot snapshot =
                 mock(PaymentFinancialEventSnapshot.class);
 
-        when(paymentLookupPort.findById(paymentId))
+        org.mockito.Mockito.lenient().when(paymentLookupPort.findById(paymentId))
                 .thenReturn(Optional.of(payment));
-        when(snapshotRepository.findByPaymentId(paymentId))
+        org.mockito.Mockito.lenient().when(snapshotRepository.findByPaymentId(paymentId))
                 .thenReturn(Optional.of(snapshot));
 
-        when(snapshot.status())
+        org.mockito.Mockito.lenient().when(snapshot.status())
                 .thenReturn(FinancialSnapshotStatus.FINALIZED);
-        when(snapshot.publicPaymentReference()).thenReturn(reference);
-        when(snapshot.requestedAmount()).thenReturn(amount);
-        when(snapshot.debtorAccountReference())
+        org.mockito.Mockito.lenient().when(snapshot.publicPaymentReference()).thenReturn(reference);
+        org.mockito.Mockito.lenient().when(snapshot.requestedAmount()).thenReturn(amount);
+        org.mockito.Mockito.lenient().when(snapshot.debtorAccountReference())
                 .thenReturn("vault:debtor:0001");
-        when(snapshot.creditorAccountReference())
+        org.mockito.Mockito.lenient().when(snapshot.creditorAccountReference())
                 .thenReturn("vault:creditor:0001");
 
         EvidenceFingerprint fingerprint =
@@ -252,5 +295,16 @@ class PaymentEventLifecycleExecutionGuardTest {
             BankingRequestContext context,
             Instant requestedAt
     ) {
+    }
+
+    private void mockBankingMappingContext(Fixture fixture) {
+        when(contextService.resolve(fixture.requestedAt))
+                .thenReturn(
+                        new PaymentEventExecutionPort.PaymentEventMappingContext(
+                                "123",
+                                "SIXPAY",
+                                fixture.requestedAt
+                        )
+                );
     }
 }

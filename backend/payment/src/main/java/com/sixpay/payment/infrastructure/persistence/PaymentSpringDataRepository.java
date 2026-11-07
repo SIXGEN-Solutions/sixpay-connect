@@ -19,8 +19,19 @@ public interface PaymentSpringDataRepository
                     String externalPaymentReference
             );
 
+    Optional<PaymentJpaEntity>
+            findByPartnerIdentifierAndExternalPaymentReference(
+                    String partnerIdentifier,
+                    String externalPaymentReference
+            );
+
     boolean existsBySourceAndExternalPaymentReference(
             PaymentSource source,
+            String externalPaymentReference
+    );
+
+    boolean existsByPartnerIdentifierAndExternalPaymentReference(
+            String partnerIdentifier,
             String externalPaymentReference
     );
 }

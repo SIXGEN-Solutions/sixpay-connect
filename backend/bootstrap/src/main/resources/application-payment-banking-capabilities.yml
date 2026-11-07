@@ -1,5 +1,29 @@
 sixpay:
   payment:
+    treasury:
+      enabled: ${SIXPAY_PAYMENT_TREASURY_ENABLED:false}
+      # Deny by default. An authorized deployment must explicitly supply
+      # institution -> approved version(s) via its configuration overlay.
+      approval:
+        approved-versions-by-institution:
+          REGIONAL:
+            - "v1"
+      accounts:
+        REGIONAL:
+          AVI:
+            configuration-id: TREASURY-BANK-CM-AVI
+            account-reference: ${TREASURY_BANK_CM_AVI_ACCOUNT_REF:}
+            version: "v1"
+
+          IM7:
+            configuration-id: TREASURY-BANK-CM-IM7
+            account-reference: ${TREASURY_BANK_CM_IM7_ACCOUNT_REF:}
+            version: "v1"
+
+          RNF:
+            configuration-id: TREASURY-BANK-CM-RNF
+            account-reference: ${TREASURY_BANK_CM_RNF_ACCOUNT_REF:}
+            version: "v1"
     banking:
       amplitude:
         reservation:
@@ -9,6 +33,9 @@ sixpay:
           connect-timeout: ${AMPLITUDE_FUNDS_RESERVATION_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_FUNDS_RESERVATION_READ_TIMEOUT:5s}
           security:
+            oauth2-enabled: ${AMPLITUDE_FUNDS_RESERVATION_OAUTH2_ENABLED:true}
+            mtls-enabled: ${AMPLITUDE_FUNDS_RESERVATION_MTLS_ENABLED:true}
+            allow-insecure-http: ${AMPLITUDE_FUNDS_RESERVATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
@@ -27,12 +54,12 @@ sixpay:
           posting-path: ${AMPLITUDE_POSTING_PATH:/api/v1/payment-events}
           payment-reference-lookup-path: ${AMPLITUDE_POSTING_PAYMENT_REFERENCE_LOOKUP_PATH:/api/v1/payment-events/{paymentReference}}
           idempotency-lookup-path: ${AMPLITUDE_POSTING_IDEMPOTENCY_LOOKUP_PATH:/api/v1/payment-events/idempotency/{idempotencyKey}}
-          allocate-event-number-path: ${AMPLITUDE_POSTING_ALLOCATE_EVENT_NUMBER_PATH:/api/v1/transactions/process/lastnumeroeveope/{operationCode}}
-          accounting-date-path: ${AMPLITUDE_POSTING_ACCOUNTING_DATE_PATH:/api/v1/nomenclature/getdatecomptable}
-          night-mode-path: ${AMPLITUDE_POSTING_NIGHT_MODE_PATH:/api/v1/kyc/process/modenuit}
           connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
           security:
+            oauth2-enabled: ${AMPLITUDE_POSTING_OAUTH2_ENABLED:true}
+            mtls-enabled: ${AMPLITUDE_POSTING_MTLS_ENABLED:true}
+            allow-insecure-http: ${AMPLITUDE_POSTING_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
@@ -48,6 +75,9 @@ sixpay:
           connect-timeout: ${AMPLITUDE_COMPENSATION_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_COMPENSATION_READ_TIMEOUT:10s}
           security:
+            oauth2-enabled: ${AMPLITUDE_COMPENSATION_OAUTH2_ENABLED:true}
+            mtls-enabled: ${AMPLITUDE_COMPENSATION_MTLS_ENABLED:true}
+            allow-insecure-http: ${AMPLITUDE_COMPENSATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
@@ -80,6 +110,9 @@ sixpay:
           connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT}
           read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
           security:
+            oauth2-enabled: ${AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED:true}
+            mtls-enabled: ${AMPLITUDE_CONFIRMATION_MTLS_ENABLED:true}
+            allow-insecure-http: ${AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:

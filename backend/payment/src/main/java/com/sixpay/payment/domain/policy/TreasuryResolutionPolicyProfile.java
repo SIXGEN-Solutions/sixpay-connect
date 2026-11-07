@@ -17,11 +17,8 @@ public record TreasuryResolutionPolicyProfile(
                 approvedConfigurationVersionsByInstitution,
                 "Approved configuration versions"
         );
-        if (approvedConfigurationVersionsByInstitution.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "At least one institution configuration must be supplied"
-            );
-        }
+        // An empty approval map is valid and intentionally denies every institution.
+        // This prevents implicit bank approval when no deployment policy is supplied.
         approvedConfigurationVersionsByInstitution =
                 approvedConfigurationVersionsByInstitution.entrySet()
                         .stream()

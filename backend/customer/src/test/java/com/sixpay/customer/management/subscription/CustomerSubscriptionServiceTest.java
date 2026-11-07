@@ -127,6 +127,49 @@ class CustomerSubscriptionServiceTest {
         verify(subscriptions, never()).save(any());
     }
 
+
+    @Test
+    void usesDefaultBankAccountWhenNotProvidedAndKeepsPendingActivation() {
+        CustomerRepository customers = mock(CustomerRepository.class);
+        CustomerSubscriptionRepository subscriptions = mock(CustomerSubscriptionRepository.class);
+        PartnerSubscriptionEligibilityPort partners = mock(PartnerSubscriptionEligibilityPort.class);
+        CustomerEnrollmentIdGenerator ids = mock(CustomerEnrollmentIdGenerator.class);
+        Customer customer = customer();
+        UUID partnerId = UUID.randomUUID();
+        when(customers.findById(customer.id())).thenReturn(Optional.of(customer));
+        when(partners.check(partnerId)).thenReturn(
+                new PartnerSubscriptionEligibilityPort.PartnerEligibility(true, true));
+        when(ids.nextId()).thenReturn(UUID.randomUUID());
+        when(subscriptions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var service = new CustomerSubscriptionService(customers, subscriptions, partners, ids);
+
+        var subscription = service.create(customer.id(), partnerId, null, NOW);
+
+        assertThat(subscription.bankAccountId())
+                .isEqualTo(customer.defaultBankAccount().orElseThrow().id());
+        assertThat(subscription.status()).isEqualTo(CustomerSubscriptionStatus.PENDING_ACTIVATION);
+        assertThat(subscription.activatedAt()).isEmpty();
+        verify(subscriptions).save(subscription);
+    }
+
+    @Test
+    void rejectsExplicitBankAccountNotOwnedByCustomer() {
+        CustomerRepository customers = mock(CustomerRepository.class);
+        CustomerSubscriptionRepository subscriptions = mock(CustomerSubscriptionRepository.class);
+        PartnerSubscriptionEligibilityPort partners = mock(PartnerSubscriptionEligibilityPort.class);
+        CustomerEnrollmentIdGenerator ids = mock(CustomerEnrollmentIdGenerator.class);
+        Customer customer = customer();
+        when(customers.findById(customer.id())).thenReturn(Optional.of(customer));
+        var service = new CustomerSubscriptionService(customers, subscriptions, partners, ids);
+
+        assertThatThrownBy(() -> service.create(customer.id(), UUID.randomUUID(),
+                new CustomerBankAccountId(UUID.randomUUID()), NOW))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessageContaining("does not belong to customer");
+        verifyNoInteractions(partners);
+        verify(subscriptions, never()).save(any());
+    }
+
     private static Customer customer() {
         CustomerId id =
                 new CustomerId(UUID.randomUUID());

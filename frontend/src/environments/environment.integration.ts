@@ -14,5 +14,8 @@ export const environment = {
     oidc: {
       enabled: false,
     },
+    ldap: {
+      enabled: false,
+    },
   },
 } satisfies AppEnvironment;

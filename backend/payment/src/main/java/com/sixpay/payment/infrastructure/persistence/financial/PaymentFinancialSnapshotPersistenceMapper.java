@@ -40,7 +40,8 @@ public class PaymentFinancialSnapshotPersistenceMapper {
                                         entry.amount(),
                                         entry.currency()
                                 ),
-                                entry.createdAt()
+                                entry.createdAt(),
+                                entry.bankingDetails()
                         )
                 )
                 .toList();
@@ -64,7 +65,8 @@ public class PaymentFinancialSnapshotPersistenceMapper {
                 entity.snapshotStatus(),
                 entity.createdAt(),
                 entity.finalizedAt(),
-                entries
+                entries,
+                entity.bankingDetails()
         );
     }
 }

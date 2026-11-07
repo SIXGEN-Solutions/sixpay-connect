@@ -1,5 +1,6 @@
 package com.sixpay.security.configuration;
 
+import com.sixpay.security.application.port.input.AuthenticateLdapUserUseCase;
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.input.ChangeLocalPasswordUseCase;
 import com.sixpay.security.application.port.output.AuthenticationAuditPort;
@@ -7,6 +8,7 @@ import com.sixpay.security.application.port.output.ExternalIdentityResolver;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -49,7 +51,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
                 "sixpay.security.authentication.local.enabled=true",
-                "sixpay.security.authentication.oidc.enabled=true"
+                "sixpay.security.authentication.oidc.enabled=true",
+                "sixpay.security.authentication.ldap.enabled=true",
+                "sixpay.security.authentication.ldap.urls=ldaps://ldap.example.test:636",
+                "sixpay.security.authentication.ldap.base-dn=dc=example,dc=test",
+                "sixpay.security.authentication.ldap.user-search-base=ou=users",
+                "sixpay.security.authentication.ldap.service-account-dn=cn=sixpay,ou=services",
+                "sixpay.security.authentication.ldap.service-account-password=test-only-secret"
         }
 )
 @AutoConfigureMockMvc
@@ -86,6 +94,9 @@ class HybridAuthenticationIT {
     @MockitoBean
     private AuthenticateLocalUserUseCase authenticateLocalUserUseCase;
 
+    @MockitoBean
+    private AuthenticateLdapUserUseCase authenticateLdapUserUseCase;
+
     /*
      * These collaborators satisfy LOCAL auto-configuration without bringing
      * database infrastructure into this focused coexistence test.
@@ -99,6 +110,15 @@ class HybridAuthenticationIT {
     @MockitoBean
     private LocalAuthenticationUserSpringDataRepository
             localAuthenticationUserSpringDataRepository;
+
+    /*
+     * This focused Security context deliberately disables JPA repository
+     * auto-configuration. Partner machine identity persistence is outside the
+     * test scope, so its repository boundary is supplied as a test double.
+     */
+    @MockitoBean
+    private PartnerMachineIdentitySpringDataRepository
+            partnerMachineIdentityRepository;
 
     @Test
     void localAuthenticationRemainsAvailableWhenOidcIsAlsoEnabled()
@@ -189,6 +209,74 @@ class HybridAuthenticationIT {
                 .authenticate(
                         any()
                 );
+    }
+
+    @Test
+    void ldapAuthenticationRemainsAvailableAlongsideLocalAndOidc()
+            throws Exception {
+
+        when(authenticateLdapUserUseCase.authenticate(any()))
+                .thenReturn(ldapManager());
+
+        var loginResult =
+                mockMvc.perform(
+                                post("/api/v1/auth/login/ldap")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"username\":\"ldap-manager\",\"password\":\"directory-password\"}")
+                        )
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.authenticated").value(true))
+                        .andExpect(jsonPath("$.subject").value(USER_ID.toString()))
+                        .andExpect(jsonPath("$.username").value("ldap-manager"))
+                        .andExpect(jsonPath("$.authenticationMethod").value("LDAP"))
+                        .andExpect(jsonPath("$.passwordChangeRequired").value(false))
+                        .andExpect(jsonPath("$.capabilities.localEnabled").value(true))
+                        .andExpect(jsonPath("$.capabilities.oidcEnabled").value(true))
+                        .andExpect(jsonPath("$.capabilities.ldapEnabled").value(true))
+                        .andReturn();
+
+        MockHttpSession ldapSession =
+                (MockHttpSession) loginResult.getRequest().getSession(false);
+
+        mockMvc.perform(get("/api/v1/auth/me").session(ldapSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.authenticationMethod").value("LDAP"))
+                .andExpect(jsonPath("$.username").value("ldap-manager"));
+
+        verify(authenticateLdapUserUseCase).authenticate(any());
+    }
+
+    @Test
+    void ldapLogoutTerminatesCanonicalBackendSession()
+            throws Exception {
+
+        when(authenticateLdapUserUseCase.authenticate(any()))
+                .thenReturn(ldapManager());
+
+        var loginResult =
+                mockMvc.perform(
+                                post("/api/v1/auth/login/ldap")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"username\":\"ldap-manager\",\"password\":\"directory-password\"}")
+                        )
+                        .andExpect(status().isOk())
+                        .andReturn();
+
+        MockHttpSession ldapSession =
+                (MockHttpSession) loginResult.getRequest().getSession(false);
+
+        mockMvc.perform(
+                        post("/api/v1/auth/logout")
+                                .session(ldapSession)
+                                .with(
+                                        org.springframework.security.test.web.servlet.request
+                                                .SecurityMockMvcRequestPostProcessors.csrf()
+                                )
+                )
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/auth/me").session(ldapSession))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -521,6 +609,18 @@ class HybridAuthenticationIT {
         return new AuthenticatedUser(
                 USER_ID.toString(),
                 "manager",
+                Set.of(
+                        "ROLE_MANAGER",
+                        "SCOPE_payment.read"
+                ),
+                false
+        );
+    }
+
+    private static AuthenticatedUser ldapManager() {
+        return new AuthenticatedUser(
+                USER_ID.toString(),
+                "ldap-manager",
                 Set.of(
                         "ROLE_MANAGER",
                         "SCOPE_payment.read"

@@ -1,5 +1,6 @@
 package com.sixpay.payment.infrastructure.query;
 
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
 import com.sixpay.payment.application.query.PaymentSearchSort;
 import com.sixpay.payment.application.query.SearchPaymentProjectionsQuery;
 import com.sixpay.payment.application.security.PaymentVisibilityScope;
@@ -7,7 +8,9 @@ import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -287,6 +290,7 @@ class PaymentProjectionAdaptersIT {
                 """.formatted(correlationId);
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(
@@ -298,6 +302,11 @@ class PaymentProjectionAdaptersIT {
         CurrentUserProvider currentUserProvider() {
             return () ->
                     Optional.<AuthenticatedUser>empty();
+        }
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return Mockito.mock(PaymentCustomerSubscriptionPort.class);
         }
     }
 }

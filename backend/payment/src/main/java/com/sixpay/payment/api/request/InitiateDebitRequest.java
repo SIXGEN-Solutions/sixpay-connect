@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,13 +19,18 @@ import java.util.List;
  */
 public record InitiateDebitRequest(
         @JsonProperty("LoginName")
-        @NotBlank
         @Size(max = 64)
         String loginName,
 
         @JsonProperty("AppID")
+        @NotBlank
         @Size(max = 64)
         String applicationId,
+
+        @JsonProperty("referenceClient")
+        @NotBlank
+        @Size(max = 128)
+        String clientReference,
 
         @JsonProperty("endToEndId")
         @NotBlank
@@ -40,18 +44,15 @@ public record InitiateDebitRequest(
         BigDecimal totalAmount,
 
         @JsonProperty("devise")
-        @NotBlank
         @Pattern(regexp = "^[A-Z]{3}$")
         String currency,
 
         @JsonProperty("ribDebiteur")
-        @NotBlank
         @Size(min = 8, max = 64)
         @Pattern(regexp = "^[A-Za-z0-9-]+$")
         String debtorRib,
 
         @JsonProperty("nomDebiteur")
-        @NotBlank
         @Size(max = 200)
         String debtorName,
 
@@ -60,16 +61,13 @@ public record InitiateDebitRequest(
         ClaimType claimType,
 
         @JsonProperty("NUI")
-        @NotBlank
         @Size(max = 64)
         String taxpayerIdentifier,
 
         @JsonProperty("dateExecution")
-        @NotNull
         Instant requestedExecutionAt,
 
         @JsonProperty("beneficiaires")
-        @NotEmpty
         @Size(max = 20)
         List<@Valid InitiateDebitBeneficiaryRequest> beneficiaries,
 
@@ -79,6 +77,21 @@ public record InitiateDebitRequest(
         @Pattern(regexp = "^https://.+$")
         String callbackUrl
 ) {
+
+    /** Backward-compatible constructor for existing Java tests/callers. */
+    public InitiateDebitRequest(
+            String loginName, String applicationId, String endToEndId,
+            BigDecimal totalAmount, String currency, String debtorRib,
+            String debtorName, ClaimType claimType, String taxpayerIdentifier,
+            Instant requestedExecutionAt,
+            List<InitiateDebitBeneficiaryRequest> beneficiaries,
+            String callbackUrl
+    ) {
+        this(loginName, applicationId, endToEndId, endToEndId,
+                totalAmount, currency, debtorRib, debtorName, claimType,
+                taxpayerIdentifier, requestedExecutionAt, beneficiaries,
+                callbackUrl);
+    }
 
     public InitiateDebitRequest {
         beneficiaries = beneficiaries == null

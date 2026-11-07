@@ -133,18 +133,92 @@ public class SecurityUserAdministrationService implements SecurityUserAdministra
 
     @Override @Transactional
     public SecurityUserDetail linkOidcIdentity(UUID userId, String provider, String providerSubject, String actorSubject) {
-        administrationPort.linkOidcIdentity(userId, provider, providerSubject);
-        auditPort.record(new SecurityAuditEvent(SecurityAuditEventType.IDENTITY_LINKED, actorSubject,
-                userId, null, provider, null, Instant.now()));
+        return linkExternalIdentity(
+                userId,
+                com.sixpay.security.domain.authentication.AuthenticationIdentityType.OIDC,
+                provider,
+                providerSubject,
+                actorSubject
+        );
+    }
+
+    @Override @Transactional
+    public SecurityUserDetail linkLdapIdentity(UUID userId, String trustDomain, String stableSubject, String actorSubject) {
+        return linkExternalIdentity(
+                userId,
+                com.sixpay.security.domain.authentication.AuthenticationIdentityType.LDAP,
+                trustDomain,
+                stableSubject,
+                actorSubject
+        );
+    }
+
+    private SecurityUserDetail linkExternalIdentity(
+            UUID userId,
+            com.sixpay.security.domain.authentication.AuthenticationIdentityType identityType,
+            String provider,
+            String providerSubject,
+            String actorSubject
+    ) {
+        if (identityType == com.sixpay.security.domain.authentication.AuthenticationIdentityType.LOCAL) {
+            throw new IllegalArgumentException("LOCAL identity linking uses the LOCAL authentication lifecycle");
+        }
+        String normalizedProvider = requireExternalIdentityValue(
+                provider,
+                "External identity provider must not be blank",
+                500
+        );
+        String normalizedSubject = requireExternalIdentityValue(
+                providerSubject,
+                "External identity subject must not be blank",
+                255
+        );
+        administrationPort.linkExternalIdentity(
+                userId,
+                identityType,
+                normalizedProvider,
+                normalizedSubject
+        );
+        auditPort.record(new SecurityAuditEvent(
+                SecurityAuditEventType.IDENTITY_LINKED,
+                actorSubject,
+                userId,
+                null,
+                normalizedProvider,
+                identityType.name(),
+                Instant.now()
+        ));
         return administrationPort.getUser(userId);
     }
 
     @Override @Transactional
-    public SecurityUserDetail unlinkOidcIdentity(UUID userId, UUID identityId, String actorSubject) {
-        administrationPort.unlinkOidcIdentity(userId, identityId);
-        auditPort.record(new SecurityAuditEvent(SecurityAuditEventType.IDENTITY_UNLINKED, actorSubject,
-                userId, null, null, null, Instant.now()));
+    public SecurityUserDetail unlinkExternalIdentity(UUID userId, UUID identityId, String actorSubject) {
+        administrationPort.unlinkExternalIdentity(userId, identityId);
+        auditPort.record(new SecurityAuditEvent(
+                SecurityAuditEventType.IDENTITY_UNLINKED,
+                actorSubject,
+                userId,
+                null,
+                null,
+                "EXTERNAL",
+                Instant.now()
+        ));
         return administrationPort.getUser(userId);
+    }
+
+    private static String requireExternalIdentityValue(
+            String value,
+            String message,
+            int maxLength
+    ) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(message);
+        }
+        return normalized;
     }
 
     @Override @Transactional

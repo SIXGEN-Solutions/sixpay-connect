@@ -13,41 +13,43 @@ import java.util.Objects;
  */
 public record CustomerIdentity(
         CustomerNiu niu,
-        String legalName
+        String legalName,
+        String bankingCustomerReference,
+        String customerNumber
 ) implements ValueObject {
 
     private static final int MIN_LEGAL_NAME_LENGTH = 2;
     private static final int MAX_LEGAL_NAME_LENGTH = 200;
 
     public CustomerIdentity {
-        niu = Objects.requireNonNull(niu, "niu is required");
-
-        if (legalName == null) {
+        bankingCustomerReference = normalize(bankingCustomerReference);
+        customerNumber = normalize(customerNumber);
+        if (niu == null && bankingCustomerReference == null && customerNumber == null) {
             throw new CustomerVerificationDomainException(
-                    "Customer legal name is required"
-            );
+                    "At least one banking customer identifier is required");
         }
 
-        legalName = legalName
-                .strip()
-                .replaceAll("\\s+", " ");
-
-        if (legalName.length() < MIN_LEGAL_NAME_LENGTH) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must contain at least "
-                            + MIN_LEGAL_NAME_LENGTH + " characters"
-            );
-        }
-        if (legalName.length() > MAX_LEGAL_NAME_LENGTH) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must not exceed "
-                            + MAX_LEGAL_NAME_LENGTH + " characters"
-            );
-        }
-        if (legalName.chars().anyMatch(Character::isISOControl)) {
-            throw new CustomerVerificationDomainException(
-                    "Customer legal name must not contain control characters"
-            );
+        if (legalName != null) {
+            legalName = legalName
+                    .strip()
+                    .replaceAll("\\s+", " ");
+            if (legalName.length() < MIN_LEGAL_NAME_LENGTH) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must contain at least "
+                                + MIN_LEGAL_NAME_LENGTH + " characters"
+                );
+            }
+            if (legalName.length() > MAX_LEGAL_NAME_LENGTH) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must not exceed "
+                                + MAX_LEGAL_NAME_LENGTH + " characters"
+                );
+            }
+            if (legalName.chars().anyMatch(Character::isISOControl)) {
+                throw new CustomerVerificationDomainException(
+                        "Customer legal name must not contain control characters"
+                );
+            }
         }
     }
 
@@ -55,7 +57,21 @@ public record CustomerIdentity(
             CustomerNiu niu,
             String legalName
     ) {
-        return new CustomerIdentity(niu, legalName);
+        return new CustomerIdentity(niu, legalName, null, null);
+    }
+
+    public static CustomerIdentity of(
+            CustomerNiu niu, String legalName,
+            String bankingCustomerReference, String customerNumber) {
+        return new CustomerIdentity(niu, legalName, bankingCustomerReference, customerNumber);
+    }
+
+    public CustomerIdentity(CustomerNiu niu, String legalName) {
+        this(niu, legalName, null, null);
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     @Override

@@ -1,5 +1,5 @@
 <div class="sp-shell">
-  <sp-header />
+  <sp-header (menuToggle)="toggleSidebar()" />
 
   @if (errorService.currentError(); as error) {
     <section
@@ -43,8 +43,8 @@
   }
 
   <mat-sidenav-container class="sp-shell__container">
-    <mat-sidenav mode="side" opened>
-      <sp-sidebar />
+    <mat-sidenav mode="side" opened [class.sp-shell__sidenav--collapsed]="sidebarCollapsed">
+      <sp-sidebar [collapsed]="sidebarCollapsed" />
     </mat-sidenav>
 
     <mat-sidenav-content>

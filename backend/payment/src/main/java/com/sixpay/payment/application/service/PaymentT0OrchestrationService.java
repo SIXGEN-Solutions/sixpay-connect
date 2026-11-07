@@ -89,10 +89,9 @@ public final class PaymentT0OrchestrationService {
                 != PaymentStatus.TREASURY_ACCOUNT_RESOLUTION_PENDING) {
             return;
         }
-
         PaymentTreasuryAccountResolutionPort treasuryPort =
                 treasuryPortProvider.getIfAvailable();
-
+        System.out.println("*** TreasuryPortProvider *** " + (treasuryPort == null));
         if (treasuryPort == null) {
             throw new IllegalStateException(
                     "Treasury account resolution bridge is unavailable"
@@ -133,7 +132,9 @@ public final class PaymentT0OrchestrationService {
                         null,
                         metadata
                 );
-
+        System.out.println("resolved: " + resolved);
+        System.out.println("evidence: " + evidence);
+        System.out.println("paymentId: " + paymentId);
         treasuryResolutionService.recordResolution(
                 paymentId,
                 evidence,
@@ -150,6 +151,7 @@ public final class PaymentT0OrchestrationService {
     ) {
         Payment payment = requirePayment(paymentId);
 
+        System.out.println("payment.status(): " + payment.status());
         if (payment.status() != PaymentStatus.APPROVED_FOR_POSTING
                 && payment.status() != PaymentStatus.POSTING_PENDING) {
             return;
@@ -172,18 +174,15 @@ public final class PaymentT0OrchestrationService {
 
         Instant now = timeProvider.now();
 
-        snapshotService.getOrCreateFinalized(
-                payment,
-                treasury,
-                now
-        );
+        // Persist event and frozen entries only during the final posting
+        // reservation, after local context validation and inside one transaction.
 
         PaymentEventLifecycleOrchestrationService lifecycle =
                 lifecycleProvider.getIfAvailable();
-
+        System.out.println("lifecycleProvider: " + (lifecycle == null));
         if (lifecycle == null) {
             throw new IllegalStateException(
-                    "Payment T0 execution bridge is unavailable"
+                    "Payment Event execution bridge is unavailable"
             );
         }
 

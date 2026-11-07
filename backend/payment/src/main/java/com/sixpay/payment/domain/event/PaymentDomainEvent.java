@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Base contract for the 33 explicit events owned by Payment.
+ * Base contract for the explicit domain events owned by Payment.
  */
 public interface PaymentDomainEvent extends DomainEvent {
 

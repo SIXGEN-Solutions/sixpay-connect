@@ -10,13 +10,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DA-11.6 / DA-12 — Golden closure and documentation validation gate for
- * Dual Authentication — Local + OIDC.
+ * AUTH-13 — Golden documentation/evidence gate for the final
+ * Hybrid Authentication baseline — LOCAL + OIDC + LDAP.
  *
- * <p>The gate does not duplicate behavioral assertions. Focused unit and
- * integration tests remain the source of behavioral evidence; this class
- * verifies that the canonical evidence and final closure documentation remain
- * present and synchronized.</p>
+ * <p>Historical DA-11/DA-12 Local/OIDC closure remains valid evidence.
+ * AUTH-12 extends that baseline with LDAP; AUTH-13 verifies that both the
+ * historical evidence and the LDAP extension remain present.</p>
  */
 class DualAuthenticationGoldenGateTest {
 
@@ -26,6 +25,9 @@ class DualAuthenticationGoldenGateTest {
                     "com.sixpay.security.integration.LocalAuthenticationSessionIT",
                     "com.sixpay.security.configuration.OidcAuthenticationProviderIT",
                     "com.sixpay.security.configuration.HybridAuthenticationIT",
+                    "com.sixpay.security.api.controller.LdapAuthenticationFailureIT",
+                    "com.sixpay.security.application.service.LdapCanonicalAuthenticationServiceTest",
+                    "com.sixpay.security.infrastructure.authentication.ldap.ActiveDirectoryLdapAuthenticationAdapterTest",
                     "com.sixpay.security.configuration.SecurityAuthorizationBoundaryIT"
             );
 
@@ -36,36 +38,22 @@ class DualAuthenticationGoldenGateTest {
             );
 
     private static final Path DA11_CLOSURE_DOCUMENT =
-            Path.of(
-                    "DA-11-INTEGRATION-SECURITY-CLOSURE.md"
-            );
+            Path.of("DA-11-INTEGRATION-SECURITY-CLOSURE.md");
 
     private static final Path DA12_CLOSURE_DOCUMENT =
-            Path.of(
-                    "DA-12-DUAL-AUTHENTICATION-CLOSURE.md"
-            );
+            Path.of("DA-12-DUAL-AUTHENTICATION-CLOSURE.md");
 
     private static final Path SECURITY_COVERAGE_DOCUMENT =
-            Path.of(
-                    "SECURITY-TEST-COVERAGE.md"
-            );
+            Path.of("SECURITY-TEST-COVERAGE.md");
 
     @Test
-    void requiresAllDa11IntegrationSecurityEvidence() {
-        assertLoadableTestClasses(
-                REQUIRED_INTEGRATION_TESTS
-        );
+    void requiresHybridAuthenticationExecutableEvidence() {
+        assertLoadableTestClasses(REQUIRED_INTEGRATION_TESTS);
+        assertLoadableTestClasses(REQUIRED_REGRESSION_TESTS);
     }
 
     @Test
-    void requiresCriticalSecurityRegressionEvidence() {
-        assertLoadableTestClasses(
-                REQUIRED_REGRESSION_TESTS
-        );
-    }
-
-    @Test
-    void requiresCanonicalDa11ClosureDocument()
+    void requiresHistoricalDa11EvidenceAndAuth12LdapExtension()
             throws IOException {
 
         String documentation =
@@ -81,35 +69,38 @@ class DualAuthenticationGoldenGateTest {
                         "DA-11.3 — OIDC integration",
                         "DA-11.4 — Hybrid coexistence",
                         "DA-11.5 — Authorization + CSRF",
-                        "DA-11 DUAL AUTHENTICATION INTEGRATION/SECURITY = COVERED"
+                        "AUTH-12 LDAP EXTENSION",
+                        "LdapAuthenticationFailureIT",
+                        "LdapCanonicalAuthenticationServiceTest",
+                        "ActiveDirectoryLdapAuthenticationAdapterTest"
                 );
     }
 
     @Test
-    void requiresCanonicalDa12FinalClosureDocument()
+    void requiresDa12HistoricalClosureAndAuth13FinalBaseline()
             throws IOException {
 
         String documentation =
                 readRequiredDocument(
                         DA12_CLOSURE_DOCUMENT,
-                        "DA-12 final Dual Authentication closure documentation"
+                        "DA-12 closure documentation"
                 );
 
         assertThat(documentation)
                 .contains(
                         "DA-12 — Documentation + validation gate",
-                        "LOCAL + OIDC",
                         "SIXPAY owns authorization",
                         "LOCAL password lifecycle",
-                        "OIDC password lifecycle is owned by the IdP",
                         "DualAuthenticationGoldenGateTest",
-                        "DA-12 DOCUMENTATION + VALIDATION GATE = COVERED",
-                        "DUAL AUTHENTICATION — LOCAL + OIDC = CLOSED"
+                        "AUTH-13 FINAL HYBRID BASELINE",
+                        "LOCAL + OIDC + LDAP",
+                        "OIDC and LDAP password lifecycle are provider-owned",
+                        "HYBRID AUTHENTICATION — LOCAL + OIDC + LDAP = CLOSED"
                 );
     }
 
     @Test
-    void requiresSecurityCoverageToReferenceFinalDualAuthenticationClosure()
+    void requiresSecurityCoverageToReferenceFinalHybridAuthenticationClosure()
             throws IOException {
 
         String documentation =
@@ -124,59 +115,35 @@ class DualAuthenticationGoldenGateTest {
                         "DA-12 Documentation + validation gate",
                         "DA-12-DUAL-AUTHENTICATION-CLOSURE.md",
                         "DualAuthenticationGoldenGateTest",
-                        "DUAL AUTHENTICATION = COVERED"
+                        "HYBRID AUTHENTICATION LOCAL/OIDC/LDAP = COVERED"
                 );
     }
 
-    private static String readRequiredDocument(
-            Path path,
-            String description
-    ) throws IOException {
+    private static String readRequiredDocument(Path path, String description)
+            throws IOException {
 
-        assertThat(
-                Files.exists(path)
-        )
-                .as(
-                        description
-                                + " must remain input backend/security"
-                )
+        assertThat(Files.exists(path))
+                .as(description + " must remain in backend/security")
                 .isTrue();
 
         return Files.readString(path);
     }
 
-    private static void assertLoadableTestClasses(
-            List<String> classNames
-    ) {
+    private static void assertLoadableTestClasses(List<String> classNames) {
         for (String className : classNames) {
-            assertThatCodeLoads(
-                    className
-            );
+            assertThatCodeLoads(className);
         }
     }
 
-    private static void assertThatCodeLoads(
-            String className
-    ) {
+    private static void assertThatCodeLoads(String className) {
         try {
-            Class<?> testClass =
-                    Class.forName(
-                            className
-                    );
+            Class<?> testClass = Class.forName(className);
 
-            assertThat(
-                    testClass
-                            .getDeclaredMethods()
-            )
-                    .anyMatch(method ->
-                            method.isAnnotationPresent(
-                                    Test.class
-                            )
-                    );
+            assertThat(testClass.getDeclaredMethods())
+                    .anyMatch(method -> method.isAnnotationPresent(Test.class));
         } catch (ClassNotFoundException exception) {
             throw new AssertionError(
-                    "Required golden security evidence is missing: "
-                            + className,
+                    "Required golden security evidence is missing: " + className,
                     exception
             );
         }

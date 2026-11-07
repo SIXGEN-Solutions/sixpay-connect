@@ -90,6 +90,45 @@ tags:
     description: Fresh composite customer, KYC and account verification.
 
 paths:
+  /api/v1/getaccountinfo/{branchid}/{accountnumber}:
+    get:
+      tags: [Accounts]
+      operationId: getAccountByBranchAndNumber
+      summary: Consulter un compte admissible BKCOM par agence et NCP
+      description: |-
+        Consultation bancaire en lecture seule selon le contrat Regional V1.
+        HTTP 200 signifie SUCCESS avec un compte ou COMPTE_INEXISTANT avec data null.
+        Le compte retourne doit correspondre exactement au compte Treasury configure.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: X-Financial-Institution-Code
+          in: header
+          required: false
+          description: |-
+            Facultatif pour cette operation seulement. En son absence la banque
+            utilise sa configuration d'etablissement; une valeur fournie est validee.
+          schema:
+            $ref: '#/components/schemas/FinancialInstitutionCode'
+        - name: branchid
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+        - name: accountnumber
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Consultation effectuee, que le compte existe ou non.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountLookupResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
   /api/v1/customers:
     get:
       tags: [Customers]
@@ -517,6 +556,49 @@ components:
           type: integer
           minimum: 0
           maximum: 500
+
+    AccountLookupResult:
+      type: object
+      additionalProperties: false
+      description: Resultat metier de la consultation par agence et NCP.
+      required: [code, message, data]
+      properties:
+        code:
+          type: string
+          enum: [SUCCESS, COMPTE_INEXISTANT]
+        message:
+          type: string
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/RegionalBkcomBankAccount'
+            - type: 'null'
+
+    RegionalBkcomBankAccount:
+      type: object
+      additionalProperties: false
+      description: |-
+        Alias de la structure Regionale BankAccount pour cette operation.
+        Le schema BankAccount deja publie par SIXPAY est une representation
+        normalisee differente et ne doit pas etre remplace.
+      required: [ncp, age, dev, cha, clc, cli, inti, ife, cfe, sin, typ, sde, suf, status]
+      properties:
+        ncp: { type: string }
+        age: { type: string }
+        dev: { type: string }
+        cha: { type: string }
+        clc: { type: string }
+        cli: { type: string }
+        inti: { type: string }
+        ife: { type: string }
+        cfe: { type: string }
+        dou: { type: [string, 'null'], format: date, description: Date d'ouverture du compte }
+        sin: { type: number, description: Solde disponible calcule selon la regle bancaire }
+        typ: { type: string }
+        sde: { type: number }
+        suf: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
 
     BankAccount:
       type: object

@@ -9,4 +9,4 @@ sixpay:
   customer:
     verification:
       banking:
-        enabled: true
+        enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:true}

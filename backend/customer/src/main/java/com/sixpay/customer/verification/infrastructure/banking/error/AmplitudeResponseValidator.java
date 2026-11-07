@@ -42,6 +42,23 @@ public final class AmplitudeResponseValidator {
     public AmplitudeCustomerVerificationResponse validate(
             AmplitudeCustomerVerificationResponse response
     ) {
+        return validate(response, true, true);
+    }
+
+    /** Identity comparison is mandatory only when the request supplies an expected holder. */
+    public AmplitudeCustomerVerificationResponse validate(
+            AmplitudeCustomerVerificationResponse response,
+            boolean identityComparisonRequested
+    ) {
+        return validate(response, identityComparisonRequested, true);
+    }
+
+    /** Require KYC checks only if the outbound request actually demands them. */
+    public AmplitudeCustomerVerificationResponse validate(
+            AmplitudeCustomerVerificationResponse response,
+            boolean identityComparisonRequested,
+            boolean kycRequested
+    ) {
         if (response == null) {
             throw invalid("Amplitude response body is empty");
         }
@@ -97,12 +114,23 @@ public final class AmplitudeResponseValidator {
             }
         }
 
-        if (!observedTypes.equals(REQUIRED_CHECK_TYPES)) {
-            Set<String> missing = new HashSet<>(REQUIRED_CHECK_TYPES);
-            missing.removeAll(observedTypes);
+        Set<String> missing = new HashSet<>(REQUIRED_CHECK_TYPES);
+        missing.removeAll(observedTypes);
+        if (!identityComparisonRequested) {
+            missing.remove("IDENTITY_MATCHES");
+        }
+        if (!kycRequested) {
+            missing.remove("REQUIRED_KYC_PRESENT");
+            missing.remove("REQUIRED_KYC_VERIFIED");
+        }
+        if (!missing.isEmpty()) {
             throw invalid(
                     "Amplitude verification checks are incomplete; missing=" + missing
             );
+        }
+        if ("VERIFIED".equals(outcome) && checks.stream().anyMatch(
+                check -> !"PASS".equals(required(check.result(), "check result")))) {
+            throw invalid("VERIFIED outcome contains non-PASS checks");
         }
 
         if ("VERIFIED".equals(outcome)) {
@@ -129,32 +157,24 @@ public final class AmplitudeResponseValidator {
                         response.identity(),
                         "Amplitude identity is required for VERIFIED outcome"
                 );
-        AmplitudeBankAccountResponse account =
+        BankAccount account =
                 Objects.requireNonNull(
                         response.account(),
                         "Amplitude account is required for VERIFIED outcome"
                 );
 
         if (!customerReference.equals(identity.customerReference())
-                || !customerReference.equals(account.customerReference())
+                || !customerReference.equals(account.cli())
                 || !accountReference.equals(account.accountReference())) {
             throw invalid(
                     "Amplitude VERIFIED banking references are inconsistent"
             );
         }
 
-        if (!"AMPLITUDE".equals(required(identity.source(), "identity source"))
-                || !"AMPLITUDE".equals(
-                required(account.source(), "account source")
-        )) {
-            throw invalid("Amplitude VERIFIED nested source is invalid");
+        if (!"AMPLITUDE".equals(required(identity.source(), "identity source"))) {
+            throw invalid("Amplitude VERIFIED identity source is invalid");
         }
 
-        if (identity.kycFields() == null) {
-            throw invalid(
-                    "Amplitude VERIFIED identity kycFields are required"
-            );
-        }
     }
 
     private static String required(

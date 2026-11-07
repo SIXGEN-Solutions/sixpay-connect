@@ -10,6 +10,9 @@ import com.sixpay.payment.application.port.output.PaymentCustomerVerificationIdG
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +33,9 @@ public final class PaymentCustomerVerificationService {
     private final CustomerVerificationEvidenceMapper evidenceMapper;
     private final CustomerVerificationFailureMapper failureMapper;
     private final PaymentCustomerVerificationIdGenerator idGenerator;
+    private final ResolvedDebtorAccountReferenceFactory accountReferenceFactory;
+
+    private final Logger log = LoggerFactory.getLogger(PaymentCustomerVerificationService.class);
 
     public PaymentCustomerVerificationService(
             PaymentMutationCoordinator coordinator,
@@ -37,7 +43,8 @@ public final class PaymentCustomerVerificationService {
             PaymentCustomerVerificationRequestFactory requestFactory,
             CustomerVerificationEvidenceMapper evidenceMapper,
             CustomerVerificationFailureMapper failureMapper,
-            PaymentCustomerVerificationIdGenerator idGenerator
+            PaymentCustomerVerificationIdGenerator idGenerator,
+            ResolvedDebtorAccountReferenceFactory accountReferenceFactory
     ) {
         this.coordinator = Objects.requireNonNull(
                 coordinator,
@@ -63,6 +70,10 @@ public final class PaymentCustomerVerificationService {
                 idGenerator,
                 "idGenerator is required"
         );
+        this.accountReferenceFactory = Objects.requireNonNull(
+                accountReferenceFactory,
+                "accountReferenceFactory is required"
+        );
     }
 
     public PaymentWorkflowResult verifyCustomer(
@@ -70,8 +81,18 @@ public final class PaymentCustomerVerificationService {
             Instant decisionAt,
             PaymentPolicyBundle policies
     ) {
+        return verifyCustomer(paymentId, decisionAt, Instant.MAX, policies);
+    }
+
+    public PaymentWorkflowResult verifyCustomer(
+            PaymentId paymentId,
+            Instant decisionAt,
+            Instant deadlineAt,
+            PaymentPolicyBundle policies
+    ) {
         Objects.requireNonNull(paymentId, "paymentId is required");
         Objects.requireNonNull(decisionAt, "decisionAt is required");
+        Objects.requireNonNull(deadlineAt, "deadlineAt is required");
         Objects.requireNonNull(policies, "policies are required");
 
         UUID verificationId = idGenerator.forPayment(paymentId);
@@ -105,7 +126,8 @@ public final class PaymentCustomerVerificationService {
                             requestFactory.from(
                                     payment,
                                     verificationId,
-                                    decisionAt
+                                    decisionAt,
+                                    deadlineAt
                             );
 
                     CustomerVerificationResponse response;
@@ -134,6 +156,17 @@ public final class PaymentCustomerVerificationService {
                      * replay. Using completedAt rather than the current retry
                      * time makes the resulting evidence and failure identical.
                      */
+                    if (response.outcome()
+                            == CustomerVerificationResponse.Outcome.VERIFIED
+                            && payment.toState()
+                                    .optionalDebtorAccountReference()
+                                    .isEmpty()) {
+                        payment.resolveDebtorAccount(
+                                accountReferenceFactory.from(response),
+                                response.completedAt()
+                        );
+                    }
+
                     var snapshot = evidenceMapper.toSnapshot(
                             response,
                             payment.toState()
@@ -142,15 +175,39 @@ public final class PaymentCustomerVerificationService {
                             response.completedAt()
                     );
 
+                    var currentAccount = payment.toState()
+                            .optionalDebtorAccountReference();
+
+                    boolean bindingMatches = currentAccount
+                            .map(account ->
+                                    account.bindingFingerprint().equals(
+                                            snapshot.accountBindingFingerprint()
+                                    ))
+                            .orElse(false);
+                    log.info(
+                            "event=payment_banking_binding_check "
+                                    + "paymentId={} "
+                                    + "accountPresent={} "
+                                    + "bindingMatches={} "
+                                    + "outcome={}",
+                            paymentId,
+                            currentAccount.isPresent(),
+                            bindingMatches,
+                            response.outcome()
+                    );
+
                     var failure = failureMapper.from(
                             response,
                             response.completedAt()
                     );
 
+                    // Canonical bank-completion time is stable across replay.
+                    // It must not precede a debtor-account resolution performed
+                    // from the same Customer response.
                     payment.recordBankingVerification(
                             snapshot,
                             failure,
-                            decisionAt,
+                            response.completedAt(),
                             policies
                     );
                 }

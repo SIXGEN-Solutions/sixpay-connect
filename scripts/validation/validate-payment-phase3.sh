@@ -21,12 +21,12 @@ echo "[2/4] Payment module unit test gate"
 mvn -pl payment -am test
 
 echo
-echo "[3/4] Payment integration/full verification gate"
-mvn -pl payment -am -Pfull-tests clean verify
+echo "[3/4] Payment integration/full verification + coverage gate"
+mvn -pl payment -am -Pcoverage clean verify
 
 echo
 echo "[4/4] Explicit LOT 2.9/3 concurrency evidence"
-mvn -pl payment \
+mvn -pl payment -am \
   -Dtest=PaymentFinancialSnapshotConcurrencyIT \
   -Dsurefire.failIfNoSpecifiedTests=false \
   test

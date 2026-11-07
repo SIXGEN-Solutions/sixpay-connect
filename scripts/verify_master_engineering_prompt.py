@@ -104,7 +104,7 @@ def main():
         "l’IdP prouve l’identité ; SIXPAY possède les rôles et permissions métier",
         "la session applicative backend unifiée",
         "aucun retry aveugle d’une commande financière",
-        "npm run verify:sixpay",
+        "npm run verify:quality",
         "mvn -Pfull-tests clean verify",
         "py scripts/verify_baseline.py",
         "git diff --check",
@@ -159,7 +159,7 @@ def main():
         fail("phase/lot implementation identifier found in active prompt")
 
     scripts = package.get("scripts", {})
-    for script in ("verify:sixpay", "verify:ci"):
+    for script in ("verify:quality", "verify:ci"):
         if script not in scripts:
             fail(f"prompt references missing frontend script: {script}")
 

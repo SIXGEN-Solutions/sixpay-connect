@@ -65,6 +65,55 @@ describe('AuthenticationService', () => {
     expect([...roles]).toEqual(['ADMIN', 'AUDITOR', 'MANAGER']);
   });
 
+  it('uses backend authentication capabilities as the source of truth after session establishment', () => {
+    const authentication = TestBed.inject(AuthenticationService);
+
+    const internals = authentication as unknown as {
+      setCanonicalSession(session: AuthenticationSessionResponse): void;
+    };
+
+    internals.setCanonicalSession({
+      authenticated: true,
+      subject: '64f48bc3-df43-3fe2-b6d5-b608db595850',
+      username: 'ldap-user',
+      roles: ['ADMIN'],
+      permissions: ['customer.read'],
+      authenticationMethod: 'LDAP',
+      passwordChangeRequired: false,
+      capabilities: {
+        localEnabled: false,
+        oidcEnabled: false,
+        ldapEnabled: true,
+      },
+    });
+
+    expect(authentication.localEnabled()).toBe(false);
+    expect(authentication.oidcEnabled()).toBe(false);
+    expect(authentication.ldapEnabled()).toBe(true);
+  });
+
+  it('falls back to static environment capabilities when rolling-upgrade session metadata is absent', () => {
+    const authentication = TestBed.inject(AuthenticationService);
+
+    const internals = authentication as unknown as {
+      setCanonicalSession(session: AuthenticationSessionResponse): void;
+    };
+
+    internals.setCanonicalSession({
+      authenticated: true,
+      subject: '64f48bc3-df43-3fe2-b6d5-b608db595850',
+      username: 'legacy-user',
+      roles: ['ADMIN'],
+      permissions: [],
+      authenticationMethod: 'LOCAL',
+      passwordChangeRequired: false,
+    });
+
+    expect(authentication.localEnabled()).toBe(false);
+    expect(authentication.oidcEnabled()).toBe(false);
+    expect(authentication.ldapEnabled()).toBe(false);
+  });
+
   it('normalizes Spring Security SCOPE_ permissions to canonical frontend permissions', () => {
     const permissions = normalizeSixpayPermissions([
       'SCOPE_customer.read',

@@ -93,7 +93,7 @@ public final class PaymentObservedCustomerOutboxScheduler {
                     clock.instant()
             ).toMillis();
 
-            LOGGER.info(
+            LOGGER.debug(
                     "Customer projection outbox dispatch completed: "
                             + "eventType={}, result={}, count={}, "
                             + "durationMs={}",

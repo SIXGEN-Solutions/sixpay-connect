@@ -1,5 +1,6 @@
 package com.sixpay.tests.assembled;
 
+import com.sixpay.SixpayApplication;
 import com.sixpay.tests.support.CrossModulePostgreSqlTestSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -13,7 +14,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
-        classes = AssembledApplicationContextIT.TestApplication.class,
+        classes = SixpayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("assembled-test")
@@ -26,8 +27,6 @@ class PaymentNotificationReadinessIT
 
     private static final String PAYMENT_FINALIZATION_SERVICE =
             "com.sixpay.payment.application.service.PaymentFinalizationService";
-    private static final String PAYMENT_POSTING_OUTCOME_EVENT =
-            "com.sixpay.payment.domain.event.PaymentPostingOutcomeRecorded";
     private static final String PAYMENT_POSTED_NOTIFICATION_TRIGGER =
             "com.sixpay.notification.domain.model.PaymentPostedNotificationTrigger";
     private static final String NOTIFICATION_TEMPLATE_CATALOG =
@@ -46,7 +45,6 @@ class PaymentNotificationReadinessIT
     void paymentAndNotificationParticipateInAssembledApplication() {
         assertBeanPresent(PAYMENT_FINALIZATION_SERVICE);
         assertBeanPresent(NOTIFICATION_TEMPLATE_CATALOG);
-        assertTypeAvailable(PAYMENT_POSTING_OUTCOME_EVENT);
         assertTypeAvailable(PAYMENT_POSTED_NOTIFICATION_TRIGGER);
     }
 

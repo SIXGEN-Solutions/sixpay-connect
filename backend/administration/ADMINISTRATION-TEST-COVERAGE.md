@@ -115,7 +115,7 @@ Frontend validation:
 
 ```bash
 cd frontend
-npm run verify:sixpay
+npm run verify:quality
 ```
 
 Canonical repository gates:

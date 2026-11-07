@@ -47,7 +47,7 @@ class BankingVerificationResponseTest {
         List<VerificationCheck> incomplete = Arrays.stream(
                         VerificationCheckType.values()
                 )
-                .filter(type -> type != VerificationCheckType.REQUIRED_KYC_VERIFIED)
+                .filter(type -> type != VerificationCheckType.ACCOUNT_EXISTS)
                 .map(VerificationCheck::passed)
                 .toList();
 

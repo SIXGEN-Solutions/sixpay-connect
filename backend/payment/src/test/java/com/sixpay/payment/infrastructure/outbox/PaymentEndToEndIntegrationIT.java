@@ -1,10 +1,13 @@
 package com.sixpay.payment.infrastructure.outbox;
 
 import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
 import com.sixpay.payment.configuration.PaymentModuleConfiguration;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.authentication.CurrentUserProvider;
+import com.sixpay.payment.support.PaymentAuthorizationRuntimeTestConfiguration;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -257,6 +260,7 @@ class PaymentEndToEndIntegrationIT {
                 .toUpperCase();
     }
 
+    @org.springframework.context.annotation.Import(PaymentAuthorizationRuntimeTestConfiguration.class)
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @ImportAutoConfiguration(PaymentModuleConfiguration.class)
@@ -275,6 +279,11 @@ class PaymentEndToEndIntegrationIT {
         @Bean
         NotificationProbe notificationProbe() {
             return new NotificationProbe();
+        }
+
+        @Bean
+        PaymentCustomerSubscriptionPort paymentCustomerSubscriptionPort() {
+            return Mockito.mock(PaymentCustomerSubscriptionPort.class);
         }
     }
 

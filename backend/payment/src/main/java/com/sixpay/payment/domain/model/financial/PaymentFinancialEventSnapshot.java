@@ -31,6 +31,7 @@ public final class PaymentFinancialEventSnapshot {
     private final String creditorAccountReference;
     private final Money requestedAmount;
     private final String snapshotVersion;
+    private final BankingEventDetails bankingDetails;
     private final Instant createdAt;
     private final List<PaymentFinancialEntrySnapshot> entries;
 
@@ -49,8 +50,10 @@ public final class PaymentFinancialEventSnapshot {
             FinancialSnapshotStatus status,
             Instant createdAt,
             Instant finalizedAt,
-            List<PaymentFinancialEntrySnapshot> entries
+            List<PaymentFinancialEntrySnapshot> entries,
+            BankingEventDetails bankingDetails
     ) {
+        this.bankingDetails = bankingDetails;
         this.snapshotId = requireUuid(
                 snapshotId,
                 "Financial-event snapshot ID"
@@ -133,7 +136,8 @@ public final class PaymentFinancialEventSnapshot {
                 FinancialSnapshotStatus.DRAFT,
                 createdAt,
                 null,
-                List.of()
+                List.of(),
+                null
         );
     }
 
@@ -163,8 +167,39 @@ public final class PaymentFinancialEventSnapshot {
                 status,
                 createdAt,
                 finalizedAt,
-                entries
+                entries,
+                null
         );
+    }
+
+    public static PaymentFinancialEventSnapshot draft(
+            UUID snapshotId, PaymentId paymentId,
+            PublicPaymentReference publicPaymentReference,
+            FinancialInstitutionCode financialInstitutionCode,
+            String debtorAccountReference, String creditorAccountReference,
+            Money requestedAmount, String snapshotVersion,
+            Instant createdAt, BankingEventDetails bankingDetails
+    ) {
+        return new PaymentFinancialEventSnapshot(
+                snapshotId, paymentId, publicPaymentReference, financialInstitutionCode,
+                debtorAccountReference, creditorAccountReference, requestedAmount,
+                snapshotVersion, FinancialSnapshotStatus.DRAFT, createdAt,
+                null, List.of(), bankingDetails);
+    }
+
+    public static PaymentFinancialEventSnapshot reconstitute(
+            UUID snapshotId, PaymentId paymentId,
+            PublicPaymentReference publicPaymentReference,
+            FinancialInstitutionCode financialInstitutionCode,
+            String debtorAccountReference, String creditorAccountReference,
+            Money requestedAmount, String snapshotVersion,
+            FinancialSnapshotStatus status, Instant createdAt, Instant finalizedAt,
+            List<PaymentFinancialEntrySnapshot> entries, BankingEventDetails bankingDetails
+    ) {
+        return new PaymentFinancialEventSnapshot(
+                snapshotId, paymentId, publicPaymentReference, financialInstitutionCode,
+                debtorAccountReference, creditorAccountReference, requestedAmount,
+                snapshotVersion, status, createdAt, finalizedAt, entries, bankingDetails);
     }
 
     public void addEntry(PaymentFinancialEntrySnapshot entry) {
@@ -325,8 +360,11 @@ public final class PaymentFinancialEventSnapshot {
                         finalizedAt,
                         other.finalizedAt
                 )
-                && entries.equals(other.entries);
+                && entries.equals(other.entries)
+                && Objects.equals(bankingDetails, other.bankingDetails);
     }
+
+    public BankingEventDetails bankingDetails() { return bankingDetails; }
 
     public UUID snapshotId() {
         return snapshotId;

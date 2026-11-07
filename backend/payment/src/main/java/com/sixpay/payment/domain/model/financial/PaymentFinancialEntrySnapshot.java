@@ -19,6 +19,7 @@ public final class PaymentFinancialEntrySnapshot {
     private final String accountReference;
     private final Money amount;
     private final Instant createdAt;
+    private final BankingEntryDetails bankingDetails;
 
     public PaymentFinancialEntrySnapshot(
             UUID entrySnapshotId,
@@ -27,6 +28,14 @@ public final class PaymentFinancialEntrySnapshot {
             String accountReference,
             Money amount,
             Instant createdAt
+    ) {
+        this(entrySnapshotId, sequence, direction, accountReference, amount, createdAt, null);
+    }
+
+    public PaymentFinancialEntrySnapshot(
+            UUID entrySnapshotId, int sequence, FinancialEntryDirection direction,
+            String accountReference, Money amount, Instant createdAt,
+            BankingEntryDetails bankingDetails
     ) {
         this.entrySnapshotId = requireUuid(
                 entrySnapshotId,
@@ -60,7 +69,10 @@ public final class PaymentFinancialEntrySnapshot {
                 createdAt,
                 "Financial-entry creation instant"
         );
+        this.bankingDetails = bankingDetails;
     }
+
+    public BankingEntryDetails bankingDetails() { return bankingDetails; }
 
     public UUID entrySnapshotId() {
         return entrySnapshotId;
@@ -125,7 +137,8 @@ public final class PaymentFinancialEntrySnapshot {
                 && direction == that.direction
                 && accountReference.equals(that.accountReference)
                 && amount.equals(that.amount)
-                && createdAt.equals(that.createdAt);
+                && createdAt.equals(that.createdAt)
+                && Objects.equals(bankingDetails, that.bankingDetails);
     }
 
     @Override

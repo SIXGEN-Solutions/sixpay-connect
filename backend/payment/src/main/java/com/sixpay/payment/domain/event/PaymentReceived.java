@@ -25,12 +25,12 @@ public record PaymentReceived(
         metadata = Objects.requireNonNull(metadata, "Event metadata");
         externalPaymentReference = Objects.requireNonNull(externalPaymentReference, "externalPaymentReference");
         source = Objects.requireNonNull(source, "source");
-        financialInstitutionCode = Objects.requireNonNull(financialInstitutionCode, "financialInstitutionCode");
         requestedAmount = Objects.requireNonNull(requestedAmount, "requestedAmount");
-        maskedDebtorAccountReference = Objects.requireNonNull(maskedDebtorAccountReference, "maskedDebtorAccountReference");
-        maskedDebtorAccountReference = maskedDebtorAccountReference.strip();
-        if (maskedDebtorAccountReference.isEmpty() || maskedDebtorAccountReference.length() > 256) {
-            throw new IllegalArgumentException("maskedDebtorAccountReference has an invalid length");
+        if (maskedDebtorAccountReference != null) {
+            maskedDebtorAccountReference = maskedDebtorAccountReference.strip();
+            if (maskedDebtorAccountReference.isEmpty() || maskedDebtorAccountReference.length() > 256) {
+                throw new IllegalArgumentException("maskedDebtorAccountReference has an invalid length");
+            }
         }
         receivedAt = Objects.requireNonNull(receivedAt, "receivedAt");
     }

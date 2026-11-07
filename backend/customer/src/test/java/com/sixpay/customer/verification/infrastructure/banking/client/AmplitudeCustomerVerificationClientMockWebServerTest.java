@@ -39,10 +39,6 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                         3,
                         Duration.ofMillis(10),
                         Duration.ofMinutes(5),
-                        new BankingVerificationProperties.Security(
-                                "core-banking-customer-verification",
-                                "core-banking-client"
-                        ),
                         new BankingVerificationProperties.Contract(
                                 "provisional-v1",
                                 Set.of("00"),
@@ -54,7 +50,6 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                 RestClient.builder()
                         .baseUrl(server.url("/").toString())
                         .build(),
-                () -> "sandbox-token",
                 properties,
                 JsonMapper.builder().build()
         );
@@ -66,7 +61,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
     }
 
     @Test
-    void sendsBearerCorrelationAndRequestHeaders() throws Exception {
+    void sendsCorrelationAndRequestHeadersWithoutBearer() throws Exception {
         server.enqueue(json(200, successBody()));
 
         client.verify(
@@ -82,8 +77,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
         assertThat(recorded.getMethod()).isEqualTo("POST");
         assertThat(recorded.getPath())
                 .isEqualTo("/api/v1/customer-verifications");
-        assertThat(recorded.getHeader("Authorization"))
-                .isEqualTo("Bearer sandbox-token");
+        assertThat(recorded.getHeader("Authorization")).isNull();
         assertThat(recorded.getHeader("X-Correlation-ID"))
                 .isEqualTo("corr-001");
         assertThat(recorded.getHeader("X-Request-ID"))
@@ -193,7 +187,7 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                   "source":"AMPLITUDE",
                   "outcome":"VERIFIED",
                   "customerReference":"CUST-001",
-                  "accountReference":"ACC-001",
+                  "accountReference":"10005-00001-12",
                   "checks":[
                     {"type":"CUSTOMER_EXISTS","result":"PASS"},
                     {"type":"ACCOUNT_EXISTS","result":"PASS"},
@@ -213,16 +207,13 @@ class AmplitudeCustomerVerificationClientMockWebServerTest {
                     "retrievedAt":"2026-08-06T14:00:00Z"
                   },
                   "account":{
-                    "accountReference":"ACC-001",
-                    "customerReference":"CUST-001",
-                    "financialInstitutionCode":"LRB",
-                    "maskedAccountIdentifier":"****0001",
-                    "currency":"XAF",
-                    "accountType":"CURRENT",
-                    "status":"ACTIVE",
-                    "restrictions":[],
-                    "source":"AMPLITUDE",
-                    "retrievedAt":"2026-08-06T14:00:00Z"
+                    "age":"10005",
+                    "ncp":"00001",
+                    "clc":"12",
+                    "cli":"CUST-001",
+                    "dev":"001",
+                    "typ":"CURRENT",
+                    "status":"ACTIVE"
                   }
                 }
                 """;

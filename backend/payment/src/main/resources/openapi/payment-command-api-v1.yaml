@@ -6,8 +6,8 @@ info:
     Official partner-facing command contract used by TresorPay to initiate one
     debit order through SIXPAY CONNECT. Authentication requires BOTH mutual TLS
     and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
-    the JSON payload. The initial response is PENDING_CONFIRMATION and callbacks
-    are asynchronous.
+    the JSON payload. The initial response is AWAITING_OTP after an ACTIVE
+    bank-owned OTP challenge, and callbacks are asynchronous.
   x-sixpay-contract:
     registryId: payment-command-api-v1
     phase: "3"
@@ -37,13 +37,19 @@ paths:
       summary: Initiate a debit order
       description: |
         Idempotency-Key identifies the HTTP replay boundary. endToEndId is the
-        durable business reference; both values are independent. LoginName must
-        match the authenticated partner identity. Beneficiary amounts must sum
-        exactly to montantTotal. The callback is never executed in this HTTP
-        transaction.
+        durable business reference; both values are independent. referenceClient
+        is required. AppID is an optional declared Partner identifier and is
+        checked against the authenticated Partner when supplied. LoginName
+        is optional compatibility metadata. The independent transport header
+        X-TresorPay-App-Id remains required. Beneficiary amounts must sum
+        exactly to montantTotal when supplied. NUI may be omitted from the
+        HTTP request, but Customer Verification currently requires a resolvable
+        NIU; requests without one cannot complete the MVP initiation flow.
+        The callback is never executed in this HTTP transaction.
       parameters:
         - $ref: '#/components/parameters/RequiredIdempotencyKey'
         - $ref: '#/components/parameters/OptionalCorrelationId'
+        - $ref: '#/components/parameters/RequiredTresorPayAppId'
       requestBody:
         required: true
         content:
@@ -53,6 +59,7 @@ paths:
             example:
               LoginName: TRESOR_PAY
               AppID: TP_APP_001
+              referenceClient: CLIENT-2026-00045678
               endToEndId: AVI-2025-00045678
               montantTotal: 600000
               devise: XAF
@@ -139,7 +146,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      schema: {type: string, minLength: 1, maxLength: 150}
+      schema: {type: string, minLength: 1, maxLength: 128}
+    RequiredTresorPayAppId:
+      name: X-TresorPay-App-Id
+      in: header
+      required: true
+      description: Independent transport application identifier; not the business AppID.
+      schema: {type: string, minLength: 1, maxLength: 64}
     OptionalCorrelationId:
       name: X-Correlation-ID
       in: header
@@ -190,27 +203,26 @@ components:
       type: object
       additionalProperties: false
       required:
-        - LoginName
+        - referenceClient
         - endToEndId
         - montantTotal
-        - devise
-        - ribDebiteur
-        - nomDebiteur
         - typeCreance
-        - NUI
-        - dateExecution
-        - beneficiaires
         - callbackURL
       properties:
         LoginName:
           type: string
           minLength: 1
           maxLength: 64
-          description: Must match the authenticated partner identity
+          description: Optional non-authenticating compatibility metadata
+        referenceClient:
+          type: string
+          format: uuid
+          description: CustomerSubscriptionId (UUID), authoritative subscription identity; distinct from endToEndId
         AppID:
           type: [string, 'null']
           minLength: 1
           maxLength: 64
+          description: Optional declared Partner business identifier; validated when supplied
         endToEndId:
           type: string
           minLength: 1
@@ -222,6 +234,7 @@ components:
         devise:
           type: string
           pattern: '^[A-Z]{3}$'
+          default: XAF
         ribDebiteur:
           type: string
           minLength: 8
@@ -248,7 +261,7 @@ components:
           minItems: 1
           maxItems: 20
           items: {$ref: '#/components/schemas/BeneficiaireRequest'}
-          description: Exact sum must equal montantTotal
+          description: Optional allocation; when present, exact sum must equal montantTotal
         callbackURL:
           type: string
           format: uri
@@ -285,14 +298,8 @@ components:
         - Result
         - paymentReference
         - endToEndId
-        - bankOperationId
         - montantTotal
-        - frais
-        - montantNet
         - Date
-        - ValidityInMinutes
-        - TransactionNumber
-        - TransactionQRCode
         - Status
         - NextStep
       properties:
@@ -311,7 +318,7 @@ components:
         ValidityInMinutes: {type: integer, minimum: 1}
         TransactionNumber: {type: string, minLength: 1, maxLength: 128}
         TransactionQRCode: {type: string, format: uri}
-        Status: {type: string, const: PENDING_CONFIRMATION}
+        Status: {type: string, const: AWAITING_OTP}
         NextStep:
           type: string
           const: Awaiting customer confirmation via OTP/SMS
