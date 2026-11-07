@@ -53,6 +53,7 @@ class TestLocalKeycloakConfiguration(unittest.TestCase):
             "payment.confirmation.read",
             "payment.confirmation.verify",
             "payment.confirmation.resend",
+            "payment.read",
         }
         self.assertEqual({x["name"] for x in self.realm["clientScopes"]}, expected_scopes)
         self.assertEqual(set(self.realm["clients"][0]["optionalClientScopes"]), expected_scopes)

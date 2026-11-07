@@ -43,6 +43,15 @@
         "include.in.token.scope": "true",
         "display.on.consent.screen": "false"
       }
+    },
+    {
+      "name": "payment.read",
+      "description": "SIXPAY Payment consultation - machine client only",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
     }
   ],
   "clients": [
@@ -64,7 +73,8 @@
         "payment.initiate",
         "payment.confirmation.read",
         "payment.confirmation.verify",
-        "payment.confirmation.resend"
+        "payment.confirmation.resend",
+        "payment.read"
       ],
       "protocolMappers": [
         {
