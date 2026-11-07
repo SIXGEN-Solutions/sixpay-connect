@@ -3,7 +3,6 @@ package com.sixpay.payment.infrastructure.callback.relay;
 import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackDelivery;
 import com.sixpay.payment.application.port.output.callback.PaymentStatusCallbackMessage;
-import com.sixpay.payment.domain.model.BankPostingReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.model.PaymentInitiationContext;
@@ -21,6 +20,7 @@ import com.sixpay.payment.infrastructure.audit.PaymentAuditEntry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -100,14 +100,25 @@ public class PaymentCallbackPlanFactory {
             JsonNode root = objectMapper.readTree(event.payload());
             JsonNode metadata = root.path("metadata");
             // Event-level data and durable audit metadata must refer to the same fact.
+            validateEventPayloadShape(root, audit.eventType());
+            Instant payloadOccurredAt = Instant.parse(required(metadata, "occurredAt"));
+
+            Instant expectedOccurredAt =
+                    roundToPostgresPrecision(payloadOccurredAt);
+
             if (!event.eventId().toString().equals(required(metadata, "eventId"))
                     || !audit.eventId().equals(event.eventId())
-                    || !audit.eventType().equals(requiredEventName(root, audit.eventType()))
                     || !audit.paymentStatus().name().equals(required(metadata, "paymentStatus"))
-                    || audit.businessVersion() != metadata.path("aggregateVersion").asLong(-1)
-                    || audit.eventSequence() != metadata.path("eventSequence").asInt(-1)
-                    || !event.occurredAt().equals(Instant.parse(required(metadata, "occurredAt")))) {
-                throw new IllegalStateException("Outbox payload does not match durable Payment audit");
+                    || audit.businessVersion()
+                    != metadata.path("aggregateVersion").asLong(-1)
+                    || audit.eventSequence()
+                    != metadata.path("eventSequence").asInt(-1)
+                    || !event.occurredAt().equals(expectedOccurredAt)
+                    || !audit.occurredAt().equals(expectedOccurredAt)) {
+
+                throw new IllegalStateException(
+                        "Outbox payload does not match durable Payment audit"
+                );
             }
             return root;
         } catch (JacksonException exception) {
@@ -115,15 +126,37 @@ public class PaymentCallbackPlanFactory {
         }
     }
 
-    private static String requiredEventName(JsonNode root, String auditedName) {
-        // The persisted logical outbox type is payment.domain-event; concrete
-        // subtype is established by the audit entry and validated by its shape.
-        if (PaymentEventOutcomeRecorded.class.getSimpleName().equals(auditedName)) {
+    private static void validateEventPayloadShape(
+            JsonNode root,
+            String auditedEventType
+    ) {
+        if (PaymentEventOutcomeRecorded.class.getSimpleName()
+                .equals(auditedEventType)) {
+
             required(root, "outcome");
-        } else if (PaymentEndOfDayConfirmationRecorded.class.getSimpleName().equals(auditedName)) {
+
+            if (root.hasNonNull("tfjStatus")) {
+                throw new IllegalStateException(
+                        "Unexpected TFJ field in PaymentEventOutcomeRecorded"
+                );
+            }
+
+        } else if (PaymentEndOfDayConfirmationRecorded.class
+                .getSimpleName().equals(auditedEventType)) {
+
             required(root, "tfjStatus");
+
+            if (root.hasNonNull("outcome")) {
+                throw new IllegalStateException(
+                        "Unexpected outcome field in PaymentEndOfDayConfirmationRecorded"
+                );
+            }
+
+        } else {
+            throw new IllegalStateException(
+                    "Unsupported callback event type: " + auditedEventType
+            );
         }
-        return auditedName;
     }
 
     private static String required(JsonNode node, String name) {
@@ -146,10 +179,11 @@ public class PaymentCallbackPlanFactory {
             String originalReference = required(original, "principalBankReference");
             Instant originalObservedAt = Instant.parse(required(original, "observedAt"));
             LocalDate originalDco = LocalDate.parse(required(original, "accountingDate"));
+
             if (!durable.bankPostingReference()
                     .map(ref -> originalReference.equals(ref.principalPostingReference()))
                     .orElse(false)
-                    || !durable.observedAt().equals(originalObservedAt)
+                    || !roundToPostgresPrecision(durable.observedAt()).equals(roundToPostgresPrecision(originalObservedAt))
                     || !durable.accountingDate().equals(originalDco)) {
                 throw new IllegalStateException("Original T0 callback conflicts with durable outcome evidence");
             }
@@ -171,9 +205,10 @@ public class PaymentCallbackPlanFactory {
             String originalRef = required(original, "principalPostingReference");
             LocalDate businessDate = LocalDate.parse(required(original, "businessDate"));
             Instant matchedAt = Instant.parse(required(original, "matchedAt"));
+
             if (!originalRef.equals(durable.principalBankPostingReference())
                     || !businessDate.equals(durable.businessDate())
-                    || !matchedAt.equals(durable.matchedAt())) {
+                    || !roundToPostgresPrecision(durable.matchedAt()).equals(roundToPostgresPrecision(matchedAt))) {
                 throw new IllegalStateException("Original TFJ callback conflicts with durable TFJ evidence");
             }
             data = new PaymentStatusCallbackMessage.TreasuryIntegratedData(
@@ -206,6 +241,25 @@ public class PaymentCallbackPlanFactory {
         return PaymentEventOutcomeRecorded.class.getSimpleName().equals(current.eventType())
                 ? PaymentStatusCallbackMessage.CUT_CREDITED
                 : null;
+    }
+
+    /**
+     * Normalizes an Instant to PostgreSQL TIMESTAMPTZ precision.
+     *
+     * <p>PostgreSQL stores timestamps with microsecond precision,
+     * whereas Java Instant supports nanoseconds.
+     *
+     * <p>This normalization is used exclusively when comparing
+     * immutable event payload timestamps with durable data.
+     *
+     * <p>It does not modify domain events, persisted payloads
+     * or callback business timestamps.
+     *
+     * <p>Existing persisted events remain compatible.
+     */
+    private static Instant roundToPostgresPrecision(Instant instant) {
+        return instant.plusNanos(500)
+                .truncatedTo(ChronoUnit.MICROS);
     }
 
 }
