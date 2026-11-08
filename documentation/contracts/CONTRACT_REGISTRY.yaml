@@ -599,6 +599,34 @@ contracts:
       - "Security approves Bearer, Subscription Key and HMAC profile"
       - "Operations approves retry, DLQ, alert and replay procedures"
 
+  - id: "payment-t0-manual-reconciliation-api-v1"
+    path: "documentation/contracts/internal/payment-t0-manual-reconciliation-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "payment"
+    securityOwner: "security"
+    capability: "PAYMENT_T0_MANUAL_RECONCILIATION"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "payment.reconcile"
+      authorization: "ADMIN_OR_OPS_PLUS_PAYMENT_RECONCILE"
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: false
+      purpose:
+        - "Authorized selection of uncertain T0 Payments for lookup-only recovery"
+      constraints:
+        - "Reuse existing R2 durable claims and bank GET recovery"
+        - "No financial POST, no TFJ, no partner consultation mutation"
+
   - id: "payment-query-api-v1"
     path: "documentation/contracts/internal/payment-query-api-v1.yaml"
     domain: "payment"

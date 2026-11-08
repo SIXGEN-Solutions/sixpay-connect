@@ -95,6 +95,41 @@ class PaymentT0RecoveryClaimStoreIT {
         assertTrue(store.claim(NOW.plus(Duration.ofMinutes(10)), props("worker-b")).isEmpty());
     }
 
+    @Test
+    void manualClaimExcludesSchedulerAndHonoursFencing() {
+        UUID paymentId = UUID.fromString("11111111-1111-4111-8111-111111111111");
+        insertPayment(paymentId, NOW.minus(Duration.ofMinutes(5)), "POSTING_OUTCOME_UNKNOWN");
+        var manual = store.claimSelected(paymentId, NOW, props("manual"),
+                "manual:ops-1").orElseThrow();
+        assertTrue(store.claim(NOW, props("scheduler")).isEmpty());
+        assertTrue(store.claimSelected(paymentId, NOW, props("manual-2"),
+                "manual:ops-2").isEmpty());
+        var recovered = store.claim(NOW.plus(Duration.ofMinutes(6)),
+                props("scheduler")).getFirst();
+        assertFalse(store.completed(manual, NOW.plus(Duration.ofMinutes(6))));
+        assertTrue(store.completed(recovered, NOW.plus(Duration.ofMinutes(6))));
+    }
+
+    @Test
+    void twoOperatorsCannotClaimTheSamePayment() throws Exception {
+        UUID paymentId = UUID.fromString("11111111-1111-4111-8111-111111111111");
+        insertPayment(paymentId, NOW.minus(Duration.ofMinutes(5)), "POSTING_OUTCOME_UNKNOWN");
+        var start = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            var first = pool.submit(() -> {
+                start.await();
+                return store.claimSelected(paymentId, NOW, props("a"), "manual:a");
+            });
+            var second = pool.submit(() -> {
+                start.await();
+                return store.claimSelected(paymentId, NOW, props("b"), "manual:b");
+            });
+            start.countDown();
+            assertEquals(1, (first.get().isPresent() ? 1 : 0)
+                    + (second.get().isPresent() ? 1 : 0));
+        }
+    }
+
     private static PaymentT0RecoveryBatchProperties props(String workerId) {
         var props = new PaymentT0RecoveryBatchProperties();
         props.setWorkerId(workerId);

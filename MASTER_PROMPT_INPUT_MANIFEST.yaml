@@ -176,6 +176,8 @@ activeContractCapabilities:
       path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
     - id: "tresorpay-treasury-integration-webhook-v1"
       path: "documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml"
+    - id: "payment-t0-manual-reconciliation-api-v1"
+      path: "documentation/contracts/internal/payment-t0-manual-reconciliation-api-v1.yaml"
     - id: "payment-query-api-v1"
       path: "documentation/contracts/internal/payment-query-api-v1.yaml"
     - id: "observed-customer-query-api-v1"

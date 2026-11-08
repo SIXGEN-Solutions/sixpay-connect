@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Internal T0 Manual Reconciliation API
+  version: 1.0.0
+  description: >-
+    Authorized internal selection and lookup-only resolution of uncertain T0 payments.
+    The same existing GET banking recovery port as the R2 scheduler is reused;
+    no financial POST is performed by this operation.
+  x-sixpay-contract:
+    registryId: payment-t0-manual-reconciliation-api-v1
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    domain: payment
+    businessOwner: payment
+    securityOwner: security
+    capability: PAYMENT_T0_MANUAL_RECONCILIATION
+    direction: INTERNAL_CLIENT_TO_SIXPAY
+    dataClassification: RESTRICTED
+security:
+  - bearerAuth: []
+paths:
+  /internal/api/v1/payments/reconciliation:
+    post:
+      operationId: reconcilePaymentsT0Manually
+      summary: Reconcile selected uncertain T0 payments by bank GET
+      x-sixpay-authorization:
+        requiredRoles: [ADMIN, OPS]
+        requiredAuthorities: [SCOPE_payment.reconcile]
+      parameters:
+        - name: X-Correlation-ID
+          in: header
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: Per-payment attempt results, including inconclusive or busy outcomes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400': {description: Malformed selection or duplicate payment identifier}
+        '401': {description: Authentication required}
+        '403': {description: Insufficient role, authority or object access}
+        '503': {description: Recovery infrastructure unavailable}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  schemas:
+    Request:
+      type: object
+      additionalProperties: false
+      required: [paymentIds]
+      properties:
+        paymentIds:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          items: {type: string, format: uuid}
+    Result:
+      type: object
+      additionalProperties: false
+      required: [paymentId, outcome]
+      properties:
+        paymentId: {type: string, format: uuid}
+        outcome:
+          type: string
+          enum: [NOT_ELIGIBLE_OR_BUSY, RETRY_SCHEDULED, RESOLVED, STALE_CLAIM, LOOKUP_FAILED_RETRY_SCHEDULED]
+        paymentStatus:
+          type: [string, 'null']
+          description: Current known SIXPAY Payment status, if available
+    Response:
+      type: object
+      additionalProperties: false
+      required: [results]
+      properties:
+        results:
+          type: array
+          items: {$ref: '#/components/schemas/Result'}
