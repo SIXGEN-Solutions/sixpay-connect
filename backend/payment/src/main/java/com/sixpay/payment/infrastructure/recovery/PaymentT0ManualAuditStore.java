@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /** Operational audit, separate from immutable financial domain-event audit. */
 @Repository
-public final class PaymentT0ManualAuditStore {
+public class PaymentT0ManualAuditStore {
     private final JdbcTemplate jdbc;
 
     public PaymentT0ManualAuditStore(JdbcTemplate jdbc) {

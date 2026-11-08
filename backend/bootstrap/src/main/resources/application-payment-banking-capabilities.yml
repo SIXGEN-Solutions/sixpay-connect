@@ -119,3 +119,10 @@ sixpay:
             idempotency-header: ${AMPLITUDE_CONFIRMATION_IDEMPOTENCY_HEADER:Idempotency-Key}
             correlation-header: ${AMPLITUDE_CONFIRMATION_CORRELATION_HEADER:X-Correlation-ID}
             institution-header: ${AMPLITUDE_CONFIRMATION_INSTITUTION_HEADER:X-Financial-Institution-Code}
+    t0-recovery:
+      enabled: false
+      batch-size: 50
+      window: PT48H
+      minimum-age: PT2M
+      claim-timeout: PT5M
+      poll-delay: PT2M
