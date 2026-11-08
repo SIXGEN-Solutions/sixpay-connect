@@ -4,8 +4,8 @@ kind: "SIXPAY_ACTIVE_MASTER_PROMPT_INPUT"
 metadata:
   project: "SIXPAY CONNECT"
   repository: "SIXGEN-Solutions/sixpay-connect"
-  baselineCommit: "09642ffaad0b1b0b6d2c16968866fb28f0162ab0"
-  generatedOn: "2026-09-09"
+  baselineCommit: "e0c7599ab3e5e5b51d1247de732d187c39aab4a9"
+  generatedOn: "2026-11-07"
   status: "ACTIVE"
   purpose: >-
     Deterministic input selection for Master Prompt generation. This manifest
