@@ -3,6 +3,7 @@ package com.sixpay.payment.api;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.api.response.PaymentProblemResponse;
 import com.sixpay.payment.application.exception.PaymentQueryUnavailableException;
+import com.sixpay.payment.application.exception.PaymentConfirmationStateConflictException;
 import com.sixpay.payment.application.security.PaymentAccessDeniedException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentExternalReferenceConflictException;
 import com.sixpay.payment.infrastructure.idempotency.PaymentIdempotencyConflictException;
@@ -67,6 +68,19 @@ public class PaymentApiExceptionHandler {
                 HttpStatus.CONFLICT,
                 "PAYMENT_REFERENCE_CONFLICT",
                 "External Payment reference is already associated with another request",
+                request
+        );
+    }
+
+    @ExceptionHandler(PaymentConfirmationStateConflictException.class)
+    ResponseEntity<PaymentProblemResponse> paymentConfirmationStateConflict(
+            PaymentConfirmationStateConflictException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.CONFLICT,
+                "PAYMENT_CONFIRMATION_STATE_CONFLICT",
+                "Payment is not awaiting OTP confirmation",
                 request
         );
     }

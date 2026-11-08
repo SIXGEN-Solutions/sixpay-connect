@@ -3,6 +3,7 @@ package com.sixpay.payment.application.service;
 import com.sixpay.payment.application.command.CreatePaymentConfirmationCommand;
 import com.sixpay.payment.application.command.ResendPaymentConfirmationCommand;
 import com.sixpay.payment.application.command.VerifyPaymentConfirmationCommand;
+import com.sixpay.payment.application.exception.PaymentConfirmationStateConflictException;
 import com.sixpay.payment.application.confirmation.PaymentConfirmationChallengeFactory;
 import com.sixpay.payment.application.port.input.CreatePaymentConfirmationUseCase;
 import com.sixpay.payment.application.port.input.ReadPaymentConfirmationUseCase;
@@ -269,7 +270,9 @@ public class PaymentConfirmationService
         Objects.requireNonNull(command, "Verify confirmation command");
         requireInitiatingMachine(command.paymentReference());
         Payment payment = requirePayment(command.paymentReference());
-        requirePendingConfirmation(payment);
+        if (payment.status() != PaymentStatus.PENDING_CONFIRMATION) {
+            throw new PaymentConfirmationStateConflictException();
+        }
         ConfirmationChallenge challenge =
                 requireCurrentChallenge(payment);
         char[] otp = command.otp();
