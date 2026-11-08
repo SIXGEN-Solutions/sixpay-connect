@@ -154,4 +154,27 @@ class PaymentT0RecoveryClaimStoreIT {
             VALUES (?, ?, ?, 'PaymentPostingAuthorized', 'POSTING_PENDING', 1, 1, ?, ?)
             """, UUID.randomUUID(), id, ref, UUID.randomUUID().toString(), Timestamp.from(postingAt));
     }
+    // BEGIN SIXPAY_R6_T0_VALIDATION_TESTS
+    @Test
+    void r6ManualSelectionRejectsOldPostingDespiteRecentPaymentUpdate() {
+        UUID paymentId = UUID.fromString("33333333-3333-4333-8333-333333333333");
+        insertPayment(paymentId, NOW.minus(Duration.ofHours(49)), "POSTING_OUTCOME_UNKNOWN");
+        // insertPayment stores payments.updated_at = NOW; the original posting audit wins.
+        assertTrue(store.claimSelected(paymentId, NOW, props("manual"),
+                "manual:r6-admin").isEmpty());
+        Integer attempts = jdbc.queryForObject(
+                "SELECT count(*) FROM payment_t0_recovery_attempts WHERE payment_id = ?",
+                Integer.class, paymentId);
+        assertEquals(0, attempts);
+    }
+
+    @Test
+    void r6ManualSelectionRejectsPaymentBeforeMinimumPostingAge() {
+        UUID paymentId = UUID.fromString("44444444-4444-4444-8444-444444444444");
+        insertPayment(paymentId, NOW.minus(Duration.ofMinutes(1)), "POSTING_PENDING");
+        assertTrue(store.claimSelected(paymentId, NOW, props("manual"),
+                "manual:r6-admin").isEmpty());
+    }
+    // END SIXPAY_R6_T0_VALIDATION_TESTS
+
 }

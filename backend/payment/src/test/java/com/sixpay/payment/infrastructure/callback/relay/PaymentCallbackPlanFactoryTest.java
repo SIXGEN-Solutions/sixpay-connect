@@ -117,4 +117,19 @@ class PaymentCallbackPlanFactoryTest {
                 Instant.parse("2026-09-18T10:00:00Z")
         );
     }
+    // BEGIN SIXPAY_R6_T0_VALIDATION_TESTS
+    @Test
+    void r6RejectedT0EventCurrentlyHasNoCallbackPlanMapping() throws Exception {
+        // Evidence of the current implementation, NOT acceptance of missing rejection delivery.
+        // Contract-level decision / integrated delivery proof is tracked in R6 report.
+        var method = PaymentCallbackPlanFactory.class
+                .getDeclaredMethod("callbackType", PaymentAuditEntry.class);
+        method.setAccessible(true);
+        PaymentAuditEntry rejected = audit(
+                PaymentEventOutcomeRecorded.class.getSimpleName(),
+                PaymentStatus.REJECTED);
+        assertThat(method.invoke(null, rejected)).isNull();
+    }
+    // END SIXPAY_R6_T0_VALIDATION_TESTS
+
 }
