@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AmplitudePaymentEventRecoveryAdapterTest {
 
@@ -93,6 +94,77 @@ class AmplitudePaymentEventRecoveryAdapterTest {
                 adapter.recover(query()).status()
         );
         assertEquals(1, client.idempotencyCalls);
+    }
+
+    @Test
+    void rejectsMismatchedPaymentReferenceFromPrimaryLookup() {
+        StubClient client = new StubClient(
+                Optional.of(mismatchedResult()),
+                Optional.empty()
+        );
+        AmplitudePaymentEventRecoveryAdapter adapter =
+                new AmplitudePaymentEventRecoveryAdapter(client);
+
+        assertThrows(IllegalStateException.class, () -> adapter.recover(query()));
+        assertEquals(1, client.paymentReferenceCalls);
+        assertEquals(0, client.idempotencyCalls);
+    }
+
+    @Test
+    void rejectsMismatchedPaymentReferenceFromIdempotencyLookup() {
+        StubClient client = new StubClient(
+                Optional.empty(),
+                Optional.of(mismatchedResult())
+        );
+        AmplitudePaymentEventRecoveryAdapter adapter =
+                new AmplitudePaymentEventRecoveryAdapter(client);
+
+        assertThrows(IllegalStateException.class, () -> adapter.recover(query()));
+        assertEquals(1, client.paymentReferenceCalls);
+        assertEquals(1, client.idempotencyCalls);
+    }
+
+    @Test
+    void resolvesUnknownReferenceWithConclusiveIdempotencyLookup() {
+        StubClient client = new StubClient(
+                Optional.of(result("UNKNOWN")),
+                Optional.of(result("COMPLETED"))
+        );
+        AmplitudePaymentEventRecoveryAdapter adapter =
+                new AmplitudePaymentEventRecoveryAdapter(client);
+
+        var recovery = adapter.recover(query());
+        assertEquals(PaymentEventRecoveryStatus.COMPLETED, recovery.status());
+        assertEquals(PaymentEventObservationSource.IDEMPOTENCY_LOOKUP, recovery.source());
+        assertEquals(1, client.paymentReferenceCalls);
+        assertEquals(1, client.idempotencyCalls);
+    }
+
+    @Test
+    void retainsUnknownWhenSecondaryLookupDoesNotFindPayment() {
+        StubClient client = new StubClient(
+                Optional.of(result("UNKNOWN")),
+                Optional.empty()
+        );
+        AmplitudePaymentEventRecoveryAdapter adapter =
+                new AmplitudePaymentEventRecoveryAdapter(client);
+
+        var recovery = adapter.recover(query());
+        assertEquals(PaymentEventRecoveryStatus.UNKNOWN, recovery.status());
+        assertEquals(PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP, recovery.source());
+        assertEquals(1, client.paymentReferenceCalls);
+        assertEquals(1, client.idempotencyCalls);
+    }
+
+    private static AmplitudePaymentEventResult mismatchedResult() {
+        return new AmplitudePaymentEventResult(
+                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAW",
+                "COMPLETED",
+                List.of(),
+                "BK-OTHER",
+                null,
+                Instant.parse("2026-09-06T18:00:05Z")
+        );
     }
 
     private static PaymentEventRecoveryQuery query() {
