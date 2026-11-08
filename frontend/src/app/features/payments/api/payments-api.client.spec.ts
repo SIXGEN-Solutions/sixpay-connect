@@ -57,6 +57,18 @@ describe('PaymentsApiClient', () => {
     });
   });
 
+  it('posts selected ids to the approved R3 endpoint without a bank POST endpoint', () => {
+    const ids = ['11111111-1111-4111-8111-111111111111'];
+    client.reconcileT0(ids).subscribe((response) => {
+      expect(response.results).toHaveLength(1);
+      expect(response.results[0]?.outcome).toBe('RETRY_SCHEDULED');
+    });
+    const request = controller.expectOne('/internal/api/v1/payments/reconciliation');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ paymentIds: ids });
+    request.flush({ results: [{ paymentId: ids[0], outcome: 'RETRY_SCHEDULED', paymentStatus: 'POSTING_OUTCOME_UNKNOWN' }] });
+  });
+
   it('encodes paymentId and calls the published detail endpoint', () => {
     client.getPayment('7fa85f64-5717-4562-b3fc-2c963f66afa1').subscribe();
 
