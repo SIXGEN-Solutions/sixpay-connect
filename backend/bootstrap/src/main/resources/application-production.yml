@@ -1,8 +1,12 @@
+# Production cloud simulation: no local insecure HTTP/OAuth2/mTLS overrides.
 spring:
   config:
     import:
       - classpath:config/security/ldap-common.yml
-      - classpath:config/security/oidc-common.yml
+      - classpath:application-customer-banking.yml
+      - classpath:application-payment-banking-capabilities.yml
+      - classpath:application-notification-operational.yml
+      - classpath:application-customer-projection-outbox.yml
   datasource:
     url: ${SIXPAY_DB_URL}
     username: ${SIXPAY_DB_USERNAME}
@@ -31,6 +35,12 @@ management:
         include: health,info
 sixpay:
   security:
+    m2m:
+      # Enable only after verified mTLS gateway, Keycloak JWT and partner binding.
+      enabled: ${SIXPAY_M2M_ENABLED:false}
+      issuer-uri: ${SIXPAY_M2M_ISSUER_URI:}
+      jwk-set-uri: ${SIXPAY_M2M_JWK_SET_URI:}
+      audience: ${SIXPAY_M2M_AUDIENCE:}
     authentication:
       policy:
         require-provider: true
@@ -39,7 +49,50 @@ sixpay:
       oidc:
         enabled: ${SIXPAY_OIDC_ENABLED:false}
       ldap:
-        enabled: ${SIXPAY_LDAP_ENABLED:false}
+        enabled: ${SIXPAY_LDAP_ENABLED:true}
+  payment:
+    treasury:
+      enabled: ${SIXPAY_PAYMENT_TREASURY_ENABLED:true}
+    banking:
+      amplitude:
+        # The imported capability fragment owns the normal provider configuration.
+        # Transport security must be configured externally for the deployed provider.
+        confirmation:
+          enabled: ${AMPLITUDE_CONFIRMATION_ENABLED:true}
+          connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT:2s}
+          read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT:10s}
+        reservation:
+          enabled: ${AMPLITUDE_FUNDS_RESERVATION_ENABLED:true}
+        posting:
+          enabled: ${AMPLITUDE_POSTING_ENABLED:true}
+        compensation:
+          enabled: ${AMPLITUDE_COMPENSATION_ENABLED:false}
+        status:
+          enabled: ${AMPLITUDE_POSTING_STATUS_ENABLED:false}
+    callback:
+      enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:true}
+      signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID}
+      signing-secret: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_SECRET}
+  reporting:
+    audit-query:
+      cursor-hmac-key: ${SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY}
+    audit-export:
+      storage-directory: ${SIXPAY_REPORTING_AUDIT_EXPORT_STORAGE_DIRECTORY:/var/lib/sixpay/audit-exports}
+      retrieval-base-uri: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI}
+  customer:
+    observation:
+      persistence:
+        enabled: true
+        protection-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_PROTECTION_KEY_BASE64}
+      query:
+        enabled: true
+        cursor-key-base64: ${SIXPAY_CUSTOMER_OBSERVATION_CURSOR_KEY_BASE64}
+      audit:
+        persistence:
+          enabled: true
+  notification:
+    email:
+      mode: ${SIXPAY_NOTIFICATION_EMAIL_MODE:logging}
 server:
   servlet:
     session:
@@ -48,3 +101,4 @@ server:
         http-only: true
         same-site: strict
         secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}
+
