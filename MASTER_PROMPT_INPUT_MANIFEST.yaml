@@ -208,6 +208,8 @@ activeContractCapabilities:
       path: "documentation/contracts/internal/notification-operational-email-v1.md"
     - id: "customer-subscription-management-api-v1"
       path: "documentation/contracts/internal/customer-subscription-management-api-v1.yaml"
+    - id: "payment-consultation-api-v1"
+      path: "documentation/contracts/external/payment-consultation-api-v1.yaml"
 
 excludedContracts:
   reason: "DEFERRED_FUTURE contracts are retained for traceability and excluded from active MVP generation context."
