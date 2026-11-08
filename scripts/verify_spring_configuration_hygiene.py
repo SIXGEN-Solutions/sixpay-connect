@@ -220,9 +220,21 @@ def main():
     for (key, value), paths in declarations.items():
         if len(paths) < 2 or key in ALLOWED_IDENTICAL_PROFILE_KEYS:
             continue
+
+        # application-production.yml is deliberately self-contained: it
+        # repeats runtime values from application.yml and other profiles.
+        # Only those cross-file repetitions are exempt. Two or more non-
+        # production declarations still constitute a duplicate.
+        non_production_paths = [
+            path for path in paths
+            if path != BOOTSTRAP_RESOURCES / "application-production.yml"
+        ]
+        if len(non_production_paths) < 2:
+            continue
+
         errors.append(
             f"duplicate runtime value {key}={value}: "
-            + ", ".join(relative(path) for path in paths)
+            + ", ".join(relative(path) for path in non_production_paths)
         )
 
     if errors:

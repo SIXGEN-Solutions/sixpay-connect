@@ -13,6 +13,8 @@ import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -26,6 +28,8 @@ import java.util.Objects;
  * or retries the financial POST after an uncertain outcome.</p>
  */
 public class PaymentEventLifecycleOrchestrationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentEventLifecycleOrchestrationService.class);
 
     private final PaymentLookupPort paymentLookupPort;
     private final PaymentFinancialSnapshotRepository snapshotRepository;
@@ -74,7 +78,8 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-        System.out.println("****payment.status(): " + payment.status());
+        logger.debug("****payment.status(): {}", payment.status());
+
         if (payment.status() == PaymentStatus.POSTING_PENDING) {
             PaymentFinancialEventSnapshot snapshot =
                     requireFinalizedSnapshot(paymentId);
@@ -89,7 +94,7 @@ public class PaymentEventLifecycleOrchestrationService {
                                     )
                             );
 
-            System.out.println("Persisted instruction: " + persistedInstruction + "\ninstruction: " + instruction);
+            logger.debug("Persisted instruction: {} - Reel Instruction: {}", persistedInstruction, instruction);
             if (!persistedInstruction.equals(instruction)) {
                 throw PaymentDomainException.conflict(
                         "A different posting instruction is already authorized"
@@ -148,7 +153,7 @@ public class PaymentEventLifecycleOrchestrationService {
                     policies
             );
         }
-        System.out.println("Provider result: " + providerResult);
+        logger.debug("Provider result: {}", providerResult);
         return finalizationService.recordPaymentEventOutcome(
                 paymentId,
                 outcomeMapper.toSnapshot(

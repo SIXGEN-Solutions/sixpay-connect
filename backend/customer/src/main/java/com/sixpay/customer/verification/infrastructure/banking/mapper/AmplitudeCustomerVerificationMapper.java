@@ -193,11 +193,7 @@ public final class AmplitudeCustomerVerificationMapper {
         if (account == null) {
             return null;
         }
-        System.out.println("identity: " + identity);
-        System.out.println("account.ncp(): " + account.ncp());
-        System.out.println("account.dev(): " + account.dev());
-        System.out.println("account.typ(): " + account.typ());
-        System.out.println("account.status(): " +account.status());
+
         if (identity == null || account.ncp() == null || account.ncp().isBlank()
                 || account.dev() == null || account.dev().isBlank()
                 || account.typ() == null || account.typ().isBlank()

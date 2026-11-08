@@ -17,6 +17,8 @@ import com.sixpay.payment.domain.model.evidence.TreasuryAccountResolutionSnapsho
 import com.sixpay.payment.domain.model.evidence.TreasuryResolutionOutcome;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,8 @@ import java.util.Objects;
 
 @Service
 public final class PaymentT0OrchestrationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentT0OrchestrationService.class);
 
     private final PaymentLookupPort paymentLookupPort;
     private final PaymentFundsControlService fundsControlService;
@@ -91,7 +95,8 @@ public final class PaymentT0OrchestrationService {
         }
         PaymentTreasuryAccountResolutionPort treasuryPort =
                 treasuryPortProvider.getIfAvailable();
-        System.out.println("*** TreasuryPortProvider *** " + (treasuryPort == null));
+
+
         if (treasuryPort == null) {
             throw new IllegalStateException(
                     "Treasury account resolution bridge is unavailable"
@@ -132,9 +137,9 @@ public final class PaymentT0OrchestrationService {
                         null,
                         metadata
                 );
-        System.out.println("resolved: " + resolved);
-        System.out.println("evidence: " + evidence);
-        System.out.println("paymentId: " + paymentId);
+        logger.debug("resolved: {}", resolved);
+        logger.debug("evidence: {}", evidence);
+        logger.debug("paymentId: {}", paymentId);
         treasuryResolutionService.recordResolution(
                 paymentId,
                 evidence,
@@ -151,7 +156,7 @@ public final class PaymentT0OrchestrationService {
     ) {
         Payment payment = requirePayment(paymentId);
 
-        System.out.println("payment.status(): " + payment.status());
+        logger.debug("payment.status(): {}", payment.status());
         if (payment.status() != PaymentStatus.APPROVED_FOR_POSTING
                 && payment.status() != PaymentStatus.POSTING_PENDING) {
             return;
@@ -179,7 +184,7 @@ public final class PaymentT0OrchestrationService {
 
         PaymentEventLifecycleOrchestrationService lifecycle =
                 lifecycleProvider.getIfAvailable();
-        System.out.println("lifecycleProvider: " + (lifecycle == null));
+
         if (lifecycle == null) {
             throw new IllegalStateException(
                     "Payment Event execution bridge is unavailable"

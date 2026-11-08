@@ -125,11 +125,34 @@ Production and integration must never silently fall back to mock data.
 canonical classification/ownership registry for runtime toggles. Runtime values
 remain in implementation configuration.
 
+## Production runtime configuration consolidation
+
+`backend/bootstrap/src/main/resources/application-production.yml` is the
+self-contained runtime configuration for the `production` Spring profile. It
+intentionally repeats values also declared in the global `application.yml` and
+in other, separately selected profiles or reusable configuration fragments.
+This duplication is the consequence of the approved production deployment
+composition; it is not by itself a competing runtime default. The production
+profile does not rely on `spring.config.import` for those fragments.
+
+This exception concerns **only** identical `(property key, value)` declarations
+where one file is `application-production.yml`. It does not permit duplicate
+keys inside a YAML/properties file or identical runtime configuration files.
+It also does not permit duplicate values shared by two or more *other* runtime
+files. Explicit classpath imports must still resolve. All module ownership,
+security, feature-flag and profile-safety requirements remain unchanged.
+
+Spring Boot can still load `application.yml` together with a selected profile.
+The production consolidation does not imply that global configuration loading
+is disabled; deployed values and overrides remain subject to Spring Boot
+precedence and must be reviewed when the production profile is configured.
+
 ## Non-regression
 
 Configuration changes must preserve explicit ownership, stable profile
 semantics, no cross-domain configuration consumption, no API-to-mock fallback
-and no duplicate competing defaults.
+and no duplicate competing defaults outside the narrowly documented production
+consolidation exception.
 
 ```bash
 python scripts/verify_spring_configuration_hygiene.py

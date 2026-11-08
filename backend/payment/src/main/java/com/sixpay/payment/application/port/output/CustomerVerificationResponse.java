@@ -204,8 +204,6 @@ public record CustomerVerificationResponse(
                         ? Outcome.INDETERMINATE
                         : Outcome.VERIFIED;
 
-        System.out.println("outcome: " + outcome);
-        System.out.println("derived: " + derived);
         if (outcome != derived) {
             throw new IllegalArgumentException(
                     "outcome is inconsistent with checks"

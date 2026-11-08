@@ -6,16 +6,21 @@ import com.sixpay.payment.domain.model.evidence.EvidenceCheckResult;
 import com.sixpay.payment.domain.model.evidence.FundsControlCheckType;
 import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.RestAmplitudePaymentEventClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMappingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.Objects;
 
 public final class AmplitudePaymentEventAdapter
         implements PaymentEventExecutionPort {
+
+    private static final Logger logger = LoggerFactory.getLogger(AmplitudePaymentEventAdapter.class);
 
     private static final String PAYMENT_NATURE = "VIRPAY";
 
@@ -54,11 +59,9 @@ public final class AmplitudePaymentEventAdapter
                             command.context().financialInstitutionCode().value(),
                             command.idempotencyKey().value()
                     );
-            System.out.println("Amplitude Payment event result: " + providerResult.toString());
-            PaymentEventExecutionResult applicationResult = toApplicationResult(providerResult);
-            System.out.println("Payment event execution result: " + applicationResult.toString());
-            return applicationResult;
-            //return toApplicationResult(providerResult);
+
+            logger.debug("Payment event execution result: {}", providerResult.toString());
+            return toApplicationResult(providerResult);
         } catch (AmplitudePaymentEventOutcomeUnknownException exception) {
             throw new PaymentEventOutcomeUnknownException(
                     exception.getMessage(),

@@ -1,11 +1,11 @@
 package com.sixpay.payment.infrastructure.banking.amplitude.posting.client;
 
-import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.configuration.AmplitudePostingProperties;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventRequest;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
-import org.springframework.http.HttpHeaders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -15,6 +15,8 @@ import java.util.Objects;
 
 public final class RestAmplitudePaymentEventClient
         implements AmplitudePaymentEventClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(RestAmplitudePaymentEventClient.class);
 
     private final RestClient restClient;
     private final PostingAccessTokenProvider tokenProvider;
@@ -46,8 +48,7 @@ public final class RestAmplitudePaymentEventClient
         requireText(idempotencyKey, "idempotencyKey");
 
         try {
-            System.out.println("properties.postingPath(): " + properties.postingPath());
-            System.out.println("request: " + request.toString());
+            logger.debug("request: {}", request.toString());
             AmplitudePaymentEventResult response =
                     restClient.post()
                             .uri(properties.postingPath())
@@ -77,7 +78,7 @@ public final class RestAmplitudePaymentEventClient
                             .body(
                                     AmplitudePaymentEventResult.class
                             );
-            System.out.println("Response: " + response);
+            logger.debug("Response: {}", response);
             if (response == null) {
                 throw new AmplitudePaymentEventOutcomeUnknownException(
                         "Payment event response is empty",
