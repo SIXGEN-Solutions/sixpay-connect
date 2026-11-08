@@ -41,6 +41,7 @@ classificationModel:
     TRESOR_PAY: "TRESOR PAY."
     AMPLITUDE: "Amplitude Core Banking."
     EMAIL_PROVIDER: "Configured operational email provider."
+    PARTNER: "Registered external SIXPAY partner."
 
   directionEndpoints:
     SIXPAY: "SIXPAY CONNECT."
@@ -139,9 +140,9 @@ contracts:
   - id: "payment-consultation-api-v1"
     path: "documentation/contracts/external/payment-consultation-api-v1.yaml"
     domain: "payment"
-    capability: "PAYMENT_RECOVERY"
+    capability: "PAYMENT_CONSULTATION"
     direction: "PARTNER_TO_SIXPAY"
-    sourceSystem: "REGISTERED_PARTNER"
+    sourceSystem: "PARTNER"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
     approvalStatus: "PENDING_APPROVAL"
@@ -186,7 +187,7 @@ contracts:
     path: "documentation/contracts/external/payment-command-api-v1.yaml"
     domain: "payment"
     capability: "PAYMENT_INITIATION"
-    direction: "TRESORPAY_TO_SIXPAY"
+    direction: "TRESOR_PAY_TO_SIXPAY"
     sourceSystem: "TRESOR_PAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"

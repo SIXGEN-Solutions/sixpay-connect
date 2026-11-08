@@ -22,7 +22,7 @@ info:
     generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
     domain: payment
-    capability: PAYMENT_RECOVERY
+    capability: PAYMENT_CONSULTATION
     direction: PARTNER_TO_SIXPAY
 servers:
   - url: https://api.sixpay.example
