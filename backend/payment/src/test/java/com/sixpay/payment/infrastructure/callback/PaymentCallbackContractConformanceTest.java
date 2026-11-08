@@ -11,6 +11,8 @@ class PaymentCallbackContractConformanceTest {
         String contract = Files.readString(Path.of("..", "..", "documentation", "contracts", "tresorpay", "tresorpay-payment-callback-webhook-v1.yaml"));
         assertThat(contract)
                 .contains("CUT_CREDITED")
+                .contains("PAYMENT_REJECTED")
+                .contains("PaymentRejectedData")
                 .contains("TREASURY_INTEGRATED")
                 .contains("X-Webhook-Event-ID")
                 .contains("X-Webhook-Delivery-ID")

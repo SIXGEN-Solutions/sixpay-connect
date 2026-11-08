@@ -64,6 +64,20 @@ class ReceiverTests(unittest.TestCase):
         changed=dict(self.event);changed['paymentVersion']=2
         self.assertEqual(self.send(changed,attempt=3),409)
 
+    def test_payment_rejected_accepted_replayed_and_conflict_checked(self):
+        self.event['eventType'] = 'PAYMENT_REJECTED'
+        self.event['data'] = {'immediateResult': 'REJECTED', 'reasonCode': 'BANK_REJECTED'}
+        self.assertEqual(self.send(self.event), 204)
+        self.assertEqual(self.send(self.event, attempt=2), 204)
+        changed = dict(self.event)
+        changed['data'] = {'immediateResult': 'REJECTED', 'reasonCode': 'OTHER_REJECTION'}
+        self.assertEqual(self.send(changed, attempt=3), 409)
+
+    def test_payment_rejected_rejects_invalid_payload(self):
+        self.event['eventType'] = 'PAYMENT_REJECTED'
+        self.event['data'] = {'immediateResult': 'UNKNOWN', 'reasonCode': 'BANK_REJECTED'}
+        self.assertEqual(self.send(self.event), 422)
+
     def test_invalid_signature(self):
         self.assertEqual(self.send(self.event,bad_sig=True),401)
 

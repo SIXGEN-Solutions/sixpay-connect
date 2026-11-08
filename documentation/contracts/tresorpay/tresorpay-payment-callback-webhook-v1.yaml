@@ -6,11 +6,13 @@ info:
     Common callback used by SIXPAY on the single callback URL supplied and
     allow-listed by TRESOR PAY.
 
-    The same runtime callback URL receives the two approved facts:
-    CUT_CREDITED and TREASURY_INTEGRATED. eventType discriminates the payload.
+    The same runtime callback URL receives the three approved facts:
+    CUT_CREDITED, PAYMENT_REJECTED and TREASURY_INTEGRATED. eventType discriminates the payload.
 
     CUT_CREDITED means the immediate CUT credit is durably known; it is not TFJ
-    finality. TREASURY_INTEGRATED is emitted only after the successful TFJ /
+    finality. PAYMENT_REJECTED means that a T0 banking rejection was
+    durably established, including after authoritative recovery of UNKNOWN.
+    TREASURY_INTEGRATED is emitted only after the successful TFJ /
     Treasury result is durably persisted and uniquely matched.
 
     The callback URL is environment-specific external configuration owned by
@@ -45,7 +47,7 @@ info:
     deliverySemantics: "AT_LEAST_ONCE"
     callbackUrlOwnership: "TRESOR_PAY"
     callbackUrlConfiguration: "EXTERNAL_RUNTIME_CONFIGURATION"
-    eventTypes: ["CUT_CREDITED", "TREASURY_INTEGRATED"]
+    eventTypes: ["CUT_CREDITED", "PAYMENT_REJECTED", "TREASURY_INTEGRATED"]
     limitations:
       - "NO_FINANCIAL_COMMAND"
       - "NO_AUTOMATIC_REVERSAL"
@@ -184,11 +186,13 @@ components:
     PaymentCallbackEvent:
       oneOf:
         - $ref: '#/components/schemas/CutCreditedEvent'
+        - $ref: '#/components/schemas/PaymentRejectedEvent'
         - $ref: '#/components/schemas/TreasuryIntegratedEvent'
       discriminator:
         propertyName: eventType
         mapping:
           CUT_CREDITED: '#/components/schemas/CutCreditedEvent'
+          PAYMENT_REJECTED: '#/components/schemas/PaymentRejectedEvent'
           TREASURY_INTEGRATED: '#/components/schemas/TreasuryIntegratedEvent'
 
     BaseEvent:
@@ -214,7 +218,7 @@ components:
           description: Immutable logical-event idempotency key.
         eventType:
           type: string
-          enum: [CUT_CREDITED, TREASURY_INTEGRATED]
+          enum: [CUT_CREDITED, PAYMENT_REJECTED, TREASURY_INTEGRATED]
         occurredAt: { type: string, format: date-time }
         correlationId: { type: string, format: uuid }
         causationId:
@@ -237,6 +241,14 @@ components:
           properties:
             eventType: { type: string, const: CUT_CREDITED }
             data: { $ref: '#/components/schemas/CutCreditedData' }
+
+    PaymentRejectedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            eventType: { type: string, const: PAYMENT_REJECTED }
+            data: { $ref: '#/components/schemas/PaymentRejectedData' }
 
     TreasuryIntegratedEvent:
       allOf:
@@ -264,6 +276,17 @@ components:
         creditedAt: { type: string, format: date-time }
         immediateResult: { type: string, const: POSTED_PENDING_TFJ }
         tfjFinality: { type: boolean, const: false }
+
+    PaymentRejectedData:
+      type: object
+      additionalProperties: false
+      required: [immediateResult, reasonCode]
+      properties:
+        immediateResult: { type: string, const: REJECTED }
+        reasonCode:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]{2,63}$'
+          description: Safe persisted Payment rejection code.
 
     TreasuryIntegratedData:
       type: object

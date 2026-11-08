@@ -20,6 +20,7 @@ public record PaymentStatusCallbackMessage(
         Object data
 ) {
     public static final String CUT_CREDITED = "CUT_CREDITED";
+    public static final String PAYMENT_REJECTED = "PAYMENT_REJECTED";
     public static final String TREASURY_INTEGRATED = "TREASURY_INTEGRATED";
 
     public PaymentStatusCallbackMessage {
@@ -29,7 +30,8 @@ public record PaymentStatusCallbackMessage(
         }
         eventId = Objects.requireNonNull(eventId, "Event ID");
         eventType = requireText(eventType, "Event type");
-        if (!CUT_CREDITED.equals(eventType) && !TREASURY_INTEGRATED.equals(eventType)) {
+        if (!CUT_CREDITED.equals(eventType) && !PAYMENT_REJECTED.equals(eventType)
+                && !TREASURY_INTEGRATED.equals(eventType)) {
             throw new IllegalArgumentException("Unsupported callback event type: " + eventType);
         }
         occurredAt = Objects.requireNonNull(occurredAt, "Occurrence instant");
@@ -44,6 +46,9 @@ public record PaymentStatusCallbackMessage(
         data = Objects.requireNonNull(data, "Callback data");
         if (CUT_CREDITED.equals(eventType) && !(data instanceof CutCreditedData)) {
             throw new IllegalArgumentException("CUT_CREDITED requires CutCreditedData");
+        }
+        if (PAYMENT_REJECTED.equals(eventType) && !(data instanceof PaymentRejectedData)) {
+            throw new IllegalArgumentException("PAYMENT_REJECTED requires PaymentRejectedData");
         }
         if (TREASURY_INTEGRATED.equals(eventType) && !(data instanceof TreasuryIntegratedData)) {
             throw new IllegalArgumentException("TREASURY_INTEGRATED requires TreasuryIntegratedData");
@@ -74,6 +79,19 @@ public record PaymentStatusCallbackMessage(
             }
             if (tfjFinality) {
                 throw new IllegalArgumentException("CUT_CREDITED must not establish TFJ finality");
+            }
+        }
+    }
+
+    public record PaymentRejectedData(String immediateResult, String reasonCode) {
+        public PaymentRejectedData {
+            immediateResult = requireText(immediateResult, "Immediate result");
+            if (!"REJECTED".equals(immediateResult)) {
+                throw new IllegalArgumentException("PAYMENT_REJECTED requires REJECTED result");
+            }
+            reasonCode = requireText(reasonCode, "Rejection reason code");
+            if (!reasonCode.matches("^[A-Z][A-Z0-9_]{2,63}$")) {
+                throw new IllegalArgumentException("Invalid rejection reason code");
             }
         }
     }

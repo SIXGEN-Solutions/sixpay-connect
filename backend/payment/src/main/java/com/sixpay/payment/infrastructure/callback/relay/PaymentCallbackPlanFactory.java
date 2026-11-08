@@ -67,6 +67,10 @@ public class PaymentCallbackPlanFactory {
                 && !"COMPLETED".equals(required(original, "outcome"))) {
             return PaymentCallbackPlan.skip();
         }
+        if (PaymentStatusCallbackMessage.PAYMENT_REJECTED.equals(callbackType)
+                && !"REJECTED".equals(required(original, "outcome"))) {
+            return PaymentCallbackPlan.skip();
+        }
         if (PaymentStatusCallbackMessage.TREASURY_INTEGRATED.equals(callbackType)
                 && !"INTEGRATED".equals(required(original, "tfjStatus"))) {
             return PaymentCallbackPlan.skip();
@@ -195,6 +199,24 @@ public class PaymentCallbackPlanFactory {
                     originalObservedAt,
                     "POSTED_PENDING_TFJ",
                     false);
+        } else if (PaymentStatusCallbackMessage.PAYMENT_REJECTED.equals(callbackType)) {
+            // Reject only when the persisted Payment and its immutable T0 event agree.
+            state.paymentEventOutcomeEvidence()
+                    .filter(snapshot -> snapshot.outcome() == PaymentEventOutcome.REJECTED)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "PAYMENT_REJECTED requires durable REJECTED T0 evidence"));
+            String reason = state.failure()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "PAYMENT_REJECTED requires a persisted failure"))
+                    .failureCode().value();
+            JsonNode eventReason = original.path("reasonCode");
+            if (!eventReason.isMissingNode() && !eventReason.isNull()
+                    && !reason.equals(required(eventReason, "value"))) {
+                throw new IllegalStateException(
+                        "Original rejection callback conflicts with persisted failure");
+            }
+            data = new PaymentStatusCallbackMessage.PaymentRejectedData(
+                    "REJECTED", reason);
         } else {
             EndOfDayConfirmationSnapshot durable = state.endOfDayConfirmationEvidence()
                     .filter(snapshot -> snapshot.tfjStatus() == TfjStatus.INTEGRATED)
@@ -234,6 +256,11 @@ public class PaymentCallbackPlanFactory {
                     : null;
         }
 
+        if (current.paymentStatus() == PaymentStatus.REJECTED) {
+            return PaymentEventOutcomeRecorded.class.getSimpleName()
+                    .equals(current.eventType())
+                    ? PaymentStatusCallbackMessage.PAYMENT_REJECTED : null;
+        }
         if (current.paymentStatus() != PaymentStatus.POSTED_PENDING_TFJ) {
             return null;
         }

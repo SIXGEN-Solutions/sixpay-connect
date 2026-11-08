@@ -110,7 +110,10 @@ class PaymentAtomicEventLifecycleTest {
                                         type,
                                         completed
                                                 ? EvidenceCheckResult.PASS
-                                                : EvidenceCheckResult.UNKNOWN,
+                                                : outcome == PaymentEventOutcome.REJECTED
+                                                        && type == FundsControlCheckType.ACCOUNT_VALID
+                                                        ? EvidenceCheckResult.FAIL
+                                                        : EvidenceCheckResult.UNKNOWN,
                                         null,
                                         PaymentAggregateTestFixtures.T0
                                                 .plusSeconds(7)
@@ -126,7 +129,9 @@ class PaymentAtomicEventLifecycleTest {
                 completed
                         ? BankPostingReference.principalOnly("BANK-REF-1")
                         : null,
-                null,
+                outcome == PaymentEventOutcome.REJECTED
+                        ? FailureCode.of("BANK_REJECTED")
+                        : null,
                 LocalDate.of(2026, 9, 6),
                 PaymentAggregateTestFixtures.T0.plusSeconds(7),
                 source

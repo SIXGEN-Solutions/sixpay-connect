@@ -174,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
                 if document.get(field) != expected_value:
                     return reject(422, 'header_body_mismatch_' + field)
             event_type = document.get('eventType')
-            if event_type not in {'CUT_CREDITED', 'TREASURY_INTEGRATED'} or document.get('schemaVersion') != '1.0':
+            if event_type not in {'CUT_CREDITED', 'PAYMENT_REJECTED', 'TREASURY_INTEGRATED'} or document.get('schemaVersion') != '1.0':
                 return reject(422, 'unexpected_event_type_or_version')
             if not isinstance(document.get('paymentReference'), str) or not document['paymentReference']:
                 return reject(422, 'missing_payment_reference')
@@ -185,6 +185,8 @@ class Handler(BaseHTTPRequestHandler):
                 return reject(422, 'missing_event_data')
             if event_type == 'CUT_CREDITED' and (data.get('immediateResult') != 'POSTED_PENDING_TFJ' or data.get('tfjFinality') is not False or not data.get('bankPostingReference')):
                 return reject(422, 'invalid_cut_credited_data')
+            if event_type == 'PAYMENT_REJECTED' and (data.get('immediateResult') != 'REJECTED' or not isinstance(data.get('reasonCode'), str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{2,63}', data['reasonCode']) or set(data) != {'immediateResult', 'reasonCode'}):
+                return reject(422, 'invalid_payment_rejected_data')
             if event_type == 'TREASURY_INTEGRATED' and (not data.get('tfjConfirmationId') or not data.get('bankPostingReference')):
                 return reject(422, 'invalid_treasury_data')
             canonical = json.dumps(document, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
