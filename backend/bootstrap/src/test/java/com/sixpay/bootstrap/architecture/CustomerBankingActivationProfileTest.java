@@ -25,6 +25,7 @@ class CustomerBankingActivationProfileTest {
         String banking = Files.readString(ROOT.resolve("application-customer-banking.yml"));
         String sandbox = Files.readString(ROOT.resolve("application-amplitude-sandbox.yml"));
         assertThat(banking).contains("enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:true}");
-        assertThat(sandbox).contains("enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:true}");
+        assertThat(sandbox).contains("classpath:application-customer-banking.yml");
+        assertThat(sandbox).doesNotContain("enabled: ${CUSTOMER_VERIFICATION_BANKING_ENABLED:true}");
     }
 }

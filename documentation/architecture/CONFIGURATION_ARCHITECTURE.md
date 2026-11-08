@@ -107,11 +107,19 @@ The committed environment files contain deployment defaults, not the complete
 capability matrix. At the current baseline:
 
 ```text
-production  -> api  / LOCAL + OIDC enabled, LDAP disabled by default
+production  -> api  / LDAP enabled, LOCAL + OIDC disabled by default
 integration -> api  / LOCAL enabled, OIDC + LDAP disabled by default
 development -> mock / standalone
 netlify     -> mock / standalone
 ```
+
+Production's current frontend defaults select LDAP authentication alone.
+The Angular environment gate checks that at least one human authentication
+capability (LOCAL, OIDC or LDAP) is enabled, rather than requiring a specific
+combination. The existing runtime validator rejects production standalone
+authentication and an empty set of enabled capabilities; OIDC authority,
+clientId and scope remain mandatory whenever OIDC is enabled. Integration,
+development and netlify retain their existing environment policies.
 
 LDAP may be enabled for an applicable API-backed deployment only when its
 backend runtime/trust configuration is available. Backend session capabilities
@@ -157,3 +165,27 @@ consolidation exception.
 ```bash
 python scripts/verify_spring_configuration_hygiene.py
 ```
+
+## Exceptions controlees de doublons inter-profils
+
+Le gate `scripts/verify_spring_configuration_hygiene.py` conserve ses controles
+sur les cles repetees **dans un meme fichier**, les imports `classpath` non
+resolus, les fichiers runtime identiques, ainsi que les doublons inter-fichiers
+non autorises.
+
+Deux doublons historiques de valeurs identiques sont admis uniquement pour
+leurs **paires exactes** de fichiers :
+
+| Propriete | Paire autorisee | Justification |
+| --- | --- | --- |
+| `sixpay.customer.verification.banking.enabled` | `application-amplitude-sandbox.yml` et `application-customer-banking.yml` | Le sandbox importe la configuration Customer Banking et reitere son activation. |
+| `sixpay.reporting.audit-export.retention` | `application-integration.yml` et `application-preproduction.yml` | Les deux profils conservent le meme defaut explicite de retention des exports d'audit. |
+
+Ces exceptions ne permettent pas la meme valeur dans un troisieme fichier :
+la presence d'un autre declarant est toujours signalee. Elles ne constituent
+pas une approbation de profils Spring actifs simultanement et n'alterent
+aucune propriete runtime, aucun contrat, ni aucune regle metier.
+
+Le profil `production`, dont les parametres ont ete consolides dans
+`application-production.yml`, releve de l'exception d'autonomie documentaire
+preparee separement. Les exceptions ci-dessus restent independantes de celle-ci.

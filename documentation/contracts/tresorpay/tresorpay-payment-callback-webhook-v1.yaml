@@ -58,8 +58,7 @@ servers:
     description: Documentation placeholder only; the complete runtime callback URL is supplied by TRESOR PAY.
 
 security:
-  - bearerAuth: []
-    subscriptionKey: []
+  - signatureHmac: []
 
 tags:
   - name: Payment callback
@@ -73,7 +72,7 @@ paths:
       summary: Receive a SIXPAY Payment callback event
       description: |
         SIXPAY invokes the single callback URL supplied by TRESOR PAY.
-        TRESOR PAY validates credentials, timestamp freshness and the HMAC
+        TRESOR PAY validates the configured HMAC shared secret, timestamp freshness and the HMAC
         signature over the raw body before parsing it.
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
@@ -108,16 +107,17 @@ paths:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Short-lived service token issued for SIXPAY callback delivery.
-    subscriptionKey:
+    signatureHmac:
       type: apiKey
       in: header
-      name: X-Subscription-Key
-      description: TRESOR PAY subscription key provisioned to SIXPAY.
+      name: X-SIXPAY-Signature
+      description: |
+        Dynamic HMAC-SHA256 signature (not a static API key). Verify with
+        X-SIXPAY-Signature-Key-ID and X-SIXPAY-Signature-Timestamp,
+        HTTP method, exact request target and raw request-body bytes.
+        This describes the active application-level authentication;
+        no outgoing Bearer JWT or X-Subscription-Key is configured
+        by the inspected PaymentStatusCallbackHttpAdapter.
 
   parameters:
     CorrelationId:

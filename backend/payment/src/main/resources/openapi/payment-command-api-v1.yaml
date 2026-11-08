@@ -8,14 +8,20 @@ info:
     and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
     the JSON payload. The initial response is AWAITING_OTP after an ACTIVE
     bank-owned OTP challenge, and callbacks are asynchronous.
+    The callback payload, event types, HMAC-SHA256 signature and HTTP 204
+    durable acknowledgement are defined exclusively by
+    documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml.
+    The confirmation read, verify and resend operations continue to use
+    the same machine-to-machine client-credentials security boundary,
+    with independent operation scopes and Payment Partner ownership checks.
   x-sixpay-contract:
     registryId: payment-command-api-v1
     phase: "3"
     lot: "3.16"
-    lifecycleStatus: DRAFT_IMPLEMENTATION_READY
-    approvalStatus: PENDING_APPROVAL
-    generationPolicy: CONTRACT_FIRST
-    codeGenerationAllowed: false
+    lifecycleStatus: ACTIVE_MVP
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
     domain: payment
     capability: PAYMENT_INITIATION
     direction: TRESORPAY_TO_SIXPAY
@@ -38,13 +44,11 @@ paths:
       description: |
         Idempotency-Key identifies the HTTP replay boundary. endToEndId is the
         durable business reference; both values are independent. referenceClient
-        is required. AppID is an optional declared Partner identifier and is
-        checked against the authenticated Partner when supplied. LoginName
+        is required. AppID is a required declared Partner identifier and is
+        required to match the authenticated Partner. LoginName
         is optional compatibility metadata. The independent transport header
         X-TresorPay-App-Id remains required. Beneficiary amounts must sum
-        exactly to montantTotal when supplied. NUI may be omitted from the
-        HTTP request, but Customer Verification currently requires a resolvable
-        NIU; requests without one cannot complete the MVP initiation flow.
+        exactly to montantTotal when supplied. NUI is optional compatibility input. Customer Verification resolves authoritative banking identifiers from the Customer-owned CustomerSubscription identified by referenceClient.
         The callback is never executed in this HTTP transaction.
       parameters:
         - $ref: '#/components/parameters/RequiredIdempotencyKey'
@@ -59,7 +63,7 @@ paths:
             example:
               LoginName: TRESOR_PAY
               AppID: TP_APP_001
-              referenceClient: CLIENT-2026-00045678
+              referenceClient: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
               endToEndId: AVI-2025-00045678
               montantTotal: 600000
               devise: XAF
@@ -94,37 +98,12 @@ paths:
         '422': {$ref: '#/components/responses/UnprocessableEntity'}
         '429': {$ref: '#/components/responses/TooManyRequests'}
         '503': {$ref: '#/components/responses/ServiceUnavailable'}
-      callbacks:
-        paymentStatusChanged:
-          '{$request.body#/callbackURL}':
-            post:
-              operationId: receivePaymentStatusCallback
-              summary: Receive an asynchronous payment status notification
-              description: |
-                Delivery is at-least-once. TresorPay deduplicates by eventId.
-                The exact request body is protected by a detached JWS signature.
-              security:
-                - mutualTLS: []
-                  callbackSignature: []
-              parameters:
-                - $ref: '#/components/parameters/RequiredCallbackSignature'
-                - $ref: '#/components/parameters/RequiredCorrelationId'
-              requestBody:
-                required: true
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/PaymentStatusCallbackRequest'
-              responses:
-                '200':
-                  description: Callback acknowledged
-                  content:
-                    application/json:
-                      schema:
-                        $ref: '#/components/schemas/CallbackAcknowledgement'
-                '400': {description: Invalid callback payload}
-                '401': {description: Callback authentication or signature failed}
-                '409': {description: Callback event conflict}
+      x-sixpay-callback-contract:
+        canonicalPath: documentation/contracts/tresorpay/tresorpay-payment-callback-webhook-v1.yaml
+        delivery: AT_LEAST_ONCE
+        signature: HMAC-SHA256
+        durableAcknowledgement: 204
+        eventTypes: [CUT_CREDITED, PAYMENT_REJECTED, TREASURY_INTEGRATED]
 components:
   securitySchemes:
     mutualTLS:
@@ -136,11 +115,6 @@ components:
           tokenUrl: https://identity.banque.com/oauth2/token
           scopes:
             payment.initiate: Initiate debit orders through SIXPAY CONNECT
-    callbackSignature:
-      type: apiKey
-      in: header
-      name: X-SIXPAY-Signature
-      description: Detached JWS signature, not a static API key.
   parameters:
     RequiredIdempotencyKey:
       name: Idempotency-Key
@@ -158,16 +132,6 @@ components:
       in: header
       required: false
       schema: {type: string, format: uuid}
-    RequiredCorrelationId:
-      name: X-Correlation-ID
-      in: header
-      required: true
-      schema: {type: string, format: uuid}
-    RequiredCallbackSignature:
-      name: X-SIXPAY-Signature
-      in: header
-      required: true
-      schema: {type: string, minLength: 1, maxLength: 4096}
   responses:
     BadRequest:
       description: Missing, malformed or invalid request
@@ -204,6 +168,7 @@ components:
       additionalProperties: false
       required:
         - referenceClient
+        - AppID
         - endToEndId
         - montantTotal
         - typeCreance
@@ -217,12 +182,13 @@ components:
         referenceClient:
           type: string
           format: uuid
-          description: CustomerSubscriptionId (UUID), authoritative subscription identity; distinct from endToEndId
+          description: CustomerSubscriptionId (UUID canonical format), authoritative subscription identity owned by Customer; distinct from endToEndId. Nonexistent, inaccessible or non-authorized subscriptions are rejected by application checks, not by the JSON format alone.
+          example: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
         AppID:
-          type: [string, 'null']
+          type: string
           minLength: 1
           maxLength: 64
-          description: Optional declared Partner business identifier; validated when supplied
+          description: Required Partner business identifier; validated against the authenticated Partner
         endToEndId:
           type: string
           minLength: 1
@@ -322,39 +288,6 @@ components:
         NextStep:
           type: string
           const: Awaiting customer confirmation via OTP/SMS
-    PaymentStatusCallbackRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - eventId
-        - eventType
-        - occurredAt
-        - paymentReference
-        - endToEndId
-        - previousStatus
-        - status
-      properties:
-        eventId: {type: string, format: uuid}
-        eventType: {type: string, const: PAYMENT_STATUS_CHANGED}
-        occurredAt: {type: string, format: date-time}
-        paymentReference:
-          type: string
-          pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
-        endToEndId: {type: string}
-        bankOperationId: {type: [string, 'null']}
-        previousStatus: {$ref: '#/components/schemas/PaymentStatus'}
-        status: {$ref: '#/components/schemas/PaymentStatus'}
-        reasonCode: {type: [string, 'null']}
-        description: {type: [string, 'null']}
-        transactionNumber: {type: [string, 'null']}
-    CallbackAcknowledgement:
-      type: object
-      additionalProperties: false
-      required: [OK, Result, eventId]
-      properties:
-        OK: {type: string, const: "200"}
-        Result: {type: string, const: ACKNOWLEDGED}
-        eventId: {type: string, format: uuid}
     PaymentStatus:
       type: string
       enum:

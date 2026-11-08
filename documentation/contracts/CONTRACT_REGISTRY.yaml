@@ -503,13 +503,8 @@ contracts:
     mvpUsage:
       included: true
       eventTypes:
-        - "PAYMENT_RECEIVED"
-        - "PAYMENT_REJECTED"
-        - "PAYMENT_PROCESSING"
-        - "PAYMENT_DEBITED"
         - "CUT_CREDITED"
-        - "PAYMENT_FAILED"
-        - "PAYMENT_REVERSED"
+        - "PAYMENT_REJECTED"
       semantics:
         delivery: "AT_LEAST_ONCE"
         idempotencyKey: "eventId"
@@ -517,15 +512,15 @@ contracts:
         ordering: "paymentVersion"
         durableAcceptance: "HTTP_204"
       constraints:
-        - "PAYMENT_DEBITED is an intermediate fact"
         - "CUT_CREDITED does not establish TFJ finality"
         - "Delivery failure never changes Payment financial state"
         - "Operational replay preserves eventId and payload"
         - "Notification replay never triggers a financial replay"
-    approvalPrerequisite:
-      - "TRESOR PAY approves endpoint registration and event semantics"
-      - "Security approves Bearer, Subscription Key and HMAC profile"
-      - "Operations approves retry, DLQ, alert and replay procedures"
+    approvalEvidence:
+      - "Explicit project-owner decision: keep tested HMAC-SHA256/HTTP 204 implementation (2026-11-08)"
+    security:
+      authentication: "HMAC_SHA256_SIGNED_CALLBACK"
+      durableAcceptance: "HTTP_204"
 
   - id: "amplitude-end-of-day-confirmation-api-v1"
     path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
@@ -580,9 +575,7 @@ contracts:
     mvpUsage:
       included: true
       eventTypes:
-        - "PENDING_END_OF_DAY_CONFIRMATION"
         - "TREASURY_INTEGRATED"
-        - "TREASURY_INTEGRATION_FAILED"
       semantics:
         delivery: "AT_LEAST_ONCE"
         idempotencyKey: "eventId"
@@ -591,13 +584,13 @@ contracts:
         durableAcceptance: "HTTP_204"
       constraints:
         - "TREASURY_INTEGRATED requires a durably persisted and uniquely matched Amplitude result"
-        - "TREASURY_INTEGRATION_FAILED never commands an automatic reversal"
         - "Delivery failure never changes Payment financial state"
         - "Operational replay never triggers a financial replay"
-    approvalPrerequisite:
-      - "TRESOR PAY approves endpoint registration and event semantics"
-      - "Security approves Bearer, Subscription Key and HMAC profile"
-      - "Operations approves retry, DLQ, alert and replay procedures"
+    approvalEvidence:
+      - "Explicit project-owner decision: keep tested HMAC-SHA256/HTTP 204 implementation (2026-11-08)"
+    security:
+      authentication: "HMAC_SHA256_SIGNED_CALLBACK"
+      durableAcceptance: "HTTP_204"
 
   - id: "payment-t0-manual-reconciliation-api-v1"
     path: "documentation/contracts/internal/payment-t0-manual-reconciliation-api-v1.yaml"
@@ -1127,7 +1120,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:
@@ -1145,6 +1138,8 @@ contracts:
         - "ACCEPTED does not claim final mailbox delivery"
         - "SMTP credentials come from deployment configuration or secret store"
         - "Provider error messages are not part of the contract and are not persisted"
+    approvalEvidence:
+      - "Explicit project-owner approval of the tested operational SMTP email contract (2026-11-08)"
   - id: "customer-subscription-management-api-v1"
     path: "documentation/contracts/internal/customer-subscription-management-api-v1.yaml"
     domain: "customer"
