@@ -119,9 +119,15 @@ import { PaymentsService } from '../services/payments.service';
           </mat-form-field>
 
           <div class="sp-filter-actions">
-            <sp-button type="button" icon="filter_alt" (buttonClick)="filterUncertain()"
-              >Résultats T0 incertains</sp-button
-            >
+            @if (canReconcile()) {
+              <sp-button
+                type="button"
+                icon="filter_alt"
+                (buttonClick)="filterUncertain()"
+              >
+                Résultats T0 incertains
+              </sp-button>
+            }
             <sp-button type="submit" icon="search">Rechercher</sp-button>
             <sp-button type="button" icon="restart_alt" (buttonClick)="reset()"
               >Réinitialiser</sp-button

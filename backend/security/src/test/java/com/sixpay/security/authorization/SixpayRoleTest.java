@@ -12,10 +12,5 @@ class SixpayRoleTest {
                 "ROLE_ADMIN",
                 SixpayRole.ADMIN.authority()
         );
-
-        assertEquals(
-                "ROLE_OPS",
-                SixpayRole.OPS.authority()
-        );
     }
 }

@@ -4,8 +4,13 @@ info:
   version: 1.0.0
   description: |
     Read-only SIXPAY Payment state consultation by an authenticated partner
-    M2M client, including recovery when an asynchronous callback is not received.
-    The GET does not call Core Banking, create or verify OTP, initiate posting,
+    M2M client, including reconsultation when an asynchronous callback has not
+    been received. The response reflects the latest persisted SIXPAY Payment
+    status, not the raw Core Banking outcome. An unresolved T0 posting can be
+    POSTING_PENDING or POSTING_OUTCOME_UNKNOWN. Once authoritative T0 evidence
+    has been persisted, the Payment can be POSTED_PENDING_TFJ or REJECTED.
+    Other Payment lifecycle statuses remain possible and unchanged.
+    This GET does not call Core Banking, create or verify OTP, initiate posting,
     perform bank recovery, or change the Payment state. An authenticated client
     may consult only a Payment tied to its registered Partner and the original
     initiating machine identity (conservative current access policy).
@@ -35,6 +40,10 @@ paths:
       description: |
         Requires a valid M2M OAuth2 JWT with scope payment.read, a registered
         caller and object-level Payment ownership. No banking I/O occurs.
+        After a missing or delayed asynchronous callback, the partner may use
+        this GET to observe the current persisted SIXPAY status. It does not
+        initiate or force T0 banking reconciliation and does not assert a final
+        bank outcome while SIXPAY still reports POSTING_OUTCOME_UNKNOWN.
         Missing and non-visible Payments both return 404; missing/invalid JWT
         returns 401 and insufficient scope returns 403.
       parameters:

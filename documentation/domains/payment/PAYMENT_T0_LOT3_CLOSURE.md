@@ -41,6 +41,43 @@ Recovery:
 
 Recovery never invokes a new financial POST.
 
+## Partner GET consultation after T0 (R5)
+
+The existing read-only Partner endpoint is
+`GET /api/v1/integrations/payments/{paymentReference}` (contract
+`documentation/contracts/external/payment-consultation-api-v1.yaml`). It returns
+only the current **persisted SIXPAY Payment** view. A delayed or missing
+asynchronous callback does not imply a failed or completed bank operation:
+the authorized initiating M2M machine may reconsult the Payment.
+
+- `POSTING_PENDING`: T0 posting is still pending in SIXPAY.
+- `POSTING_OUTCOME_UNKNOWN`: authoritative T0 outcome is not yet established;
+  this GET does **not** query the bank and must not be interpreted as rejection.
+- `POSTED_PENDING_TFJ`: authoritative T0 success has already been persisted;
+  this is the Payment status, not a raw bank `COMPLETED` field.
+- `REJECTED`: the Payment has been rejected after an authoritative decision;
+  this is not a raw bank `REJECTED` field.
+- Other existing lifecycle statuses remain valid. No new status or field is
+  introduced by R5.
+
+The response shape remains unchanged: `paymentId`, `paymentReference`,
+`externalPaymentReference`, `status`, `amount` (`amount`, `currency`),
+`receivedAt`, `updatedAt`, and optional/nullable `finalizedAt`.
+No bank payload, internal evidence, OTP, full account or retry metadata is
+exposed. The GET neither changes Payment nor triggers Core Banking, OTP,
+financial execution, internal R2 recovery or manual R3 reconciliation.
+
+The request requires a valid M2M caller, `payment.read` scope, the existing
+object-level partner and initiating-machine binding, and `X-Correlation-ID`.
+Missing or invisible Payments return the same `404`; missing/invalid JWT
+returns `401`, and inadequate scope returns `403`. mTLS is enforced at the
+ingress/gateway boundary as specified by the existing contract.
+
+**Contract governance remains unchanged:** `ACTIVE_MVP`,
+`PENDING_APPROVAL`, `REFERENCE_ONLY`, `codeGenerationAllowed: false`.
+This documentation-only alignment does not approve code generation or change
+any request/response schema, permission or operational trigger.
+
 ## Single logical T0 execution guard
 
 The T0 execution path is at-most-once at SIXPAY orchestration level:
