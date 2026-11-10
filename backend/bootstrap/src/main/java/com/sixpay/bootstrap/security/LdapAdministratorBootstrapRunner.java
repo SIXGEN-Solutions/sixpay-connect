@@ -6,23 +6,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 /**
- * Pre-production composition hook for the one-shot Security bootstrap.
+ * Profile-independent composition hook for the one-shot Security bootstrap.
  * No Security repository, JPA entity or infrastructure adapter is consumed here.
  */
 @Component
-@Profile("preproduction")
 @ConditionalOnProperty(
         prefix = "sixpay.security.bootstrap.ldap-admin",
         name = "enabled",
         havingValue = "true"
 )
-public final class PreproductionLdapAdministratorBootstrap
+public final class LdapAdministratorBootstrapRunner
         implements ApplicationRunner {
 
     static final String ACTOR = "preproduction-ldap-admin-bootstrap";
@@ -34,7 +32,7 @@ public final class PreproductionLdapAdministratorBootstrap
     private final String trustDomain;
     private final String stableSubject;
 
-    public PreproductionLdapAdministratorBootstrap(
+    public LdapAdministratorBootstrapRunner(
             BootstrapLdapAdministratorUseCase useCase,
             @Value("${sixpay.security.bootstrap.ldap-admin.user-id}") UUID userId,
             @Value("${sixpay.security.bootstrap.ldap-admin.username}") String username,

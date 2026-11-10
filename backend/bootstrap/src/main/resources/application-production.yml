@@ -110,6 +110,14 @@ sixpay:
         connect-timeout: ${SIXPAY_LDAP_CONNECT_TIMEOUT:3s}
         read-timeout: ${SIXPAY_LDAP_READ_TIMEOUT:5s}
         authentication-timeout: ${SIXPAY_LDAP_AUTHENTICATION_TIMEOUT:10s}
+    bootstrap:
+      ldap-admin:
+        enabled: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_ENABLED:false}
+        user-id: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USER_ID:}
+        username: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USERNAME:}
+        email: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_EMAIL:}
+        trust-domain: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_TRUST_DOMAIN:}
+        stable-subject: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_STABLE_SUBJECT:}
   payment:
     treasury:
       enabled: ${SIXPAY_PAYMENT_TREASURY_ENABLED:true}
