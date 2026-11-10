@@ -7,7 +7,9 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /opt/sixpay
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --create-home sixpay
-COPY --from=build /workspace/bootstrap/target/bootstrap-*.jar /opt/sixpay/app.jar
+COPY --from=build \
+  /workspace/bootstrap/target/bootstrap-1.0.0-SNAPSHOT-exec.jar \
+  /opt/sixpay/app.jar
 USER 10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/opt/sixpay/app.jar"]
