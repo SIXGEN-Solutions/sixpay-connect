@@ -2,11 +2,6 @@ name: Backend image publish (GHCR)
 
 on:
   workflow_dispatch:
-    inputs:
-      expected_sha:
-        description: "Full 40-character commit SHA approved for image publication"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -22,24 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Check selected commit
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ inputs.expected_sha }}
-          ACTUAL_SHA: ${{ github.sha }}
-        run: |
-          if [[ ! "$EXPECTED_SHA" =~ ^[[:xdigit:]]{40}$ ]]; then
-            echo "::error::expected_sha must be a full 40-character hexadecimal commit SHA"
-            exit 1
-          fi
-          if [[ "${EXPECTED_SHA,,}" != "${ACTUAL_SHA,,}" ]]; then
-            echo "::error::Selected workflow revision differs from approved expected_sha"
-            exit 1
-          fi
-
       - name: Checkout selected revision
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Java 21
