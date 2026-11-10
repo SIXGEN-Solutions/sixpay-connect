@@ -51,8 +51,8 @@ jobs:
           cache-dependency-path: 'backend/**/pom.xml'
 
       - name: Maven verification gate
-        working-directory: backend
-        run: mvn --batch-mode --no-transfer-progress clean verify
+         working-directory: backend
+         run: mvn --batch-mode --no-transfer-progress -Passembled-tests clean verify
 
       - name: Normalize GHCR image repository
         shell: bash

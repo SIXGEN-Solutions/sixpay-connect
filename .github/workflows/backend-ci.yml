@@ -39,4 +39,4 @@ jobs:
           cache: maven
           cache-dependency-path: 'backend/**/pom.xml'
       - name: Build and test
-        run: mvn --batch-mode --no-transfer-progress clean verify
+        run: mvn --batch-mode --no-transfer-progress -Passembled-tests clean verify
