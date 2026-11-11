@@ -47,7 +47,7 @@ management:
   messaging:
     transport: internal
     outbox:
-      enabled: true
+      enabled: ${SIXPAY_MESSAGING_OUTBOX_ENABLED:true}
   security:
     local:
       password:
@@ -214,21 +214,21 @@ sixpay:
             correlation-header: ${AMPLITUDE_CONFIRMATION_CORRELATION_HEADER:X-Correlation-ID}
             institution-header: ${AMPLITUDE_CONFIRMATION_INSTITUTION_HEADER:X-Financial-Institution-Code}
     t0-recovery:
-      enabled: false
-      batch-size: 50
-      window: PT48H
-      minimum-age: PT2M
-      claim-timeout: PT5M
-      poll-delay: PT2M
+      enabled: ${SIXPAY_PAYMENT_T0_RECOVERY_ENABLED:false}
+      batch-size: ${SIXPAY_PAYMENT_T0_RECOVERY_BATCH_SIZE:50}
+      window: ${SIXPAY_PAYMENT_T0_RECOVERY_WINDOW:PT48H}
+      minimum-age: ${SIXPAY_PAYMENT_T0_RECOVERY_MINIMUM_AGE:PT2M}
+      claim-timeout: ${SIXPAY_PAYMENT_T0_RECOVERY_CLAIM_TIMEOUT:PT5M}
+      poll-delay: ${SIXPAY_PAYMENT_T0_RECOVERY_POLL_DELAY:PT2M}
     outbox:
       customer-projection:
-        enabled: true
-        batch-size: 50
-        polling-interval: 1s
-        max-attempts: 10
-        initial-backoff: 1s
-        max-backoff: 5m
-        processing-timeout: 2m
+        enabled: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_ENABLED:true}
+        batch-size: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_BATCH_SIZE:50}
+        polling-interval: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_POLLING_INTERVAL:1s}
+        max-attempts: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_MAX_ATTEMPTS:10}
+        initial-backoff: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_INITIAL_BACKOFF:1s}
+        max-backoff: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_MAX_BACKOFF:5m}
+        processing-timeout: ${SIXPAY_PAYMENT_CUSTOMER_PROJECTION_OUTBOX_PROCESSING_TIMEOUT:2m}
     callback:
       enabled: ${SIXPAY_PAYMENT_CALLBACK_ENABLED:true}
       signing-key-id: ${SIXPAY_PAYMENT_CALLBACK_SIGNING_KEY_ID}
