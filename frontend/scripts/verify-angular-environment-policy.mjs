@@ -175,8 +175,12 @@ for (const [configuration, expectedWith] of Object.entries(expectedReplacements)
   }
 }
 
-if (buildConfigurations.production?.fileReplacements?.length) {
-  errors.push('angular.json: production must use canonical environment.ts without replacement');
+const runtimeBuild = buildConfigurations.production?.fileReplacements ?? [];
+if (!runtimeBuild.some((replacement) =>
+  replacement.replace === 'src/environments/environment.ts' &&
+  replacement.with === 'src/environments/environment.runtime.ts'
+)) {
+  errors.push('angular.json: optimized default build must load runtime environment');
 }
 
 if (angular?.projects?.frontend?.architect?.build?.defaultConfiguration !== 'production') {
