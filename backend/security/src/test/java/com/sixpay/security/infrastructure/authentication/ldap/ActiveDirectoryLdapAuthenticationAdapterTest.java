@@ -10,9 +10,18 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ActiveDirectoryLdapAuthenticationAdapterTest {
+
+    @Test
+    void usesDirectoryDistinguishedNameForUserBindInsteadOfSamAccountName() {
+        DirectoryUserProfile profile = profile(DirectoryAccountStatus.ACTIVE);
+        assertThat(ActiveDirectoryLdapAuthenticationAdapter.userBindDn(profile))
+                .isEqualTo("CN=Jane Doe,OU=People,DC=example,DC=test")
+                .isNotEqualTo(profile.username());
+    }
 
     @Test
     void rejectsDisabledDirectoryAccountBeforeUserBind() {
@@ -159,7 +168,8 @@ class ActiveDirectoryLdapAuthenticationAdapterTest {
                 "jane.doe@example.test",
                 "regionale-ldap",
                 "00112233-4455-6677-8899-aabbccddeeff",
-                status
+                status,
+                "CN=Jane Doe,OU=People,DC=example,DC=test"
         );
     }
 

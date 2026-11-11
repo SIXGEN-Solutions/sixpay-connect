@@ -19,7 +19,8 @@ class DirectoryUserLookupServiceTest {
                 "jane.doe@example.test",
                 "regionale-ldap",
                 "00112233-4455-6677-8899-aabbccddeeff",
-                DirectoryAccountStatus.ACTIVE
+                DirectoryAccountStatus.ACTIVE,
+                "CN=Jane Doe,OU=People,DC=example,DC=test"
         );
 
         DirectoryUserLookupPort port = username -> {
@@ -52,7 +53,8 @@ class DirectoryUserLookupServiceTest {
                 null,
                 "regionale-ldap",
                 "00112233-4455-6677-8899-aabbccddeeff",
-                DirectoryAccountStatus.ACTIVE
+                DirectoryAccountStatus.ACTIVE,
+                "CN=Jane Doe,OU=People,DC=example,DC=test"
         );
 
         assertThat(profile.username()).isEqualTo("jane.doe");

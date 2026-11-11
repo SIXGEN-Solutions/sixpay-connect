@@ -2,6 +2,7 @@ package com.sixpay.security.infrastructure.authentication.ldap;
 
 import com.sixpay.security.application.exception.LdapAuthenticationFailedException;
 import com.sixpay.security.application.model.DirectoryAccountStatus;
+import com.sixpay.security.application.model.DirectoryUserProfile;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ActiveDirectoryDirectoryUserLookupAdapterTest {
+
+    @Test
+    void rejectsBlankDistinguishedNameInDirectoryProfile() {
+        assertThatThrownBy(() -> new DirectoryUserProfile(
+                "jane.doe",
+                "Jane Doe",
+                null,
+                "regionale-ldap",
+                "00112233-4455-6677-8899-aabbccddeeff",
+                DirectoryAccountStatus.ACTIVE,
+                " "
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
 
     @Test
     void convertsActiveDirectoryObjectGuidToCanonicalUuid() {

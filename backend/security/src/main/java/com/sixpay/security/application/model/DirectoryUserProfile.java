@@ -8,7 +8,8 @@ public record DirectoryUserProfile(
         String email,
         String trustDomain,
         String stableSubject,
-        DirectoryAccountStatus accountStatus
+        DirectoryAccountStatus accountStatus,
+        String distinguishedName
 ) {
 
     public DirectoryUserProfile {
@@ -40,6 +41,11 @@ public record DirectoryUserProfile(
         accountStatus = Objects.requireNonNull(
                 accountStatus,
                 "Directory account status must not be null"
+        );
+        distinguishedName = requireNonBlank(
+                distinguishedName,
+                "Directory distinguished name must not be blank",
+                2048
         );
     }
 

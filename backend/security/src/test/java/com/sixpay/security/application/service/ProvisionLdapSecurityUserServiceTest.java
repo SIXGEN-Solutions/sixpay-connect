@@ -217,7 +217,8 @@ class ProvisionLdapSecurityUserServiceTest {
                 "jane.doe@example.test",
                 "regionale-ldap",
                 "00112233-4455-6677-8899-aabbccddeeff",
-                status
+                status,
+                "CN=Jane Doe,OU=People,DC=example,DC=test"
         );
     }
 }

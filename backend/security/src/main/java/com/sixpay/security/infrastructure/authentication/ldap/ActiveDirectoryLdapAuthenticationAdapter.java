@@ -55,7 +55,7 @@ public final class ActiveDirectoryLdapAuthenticationAdapter
                     );
 
             directoryLookup.contextSource(
-                    profile.username(),
+                    userBindDn(profile),
                     command.password(),
                     deadlineNanos
             ).getReadOnlyContext().close();
@@ -78,6 +78,13 @@ public final class ActiveDirectoryLdapAuthenticationAdapter
         } catch (Exception exception) {
             throw new LdapAuthenticationFailedException(exception);
         }
+    }
+
+    // Use the distinguished name returned by the trusted directory search.
+    // A bare sAMAccountName is not a portable LDAP simple-bind identity.
+    static String userBindDn(DirectoryUserProfile profile) {
+        Objects.requireNonNull(profile, "Directory profile must not be null");
+        return profile.distinguishedName();
     }
 
     private static void requireAuthenticatable(

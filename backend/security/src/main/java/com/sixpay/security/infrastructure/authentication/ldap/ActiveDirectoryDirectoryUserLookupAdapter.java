@@ -93,7 +93,8 @@ public class ActiveDirectoryDirectoryUserLookupAdapter
                     user.email(),
                     properties.trustDomain(),
                     user.stableSubject(),
-                    accountStatus(user.accountState(), now.get())
+                    accountStatus(user.accountState(), now.get()),
+                    user.distinguishedName()
             );
         } catch (DirectoryUserNotFoundException
                 | DirectoryUserAmbiguousException
