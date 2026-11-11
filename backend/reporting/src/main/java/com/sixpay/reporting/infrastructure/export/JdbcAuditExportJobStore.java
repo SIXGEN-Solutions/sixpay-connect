@@ -5,6 +5,7 @@ import com.sixpay.reporting.application.exception.PaymentAuditQueryUnavailableEx
 import com.sixpay.reporting.application.port.output.AuditExportJobStore;
 import com.sixpay.reporting.application.query.*;
 import com.sixpay.reporting.domain.model.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -19,6 +20,12 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@ConditionalOnProperty(
+        prefix = "sixpay.reporting.audit-export",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @Repository
 public class JdbcAuditExportJobStore
         implements AuditExportJobStore {

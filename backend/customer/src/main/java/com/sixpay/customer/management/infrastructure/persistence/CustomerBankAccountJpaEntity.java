@@ -33,7 +33,7 @@ public class CustomerBankAccountJpaEntity {
     @Column(name = "masked_account_identifier", nullable = false, length = 100)
     private String maskedAccountIdentifier;
 
-    @Column(name = "currency", nullable = false, length = 3)
+    @Column(name = "dev", nullable = false, length = 3)
     private String currency;
 
     @Column(name = "account_type", length = 40)

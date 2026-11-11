@@ -41,6 +41,7 @@ public final class AmplitudePaymentEventRecoveryAdapter
                 );
 
         if (byReference.isPresent()) {
+            requireMatchingPaymentReference(byReference.get(), query);
             PaymentEventRecoveryResult result = classify(
                     byReference.get(),
                     PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP
@@ -58,6 +59,7 @@ public final class AmplitudePaymentEventRecoveryAdapter
                 );
 
         if (byIdempotency.isPresent()) {
+            requireMatchingPaymentReference(byIdempotency.get(), query);
             return classify(
                     byIdempotency.get(),
                     PaymentEventObservationSource.IDEMPOTENCY_LOOKUP
@@ -70,6 +72,17 @@ public final class AmplitudePaymentEventRecoveryAdapter
                         PaymentEventObservationSource.PAYMENT_REFERENCE_LOOKUP
                 ))
                 .orElseGet(PaymentEventRecoveryResult::notFound);
+    }
+
+    private static void requireMatchingPaymentReference(
+            AmplitudePaymentEventResult result,
+            PaymentEventRecoveryQuery query
+    ) {
+        if (!query.paymentReference().value().equals(result.paymentReference())) {
+            throw new IllegalStateException(
+                    "Core Banking recovery paymentReference does not match requested Payment"
+            );
+        }
     }
 
     private PaymentEventRecoveryResult classify(

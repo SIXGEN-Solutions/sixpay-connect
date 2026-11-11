@@ -6,10 +6,13 @@ import {
   CreateSecurityUserRequest,
   SecurityUserDetail,
   SecurityUserSummary,
+  DirectoryUserView,
+  ProvisionDirectoryUserRequest,
   UpdateSecurityUserRequest,
 } from '../models/security-user-administration';
 
 const API = '/internal/api/v1/administration/users';
+const DIRECTORY_API = '/internal/api/v1/administration/directory-users';
 
 @Injectable({ providedIn: 'root' })
 export class SecurityUserAdministrationService {
@@ -17,6 +20,20 @@ export class SecurityUserAdministrationService {
 
   createUser(request: CreateSecurityUserRequest): Observable<SecurityUserDetail> {
     return this.http.post<SecurityUserDetail>(API, request);
+  }
+
+  lookupDirectoryUser(username: string): Observable<DirectoryUserView> {
+    return this.http.get<DirectoryUserView>(`${DIRECTORY_API}/${encodeURIComponent(username)}`);
+  }
+
+  provisionLdapUser(
+    username: string,
+    request: ProvisionDirectoryUserRequest,
+  ): Observable<SecurityUserDetail> {
+    return this.http.post<SecurityUserDetail>(
+      `${DIRECTORY_API}/${encodeURIComponent(username)}/provisioning`,
+      request,
+    );
   }
 
   listUsers(): Observable<readonly SecurityUserSummary[]> {

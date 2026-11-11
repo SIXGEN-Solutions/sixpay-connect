@@ -1,5 +1,10 @@
 package com.sixpay.payment.application.port.output;
 
+import com.sixpay.payment.application.service.ResolvedDebtorAccountReferenceFactory;
+import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
@@ -23,6 +28,8 @@ public record CustomerVerificationResponse(
         String accountBindingFingerprint,
         String customerReference,
         String accountReference,
+        String accountFinancialInstitutionCode,
+        String maskedAccountIdentifier,
         Instant observedAt,
         Instant validUntil,
         Instant completedAt
@@ -47,9 +54,8 @@ public record CustomerVerificationResponse(
                 evidenceFingerprint,
                 "evidenceFingerprint"
         );
-        accountBindingFingerprint = requireText(
-                accountBindingFingerprint,
-                "accountBindingFingerprint"
+        accountBindingFingerprint = normalizeOptional(
+                accountBindingFingerprint
         );
         customerReference = normalizeOptional(
                 customerReference
@@ -57,9 +63,17 @@ public record CustomerVerificationResponse(
         accountReference = normalizeOptional(
                 accountReference
         );
+        accountFinancialInstitutionCode = normalizeOptional(
+                accountFinancialInstitutionCode
+        );
+        maskedAccountIdentifier = normalizeOptional(
+                maskedAccountIdentifier
+        );
         if (outcome == Outcome.VERIFIED
                 && (customerReference == null
-                || accountReference == null)) {
+                || accountReference == null
+                || accountFinancialInstitutionCode == null
+                || maskedAccountIdentifier == null)) {
             throw new IllegalArgumentException(
                     "VERIFIED customer verification requires canonical "
                             + "customerReference and accountReference"
@@ -75,6 +89,7 @@ public record CustomerVerificationResponse(
         );
 
         validateChecks(checks);
+
         validateOutcome(outcome, checks);
 
         if (validUntil != null
@@ -102,7 +117,9 @@ public record CustomerVerificationResponse(
         return Optional.ofNullable(validUntil);
     }
 
-    private static void validateChecks(List<Check> checks) {
+    private static final Logger log = LoggerFactory.getLogger(CustomerVerificationResponse.class);
+
+    private static void validateChecks_bk(List<Check> checks) {
         if (checks.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException(
                     "checks must not contain null"
@@ -122,6 +139,48 @@ public record CustomerVerificationResponse(
         if (!actual.equals(EnumSet.allOf(CheckType.class))) {
             throw new IllegalArgumentException(
                     "all canonical verification checks are required"
+            );
+        }
+    }
+
+    private static void validateChecks(List<Check> checks) {
+        if (checks.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException(
+                    "checks must not contain null"
+            );
+        }
+
+        Set<CheckType> actual = checks.stream()
+                .map(Check::type)
+                .collect(Collectors.toSet());
+
+        if (actual.size() != checks.size()) {
+            throw new IllegalArgumentException(
+                    "verification check types must be unique"
+            );
+        }
+
+        EnumSet<CheckType> mandatory =
+                EnumSet.allOf(CheckType.class);
+
+        //mandatory.remove(CheckType.IDENTITY_MATCHES);
+        mandatory.remove(CheckType.REQUIRED_KYC_PRESENT);
+        mandatory.remove(CheckType.REQUIRED_KYC_VERIFIED);
+
+        log.info(
+                "event=customer_verification_checks "
+                        + "actual={} mandatory={} missing={}",
+                actual.stream().sorted().toList(),
+                mandatory.stream().sorted().toList(),
+                mandatory.stream()
+                        .filter(check -> !actual.contains(check))
+                        .sorted()
+                        .toList()
+        );
+
+        if (!actual.containsAll(mandatory)) {
+            throw new IllegalArgumentException(
+                    "mandatory verification checks are missing"
             );
         }
     }
@@ -189,6 +248,9 @@ public record CustomerVerificationResponse(
                 + ", accountBindingFingerprint=[PROTECTED]"
                 + ", customerReference=[PROTECTED]"
                 + ", accountReference=[PROTECTED]"
+                + ", accountFinancialInstitutionCode="
+                + accountFinancialInstitutionCode
+                + ", maskedAccountIdentifier=[PROTECTED]"
                 + ", observedAt="
                 + observedAt
                 + ", validUntil="

@@ -71,3 +71,14 @@ sixpay:
         enabled: false
       oidc:
         enabled: false
+
+  payment:
+    outbox:
+      customer-projection:
+        enabled: false
+        batch-size: 50
+        polling-interval: PT5S
+        max-attempts: 3
+        initial-backoff: PT1S
+        max-backoff: PT30S
+        processing-timeout: PT1M

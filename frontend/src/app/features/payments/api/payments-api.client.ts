@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { PaymentSearchQuery } from '../models/payment-query';
+import { PaymentT0ManualResponse } from '../models/payment-t0-manual-reconciliation';
 import { PaymentDetailResponse, PaymentSearchPageResponse } from '../models/payments.response';
 
 const PAYMENTS_API_PATH = '/internal/api/v1/payments';
@@ -21,6 +22,13 @@ export class PaymentsApiClient {
     return this.http.get<PaymentDetailResponse>(
       `${PAYMENTS_API_PATH}/${encodeURIComponent(paymentId)}`,
     );
+  }
+
+  /** Approved R3 internal operator POST. Correlation ID is attached by the global interceptor. */
+  reconcileT0(paymentIds: readonly string[]): Observable<PaymentT0ManualResponse> {
+    return this.http.post<PaymentT0ManualResponse>(`${PAYMENTS_API_PATH}/reconciliation`, {
+      paymentIds: [...paymentIds],
+    });
   }
 
   private searchParams(query: PaymentSearchQuery): HttpParams {

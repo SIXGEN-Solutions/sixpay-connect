@@ -21,28 +21,14 @@ class AuthorizationControlSourceMapTest {
     }
 
     @Test
-    void subscriptionAuthorizationNeverUsesLocalCustomerSubscription() {
-        AuthorizationControlSource source =
-                AuthorizationControlSourceMap.sourceFor(
-                        AuthorizationControl.SUBSCRIPTION_AUTHORIZED
-                );
-
-        assertEquals("TRESOR_PAY", source.owner());
-        assertEquals(
-                AuthorizationSourceKind.TRUSTED_INTAKE_ATTESTATION,
-                source.sourceKind()
-        );
-        assertTrue(source.evidence().contains("signed JWT"));
-        assertTrue(
-                source.evidence().contains(
-                        "CustomerSubscription is not the source"
-                )
-        );
-        assertTrue(
-                source.evidence().contains(
-                        "no synchronous TRESOR PAY subscription verification"
-                )
-        );
+    void subscriptionAuthorizationUsesCustomerOwnedLocalSubscription() {
+        AuthorizationControlSource source = AuthorizationControlSourceMap.sourceFor(
+                AuthorizationControl.SUBSCRIPTION_AUTHORIZED);
+        assertEquals("customer", source.owner());
+        assertEquals(AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE, source.sourceKind());
+        assertTrue(source.evidence().contains("CustomerSubscription"));
+        assertEquals(AuthorizationControlSource.ImplementationStatus.READY,
+                source.implementationStatus());
     }
 
     @Test
@@ -73,10 +59,6 @@ class AuthorizationControlSourceMapTest {
     @Test
     void unresolvedControlsRemainExplicitlyBlockedForEvaluation() {
         for (AuthorizationControl control : EnumSet.of(
-                AuthorizationControl.PARTNER_AUTHORIZED,
-                AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
-                AuthorizationControl.APPLICATION_AUTHORIZED,
-                AuthorizationControl.CLAIM_TYPE_AUTHORIZED,
                 AuthorizationControl.EXECUTION_DATE_VALID
         )) {
             AuthorizationControlSource source =

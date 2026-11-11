@@ -15,7 +15,8 @@ public final class VerifiedTresorPayStatusEligibilityPolicy
         Objects.requireNonNull(candidate, "candidate");
         Objects.requireNonNull(window, "window");
 
-        if (!window.contains(candidate.paymentOccurredAt())) {
+        // Carry-over: older successful, unbatched T0 events remain eligible.
+        if (!candidate.paymentOccurredAt().isBefore(window.toExclusive())) {
             return AccountingEligibilityDecision.rejected(
                     "PAYMENT_OUTSIDE_ACCOUNTING_WINDOW"
             );
@@ -27,13 +28,8 @@ public final class VerifiedTresorPayStatusEligibilityPolicy
             );
         }
 
-        if (candidate.tresorPayStatusEvidence()
-                .checkedAt()
-                .isAfter(window.toExclusive())) {
-            return AccountingEligibilityDecision.rejected(
-                    "TRESORPAY_STATUS_CHECKED_AFTER_CUTOFF"
-            );
-        }
+        // Partner confirmation is obtained at T1; it may occur after
+        // the original payment's cutoff, including for carry-over candidates.
 
         return AccountingEligibilityDecision.accepted();
     }

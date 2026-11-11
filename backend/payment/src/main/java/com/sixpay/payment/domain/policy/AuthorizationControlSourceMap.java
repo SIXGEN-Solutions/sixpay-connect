@@ -53,17 +53,8 @@ public final class AuthorizationControlSourceMap {
                         AuthorizationControl.PARTNER_AUTHORIZED,
                         AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
                         "partner",
-                        "Resolved business authority: Partner accepts new "
-                                + "transactions only when PartnerStatus.ACTIVE and "
-                                + "AuthorizedPerimeter allows the transaction type. "
-                                + "PaymentInitiationContext.partnerLoginName is durably "
-                                + "retained, but Payment cannot access partner "
-                                + "repositories directly and no approved cross-module "
-                                + "runtime port keyed by partnerLoginName is demonstrated "
-                                + "at this baseline.",
-                        AuthorizationControlSource
-                                .ImplementationStatus
-                                .REQUIRES_RUNTIME_SOURCE
+                        "Partner application surface: ACTIVE status and AuthorizedPerimeter.",
+                        AuthorizationControlSource.ImplementationStatus.READY
                 )
         );
 
@@ -71,21 +62,10 @@ public final class AuthorizationControlSourceMap {
                 AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
                 new AuthorizationControlSource(
                         AuthorizationControl.SUBSCRIPTION_AUTHORIZED,
-                        AuthorizationSourceKind.TRUSTED_INTAKE_ATTESTATION,
-                        "TRESOR_PAY",
-                        "Resolved source: the short-lived asymmetric TRESOR PAY "
-                                + "signed JWT/JWS validated locally at payment intake "
-                                + "attests subscription_status=ACTIVE and binds "
-                                + "the subscription, client, financial institution, "
-                                + "debtor account and payment. "
-                                + "CustomerSubscription is not the source; "
-                                + "no synchronous TRESOR PAY subscription verification "
-                                + "call is allowed in MVP. "
-                                + "Implementation remains gated by the "
-                                + "tresorpay-payment-request-api-v1 contract approval.",
-                        AuthorizationControlSource
-                                .ImplementationStatus
-                                .REQUIRES_RUNTIME_SOURCE
+                        AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
+                        "customer",
+                        "Customer-owned CustomerSubscription eligibility and exact Partner/account binding after OTP.",
+                        AuthorizationControlSource.ImplementationStatus.READY
                 )
         );
 
@@ -94,18 +74,9 @@ public final class AuthorizationControlSourceMap {
                 new AuthorizationControlSource(
                         AuthorizationControl.APPLICATION_AUTHORIZED,
                         AuthorizationSourceKind.REQUIRES_RUNTIME_SOURCE,
-                        "security / TRESOR_PAY intake profile",
-                        "Resolved source: PaymentInitiationContext.applicationId "
-                                + "comes from X-TresorPay-App-Id and the signed "
-                                + "authorization token client_id is required to match "
-                                + "that application identity and the Subscription Key "
-                                + "owner at intake. Re-evaluation after OTP requires "
-                                + "durable canonical acceptance evidence; current "
-                                + "PaymentInitiationContext alone proves the identifier "
-                                + "but not the prior authorization decision.",
-                        AuthorizationControlSource
-                                .ImplementationStatus
-                                .REQUIRES_RUNTIME_SOURCE
+                        "security",
+                        "Registered machine subject and initiating Payment Partner binding.",
+                        AuthorizationControlSource.ImplementationStatus.READY
                 )
         );
 
@@ -114,16 +85,9 @@ public final class AuthorizationControlSourceMap {
                 new AuthorizationControlSource(
                         AuthorizationControl.CLAIM_TYPE_AUTHORIZED,
                         AuthorizationSourceKind.PAYMENT_STATE,
-                        "payment",
-                        "Resolved data source: PaymentInitiationContext.claimType "
-                                + "durably retains the normalized Payment ClaimType. "
-                                + "No active authoritative source at this baseline "
-                                + "defines a partner/application-specific entitlement "
-                                + "rule for AVI, IM7 or RNF, so the decision rule "
-                                + "remains unresolved and must not be invented.",
-                        AuthorizationControlSource
-                                .ImplementationStatus
-                                .REQUIRES_RUNTIME_SOURCE
+                        "partner",
+                        "Payment ClaimType must belong to Partner authorized transaction types.",
+                        AuthorizationControlSource.ImplementationStatus.READY
                 )
         );
 

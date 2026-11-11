@@ -1,0 +1,16 @@
+name: sixpay-m2m-keycloak-local
+
+# Local, disposable OAuth2 M2M issuer. Deliberately isolated from SIXPAY USER auth.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?Set KC_BOOTSTRAP_ADMIN_USERNAME in local .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?Set KC_BOOTSTRAP_ADMIN_PASSWORD in local .env}
+      SIXPAY_M2M_TEST_CLIENT_SECRET: ${SIXPAY_M2M_TEST_CLIENT_SECRET:?Set SIXPAY_M2M_TEST_CLIENT_SECRET in local .env}
+    ports:
+      - "127.0.0.1:${SIXPAY_M2M_KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - ./realm:/opt/keycloak/data/import:ro
+    # This M2M-1 stack deliberately has no persistent or production database.

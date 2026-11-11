@@ -37,7 +37,7 @@ import java.util.UUID;
 public final class BankingVerificationHttpTestSupport {
 
     public static final String CORRELATION_ID = "corr-http-4.3.5";
-    public static final String ACCOUNT_REFERENCE = "10005-00001-12345678901-12";
+    public static final String ACCOUNT_REFERENCE = "10005-00001-12";
     public static final String NIU = "M0123456";
     public static final String LEGAL_NAME = "Société ABC SARL";
 
@@ -83,10 +83,6 @@ public final class BankingVerificationHttpTestSupport {
                 maxAttempts,
                 Duration.ofMillis(1),
                 Duration.ofMinutes(5),
-                new BankingVerificationProperties.Security(
-                        "core-banking-test",
-                        "core-banking-test"
-                ),
                 new BankingVerificationProperties.Contract(
                         "test-v1",
                         Set.of(
@@ -137,7 +133,6 @@ public final class BankingVerificationHttpTestSupport {
         AmplitudeCustomerVerificationClient client =
                 new AmplitudeCustomerVerificationClient(
                         restClient,
-                        () -> "test-access-token",
                         properties,
                         new ObjectMapper()
                 );
@@ -207,7 +202,7 @@ public final class BankingVerificationHttpTestSupport {
 
     public static String partialJson() {
         String checks = checksJson("PASS").replace(
-                ",{\"type\":\"REQUIRED_KYC_VERIFIED\",\"result\":\"PASS\"}",
+                ",{\"type\":\"ACCOUNT_EXISTS\",\"result\":\"PASS\"}",
                 ""
         );
         return responseJson("INDETERMINATE", checks, false);
@@ -251,16 +246,13 @@ public final class BankingVerificationHttpTestSupport {
                 """.formatted(NIU, LEGAL_NAME) : "null";
         String account = verified ? """
                 {
-                  "accountReference":"%s",
-                  "customerReference":"CUST-0001",
-                  "financialInstitutionCode":"AMPLITUDE",
-                  "maskedAccountIdentifier":"****8901",
-                  "currency":"XAF",
-                  "accountType":"CURRENT",
-                  "status":"ACTIVE",
-                  "restrictions":[],
-                  "source":"AMPLITUDE",
-                  "retrievedAt":"2026-08-03T17:00:01Z"
+                  "age":"10005",
+                  "ncp":"00001",
+                  "clc":"12",
+                  "cli":"CUST-0001",
+                  "dev":"001",
+                  "typ":"CURRENT",
+                  "status":"ACTIVE"
                 }
                 """.formatted(ACCOUNT_REFERENCE) : "null";
         return """

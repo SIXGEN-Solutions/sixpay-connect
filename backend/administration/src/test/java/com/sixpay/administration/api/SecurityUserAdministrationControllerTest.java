@@ -444,6 +444,91 @@ class SecurityUserAdministrationControllerTest {
             username = "admin",
             roles = "ADMIN"
     )
+    void linksLdapIdentityAndPropagatesAuthenticatedActor()
+            throws Exception {
+
+        authenticatedActor("admin-subject");
+
+        when(
+                useCase.linkLdapIdentity(
+                        USER_ID,
+                        "regionale-ldap",
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "admin-subject"
+                )
+        ).thenReturn(
+                detail(
+                        USER_ID,
+                        "ldap-user",
+                        "ldap-user@sixpay.local",
+                        Set.of("AUDITOR")
+                )
+        );
+
+        mockMvc.perform(
+                        post(
+                                API
+                                        + "/"
+                                        + USER_ID
+                                        + "/identities/ldap"
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "trustDomain": "regionale-ldap",
+                                          "stableSubject": "550e8400-e29b-41d4-a716-446655440000"
+                                        }
+                                        """
+                                )
+                )
+                .andExpect(status().isOk());
+
+        verify(useCase).linkLdapIdentity(
+                USER_ID,
+                "regionale-ldap",
+                "550e8400-e29b-41d4-a716-446655440000",
+                "admin-subject"
+        );
+    }
+
+    @Test
+    @WithMockUser(
+            username = "admin",
+            roles = "ADMIN"
+    )
+    void rejectsInvalidLdapIdentityLinkBeforeUseCase()
+            throws Exception {
+
+        mockMvc.perform(
+                        post(
+                                API
+                                        + "/"
+                                        + USER_ID
+                                        + "/identities/ldap"
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "trustDomain": " ",
+                                          "stableSubject": " "
+                                        }
+                                        """
+                                )
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    @WithMockUser(
+            username = "admin",
+            roles = "ADMIN"
+    )
     void deletesUserAndReturnsNoContent()
             throws Exception {
 

@@ -3,13 +3,20 @@ package com.sixpay.payment.infrastructure.banking.amplitude.posting.configuratio
 import com.sixpay.integration.http.HttpTimeoutPolicy;
 import com.sixpay.integration.http.StandardRestClientFactory;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventAdapter;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventContextAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.AmplitudePaymentEventRecoveryAdapter;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
-import com.sixpay.payment.application.port.output.banking.PaymentEventContextPort;
+import com.sixpay.payment.application.port.output.PaymentLookupPort;
+import com.sixpay.payment.application.port.output.configuration.PaymentConfigurationParameterPort;
+import com.sixpay.payment.application.service.PaymentEventLifecycleOrchestrationService;
+import com.sixpay.payment.application.service.PaymentPostingPreparationService;
+import com.sixpay.payment.application.service.PaymentT0PostingReservationService;
+import com.sixpay.payment.application.service.PaymentFinalizationService;
+import com.sixpay.payment.application.service.PaymentEventContextService;
+import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
@@ -34,13 +41,18 @@ public class AmplitudePostingConfiguration {
 
     @Bean
     PostingAccessTokenProvider postingAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
+            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
             AmplitudePostingProperties properties
     ) {
-        return new OAuth2PostingAccessTokenProvider(
-                manager,
-                properties
-        );
+        if (!properties.security().oauth2Enabled()) {
+            return () -> null;
+        }
+        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
+        if (manager == null) {
+            throw new IllegalStateException(
+                    "OAuth2 manager required when posting OAuth2 is enabled");
+        }
+        return new OAuth2PostingAccessTokenProvider(manager, properties);
     }
 
     @Bean
@@ -55,10 +67,12 @@ public class AmplitudePostingConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                sslBundles.getBundle(
-                        properties.security().sslBundle()
-                ).createSslContext(),
-                List.of()
+                properties.security().mtlsEnabled()
+                        ? sslBundles.getBundle(properties.security().sslBundle())
+                                .createSslContext()
+                        : null,
+                List.of(),
+                properties.security().allowInsecureHttp()
         );
     }
 
@@ -85,26 +99,6 @@ public class AmplitudePostingConfiguration {
     }
 
     @Bean
-    AmplitudePaymentEventContextClient amplitudePaymentEventContextClient(
-            RestClient amplitudePostingRestClient,
-            PostingAccessTokenProvider tokenProvider,
-            AmplitudePostingProperties properties
-    ) {
-        return new RestAmplitudePaymentEventContextClient(
-                amplitudePostingRestClient,
-                tokenProvider,
-                properties
-        );
-    }
-
-    @Bean
-    PaymentEventContextPort paymentEventContextPort(
-            AmplitudePaymentEventContextClient client
-    ) {
-        return new AmplitudePaymentEventContextAdapter(client);
-    }
-
-    @Bean
     AmplitudePaymentEventMapper amplitudePaymentEventMapper() {
         return new AmplitudePaymentEventMapper();
     }
@@ -128,6 +122,42 @@ public class AmplitudePostingConfiguration {
             AmplitudePaymentEventMapper mapper
     ) {
         return new AmplitudePaymentEventAdapter(client, mapper);
+    }
+
+    // The Posting capability gates this service. Declare the bean here rather
+    // than applying @ConditionalOnBean to a component-scanned @Service: the
+    // latter may be evaluated before the execution/recovery ports are registered.
+    // Register application orchestration explicitly with the Posting capability.
+    // Avoid @ConditionalOnBean on component-scanned services: port definitions
+    // may not yet be registered when component conditions are evaluated.
+    @Bean
+    PaymentEventContextService paymentEventContextService(
+            PaymentConfigurationParameterPort parameterPort
+    ) {
+        return new PaymentEventContextService(parameterPort);
+    }
+
+    @Bean
+    PaymentEventLifecycleOrchestrationService paymentEventLifecycleOrchestrationService(
+            PaymentLookupPort paymentLookupPort,
+            PaymentFinancialSnapshotRepository snapshotRepository,
+            PaymentPostingPreparationService postingPreparationService,
+            PaymentT0PostingReservationService reservationService,
+            PaymentFinalizationService finalizationService,
+            PaymentEventContextService contextService,
+            PaymentEventExecutionPort executionPort,
+            PaymentEventRecoveryPort recoveryPort
+    ) {
+        return new PaymentEventLifecycleOrchestrationService(
+                paymentLookupPort,
+                snapshotRepository,
+                postingPreparationService,
+                reservationService,
+                finalizationService,
+                contextService,
+                executionPort,
+                recoveryPort
+        );
     }
 
 }

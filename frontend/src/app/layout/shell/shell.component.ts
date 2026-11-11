@@ -25,4 +25,9 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 })
 export class ShellComponent {
   protected readonly errorService = inject(ErrorService);
+  protected sidebarCollapsed = false;
+
+  protected toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
 }

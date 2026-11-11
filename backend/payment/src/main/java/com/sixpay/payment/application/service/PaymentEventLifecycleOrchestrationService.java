@@ -13,8 +13,8 @@ import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import com.sixpay.payment.domain.policy.PostingInstructionIdentity;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -24,19 +24,17 @@ import java.util.Objects;
  *
  * <p>The service consumes a finalized Payment financial snapshot and an already
  * Payment event context resolved by SIXPAY from Administration parameters
- * and Core Banking allocated context.
+ * while Core Banking owns event number, accounting date and night mode.
  * or retries the financial POST after an uncertain outcome.</p>
  */
-@Service
-@ConditionalOnBean({
-        PaymentEventExecutionPort.class,
-        PaymentEventRecoveryPort.class
-})
 public class PaymentEventLifecycleOrchestrationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentEventLifecycleOrchestrationService.class);
 
     private final PaymentLookupPort paymentLookupPort;
     private final PaymentFinancialSnapshotRepository snapshotRepository;
     private final PaymentPostingPreparationService postingPreparationService;
+    private final PaymentT0PostingReservationService reservationService;
     private final PaymentFinalizationService finalizationService;
     private final PaymentEventContextService contextService;
     private final PaymentEventExecutionPort executionPort;
@@ -48,6 +46,7 @@ public class PaymentEventLifecycleOrchestrationService {
             PaymentLookupPort paymentLookupPort,
             PaymentFinancialSnapshotRepository snapshotRepository,
             PaymentPostingPreparationService postingPreparationService,
+            PaymentT0PostingReservationService reservationService,
             PaymentFinalizationService finalizationService,
             PaymentEventContextService contextService,
             PaymentEventExecutionPort executionPort,
@@ -57,6 +56,7 @@ public class PaymentEventLifecycleOrchestrationService {
         this.snapshotRepository = Objects.requireNonNull(snapshotRepository);
         this.postingPreparationService =
                 Objects.requireNonNull(postingPreparationService);
+        this.reservationService = Objects.requireNonNull(reservationService);
         this.finalizationService =
                 Objects.requireNonNull(finalizationService);
         this.contextService = Objects.requireNonNull(contextService);
@@ -78,15 +78,12 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-        PaymentFinancialEventSnapshot snapshot =
-                requireFinalizedSnapshot(paymentId);
-
-        requireInstructionMatchesSnapshot(
-                instruction,
-                snapshot
-        );
+        logger.debug("****payment.status(): {}", payment.status());
 
         if (payment.status() == PaymentStatus.POSTING_PENDING) {
+            PaymentFinancialEventSnapshot snapshot =
+                    requireFinalizedSnapshot(paymentId);
+            requireInstructionMatchesSnapshot(instruction, snapshot);
             PostingInstructionIdentity persistedInstruction =
                     payment.toState()
                             .postingInstruction()
@@ -97,6 +94,7 @@ public class PaymentEventLifecycleOrchestrationService {
                                     )
                             );
 
+            logger.debug("Persisted instruction: {} - Reel Instruction: {}", persistedInstruction, instruction);
             if (!persistedInstruction.equals(instruction)) {
                 throw PaymentDomainException.conflict(
                         "A different posting instruction is already authorized"
@@ -116,22 +114,21 @@ public class PaymentEventLifecycleOrchestrationService {
             );
         }
 
-        PaymentWorkflowResult authorization =
-                postingPreparationService.authorizePaymentEventPosting(
-                        paymentId,
-                        instruction,
-                        requestedAt
-                );
-
-        if (!authorization.stateChanged()) {
-            return authorization;
-        }
-
+        // Resolve local configuration only; never perform bank-side GETs here.
         PaymentEventExecutionPort.PaymentEventMappingContext mappingContext =
-                contextService.resolve(
-                        bankingContext,
-                        requestedAt
-                );
+                contextService.resolve(requestedAt);
+
+        // Short local transaction: finalized snapshot + two frozen entries
+        // and the durable posting instruction are committed together.
+        // No external HTTP call is made inside that transaction.
+        PaymentFinancialEventSnapshot snapshot;
+        try {
+            snapshot = reservationService.reserve(
+                    paymentId, instruction, requestedAt, mappingContext);
+        } catch (PaymentT0PostingReservationService.ReservationLostException race) {
+            return PaymentWorkflowResult.from(requirePayment(paymentId), false);
+        }
+        requireInstructionMatchesSnapshot(instruction, snapshot);
 
         PaymentEventExecutionPort.PaymentEventExecutionResult providerResult;
         try {
@@ -156,13 +153,13 @@ public class PaymentEventLifecycleOrchestrationService {
                     policies
             );
         }
-
+        logger.debug("Provider result: {}", providerResult);
         return finalizationService.recordPaymentEventOutcome(
                 paymentId,
                 outcomeMapper.toSnapshot(
                         instruction,
                         providerResult,
-                        mappingContext.accountingDate(),
+                        providerResult.accountingDate(),
                         PaymentEventObservationSource.DIRECT_RESPONSE
                 ),
                 failureFor(providerResult, FailureStage.POSTING),
@@ -206,7 +203,8 @@ public class PaymentEventLifecycleOrchestrationService {
         Objects.requireNonNull(policies, "Payment policies");
 
         Payment payment = requirePayment(paymentId);
-        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN) {
+        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN
+                && payment.status() != PaymentStatus.POSTING_PENDING) {
             throw PaymentDomainException.invalidTransition(
                     payment.status(),
                     "recoverPaymentEvent"
@@ -220,6 +218,7 @@ public class PaymentEventLifecycleOrchestrationService {
 
         PaymentFinancialEventSnapshot snapshot =
                 requireFinalizedSnapshot(paymentId);
+        requireInstructionMatchesSnapshot(instruction, snapshot);
 
         PaymentEventRecoveryPort.PaymentEventRecoveryResult recovery =
                 recoveryPort.recover(
@@ -256,15 +255,28 @@ public class PaymentEventLifecycleOrchestrationService {
                         "Recovery observation source"
                 );
 
+        // An UNKNOWN lookup does not establish a financial result. Keep the
+        // original reservation; never send a second financial POST.
+        if (payment.status() == PaymentStatus.POSTING_PENDING
+                && recovery.status() == PaymentEventRecoveryPort.PaymentEventRecoveryStatus.UNKNOWN) {
+            return PaymentWorkflowResult.from(payment, false);
+        }
+
+        java.time.LocalDate originalDate = providerResult.accountingDate();
+        // Never invent a banking date. A COMPLETED result must supply dco.
+        if (providerResult.outcome() == PaymentEventOutcome.COMPLETED
+                && originalDate == null) {
+            throw new IllegalStateException(
+                    "COMPLETED Core Banking recovery requires dco"
+            );
+        }
+
         return finalizationService.resolvePaymentEventOutcome(
                 paymentId,
                 outcomeMapper.toSnapshot(
                         instruction,
                         providerResult,
-                        payment.toState()
-                                .paymentEventOutcomeEvidence()
-                                .orElseThrow()
-                                .accountingDate(),
+                        originalDate,
                         source
                 ),
                 failureFor(
@@ -312,7 +324,7 @@ public class PaymentEventLifecycleOrchestrationService {
                 outcomeMapper.toSnapshot(
                         instruction,
                         syntheticUnknown,
-                        mappingContext.accountingDate(),
+                        null,
                         PaymentEventObservationSource.DIRECT_RESPONSE
                 ),
                 unknownFailure(

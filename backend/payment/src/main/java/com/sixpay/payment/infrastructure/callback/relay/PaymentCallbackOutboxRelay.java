@@ -53,13 +53,19 @@ public class PaymentCallbackOutboxRelay {
                 transport.send(plan.delivery());
             }
 
-            coordinator.markPublished(event.eventId());
+            coordinator.markPublished(event.eventId(), event.attemptCount());
+        } catch (PaymentCallbackOutboxCoordinator.StaleCallbackClaimException stale) {
+            // Reclaimed by another attempt: the late worker cannot complete it.
         } catch (Exception exception) {
-            coordinator.markFailed(
-                    event.eventId(),
-                    event.attemptCount(),
-                    exception
-            );
+            try {
+                coordinator.markFailed(
+                        event.eventId(),
+                        event.attemptCount(),
+                        exception
+                );
+            } catch (PaymentCallbackOutboxCoordinator.StaleCallbackClaimException stale) {
+                // The owning attempt has changed while this call was executing.
+            }
         }
     }
 }

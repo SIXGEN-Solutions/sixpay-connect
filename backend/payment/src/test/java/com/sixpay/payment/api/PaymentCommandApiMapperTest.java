@@ -29,6 +29,7 @@ class PaymentCommandApiMapperTest {
         var command = mapper.toCommand(
                 request,
                 "TRESOR_PAY",
+                "TP_APP_001",
                 "IDEMPOTENCY-001",
                 CorrelationId.of(
                         "11111111-1111-1111-1111-111111111111"
@@ -39,6 +40,10 @@ class PaymentCommandApiMapperTest {
                 .isEqualTo("TRESOR_PAY");
         assertThat(command.authenticatedPartnerLoginName())
                 .isEqualTo("TRESOR_PAY");
+        assertThat(command.clientReference())
+                .isEqualTo("7a7185d1-3c0a-43e0-8b64-a9407f910001");
+        assertThat(command.resolvedPartnerIdentifier())
+                .isEqualTo("TP_APP_001");
         assertThat(command.beneficiaries())
                 .hasSize(1);
     }
@@ -46,7 +51,7 @@ class PaymentCommandApiMapperTest {
     @Test
     void omitsUnavailableBankChallengeData() {
         InitiateDebitResult result =
-                InitiateDebitResult.accepted(
+                InitiateDebitResult.awaitingOtp(
                         new PaymentId(UUID.randomUUID()),
                         PublicPaymentReference.of(
                                 "PAY-1234567890ABCDEFGHJKMNPQRS"
@@ -58,22 +63,52 @@ class PaymentCommandApiMapperTest {
                         ),
                         Instant.parse(
                                 "2026-08-03T10:30:00Z"
+                        ),
+                        new com.sixpay.payment.application.view.PaymentConfirmationView(
+                                PublicPaymentReference.of("PAY-1234567890ABCDEFGHJKMNPQRS"),
+                                com.sixpay.payment.domain.model.ConfirmationChallengeStatus.ACTIVE,
+                                com.sixpay.payment.domain.model.ConfirmationBusinessCode.CHALLENGE_ACTIVE,
+                                null,
+                                Instant.parse("2026-08-03T10:30:01Z"),
+                                Instant.parse("2026-08-03T10:35:01Z"),
+                                null,
+                                false
                         )
                 );
 
         var response = mapper.toResponse(result);
 
-        assertThat(response.status().name())
-                .isEqualTo("RECEIVED");
+        assertThat(response.status())
+                .isEqualTo("AWAITING_OTP");
         assertThat(response.bankOperationId()).isNull();
         assertThat(response.fees()).isNull();
         assertThat(response.transactionQrCode()).isNull();
+    }
+
+    @Test
+    void acceptsOptionalPartnerDataAtApiBoundary() {
+        InitiateDebitRequest minimal = new InitiateDebitRequest(
+                null, null, "7a7185d1-3c0a-43e0-8b64-a9407f910001", "PAY-123",
+                new BigDecimal("100.00"), null, null, null,
+                ClaimType.AVI, null, null, null,
+                "https://partner.example/callback"
+        );
+        var command = mapper.toCommand(
+                minimal, "machine-subject", "PARTNER_DEMO",
+                "IDEMPOTENCY-002",
+                CorrelationId.of("11111111-1111-1111-1111-111111111111")
+        );
+        assertThat(command.applicationId()).isNull();
+        assertThat(command.taxpayerIdentifier()).isNull();
+        assertThat(command.requestedExecutionAt()).isNull();
+        assertThat(command.currency()).isEqualTo("XAF");
     }
 
     private static InitiateDebitRequest request() {
         return new InitiateDebitRequest(
                 "TRESOR_PAY",
                 "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
                 "XAF",

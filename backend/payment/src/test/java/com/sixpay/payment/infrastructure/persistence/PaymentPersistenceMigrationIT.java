@@ -10,10 +10,15 @@ import org.testcontainers.utility.DockerImageName;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.util.UUID;
+import java.util.Locale;
+import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testcontainers(disabledWithoutDocker = true)
 class PaymentPersistenceMigrationIT {
@@ -43,7 +48,80 @@ class PaymentPersistenceMigrationIT {
         assertHistoricalPaymentMigrationsAreAbsent(flyway);
 
         assertPaymentsTableExistsWithRequiredColumns();
-        assertSourceExternalReferenceUniqueIndexExists();
+        assertPartnerExternalReferenceUniqueIndexExists();
+    }
+
+    @Test
+    void paymentStateVersionConstraintAcceptsCurrentVersionAndRejectsMalformedValues()
+            throws Exception {
+        Flyway flyway = Flyway.configure()
+                .dataSource(POSTGRESQL.getJdbcUrl(), POSTGRESQL.getUsername(),
+                        POSTGRESQL.getPassword())
+                .locations("classpath:db/migration")
+                .load();
+        flyway.migrate();
+
+        assertTrue(Arrays.stream(flyway.info().applied())
+                .anyMatch(migration -> migration.getVersion() != null
+                        && "301".equals(migration.getVersion().getVersion())),
+                "Option B corrective migration V301 must be applied");
+
+        // The current Java writer's document version must be accepted by the DB.
+        assertStatePayloadInsertAccepted("{\"schemaVersion\":"
+                + PaymentStateDocument.CURRENT_SCHEMA_VERSION + "}");
+        assertStatePayloadInsertAccepted("{\"schemaVersion\":1}");
+
+        // SQL remains structural. Java rejects future versions on reconstitution.
+        assertStatePayloadInsertAccepted("{\"schemaVersion\":999}");
+        assertStatePayloadInsertRejected("{}");
+        assertStatePayloadInsertRejected("{\"schemaVersion\":null}");
+        assertStatePayloadInsertRejected("{\"schemaVersion\":0}");
+        assertStatePayloadInsertRejected("{\"schemaVersion\":-1}");
+        assertStatePayloadInsertRejected("{\"schemaVersion\":7.5}");
+        assertStatePayloadInsertRejected("{\"schemaVersion\":\"7\"}");
+    }
+
+    private void assertStatePayloadInsertAccepted(String payload) throws Exception {
+        insertPaymentStatePayload(payload);
+    }
+
+    private void assertStatePayloadInsertRejected(String payload) {
+        assertThrows(SQLException.class, () -> insertPaymentStatePayload(payload),
+                "Invalid JSON schema version must be rejected: " + payload);
+    }
+
+    /** Roll back each probe; it must never leave test Payments behind. */
+    private void insertPaymentStatePayload(String payload) throws Exception {
+        UUID id = UUID.randomUUID();
+        String publicReference = "PAY-" + id.toString().replace("-", "")
+                .substring(0, 26).toUpperCase(Locale.ROOT);
+        String sql = """
+                INSERT INTO payments (
+                    payment_id, public_payment_reference, payment_source,
+                    external_payment_reference, external_subscription_reference,
+                    requested_amount, requested_currency, status,
+                    business_version, received_at, updated_at,
+                    state_payload, persistence_version
+                ) VALUES (?, ?, 'TRESOR_PAY', ?, 'SUB-TEST',
+                    1000, 'XAF', 'RECEIVED', 1,
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CAST(? AS jsonb), 0)
+                """;
+        try (Connection connection = DriverManager.getConnection(
+                POSTGRESQL.getJdbcUrl(), POSTGRESQL.getUsername(),
+                POSTGRESQL.getPassword())) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setObject(1, id);
+                    statement.setString(2, publicReference);
+                    statement.setString(3, "TEST-E2E-" + id);
+                    statement.setString(4, payload);
+                    statement.executeUpdate();
+                }
+            } finally {
+                connection.rollback();
+            }
+        }
     }
 
     private void assertPaymentBaselineWasApplied(
@@ -148,7 +226,7 @@ class PaymentPersistenceMigrationIT {
         }
     }
 
-    private void assertSourceExternalReferenceUniqueIndexExists()
+    private void assertPartnerExternalReferenceUniqueIndexExists()
             throws Exception {
 
         try (
@@ -171,7 +249,7 @@ class PaymentPersistenceMigrationIT {
                                 )
         ) {
 
-            boolean sourceExternalUnique = false;
+            boolean partnerExternalUnique = false;
 
             while (indexes.next()) {
                 String name =
@@ -180,18 +258,18 @@ class PaymentPersistenceMigrationIT {
                         );
 
                 if (
-                        "uk_payments_source_external_reference"
+                        "uk_payments_partner_external_reference"
                                 .equalsIgnoreCase(name)
                 ) {
-                    sourceExternalUnique = true;
+                    partnerExternalUnique = true;
                 }
             }
 
             assertTrue(
-                    sourceExternalUnique,
+                    partnerExternalUnique,
                     "Canonical Payment baseline "
                             + "must create "
-                            + "uk_payments_source_external_reference"
+                            + "uk_payments_partner_external_reference"
             );
         }
     }

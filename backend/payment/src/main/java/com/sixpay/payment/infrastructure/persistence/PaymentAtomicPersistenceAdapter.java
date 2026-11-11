@@ -2,6 +2,11 @@ package com.sixpay.payment.infrastructure.persistence;
 
 import com.sixpay.payment.application.port.output.PaymentAtomicPersistencePort;
 import com.sixpay.payment.domain.event.PaymentDomainEvent;
+import com.sixpay.payment.domain.event.PaymentEventOutcomeRecorded;
+import com.sixpay.payment.domain.model.PaymentId;
+import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
+import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.repository.PaymentRepository;
 import com.sixpay.payment.infrastructure.audit.PaymentAuditAdapter;
@@ -26,12 +31,25 @@ public class PaymentAtomicPersistenceAdapter
     private final PaymentAuditAdapter auditAdapter;
     private final PaymentOutboxRepository outboxRepository;
     private final PaymentDomainEventMapper domainEventMapper;
+    private final PaymentFinancialSnapshotRepository financialSnapshotRepository;
 
     public PaymentAtomicPersistenceAdapter(
             PaymentRepository paymentRepository,
             PaymentAuditAdapter auditAdapter,
             PaymentOutboxRepository outboxRepository,
             PaymentDomainEventMapper domainEventMapper
+    ) {
+        this(paymentRepository, auditAdapter, outboxRepository,
+                domainEventMapper, null);
+    }
+
+    @Autowired
+    public PaymentAtomicPersistenceAdapter(
+            PaymentRepository paymentRepository,
+            PaymentAuditAdapter auditAdapter,
+            PaymentOutboxRepository outboxRepository,
+            PaymentDomainEventMapper domainEventMapper,
+            PaymentFinancialSnapshotRepository financialSnapshotRepository
     ) {
         this.paymentRepository = Objects.requireNonNull(
                 paymentRepository,
@@ -49,6 +67,7 @@ public class PaymentAtomicPersistenceAdapter
                 domainEventMapper,
                 "Payment domain-event mapper"
         );
+        this.financialSnapshotRepository = financialSnapshotRepository;
     }
 
     /**
@@ -79,6 +98,24 @@ public class PaymentAtomicPersistenceAdapter
 
         Payment persisted =
                 paymentRepository.save(payment);
+
+        // Bank-assigned facts are filled exactly once in the SAME transaction
+        // as the Payment outcome, audit and outbox. T0 amounts/legs remain frozen.
+        for (PaymentDomainEvent event : immutableEvents) {
+            if (event instanceof PaymentEventOutcomeRecorded outcome
+                    && outcome.outcome() == PaymentEventOutcome.COMPLETED) {
+                if (financialSnapshotRepository == null) {
+                    throw new IllegalStateException(
+                            "Financial snapshot outcome enrichment port is required");
+                }
+                financialSnapshotRepository.enrichCompletedBankingOutcome(
+                        new PaymentId(payment.id().value()),
+                        outcome.principalBankReference(),
+                        outcome.accountingDate(),
+                        outcome.observedAt()
+                );
+            }
+        }
 
         auditAdapter.appendAll(immutableEvents);
 

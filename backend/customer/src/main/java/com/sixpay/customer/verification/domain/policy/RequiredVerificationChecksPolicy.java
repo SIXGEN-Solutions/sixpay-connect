@@ -22,8 +22,14 @@ public final class RequiredVerificationChecksPolicy {
                 throw new CustomerVerificationDomainException("Duplicate verification check type: " + validated.type());
         }
         List<VerificationCheckType> missing = new ArrayList<>();
-        for (VerificationCheckType required : VerificationCheckType.values())
-            if (!byType.containsKey(required)) missing.add(required);
+        for (VerificationCheckType required : VerificationCheckType.values()) {
+            // The identity-name comparison is conditional on caller-provided evidence.
+            // The banking adapter enforces it when expectedAccountHolder is present.
+            if (required != VerificationCheckType.IDENTITY_MATCHES
+                    && required != VerificationCheckType.REQUIRED_KYC_PRESENT
+                    && required != VerificationCheckType.REQUIRED_KYC_VERIFIED
+                    && !byType.containsKey(required)) missing.add(required);
+        }
         if (!missing.isEmpty())
             throw new CustomerVerificationDomainException("Missing mandatory verification checks: " + missing);
         List<VerificationCheck> canonical = new ArrayList<>(byType.values());

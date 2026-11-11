@@ -5,6 +5,7 @@ import com.sixpay.common.messaging.transport.IntegrationEventTransport;
 import com.sixpay.integration.messaging.outbox.OutboxRelay;
 import com.sixpay.integration.messaging.properties.OutboxRelayProperties;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -34,25 +35,21 @@ import java.util.List;
 @EnableScheduling
 public class OutboxRelayAutoConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
+    @Bean("outboxRelayClock")
     Clock outboxRelayClock() {
         return Clock.systemUTC();
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(OutboxRelay.class)
     OutboxRelay outboxRelay(
             ObjectProvider<OutboxMessageSource> sources,
             IntegrationEventTransport transport,
             OutboxRelayProperties properties,
-            Clock clock
+            @Qualifier("outboxRelayClock") Clock clock
     ) {
-        List<OutboxMessageSource> orderedSources =
-                sources.orderedStream().toList();
-
         return new OutboxRelay(
-                orderedSources,
+                sources.orderedStream().toList(),
                 transport,
                 properties,
                 clock

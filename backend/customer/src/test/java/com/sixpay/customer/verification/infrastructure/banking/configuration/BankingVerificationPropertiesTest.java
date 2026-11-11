@@ -41,7 +41,6 @@ class BankingVerificationPropertiesTest {
                         3,
                         Duration.ofMillis(250),
                         Duration.ofMinutes(5),
-                        validSecurity(),
                         validContract()
                 )
         );
@@ -61,7 +60,6 @@ class BankingVerificationPropertiesTest {
                         3,
                         Duration.ofMillis(250),
                         Duration.ofMinutes(5),
-                        validSecurity(),
                         validContract()
                 )
         );
@@ -81,7 +79,6 @@ class BankingVerificationPropertiesTest {
                         3,
                         Duration.ofMillis(250),
                         Duration.ofMinutes(5),
-                        validSecurity(),
                         validContract()
                 )
         );
@@ -101,7 +98,6 @@ class BankingVerificationPropertiesTest {
                         3,
                         Duration.ofMillis(250),
                         Duration.ofMinutes(5),
-                        validSecurity(),
                         validContract()
                 )
         );
@@ -120,7 +116,6 @@ class BankingVerificationPropertiesTest {
                         6,
                         Duration.ofMillis(250),
                         Duration.ofMinutes(5),
-                        validSecurity(),
                         validContract()
                 );
 
@@ -137,16 +132,6 @@ class BankingVerificationPropertiesTest {
         );
     }
 
-    @Test
-    void rejectsBlankSecurityValues() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new BankingVerificationProperties.Security(
-                        " ",
-                        " "
-                )
-        );
-    }
 
     @Test
     void rejectsEmptySuccessCodeSet() {
@@ -175,18 +160,10 @@ class BankingVerificationPropertiesTest {
                 3,
                 Duration.ofMillis(250),
                 Duration.ofMinutes(5),
-                validSecurity(),
                 validContract()
         );
     }
 
-    private static BankingVerificationProperties.Security
-    validSecurity() {
-        return new BankingVerificationProperties.Security(
-                "core-banking-customer-verification",
-                "core-banking-client"
-        );
-    }
 
     private static BankingVerificationProperties.Contract
     validContract() {

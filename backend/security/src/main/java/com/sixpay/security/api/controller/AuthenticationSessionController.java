@@ -1,11 +1,13 @@
 package com.sixpay.security.api.controller;
 
+import com.sixpay.security.api.dto.AuthenticationCapabilitiesResponse;
 import com.sixpay.security.api.dto.AuthenticationSessionResponse;
 import com.sixpay.security.application.port.input.GetCurrentSessionUseCase;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.authentication.AuthenticatedUser;
 import com.sixpay.security.domain.administration.SecurityAuditEvent;
 import com.sixpay.security.domain.administration.SecurityAuditEventType;
+import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.domain.authentication.AuthenticationMethod;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationToken;
 import com.sixpay.security.infrastructure.authentication.session.SpringSecuritySessionManager;
@@ -32,11 +34,13 @@ public final class AuthenticationSessionController {
     private final GetCurrentSessionUseCase getCurrentSession;
     private final SpringSecuritySessionManager sessionManager;
     private final SecurityAuditPort auditPort;
+    private final AuthenticationCapabilitiesProperties capabilities;
 
     public AuthenticationSessionController(
             GetCurrentSessionUseCase getCurrentSession,
             SpringSecuritySessionManager sessionManager,
-            SecurityAuditPort auditPort
+            SecurityAuditPort auditPort,
+            AuthenticationCapabilitiesProperties capabilities
     ) {
         this.getCurrentSession =
                 Objects.requireNonNull(
@@ -49,6 +53,10 @@ public final class AuthenticationSessionController {
         this.auditPort =
                 Objects.requireNonNull(
                         auditPort
+                );
+        this.capabilities =
+                Objects.requireNonNull(
+                        capabilities
                 );
     }
 
@@ -72,7 +80,8 @@ public final class AuthenticationSessionController {
 
         return toResponse(
                 user,
-                method
+                method,
+                capabilities
         );
     }
 
@@ -107,7 +116,8 @@ public final class AuthenticationSessionController {
 
         return toResponse(
                 user,
-                AuthenticationMethod.OIDC
+                AuthenticationMethod.OIDC,
+                capabilities
         );
     }
 
@@ -146,7 +156,8 @@ public final class AuthenticationSessionController {
 
     static AuthenticationSessionResponse toResponse(
             AuthenticatedUser user,
-            AuthenticationMethod method
+            AuthenticationMethod method,
+            AuthenticationCapabilitiesProperties capabilities
     ) {
         boolean passwordChangeRequired =
                 method == AuthenticationMethod.LOCAL
@@ -159,7 +170,12 @@ public final class AuthenticationSessionController {
                 user.roles(),
                 user.permissions(),
                 method,
-                passwordChangeRequired
+                passwordChangeRequired,
+                new AuthenticationCapabilitiesResponse(
+                        capabilities.localEnabled(),
+                        capabilities.oidcEnabled(),
+                        capabilities.ldapEnabled()
+                )
         );
     }
 

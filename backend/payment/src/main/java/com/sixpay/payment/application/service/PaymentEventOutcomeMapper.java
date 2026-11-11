@@ -20,7 +20,10 @@ final class PaymentEventOutcomeMapper {
     ) {
         Objects.requireNonNull(instruction, "Posting instruction");
         Objects.requireNonNull(result, "Payment event result");
-        Objects.requireNonNull(accountingDate, "Accounting date");
+        if (result.outcome() == com.sixpay.payment.domain.model.evidence.PaymentEventOutcome.COMPLETED
+                && accountingDate == null) {
+            throw new IllegalStateException("COMPLETED Core Banking result has no dco");
+        }
         Objects.requireNonNull(observationSource, "Observation source");
 
         return new PaymentEventOutcomeSnapshot(

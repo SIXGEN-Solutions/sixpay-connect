@@ -31,20 +31,14 @@ public interface PaymentEventExecutionPort {
 
     record PaymentEventMappingContext(
             String operationCode,
-            long eventNumber,
-            LocalDate accountingDate,
-            boolean nightMode,
             String technicalUser,
             Instant requestedAt
     ) {
         public PaymentEventMappingContext {
-            if (operationCode == null || operationCode.isBlank()) {
-                throw new IllegalArgumentException("Operation code must not be blank");
+            if (operationCode == null || operationCode.isBlank()
+                    || operationCode.length() > 3) {
+                throw new IllegalArgumentException("Operation code must be 1..3 characters");
             }
-            if (eventNumber <= 0) {
-                throw new IllegalArgumentException("Event number must be positive");
-            }
-            accountingDate = Objects.requireNonNull(accountingDate, "Accounting date");
             if (technicalUser == null || technicalUser.isBlank()) {
                 throw new IllegalArgumentException("Technical user must not be blank");
             }
@@ -71,7 +65,8 @@ public interface PaymentEventExecutionPort {
             List<PaymentEventExecutionCheck> checks,
             String bankReference,
             FailureCode reasonCode,
-            Instant observedAt
+            Instant observedAt,
+            LocalDate accountingDate
     ) {
         public PaymentEventExecutionResult {
             if (paymentReference == null || paymentReference.isBlank()) {
@@ -81,6 +76,18 @@ public interface PaymentEventExecutionPort {
             outcome = Objects.requireNonNull(outcome, "Payment event outcome");
             checks = List.copyOf(Objects.requireNonNull(checks, "Payment execution checks"));
             observedAt = Objects.requireNonNull(observedAt, "Observed at");
+        }
+
+        public PaymentEventExecutionResult(
+                String paymentReference,
+                PaymentEventOutcome outcome,
+                List<PaymentEventExecutionCheck> checks,
+                String bankReference,
+                FailureCode reasonCode,
+                Instant observedAt
+        ) {
+            this(paymentReference, outcome, checks, bankReference, reasonCode,
+                    observedAt, null);
         }
     }
 

@@ -104,7 +104,7 @@ mvn verify
 
 ```bash
 cd frontend
-npm run verify:sixpay
+npm run verify:quality
 ```
 
 Use `npm ci --no-audit --no-fund` first when frontend dependencies are absent

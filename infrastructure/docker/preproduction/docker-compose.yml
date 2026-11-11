@@ -1,0 +1,120 @@
+name: sixpay-connect-preproduction
+services:
+  postgres:
+    image: postgres:15
+    container_name: sixpay-prepod-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sixpaydb}
+      POSTGRES_USER: ${POSTGRES_USER:-sixpay_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ["${POSTGRES_PORT:-25432}:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sixpay_user} -d ${POSTGRES_DB:-sixpaydb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  ldap:
+    image: instantlinux/samba-dc:4.23.10-r0
+    container_name: sixpay-preprod-ldap
+    cap_add: [SYS_ADMIN]
+    hostname: ${SAMBA_HOSTNAME:-dc.sixpay.test}
+    environment:
+      DOMAIN_ACTION: provision
+      REALM: ${SAMBA_REALM:-sixpay.test}
+      WORKGROUP: ${SAMBA_WORKGROUP:-SIXPAY}
+      TZ: UTC
+    secrets: [samba-admin-password]
+    volumes: [samba-etc:/etc/samba, samba-lib:/var/lib/samba]
+  ldap-truststore:
+    image: eclipse-temurin:21-jdk
+    depends_on: [ldap]
+    volumes: [samba-lib:/samba:ro, ldap-truststore:/truststore]
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        for i in $$(seq 1 60); do
+          [ -s /samba/private/tls/ca.pem ] && break
+          sleep 2
+        done
+
+        test -s /samba/private/tls/ca.pem
+        rm -f /truststore/sixpay-cacerts
+        cp "$$JAVA_HOME/lib/security/cacerts" /truststore/sixpay-cacerts
+
+        keytool -importcert \
+          -noprompt \
+          -trustcacerts \
+          -alias samba-ca \
+          -file /samba/private/tls/ca.pem \
+          -keystore /truststore/sixpay-cacerts \
+          -storepass changeit
+
+        keytool -list \
+          -keystore /truststore/sixpay-cacerts \
+          -storepass changeit \
+          -alias samba-ca
+  backend:
+    build: {context: ../../../backend, dockerfile: Dockerfile}
+    container_name: sixpay-prepod-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: preproduction
+      SIXPAY_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-sixpaydb}?currentSchema=sixpay
+      SIXPAY_DB_USERNAME: ${POSTGRES_USER:-sixpay_user}
+      SIXPAY_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SIXPAY_LDAP_ENABLED: "true"
+      SIXPAY_LDAP_URLS: ${SIXPAY_LDAP_URLS}
+      SIXPAY_LDAP_BASE_DN: ${SIXPAY_LDAP_BASE_DN}
+      SIXPAY_LDAP_USER_SEARCH_BASE: ${SIXPAY_LDAP_USER_SEARCH_BASE}
+      SIXPAY_LDAP_SERVICE_ACCOUNT_DN: ${SIXPAY_LDAP_SERVICE_ACCOUNT_DN}
+      SIXPAY_LDAP_SERVICE_ACCOUNT_PASSWORD: ${SIXPAY_LDAP_SERVICE_ACCOUNT_PASSWORD}
+      SIXPAY_LDAP_TRUST_DOMAIN: ${SIXPAY_LDAP_TRUST_DOMAIN}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_ENABLED: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_ENABLED:-false}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_USER_ID: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USER_ID:-}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_USERNAME: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_USERNAME:-}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_EMAIL: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_EMAIL:-}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_TRUST_DOMAIN: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_TRUST_DOMAIN:-}
+      SIXPAY_LDAP_ADMIN_BOOTSTRAP_STABLE_SUBJECT: ${SIXPAY_LDAP_ADMIN_BOOTSTRAP_STABLE_SUBJECT:-}
+      AMPLITUDE_PAYMENT_BASE_URL: ${AMPLITUDE_PAYMENT_BASE_URL:-http://host.docker.internal:9092}
+      AMPLITUDE_FUNDS_RESERVATION_ENABLED: ${AMPLITUDE_FUNDS_RESERVATION_ENABLED:-false}
+      AMPLITUDE_POSTING_ENABLED: ${AMPLITUDE_POSTING_ENABLED:-false}
+      AMPLITUDE_COMPENSATION_ENABLED: ${AMPLITUDE_COMPENSATION_ENABLED:-false}
+      AMPLITUDE_POSTING_STATUS_ENABLED: ${AMPLITUDE_POSTING_STATUS_ENABLED:-false}
+      AMPLITUDE_CONFIRMATION_ENABLED: ${AMPLITUDE_CONFIRMATION_ENABLED:-true}
+      AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED: ${AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED:-false}
+      AMPLITUDE_CONFIRMATION_MTLS_ENABLED: ${AMPLITUDE_CONFIRMATION_MTLS_ENABLED:-false}
+      AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP: ${AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP:-true}
+      AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT:-2s}
+      AMPLITUDE_CONFIRMATION_READ_TIMEOUT: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT:-10s}
+      SIXPAY_SESSION_COOKIE_SECURE: "false"
+      SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY: ${SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY}
+      SIXPAY_REPORTING_AUDIT_EXPORT_STORAGE_DIRECTORY: /var/lib/sixpay/audit-exports
+      SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI:-https://audit-artifacts.preproduction.local/}
+      SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETENTION:-PT1H}
+      JAVA_TOOL_OPTIONS: "-Djavax.net.ssl.trustStore=/opt/sixpay/trust/sixpay-cacerts -Djavax.net.ssl.trustStorePassword=changeit"
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["${BACKEND_PORT:-28080}:8080"]
+    volumes:
+      - ldap-truststore:/opt/sixpay/trust:ro
+      - audit-exports:/var/lib/sixpay/audit-exports
+    depends_on:
+      postgres: {condition: service_healthy}
+      ldap-truststore: {condition: service_completed_successfully}
+  frontend:
+    container_name: sixpay-prepod-frontend
+    build:
+      context: ../../../frontend
+      dockerfile: Dockerfile
+      args: {BUILD_CONFIGURATION: preproduction}
+    ports: ["${FRONTEND_PORT:-28088}:80"]
+    depends_on: [backend]
+volumes:
+  postgres-data: {}
+  samba-etc: {}
+  samba-lib: {}
+  ldap-truststore: {}
+  audit-exports: {}
+secrets:
+  samba-admin-password:
+    file: ./secrets/samba-admin-password.txt

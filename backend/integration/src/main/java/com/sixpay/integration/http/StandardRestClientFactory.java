@@ -21,9 +21,17 @@ public final class StandardRestClientFactory {
             SSLContext sslContext,
             List<ClientHttpRequestInterceptor> interceptors
     ) {
+        return create(baseUrl, timeoutPolicy, sslContext, interceptors, false);
+    }
+    public RestClient create(
+            URI baseUrl, HttpTimeoutPolicy timeoutPolicy, SSLContext sslContext,
+            List<ClientHttpRequestInterceptor> interceptors, boolean allowInsecureHttp
+    ) {
         Objects.requireNonNull(baseUrl, "baseUrl is required");
         Objects.requireNonNull(timeoutPolicy, "timeoutPolicy is required");
-        if (!"https".equalsIgnoreCase(baseUrl.getScheme())) {
+        boolean https = "https".equalsIgnoreCase(baseUrl.getScheme());
+        boolean allowedHttp = allowInsecureHttp && "http".equalsIgnoreCase(baseUrl.getScheme());
+        if (!https && !allowedHttp) {
             throw new IllegalArgumentException("External baseUrl must use HTTPS");
         }
         HttpClient.Builder clientBuilder = HttpClient.newBuilder()

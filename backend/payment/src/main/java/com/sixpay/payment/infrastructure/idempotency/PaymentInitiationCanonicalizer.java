@@ -28,8 +28,11 @@ public final class PaymentInitiationCanonicalizer {
 
         StringBuilder value = new StringBuilder(1024);
 
-        append(value, command.partnerLoginName());
-        append(value, command.authenticatedPartnerLoginName());
+        // AppID is the canonical Partner business identifier.
+        // LoginName is compatibility metadata and the authenticated subject
+        // is transport/security identity; neither changes the business request.
+        append(value, command.resolvedPartnerIdentifier());
+        append(value, command.clientReference());
         append(value, command.applicationId());
         append(value, command.endToEndId());
         append(value, decimal(command.totalAmount()));
@@ -38,7 +41,8 @@ public final class PaymentInitiationCanonicalizer {
         append(value, command.debtorName());
         append(value, command.claimType().name());
         append(value, command.taxpayerIdentifier());
-        append(value, command.requestedExecutionAt().toString());
+        append(value, command.requestedExecutionAt() == null
+                ? null : command.requestedExecutionAt().toString());
         append(value, command.callbackUrl());
 
         command.beneficiaries().stream()
@@ -71,10 +75,14 @@ public final class PaymentInitiationCanonicalizer {
             StringBuilder target,
             String value
     ) {
-        String normalized = value == null ? "" : value;
-        target.append(normalized.length())
+        if (value == null) {
+            target.append("N|");
+            return;
+        }
+        target.append('V')
+                .append(value.length())
                 .append(':')
-                .append(normalized)
+                .append(value)
                 .append('|');
     }
 }

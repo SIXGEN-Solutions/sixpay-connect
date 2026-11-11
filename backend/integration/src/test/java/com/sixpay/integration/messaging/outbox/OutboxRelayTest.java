@@ -44,6 +44,7 @@ class OutboxRelayTest {
 
         assertEquals(source.message.event().eventId(), source.failedId);
         assertEquals(NOW.plusSeconds(60), source.nextAttemptAt);
+        assertEquals("IllegalStateException: broker unavailable", source.failureReason);
         assertNull(source.deadId);
     }
 
@@ -57,7 +58,45 @@ class OutboxRelayTest {
         relay.poll();
 
         assertEquals(source.message.event().eventId(), source.deadId);
+        assertEquals("IllegalStateException: broker unavailable", source.failureReason);
         assertNull(source.failedId);
+    }
+
+    @Test
+    void persistsDomainExceptionMessageWhenItContainsNoSensitiveData() {
+        FakeSource source = new FakeSource(message(1));
+        OutboxRelay relay = relay(source, event -> {
+            throw new PaymentDomainException("Conflicting Treasury-resolution evidence");
+        });
+        relay.poll();
+        assertEquals("PaymentDomainException: Conflicting Treasury-resolution evidence",
+                source.failureReason);
+    }
+
+    @Test
+    void omitsUnsafeProviderMessagesFromPersistentFailureReason() {
+        FakeSource source = new FakeSource(message(1));
+        OutboxRelay relay = relay(source, event -> {
+            throw new IllegalStateException("bank account 00001-05759051051-86");
+        });
+        relay.poll();
+        assertEquals("IllegalStateException", source.failureReason);
+    }
+
+    @Test
+    void unwrapsSafeDomainReasonFromTransportWrapper() {
+        FakeSource source = new FakeSource(message(1));
+        OutboxRelay relay = relay(source, event -> {
+            throw new IllegalStateException("listener failure",
+                    new PaymentDomainException("Conflicting Treasury-resolution evidence"));
+        });
+        relay.poll();
+        assertEquals("PaymentDomainException: Conflicting Treasury-resolution evidence",
+                source.failureReason);
+    }
+
+    private static final class PaymentDomainException extends RuntimeException {
+        PaymentDomainException(String message) { super(message); }
     }
 
     private static OutboxRelay relay(
@@ -100,6 +139,7 @@ class OutboxRelayTest {
         private UUID failedId;
         private UUID deadId;
         private Instant nextAttemptAt;
+        private String failureReason;
 
         private FakeSource(OutboxMessage message) {
             this.message = message;
@@ -132,6 +172,7 @@ class OutboxRelayTest {
                 Instant nextAttemptAt
         ) {
             this.failedId = eventId;
+            this.failureReason = reason;
             this.nextAttemptAt = nextAttemptAt;
         }
 
@@ -142,6 +183,7 @@ class OutboxRelayTest {
                 Instant failedAt
         ) {
             this.deadId = eventId;
+            this.failureReason = reason;
         }
     }
 }

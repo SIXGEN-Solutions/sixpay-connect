@@ -13,12 +13,16 @@ import com.sixpay.payment.application.service
 import com.sixpay.payment.application.service
         .PaymentObservedCustomerProjectionService;
 import org.springframework.boot.autoconfigure.condition
-        .ConditionalOnBean;
+        .ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnBean(ObserveCustomerUseCase.class)
+@ConditionalOnProperty(
+        prefix = "sixpay.customer.observation.persistence",
+        name = "enabled",
+        havingValue = "true"
+)
 public class ObservedCustomerProjectionIntegrationConfiguration {
 
     @Bean

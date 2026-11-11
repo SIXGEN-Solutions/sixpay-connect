@@ -54,9 +54,9 @@ public class CustomerSubscriptionController {
                                         request.customerId()
                                 ),
                                 request.partnerId(),
-                                new CustomerBankAccountId(
-                                        request.bankAccountId()
-                                ),
+                                request.bankAccountId() == null
+                                        ? null
+                                        : new CustomerBankAccountId(request.bankAccountId()),
                                 Instant.now()
                         )
                 );

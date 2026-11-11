@@ -58,10 +58,7 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
         this.checks = canonicalChecks(checks);
         this.bankPostingReference = bankPostingReference;
         this.reasonCode = reasonCode;
-        this.accountingDate = Objects.requireNonNull(
-                accountingDate,
-                "Core Banking accounting date"
-        );
+        this.accountingDate = accountingDate;
         this.observedAt = Objects.requireNonNull(
                 observedAt,
                 "Payment event observation instant"
@@ -79,11 +76,11 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
     ) {
         Objects.requireNonNull(values, "Payment execution checks");
 
-        if (values.size() != FundsControlCheckType.values().length) {
+        if (values.size() > FundsControlCheckType.values().length) {
             throw new IllegalArgumentException(
-                    "Payment event outcome requires exactly "
+                    "Payment event outcome cannot contain more than "
                             + FundsControlCheckType.values().length
-                            + " execution checks"
+                            + " distinct execution checks"
             );
         }
 
@@ -106,12 +103,6 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
             canonical.add(validated);
         }
 
-        if (seen.size() != FundsControlCheckType.values().length) {
-            throw new IllegalArgumentException(
-                    "Payment event outcome must contain every execution check"
-            );
-        }
-
         canonical.sort(
                 (left, right) -> Integer.compare(
                         left.type().ordinal(),
@@ -131,6 +122,24 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
 
         switch (outcome) {
             case COMPLETED -> {
+                Set<FundsControlCheckType> requiredChecks = EnumSet.of(
+                        FundsControlCheckType.ACCOUNT_VALID,
+                        FundsControlCheckType.DEBIT_ALLOWED,
+                        FundsControlCheckType.AVAILABLE_FUNDS_SUFFICIENT
+                );
+                for (FundsControlCheckEvidence check : checks) {
+                    requiredChecks.remove(check.type());
+                }
+                if (!requiredChecks.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "COMPLETED Payment event missing required checks: "
+                                    + requiredChecks
+                    );
+                }
+                if (accountingDate == null) {
+                    throw new IllegalArgumentException(
+                            "COMPLETED Payment event requires Core Banking dco");
+                }
                 if (!allPass) {
                     throw new IllegalArgumentException(
                             "COMPLETED Payment event requires all checks PASS"
@@ -215,7 +224,7 @@ public final class PaymentEventOutcomeSnapshot implements ValueObject {
                         that.bankPostingReference
                 )
                 && Objects.equals(reasonCode, that.reasonCode)
-                && accountingDate.equals(that.accountingDate)
+                && Objects.equals(accountingDate, that.accountingDate)
                 && observedAt.equals(that.observedAt)
                 && observationSource == that.observationSource;
     }

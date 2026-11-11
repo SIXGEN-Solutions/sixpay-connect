@@ -26,6 +26,25 @@ ALLOWED_IDENTICAL_PROFILE_KEYS = {
     "sixpay.security.authentication.oidc.enabled",
 }
 
+# Exceptions documentees et strictement limitees aux paires de sources.
+# Toute autre repetition de ces cles reste une erreur.
+ALLOWED_EXACT_RUNTIME_DUPLICATES = {
+    (
+        "sixpay.customer.verification.banking.enabled",
+        frozenset({
+            "application-amplitude-sandbox.yml",
+            "application-customer-banking.yml",
+        }),
+    ),
+    (
+        "sixpay.reporting.audit-export.retention",
+        frozenset({
+            "application-integration.yml",
+            "application-preproduction.yml",
+        }),
+    ),
+}
+
 YAML_KEY = re.compile(r"^(\s*)([^#\s][^:]*):(?:\s*(.*))?$")
 CLASSPATH_IMPORT = re.compile(
     r"^\s*-\s*(?:optional:)?classpath:([^\s#]+)\s*$"
@@ -220,9 +239,24 @@ def main():
     for (key, value), paths in declarations.items():
         if len(paths) < 2 or key in ALLOWED_IDENTICAL_PROFILE_KEYS:
             continue
+
+        # application-production.yml is deliberately self-contained: it
+        # repeats runtime values from application.yml and other profiles.
+        # Only those cross-file repetitions are exempt. Two or more non-
+        # production declarations still constitute a duplicate.
+        non_production_paths = [
+            path for path in paths
+            if path != BOOTSTRAP_RESOURCES / "application-production.yml"
+        ]
+        if len(non_production_paths) < 2:
+            continue
+
+        # Exceptions exactes : une cle et exactement les deux fichiers revus.
+        if (key, frozenset(path.name for path in paths)) in ALLOWED_EXACT_RUNTIME_DUPLICATES:
+            continue
         errors.append(
             f"duplicate runtime value {key}={value}: "
-            + ", ".join(relative(path) for path in paths)
+            + ", ".join(relative(path) for path in non_production_paths)
         )
 
     if errors:

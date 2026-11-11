@@ -149,8 +149,21 @@ class Phase6ReadinessConfigurationTest {
                 )
         );
 
+        String exportConfiguration = Files.readString(
+                ROOT.resolve(
+                        "backend/reporting/src/main/java/"
+                                + "com/sixpay/reporting/configuration/"
+                                + "ReportingAuditExportConfiguration.java"
+                )
+        );
+
         assertTrue(
                 configuration.contains(
+                        "Clock reportingAuditClock()"
+                )
+        );
+        assertTrue(
+                exportConfiguration.contains(
                         "@Qualifier(\"reportingAuditClock\")"
                 )
         );

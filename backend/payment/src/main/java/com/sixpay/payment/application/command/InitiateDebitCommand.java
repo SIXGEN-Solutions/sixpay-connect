@@ -18,6 +18,8 @@ import java.util.Objects;
 public record InitiateDebitCommand(
         String partnerLoginName,
         String authenticatedPartnerLoginName,
+        String resolvedPartnerIdentifier,
+        String clientReference,
         String applicationId,
         String endToEndId,
         BigDecimal totalAmount,
@@ -36,16 +38,21 @@ public record InitiateDebitCommand(
     private static final int MAXIMUM_BENEFICIARIES = 20;
 
     public InitiateDebitCommand {
-        partnerLoginName = requireText(
-                partnerLoginName,
-                64,
-                "Partner login name"
-        );
         authenticatedPartnerLoginName = requireText(
                 authenticatedPartnerLoginName,
                 64,
                 "Authenticated partner login name"
         );
+        resolvedPartnerIdentifier = requireText(
+                resolvedPartnerIdentifier,
+                64,
+                "Resolved Partner identifier"
+        );
+        clientReference = java.util.UUID.fromString(requireText(
+                clientReference,
+                128,
+                "Client reference"
+        )).toString();
         applicationId = normalizeOptional(
                 applicationId,
                 64,
@@ -60,17 +67,19 @@ public record InitiateDebitCommand(
                 totalAmount,
                 "Total amount"
         );
-        currency = requireText(
-                currency,
-                3,
-                "Currency"
-        ).toUpperCase(java.util.Locale.ROOT);
-        debtorRib = requireText(
+        currency = currency == null || currency.isBlank()
+                ? "XAF"
+                : requireText(
+                        currency,
+                        3,
+                        "Currency"
+                ).toUpperCase(java.util.Locale.ROOT);
+        debtorRib = normalizeOptional(
                 debtorRib,
                 64,
                 "Debtor RIB"
         );
-        debtorName = requireText(
+        debtorName = normalizeOptional(
                 debtorName,
                 200,
                 "Debtor name"
@@ -79,14 +88,10 @@ public record InitiateDebitCommand(
                 claimType,
                 "Claim type"
         );
-        taxpayerIdentifier = requireText(
+        taxpayerIdentifier = normalizeOptional(
                 taxpayerIdentifier,
                 64,
                 "Taxpayer identifier"
-        );
-        requestedExecutionAt = Objects.requireNonNull(
-                requestedExecutionAt,
-                "Requested execution instant"
         );
         callbackUrl = requireText(
                 callbackUrl,
@@ -103,15 +108,6 @@ public record InitiateDebitCommand(
                 "Correlation ID"
         );
 
-        if (!partnerLoginName.equals(
-                authenticatedPartnerLoginName
-        )) {
-            throw new IllegalArgumentException(
-                    "Partner login name must match "
-                            + "the authenticated partner identity"
-            );
-        }
-
         if (totalAmount.signum() <= 0) {
             throw new IllegalArgumentException(
                     "Total amount must be positive"
@@ -124,7 +120,8 @@ public record InitiateDebitCommand(
             );
         }
 
-        if (!currency.matches("^[A-Z]{3}$")) {
+        if (currency != null
+                && !currency.matches("^[A-Z]{3}$")) {
             throw new IllegalArgumentException(
                     "Currency must use an ISO 4217 alpha-3 code"
             );
@@ -136,38 +133,35 @@ public record InitiateDebitCommand(
             );
         }
 
-        beneficiaries = List.copyOf(
-                Objects.requireNonNull(
-                        beneficiaries,
-                        "Beneficiaries"
-                )
-        );
+        beneficiaries = beneficiaries == null
+                ? List.of()
+                : List.copyOf(beneficiaries);
 
-        if (beneficiaries.isEmpty()
-                || beneficiaries.size()
-                > MAXIMUM_BENEFICIARIES) {
+        if (beneficiaries.size() > MAXIMUM_BENEFICIARIES) {
             throw new IllegalArgumentException(
-                    "Beneficiaries must contain between 1 and "
+                    "Beneficiaries must contain at most "
                             + MAXIMUM_BENEFICIARIES
                             + " entries"
             );
         }
 
-        BigDecimal allocatedAmount =
-                beneficiaries.stream()
-                        .map(
-                                InitiateDebitBeneficiaryCommand
-                                        ::amount
-                        )
-                        .reduce(
-                                BigDecimal.ZERO,
-                                BigDecimal::add
-                        );
+        if (!beneficiaries.isEmpty()) {
+            BigDecimal allocatedAmount =
+                    beneficiaries.stream()
+                            .map(
+                                    InitiateDebitBeneficiaryCommand
+                                            ::amount
+                            )
+                            .reduce(
+                                    BigDecimal.ZERO,
+                                    BigDecimal::add
+                            );
 
-        if (allocatedAmount.compareTo(totalAmount) != 0) {
-            throw new IllegalArgumentException(
-                    "Beneficiary amount sum must equal total amount"
-            );
+            if (allocatedAmount.compareTo(totalAmount) != 0) {
+                throw new IllegalArgumentException(
+                        "Beneficiary amount sum must equal total amount"
+                );
+            }
         }
     }
 

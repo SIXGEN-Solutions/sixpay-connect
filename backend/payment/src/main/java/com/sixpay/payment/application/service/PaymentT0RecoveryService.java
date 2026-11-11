@@ -90,9 +90,10 @@ public final class PaymentT0RecoveryService
         Objects.requireNonNull(payment, "Payment");
         Objects.requireNonNull(correlationId, "Correlation ID");
 
-        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN) {
+        if (payment.status() != PaymentStatus.POSTING_OUTCOME_UNKNOWN
+                && payment.status() != PaymentStatus.POSTING_PENDING) {
             throw new IllegalStateException(
-                    "T0 recovery requires POSTING_OUTCOME_UNKNOWN Payment"
+                    "T0 recovery requires POSTING_OUTCOME_UNKNOWN or POSTING_PENDING Payment"
             );
         }
 

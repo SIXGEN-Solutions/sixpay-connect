@@ -1,8 +1,17 @@
 package com.sixpay.payment.infrastructure.persistence;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationCheckEvidence;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationId;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationOutcome;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
+import com.sixpay.payment.domain.model.evidence.EvidenceMetadata;
+import java.util.List;
 import com.sixpay.payment.domain.model.Payment;
+import com.sixpay.payment.domain.model.PaymentInitiationContext;
 import com.sixpay.payment.domain.model.PaymentState;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -26,6 +35,10 @@ public final class PaymentPersistenceMapper {
         Objects.requireNonNull(objectMapper, "Object mapper");
 
         persistenceObjectMapper = objectMapper.rebuild()
+                // Infrastructure-only creator mapping for an immutable domain
+                // snapshot. Keep Jackson annotations out of the Payment domain.
+                .addMixIn(BankingVerificationSnapshot.class,
+                        BankingVerificationSnapshotMixin.class)
                 .changeDefaultVisibility(visibility -> visibility
                         .withVisibility(
                                 PropertyAccessor.ALL,
@@ -106,6 +119,26 @@ public final class PaymentPersistenceMapper {
         }
     }
 
+    /**
+     * The domain offers a legacy five-argument constructor and the canonical
+     * seven-argument constructor. Jackson must select the latter explicitly.
+     * The persisted names correspond to the existing JSON field names, so no
+     * state_payload schema or domain-model change is necessary.
+     */
+    private abstract static class BankingVerificationSnapshotMixin {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        BankingVerificationSnapshotMixin(
+                @JsonProperty("verificationId") BankingVerificationId verificationId,
+                @JsonProperty("outcome") BankingVerificationOutcome outcome,
+                @JsonProperty("accountBindingFingerprint") String accountBindingFingerprint,
+                @JsonProperty("customerReference") String customerReference,
+                @JsonProperty("accountReference") String accountReference,
+                @JsonProperty("checks") List<BankingVerificationCheckEvidence> checks,
+                @JsonProperty("metadata") EvidenceMetadata metadata
+        ) {
+        }
+    }
+
     private static Payment requirePayment(Payment payment) {
         return Objects.requireNonNull(
                 payment,
@@ -124,6 +157,12 @@ public final class PaymentPersistenceMapper {
                 || entity.source() != state.source()
                 || !entity.externalPaymentReference().equals(
                 state.externalPaymentReference().value()
+        )
+                || !Objects.equals(
+                entity.partnerIdentifier(),
+                state.initiationContext()
+                        .map(PaymentInitiationContext::applicationId)
+                        .orElse(null)
         )
                 || entity.status() != state.status()
                 || entity.businessVersion()

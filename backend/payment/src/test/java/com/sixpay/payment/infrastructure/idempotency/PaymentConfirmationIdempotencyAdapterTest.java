@@ -122,6 +122,42 @@ class PaymentConfirmationIdempotencyAdapterTest {
     }
 
     @Test
+    void sameVerifyKeyCannotReplayResultOfAnotherPayment() {
+        PaymentId storedPayment = new PaymentId(
+                UUID.fromString("11111111-1111-4111-8111-111111111111"));
+        PaymentId callerPayment = new PaymentId(
+                UUID.fromString("22222222-2222-4222-8222-222222222222"));
+        IdempotencyKey key = IdempotencyKey.of("verify-key-0001");
+        var fingerprint = fingerprint("current-key-material-for-verify");
+        var fingerprints = new PaymentOtpIdempotencyFingerprintSet(List.of(fingerprint));
+        String requestHash = fingerprint.fingerprint(PAYMENT_REFERENCE.value(), "123456");
+        PaymentConfirmationBankResult completed = result("challenge-verify");
+        var codec = new PaymentConfirmationReplayCodec();
+        var replay = new PaymentIdempotencyDecision(
+                PaymentIdempotencyDecision.Kind.REPLAY, storedPayment.value(),
+                completed.status().name(), codec.encode(completed), null, null, null);
+        var transactions = mock(PaymentConfirmationIdempotencyTransactions.class);
+        when(transactions.begin(
+                eq(PaymentConfirmationIdempotencyAdapter.VERIFY_OPERATION),
+                eq(key.value()), eq(requestHash), eq(List.of(requestHash)),
+                any(Instant.class)))
+                .thenReturn(new PaymentConfirmationIdempotencyTransactions.BeginResult(
+                        replay, requestHash));
+        TimeProvider clock = mock(TimeProvider.class);
+        when(clock.now()).thenReturn(Instant.parse("2026-08-30T12:00:00Z"));
+        var adapter = new PaymentConfirmationIdempotencyAdapter(
+                new PaymentConfirmationCanonicalizer(), new PaymentIdempotencyHasher(),
+                fingerprints, transactions, codec, clock);
+        AtomicInteger bankCalls = new AtomicInteger();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> adapter.executeVerify(
+                callerPayment, PAYMENT_REFERENCE, key, "123456".toCharArray(),
+                () -> { bankCalls.incrementAndGet(); return completed; }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Payment ID mismatch");
+        assertThat(bankCalls.get()).isZero();
+    }
+
+    @Test
     void uncertainCreateMarksUnknownThenRecoversWithoutBlindRetry() {
         PaymentId paymentId =
                 new PaymentId(

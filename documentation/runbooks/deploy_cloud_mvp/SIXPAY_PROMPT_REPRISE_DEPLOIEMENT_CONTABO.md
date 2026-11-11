@@ -1,0 +1,54 @@
+# PROMPT DE REPRISE — SIXPAY CONNECT / Déploiement MVP sur Contabo
+
+Agis comme **analyste fonctionnelle, tech lead, architecte logiciel senior Java/Spring Boot/Angular et ingénieure DevOps/Sécurité**.
+
+## Mission et autorité
+
+Poursuis **sans recommencer les travaux validés** la préparation du cloud MVP SIXPAY CONNECT sur le VPS Contabo, puis les validations, avant la rédaction du dossier d'exigences d'infrastructure destiné à La Régionale. Travaille progressivement : **une commande ciblée à exécuter par l'opérateur à la fois**, attends sa sortie, interprète-la avant de proposer la commande suivante. N'affirme jamais avoir exécuté une commande sur le VPS sans sa sortie. Ne propose pas `down -v` ni la suppression des données. Ne modifie pas GitHub, branches, sécurité, CI/CD, contrats, images, DNS ou système externe sans autorisation explicite. Préserve secrets, changements existants, rollback et périmètre.
+
+**Repository :** `SIXGEN-Solutions/sixpay-connect`. **Branche :** `feat/repository-baseline-consolidation-cucumber`. **Dernier HEAD vérifié dans la discussion :** `e8a528bc18340b40c04e62a60e0730f8401a5779`. **Au début de la nouvelle discussion, recontrôle le HEAD de la branche** et examine les différences si elle a évolué ; ne considère ni ce SHA ni `baselineCommit` comme une branche permanente.
+
+Charge dans l'ordre : `AGENTS.md`, `ENGINEERING_CONTEXT.md`, `MASTER_PROMPT_INPUT_MANIFEST.yaml`, toutes les sources `alwaysLoad` avec alias éventuels, puis `MASTER_ENGINEERING_PROMPT.md` en dernier ; sources `loadOnDemand` uniquement pertinentes. Respecte registres et statuts des contrats, limites du monolithe modulaire, règles de sécurité/architecture et gouvernance des changements. Si une source obligatoire manque, indique `INCOMPLETE_CONTEXT` ; sans vérification Git ou commande, ne déclare pas `REPOSITORY_VALIDATED`.
+
+## Acquis opérationnels à ne pas refaire
+
+- VPS Contabo `vmi3671192`, **AlmaLinux 10.2**, utilisateur `sixpayadmin`, `/opt/sixpay/compose` ; Docker Compose actif, `firewalld` actif ; ports hôte **80 et 443 libres** lors du dernier inventaire ; **ni nginx, ni caddy, ni httpd** installés.
+- Fichiers Compose VPS : `docker-compose.yml`, `docker-compose.backend.yml`, `docker-compose.ldap.yml`. Containers : `sixpay-connect-ldap-backend-1`, `sixpay-connect-cloud-postgres-1`, `sixpay-cloud-ldap`. Backend Spring `production`, PostgreSQL et Samba AD opérationnels.
+- Backend image **immuable** : `ghcr.io/sixgen-solutions/sixpay-backend@sha256:1958f3bf753129ea6fde73e9e7dba2a666fcc5d6d6c04205411a148dd512951b`. Le Compose backend a été sauvegardé dans `docker-compose.backend.yml.bak-g716`, validé puis backend recréé ciblé ; `GET /actuator/health` a retourné `UP`.
+- Configuration backend **externalisée** dans `/opt/sixpay/config/backend.env` (secrets, jamais afficher). LDAPS `ldaps://dc.sixpay.test:636`, Base DN `DC=sixpay,DC=test`, Users `CN=Users`, service DN de labo `CN=Administrator,CN=Users,DC=sixpay,DC=test`, provider `sixpay-preproduction-ldap`. Truststore Java PKCS12 sous `/opt/sixpay/secrets/ldap` ; `keytool` a montré **119 entrées dont `sixpay-samba-ad-ca`** et les CA standards. Ne pas réimporter/recréer sans motif.
+- **Bootstrap admin effectué une fois puis désactivé durablement : `SIXPAY_LDAP_ADMIN_BOOTSTRAP_ENABLED=false`**. `sixpay.admin` : LDAP, ACTIVE, ADMIN, 20 permissions, `objectGUID=09d2761b-127b-4ed4-b385-a5ec584f1931`, utilisateur SIXPAY `32e414be-c323-49ab-b400-6673db835e13`.
+- `sixpay.testuser` : AD actif, DN `CN=sixpay.testuser,CN=Users,DC=sixpay,DC=test`, `objectGUID=cbd1f5cf-e2f2-42bb-8a6a-08f9a8170792`. Mot de passe AD réinitialisé par l'opérateur avec `samba-tool user setpassword`, résultat `Changed password OK`. Provisioning par ADMIN via `POST /internal/api/v1/administration/directory-users/sixpay.testuser/provisioning` : **HTTP 201**, utilisateur SIXPAY `d6a4354f-b3ce-4d89-bcbf-89b589b95989`, ACTIVE, **MANAGER**, six permissions : `accounting.read`, `accounting.t1.execute`, `observed-customer.read`, `payment.audit`, `payment.read`, `payment.write`. Vérifié en PostgreSQL et session.
+- Parcours testés : login LDAP admin HTTP 200 ; `/api/v1/auth/me` admin 200, ADMIN, 20 permissions ; login testuser 200 ; `/auth/me` testuser 200, MANAGER, pas ADMIN, six droits sous forme `SCOPE_*` ; accès testuser à API ADMIN **403** attendu. Bootstrap ne doit pas être réactivé ; ne pas reprovisionner ces comptes.
+- Incident corrigé : login LDAP **401** sur Contabo, adapté au **bind utilisateur par DN complet** (image actuelle). Tests Java des constructeurs corrigés. Ne pas revenir au bind seulement `sAMAccountName`.
+- Incident expliqué : login HTTP 200 puis `/auth/me` 401 avec Python cookie jar, parce que `JSESSIONID` a `Secure=true` et **n'est pas envoyé via HTTP direct**. Tests diagnostiques sur réseau Docker privé ont transmis manuellement le cookie pour isoler l'authentification ; ne pas généraliser. **Garder `SIXPAY_SESSION_COOKIE_SECURE=true`** ; tests finaux via navigateur HTTPS requis. Vérifier aussi `XSRF-TOKEN`/CSRF et forward headers en HTTPS. En local Docker Desktop, `Secure=false` est une différence de labo, pas une consigne Contabo.
+- Permission `payment.reverse` envisagée mais **inexistante** dans l'énumération `SixpayPermission`; ne pas la créer arbitrairement. L'écart `EXPECTED_PERMISSIONS_MATCH=False` provenait du préfixe Spring `SCOPE_`, pas d'un défaut de provisioning.
+- Aucun frontend déployé ni image frontend présente sur Contabo. `docker manifest inspect ...:sha-e8a528...` a renvoyé `FRONTEND_IMAGE_NOT_ACCESSIBLE`, et l'opérateur a confirmé qu'aucune image frontend n'est encore publiée.
+
+## Audit GitHub déjà réalisé
+
+- `frontend/Dockerfile` existe : builder `node:22.23.1-alpine`, `npm ci`, build avec `ARG BUILD_CONFIGURATION` (**défaut `integration`**), runtime `nginx:1.27-alpine` ; copier `dist/frontend/browser`, port 80.
+- `frontend/angular.json` définit le profil **`preproduction`** ; `environment.preproduction.ts` utilise une base d'API relative. `frontend/nginx.conf` route `/api/` et `/internal/api/` vers `backend:8080`, `/` vers Angular (attention aux headers forwardés et à l'exposition de `/actuator/`).
+- `.github/workflows/frontend-ci.yml` fait `npm ci`, `npm test`, `npm run build`, **mais ne publie pas d'image**. `.github/workflows/backend-image-publish.yml` est la référence de publication GHCR, build `linux/amd64` et digest immuable.
+- Il n'existe pas encore de workflow `frontend-image-publish.yml` (à proposer après inspection du nouveau HEAD et décision explicite avant changement CI/CD). Recommandation : builder GitHub Actions avec `BUILD_CONFIGURATION=preproduction`, gates adaptés, tag `sha-${GITHUB_SHA}`, publication digest et pull sur Contabo, plutôt que Node/Angular sur le VPS.
+- `infrastructure/docker/m2m-keycloak/docker-compose.yml` existe **pour local uniquement** : `quay.io/keycloak/keycloak:26.8.1`, `start-dev`, realm import `sixpay-m2m-local`, client test `sixpay-partner-test`, `client_credentials`, scopes de paiement, **pas de DB persistante**. Ne jamais déployer tel quel en production.
+- `M2mJwtAuthenticationFilter` existe : validation JWT, issuer, audience `sixpay-api`, scopes, `azp`/identité technique ; mais le contrôle mTLS gateway et association certificat/partenaire reste à faire/valider. **Keycloak M2M est distinct de l'authentification humaine LDAP.** Ne pas activer `SIXPAY_M2M_ENABLED=true` prématurément.
+
+## DNS et proxy — décision différée
+
+Le nom initial suggéré `cloud.sixpay-connect.com` n'a pas de résolution IPv4 depuis le VPS, idem pour `sixpay-connect.com` ; l'utilisateur a précisé ne pas posséder ce domaine. Il a ensuite évoqué `sixgensol.com` et le nom proposé `cloud.sixgensol.com`, **sans confirmer la propriété, la disponibilité ni l'accès DNS**. Le collègue qui détient ces informations est absent ; **ne plus bloquer le chantier en redemandant immédiatement DNS**. Ne pas présenter `cloud.sixpay.com` ou `cloud.sixgensol.com` comme domaine validé. Préparer frontend/proxy sur réseau interne ; plus tard DNS A, autorité certificats et HTTPS lorsqu'autorisation et informations disponibles. Ne pas exposer les services sensibles ou désactiver Secure cookies pour pallier le DNS.
+
+## Planning retenu : continuer à partir d'ici
+
+1. **G7.18 — pipeline frontend GHCR** : vérifier HEAD, analyser workflow existant et dépendances, proposer modification ciblée ; demander autorisation pour créer le workflow CI/CD, exécuter gates, publier image sur demande.
+2. **G7.19 — déploiement frontend Contabo** : image par digest, configuration `preproduction`, Compose additionnel, réseau interne, contrôles de disponibilité et communication backend sans exposition publique non validée.
+3. **G7.20 — reverse proxy/HTTPS** : choisir Nginx et le schéma de routage qui n'introduit pas une double configuration incohérente ; tests internes avant DNS. Domaine, certificat et ouverture réseau publique à réaliser uniquement lorsque l'équipe en confirmera l'autorité.
+4. **G7.21 — Keycloak M2M** : préparer et faire approuver un Compose de déploiement persistant (DB dédiée ou architecture approuvée), secrets, hostname/TLS, volumes, sauvegardes, supervision et firewall. Ne pas copier le `start-dev` local.
+5. **G7.22 — intégration JWT M2M** : `issuer`, JWKS, audience, clients confidentiels `client_credentials`, scopes, liaison machine identity -> partenaire/app ; tests positifs/négatifs, sans impacter LDAP humains.
+6. **G7.23 — mTLS Gateway** : validation chaîne client/certificat, identité partenaire, révocation, propagation de confiance et contrôles d'accès avant appels de paiement M2M ; nécessite décisions sécurité/réseau externes.
+7. **G7.24 — E2E navigateur HTTPS** : Angular, ADMIN/MANAGER, Secure cookies, CSRF, sessions, autorisations, refus 403.
+8. **G7.25 — exploitation** : logs, redémarrage, backup/restore PostgreSQL/AD/Keycloak, isolation réseau, monitoring, rotation secrets.
+9. **G7.26 — exigences d'infrastructure La Régionale** : produire après vérification de l'environnement Contabo ; distinguer lab Samba AD de Microsoft AD banque, comptes techniques, CA/LDAPS, OIDC M2M, gateway/mTLS, DNS/certificats, sauvegardes, capacité/HA et responsabilités.
+
+Ne confonds pas *préparation* (possible sans DNS) et *validation HTTPS finale* (encore bloquée). Ne déclare pas `REPOSITORY_VALIDATED` sans validations exécutées. Commence par **l'état GitHub du frontend à la révision courante et la préparation bornée du workflow de publication**, puis avance **une seule étape/commande à la fois**. Si une décision humaine est obligatoire (CI/CD, sécurité, réseaux, déploiement), expose-la avant d'agir. Ne redemande ni les détails LDAP déjà confirmés, ni l'autorisation de reprovisionner un compte déjà existant.
+
+**Livrable compagnon à lire :** `SIXPAY_RUNBOOK_CONTABO_LDAP_PROVISIONNEMENT.md` (runbook de cette phase ; ne pas le considérer comme état Git en temps réel).

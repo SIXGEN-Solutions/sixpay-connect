@@ -312,11 +312,25 @@ class PaymentPersistenceArchitectureTest {
         assertTrue(
                 sql.contains(
                         "UNIQUE "
-                                + "(payment_source, "
+                                + "(partner_identifier, "
                                 + "external_payment_reference)"
                 )
         );
 
+        assertTrue(
+                sql.contains(
+                        "uk_payment_idempotency_partner_operation_key"
+                )
+        );
+/*
+        assertTrue(
+                sql.contains(
+                        "partner_identifier,\n"
+                                + "        operation,\n"
+                                + "        idempotency_key"
+                )
+        );
+*/
         assertTrue(
                 sql.contains(
                         "business_version > 0"

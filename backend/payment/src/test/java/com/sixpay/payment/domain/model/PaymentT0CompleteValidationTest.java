@@ -52,7 +52,7 @@ class PaymentT0CompleteValidationTest {
     @Test
     void inactiveAccountRejectsPayment() {
         assertRejected(
-                FundsControlCheckType.ACCOUNT_ACTIVE,
+                FundsControlCheckType.ACCOUNT_VALID,
                 "ACCOUNT_INACTIVE"
         );
     }

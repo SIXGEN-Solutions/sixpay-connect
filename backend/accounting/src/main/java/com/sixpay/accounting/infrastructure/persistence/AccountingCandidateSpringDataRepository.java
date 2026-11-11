@@ -54,11 +54,10 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
     @Query("""
             select c from AccountingCandidateJpaEntity c
             where c.batchId is null
-              and c.accountingBusinessDate = :businessDate
-              and c.paymentOccurredAt >= :fromInclusive
+              and c.accountingBusinessDate <= :businessDate
               and c.paymentOccurredAt < :toExclusive
               and upper(c.tresorPayStatus) = 'COMPLETED'
-              and c.tresorPayCheckedAt <= :toExclusive
+              and c.tresorPayCheckedAt is not null
             order by c.paymentOccurredAt asc, c.publicPaymentReference asc
             """)
     List<AccountingCandidateJpaEntity> findEligibleUnbatched(
@@ -69,13 +68,12 @@ interface AccountingCandidateSpringDataRepository extends JpaRepository<Accounti
     @Query("""
             select c from AccountingCandidateJpaEntity c
             where c.batchId is null
-              and c.accountingBusinessDate = :businessDate
-              and c.paymentOccurredAt >= :fromInclusive
+              and c.accountingBusinessDate <= :businessDate
               and c.paymentOccurredAt < :toExclusive
               and (
                     c.tresorPayStatus is null
                     or c.tresorPayCheckedAt is null
-                    or c.tresorPayCheckedAt > :toExclusive
+                    or upper(c.tresorPayStatus) <> 'COMPLETED'
                   )
             order by c.paymentOccurredAt asc, c.publicPaymentReference asc
             """)

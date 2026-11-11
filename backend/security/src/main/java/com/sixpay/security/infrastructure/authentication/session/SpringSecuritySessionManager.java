@@ -19,7 +19,7 @@ import java.util.Optional;
 /**
  * Mechanism-neutral SIXPAY backend session manager.
  *
- * <p>Both Local and OIDC authentication converge here after identity and
+ * <p>Local, OIDC and LDAP authentication converge here after identity and
  * authorization have been resolved to the canonical SIXPAY principal.</p>
  */
 public class SpringSecuritySessionManager {

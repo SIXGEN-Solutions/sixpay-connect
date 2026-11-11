@@ -56,27 +56,121 @@ class PaymentInitiationCanonicalizerTest {
 
         InitiateDebitCommand changed =
                 new InitiateDebitCommand(
-                        original.partnerLoginName(),
-                        original.authenticatedPartnerLoginName(),
-                        original.applicationId(),
-                        "AVI-2025-00099999",
-                        original.totalAmount(),
-                        original.currency(),
-                        original.debtorRib(),
-                        original.debtorName(),
-                        original.claimType(),
-                        original.taxpayerIdentifier(),
-                        original.requestedExecutionAt(),
-                        original.beneficiaries(),
-                        original.callbackUrl(),
-                        original.idempotencyKey(),
-                        original.correlationId()
-                );
+                original.partnerLoginName(),
+                original.authenticatedPartnerLoginName(),
+                original.applicationId(),
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                original.applicationId(),
+                "AVI-2025-00099999",
+                original.totalAmount(),
+                original.currency(),
+                original.debtorRib(),
+                original.debtorName(),
+                original.claimType(),
+                original.taxpayerIdentifier(),
+                original.requestedExecutionAt(),
+                original.beneficiaries(),
+                original.callbackUrl(),
+                original.idempotencyKey(),
+                original.correlationId()
+        );
 
         assertThat(canonicalizer.canonicalize(changed))
                 .isNotEqualTo(
                         canonicalizer.canonicalize(original)
                 );
+    }
+
+    @Test
+    void loginAndMachineSubjectDoNotChangeCanonicalBusinessRequest() {
+        InitiateDebitCommand original = command(
+                List.of(
+                        beneficiary(
+                                "10005-00001-TRESDGI-97",
+                                "600000"
+                        )
+                )
+        );
+
+        InitiateDebitCommand changed = new InitiateDebitCommand(
+                "COMPATIBILITY_LOGIN_CHANGED",
+                "different-machine-subject",
+                original.applicationId(),
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                original.applicationId(),
+                original.endToEndId(),
+                original.totalAmount(),
+                original.currency(),
+                original.debtorRib(),
+                original.debtorName(),
+                original.claimType(),
+                original.taxpayerIdentifier(),
+                original.requestedExecutionAt(),
+                original.beneficiaries(),
+                original.callbackUrl(),
+                original.idempotencyKey(),
+                original.correlationId()
+        );
+
+        assertThat(canonicalizer.canonicalize(changed))
+                .isEqualTo(canonicalizer.canonicalize(original));
+    }
+
+    @Test
+    void clientReferenceChangesCanonicalBusinessRequest() {
+        InitiateDebitCommand original = command(List.of(beneficiary(
+                "10005-00001-TRESDGI-97", "600000")));
+        InitiateDebitCommand changed = new InitiateDebitCommand(
+                original.partnerLoginName(),
+                original.authenticatedPartnerLoginName(),
+                original.resolvedPartnerIdentifier(),
+                "7a7185d1-3c0a-43e0-8b64-a9407f910002",
+                original.applicationId(),
+                original.endToEndId(),
+                original.totalAmount(),
+                original.currency(),
+                original.debtorRib(),
+                original.debtorName(),
+                original.claimType(),
+                original.taxpayerIdentifier(),
+                original.requestedExecutionAt(),
+                original.beneficiaries(),
+                original.callbackUrl(),
+                original.idempotencyKey(),
+                original.correlationId()
+        );
+        assertThat(canonicalizer.canonicalize(changed))
+                .isNotEqualTo(canonicalizer.canonicalize(original));
+    }
+
+    @Test
+    void absentOptionalFieldsAreDeterministic() {
+        InitiateDebitCommand original = command(List.of(beneficiary(
+                "10005-00001-TRESDGI-97", "600000")));
+        InitiateDebitCommand absent = new InitiateDebitCommand(
+                original.partnerLoginName(),
+                original.authenticatedPartnerLoginName(),
+                original.resolvedPartnerIdentifier(),
+                original.clientReference(),
+                null,
+                original.endToEndId(),
+                original.totalAmount(),
+                original.currency(),
+                null,
+                null,
+                original.claimType(),
+                null,
+                null,
+                original.beneficiaries(),
+                original.callbackUrl(),
+                original.idempotencyKey(),
+                original.correlationId()
+        );
+
+        assertThat(canonicalizer.canonicalize(absent))
+                .isEqualTo(canonicalizer.canonicalize(absent));
+        assertThat(canonicalizer.canonicalize(absent))
+                .isNotEqualTo(canonicalizer.canonicalize(original));
     }
 
     @Test
@@ -106,6 +200,8 @@ class PaymentInitiationCanonicalizerTest {
         return new InitiateDebitCommand(
                 "TRESOR_PAY",
                 "TRESOR_PAY",
+                "TP_APP_001",
+                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 total,

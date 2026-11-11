@@ -5,233 +5,87 @@ import com.sixpay.payment.domain.model.financial.FinancialSnapshotStatus;
 import com.sixpay.payment.domain.model.financial.PaymentFinancialEntrySnapshot;
 import com.sixpay.payment.domain.model.financial.PaymentFinancialEventSnapshot;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventRequest;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentProviderEntry;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentProviderEvent;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
+/** Owns the ONLY mapping from finalized SIXPAY financial snapshot to Regional T0 wire DTO. */
 public final class AmplitudePaymentEventMapper {
-
-    private static final String REQUIRED_NATURE = "VIRPAY";
-    private static final String DEBIT_CODE = "D";
-    private static final String CREDIT_CODE = "C";
-    private static final String REQUIRED_CURRENCY = "XAF";
-
-    private static final Pattern ACCOUNT_REFERENCE = Pattern.compile(
-            "^[^-]+-[^-]+-[^-]+$"
-    );
 
     public AmplitudePaymentEventRequest toRequest(
             PaymentFinancialEventSnapshot snapshot,
             AmplitudePaymentEventMappingContext context
     ) {
-        Objects.requireNonNull(
-                snapshot,
-                "Financial event snapshot"
-        );
-        Objects.requireNonNull(
-                context,
-                "Amplitude mapping context"
-        );
-
+        Objects.requireNonNull(snapshot, "Financial event snapshot");
+        Objects.requireNonNull(context, "Banking mapping context");
         if (snapshot.status() != FinancialSnapshotStatus.FINALIZED) {
-            throw new IllegalArgumentException(
-                    "Amplitude mapping requires a finalized financial snapshot"
-            );
+            throw new IllegalArgumentException("Finalized financial snapshot required");
         }
-        if (!REQUIRED_NATURE.equals(context.nature())) {
-            throw new IllegalArgumentException(
-                    "Amplitude nature must be VIRPAY for TRESOR PAY"
-            );
+        if (!"VIRPAY".equals(context.nature())) {
+            throw new IllegalArgumentException("Unsupported banking nature");
         }
-        if (!REQUIRED_CURRENCY.equals(
-                snapshot.requestedAmount()
-                        .currency()
-                        .getCurrencyCode()
-        )) {
-            throw new IllegalArgumentException(
-                    "Amplitude Payment event currency must be XAF"
-            );
-        }
+        String currency = snapshot.requestedAmount().currency().getCurrencyCode();
+        // ISO currency is stored in SIXPAY; the provider-specific DEV convention
+        // is still applied only at the wire boundary.
 
-        List<PaymentFinancialEntrySnapshot> entries =
-                snapshot.entries();
-
+        List<PaymentFinancialEntrySnapshot> entries = snapshot.entries();
         if (entries.size() != 2) {
-            throw new IllegalArgumentException(
-                    "Amplitude Payment event requires exactly two financial entries"
-            );
+            throw new IllegalArgumentException("Exactly two financial snapshot entries required");
         }
-
-        PaymentFinancialEntrySnapshot debit = requireEntry(
-                entries,
-                FinancialEntryDirection.DEBIT
-        );
-        PaymentFinancialEntrySnapshot credit = requireEntry(
-                entries,
-                FinancialEntryDirection.CREDIT
-        );
-
-        validateAccountReference(
-                snapshot.debtorAccountReference(),
-                "Debtor"
-        );
-        validateAccountReference(
-                snapshot.creditorAccountReference(),
-                "Creditor"
-        );
-
-        if (!snapshot.debtorAccountReference()
-                .equals(debit.accountReference())) {
-            throw new IllegalArgumentException(
-                    "Debit entry account must match the snapshot debtor account"
-            );
-        }
-        if (!snapshot.creditorAccountReference()
-                .equals(credit.accountReference())) {
-            throw new IllegalArgumentException(
-                    "Credit entry account must match the snapshot creditor account"
-            );
-        }
-        if (!snapshot.requestedAmount().equals(debit.amount())
+        PaymentFinancialEntrySnapshot debit = requireOne(entries, FinancialEntryDirection.DEBIT);
+        PaymentFinancialEntrySnapshot credit = requireOne(entries, FinancialEntryDirection.CREDIT);
+        validateAccount(snapshot.debtorAccountReference());
+        validateAccount(snapshot.creditorAccountReference());
+        if (!snapshot.debtorAccountReference().equals(debit.accountReference())
+                || !snapshot.creditorAccountReference().equals(credit.accountReference())
+                || !snapshot.requestedAmount().equals(debit.amount())
                 || !snapshot.requestedAmount().equals(credit.amount())) {
-            throw new IllegalArgumentException(
-                    "Debit and credit entries must match the requested amount"
-            );
+            throw new IllegalArgumentException("Financial snapshot accounts or amounts mismatch");
         }
-
-        String paymentReference =
-                snapshot.publicPaymentReference().value();
-
-        AmplitudePaymentProviderEvent providerEvent =
-                new AmplitudePaymentProviderEvent(
-                        paymentReference,
-                        context.operationCode(),
-                        context.eventNumber(),
-                        snapshot.requestedAmount()
-                                .currency()
-                                .getCurrencyCode(),
-                        context.nature(),
-                        context.accountingDate(),
-                        context.technicalUser(),
-                        snapshot.debtorAccountReference(),
-                        snapshot.creditorAccountReference(),
-                        snapshot.requestedAmount().amount(),
-                        buildLabel(
-                                context.accountingDate().toString(),
-                                paymentReference,
-                                snapshot.debtorAccountReference()
-                        ),
-                        context.nightMode()
-                );
-
-        List<AmplitudePaymentProviderEntry> providerEntries =
-                entries.stream()
-                        .map(entry -> mapEntry(
-                                entry,
-                                paymentReference
-                        ))
-                        .toList();
-
+        String paymentReference = snapshot.publicPaymentReference().value();
+        var providerEvent = new AmplitudePaymentProviderEvent();
+        providerEvent.setPaymentReference(paymentReference);
+        var frozen = snapshot.bankingDetails();
+        providerEvent.setOperationCode(frozen != null && frozen.operationCode() != null
+                ? frozen.operationCode() : context.operationCode());
+        // Bank DEV currency convention (001); SIXPAY financial snapshot remains ISO XAF.
+        providerEvent.setCurrency("001");
+        providerEvent.setNature(frozen != null && frozen.nature() != null
+                ? frozen.nature() : context.nature());
+        providerEvent.setTechnicalUser(frozen != null && frozen.technicalUser() != null
+                ? frozen.technicalUser() : context.technicalUser());
+        providerEvent.setDebtorAccountReference(snapshot.debtorAccountReference());
+        providerEvent.setCreditorAccountReference(snapshot.creditorAccountReference());
+        providerEvent.setDebitAmount(debit.amount().amount());
+        providerEvent.setCreditAmount(credit.amount().amount());
+        providerEvent.setLabel(frozen != null && frozen.eventLabel() != null
+                ? frozen.eventLabel() : "PAIEMENT/" + paymentReference);
+        if (frozen != null) {
+            providerEvent.setEve(frozen.bankEventNumber());
+            providerEvent.setDco(frozen.accountingDate());
+            providerEvent.setDou(frozen.operationDate());
+            providerEvent.setAgsa(frozen.originBranch());
+        }
         return new AmplitudePaymentEventRequest(
-                paymentReference,
-                snapshot.snapshotVersion(),
-                providerEvent,
-                providerEntries,
-                context.requestedAt()
-        );
+                paymentReference, snapshot.snapshotVersion(), providerEvent, context.requestedAt());
     }
 
-    private static PaymentFinancialEntrySnapshot requireEntry(
+    private static PaymentFinancialEntrySnapshot requireOne(
             List<PaymentFinancialEntrySnapshot> entries,
             FinancialEntryDirection direction
     ) {
-        List<PaymentFinancialEntrySnapshot> matching =
-                entries.stream()
-                        .filter(entry -> entry.direction() == direction)
-                        .toList();
-
-        if (matching.size() != 1) {
-            throw new IllegalArgumentException(
-                    "Amplitude Payment event requires exactly one "
-                            + direction + " entry"
-            );
+        List<PaymentFinancialEntrySnapshot> matches = entries.stream()
+                .filter(entry -> entry.direction() == direction).toList();
+        if (matches.size() != 1) {
+            throw new IllegalArgumentException("Exactly one " + direction + " entry required");
         }
-
-        return matching.getFirst();
+        return matches.getFirst();
     }
 
-    private static AmplitudePaymentProviderEntry mapEntry(
-            PaymentFinancialEntrySnapshot entry,
-            String paymentReference
-    ) {
-        String direction = switch (entry.direction()) {
-            case DEBIT -> DEBIT_CODE;
-            case CREDIT -> CREDIT_CODE;
-        };
-
-        validateAccountReference(
-                entry.accountReference(),
-                "Entry"
-        );
-
-        String currency =
-                entry.amount().currency().getCurrencyCode();
-
-        if (!REQUIRED_CURRENCY.equals(currency)) {
-            throw new IllegalArgumentException(
-                    "Amplitude provider entries must use XAF"
-            );
-        }
-
-        return new AmplitudePaymentProviderEntry(
-                entry.sequence(),
-                direction,
-                entry.accountReference(),
-                entry.amount().amount(),
-                currency,
-                paymentReference
-        );
-    }
-
-    private static String buildLabel(
-            String accountingDate,
-            String paymentReference,
-            String debtorAccountReference
-    ) {
-        String debtorNcp =
-                debtorAccountReference.split("-", -1)[1];
-
-        return accountingDate
-                + "/PAIEMENT/"
-                + paymentReference
-                + "/"
-                + debtorNcp;
-    }
-
-    private static void validateAccountReference(
-            String value,
-            String label
-    ) {
-        if (value == null
-                || !ACCOUNT_REFERENCE.matcher(value).matches()) {
-            throw new IllegalArgumentException(
-                    label
-                            + " account reference must use age-ncp-clc format"
-            );
-        }
-
-        String[] parts = value.split("-", -1);
-        if (parts.length != 3
-                || parts[0].isBlank()
-                || parts[1].isBlank()
-                || parts[2].isBlank()) {
-            throw new IllegalArgumentException(
-                    label
-                            + " account reference must use age-ncp-clc format"
-            );
+    private static void validateAccount(String account) {
+        if (account == null || !account.matches("[^-]+-[^-]+-[^-]+")) {
+            throw new IllegalArgumentException("Account must use age-ncp-clc format");
         }
     }
 }

@@ -17,7 +17,6 @@ public final class PaymentRolePolicy {
     private static final Set<SixpayRole> INTERNAL_READ_ROLES =
             EnumSet.of(
                     SixpayRole.ADMIN,
-                    SixpayRole.OPS,
                     SixpayRole.SUPPORT,
                     SixpayRole.MANAGER,
                     SixpayRole.AUDITOR,
@@ -27,7 +26,6 @@ public final class PaymentRolePolicy {
     private static final Set<SixpayRole> OPERATE_ROLES =
             EnumSet.of(
                     SixpayRole.ADMIN,
-                    SixpayRole.OPS,
                     SixpayRole.MANAGER
             );
 
@@ -54,8 +52,7 @@ public final class PaymentRolePolicy {
             case AUDIT ->
                     hasAnyRole(user, AUDIT_ROLES);
             case RECONCILE ->
-                    user.hasRole(SixpayRole.ADMIN)
-                            || user.hasRole(SixpayRole.OPS);
+                    user.hasRole(SixpayRole.ADMIN);
             case REVERSE ->
                     user.hasRole(SixpayRole.ADMIN)
                             || user.hasRole(SixpayRole.MANAGER);

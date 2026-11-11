@@ -6,7 +6,6 @@ package com.sixpay.security.authorization;
 public enum SixpayRole {
 
     ADMIN,
-    OPS,
     SUPPORT,
     MANAGER,
     AUDITOR,

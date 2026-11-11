@@ -110,7 +110,10 @@ class PaymentAtomicEventLifecycleTest {
                                         type,
                                         completed
                                                 ? EvidenceCheckResult.PASS
-                                                : EvidenceCheckResult.UNKNOWN,
+                                                : outcome == PaymentEventOutcome.REJECTED
+                                                        && type == FundsControlCheckType.ACCOUNT_VALID
+                                                        ? EvidenceCheckResult.FAIL
+                                                        : EvidenceCheckResult.UNKNOWN,
                                         null,
                                         PaymentAggregateTestFixtures.T0
                                                 .plusSeconds(7)
@@ -126,10 +129,43 @@ class PaymentAtomicEventLifecycleTest {
                 completed
                         ? BankPostingReference.principalOnly("BANK-REF-1")
                         : null,
-                null,
+                outcome == PaymentEventOutcome.REJECTED
+                        ? FailureCode.of("BANK_REJECTED")
+                        : null,
                 LocalDate.of(2026, 9, 6),
                 PaymentAggregateTestFixtures.T0.plusSeconds(7),
                 source
         );
     }
+    // BEGIN SIXPAY_R6_T0_VALIDATION_TESTS
+    @Test
+    void r6AuthoritativeRejectedLookupResolvesUnknownToRejected() {
+        Payment payment = PaymentAggregateTestFixtures.approvedPayment();
+        PostingInstructionIdentity instruction = PaymentAggregateTestFixtures.postingInstruction();
+        payment.authorizePaymentEventPosting(
+                instruction, PaymentAggregateTestFixtures.T0.plusSeconds(6));
+        payment.recordPaymentEventOutcome(
+                outcome(instruction, PaymentEventOutcome.UNKNOWN,
+                        PaymentEventObservationSource.DIRECT_RESPONSE, false),
+                PaymentAggregateTestFixtures.unknownFailure(
+                        "POSTING_OUTCOME_UNKNOWN", FailureStage.POSTING,
+                        PaymentAggregateTestFixtures.T0.plusSeconds(7)),
+                PaymentAggregateTestFixtures.T0.plusSeconds(7),
+                PaymentAggregateTestFixtures.profiles());
+
+        payment.resolvePaymentEventOutcome(
+                outcome(instruction, PaymentEventOutcome.REJECTED,
+                        PaymentEventObservationSource.IDEMPOTENCY_LOOKUP, false),
+                PaymentAggregateTestFixtures.businessFailure(
+                        "BANK_REJECTED", FailureStage.POSTING_RESOLUTION,
+                        PaymentAggregateTestFixtures.T0.plusSeconds(8)),
+                PaymentAggregateTestFixtures.T0.plusSeconds(8),
+                PaymentAggregateTestFixtures.profiles());
+
+        assertEquals(PaymentStatus.REJECTED, payment.status());
+        assertEquals(PaymentEventOutcome.REJECTED,
+                payment.toState().paymentEventOutcomeEvidence().orElseThrow().outcome());
+    }
+    // END SIXPAY_R6_T0_VALIDATION_TESTS
+
 }

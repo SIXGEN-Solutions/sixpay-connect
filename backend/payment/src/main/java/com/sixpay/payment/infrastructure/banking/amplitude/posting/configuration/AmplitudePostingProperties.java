@@ -16,9 +16,6 @@ public record AmplitudePostingProperties(
         @NotBlank String postingPath,
         @NotBlank String paymentReferenceLookupPath,
         @NotBlank String idempotencyLookupPath,
-        @NotBlank String allocateEventNumberPath,
-        @NotBlank String accountingDatePath,
-        @NotBlank String nightModePath,
         @NotNull Duration connectTimeout,
         @NotNull Duration readTimeout,
         @NotNull @Valid Security security,
@@ -27,6 +24,7 @@ public record AmplitudePostingProperties(
     public static final String PREFIX =
             "sixpay.payment.banking.amplitude.posting";
 
+    @org.springframework.boot.context.properties.bind.ConstructorBinding
     public AmplitudePostingProperties {
         if (baseUrl == null
                 || baseUrl.getScheme() == null
@@ -50,9 +48,6 @@ public record AmplitudePostingProperties(
         postingPath = validatePath(postingPath, "postingPath");
         paymentReferenceLookupPath = validatePath(paymentReferenceLookupPath, "paymentReferenceLookupPath");
         idempotencyLookupPath = validatePath(idempotencyLookupPath, "idempotencyLookupPath");
-        allocateEventNumberPath = validatePath(allocateEventNumberPath, "allocateEventNumberPath");
-        accountingDatePath = validatePath(accountingDatePath, "accountingDatePath");
-        nightModePath = validatePath(nightModePath, "nightModePath");
         if (connectTimeout == null
                 || connectTimeout.isZero()
                 || connectTimeout.isNegative()
@@ -65,10 +60,53 @@ public record AmplitudePostingProperties(
         }
     }
 
+    // Legacy direct constructor compatibility for existing Java tests; no GET endpoints used.
+    public AmplitudePostingProperties(
+            URI baseUrl, String postingPath, String paymentReferenceLookupPath,
+            String idempotencyLookupPath, String ignoredAllocationPath,
+            String ignoredAccountingDatePath, String ignoredNightModePath,
+            Duration connectTimeout, Duration readTimeout,
+            Security security, Contract contract
+    ) {
+        this(baseUrl, postingPath, paymentReferenceLookupPath,
+                idempotencyLookupPath, connectTimeout, readTimeout, security, contract);
+    }
+
     public record Security(
-            @NotBlank String oauth2RegistrationId,
-            @NotBlank String sslBundle
-    ) { }
+            boolean oauth2Enabled,
+            boolean mtlsEnabled,
+            boolean allowInsecureHttp,
+            String oauth2RegistrationId,
+            String sslBundle
+    ) {
+        @org.springframework.boot.context.properties.bind.ConstructorBinding
+        public Security {
+            if (oauth2Enabled && (oauth2RegistrationId == null
+                    || oauth2RegistrationId.isBlank())) {
+                throw new IllegalArgumentException(
+                        "oauth2RegistrationId is required when OAuth2 is enabled");
+            }
+            if (mtlsEnabled && (sslBundle == null || sslBundle.isBlank())) {
+                throw new IllegalArgumentException(
+                        "sslBundle is required when mTLS is enabled");
+            }
+            if (allowInsecureHttp && (oauth2Enabled || mtlsEnabled)) {
+                throw new IllegalArgumentException(
+                        "insecure HTTP cannot be combined with OAuth2 or mTLS");
+            }
+            if (oauth2RegistrationId != null) {
+                oauth2RegistrationId = oauth2RegistrationId.strip();
+            }
+            if (sslBundle != null) {
+                sslBundle = sslBundle.strip();
+            }
+        }
+
+        // Retains existing direct constructor usages. Default is OAuth2 + mTLS.
+        public Security(String oauth2RegistrationId, String sslBundle) {
+            this(true, true, false, oauth2RegistrationId, sslBundle);
+        }
+    }
 
     public record Contract(
             @NotBlank String version,

@@ -6,16 +6,21 @@ import com.sixpay.payment.domain.model.evidence.EvidenceCheckResult;
 import com.sixpay.payment.domain.model.evidence.FundsControlCheckType;
 import com.sixpay.payment.domain.model.evidence.PaymentEventOutcome;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.AmplitudePaymentEventClient;
+import com.sixpay.payment.infrastructure.banking.amplitude.posting.client.RestAmplitudePaymentEventClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMapper;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.mapper.AmplitudePaymentEventMappingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.Objects;
 
 public final class AmplitudePaymentEventAdapter
         implements PaymentEventExecutionPort {
+
+    private static final Logger logger = LoggerFactory.getLogger(AmplitudePaymentEventAdapter.class);
 
     private static final String PAYMENT_NATURE = "VIRPAY";
 
@@ -45,9 +50,6 @@ public final class AmplitudePaymentEventAdapter
                                     command.snapshot(),
                                     new AmplitudePaymentEventMappingContext(
                                             context.operationCode(),
-                                            context.eventNumber(),
-                                            context.accountingDate(),
-                                            context.nightMode(),
                                             PAYMENT_NATURE,
                                             context.technicalUser(),
                                             context.requestedAt()
@@ -58,6 +60,7 @@ public final class AmplitudePaymentEventAdapter
                             command.idempotencyKey().value()
                     );
 
+            logger.debug("Payment event execution result: {}", providerResult.toString());
             return toApplicationResult(providerResult);
         } catch (AmplitudePaymentEventOutcomeUnknownException exception) {
             throw new PaymentEventOutcomeUnknownException(
@@ -104,7 +107,8 @@ public final class AmplitudePaymentEventAdapter
                 result.reasonCode() == null
                         ? null
                         : FailureCode.of(result.reasonCode()),
-                result.observedAt()
+                result.observedAt(),
+                result.accountingDate()
         );
     }
 

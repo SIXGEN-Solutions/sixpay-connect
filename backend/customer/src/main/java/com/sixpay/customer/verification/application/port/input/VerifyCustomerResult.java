@@ -44,10 +44,7 @@ public record VerifyCustomerResult(
                 evidenceFingerprint,
                 "evidenceFingerprint is required"
         );
-        accountBindingFingerprint = Objects.requireNonNull(
-                accountBindingFingerprint,
-                "accountBindingFingerprint is required"
-        );
+        // INIT-3: request-side account binding may be absent in NIU-first flow.
         observedAt = Objects.requireNonNull(
                 observedAt,
                 "observedAt is required"

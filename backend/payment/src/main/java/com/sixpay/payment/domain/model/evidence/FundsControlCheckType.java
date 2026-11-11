@@ -4,7 +4,7 @@ import com.sixpay.sharedkernel.domain.valueobject.ValueObject;
 
 public enum FundsControlCheckType implements ValueObject {
     ACCOUNT_EXISTS,
-    ACCOUNT_ACTIVE,
+    ACCOUNT_VALID,
     DEBIT_ALLOWED,
     CURRENCY_SUPPORTED,
     AVAILABLE_FUNDS_SUFFICIENT,

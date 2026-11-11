@@ -145,6 +145,15 @@ public class CustomerManagementService
                 );
 
         requireSameBankingCustomer(customer, profile);
+        // A preview-only GET response cannot authorize linking a bank account.
+        // Reject before verification or any aggregate mutation when binding data is absent.
+        if (profile.account().accountBindingFingerprint() == null
+                || profile.account().accountBindingFingerprint().isBlank()
+                || profile.account().bankingAccountAccessReference() == null
+                || profile.account().bankingAccountAccessReference().isBlank()) {
+            throw new CustomerDomainException(
+                    "bank account linking requires banking binding evidence");
+        }
 
         VerifyCustomerResult verification =
                 verifyCustomerUseCase.verify(

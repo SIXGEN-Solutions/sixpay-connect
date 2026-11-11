@@ -18,16 +18,33 @@ public record VerifyCustomerCommand(
         AccountBindingFingerprint accountBindingFingerprint,
         BankingAccountAccessReference bankingAccountAccessReference,
         CustomerVerificationContext context,
-        Instant requestedAt
+        Instant requestedAt,
+        Instant deadlineAt
 ) {
     public VerifyCustomerCommand {
         verificationId = Objects.requireNonNull(verificationId, "verificationId is required");
         subject = Objects.requireNonNull(subject, "subject is required");
         financialInstitutionCode = Objects.requireNonNull(financialInstitutionCode, "financialInstitutionCode is required");
-        accountBindingFingerprint = Objects.requireNonNull(accountBindingFingerprint, "accountBindingFingerprint is required");
-        bankingAccountAccessReference = Objects.requireNonNull(bankingAccountAccessReference, "bankingAccountAccessReference is required");
         context = Objects.requireNonNull(context, "context is required");
         requestedAt = Objects.requireNonNull(requestedAt, "requestedAt is required");
+        deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");
+        if (!deadlineAt.isAfter(requestedAt)) {
+            throw new IllegalArgumentException("deadlineAt must be after requestedAt");
+        }
+    }
+
+    public VerifyCustomerCommand(
+            CustomerVerificationId verificationId,
+            CustomerVerificationSubject subject,
+            FinancialInstitutionCode financialInstitutionCode,
+            AccountBindingFingerprint accountBindingFingerprint,
+            BankingAccountAccessReference bankingAccountAccessReference,
+            CustomerVerificationContext context,
+            Instant requestedAt
+    ) {
+        this(verificationId, subject, financialInstitutionCode,
+                accountBindingFingerprint, bankingAccountAccessReference,
+                context, requestedAt, Instant.MAX);
     }
 
     public BankingVerificationQuery toBankingQuery() {
@@ -38,7 +55,8 @@ public record VerifyCustomerCommand(
                 accountBindingFingerprint,
                 bankingAccountAccessReference,
                 context,
-                requestedAt
+                requestedAt,
+                deadlineAt
         );
     }
 

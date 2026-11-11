@@ -18,9 +18,12 @@ public record CustomerVerificationRequest(
         String financialInstitutionCode,
         String accountBindingFingerprint,
         String integrationAccountToken,
+        String bankingCustomerReference,
+        String customerNumber,
         String correlationId,
         UUID causationId,
-        Instant requestedAt
+        Instant requestedAt,
+        Instant deadlineAt
 ) {
 
     public CustomerVerificationRequest {
@@ -28,22 +31,21 @@ public record CustomerVerificationRequest(
                 verificationId,
                 "verificationId is required"
         );
-        customerNiu = requireText(customerNiu, "customerNiu");
-        customerLegalName = requireText(
-                customerLegalName,
-                "customerLegalName"
+        customerNiu = normalizeOptional(customerNiu);
+        bankingCustomerReference = normalizeOptional(bankingCustomerReference);
+        customerNumber = normalizeOptional(customerNumber);
+        if (customerNiu == null && bankingCustomerReference == null && customerNumber == null) {
+            throw new IllegalArgumentException("At least one banking customer identifier is required");
+        }
+        customerLegalName = normalizeOptional(
+                customerLegalName
         );
-        financialInstitutionCode = requireText(
-                financialInstitutionCode,
-                "financialInstitutionCode"
+        financialInstitutionCode = normalizeOptional(financialInstitutionCode);
+        accountBindingFingerprint = normalizeOptional(
+                accountBindingFingerprint
         );
-        accountBindingFingerprint = requireText(
-                accountBindingFingerprint,
-                "accountBindingFingerprint"
-        );
-        integrationAccountToken = requireText(
-                integrationAccountToken,
-                "integrationAccountToken"
+        integrationAccountToken = normalizeOptional(
+                integrationAccountToken
         );
         correlationId = requireText(
                 correlationId,
@@ -53,6 +55,41 @@ public record CustomerVerificationRequest(
                 requestedAt,
                 "requestedAt is required"
         );
+        deadlineAt = Objects.requireNonNull(deadlineAt, "deadlineAt is required");
+        if (!deadlineAt.isAfter(requestedAt)) {
+            throw new IllegalArgumentException("deadlineAt must be after requestedAt");
+        }
+    }
+
+    public CustomerVerificationRequest(
+            UUID verificationId, String customerNiu, String customerLegalName,
+            String financialInstitutionCode, String accountBindingFingerprint,
+            String integrationAccountToken, String correlationId,
+            UUID causationId, Instant requestedAt
+    ) {
+        this(verificationId, customerNiu, customerLegalName,
+                financialInstitutionCode, accountBindingFingerprint,
+                integrationAccountToken, null, null, correlationId, causationId,
+                requestedAt, Instant.MAX);
+    }
+
+    public CustomerVerificationRequest(
+            UUID verificationId, String customerNiu, String customerLegalName,
+            String financialInstitutionCode, String accountBindingFingerprint,
+            String integrationAccountToken, String correlationId,
+            UUID causationId, Instant requestedAt, Instant deadlineAt
+    ) {
+        this(verificationId, customerNiu, customerLegalName,
+                financialInstitutionCode, accountBindingFingerprint,
+                integrationAccountToken, null, null, correlationId, causationId,
+                requestedAt, deadlineAt);
+    }
+
+    private static String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.strip();
     }
 
     private static String requireText(

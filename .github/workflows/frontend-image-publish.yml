@@ -1,0 +1,92 @@
+name: Frontend image publish (GHCR)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: frontend-image-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout selected revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Frontend verification
+        working-directory: frontend
+        run: |
+          npm run verify:angular-environments
+          npm run verify:runtime-datasource-policy
+          npm run verify:contract-consolidation
+          npm run verify:full-stack-conformance
+          npm run verify:integration-contract-backed
+          npm test
+          npm run build
+
+      - name: Check runtime image policy
+        working-directory: frontend
+        run: npm run verify:runtime-image
+
+      - name: Normalize image name
+        shell: bash
+        run: echo "IMAGE_REPOSITORY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/sixpay-frontend" >> "$GITHUB_ENV"
+
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push immutable frontend image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=SIXPAY CONNECT frontend
+
+      - name: Record image digest
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
+        run: |
+          if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[[:xdigit:]]{64}$ ]]; then
+            echo "::error::No valid published digest"
+            exit 1
+          fi
+          {
+            echo '### Frontend image reference'
+            printf '`%s@%s`\n' "$IMAGE_REPOSITORY" "$IMAGE_DIGEST"
+            echo "Source commit: $GITHUB_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"

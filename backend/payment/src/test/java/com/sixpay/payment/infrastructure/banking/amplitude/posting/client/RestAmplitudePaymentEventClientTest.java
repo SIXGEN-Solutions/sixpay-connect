@@ -2,7 +2,6 @@ package com.sixpay.payment.infrastructure.banking.amplitude.posting.client;
 
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.configuration.AmplitudePostingProperties;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventRequest;
-import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentProviderEntry;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentProviderEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -13,8 +12,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -92,6 +89,38 @@ class RestAmplitudePaymentEventClientTest {
         server.verify();
     }
 
+    @Test
+    void omitsAuthorizationHeaderWhenNoTokenIsConfigured() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        RestAmplitudePaymentEventClient client =
+                new RestAmplitudePaymentEventClient(
+                        builder.baseUrl("http://localhost").build(),
+                        () -> null,
+                        properties()
+                );
+
+        server.expect(requestTo("http://localhost/api/v1/payment-events"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(request -> org.junit.jupiter.api.Assertions.assertNull(
+                        request.getHeaders().getFirst(
+                                org.springframework.http.HttpHeaders.AUTHORIZATION
+                        )
+                ))
+                .andRespond(withSuccess(
+                        "{\"paymentReference\":\"PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV\","
+                                + "\"outcome\":\"COMPLETED\","
+                                + "\"checks\":[],"
+                                + "\"bankReference\":\"BK-1\","
+                                + "\"reasonCode\":null,"
+                                + "\"observedAt\":\"2026-09-06T18:00:05Z\"}",
+                        org.springframework.http.MediaType.APPLICATION_JSON));
+        client.execute(request(),
+                "11111111-1111-4111-8111-111111111111",
+                "LRB", "idem-1234567890123456");
+        server.verify();
+    }
+
     private static AmplitudePostingProperties properties() {
         return new AmplitudePostingProperties(
                 URI.create("http://localhost"),
@@ -118,43 +147,12 @@ class RestAmplitudePaymentEventClientTest {
 
     private static AmplitudePaymentEventRequest request() {
         return new AmplitudePaymentEventRequest(
-                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV",
-                "v1",
+                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV", "v1",
                 new AmplitudePaymentProviderEvent(
-                        "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV",
-                        "PAY",
-                        101L,
-                        "XAF",
-                        "VIRPAY",
-                        LocalDate.of(2026, 9, 6),
-                        "SIXPAY",
-                        "00001-12345678901-42",
-                        "00001-99999999999-17",
-                        new BigDecimal("1000"),
-                        "2026-09-06/PAIEMENT/"
-                                + "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/"
-                                + "12345678901",
-                        false
-                ),
-                List.of(
-                        new AmplitudePaymentProviderEntry(
-                                1,
-                                "D",
-                                "00001-12345678901-42",
-                                new BigDecimal("1000"),
-                                "XAF",
-                                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"
-                        ),
-                        new AmplitudePaymentProviderEntry(
-                                2,
-                                "C",
-                                "00001-99999999999-17",
-                                new BigDecimal("1000"),
-                                "XAF",
-                                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"
-                        )
-                ),
-                Instant.parse("2026-09-06T18:00:04Z")
-        );
+                        "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV", "787", "001",
+                        "VIRPAY", "001", "00001-12345678901-42",
+                        "00001-99999999999-17", new BigDecimal("1000"),
+                        new BigDecimal("1000"), "PAIEMENT/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+                Instant.parse("2026-09-06T18:00:04Z"));
     }
 }

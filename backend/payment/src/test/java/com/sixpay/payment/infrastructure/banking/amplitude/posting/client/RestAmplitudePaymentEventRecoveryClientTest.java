@@ -147,4 +147,42 @@ class RestAmplitudePaymentEventRecoveryClientTest {
                 + "\"2026-09-06T18:00:05Z\""
                 + "}";
     }
+    // BEGIN SIXPAY_R6_T0_VALIDATION_TESTS
+    @Test
+    void r6Http404OnPaymentReferenceIsInconclusiveAndReturnsEmpty() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var client = client(builder);
+        server.expect(requestTo("http://localhost/api/v1/payment-events/"
+                        + "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withResourceNotFound());
+
+        assertTrue(client.findByPaymentReference(
+                "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                "11111111-1111-4111-8111-111111111111", "LRB").isEmpty());
+        server.verify();
+    }
+
+    @Test
+    void r6Http503OnBankLookupIsUnknownNotAConclusiveRejection() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var client = client(builder);
+        server.expect(requestTo("http://localhost/api/v1/payment-events/"
+                        + "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators
+                        .withStatus(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.sixpay.payment.infrastructure.banking.amplitude.posting.error
+                        .AmplitudePaymentEventOutcomeUnknownException.class,
+                () -> client.findByPaymentReference(
+                        "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                        "11111111-1111-4111-8111-111111111111", "LRB"));
+        server.verify();
+    }
+    // END SIXPAY_R6_T0_VALIDATION_TESTS
+
 }

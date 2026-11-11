@@ -116,6 +116,12 @@ class CustomerVerificationFailureMapperTest {
                 outcome == CustomerVerificationResponse.Outcome.VERIFIED
                         ? "ACCOUNT-VERIFIED-001"
                         : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "LRB"
+                        : null,
+                outcome == CustomerVerificationResponse.Outcome.VERIFIED
+                        ? "****0001"
+                        : null,
                 Instant.parse("2026-08-03T19:59:59Z"),
                 Instant.parse("2026-08-03T20:04:59Z"),
                 Instant.parse("2026-08-03T20:00:00Z")

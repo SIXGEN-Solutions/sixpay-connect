@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.validation.annotation.Validated;
 
 import java.net.URI;
@@ -25,7 +26,6 @@ public record BankingVerificationProperties(
         @Min(1) @Max(5) int maxAttempts,
         @NotNull Duration retryBackoff,
         @NotNull Duration evidenceTtl,
-        @NotNull @Valid Security security,
         @NotNull @Valid Contract contract
 ) {
     public static final String PREFIX =
@@ -65,24 +65,12 @@ public record BankingVerificationProperties(
         );
     }
 
-    public record Security(
-            @NotBlank String oauth2RegistrationId,
-            @NotBlank String sslBundle
-    ) {
-        public Security {
-            oauth2RegistrationId = required(
-                    oauth2RegistrationId,
-                    "oauth2RegistrationId"
-            );
-            sslBundle = required(sslBundle, "sslBundle");
-        }
-    }
-
     public record Contract(
             @NotBlank String version,
             @NotNull Set<@NotBlank String> successCodes,
             @NotNull Set<@NotBlank String> businessFailureCodes
     ) {
+        @ConstructorBinding
         public Contract {
             version = required(version, "version");
             successCodes = Set.copyOf(Objects.requireNonNull(successCodes, "successCodes are required"));

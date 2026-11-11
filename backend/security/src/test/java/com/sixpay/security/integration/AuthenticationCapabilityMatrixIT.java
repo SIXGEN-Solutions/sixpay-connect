@@ -2,15 +2,18 @@ package com.sixpay.security.integration;
 
 import com.sixpay.security.application.port.input.AuthenticateLocalUserUseCase;
 import com.sixpay.security.application.port.output.ExternalIdentityResolver;
+import com.sixpay.security.application.port.output.FindLinkedIdentityPort;
 import com.sixpay.security.application.port.output.PasswordHistoryPort;
 import com.sixpay.security.application.port.output.SecurityAuditPort;
 import com.sixpay.security.configuration.AuthenticationCapabilitiesProperties;
 import com.sixpay.security.configuration.SixpaySecurityAutoConfiguration;
 import com.sixpay.security.domain.authentication.PasswordPolicy;
 import com.sixpay.security.infrastructure.authentication.audit.AuthenticationAuditSpringDataRepository;
+import com.sixpay.security.infrastructure.authentication.machine.PartnerMachineIdentitySpringDataRepository;
 import com.sixpay.security.infrastructure.authentication.oidc.OidcAuthenticationAdapter;
 import com.sixpay.security.infrastructure.authentication.persistence.LocalAuthenticationUserSpringDataRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
@@ -195,6 +198,14 @@ class AuthenticationCapabilityMatrixIT {
     static class CapabilityMatrixTestApplication {
 
         @Bean
+        PartnerMachineIdentitySpringDataRepository
+        partnerMachineIdentitySpringDataRepository() {
+            return mock(
+                    PartnerMachineIdentitySpringDataRepository.class
+            );
+        }
+
+        @Bean
         SecurityAuditPort securityAuditPort() {
             return mock(
                     SecurityAuditPort.class
@@ -202,11 +213,17 @@ class AuthenticationCapabilityMatrixIT {
         }
 
         @Bean
+        FindLinkedIdentityPort findLinkedIdentityPort() {
+            return Mockito.mock(FindLinkedIdentityPort.class);
+        }
+/*
+        @Bean
         ExternalIdentityResolver externalIdentityResolver() {
             return mock(
                     ExternalIdentityResolver.class
             );
         }
+        */
 
         @Bean
         JwtDecoder jwtDecoder() {

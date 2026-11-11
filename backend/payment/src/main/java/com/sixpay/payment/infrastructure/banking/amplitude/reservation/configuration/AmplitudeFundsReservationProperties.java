@@ -42,18 +42,38 @@ public record AmplitudeFundsReservationProperties(
     }
 
     public record Security(
-            @NotBlank String oauth2RegistrationId,
-            @NotBlank String sslBundle
+            boolean oauth2Enabled,
+            boolean mtlsEnabled,
+            boolean allowInsecureHttp,
+            String oauth2RegistrationId,
+            String sslBundle
     ) {
+        @org.springframework.boot.context.properties.bind.ConstructorBinding
         public Security {
-            oauth2RegistrationId = text(
-                    oauth2RegistrationId,
-                    "oauth2RegistrationId"
-            );
-            sslBundle = text(
-                    sslBundle,
-                    "sslBundle"
-            );
+            if (oauth2Enabled && (oauth2RegistrationId == null
+                    || oauth2RegistrationId.isBlank())) {
+                throw new IllegalArgumentException(
+                        "oauth2RegistrationId is required when OAuth2 is enabled");
+            }
+            if (mtlsEnabled && (sslBundle == null || sslBundle.isBlank())) {
+                throw new IllegalArgumentException(
+                        "sslBundle is required when mTLS is enabled");
+            }
+            if (allowInsecureHttp && (oauth2Enabled || mtlsEnabled)) {
+                throw new IllegalArgumentException(
+                        "insecure HTTP cannot be combined with OAuth2 or mTLS");
+            }
+            if (oauth2RegistrationId != null) {
+                oauth2RegistrationId = oauth2RegistrationId.strip();
+            }
+            if (sslBundle != null) {
+                sslBundle = sslBundle.strip();
+            }
+        }
+
+        // Retains existing direct constructor usages. Default is OAuth2 + mTLS.
+        public Security(String oauth2RegistrationId, String sslBundle) {
+            this(true, true, false, oauth2RegistrationId, sslBundle);
         }
     }
 

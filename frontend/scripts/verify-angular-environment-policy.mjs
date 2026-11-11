@@ -64,19 +64,31 @@ requireToken('production', "mode: 'api'", 'production must remain API-backed');
 requireToken('production', 'standalone: false', 'production standalone auth must remain disabled');
 
 {
+  // Match validateAuthenticationEnvironment(): production requires at least
+  // one human authentication capability, not a fixed LOCAL/OIDC combination.
   const local = section(source.production, 'local:', 'oidc:');
-  const oidc = section(source.production, 'oidc:', 'standaloneUser:');
+  const oidc = section(source.production, 'oidc:', 'ldap:');
+  const ldap = section(source.production, 'ldap:', 'standaloneUser:');
+  const enabled = {};
 
-  if (!local.includes('enabled: true')) {
-    errors.push('production: local authentication must remain enabled');
-  }
-  if (!oidc.includes('enabled: true')) {
-    errors.push('production: OIDC must remain enabled');
+  for (const [name, block] of Object.entries({ local, oidc, ldap })) {
+    const match = block.match(/\benabled:\s*(true|false)\b/);
+    if (!match) {
+      errors.push(`production: ${name} authentication must declare a boolean enabled flag`);
+      continue;
+    }
+    enabled[name] = match[1] === 'true';
   }
 
-  for (const token of ['authority:', 'clientId:', 'scope:']) {
-    if (!oidc.includes(token)) {
-      errors.push(`production: enabled OIDC must keep ${token}`);
+  if (Object.keys(enabled).length === 3 && !Object.values(enabled).some(Boolean)) {
+    errors.push('production: at least one authentication capability must remain enabled');
+  }
+
+  if (enabled.oidc) {
+    for (const token of ['authority:', 'clientId:', 'scope:']) {
+      if (!oidc.includes(token)) {
+        errors.push(`production: enabled OIDC must keep ${token}`);
+      }
     }
   }
 }
@@ -163,8 +175,12 @@ for (const [configuration, expectedWith] of Object.entries(expectedReplacements)
   }
 }
 
-if (buildConfigurations.production?.fileReplacements?.length) {
-  errors.push('angular.json: production must use canonical environment.ts without replacement');
+const runtimeBuild = buildConfigurations.production?.fileReplacements ?? [];
+if (!runtimeBuild.some((replacement) =>
+  replacement.replace === 'src/environments/environment.ts' &&
+  replacement.with === 'src/environments/environment.runtime.ts'
+)) {
+  errors.push('angular.json: optimized default build must load runtime environment');
 }
 
 if (angular?.projects?.frontend?.architect?.build?.defaultConfiguration !== 'production') {
@@ -181,7 +197,7 @@ const authValidator = read('src/environments/authentication-environment.ts');
 for (const token of [
   'Standalone authentication is not allowed in production',
   'At least one production authentication capability must be enabled',
-  'Standalone authentication cannot be combined with Local or OIDC authentication',
+  'Standalone authentication cannot be combined with Local, OIDC or LDAP authentication',
   'OIDC authority must be configured when OIDC is enabled',
   'OIDC clientId must be configured when OIDC is enabled',
   'OIDC scope must be configured when OIDC is enabled',

@@ -5,7 +5,7 @@ import com.sixpay.payment.domain.model.IdempotencyKey;
 import com.sixpay.payment.domain.model.PaymentFailure;
 import com.sixpay.payment.domain.model.PaymentId;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,9 +20,11 @@ import java.util.Objects;
  * terminal-safe result.</p>
  */
 @Service
-@ConditionalOnBean({
-        PaymentConfirmationRevocationService.class
-})
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.banking.amplitude.confirmation",
+        name = "enabled",
+        havingValue = "true"
+)
 public class PaymentPreConfirmationTerminationService {
 
     private final PaymentConfirmationRevocationService revocationService;

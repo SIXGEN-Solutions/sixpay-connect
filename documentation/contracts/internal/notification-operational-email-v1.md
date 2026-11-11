@@ -51,3 +51,9 @@ They are never included in:
 - database delivery records;
 - attempt error codes;
 - logs.
+
+## Approval (MVP)
+
+The project owner approved this already-tested SMTP operational email contract on 2026-11-08.
+It remains `ACTIVE_MVP`, `REFERENCE_ONLY`, `codeGenerationAllowed: false`.
+`ACCEPTED` confirms SMTP-adapter acceptance, not final inbox delivery.

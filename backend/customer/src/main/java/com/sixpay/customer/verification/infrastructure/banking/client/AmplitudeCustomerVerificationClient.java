@@ -2,6 +2,7 @@ package com.sixpay.customer.verification.infrastructure.banking.client;
 
 import com.sixpay.customer.verification.infrastructure.banking.configuration.BankingVerificationProperties;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationRequest;
+import com.sixpay.customer.verification.infrastructure.banking.dto.CustomerVerificationRequest;
 import com.sixpay.customer.verification.infrastructure.banking.dto.AmplitudeCustomerVerificationResponse;
 import com.sixpay.customer.verification.infrastructure.banking.error.*;
 import com.sixpay.integration.http.IntegrationHttpHeaders;
@@ -18,20 +19,15 @@ import java.util.Objects;
 public final class AmplitudeCustomerVerificationClient {
 
     private final RestClient restClient;
-    private final CoreBankingAccessTokenProvider accessTokenProvider;
     private final BankingVerificationProperties properties;
     private final ObjectMapper objectMapper;
 
     public AmplitudeCustomerVerificationClient(
             RestClient restClient,
-            CoreBankingAccessTokenProvider accessTokenProvider,
             BankingVerificationProperties properties,
             ObjectMapper objectMapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.accessTokenProvider = Objects.requireNonNull(
-                accessTokenProvider
-        );
         this.properties = Objects.requireNonNull(properties);
         this.objectMapper = Objects.requireNonNull(objectMapper);
     }
@@ -63,15 +59,10 @@ public final class AmplitudeCustomerVerificationClient {
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
                             .header(
-                                    HttpHeaders.AUTHORIZATION,
-                                    "Bearer "
-                                            + accessTokenProvider.accessToken()
-                            )
-                            .header(
                                     IntegrationHttpHeaders.CORRELATION_ID,
                                     correlationId
                             )
-                            .body(request)
+                            .body(CustomerVerificationRequest.from(request))
                             .retrieve()
                             .body(
                                     AmplitudeCustomerVerificationResponse.class
