@@ -2,8 +2,15 @@ package com.sixpay.reporting.api.mapper;
 
 import com.sixpay.reporting.api.dto.PaymentAuditExportJobResponse;
 import com.sixpay.reporting.application.query.PaymentAuditExportJobView;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+@ConditionalOnProperty(
+        prefix = "sixpay.reporting.audit-export",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @Component
 public final class PaymentAuditExportApiMapper {
 

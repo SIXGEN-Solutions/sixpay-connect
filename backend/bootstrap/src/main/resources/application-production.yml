@@ -276,6 +276,7 @@ sixpay:
     audit-query:
       cursor-hmac-key: ${SIXPAY_REPORTING_AUDIT_CURSOR_HMAC_KEY}
     audit-export:
+      enabled: ${SIXPAY_REPORTING_AUDIT_EXPORT_ENABLED:false}
       storage-directory: ${SIXPAY_REPORTING_AUDIT_EXPORT_STORAGE_DIRECTORY:/var/lib/sixpay/audit-exports}
       retrieval-base-uri: ${SIXPAY_REPORTING_AUDIT_EXPORT_RETRIEVAL_BASE_URI}
   customer:

@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,12 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.UUID;
 
+@ConditionalOnProperty(
+        prefix = "sixpay.reporting.audit-export",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @RestController
 @RequestMapping("/internal/api/v1/payment-audit-exports")
 public class PaymentAuditExportController {

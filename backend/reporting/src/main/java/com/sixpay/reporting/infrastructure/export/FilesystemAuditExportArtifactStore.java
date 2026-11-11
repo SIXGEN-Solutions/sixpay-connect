@@ -3,6 +3,7 @@ package com.sixpay.reporting.infrastructure.export;
 import com.sixpay.reporting.application.port.output.AuditExportArtifactStore;
 import com.sixpay.reporting.application.query.*;
 import com.sixpay.reporting.configuration.ReportingAuditExportProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -10,6 +11,12 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.Objects;
 
+@ConditionalOnProperty(
+        prefix = "sixpay.reporting.audit-export",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @Component
 public final class FilesystemAuditExportArtifactStore
         implements AuditExportArtifactStore {

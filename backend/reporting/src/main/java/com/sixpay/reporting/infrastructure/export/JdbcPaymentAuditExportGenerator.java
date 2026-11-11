@@ -5,6 +5,7 @@ import com.sixpay.reporting.application.port.output.AuditExportGeneratorPort;
 import com.sixpay.reporting.application.query.AuditExportJobDefinition;
 import com.sixpay.reporting.application.query.GeneratedAuditExport;
 import com.sixpay.reporting.domain.model.AuditExportFormat;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -21,6 +22,12 @@ import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
+@ConditionalOnProperty(
+        prefix = "sixpay.reporting.audit-export",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 @Component
 public final class JdbcPaymentAuditExportGenerator
         implements AuditExportGeneratorPort {
