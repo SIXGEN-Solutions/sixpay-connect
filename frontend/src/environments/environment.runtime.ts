@@ -1,7 +1,6 @@
 import { validateAuthenticationEnvironment } from './authentication-environment';
 import type { AppEnvironment } from './environment.model';
-
-let activeEnvironment: Readonly<AppEnvironment> | undefined;
+import { getRuntimeEnvironment, hasRuntimeEnvironment, setRuntimeEnvironment } from './runtime-environment-state';
 
 function object(value: unknown): Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -73,7 +72,7 @@ export function validateRuntimeEnvironment(raw: unknown): AppEnvironment {
 }
 
 export async function loadRuntimeEnvironment(): Promise<void> {
-  if (activeEnvironment) return;
+  if (hasRuntimeEnvironment()) return;
   const response = await fetch('/runtime-config.json', {
     cache: 'no-store',
     credentials: 'same-origin',
@@ -84,13 +83,12 @@ export async function loadRuntimeEnvironment(): Promise<void> {
     throw new Error('SIXPAY runtime configuration unavailable or invalid content type');
   }
   const raw: unknown = await response.json();
-  activeEnvironment = Object.freeze(validateRuntimeEnvironment(raw));
+  setRuntimeEnvironment(validateRuntimeEnvironment(raw));
 }
 
 /** App code retains the established environment interface, resolved only after bootstrap preflight. */
 export const environment: AppEnvironment = new Proxy({} as AppEnvironment, {
   get(_target, property: string | symbol) {
-    if (!activeEnvironment) throw new Error('SIXPAY runtime configuration not initialized');
-    return Reflect.get(activeEnvironment, property);
+    return Reflect.get(getRuntimeEnvironment(), property);
   },
 });
