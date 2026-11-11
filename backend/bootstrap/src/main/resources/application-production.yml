@@ -15,31 +15,6 @@ spring:
     validate-on-migrate: true
     clean-disabled: true
     out-of-order: true
-  security:
-    oauth2:
-      client:
-        provider:
-          amplitude-payment:
-            token-uri: ${AMPLITUDE_PAYMENT_OAUTH2_TOKEN_URI}
-        registration:
-          amplitude-payment:
-            provider: amplitude-payment
-            authorization-grant-type: client_credentials
-            client-id: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_ID}
-            client-secret: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_SECRET}
-            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:amplitude.payment.confirmation,amplitude.payment.execution,amplitude.payment.execution.read}
-  ssl:
-    bundle:
-      jks:
-        amplitude-payment-client:
-          keystore:
-            location: ${AMPLITUDE_PAYMENT_KEYSTORE_LOCATION}
-            password: ${AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD}
-            type: ${AMPLITUDE_PAYMENT_KEYSTORE_TYPE:PKCS12}
-          truststore:
-            location: ${AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION}
-            password: ${AMPLITUDE_PAYMENT_TRUSTSTORE_PASSWORD}
-            type: ${AMPLITUDE_PAYMENT_TRUSTSTORE_TYPE:PKCS12}
   datasource:
     url: ${SIXPAY_DB_URL}
     username: ${SIXPAY_DB_USERNAME}
@@ -353,3 +328,35 @@ server:
         http-only: true
         same-site: strict
         secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}
+
+---
+# Infrastructure bancaire externe : ne charger qu'avec un profil bancaire explicite.
+spring:
+  config:
+    activate:
+      on-profile: "production & amplitude-banking"
+  security:
+    oauth2:
+      client:
+        provider:
+          amplitude-payment:
+            token-uri: ${AMPLITUDE_PAYMENT_OAUTH2_TOKEN_URI}
+        registration:
+          amplitude-payment:
+            provider: amplitude-payment
+            authorization-grant-type: client_credentials
+            client-id: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_ID}
+            client-secret: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_SECRET}
+            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:amplitude.payment.confirmation,amplitude.payment.execution,amplitude.payment.execution.read}
+  ssl:
+    bundle:
+      jks:
+        amplitude-payment-client:
+          keystore:
+            location: ${AMPLITUDE_PAYMENT_KEYSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_TRUSTSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_TRUSTSTORE_TYPE:PKCS12}
