@@ -262,7 +262,6 @@ sixpay:
           ssl-bundle: ${AMPLITUDE_TFJ_SSL_BUNDLE:amplitude-tfj-client}
       webhook:
         enabled: ${AMPLITUDE_TFJ_WEBHOOK_ENABLED:false}
-        signature-keys-base64: {}
     tresorpay-status:
       enabled: ${SIXPAY_ACCOUNTING_TRESORPAY_STATUS_ENABLED:false}
       base-url: ${TRESORPAY_STATUS_BASE_URL:https://tresorpay.invalid}
