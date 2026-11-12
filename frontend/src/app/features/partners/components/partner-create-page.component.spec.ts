@@ -57,6 +57,34 @@ describe('PartnerCreatePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Ce champ est obligatoire.');
   });
 
+  it('expose le champ identifiant partenaire et exige sa saisie avant envoi', () => {
+    const input = fixture.nativeElement.querySelector(
+      'input[formControlName="partnerIdentifier"]',
+    ) as HTMLInputElement | null;
+
+    expect(input).not.toBeNull();
+    expect(input?.getAttribute('maxlength')).toBe('64');
+    expect(component.form.controls.partnerIdentifier.invalid).toBe(true);
+
+    component.form.patchValue({
+      legalName: 'Golden Partner',
+      technicalContactName: 'Alice Admin',
+      technicalContactEmail: 'alice@example.test',
+      authorizedTransactionTypes: 'PAYMENT',
+    });
+    component.submit();
+    fixture.detectChanges();
+
+    expect(partners.create).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Ce champ est obligatoire.');
+
+    input!.value = 'GOLDEN_PARTNER';
+    input!.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    expect(component.form.controls.partnerIdentifier.value).toBe('GOLDEN_PARTNER');
+    expect(component.form.valid).toBe(true);
+  });
+
   it('normalise les données, bloque la double soumission et redirige après succès', () => {
     component.form.setValue({
       partnerIdentifier: '  GOLDEN_PARTNER ',
