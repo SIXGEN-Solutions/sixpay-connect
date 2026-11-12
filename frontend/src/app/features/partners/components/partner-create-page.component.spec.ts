@@ -108,6 +108,7 @@ describe('PartnerCreatePageComponent', () => {
 
     creation.next({
       id: 'partner-id',
+      partnerIdentifier: 'GOLDEN_PARTNER',
       legalName: 'Golden Partner',
       technicalContactName: 'Alice',
       technicalContactEmail: 'alice@example.test',
