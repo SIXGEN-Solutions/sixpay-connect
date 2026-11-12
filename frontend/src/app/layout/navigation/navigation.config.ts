@@ -66,5 +66,4 @@ export const SIXPAY_NAVIGATION: readonly NavigationItem[] = [
     route: '/partners/status',
     roles: ['PARTNER'],
   },
-  { label: 'Design System', icon: 'palette', route: '/design-system' },
 ];

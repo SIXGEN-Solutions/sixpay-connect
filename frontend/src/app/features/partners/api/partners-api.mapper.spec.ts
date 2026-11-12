@@ -22,6 +22,7 @@ describe('Partner API mappers', () => {
     expect(partner.createdAt).toBeInstanceOf(Date);
     expect(partner.updatedAt).toBeInstanceOf(Date);
     expect(partner.statusReason).toBeNull();
+    expect(partner.partnerIdentifier).toBe('GOLDEN_PARTNER');
   });
 
   it('maps a paginated Partner catalog without inventing detail fields', () => {
