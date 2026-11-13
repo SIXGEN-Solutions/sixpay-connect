@@ -14,7 +14,7 @@ info:
     perform bank recovery, or change the Payment state. An authenticated client
     may consult only a Payment tied to its registered Partner and the original
     initiating machine identity (conservative current access policy).
-    The mTLS requirement is enforced at the ingress/gateway boundary.
+    OAuth2 bearer JWT is required; mTLS is optional for these operations.
   x-sixpay-contract:
     registryId: payment-consultation-api-v1
     lifecycleStatus: ACTIVE_MVP
@@ -28,11 +28,10 @@ servers:
   - url: https://api.sixpay.example
 security:
   - bearerAuth: []
-    mutualTLS: []
 tags:
   - name: Partner Payment Consultation
 paths:
-  /api/v1/integrations/payments/{paymentReference}:
+  /api/v1/payments/{paymentReference}:
     get:
       tags: [Partner Payment Consultation]
       operationId: getPartnerPayment

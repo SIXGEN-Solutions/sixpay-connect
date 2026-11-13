@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: |
     Official partner-facing command contract used by TresorPay to initiate one
-    debit order through SIXPAY CONNECT. Authentication requires BOTH mutual TLS
-    and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
+    debit order through SIXPAY CONNECT. Authentication requires an OAuth 2.0 client-credentials JWT;
+    mTLS is optional at the API contract level. APIKey and PIN are forbidden from
     the JSON payload. The initial response is AWAITING_OTP after an ACTIVE
     bank-owned OTP challenge, and callbacks are asynchronous.
     The callback payload, event types, HMAC-SHA256 signature and HTTP 204
@@ -31,12 +31,11 @@ info:
 servers:
   - url: https://api.banque.com
 security:
-  - mutualTLS: []
-    oauth2: [payment.initiate]
+  - oauth2: [payment.initiate]
 tags:
   - name: Payment Commands
 paths:
-  /v1/payments/initiate:
+  /api/v1/payments/initiate:
     post:
       tags: [Payment Commands]
       operationId: initiateDebit
@@ -139,7 +138,7 @@ components:
         application/problem+json:
           schema: {$ref: '#/components/schemas/ProblemDetail'}
     Unauthorized:
-      description: mTLS or OAuth 2.0 authentication failed
+      description: OAuth 2.0 authentication failed
     Forbidden:
       description: Partner is not authorized
     Conflict:

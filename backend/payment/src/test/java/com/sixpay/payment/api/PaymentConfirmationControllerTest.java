@@ -22,7 +22,7 @@ class PaymentConfirmationControllerTest {
                                 .getAnnotationsByType(SecurityRequirement.class)
                 ).map(SecurityRequirement::name)
                  .toList()
-        ).containsExactlyInAnyOrder("bearerAuth", "mutualTLS");
+        ).containsExactlyInAnyOrder("bearerAuth");
     }
 
     @Test
@@ -33,7 +33,7 @@ class PaymentConfirmationControllerTest {
                 );
         assertThat(root.value())
                 .containsExactly(
-                        "/v1/payments/{paymentReference}/confirmation-challenge"
+                        "/api/v1/payments/{paymentReference}/confirmation-challenge"
                 );
 
         assertScopeAndPost("verify", "payment.confirmation.verify", "/verify");

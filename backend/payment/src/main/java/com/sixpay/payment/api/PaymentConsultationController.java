@@ -22,13 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
  * Partner-agnostic read-only Payment consultation endpoint.
  */
 @RestController
-@RequestMapping("/api/v1/integrations/payments")
+@RequestMapping("/api/v1/payments")
 @Tag(
         name = "Partner payments",
         description = "Partner Payment consultation API"
 )
 @SecurityRequirement(name = "bearerAuth")
-@SecurityRequirement(name = "mutualTLS")
 public class PaymentConsultationController {
 
     private final PaymentConsultationUseCase recoveryUseCase;

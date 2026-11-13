@@ -149,7 +149,8 @@ contracts:
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:
-      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      active: ["OAUTH2_CLIENT_CREDENTIALS"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       requiredScopes:
         read: "payment.read"
     mvpUsage:
@@ -195,12 +196,13 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     security:
-      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      active: ["OAUTH2_CLIENT_CREDENTIALS"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       conditional: ["TRANSPORT_API_KEY", "ANTI_REPLAY_HEADERS"]
     mvpUsage:
       included: true
       purpose:
-        - "Initiate Payment via POST /v1/payments/initiate"
+        - "Initiate Payment via POST /api/v1/payments/initiate"
         - "Resolve CustomerSubscription through referenceClient and authenticated Partner"
         - "Create bank-owned ACTIVE OTP challenge before returning AWAITING_OTP"
       constraints:
@@ -263,7 +265,8 @@ contracts:
     codeGenerationAllowed: true
     security:
       status: "APPROVED_CONTRACT_PROFILE"
-      authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
+      authentication: ["OAUTH2_BEARER_JWT"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       requiredScopes:
         verify: "payment.confirmation.verify"
         resend: "payment.confirmation.resend"
