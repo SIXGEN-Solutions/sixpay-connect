@@ -115,7 +115,6 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    @Primary
     BankingCustomerVerificationPort bankingCustomerVerificationPort(
             AmplitudeCustomerVerificationAdapter delegate,
             BankingVerificationProperties properties,
@@ -131,7 +130,6 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    @Primary
     BankingCustomerLookupPort bankingCustomerLookupPort(
             AmplitudeCustomerLookupClient client
     ) {

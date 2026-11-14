@@ -42,7 +42,7 @@ public final class RestAmplitudeCustomerLookupClient implements AmplitudeCustome
         if (matches == null || matches.customers() == null || matches.customers().size() != 1) {
             throw new IllegalStateException("Banking customer search must identify exactly one customer");
         }
-        CustomerSummary summary = matches.customers().get(0);
+        CustomerSummary summary = matches.customers().getFirst();
         if (!query.financialInstitutionCode().equals(summary.financialInstitutionCode())
                 || (!blank(query.niu()) && !query.niu().equals(summary.niu()))
                 || (!blank(query.customerNumber()) && !query.customerNumber().equals(summary.customerNumber()))) {

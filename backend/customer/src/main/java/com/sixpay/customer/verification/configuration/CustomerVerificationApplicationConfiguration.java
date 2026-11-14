@@ -12,6 +12,7 @@ import com.sixpay.customer.verification.application.port.output.CustomerVerifica
 import com.sixpay.customer.verification.application.service.CustomerVerificationService;
 import com.sixpay.customer.verification.domain.event.CustomerVerificationDomainEvent;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,6 +77,12 @@ public class CustomerVerificationApplicationConfiguration {
      * BankingCustomerVerificationPort replaces this fallback.</p>
      */
     @Bean
+    @ConditionalOnProperty(
+            prefix = "sixpay.customer.verification.banking",
+            name = "enabled",
+            havingValue = "false",
+            matchIfMissing = true
+    )
     @ConditionalOnMissingBean(BankingCustomerVerificationPort.class)
     BankingCustomerVerificationPort
             unavailableBankingCustomerVerificationPort() {
@@ -95,10 +102,16 @@ public class CustomerVerificationApplicationConfiguration {
     /**
      * Fail-closed Customer lookup boundary.
      *
-     * <p>No bank-approved runtime implementation of the Customer lookup
-     * contract exists on the authoritative branch yet.</p>
+     * <p>Used only when Customer banking is disabled or not configured.
+     * An enabled integration uses the real lookup adapter.</p>
      */
     @Bean
+    @ConditionalOnProperty(
+            prefix = "sixpay.customer.verification.banking",
+            name = "enabled",
+            havingValue = "false",
+            matchIfMissing = true
+    )
     @ConditionalOnMissingBean(BankingCustomerLookupPort.class)
     BankingCustomerLookupPort unavailableBankingCustomerLookupPort() {
         return query -> {
