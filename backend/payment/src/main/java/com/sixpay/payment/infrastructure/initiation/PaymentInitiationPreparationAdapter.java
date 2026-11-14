@@ -5,6 +5,8 @@ import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
 import com.sixpay.payment.domain.model.CallbackEndpoint;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.ExternalSubscriptionReference;
@@ -51,12 +53,17 @@ public final class PaymentInitiationPreparationAdapter
         implements PaymentInitiationPreparationPort {
 
     private final IdentifierGenerator<UUID> identifierGenerator;
+    private final PaymentCustomerSubscriptionPort subscriptions;
+    private final PartnerIdentityResolutionPort partners;
 
     public PaymentInitiationPreparationAdapter(
-            IdentifierGenerator<UUID> identifierGenerator
+            IdentifierGenerator<UUID> identifierGenerator,
+            PaymentCustomerSubscriptionPort subscriptions,
+            PartnerIdentityResolutionPort partners
     ) {
-        this.identifierGenerator =
-                Objects.requireNonNull(identifierGenerator);
+        this.identifierGenerator = Objects.requireNonNull(identifierGenerator);
+        this.subscriptions = Objects.requireNonNull(subscriptions);
+        this.partners = Objects.requireNonNull(partners);
     }
 
     /**
@@ -185,14 +192,18 @@ public final class PaymentInitiationPreparationAdapter
                 .collect(Collectors.joining("|"));
     }
 
-    /**
-     * Retains the Customer-owned CustomerSubscriptionId UUID supplied as
-     * referenceClient; this is not derived from Partner or application IDs.
+    /** Resolve the public banking reference before persisting the internal UUID.
+     * All downstream Payment, banking-verification and OTP logic stays unchanged.
      */
-    private static String subscriptionReference(
-            InitiateDebitCommand command
-    ) {
-        return command.clientReference();
+    private String subscriptionReference(InitiateDebitCommand command) {
+        var partner = partners.findByPartnerIdentifier(command.resolvedPartnerIdentifier())
+                .orElseThrow(() -> new IllegalStateException("Payment Partner is unavailable"));
+        if (!partner.acceptsNewTransactions()) {
+            throw new IllegalStateException("Payment Partner is not authorized");
+        }
+        return subscriptions.resolveByBankingCustomerReference(
+                command.clientReference(), partner.partnerId())
+                .subscriptionId().toString();
     }
 
     private static PublicPaymentReference publicReference(

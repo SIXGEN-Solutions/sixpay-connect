@@ -48,11 +48,11 @@ public record InitiateDebitCommand(
                 64,
                 "Resolved Partner identifier"
         );
-        clientReference = java.util.UUID.fromString(requireText(
+        clientReference = requireText(
                 clientReference,
                 128,
                 "Client reference"
-        )).toString();
+        );
         applicationId = normalizeOptional(
                 applicationId,
                 64,

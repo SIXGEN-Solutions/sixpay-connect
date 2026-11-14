@@ -47,7 +47,7 @@ paths:
         required to match the authenticated Partner. LoginName
         is optional compatibility metadata. The independent transport header
         X-TresorPay-App-Id remains required. Beneficiary amounts must sum
-        exactly to montantTotal when supplied. NUI is optional compatibility input. Customer Verification resolves authoritative banking identifiers from the Customer-owned CustomerSubscription identified by referenceClient.
+        exactly to montantTotal when supplied. NUI is optional compatibility input. referenceClient carries the banking customerReference obtained at enrollment. SIXPAY resolves the unique ACTIVE CustomerSubscription for the authenticated Partner and retains its subscriptionId internally before continuing the unchanged banking verification and OTP flow.
         The callback is never executed in this HTTP transaction.
       parameters:
         - $ref: '#/components/parameters/RequiredIdempotencyKey'
@@ -62,7 +62,7 @@ paths:
             example:
               LoginName: TRESOR_PAY
               AppID: TP_APP_001
-              referenceClient: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
+              referenceClient: "0494223"
               endToEndId: AVI-2025-00045678
               montantTotal: 600000
               devise: XAF
@@ -180,9 +180,10 @@ components:
           description: Optional non-authenticating compatibility metadata
         referenceClient:
           type: string
-          format: uuid
-          description: CustomerSubscriptionId (UUID canonical format), authoritative subscription identity owned by Customer; distinct from endToEndId. Nonexistent, inaccessible or non-authorized subscriptions are rejected by application checks, not by the JSON format alone.
-          example: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
+          minLength: 1
+          maxLength: 128
+          description: Banking customerReference established during Customer enrollment (not a subscription UUID). SIXPAY resolves the ACTIVE CustomerSubscription for the authenticated Partner. Missing, inactive or ambiguous matches are rejected without revealing subscription ownership.
+          example: "0494223"
         AppID:
           type: string
           minLength: 1
