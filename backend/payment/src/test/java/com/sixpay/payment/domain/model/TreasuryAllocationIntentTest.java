@@ -50,6 +50,15 @@ class TreasuryAllocationIntentTest {
     }
 
     @Test
+    void unallocatedInitiationHasPositiveTotalWithoutBeneficiary() {
+        TreasuryAllocationIntent pending = new TreasuryAllocationIntent(
+                List.of(), Money.of(new BigDecimal("150.00"), "XAF")
+        );
+        assertTrue(pending.allocations().isEmpty());
+        assertEquals(Money.of(new BigDecimal("150.00"), "XAF"), pending.totalAmount());
+    }
+
+    @Test
     void allocationsAreDefensivelyCopied() {
         List<TreasuryAllocation> mutable =
                 new ArrayList<>();

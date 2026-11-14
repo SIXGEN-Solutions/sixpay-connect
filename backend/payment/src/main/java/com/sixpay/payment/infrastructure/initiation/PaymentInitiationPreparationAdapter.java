@@ -1,7 +1,6 @@
 package com.sixpay.payment.infrastructure.initiation;
 
 import com.sixpay.common.identifier.IdentifierGenerator;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
@@ -19,9 +18,7 @@ import com.sixpay.payment.domain.model.PaymentRequestIdentity;
 import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PublicPaymentReference;
 import com.sixpay.payment.domain.model.RequestFingerprint;
-import com.sixpay.payment.domain.model.TreasuryAllocation;
 import com.sixpay.payment.domain.model.TreasuryAllocationIntent;
-import com.sixpay.payment.domain.model.TreasuryBeneficiaryReference;
 import com.sixpay.payment.domain.model.evidence.EvidenceFingerprint;
 import com.sixpay.sharedkernel.domain.valueobject.Money;
 import org.springframework.stereotype.Component;
@@ -30,23 +27,19 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Builds the domain-safe representation of a new partner debit request.
  *
- * <p>Raw account references are converted to masked displays and deterministic
- * integration tokens before they enter the Payment aggregate. Beneficiary
- * references and the allocation fingerprint are likewise derived without
- * persisting raw beneficiary RIBs. This adapter prepares state only; aggregate
- * transitions and persistence remain the responsibility of the application
- * workflow.</p>
+ * <p>Initiation creates a Payment without any beneficiary allocation. Treasury
+ * account resolution happens later in the Payment workflow. This adapter
+ * prepares state only; aggregate transitions and persistence remain the
+ * responsibility of the application workflow.</p>
  */
 @Component
 public final class PaymentInitiationPreparationAdapter
@@ -68,9 +61,9 @@ public final class PaymentInitiationPreparationAdapter
 
     /**
      * Generates Payment identities and translates the command into a
-     * {@link NewPaymentIntent}. The idempotency request hash is retained as the
-     * request fingerprint, while a separate hash protects the allocation
-     * intent against later substitution.
+     * {@link NewPaymentIntent}. The request hash is retained independently from
+     * the canonical empty-allocation fingerprint. Actual Treasury configuration
+     * must never be supplied or fabricated by the initiating partner.
      */
     @Override
     public PreparedPaymentInitiation prepare(
@@ -93,13 +86,11 @@ public final class PaymentInitiationPreparationAdapter
         );
 
         TreasuryAllocationIntent allocations =
-                new TreasuryAllocationIntent(
-                        allocations(command),
-                        total
-                );
+                new TreasuryAllocationIntent(List.of(), total);
 
-        String allocationHash =
-                sha256(canonicalAllocations(command));
+        // Stable sentinel fingerprint of the unallocated initiation state.
+        // It is NOT evidence of an approved Treasury beneficiary configuration.
+        String allocationHash = sha256("");
 
         NewPaymentIntent intent = new NewPaymentIntent(
                 PaymentSource.TRESOR_PAY,
@@ -138,58 +129,6 @@ public final class PaymentInitiationPreparationAdapter
                 intent,
                 receivedAt
         );
-    }
-
-    /**
-     * Creates a partner-bound account token plus a display-safe masked RIB.
-     * Binding the hash to the partner prevents equal RIBs received from two
-     * partners from sharing the same integration token.
-     */
-    private static List<TreasuryAllocation> allocations(
-            InitiateDebitCommand command
-    ) {
-        return command.beneficiaries()
-                .stream()
-                .map(item -> new TreasuryAllocation(
-                        beneficiaryReference(item),
-                        Money.of(
-                                item.amount(),
-                                command.currency()
-                        )
-                ))
-                .toList();
-    }
-
-    /**
-     * Produces an opaque stable beneficiary reference so the raw beneficiary
-     * RIB is not stored input the Payment aggregate.
-     */
-    private static TreasuryBeneficiaryReference beneficiaryReference(
-            InitiateDebitBeneficiaryCommand item
-    ) {
-        return TreasuryBeneficiaryReference.of(
-                "BEN_" + sha256(item.rib()).substring(0, 32)
-        );
-    }
-
-    private static String canonicalAllocations(
-            InitiateDebitCommand command
-    ) {
-        return command.beneficiaries()
-                .stream()
-                .sorted(
-                        Comparator.comparing(
-                                InitiateDebitBeneficiaryCommand::rib
-                        )
-                )
-                .map(item ->
-                        item.rib()
-                                + "="
-                                + item.amount()
-                                .stripTrailingZeros()
-                                .toPlainString()
-                )
-                .collect(Collectors.joining("|"));
     }
 
     /** Resolve the public banking reference before persisting the internal UUID.

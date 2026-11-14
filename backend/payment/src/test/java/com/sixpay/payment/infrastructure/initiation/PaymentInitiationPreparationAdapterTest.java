@@ -57,7 +57,7 @@ class PaymentInitiationPreparationAdapterTest {
     }
 
     @Test
-    void preparesProtectedDomainIntentWithoutClearRib() {
+    void preparesInitiationWithoutPartnerBeneficiaryAllocations() {
         InitiateDebitCommand command = command(
                 List.of(
                         beneficiary(
@@ -104,7 +104,7 @@ class PaymentInitiationPreparationAdapterTest {
 
         assertThat(intent.treasuryAllocationIntent()
                 .allocations())
-                .hasSize(2);
+                .isEmpty();
         assertThat(intent.initiationContext())
                 .isNotNull();
         assertThat(intent.initiationContext().partnerLoginName())
