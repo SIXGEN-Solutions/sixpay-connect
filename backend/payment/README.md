@@ -46,9 +46,9 @@ Public confirmation surface:
 
 ```text
 POST /v1/payments/{paymentReference}/confirmation-challenge
-GET  /v1/payments/{paymentReference}/confirmation-challenge
-POST /v1/payments/{paymentReference}/confirmation-challenge/verify
-POST /v1/payments/{paymentReference}/confirmation-challenge/resend
+GET  /api/v1/payments/{paymentReference}/confirmation-challenge
+POST /api/v1/payments/{paymentReference}/confirmation-challenge/verify
+POST /api/v1/payments/{paymentReference}/confirmation-challenge/resend
 ```
 
 ## Customer boundary

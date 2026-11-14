@@ -29,8 +29,8 @@ import java.util.List;
  * The mTLS gateway requirement remains a separate mandatory contract control.
  */
 public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String INITIATE = "/v1/payments/initiate";
-    private static final String CONSULTATION_PREFIX = "/api/v1/integrations/payments/";
+    private static final String INITIATE = "/api/v1/payments/initiate";
+    private static final String CONSULTATION_PREFIX = "/api/v1/payments/";
     private static final java.util.regex.Pattern PAYMENT_REFERENCE =
             java.util.regex.Pattern.compile("PAY-[0-9A-HJKMNP-TV-Z]{26}");
     private static final String CHALLENGE_SUFFIX = "/confirmation-challenge";
@@ -67,12 +67,12 @@ public final class M2mJwtAuthenticationFilter extends OncePerRequestFilter {
         if ("POST".equals(method) && INITIATE.equals(path)) {
             return "payment.initiate";
         }
-        String prefix = "/v1/payments/";
+        String prefix = "/api/v1/payments/";
         if (!path.startsWith(prefix)) return null;
         String remainder = path.substring(prefix.length());
         int slash = remainder.indexOf('/');
         // An opaque public payment reference must occupy exactly one segment.
-        if (slash <= 0) return null;
+        if (slash <= 0 || !PAYMENT_REFERENCE.matcher(remainder.substring(0, slash)).matches()) return null;
         String suffix = remainder.substring(slash);
         if ("GET".equals(method) && CHALLENGE_SUFFIX.equals(suffix)) {
             return "payment.confirmation.read";

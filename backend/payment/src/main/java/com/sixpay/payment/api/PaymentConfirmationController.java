@@ -27,12 +27,11 @@ import org.springframework.web.bind.annotation.*;
         name = "enabled",
         havingValue = "true"
 )
-@RequestMapping("/v1/payments/{paymentReference}/confirmation-challenge")
+@RequestMapping("/api/v1/payments/{paymentReference}/confirmation-challenge")
 @Tag(
         name = "Payment Confirmation",
         description = "TRESOR PAY customer confirmation operations"
 )
-@SecurityRequirement(name = "mutualTLS")
 @SecurityRequirement(name = "bearerAuth")
 public class PaymentConfirmationController {
 

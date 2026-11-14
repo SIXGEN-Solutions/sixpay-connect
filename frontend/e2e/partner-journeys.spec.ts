@@ -14,6 +14,7 @@ test('création et consultation d’un Partner par un administrateur', async ({ 
 
   await page.goto('/partners/create');
 
+  await page.getByLabel('Identifiant partenaire').fill('GOLDEN_PARTNER');
   await page.getByLabel('Raison sociale').fill('Golden Partner');
   await page.getByLabel('Nom du contact technique').fill('Alice Admin');
   await page.getByLabel('Courriel du contact').fill('alice@example.test');

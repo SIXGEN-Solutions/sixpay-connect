@@ -9,6 +9,7 @@ export interface ValidationThreshold {
 
 export interface Partner {
   readonly id: string;
+  readonly partnerIdentifier: string;
   readonly legalName: string;
   readonly technicalContactName: string;
   readonly technicalContactEmail: string;

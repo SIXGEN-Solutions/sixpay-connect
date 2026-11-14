@@ -45,6 +45,7 @@ describe('PartnerLifecycleActionsComponent', () => {
   function partner(status: Partner['status']): Partner {
     return {
       id: '8ec6a427-406f-4f93-b271-cbc819a4c1dd',
+      partnerIdentifier: 'GOLDEN_PARTNER',
       legalName: 'Acme Payments',
       technicalContactName: 'Alice Ops',
       technicalContactEmail: 'alice@example.com',

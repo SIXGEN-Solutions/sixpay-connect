@@ -26,7 +26,7 @@ class M2mJwtAuthenticationFilterTest {
     void clear() { SecurityContextHolder.clearContext(); }
 
     private MockHttpServletRequest request(String token) {
-        var request = new MockHttpServletRequest("POST", "/v1/payments/initiate");
+        var request = new MockHttpServletRequest("POST", "/api/v1/payments/initiate");
         if (token != null) request.addHeader("Authorization", "Bearer " + token);
         return request;
     }
@@ -119,7 +119,7 @@ class M2mJwtAuthenticationFilterTest {
     @Test
     void authenticatesAllConfirmationOperationsWithTheirOwnScopes() throws Exception {
         String reference = "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
-        String base = "/v1/payments/" + reference + "/confirmation-challenge";
+        String base = "/api/v1/payments/" + reference + "/confirmation-challenge";
         String[][] operations = {
                 {"GET", base, "payment.confirmation.read"},
                 {"POST", base + "/verify", "payment.confirmation.verify"},
@@ -145,7 +145,7 @@ class M2mJwtAuthenticationFilterTest {
 
     @Test
     void confirmationRoutesRejectMissingJwtAndWrongScopeBeforeController() throws Exception {
-        String uri = "/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge/verify";
+        String uri = "/api/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge/verify";
         var missing = new MockHttpServletRequest("POST", uri);
         var missingResponse = new MockHttpServletResponse();
         filter.doFilter(missing, missingResponse, (req,res) -> fail("must reject"));
@@ -161,7 +161,7 @@ class M2mJwtAuthenticationFilterTest {
 
     @Test
     void confirmationRejectsInvalidJwtAndMissingAzp() throws Exception {
-        String uri = "/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge";
+        String uri = "/api/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/confirmation-challenge";
         var invalid = new MockHttpServletRequest("GET", uri);
         invalid.addHeader("Authorization", "Bearer invalid-confirmation");
         when(decoder.decode("invalid-confirmation"))
@@ -181,7 +181,7 @@ class M2mJwtAuthenticationFilterTest {
 
     @Test
     void unknownPaymentRoutesAreNotIntercepted() throws Exception {
-        var request = new MockHttpServletRequest("GET", "/v1/payments/sample/other");
+        var request = new MockHttpServletRequest("GET", "/api/v1/payments/sample/other");
         var reached = new java.util.concurrent.atomic.AtomicBoolean();
         filter.doFilter(request, new MockHttpServletResponse(),
                 (req, res) -> reached.set(true));
@@ -191,7 +191,7 @@ class M2mJwtAuthenticationFilterTest {
 
     @Test
     void consultationRequiresMachineJwtAndReadScope() throws Exception {
-        String uri = "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        String uri = "/api/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
         var missing = new MockHttpServletRequest("GET", uri);
         var responseMissing = new MockHttpServletResponse();
         filter.doFilter(missing, responseMissing, (req,res) -> fail("must reject"));
@@ -222,11 +222,31 @@ class M2mJwtAuthenticationFilterTest {
     @Test
     void consultationOnlyInterceptsExactReferencePathAndGet() throws Exception {
         var wrongMethod = new MockHttpServletRequest("POST",
-                "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV");
+                "/api/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV");
         var extraSegment = new MockHttpServletRequest("GET",
-                "/api/v1/integrations/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/other");
+                "/api/v1/payments/PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV/other");
         assertThat(M2mJwtAuthenticationFilter.isPartnerM2mRequest(wrongMethod)).isFalse();
         assertThat(M2mJwtAuthenticationFilter.isPartnerM2mRequest(extraSegment)).isFalse();
+    }
+
+    @Test
+    void newPaymentRoutesRejectWrongMethodsAndUnrelatedPaths() {
+        String ref = "PAY-01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        String base = "/api/v1/payments/" + ref;
+        String[][] excluded = {
+                {"GET", "/api/v1/payments/initiate"},
+                {"POST", base},
+                {"POST", base + "/confirmation-challenge"},
+                {"GET", base + "/confirmation-challenge/verify"},
+                {"POST", base + "/confirmation-challenge/other"},
+                {"GET", "/api/v1/payments/invalid/confirmation-challenge"},
+                {"GET", "/internal/api/v1/payments/" + ref},
+                {"GET", "/api/v1/integrations/payments/" + ref}
+        };
+        for (String[] entry : excluded) {
+            assertThat(M2mJwtAuthenticationFilter.isPartnerM2mRequest(
+                    new MockHttpServletRequest(entry[0], entry[1]))).isFalse();
+        }
     }
 
     private static void fail(String message) { throw new AssertionError(message); }

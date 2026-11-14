@@ -2,7 +2,6 @@ package com.sixpay.payment.api.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sixpay.payment.domain.model.ClaimType;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -12,7 +11,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
 /**
  * TresorPay request for the contracted InitiateDebit operation.
@@ -67,10 +65,6 @@ public record InitiateDebitRequest(
         @JsonProperty("dateExecution")
         Instant requestedExecutionAt,
 
-        @JsonProperty("beneficiaires")
-        @Size(max = 20)
-        List<@Valid InitiateDebitBeneficiaryRequest> beneficiaries,
-
         @JsonProperty("callbackURL")
         @NotBlank
         @Size(max = 2048)
@@ -78,24 +72,35 @@ public record InitiateDebitRequest(
         String callbackUrl
 ) {
 
-    /** Backward-compatible constructor for existing Java tests/callers. */
+    /**
+     * Legacy Java constructor retained only for source compatibility.
+     * Beneficiaries are deliberately not part of the public request schema.
+     */
+    @Deprecated
+    public InitiateDebitRequest(
+            String loginName, String applicationId, String clientReference,
+            String endToEndId, BigDecimal totalAmount, String currency,
+            String debtorRib, String debtorName, ClaimType claimType,
+            String taxpayerIdentifier, Instant requestedExecutionAt,
+            java.util.List<InitiateDebitBeneficiaryRequest> ignoredBeneficiaries,
+            String callbackUrl
+    ) {
+        this(loginName, applicationId, clientReference, endToEndId,
+                totalAmount, currency, debtorRib, debtorName, claimType,
+                taxpayerIdentifier, requestedExecutionAt, callbackUrl);
+    }
+
+    @Deprecated
     public InitiateDebitRequest(
             String loginName, String applicationId, String endToEndId,
             BigDecimal totalAmount, String currency, String debtorRib,
             String debtorName, ClaimType claimType, String taxpayerIdentifier,
             Instant requestedExecutionAt,
-            List<InitiateDebitBeneficiaryRequest> beneficiaries,
+            java.util.List<InitiateDebitBeneficiaryRequest> ignoredBeneficiaries,
             String callbackUrl
     ) {
         this(loginName, applicationId, endToEndId, endToEndId,
                 totalAmount, currency, debtorRib, debtorName, claimType,
-                taxpayerIdentifier, requestedExecutionAt, beneficiaries,
-                callbackUrl);
-    }
-
-    public InitiateDebitRequest {
-        beneficiaries = beneficiaries == null
-                ? null
-                : List.copyOf(beneficiaries);
+                taxpayerIdentifier, requestedExecutionAt, callbackUrl);
     }
 }
