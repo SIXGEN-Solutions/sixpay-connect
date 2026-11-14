@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-@Component
-@ConditionalOnBean(AmplitudeCustomerLookupClient.class)
 public final class AmplitudeCustomerLookupAdapter
         implements BankingCustomerLookupPort {
 

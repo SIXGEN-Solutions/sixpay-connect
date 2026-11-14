@@ -1,5 +1,8 @@
 package com.sixpay.customer.verification.infrastructure.banking.configuration;
 
+import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
+import com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupAdapter;
+import com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupClient;
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.*;
@@ -125,5 +128,13 @@ public class AmplitudeCustomerVerificationConfiguration {
                 sleeper,
                 observation
         );
+    }
+
+    @Bean
+    @Primary
+    BankingCustomerLookupPort bankingCustomerLookupPort(
+            AmplitudeCustomerLookupClient client
+    ) {
+        return new AmplitudeCustomerLookupAdapter(client);
     }
 }
