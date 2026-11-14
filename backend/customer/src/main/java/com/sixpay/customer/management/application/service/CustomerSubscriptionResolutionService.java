@@ -3,6 +3,7 @@ package com.sixpay.customer.management.application.service;
 import com.sixpay.customer.management.application.port.input.ResolveCustomerSubscriptionUseCase;
 import com.sixpay.customer.management.application.port.input.ResolvedCustomerSubscription;
 import com.sixpay.customer.management.domain.exception.CustomerDomainException;
+import com.sixpay.customer.management.domain.model.CustomerSubscription;
 import com.sixpay.customer.management.domain.model.CustomerSubscriptionId;
 import com.sixpay.customer.management.domain.model.CustomerStatus;
 import com.sixpay.customer.management.domain.repository.CustomerRepository;
@@ -40,14 +41,14 @@ public class CustomerSubscriptionResolutionService implements ResolveCustomerSub
                 .stream()
                 .flatMap(customer -> subscriptions.findByCustomerId(customer.id()).stream())
                 .filter(subscription -> authenticatedPartnerId.equals(subscription.partnerId()))
-                .filter(subscription -> subscription.acceptsPayments())
+                .filter(CustomerSubscription::acceptsPayments)
                 .limit(2)
                 .toList();
         if (matches.size() != 1) {
             throw new CustomerDomainException("customer subscription unavailable");
         }
         // Reuse all existing ownership, Customer status and account-binding checks.
-        return resolve(matches.get(0).id().value(), authenticatedPartnerId);
+        return resolve(matches.getFirst().id().value(), authenticatedPartnerId);
     }
 
     @Override
