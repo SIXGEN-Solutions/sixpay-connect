@@ -5,6 +5,7 @@ import com.sixpay.common.messaging.model.IntegrationEventEnvelope;
 import com.sixpay.common.time.TimeProvider;
 import com.sixpay.payment.application.port.input.HandlePaymentPostPersistenceEventUseCase;
 import com.sixpay.payment.domain.model.PaymentId;
+import com.sixpay.payment.application.exception.PaymentConcurrentMutationException;
 import com.sixpay.payment.domain.model.PaymentStatus;
 import com.sixpay.payment.domain.policy.PaymentPolicyBundle;
 import org.springframework.beans.factory.ObjectProvider;
@@ -142,16 +143,28 @@ public final class PaymentPostPersistenceOrchestrationService
     private void startBankingVerification(PaymentId paymentId) {
         Instant requestedAt = timeProvider.now();
 
-        coordinator.mutate(
-                paymentId,
-                payment -> {
-                    if (payment.status() == PaymentStatus.RECEIVED
-                            || payment.status()
-                            == PaymentStatus.BANKING_VERIFICATION_PENDING) {
-                        payment.startBankingVerification(requestedAt);
+        try {
+            coordinator.mutate(
+                    paymentId,
+                    payment -> {
+                        if (payment.status() == PaymentStatus.RECEIVED
+                                || payment.status()
+                                == PaymentStatus.BANKING_VERIFICATION_PENDING) {
+                            payment.startBankingVerification(requestedAt);
+                        }
                     }
+            );
+        } catch (PaymentConcurrentMutationException conflict) {
+            // Same transition was concurrently claimed by the HTTP path.
+            // A real durable state change is required before acknowledging.
+            coordinator.mutate(paymentId, current -> {
+                if (current.status() == PaymentStatus.RECEIVED
+                        || (current.status() != PaymentStatus.BANKING_VERIFICATION_PENDING
+                        && current.toState().bankingVerificationEvidence().isEmpty())) {
+                    throw conflict;
                 }
-        );
+            });
+        }
     }
 
     private void verifyCustomer(PaymentId paymentId) {

@@ -1018,6 +1018,13 @@ public final class Payment {
         Objects.requireNonNull(evidence, "Treasury-resolution evidence");
         Objects.requireNonNull(decisionAt, "Decision instant");
         Objects.requireNonNull(profiles, "Policy bundle");
+        // Never accept an account other than the one carried in the evidence.
+        if (!Objects.equals(evidence.treasuryAccountReference().orElse(null),
+                resolvedAccount)) {
+            throw PaymentDomainException.conflict(
+                    "Treasury evidence account differs from resolved account"
+            );
+        }
 
         if (sameTreasuryEvidence(evidence)) {
             return;
@@ -2935,6 +2942,9 @@ public final class Payment {
                                 .equals(
                                         candidate.metadata()
                                                 .evidenceFingerprint()
+                                ) && Objects.equals(
+                                        current.treasuryAccountReference().orElse(null),
+                                        candidate.treasuryAccountReference().orElse(null)
                                 )
                 )
                 .orElse(false);

@@ -1,6 +1,7 @@
 package com.sixpay.payment.infrastructure.persistence;
 
 import com.sixpay.payment.application.port.output.PaymentLookupPort;
+import com.sixpay.payment.application.exception.PaymentConcurrentMutationException;
 import com.sixpay.payment.domain.model.ExternalPaymentReference;
 import com.sixpay.payment.domain.model.Payment;
 import com.sixpay.payment.domain.model.PaymentId;
@@ -61,7 +62,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository, PaymentLooku
                     springDataRepository.saveAndFlush(entity)
             );
         } catch (ObjectOptimisticLockingFailureException exception) {
-            throw new PaymentPersistenceException(
+            throw new PaymentConcurrentMutationException(
                     "Concurrent Payment update detected for "
                             + payment.id(),
                     exception

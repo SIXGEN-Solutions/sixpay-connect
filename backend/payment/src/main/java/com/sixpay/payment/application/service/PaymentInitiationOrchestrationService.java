@@ -8,6 +8,7 @@ import com.sixpay.payment.application.port.output.idempotency.PaymentInitiationI
 import com.sixpay.payment.application.port.output.initiation.PaymentInitiationPreparationPort;
 import com.sixpay.payment.application.port.output.initiation.PreparedPaymentInitiation;
 import com.sixpay.payment.application.exception.PaymentCustomerVerificationRetryableException;
+import com.sixpay.payment.application.exception.PaymentConcurrentMutationException;
 import com.sixpay.payment.application.view.InitiateDebitResult;
 import com.sixpay.payment.application.view.PaymentConfirmationView;
 import com.sixpay.payment.domain.model.ConfirmationChallengeStatus;
@@ -92,10 +93,23 @@ public class PaymentInitiationOrchestrationService implements PaymentInitiationU
         if (status != PaymentStatus.PENDING_CONFIRMATION)
             failIfDeadlineExpired(paymentId, receivedAt);
         if (status == PaymentStatus.RECEIVED) {
-            PaymentWorkflowResult pending = coordinator.mutate(paymentId, payment -> {
-                if (payment.status() == PaymentStatus.RECEIVED)
-                    payment.startBankingVerification(timeProvider.now());
-            });
+            PaymentWorkflowResult pending;
+            try {
+                pending = coordinator.mutate(paymentId, payment -> {
+                    if (payment.status() == PaymentStatus.RECEIVED)
+                        payment.startBankingVerification(timeProvider.now());
+                });
+            } catch (PaymentConcurrentMutationException conflict) {
+                // The relayed PaymentReceived event may already have started
+                // the very same transition. Reload; never blindly retry it.
+                pending = coordinator.mutate(paymentId, current -> {
+                    if (current.status() != PaymentStatus.BANKING_VERIFICATION_PENDING
+                            && current.status() != PaymentStatus.PENDING_CONFIRMATION
+                            && current.toState().bankingVerificationEvidence().isEmpty()) {
+                        throw conflict;
+                    }
+                });
+            }
             status = pending.status();
         }
         if (status == PaymentStatus.BANKING_VERIFICATION_PENDING) {

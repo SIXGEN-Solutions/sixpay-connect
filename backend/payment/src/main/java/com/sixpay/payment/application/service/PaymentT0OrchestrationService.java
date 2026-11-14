@@ -112,7 +112,8 @@ public final class PaymentT0OrchestrationService {
                         + "|" + payment.toState()
                                 .allocationIntentFingerprint().value()
                         + "|" + resolved.treasuryConfigurationId()
-                        + "|" + resolved.configurationVersion();
+                        + "|" + resolved.configurationVersion()
+                        + "|" + resolved.accountToken();
 
         EvidenceMetadata metadata =
                 new EvidenceMetadata(
