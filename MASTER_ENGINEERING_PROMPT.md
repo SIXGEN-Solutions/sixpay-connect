@@ -6,7 +6,7 @@
 | Version | **2.0.0** |
 | Source de sélection | `MASTER_PROMPT_INPUT_MANIFEST.yaml` version `1.0` |
 | Stratégie | `AI_GENERATION_STRATEGY.md` version `1.0.0` |
-| Commit source | `28b00d72c05d3b5cebc184d26d08486ba92925c5` |
+| Commit source | `88ef7815b5cd5d6e64d9e16ca407d5591c1ae9af` |
 | Périmètre | Backend, frontend, contrats, données, intégrations, sécurité, tests, documentation, CI/CD et infrastructure |
 | Architecture | Monolithe modulaire |
 | Golden module | `backend/partner` |
