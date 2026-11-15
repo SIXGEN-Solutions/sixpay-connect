@@ -6,13 +6,15 @@ info:
     Canonical contract normalized from the existing Customer Management implementation.
     It documents the complete implemented /internal/api/v1/customers boundary.
     Customer Subscription endpoints are defined by customer-subscription-management-api-v1.yaml.
-    No endpoint or field is introduced by this contract.
+    The banking-preview response returns every banking account reported by the
+    approved read-only Core Banking GET operations. The operator selects a
+    bank-returned account for a fresh verification before enrolment.
   x-sixpay-contract:
     registryId: customer-management-query-api-v1
     gate: FS-2_REPOSITORY_BASELINE_CONSOLIDATION
     phaseStep: FS-2.1.3
     lifecycleStatus: ACTIVE_MVP
-    approvalStatus: PENDING_APPROVAL
+    approvalStatus: APPROVED
     generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
     domain: customer
@@ -64,8 +66,8 @@ paths:
       parameters:
         - {name: financialInstitutionCode, in: query, required: true, schema: {type: string}}
         - {name: niu, in: query, schema: {type: string}}
-        - {name: customerNumber, in: query, schema: {type: string}}
-        - {name: accountReference, in: query, required: true, schema: {type: string}}
+        - {name: customerNumber, in: query, required: true, schema: {type: string, minLength: 1}}
+        - {name: accountReference, in: query, required: true, description: "Reference of the selected bank-returned account; never manually typed by the operator; fresh bank verification is mandatory.", schema: {type: string}}
         - {$ref: '#/components/parameters/OptionalCorrelationId'}
       responses:
         '201':
@@ -353,15 +355,14 @@ components:
         last: {type: boolean}
     BankingCustomerPreviewRequest:
       type: object
-      required: [financialInstitutionCode, accountReference]
+      required: [financialInstitutionCode, customerNumber]
       properties:
-        financialInstitutionCode: {type: string, maxLength: 50}
-        niu: {type: [string, 'null'], maxLength: 100}
-        customerNumber: {type: [string, 'null'], maxLength: 100}
-        accountReference: {type: string, maxLength: 100}
+        financialInstitutionCode: {type: string, maxLength: 50, example: REGIONAL}
+        customerNumber: {type: string, minLength: 1, maxLength: 50}
     BankingCustomerPreviewResponse:
       type: object
-      required: [financialInstitutionCode, bankingCustomerReference, legalName, accountReference, maskedAccountIdentifier, currency, accountType, retrievedAt]
+      required: [financialInstitutionCode, bankingCustomerReference, legalName, accounts, retrievedAt]
+      description: "Read-only identity and the full bank-returned account list; not verification evidence."
       properties:
         financialInstitutionCode: {type: string}
         bankingCustomerReference: {type: string}
@@ -370,10 +371,20 @@ components:
         legalName: {type: string}
         email: {type: [string, 'null']}
         phoneNumber: {type: [string, 'null']}
+        accounts:
+          type: array
+          items: {$ref: '#/components/schemas/BankingCustomerPreviewAccount'}
+        retrievedAt: {type: string, format: date-time}
+    BankingCustomerPreviewAccount:
+      type: object
+      required: [accountReference, maskedAccountIdentifier, currency, retrievedAt]
+      description: "Authoritative GET account facts used for selection; fresh verification required for enrollment."
+      properties:
         accountReference: {type: string}
         maskedAccountIdentifier: {type: string}
         currency: {type: string}
-        accountType: {type: string}
+        accountType: {type: [string, 'null']}
+        status: {type: [string, 'null']}
         retrievedAt: {type: string, format: date-time}
     UpdateCustomerRequest:
       type: object

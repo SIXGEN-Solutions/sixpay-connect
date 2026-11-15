@@ -88,21 +88,6 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    AmplitudeCustomerVerificationAdapter amplitudeCustomerVerificationAdapter(
-            AmplitudeCustomerVerificationClient client,
-            AmplitudeCustomerVerificationMapper mapper,
-            AmplitudeResponseValidator validator,
-            BankingVerificationErrorClassifier classifier
-    ) {
-        return new AmplitudeCustomerVerificationAdapter(
-                client,
-                mapper,
-                validator,
-                classifier
-        );
-    }
-
-    @Bean
     RetrySleeper bankingVerificationRetrySleeper() {
         return RetrySleeper.threadSleep();
     }
@@ -116,11 +101,23 @@ public class AmplitudeCustomerVerificationConfiguration {
 
     @Bean
     BankingCustomerVerificationPort bankingCustomerVerificationPort(
-            AmplitudeCustomerVerificationAdapter delegate,
+            AmplitudeCustomerVerificationClient client,
+            AmplitudeCustomerVerificationMapper mapper,
+            AmplitudeResponseValidator validator,
+            BankingVerificationErrorClassifier classifier,
             BankingVerificationProperties properties,
             RetrySleeper sleeper,
             BankingVerificationObservation observation
     ) {
+        // The raw adapter is a private delegate, not a second Spring output port.
+        AmplitudeCustomerVerificationAdapter delegate =
+                new AmplitudeCustomerVerificationAdapter(
+                        client,
+                        mapper,
+                        validator,
+                        classifier
+                );
+
         return new RetryingBankingCustomerVerificationAdapter(
                 delegate,
                 properties,

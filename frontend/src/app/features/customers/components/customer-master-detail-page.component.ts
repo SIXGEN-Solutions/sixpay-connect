@@ -331,10 +331,7 @@ class CustomerReasonDialogComponent {
                 <input matInput formControlName="partnerId" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Bank account ID</mat-label>
-                <input matInput formControlName="bankAccountId" />
-              </mat-form-field>
+              <p>La souscription utilisera le compte bancaire par défaut du Customer.</p>
 
               <div class="customer-form__actions">
                 <sp-button type="submit" icon="add" [disabled]="mutating()"> Créer </sp-button>
@@ -463,7 +460,6 @@ export class CustomerMasterDetailPageComponent {
 
   protected readonly subscriptionForm = this.fb.nonNullable.group({
     partnerId: ['', Validators.required],
-    bankAccountId: ['', Validators.required],
   });
 
   protected readonly canUpdate = () =>
@@ -522,10 +518,6 @@ export class CustomerMasterDetailPageComponent {
           email: customer.email ?? '',
           phoneNumber: customer.phoneNumber ?? '',
         });
-        const defaultAccount = customer.bankAccounts.find((account) => account.defaultAccount);
-        if (defaultAccount) {
-          this.subscriptionForm.controls.bankAccountId.setValue(defaultAccount.id);
-        }
       });
   }
 
@@ -653,7 +645,6 @@ export class CustomerMasterDetailPageComponent {
       this.service.createSubscription({
         customerId: this.customerId,
         partnerId: value.partnerId.trim(),
-        bankAccountId: value.bankAccountId.trim(),
       }),
       'Subscription créée',
       'La CustomerSubscription a été créée en attente d’activation.',

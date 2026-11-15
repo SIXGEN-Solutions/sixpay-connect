@@ -976,7 +976,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:
@@ -1154,7 +1154,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:

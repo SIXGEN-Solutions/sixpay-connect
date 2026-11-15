@@ -29,18 +29,24 @@ export interface CustomerMaster {
   bankAccounts: CustomerBankAccount[];
 }
 
-export interface BankingCustomerPreview {
-  financialInstitutionCode: string;
-  bankingCustomerReference: string;
-  customerNumber: string | null;
-  niu: string;
-  legalName: string;
-  email: string | null;
-  phoneNumber: string | null;
+export interface BankingCustomerPreviewAccount {
   accountReference: string;
   maskedAccountIdentifier: string;
   currency: string;
   accountType: string | null;
+  status: string | null;
+  retrievedAt: Date;
+}
+
+export interface BankingCustomerPreview {
+  financialInstitutionCode: string;
+  bankingCustomerReference: string;
+  customerNumber: string | null;
+  niu: string | null;
+  legalName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  accounts: BankingCustomerPreviewAccount[];
   retrievedAt: Date;
 }
 

@@ -3,6 +3,7 @@ package com.sixpay.customer.management.api.response;
 import com.sixpay.customer.management.application.port.input.BankingCustomerPreviewUseCase;
 
 import java.time.Instant;
+import java.util.List;
 
 public record BankingCustomerPreviewResponse(
         String financialInstitutionCode,
@@ -12,10 +13,7 @@ public record BankingCustomerPreviewResponse(
         String legalName,
         String email,
         String phoneNumber,
-        String accountReference,
-        String maskedAccountIdentifier,
-        String currency,
-        String accountType,
+        List<BankingCustomerAccountPreviewResponse> accounts,
         Instant retrievedAt
 ) {
     public static BankingCustomerPreviewResponse from(
@@ -29,11 +27,27 @@ public record BankingCustomerPreviewResponse(
                 preview.legalName(),
                 preview.email(),
                 preview.phoneNumber(),
-                preview.accountReference(),
-                preview.maskedAccountIdentifier(),
-                preview.currency(),
-                preview.accountType(),
+                preview.accounts().stream()
+                        .map(BankingCustomerAccountPreviewResponse::from).toList(),
                 preview.retrievedAt()
         );
+    }
+
+    public record BankingCustomerAccountPreviewResponse(
+            String accountReference,
+            String maskedAccountIdentifier,
+            String currency,
+            String accountType,
+            String status,
+            Instant retrievedAt
+    ) {
+        public static BankingCustomerAccountPreviewResponse from(
+                BankingCustomerPreviewUseCase.BankingCustomerAccountPreview account
+        ) {
+            return new BankingCustomerAccountPreviewResponse(
+                    account.accountReference(), account.maskedAccountIdentifier(),
+                    account.currency(), account.accountType(), account.status(),
+                    account.retrievedAt());
+        }
     }
 }

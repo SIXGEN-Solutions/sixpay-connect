@@ -93,6 +93,8 @@ class CustomerBankingPortWiringConfigurationTest {
                                 .isInstanceOf(AmplitudeCustomerLookupAdapter.class);
                         assertThat(context.getBean(BankingCustomerVerificationPort.class))
                                 .isInstanceOf(RetryingBankingCustomerVerificationAdapter.class);
+                        // The undecorated adapter must not be exposed as a second port.
+                        assertThat(context).doesNotHaveBean("amplitudeCustomerVerificationAdapter");
                         assertThat(context).doesNotHaveBean("unavailableBankingCustomerLookupPort");
                         assertThat(context).doesNotHaveBean("unavailableBankingCustomerVerificationPort");
                     });

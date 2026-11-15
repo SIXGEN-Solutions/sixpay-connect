@@ -5,6 +5,7 @@ import com.sixpay.customer.management.application.port.output.BankingCustomerLoo
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Objects;
 
 @Service
@@ -29,9 +30,9 @@ public class BankingCustomerPreviewService
         var profile = lookupPort.lookup(
                 new BankingCustomerLookupPort.BankingCustomerLookupQuery(
                         query.financialInstitutionCode(),
-                        query.niu(),
+                        null,
                         query.customerNumber(),
-                        query.accountReference(),
+                        null,
                         query.correlationId()
                 )
         );
@@ -44,11 +45,16 @@ public class BankingCustomerPreviewService
                 profile.legalName(),
                 profile.email(),
                 profile.phoneNumber(),
-                profile.account().accountReference(),
-                profile.account().maskedAccountIdentifier(),
-                profile.account().currency(),
-                profile.account().accountType(),
-                profile.account().retrievedAt()
+                profile.accounts().stream().map(account ->
+                        new BankingCustomerAccountPreview(
+                                account.accountReference(),
+                                account.maskedAccountIdentifier(),
+                                account.currency(),
+                                account.accountType(),
+                                account.status(),
+                                account.retrievedAt()
+                        )).toList(),
+                Instant.now()
         );
     }
 }

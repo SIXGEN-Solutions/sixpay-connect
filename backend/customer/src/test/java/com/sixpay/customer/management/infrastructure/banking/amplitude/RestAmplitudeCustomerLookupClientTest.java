@@ -62,4 +62,44 @@ class RestAmplitudeCustomerLookupClientTest {
             assertThat(server.getRequestCount()).isEqualTo(1);
         }
     }
+    @Test
+    void bankingPreviewReturnsEveryAccountWithoutManuallyEnteredReference() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.start();
+            server.enqueue(json("""
+                    {"customers":[{"customerReference":"C-1","customerNumber":"123",
+                    "financialInstitutionCode":"REGIONAL","niu":"N-1","legalName":"Customer One"}],"resultCount":1}
+                    """));
+            server.enqueue(json("""
+                    {"customerReference":"C-1","customerNumber":"123","financialInstitutionCode":"REGIONAL",
+                    "niu":"N-1","legalName":"Customer One","email":"c@example.com",
+                    "phoneNumber":"+237600000000","kycStatus":"COMPLETE","kycFields":[],
+                    "source":"AMPLITUDE","retrievedAt":"2026-10-01T12:00:00Z"}
+                    """));
+            server.enqueue(json("""
+                    {"accounts":[
+                      {"ncp":"00012345678","age":"00001","dev":"001","clc":"07",
+                       "cli":"C-1","typ":"CURRENT","status":"ACTIVE"},
+                      {"ncp":"00098765432","age":"00002","dev":"001","clc":"08",
+                       "cli":"C-1","typ":"SAVINGS","status":"ACTIVE"}
+                    ],"resultCount":2}
+                    """));
+            var client = new RestAmplitudeCustomerLookupClient(
+                    RestClient.builder().baseUrl(server.url("/").toString()).build());
+            var result = client.lookup(new BankingCustomerLookupPort.BankingCustomerLookupQuery(
+                    "REGIONAL", null, "123", null, "corr-multiple"));
+            assertThat(result.account()).isNull();
+            assertThat(result.accounts()).hasSize(2);
+            assertThat(result.accounts()).extracting(BankingCustomerLookupPort.BankingAccount::accountReference)
+                    .containsExactly("00001-00012345678-07", "00002-00098765432-08");
+            assertThat(result.accounts()).allSatisfy(account -> {
+                assertThat(account.accountBindingFingerprint()).isNull();
+                assertThat(account.bankingAccountAccessReference()).isNull();
+            });
+            assertThat(server.takeRequest().getPath()).contains("customerNumber=123");
+            assertThat(server.takeRequest().getPath()).isEqualTo("/api/v1/customers/C-1");
+            assertThat(server.takeRequest().getPath()).isEqualTo("/api/v1/customers/C-1/accounts");
+        }
+    }
+
 }
