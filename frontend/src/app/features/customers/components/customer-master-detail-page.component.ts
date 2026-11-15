@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   MAT_DIALOG_DATA,
@@ -9,8 +9,9 @@ import {
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, EMPTY, finalize, forkJoin, of } from 'rxjs';
+import { catchError, EMPTY, expand, finalize, forkJoin, of, reduce } from 'rxjs';
 
 import { AuthenticationService } from '../../../core/auth/authentication.service';
 import { ErrorService } from '../../../core/errors/error.service';
@@ -25,6 +26,8 @@ import { SpNotificationComponent } from '../../../shared/components/notification
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { CustomerMaster, CustomerSubscription } from '../models/customer-management';
 import { CustomerManagementService } from '../services/customer-management.service';
+import { PartnerSummary } from '../../partners/models/partners';
+import { PartnersService } from '../../partners/services/partners.service';
 
 type Feedback = {
   readonly title: string;
@@ -107,6 +110,7 @@ class CustomerReasonDialogComponent {
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     ReactiveFormsModule,
     SpButtonComponent,
     SpCardComponent,
@@ -275,7 +279,7 @@ class CustomerReasonDialogComponent {
           <div class="customer-rows">
             @for (subscription of subscriptions(); track subscription.id) {
               <div class="customer-row">
-                <span>{{ subscription.partnerId }}</span>
+                <span>{{ partnerDisplayName(subscription.partnerId) }}</span>
                 <span>{{ subscription.status }}</span>
                 <span>{{ subscription.updatedAt | date: 'short' }}</span>
 
@@ -327,14 +331,58 @@ class CustomerReasonDialogComponent {
               novalidate
             >
               <mat-form-field appearance="outline">
-                <mat-label>Partner ID</mat-label>
-                <input matInput formControlName="partnerId" />
+                <mat-label>Partenaire</mat-label>
+                <mat-select
+                  formControlName="partnerId"
+                  [disabled]="
+                    partnersLoading() || partnersLoadFailed() ||
+                    !catalogLoaded() || item.status !== 'ACTIVE'
+                  "
+                  required
+                >
+                  @for (partner of activePartners(); track partner.id) {
+                    <mat-option [value]="partner.id">{{ partner.legalName }}</mat-option>
+                  }
+                </mat-select>
+                @if (subscriptionForm.controls.partnerId.hasError('required') && subscriptionForm.controls.partnerId.touched) {
+                  <mat-error>Veuillez sélectionner un partenaire.</mat-error>
+                }
+                @if (subscriptionForm.controls.partnerId.hasError('invalidPartner')) {
+                  <mat-error>Le partenaire sélectionné n'est plus disponible.</mat-error>
+                }
               </mat-form-field>
 
               <p>La souscription utilisera le compte bancaire par défaut du Customer.</p>
 
+              @if (item.status !== 'ACTIVE') {
+                <p>Le Customer doit être actif pour créer une souscription.</p>
+              } @else if (!canReadPartnerCatalog()) {
+                <p>Lecture du catalogue partenaire non autorisée pour cet utilisateur.</p>
+              } @else if (partnersLoading()) {
+                <p>Chargement des partenaires actifs…</p>
+              } @else if (partnersLoadFailed()) {
+                <div>
+                  <p>Impossible de charger les partenaires.</p>
+                  <sp-button type="button" variant="secondary" (buttonClick)="loadPartners()">
+                    Réessayer
+                  </sp-button>
+                </div>
+              } @else if (catalogLoaded() && activePartners().length === 0) {
+                <p>Aucun partenaire actif disponible.</p>
+              }
+
               <div class="customer-form__actions">
-                <sp-button type="submit" icon="add" [disabled]="mutating()"> Créer </sp-button>
+                <sp-button
+                  type="submit"
+                  icon="add"
+                  [disabled]="
+                    mutating() || item.status !== 'ACTIVE' ||
+                    !catalogLoaded() || partnersLoading() || partnersLoadFailed() ||
+                    activePartners().length === 0 || subscriptionForm.invalid
+                  "
+                >
+                  Créer
+                </sp-button>
               </div>
             </form>
           }
@@ -435,6 +483,7 @@ class CustomerReasonDialogComponent {
 export class CustomerMasterDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(CustomerManagementService);
+  private readonly partnersService = inject(PartnersService);
   private readonly auth = inject(AuthenticationService);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
@@ -447,6 +496,15 @@ export class CustomerMasterDetailPageComponent {
   protected readonly customer = signal<CustomerMaster | null>(null);
   protected readonly subscriptions = signal<CustomerSubscription[]>([]);
   protected readonly feedback = signal<Feedback | null>(null);
+  protected readonly catalogPartners = signal<PartnerSummary[]>([]);
+  protected readonly partnersLoading = signal(false);
+  protected readonly partnersLoadFailed = signal(false);
+  protected readonly catalogLoaded = signal(false);
+  protected readonly activePartners = computed(() =>
+    this.catalogPartners()
+      .filter((partner) => partner.status === 'ACTIVE')
+      .sort((left, right) => left.legalName.localeCompare(right.legalName)),
+  );
 
   protected readonly profileForm = this.fb.nonNullable.group({
     legalName: ['', [Validators.required, Validators.maxLength(200)]],
@@ -490,8 +548,54 @@ export class CustomerMasterDetailPageComponent {
     this.auth.hasPermission('subscription.close') ||
     (this.auth.isStandaloneMode && this.auth.hasRole('ADMIN'));
 
+  protected readonly canReadPartnerCatalog = () =>
+    this.auth.hasPermission('partner.read') ||
+    this.auth.hasRole('ADMIN') ||
+    this.auth.hasRole('MANAGER') ||
+    this.auth.hasRole('AUDITOR');
+
   constructor() {
     this.reload();
+    if (this.canSubscriptionRead() && this.canReadPartnerCatalog()) {
+      this.loadPartners();
+    }
+  }
+
+  protected loadPartners(): void {
+    if (!this.canSubscriptionRead() || !this.canReadPartnerCatalog() || this.partnersLoading()) {
+      return;
+    }
+
+    this.partnersLoading.set(true);
+    this.partnersLoadFailed.set(false);
+    this.catalogLoaded.set(false);
+    this.catalogPartners.set([]);
+
+    // The existing Partner API is paginated (max 100 items/page).
+    // Fetch every page before filtering by ACTIVE, including for existing subscriptions.
+    this.partnersService.search({ page: 0, size: 100 }).pipe(
+      expand((page) =>
+        page.page + 1 < page.totalPages
+          ? this.partnersService.search({ page: page.page + 1, size: 100 })
+          : EMPTY,
+      ),
+      reduce(
+        (items, page) => [...items, ...page.items],
+        [] as PartnerSummary[],
+      ),
+      catchError(() => {
+        this.partnersLoadFailed.set(true);
+        return EMPTY;
+      }),
+      finalize(() => this.partnersLoading.set(false)),
+    ).subscribe((partners) => {
+      this.catalogPartners.set(partners);
+      this.catalogLoaded.set(true);
+    });
+  }
+
+  protected partnerDisplayName(partnerId: string): string {
+    return this.catalogPartners().find((partner) => partner.id === partnerId)?.legalName ?? partnerId;
   }
 
   private reload(): void {
@@ -634,21 +738,38 @@ export class CustomerMasterDetailPageComponent {
   }
 
   protected createSubscription(): void {
-    if (!this.canSubscriptionCreate() || this.subscriptionForm.invalid || this.mutating()) {
+    if (
+      !this.canSubscriptionCreate() ||
+      this.customer()?.status !== 'ACTIVE' ||
+      this.subscriptionForm.invalid ||
+      this.mutating() ||
+      !this.canReadPartnerCatalog() ||
+      !this.catalogLoaded() ||
+      this.partnersLoading() ||
+      this.partnersLoadFailed()
+    ) {
       this.subscriptionForm.markAllAsTouched();
       return;
     }
 
-    const value = this.subscriptionForm.getRawValue();
+    const partnerId = this.subscriptionForm.getRawValue().partnerId;
+    const selectedPartner = this.activePartners().find((partner) => partner.id === partnerId);
+    if (!selectedPartner) {
+      this.subscriptionForm.controls.partnerId.setErrors({ invalidPartner: true });
+      return;
+    }
 
     this.runMutation(
       this.service.createSubscription({
         customerId: this.customerId,
-        partnerId: value.partnerId.trim(),
+        partnerId: selectedPartner.id,
       }),
       'Subscription créée',
       'La CustomerSubscription a été créée en attente d’activation.',
-      () => this.reloadAfterMutation(),
+      () => {
+        this.subscriptionForm.reset();
+        this.reloadAfterMutation();
+      },
     );
   }
 
