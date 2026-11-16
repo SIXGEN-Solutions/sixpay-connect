@@ -24,8 +24,10 @@ describe('Customer banking preview account list', () => {
     };
     const model = mapBankingPreview(response);
     expect(model.accounts.map((account) => account.accountReference)).toEqual(['A-1', 'A-2']);
-    expect(model.accounts[0].retrievedAt).toEqual(new Date('2026-11-14T10:00:00Z'));
-    expect(model.accounts[1].retrievedAt).toEqual(new Date('2026-11-14T10:00:01Z'));
+    expect(model.accounts.map((account) => account.retrievedAt)).toEqual([
+      new Date('2026-11-14T10:00:00Z'),
+      new Date('2026-11-14T10:00:01Z'),
+    ]);
     expect(model.niu).toBeNull();
   });
 });
