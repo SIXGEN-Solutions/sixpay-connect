@@ -2,6 +2,7 @@ package com.sixpay.bootstrap.configuration;
 
 import com.sixpay.payment.infrastructure.idempotency.PaymentOtpIdempotencyFingerprintSet;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -9,12 +10,48 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PaymentOtpLocalIdempotencyConfigurationTest {
+    private final ApplicationContextRunner runner = new ApplicationContextRunner()
+            .withUserConfiguration(PaymentOtpLocalIdempotencyConfiguration.class);
+
     private final PaymentOtpLocalIdempotencyConfiguration config =
             new PaymentOtpLocalIdempotencyConfiguration();
 
     private static String encoded(String material) {
         return Base64.getEncoder().encodeToString(
                 material.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void disabledByDefaultWithoutAnySpringProfile() {
+        runner.run(context -> {
+            assertNull(context.getStartupFailure());
+            assertFalse(context.containsBean("paymentOtpIdempotencyFingerprintSet"));
+        });
+    }
+
+    @Test
+    void enabledWithSecretBuildsBeanWithoutAnySpringProfile() {
+        runner.withPropertyValues(
+                "SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true",
+                "SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64=" + encoded("current-local-test-key-material-32bytes-2026")
+        ).run(context -> {
+            assertNull(context.getStartupFailure());
+            assertNotNull(context.getBean(PaymentOtpIdempotencyFingerprintSet.class));
+        });
+    }
+
+    @Test
+    void enabledWithoutSecretFailsAtStartup() {
+        runner.withPropertyValues("SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true")
+                .run(context -> assertNotNull(context.getStartupFailure()));
+    }
+
+    @Test
+    void enabledWithWeakSecretFailsAtStartup() {
+        runner.withPropertyValues(
+                "SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true",
+                "SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64=" + encoded("short")
+        ).run(context -> assertNotNull(context.getStartupFailure()));
     }
 
     @Test
