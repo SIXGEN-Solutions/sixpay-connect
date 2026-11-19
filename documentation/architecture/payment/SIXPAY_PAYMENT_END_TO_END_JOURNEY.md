@@ -41,7 +41,7 @@ Il présente :
 ```text
 TresorPay
     |
-    | POST /v1/payments/initiate
+    | POST /api/v1/payments/initiate
     | Authorization: Bearer <JWT>
     | Idempotency-Key: <clé unique>
     | X-Correlation-ID: <identifiant optionnel>
@@ -88,7 +88,7 @@ Statut final du paiement
 TresorPay appelle l’endpoint suivant :
 
 ```http
-POST /v1/payments/initiate
+POST /api/v1/payments/initiate
 Authorization: Bearer <JWT>
 Idempotency-Key: <clé unique>
 X-Correlation-ID: <UUID optionnel>
@@ -992,7 +992,7 @@ REVERSED
 ```text
 TresorPay
     |
-    | POST /v1/payments/initiate
+    | POST /api/v1/payments/initiate
     v
 SIXPAY
     |

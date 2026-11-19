@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: |
     Official partner-facing command contract used by TresorPay to initiate one
-    debit order through SIXPAY CONNECT. Authentication requires BOTH mutual TLS
-    and an OAuth 2.0 client-credentials JWT. APIKey and PIN are forbidden from
+    debit order through SIXPAY CONNECT. Authentication requires an OAuth 2.0 client-credentials JWT;
+    mTLS is optional at the API contract level. APIKey and PIN are forbidden from
     the JSON payload. The initial response is AWAITING_OTP after an ACTIVE
     bank-owned OTP challenge, and callbacks are asynchronous.
     The callback payload, event types, HMAC-SHA256 signature and HTTP 204
@@ -31,12 +31,11 @@ info:
 servers:
   - url: https://api.banque.com
 security:
-  - mutualTLS: []
-    oauth2: [payment.initiate]
+  - oauth2: [payment.initiate]
 tags:
   - name: Payment Commands
 paths:
-  /v1/payments/initiate:
+  /api/v1/payments/initiate:
     post:
       tags: [Payment Commands]
       operationId: initiateDebit
@@ -47,8 +46,8 @@ paths:
         is required. AppID is a required declared Partner identifier and is
         required to match the authenticated Partner. LoginName
         is optional compatibility metadata. The independent transport header
-        X-TresorPay-App-Id remains required. Beneficiary amounts must sum
-        exactly to montantTotal when supplied. NUI is optional compatibility input. Customer Verification resolves authoritative banking identifiers from the Customer-owned CustomerSubscription identified by referenceClient.
+        X-TresorPay-App-Id remains required. Beneficiaries are never supplied
+         in the initiation payload; Treasury resolution happens downstream. NUI is optional compatibility input. referenceClient carries the banking customerReference obtained at enrollment. SIXPAY resolves the unique ACTIVE CustomerSubscription for the authenticated Partner and retains its subscriptionId internally before continuing the unchanged banking verification and OTP flow.
         The callback is never executed in this HTTP transaction.
       parameters:
         - $ref: '#/components/parameters/RequiredIdempotencyKey'
@@ -61,25 +60,12 @@ paths:
             schema:
               $ref: '#/components/schemas/InitiateDebitRequest'
             example:
-              LoginName: TRESOR_PAY
-              AppID: TP_APP_001
-              referenceClient: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
-              endToEndId: AVI-2025-00045678
-              montantTotal: 600000
-              devise: XAF
-              ribDebiteur: 10005-00001-12345678901-12
-              nomDebiteur: Société ABC SARL
+              AppID: TRESOR-INS-2026
+              referenceClient: "0494223"
+              endToEndId: E2E-T07-0051
+              montantTotal: 150.0
               typeCreance: AVI
-              NUI: "100200300"
-              dateExecution: "2025-07-24T10:30:00Z"
-              beneficiaires:
-                - rib: 10005-00001-000000TRESDGI-97
-                  montant: 300000
-                - rib: 10005-00001-000000TRESDOUANE-11
-                  montant: 200000
-                - rib: 10005-00001-000000TRESDOMAINE-22
-                  montant: 100000
-              callbackURL: https://tresorpay.cm/v1/callbacks/payment-status
+              callbackURL: https://partner.example/callback
       responses:
         '200':
           description: Payment order initiated and awaiting customer confirmation
@@ -139,7 +125,7 @@ components:
         application/problem+json:
           schema: {$ref: '#/components/schemas/ProblemDetail'}
     Unauthorized:
-      description: mTLS or OAuth 2.0 authentication failed
+      description: OAuth 2.0 authentication failed
     Forbidden:
       description: Partner is not authorized
     Conflict:
@@ -181,9 +167,10 @@ components:
           description: Optional non-authenticating compatibility metadata
         referenceClient:
           type: string
-          format: uuid
-          description: CustomerSubscriptionId (UUID canonical format), authoritative subscription identity owned by Customer; distinct from endToEndId. Nonexistent, inaccessible or non-authorized subscriptions are rejected by application checks, not by the JSON format alone.
-          example: 6bed9760-82a2-4698-bcf7-70b111a0cbdd
+          minLength: 1
+          maxLength: 128
+          description: Banking customerReference established during Customer enrollment (not a subscription UUID). SIXPAY resolves the ACTIVE CustomerSubscription for the authenticated Partner. Missing, inactive or ambiguous matches are rejected without revealing subscription ownership.
+          example: "0494223"
         AppID:
           type: string
           minLength: 1
@@ -222,32 +209,12 @@ components:
           type: string
           format: date-time
           description: Verified by the bank
-        beneficiaires:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items: {$ref: '#/components/schemas/BeneficiaireRequest'}
-          description: Optional allocation; when present, exact sum must equal montantTotal
         callbackURL:
           type: string
           format: uri
           pattern: '^https://'
           maxLength: 2048
           description: Must match the partner callback allowlist
-    BeneficiaireRequest:
-      type: object
-      additionalProperties: false
-      required: [rib, montant]
-      properties:
-        rib:
-          type: string
-          minLength: 8
-          maxLength: 64
-          pattern: '^[A-Za-z0-9-]+$'
-        montant:
-          type: number
-          exclusiveMinimum: 0
-          multipleOf: 0.01
     Money:
       type: object
       additionalProperties: false

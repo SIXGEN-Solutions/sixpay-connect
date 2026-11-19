@@ -1,6 +1,9 @@
 package com.sixpay.payment.application.service;
 
 import com.sixpay.payment.application.exception.PaymentCustomerVerificationRetryableException;
+import com.sixpay.payment.application.exception.PaymentConcurrentMutationException;
+import com.sixpay.payment.domain.model.evidence.BankingVerificationSnapshot;
+import java.util.concurrent.locks.ReentrantLock;
 import com.sixpay.payment.application.port.output.CustomerVerificationEvidenceMapper;
 import com.sixpay.payment.application.port.output.CustomerVerificationPort;
 import com.sixpay.payment.application.port.output.CustomerVerificationRequest;
@@ -34,6 +37,19 @@ public final class PaymentCustomerVerificationService {
     private final CustomerVerificationFailureMapper failureMapper;
     private final PaymentCustomerVerificationIdGenerator idGenerator;
     private final ResolvedDebtorAccountReferenceFactory accountReferenceFactory;
+
+    // Fixed-size in-JVM stripes coordinate concurrent payment verification
+    // without holding any database transaction during Core Banking I/O.
+    // Distributed races are still handled by optimistic-write reconciliation.
+    private static final ReentrantLock[] VERIFICATION_GATES = createVerificationGates();
+
+    private static ReentrantLock[] createVerificationGates() {
+        ReentrantLock[] gates = new ReentrantLock[1024];
+        for (int i = 0; i < gates.length; i++) {
+            gates[i] = new ReentrantLock();
+        }
+        return gates;
+    }
 
     private final Logger log = LoggerFactory.getLogger(PaymentCustomerVerificationService.class);
 
@@ -96,8 +112,14 @@ public final class PaymentCustomerVerificationService {
         Objects.requireNonNull(policies, "policies are required");
 
         UUID verificationId = idGenerator.forPayment(paymentId);
-
-        return coordinator.mutate(
+        // This holder is request-local: it contains the exact evidence computed
+        // before an optimistic-write conflict, never a second bank invocation.
+        BankingVerificationSnapshot[] observed = new BankingVerificationSnapshot[1];
+        ReentrantLock gate = VERIFICATION_GATES[Math.floorMod(
+                paymentId.value().hashCode(), VERIFICATION_GATES.length)];
+        gate.lock();
+        try {
+            return coordinator.mutate(
                 paymentId,
                 payment -> {
                     if (payment.status()
@@ -175,6 +197,8 @@ public final class PaymentCustomerVerificationService {
                             response.completedAt()
                     );
 
+                    observed[0] = snapshot;
+
                     var currentAccount = payment.toState()
                             .optionalDebtorAccountReference();
 
@@ -211,6 +235,30 @@ public final class PaymentCustomerVerificationService {
                             policies
                     );
                 }
-        );
+            );
+        } catch (PaymentConcurrentMutationException conflict) {
+            BankingVerificationSnapshot candidate = observed[0];
+            if (candidate == null) {
+                throw conflict;
+            }
+            // Re-read after the losing transaction has rolled back. Only
+            // acknowledge a *durably recorded and matching* banking result;
+            // never replay a banking operation or conceal conflicting evidence.
+            return coordinator.mutate(paymentId, current -> {
+                BankingVerificationSnapshot durable = current.toState()
+                        .bankingVerificationEvidence().orElse(null);
+                if (durable == null
+                        || !durable.verificationId().equals(candidate.verificationId())
+                        || !durable.metadata().evidenceFingerprint().equals(
+                                candidate.metadata().evidenceFingerprint())
+                        || durable.outcome() != candidate.outcome()
+                        || !durable.accountBindingFingerprint().equals(
+                                candidate.accountBindingFingerprint())) {
+                    throw conflict;
+                }
+            });
+        } finally {
+            gate.unlock();
+        }
     }
 }

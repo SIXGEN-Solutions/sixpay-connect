@@ -1,5 +1,6 @@
 package com.sixpay.payment.infrastructure.persistence;
 
+import com.sixpay.payment.application.exception.PaymentConcurrentMutationException;
 import com.sixpay.payment.domain.model.PaymentSource;
 import com.sixpay.payment.domain.model.PaymentState;
 import com.sixpay.payment.domain.model.PaymentStatus;
@@ -234,7 +235,7 @@ public class PaymentJpaEntity {
             );
         }
         if (state.businessVersion() < businessVersion) {
-            throw new PaymentPersistenceException(
+            throw new PaymentConcurrentMutationException(
                     "Cannot persist an older Payment business version"
             );
         }

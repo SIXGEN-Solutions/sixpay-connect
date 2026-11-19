@@ -27,7 +27,7 @@ class PaymentCommandApiArchitectureTest {
                 "package com.sixpay.payment.api;"
         ));
         assertTrue(source.contains(
-                "@RequestMapping(\"/v1/payments\")"
+                "@RequestMapping(\"/api/v1/payments\")"
         ));
         assertTrue(source.contains(
                 "@PostMapping(\"/initiate\")"

@@ -89,6 +89,15 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Customer> findByBankingCustomerReference(String bankingCustomerReference) {
+        return repository.findAllByBankingCustomerReference(bankingCustomerReference)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public CustomerSearchPage search(
             CustomerSearchCriteria criteria
     ) {

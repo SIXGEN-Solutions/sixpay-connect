@@ -53,6 +53,8 @@ public final class AmplitudeCustomerVerificationClient {
         }
 
         try {
+            System.out.println("Amplitude request: " + request);
+            System.out.println("CustomerVerificationRequest.from(request): " + CustomerVerificationRequest.from(request));
             AmplitudeCustomerVerificationResponse response =
                     restClient.post()
                             .uri(properties.endpointPath())

@@ -1,6 +1,7 @@
 package com.sixpay.customer.management.application.port.output;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -17,11 +18,14 @@ public interface BankingCustomerLookupPort {
     ) {
         public BankingCustomerLookupQuery {
             Objects.requireNonNull(financialInstitutionCode);
-            Objects.requireNonNull(accountReference);
             Objects.requireNonNull(correlationId);
         }
     }
 
+    /**
+     * The preview exposes all authoritative GET accounts. For the legacy
+     * add-account use case, account is the explicitly requested item.
+     */
     record BankingCustomerProfile(
             String financialInstitutionCode,
             String customerReference,
@@ -30,14 +34,25 @@ public interface BankingCustomerLookupPort {
             String legalName,
             String email,
             String phoneNumber,
-            BankingAccount account
+            BankingAccount account,
+            List<BankingAccount> accounts
     ) {
         public BankingCustomerProfile {
             Objects.requireNonNull(financialInstitutionCode);
             Objects.requireNonNull(customerReference);
-            Objects.requireNonNull(niu);
             Objects.requireNonNull(legalName);
-            Objects.requireNonNull(account);
+            accounts = List.copyOf(Objects.requireNonNull(accounts));
+        }
+
+        /** Backward-compatible constructor used by account-linking clients. */
+        public BankingCustomerProfile(
+                String financialInstitutionCode, String customerReference,
+                String customerNumber, String niu, String legalName,
+                String email, String phoneNumber, BankingAccount account
+        ) {
+            this(financialInstitutionCode, customerReference, customerNumber,
+                    niu, legalName, email, phoneNumber, account,
+                    List.of(Objects.requireNonNull(account)));
         }
     }
 
@@ -48,15 +63,26 @@ public interface BankingCustomerLookupPort {
             String maskedAccountIdentifier,
             String currency,
             String accountType,
+            String status,
             Instant retrievedAt
     ) {
         public BankingAccount {
             Objects.requireNonNull(accountReference);
-            // GET banking-preview returns descriptive facts, not account-binding evidence.
-            // Binding hints are optional here; write operations must reject their absence.
+            // A GET preview does not constitute account-binding evidence.
             Objects.requireNonNull(maskedAccountIdentifier);
             Objects.requireNonNull(currency);
             Objects.requireNonNull(retrievedAt);
+        }
+
+        /** Preserve the existing account-linking and test constructor. */
+        public BankingAccount(
+                String accountReference, String accountBindingFingerprint,
+                String bankingAccountAccessReference, String maskedAccountIdentifier,
+                String currency, String accountType, Instant retrievedAt
+        ) {
+            this(accountReference, accountBindingFingerprint,
+                    bankingAccountAccessReference, maskedAccountIdentifier,
+                    currency, accountType, null, retrievedAt);
         }
     }
 }

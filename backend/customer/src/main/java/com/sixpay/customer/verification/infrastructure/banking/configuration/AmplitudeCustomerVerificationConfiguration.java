@@ -1,5 +1,8 @@
 package com.sixpay.customer.verification.infrastructure.banking.configuration;
 
+import com.sixpay.customer.management.application.port.output.BankingCustomerLookupPort;
+import com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupAdapter;
+import com.sixpay.customer.management.infrastructure.banking.amplitude.AmplitudeCustomerLookupClient;
 import com.sixpay.customer.verification.application.port.output.BankingCustomerVerificationPort;
 import com.sixpay.customer.verification.infrastructure.banking.AmplitudeCustomerVerificationAdapter;
 import com.sixpay.customer.verification.infrastructure.banking.client.*;
@@ -14,6 +17,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.*;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.ssl.SslBundles;
+import org.springframework.beans.factory.annotation.Value;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
@@ -30,7 +36,10 @@ public class AmplitudeCustomerVerificationConfiguration {
     @Bean
     RestClient amplitudeCustomerVerificationRestClient(
             StandardRestClientFactory factory,
-            BankingVerificationProperties properties
+            BankingVerificationProperties properties,
+            @Value("${SIXPAY_BANKING_MTLS_ENABLED:false}") boolean mtlsEnabled,
+            @Value("${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}") String sslBundle,
+            ObjectProvider<SslBundles> bundles
     ) {
         return factory.create(
                 properties.baseUrl(),
@@ -38,7 +47,7 @@ public class AmplitudeCustomerVerificationConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                null,
+                mtlsEnabled ? bundles.getObject().getBundle(sslBundle).createSslContext() : null,
                 List.of(),
                 true
         );
@@ -85,21 +94,6 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    AmplitudeCustomerVerificationAdapter amplitudeCustomerVerificationAdapter(
-            AmplitudeCustomerVerificationClient client,
-            AmplitudeCustomerVerificationMapper mapper,
-            AmplitudeResponseValidator validator,
-            BankingVerificationErrorClassifier classifier
-    ) {
-        return new AmplitudeCustomerVerificationAdapter(
-                client,
-                mapper,
-                validator,
-                classifier
-        );
-    }
-
-    @Bean
     RetrySleeper bankingVerificationRetrySleeper() {
         return RetrySleeper.threadSleep();
     }
@@ -112,18 +106,36 @@ public class AmplitudeCustomerVerificationConfiguration {
     }
 
     @Bean
-    @Primary
     BankingCustomerVerificationPort bankingCustomerVerificationPort(
-            AmplitudeCustomerVerificationAdapter delegate,
+            AmplitudeCustomerVerificationClient client,
+            AmplitudeCustomerVerificationMapper mapper,
+            AmplitudeResponseValidator validator,
+            BankingVerificationErrorClassifier classifier,
             BankingVerificationProperties properties,
             RetrySleeper sleeper,
             BankingVerificationObservation observation
     ) {
+        // The raw adapter is a private delegate, not a second Spring output port.
+        AmplitudeCustomerVerificationAdapter delegate =
+                new AmplitudeCustomerVerificationAdapter(
+                        client,
+                        mapper,
+                        validator,
+                        classifier
+                );
+
         return new RetryingBankingCustomerVerificationAdapter(
                 delegate,
                 properties,
                 sleeper,
                 observation
         );
+    }
+
+    @Bean
+    BankingCustomerLookupPort bankingCustomerLookupPort(
+            AmplitudeCustomerLookupClient client
+    ) {
+        return new AmplitudeCustomerLookupAdapter(client);
     }
 }

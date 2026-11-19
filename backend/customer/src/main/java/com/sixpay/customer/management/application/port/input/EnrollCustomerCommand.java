@@ -11,14 +11,8 @@ public record EnrollCustomerCommand(
 ) {
     public EnrollCustomerCommand {
         financialInstitutionCode = require(financialInstitutionCode, "financialInstitutionCode");
-        if ((niu == null || niu.isBlank())
-                && (customerNumber == null || customerNumber.isBlank())) {
-            throw new IllegalArgumentException(
-                    "niu or customerNumber is required"
-            );
-        }
+        customerNumber = require(customerNumber, "customerNumber");
         niu = normalize(niu);
-        customerNumber = normalize(customerNumber);
         accountReference = require(accountReference, "accountReference");
         correlationId = require(correlationId, "correlationId");
     }

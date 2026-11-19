@@ -45,7 +45,7 @@ class PaymentCommandApiMapperTest {
         assertThat(command.resolvedPartnerIdentifier())
                 .isEqualTo("TP_APP_001");
         assertThat(command.beneficiaries())
-                .hasSize(1);
+                .isEmpty();
     }
 
     @Test

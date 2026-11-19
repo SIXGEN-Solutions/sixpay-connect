@@ -13,7 +13,7 @@ public final class TresorPayRequestGuardFilter
         extends OncePerRequestFilter {
 
     private static final String PAYMENT_INITIATION_PATH =
-            "/v1/payments/initiate";
+            "/api/v1/payments/initiate";
 
     private final TresorPayRequestGuard requestGuard;
 

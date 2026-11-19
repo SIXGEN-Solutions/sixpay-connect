@@ -33,19 +33,17 @@ public final class AmplitudeTfjLookupClient
         implements TfjConfirmationLookupGateway {
 
     private final RestClient restClient;
-    private final TfjLookupAccessTokenProvider tokenProvider;
     private final AccountingTfjLookupProperties properties;
     private final AmplitudeTfjMapper mapper;
 
     public AmplitudeTfjLookupClient(
             @Qualifier("tfjLookupRestClient")
             RestClient restClient,
-            TfjLookupAccessTokenProvider tokenProvider,
+
             AccountingTfjLookupProperties properties,
             AmplitudeTfjMapper mapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
     }
@@ -83,11 +81,7 @@ public final class AmplitudeTfjLookupClient
                                     )
                                     .build()
                             )
-                            .header(
-                                    HttpHeaders.AUTHORIZATION,
-                                    "Bearer "
-                                            + tokenProvider.accessToken()
-                            )
+
                             .header(
                                     IntegrationHttpHeaders.CORRELATION_ID,
                                     context.correlationId().value()

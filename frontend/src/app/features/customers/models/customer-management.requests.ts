@@ -1,15 +1,15 @@
 export interface BankingCustomerPreviewRequest {
   financialInstitutionCode: string;
   niu?: string;
-  customerNumber?: string;
-  accountReference: string;
+  customerNumber: string;
 }
 
 export interface EnrollCustomerRequest {
   financialInstitutionCode: string;
-  niu?: string;
-  customerNumber?: string;
+  customerNumber: string;
+  /** Bank-selected account, never a manually entered reference. */
   accountReference: string;
+  niu?: string;
 }
 
 export interface UpdateCustomerRequest {
@@ -29,5 +29,6 @@ export interface AddBankAccountRequest {
 export interface CreateSubscriptionRequest {
   customerId: string;
   partnerId: string;
-  bankAccountId: string;
+  /** Optional; backend resolves the customer's verified default account. */
+  bankAccountId?: string;
 }

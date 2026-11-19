@@ -43,6 +43,14 @@ class PaymentInitiationCanonicalizerTest {
     }
 
     @Test
+    void partnerBeneficiariesNeverAffectInitiationFingerprint() {
+        var one = command(List.of(beneficiary("10005-00001-TRESDGI-97", "600000")));
+        var other = command(List.of(beneficiary("10005-00001-TRESDOUANE-11", "600000")));
+        assertThat(canonicalizer.canonicalize(one))
+                .isEqualTo(canonicalizer.canonicalize(other));
+    }
+
+    @Test
     void materialBusinessChangeChangesCanonicalRequest() {
         InitiateDebitCommand original =
                 command(

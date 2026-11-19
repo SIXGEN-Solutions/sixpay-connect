@@ -77,10 +77,7 @@ servers:
   - url: https://amplitude-api.example
     description: Environment-specific Amplitude integration endpoint
 security:
-  - oauth2ClientCredentials:
-      - amplitude.customer.read
-      - amplitude.account.read
-    mutualTLS: []
+  - mutualTLS: []
 tags:
   - name: Customers
     description: Customer lookup and canonical banking identity.
@@ -329,15 +326,6 @@ paths:
 
 components:
   securitySchemes:
-    oauth2ClientCredentials:
-      type: oauth2
-      description: OAuth 2.0 client credentials access token issued to SIXPAY.
-      flows:
-        clientCredentials:
-          tokenUrl: https://identity.amplitude.example/oauth2/token
-          scopes:
-            amplitude.customer.read: Read customer identity and KYC facts
-            amplitude.account.read: Read customer account facts
     mutualTLS:
       type: mutualTLS
       description: SIXPAY client certificate trusted by the bank.

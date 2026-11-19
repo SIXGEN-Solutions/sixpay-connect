@@ -3,6 +3,7 @@ package com.sixpay.customer.management.application.service;
 import com.sixpay.customer.management.application.port.input.ResolveCustomerSubscriptionUseCase;
 import com.sixpay.customer.management.application.port.input.ResolvedCustomerSubscription;
 import com.sixpay.customer.management.domain.exception.CustomerDomainException;
+import com.sixpay.customer.management.domain.model.CustomerSubscription;
 import com.sixpay.customer.management.domain.model.CustomerSubscriptionId;
 import com.sixpay.customer.management.domain.model.CustomerStatus;
 import com.sixpay.customer.management.domain.repository.CustomerRepository;
@@ -24,6 +25,30 @@ public class CustomerSubscriptionResolutionService implements ResolveCustomerSub
             CustomerSubscriptionRepository subscriptions, CustomerRepository customers) {
         this.subscriptions = Objects.requireNonNull(subscriptions);
         this.customers = Objects.requireNonNull(customers);
+    }
+
+    @Override
+    public ResolvedCustomerSubscription resolveByBankingCustomerReference(
+            String bankingCustomerReference, UUID authenticatedPartnerId) {
+        Objects.requireNonNull(authenticatedPartnerId, "authenticatedPartnerId is required");
+        if (bankingCustomerReference == null || bankingCustomerReference.isBlank()) {
+            throw new CustomerDomainException("customer subscription unavailable");
+        }
+
+        // The same banking reference may exist in multiple financial institutions.
+        // Only exactly one ACTIVE subscription for the trusted Partner is acceptable.
+        var matches = customers.findByBankingCustomerReference(bankingCustomerReference.strip())
+                .stream()
+                .flatMap(customer -> subscriptions.findByCustomerId(customer.id()).stream())
+                .filter(subscription -> authenticatedPartnerId.equals(subscription.partnerId()))
+                .filter(CustomerSubscription::acceptsPayments)
+                .limit(2)
+                .toList();
+        if (matches.size() != 1) {
+            throw new CustomerDomainException("customer subscription unavailable");
+        }
+        // Reuse all existing ownership, Customer status and account-binding checks.
+        return resolve(matches.getFirst().id().value(), authenticatedPartnerId);
     }
 
     @Override

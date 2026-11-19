@@ -32,22 +32,23 @@ class InitiateDebitCommandTest {
     }
 
     @Test
-    void rejectsNonUuidCustomerSubscriptionReference() {
-        assertThatThrownBy(() -> new InitiateDebitCommand(
-                "PARTNER", "machine-subject", "PARTNER_ID", "SUB-LEGACY-001",
+    void acceptsBankingCustomerReference() {
+        var command = new InitiateDebitCommand(
+                "PARTNER", "machine-subject", "PARTNER_ID", "0494223",
                 "APP", "AVI-2025-00045678", new BigDecimal("600000"), "XAF",
                 null, "Société ABC SARL", ClaimType.AVI, "100200300",
                 Instant.parse("2026-08-03T10:30:00Z"),
                 List.of(beneficiary("600000")), "https://example.org/callback",
                 "idem-001", CorrelationId.of("11111111-1111-1111-1111-111111111111")
-        )).isInstanceOf(IllegalArgumentException.class);
+        );
+        assertThat(command.clientReference()).isEqualTo("0494223");
     }
 
     @Test
-    void keepsSubscriptionUuidDistinctFromEndToEndBusinessReference() {
+    void keepsBankingCustomerReferenceDistinctFromEndToEndBusinessReference() {
         var command = command(new BigDecimal("600000"), List.of(beneficiary("600000")));
         assertThat(command.clientReference())
-                .isEqualTo("7a7185d1-3c0a-43e0-8b64-a9407f910001");
+                .isEqualTo("BANK-CUST-001");
         assertThat(command.endToEndId()).isEqualTo("AVI-2025-00045678");
         assertThat(command.resolvedPartnerIdentifier()).isEqualTo("TP_APP_001");
     }
@@ -77,7 +78,7 @@ class InitiateDebitCommandTest {
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
-                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "BANK-CUST-001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
@@ -101,7 +102,7 @@ class InitiateDebitCommandTest {
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
-                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "BANK-CUST-001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
@@ -127,7 +128,7 @@ class InitiateDebitCommandTest {
                 "DISPLAY_LOGIN_ONLY",
                 "machine-subject-001",
                 "TP_APP_001",
-                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "BANK-CUST-001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 new BigDecimal("600000"),
@@ -163,7 +164,7 @@ class InitiateDebitCommandTest {
                 "TRESOR_PAY",
                 "TRESOR_PAY",
                 "TP_APP_001",
-                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "BANK-CUST-001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 totalAmount,

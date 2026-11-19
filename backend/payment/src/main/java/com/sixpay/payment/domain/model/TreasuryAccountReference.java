@@ -90,6 +90,8 @@ public final class TreasuryAccountReference implements ValueObject {
                 that.financialInstitutionCode
         ) && treasuryConfigurationId.equals(
                 that.treasuryConfigurationId
+        ) && accountToken.equals(
+                that.accountToken
         ) && configurationVersion.equals(
                 that.configurationVersion
         );
@@ -100,6 +102,7 @@ public final class TreasuryAccountReference implements ValueObject {
         return Objects.hash(
                 financialInstitutionCode,
                 treasuryConfigurationId,
+                accountToken,
                 configurationVersion
         );
     }

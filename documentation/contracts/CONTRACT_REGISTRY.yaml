@@ -149,7 +149,8 @@ contracts:
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:
-      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      active: ["OAUTH2_CLIENT_CREDENTIALS"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       requiredScopes:
         read: "payment.read"
     mvpUsage:
@@ -195,12 +196,13 @@ contracts:
     generationPolicy: "ACTIVE"
     codeGenerationAllowed: true
     security:
-      active: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      active: ["OAUTH2_CLIENT_CREDENTIALS"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       conditional: ["TRANSPORT_API_KEY", "ANTI_REPLAY_HEADERS"]
     mvpUsage:
       included: true
       purpose:
-        - "Initiate Payment via POST /v1/payments/initiate"
+        - "Initiate Payment via POST /api/v1/payments/initiate"
         - "Resolve CustomerSubscription through referenceClient and authenticated Partner"
         - "Create bank-owned ACTIVE OTP challenge before returning AWAITING_OTP"
       constraints:
@@ -263,7 +265,8 @@ contracts:
     codeGenerationAllowed: true
     security:
       status: "APPROVED_CONTRACT_PROFILE"
-      authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
+      authentication: ["OAUTH2_BEARER_JWT"]
+      optionalAuthentication: ["MUTUAL_TLS"]
       requiredScopes:
         verify: "payment.confirmation.verify"
         resend: "payment.confirmation.resend"
@@ -311,7 +314,7 @@ contracts:
     governanceDecision: "D00-CB-OWNERSHIP"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
-      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      authentication: ["MUTUAL_TLS"]
       correlationHeader: "X-Correlation-ID"
       institutionHeader: "X-Financial-Institution-Code"
       operationalParameters: "EXTERNAL_CONFIGURATION"
@@ -343,7 +346,7 @@ contracts:
         - "The approved Payment Confirmation policy invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
         - "Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
         - "The contract records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation capability"
-        - "Environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
+        - "Environment-specific mTLS certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
         - "OTP success does not establish funds availability or posting success"
 
   - id: "amplitude-customer-verification-api-v1"
@@ -403,7 +406,7 @@ contracts:
     governanceDecision: "ACCOUNTING_T1_T1_4_APPROVED_DECISIONS"
     security:
       status: "APPROVED_CONTRACT_PROFILE_REUSED"
-      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      authentication: ["MUTUAL_TLS"]
       correlationHeader: "X-Correlation-ID"
       institutionHeader: "X-Financial-Institution-Code"
       idempotencyHeader: "Idempotency-Key"
@@ -446,10 +449,7 @@ contracts:
     governanceDecision: "D00-CB-OWNERSHIP"
     security:
       status: "APPROVED_CONTRACT_PROFILE"
-      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
-      requiredScopes:
-        execute: "amplitude.payment.execution"
-        read: "amplitude.payment.execution.read"
+      authentication: ["MUTUAL_TLS"]
       correlationHeader: "X-Correlation-ID"
       institutionHeader: "X-Financial-Institution-Code"
       idempotencyHeader: "Idempotency-Key"
@@ -471,7 +471,7 @@ contracts:
         - "SIXPAY persists reduced immutable snapshots, not the complete historical Amplitude bkeve/bkmvti entity/table schema"
         - "Provider-specific payloads and mappings remain in Payment infrastructure"
         - "Debtor and creditor account references use the approved age-ncp-clc exchange format"
-        - "The auxiliary event-number, accounting-date and night-mode lookups are read-only Core Banking context operations under the same OAuth2 client-credentials plus mTLS profile"
+        - "The auxiliary event-number, accounting-date and night-mode lookups are read-only Core Banking context operations under the same mTLS client-certificate profile"
         - "No standalone read-only Funds Control Core Banking call exists in the MVP"
         - "The canonical debtor account reference comes from the earlier VERIFIED Customer Verification result"
         - "The protected creditor account reference is resolved from Partner-owned data before snapshot finalization"
@@ -481,7 +481,7 @@ contracts:
         - "Same Idempotency-Key plus same logical request maps to the same financial operation/result"
         - "Same Idempotency-Key plus a different logical request is a conflict"
         - "Unknown financial outcomes permit authoritative lookup only, never blind replay"
-        - "OAuth2 Client Credentials and mTLS remain application-level security even inside the same bank SI"
+        - "mTLS client certificate and bank-side authorization remain mandatory even inside the same bank SI"
       approvedOperations:
         execute: "POST /api/v1/payment-events"
         lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
@@ -557,7 +557,7 @@ contracts:
         - "TFJ delay alone never authorizes automatic reversal"
     approvalPrerequisite:
       - "SIXPAY Accounting and Integration approve the target callback, lookup and business-status semantics"
-      - "Security approves mTLS plus HMAC for callback and OAuth2 plus mTLS for lookup"
+      - "Security reviews mTLS plus HMAC for callback and mTLS without Bearer for lookup"
       - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
 
   - id: "tresorpay-treasury-integration-webhook-v1"
@@ -973,7 +973,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:
@@ -1151,7 +1151,7 @@ contracts:
     sourceSystem: "SIXPAY"
     systemOfRecord: "SIXPAY"
     lifecycleStatus: "ACTIVE_MVP"
-    approvalStatus: "PENDING_APPROVAL"
+    approvalStatus: "APPROVED"
     generationPolicy: "REFERENCE_ONLY"
     codeGenerationAllowed: false
     security:

@@ -11,7 +11,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Canonical bounded Treasury allocation intention.
+ * Canonical bounded Treasury allocation intention. An empty allocation set
+ * denotes an unresolved Treasury allocation at Payment initiation; it never
+ * denotes a zero-value payment or a fabricated beneficiary.
  */
 public final class TreasuryAllocationIntent implements ValueObject {
 
@@ -40,10 +42,9 @@ public final class TreasuryAllocationIntent implements ValueObject {
             );
         }
 
-        if (allocations.isEmpty()
-                || allocations.size() > MAXIMUM_ALLOCATIONS) {
+        if (allocations.size() > MAXIMUM_ALLOCATIONS) {
             throw new IllegalArgumentException(
-                    "Treasury allocation count must be between 1 and "
+                    "Treasury allocation count must not exceed "
                             + MAXIMUM_ALLOCATIONS
             );
         }
@@ -97,7 +98,9 @@ public final class TreasuryAllocationIntent implements ValueObject {
             );
         }
 
-        if (!calculatedTotal.equals(totalAmount)) {
+        // An empty list means the Treasury configuration has not been resolved
+        // during initiation. It is NOT an allocation of 0 to a beneficiary.
+        if (!canonical.isEmpty() && !calculatedTotal.equals(totalAmount)) {
             throw new IllegalArgumentException(
                     "Treasury allocations must sum exactly to the total"
             );

@@ -38,20 +38,20 @@ import { CustomerManagementService } from '../services/customer-management.servi
   ],
   template: `
     <sp-toolbar
-      title="Customers SIXPAY"
-      description="Recherchez et administrez les Customers enrôlés dans SIXPAY."
+      title="Clients SIXPAY"
+      description="Recherchez et administrez les Clients enrôlés dans SIXPAY."
     />
 
     <div class="customer-actions">
       @if (canCreate()) {
-        <a mat-flat-button routerLink="/customers/enroll"> Enrôler un Customer </a>
+        <a mat-flat-button routerLink="/customers/enroll"> Enrôler un Client </a>
       }
 
       <a mat-stroked-button routerLink="/customers/observed"> Clients observés </a>
     </div>
 
     <div class="customer-content">
-      <sp-card title="Recherche Customer">
+      <sp-card title="Recherche Client">
         <form
           class="customer-search-form"
           [formGroup]="searchForm"
@@ -99,11 +99,11 @@ import { CustomerManagementService } from '../services/customer-management.servi
         </form>
       </sp-card>
 
-      <sp-card title="Customers enrôlés">
+      <sp-card title="Clients enrôlés">
         @if (loading()) {
-          <sp-loading label="Chargement des Customers" />
+          <sp-loading label="Chargement des Clients" />
         } @else if (customers().length === 0) {
-          <p>Aucun Customer ne correspond aux critères.</p>
+          <p>Aucun Client ne correspond aux critères.</p>
         } @else {
           <div class="customer-grid">
             @for (customer of customers(); track customer.id) {

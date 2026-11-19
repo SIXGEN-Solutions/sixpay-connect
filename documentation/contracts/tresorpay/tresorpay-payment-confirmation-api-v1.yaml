@@ -27,7 +27,7 @@ info:
     operation-specific scope is required; human OIDC identities are not accepted.
     SIXPAY resolves the authenticated technical client to a registered Partner
     and checks ownership of the Payment before any Core Banking request.
-    The existing mTLS gateway requirement remains applicable.
+    mTLS is optional for these public operations; the M2M JWT remains required.
 
     A successful HTTP response means that SIXPAY reached a stable result for
     the requested confirmation operation. The caller must still interpret
@@ -52,10 +52,11 @@ info:
     paymentSystemOfRecord: "SIXPAY"
     otpSystemOfRecord: "LA_REGIONALE"
     bankChallengeSystemOfRecord: "LA_REGIONALE"
-    securityDecision: "APPROVED_OAUTH2_JWT_MTLS"
+    securityDecision: "OAUTH2_M2M_JWT_REQUIRED_MTLS_OPTIONAL"
     securityProfile:
       authentication:
         - "OAUTH2_BEARER_JWT"
+      optionalAuthentication:
         - "MUTUAL_TLS"
       requiredScopes:
         verifyPaymentConfirmationChallenge: "payment.confirmation.verify"
@@ -87,14 +88,13 @@ servers:
 
 security:
   - bearerAuth: []
-    mutualTLS: []
 
 tags:
   - name: Payment Confirmation
     description: Customer confirmation operations for an existing SIXPAY Payment.
 
 paths:
-  /v1/payments/{paymentReference}/confirmation-challenge:
+  /api/v1/payments/{paymentReference}/confirmation-challenge:
     get:
       tags: [Payment Confirmation]
       operationId: getPaymentConfirmationChallenge
@@ -123,7 +123,7 @@ paths:
         '500': { $ref: '#/components/responses/InternalServerError' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
-  /v1/payments/{paymentReference}/confirmation-challenge/verify:
+  /api/v1/payments/{paymentReference}/confirmation-challenge/verify:
     post:
       tags: [Payment Confirmation]
       operationId: verifyPaymentConfirmationChallenge
@@ -167,7 +167,7 @@ paths:
         '500': { $ref: '#/components/responses/InternalServerError' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
-  /v1/payments/{paymentReference}/confirmation-challenge/resend:
+  /api/v1/payments/{paymentReference}/confirmation-challenge/resend:
     post:
       tags: [Payment Confirmation]
       operationId: resendPaymentConfirmationChallenge
@@ -215,7 +215,7 @@ components:
     mutualTLS:
       type: mutualTLS
       description: >-
-        Mutual TLS is mandatory in addition to the OAuth2 Bearer JWT.
+        Mutual TLS is optional; OAuth2 Bearer JWT remains mandatory.
         Certificates and trust material remain external configuration.
 
   parameters:
@@ -608,7 +608,7 @@ x-sixpay-approvals:
   codeGeneration: APPROVED
   note: >-
     LOT 0.4.8 closes the remaining public-security decision with OAuth2 Bearer
-    JWT plus mandatory mutual TLS and dedicated Payment Confirmation scopes.
+    required JWT with dedicated Payment Confirmation scopes; optional mTLS.
     TRESOR PAY Payment Confirmation is approved and authorized for code
     generation. OAuth2 issuer/token endpoints, certificates and trust material
     remain environment-specific external configuration.

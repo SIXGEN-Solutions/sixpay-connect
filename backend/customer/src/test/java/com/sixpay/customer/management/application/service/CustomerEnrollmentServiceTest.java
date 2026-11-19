@@ -39,7 +39,7 @@ class CustomerEnrollmentServiceTest {
     }
 
     private EnrollCustomerCommand command() {
-        return new EnrollCustomerCommand("SIXPAY_BANK", "NIU-001", null,
+        return new EnrollCustomerCommand("SIXPAY_BANK", "NIU-001", "000123",
                 "ACC-001", UUID.randomUUID().toString());
     }
 
@@ -157,4 +157,26 @@ class CustomerEnrollmentServiceTest {
                 .isInstanceOf(IllegalStateException.class);
         verify(repository, never()).save(any());
     }
+    @Test
+    void customerNumberIsRequiredEvenIfNiuIsPresent() {
+        assertThatThrownBy(() -> new EnrollCustomerCommand(
+                "REGIONAL", "NIU-001", null, "ACC-001", "corr"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("customerNumber");
+    }
+
+    @Test
+    void selectedAccountMustStillMatchFreshVerification() {
+        var service = service();
+
+        VerifyCustomerResult verifiedResult = verified("OTHER-ACCOUNT");
+        when(verification.verify(any())).thenReturn(verifiedResult);
+
+        assertThatThrownBy(() -> service.enroll(command()))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessageContaining("mismatch");
+
+        verify(repository, never()).save(any());
+    }
+
 }

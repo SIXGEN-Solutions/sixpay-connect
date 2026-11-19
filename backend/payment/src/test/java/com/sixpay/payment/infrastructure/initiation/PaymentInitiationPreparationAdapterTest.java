@@ -4,6 +4,11 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.common.identifier.IdentifierGenerator;
 import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
+import com.sixpay.payment.application.port.output.customer.PaymentCustomerSubscriptionPort;
+import com.sixpay.payment.application.port.output.customer.ResolvedPaymentSubscription;
+import com.sixpay.payment.application.port.output.partner.PartnerIdentityResolutionPort;
+import com.sixpay.payment.application.port.output.partner.ResolvedPartnerIdentity;
+import org.junit.jupiter.api.BeforeEach;
 import com.sixpay.payment.domain.model.ClaimType;
 import com.sixpay.payment.domain.model.PaymentSource;
 import org.junit.jupiter.api.Test;
@@ -11,10 +16,12 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 class PaymentInitiationPreparationAdapterTest {
 
@@ -29,13 +36,28 @@ class PaymentInitiationPreparationAdapterTest {
     private final IdentifierGenerator<UUID> identifiers =
             () -> PAYMENT_UUID;
 
+    private static final UUID PARTNER_UUID =
+            UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
+    private static final UUID SUBSCRIPTION_UUID =
+            UUID.fromString("cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa");
+    private final PartnerIdentityResolutionPort partners = mock(PartnerIdentityResolutionPort.class);
+    private final PaymentCustomerSubscriptionPort subscriptions = mock(PaymentCustomerSubscriptionPort.class);
     private final PaymentInitiationPreparationAdapter adapter =
-            new PaymentInitiationPreparationAdapter(
-                    identifiers
-            );
+            new PaymentInitiationPreparationAdapter(identifiers, subscriptions, partners);
+
+    @BeforeEach
+    void setupSubscriptionLookup() {
+        when(partners.findByPartnerIdentifier("TP_APP_001"))
+                .thenReturn(Optional.of(new ResolvedPartnerIdentity(PARTNER_UUID, "TP_APP_001", true)));
+        when(subscriptions.resolveByBankingCustomerReference("BANK-CUST-001", PARTNER_UUID))
+                .thenReturn(new ResolvedPaymentSubscription(
+                        SUBSCRIPTION_UUID, PARTNER_UUID, "BANK", "BANK-CUST-001",
+                        null, null, "Customer One", "ACC-001",
+                        "v1:" + "a".repeat(64), "****0001"));
+    }
 
     @Test
-    void preparesProtectedDomainIntentWithoutClearRib() {
+    void preparesInitiationWithoutPartnerBeneficiaryAllocations() {
         InitiateDebitCommand command = command(
                 List.of(
                         beneficiary(
@@ -71,6 +93,10 @@ class PaymentInitiationPreparationAdapterTest {
                 .requestFingerprint().value())
                 .isEqualTo("a".repeat(64));
 
+        assertThat(intent.externalSubscriptionReference().value())
+                .isEqualTo(SUBSCRIPTION_UUID.toString());
+        verify(subscriptions).resolveByBankingCustomerReference("BANK-CUST-001", PARTNER_UUID);
+
         assertThat(intent.financialInstitutionCode())
                 .isNull();
         assertThat(intent.debtorAccountReference())
@@ -78,7 +104,7 @@ class PaymentInitiationPreparationAdapterTest {
 
         assertThat(intent.treasuryAllocationIntent()
                 .allocations())
-                .hasSize(2);
+                .isEmpty();
         assertThat(intent.initiationContext())
                 .isNotNull();
         assertThat(intent.initiationContext().partnerLoginName())
@@ -160,7 +186,7 @@ class PaymentInitiationPreparationAdapterTest {
                 "UNTRUSTED_LOGIN",
                 "TRESOR_PAY",
                 "TP_APP_001",
-                "7a7185d1-3c0a-43e0-8b64-a9407f910001",
+                "BANK-CUST-001",
                 "TP_APP_001",
                 "AVI-2025-00045678",
                 total,

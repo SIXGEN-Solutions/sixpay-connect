@@ -8,6 +8,7 @@ import com.sixpay.customer.management.domain.repository.CustomerSubscriptionRepo
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -128,6 +129,74 @@ class CustomerSubscriptionResolutionTest {
         assertThat(firstApplication).isEqualTo(secondApplication);
         assertThat(firstApplication.partnerId()).isEqualTo(partnerId);
         assertThat(firstApplication.bankingAccountReference()).isEqualTo("ACC-001");
+    }
+
+    @Test
+    void resolvesActiveSubscriptionFromBankingReferenceAndPartner() {
+        when(customers.findByBankingCustomerReference("BANK-CUST-001"))
+                .thenReturn(List.of(customer(null)));
+        when(subscriptions.findByCustomerId(customerId))
+                .thenReturn(List.of(activeSubscription()));
+        when(subscriptions.findById(subscriptionId))
+                .thenReturn(Optional.of(activeSubscription()));
+        when(customers.findById(customerId))
+                .thenReturn(Optional.of(customer(null)));
+
+        var resolved = service.resolveByBankingCustomerReference("BANK-CUST-001", partnerId);
+        assertThat(resolved.subscriptionId()).isEqualTo(subscriptionId.value());
+        assertThat(resolved.bankingCustomerReference()).isEqualTo("BANK-CUST-001");
+    }
+
+    @Test
+    void rejectsBankingReferenceWithoutActiveSubscription() {
+        when(customers.findByBankingCustomerReference("BANK-CUST-001"))
+                .thenReturn(List.of(customer(null)));
+        when(subscriptions.findByCustomerId(customerId))
+                .thenReturn(List.of(pendingSubscription()));
+
+        assertThatThrownBy(() -> service.resolveByBankingCustomerReference("BANK-CUST-001", partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+        verify(subscriptions, never()).findById(any());
+    }
+
+    @Test
+    void rejectsBankingReferenceBelongingToOtherPartner() {
+        when(customers.findByBankingCustomerReference("BANK-CUST-001"))
+                .thenReturn(List.of(customer(null)));
+        when(subscriptions.findByCustomerId(customerId))
+                .thenReturn(List.of(activeSubscription()));
+
+        assertThatThrownBy(() -> service.resolveByBankingCustomerReference("BANK-CUST-001", UUID.randomUUID()))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+        verify(subscriptions, never()).findById(any());
+    }
+
+    @Test
+    void rejectsAmbiguousBankingReferenceAcrossInstitutions() {
+        var anotherCustomerId = new CustomerId(UUID.randomUUID());
+        var anotherAccountId = new CustomerBankAccountId(UUID.randomUUID());
+        var anotherAccount = CustomerBankAccount.create(
+                anotherAccountId, anotherCustomerId, "OTHER-ACC", "v1:" + "b".repeat(64),
+                "****0002", "XAF", "CURRENT", NOW);
+        var anotherCustomer = Customer.create(anotherCustomerId, "OTHER-BANK", "BANK-CUST-001",
+                "000987", null, "Other Customer", null, null, anotherAccount, NOW);
+        var anotherSubscription = CustomerSubscription.create(
+                new CustomerSubscriptionId(UUID.randomUUID()), anotherCustomerId,
+                partnerId, anotherAccountId, NOW);
+        anotherSubscription.activate(NOW.plusSeconds(1));
+        when(customers.findByBankingCustomerReference("BANK-CUST-001"))
+                .thenReturn(List.of(customer(null), anotherCustomer));
+        when(subscriptions.findByCustomerId(customerId))
+                .thenReturn(List.of(activeSubscription()));
+        when(subscriptions.findByCustomerId(anotherCustomerId))
+                .thenReturn(List.of(anotherSubscription));
+
+        assertThatThrownBy(() -> service.resolveByBankingCustomerReference("BANK-CUST-001", partnerId))
+                .isInstanceOf(CustomerDomainException.class)
+                .hasMessage("customer subscription unavailable");
+        verify(subscriptions, never()).findById(any());
     }
 
     private CustomerSubscription pendingSubscription() {

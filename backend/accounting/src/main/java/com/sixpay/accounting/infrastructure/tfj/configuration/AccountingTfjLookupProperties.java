@@ -19,7 +19,12 @@ public record AccountingTfjLookupProperties(
 
     public AccountingTfjLookupProperties {
         if (baseUrl == null || !baseUrl.isAbsolute() || baseUrl.getHost() == null
-                || !"https".equalsIgnoreCase(baseUrl.getScheme())) {
+                || !("https".equalsIgnoreCase(baseUrl.getScheme())
+                    || (security != null && security.allowInsecureHttp() && !security.mtlsEnabled()
+                    && "http".equalsIgnoreCase(baseUrl.getScheme())
+                    && ("localhost".equalsIgnoreCase(baseUrl.getHost())
+                        || "127.0.0.1".equals(baseUrl.getHost())
+                        || "::1".equals(baseUrl.getHost()))))) {
             throw new IllegalArgumentException("baseUrl must be an absolute HTTPS URI");
         }
         if (lookupPath == null || lookupPath.isBlank() || !lookupPath.startsWith("/")) {
@@ -33,13 +38,13 @@ public record AccountingTfjLookupProperties(
         security = Objects.requireNonNull(security, "security");
     }
 
-    public record Security(String oauth2RegistrationId, String sslBundle) {
+    public record Security(boolean mtlsEnabled, boolean allowInsecureHttp, String sslBundle) {
         public Security {
-            if (oauth2RegistrationId == null || oauth2RegistrationId.isBlank()) {
-                throw new IllegalArgumentException("oauth2RegistrationId is required");
+            if (mtlsEnabled && (sslBundle == null || sslBundle.isBlank())) {
+                throw new IllegalArgumentException("sslBundle is required when mTLS is enabled");
             }
-            if (sslBundle == null || sslBundle.isBlank()) {
-                throw new IllegalArgumentException("sslBundle is required");
+            if (mtlsEnabled && allowInsecureHttp) {
+                throw new IllegalArgumentException("insecure HTTP cannot be combined with mTLS");
             }
         }
     }

@@ -8,7 +8,7 @@ info:
     gate: FS-2_REPOSITORY_BASELINE_CONSOLIDATION
     phaseStep: FS-2.1.4
     lifecycleStatus: ACTIVE_MVP
-    approvalStatus: PENDING_APPROVAL
+    approvalStatus: APPROVED
     generationPolicy: REFERENCE_ONLY
     codeGenerationAllowed: false
     domain: customer

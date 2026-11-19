@@ -34,7 +34,7 @@ class OpenApiConfigurationArchitectureTest {
                 ".group(\"customer\")",
                 ".group(\"administration\")",
                 "/api/v1/partners/**",
-                "/v1/payments/**",
+                "/api/v1/payments/**",
                 "/internal/api/v1/payments/**",
                 "/internal/api/v1/observed-customers/**",
                 "/internal/api/v1/administration/users/**"

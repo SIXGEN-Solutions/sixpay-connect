@@ -29,6 +29,10 @@ export function mapBankingPreview(
   return {
     ...response,
     retrievedAt: new Date(response.retrievedAt),
+    accounts: response.accounts.map((account) => ({
+      ...account,
+      retrievedAt: new Date(account.retrievedAt),
+    })),
   };
 }
 

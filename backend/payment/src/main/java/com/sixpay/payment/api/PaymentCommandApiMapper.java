@@ -4,7 +4,6 @@ import com.sixpay.common.context.CorrelationId;
 import com.sixpay.payment.api.request.InitiateDebitRequest;
 import com.sixpay.payment.api.response.InitiateDebitResponse;
 import com.sixpay.payment.api.response.PaymentMoneyResponse;
-import com.sixpay.payment.application.command.InitiateDebitBeneficiaryCommand;
 import com.sixpay.payment.application.command.InitiateDebitCommand;
 import com.sixpay.payment.application.view.InitiateDebitResult;
 import org.springframework.stereotype.Component;
@@ -48,16 +47,7 @@ public final class PaymentCommandApiMapper {
                 request.claimType(),
                 request.taxpayerIdentifier(),
                 request.requestedExecutionAt(),
-                request.beneficiaries() == null
-                        ? java.util.List.of()
-                        : request.beneficiaries().stream()
-                                .map(beneficiary ->
-                                        new InitiateDebitBeneficiaryCommand(
-                                                beneficiary.rib(),
-                                                beneficiary.amount()
-                                        )
-                                )
-                                .toList(),
+                java.util.List.of(),
                 request.callbackUrl(),
                 idempotencyKey,
                 correlationId

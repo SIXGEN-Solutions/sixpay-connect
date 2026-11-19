@@ -118,7 +118,7 @@ public class PaymentConfirmationIdempotencyAdapter
                 transactions.begin(
                         VERIFY_OPERATION,
                         idempotencyKey.value(),
-                        candidates.get(0),
+                        candidates.getFirst(),
                         candidates,
                         timeProvider.now()
                 );

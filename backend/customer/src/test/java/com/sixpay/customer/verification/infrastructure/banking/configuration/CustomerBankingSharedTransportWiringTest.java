@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** CB-3: protect the existing shared Customer banking HTTP composition without technical OAuth2 or mTLS. */
+/** CB-3: protect the existing shared Customer banking HTTP composition without technical OAuth2; optional SSL reuses the shared transport. */
 class CustomerBankingSharedTransportWiringTest {
 
     @Test
@@ -31,7 +31,8 @@ class CustomerBankingSharedTransportWiringTest {
         assertThat(restClient.getReturnType()).isEqualTo(RestClient.class);
         assertThat(restClient.getParameterTypes()).containsExactly(
                 com.sixpay.integration.http.StandardRestClientFactory.class,
-                BankingVerificationProperties.class);
+                BankingVerificationProperties.class, boolean.class, String.class,
+                org.springframework.beans.factory.ObjectProvider.class);
         assertThat(lookup.isAnnotationPresent(Bean.class)).isTrue();
         assertThat(verification.isAnnotationPresent(Bean.class)).isTrue();
         assertThat(lookup.getReturnType()).isEqualTo(AmplitudeCustomerLookupClient.class);

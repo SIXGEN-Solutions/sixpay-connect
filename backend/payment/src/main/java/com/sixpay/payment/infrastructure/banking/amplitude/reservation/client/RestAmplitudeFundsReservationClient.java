@@ -24,7 +24,6 @@ public final class RestAmplitudeFundsReservationClient
         implements AmplitudeFundsReservationClient {
 
     private final RestClient restClient;
-    private final FundsReservationAccessTokenProvider tokenProvider;
     private final AmplitudeFundsReservationProperties properties;
     private final AmplitudeFundsReservationMapper mapper;
     private final AmplitudeFundsReservationResponseValidator validator;
@@ -32,14 +31,13 @@ public final class RestAmplitudeFundsReservationClient
 
     public RestAmplitudeFundsReservationClient(
             RestClient restClient,
-            FundsReservationAccessTokenProvider tokenProvider,
+
             AmplitudeFundsReservationProperties properties,
             AmplitudeFundsReservationMapper mapper,
             AmplitudeFundsReservationResponseValidator validator,
             ObjectMapper objectMapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
         this.validator = Objects.requireNonNull(validator);
@@ -57,12 +55,7 @@ public final class RestAmplitudeFundsReservationClient
                     .uri(properties.reservationPath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .headers(headers -> {
-                        String token = tokenProvider.accessToken();
-                        if (token != null && !token.isBlank()) {
-                            headers.setBearerAuth(token);
-                        }
-                    })
+
                     .header(
                             IntegrationHttpHeaders.CORRELATION_ID,
                             request.context().correlationId().value()

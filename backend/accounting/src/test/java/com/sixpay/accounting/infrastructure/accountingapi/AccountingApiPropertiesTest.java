@@ -22,10 +22,9 @@ class AccountingApiPropertiesTest {
                         "/api/v1/accounting-entries/idempotency/{idempotencyKey}",
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(5),
-                        new AccountingApiProperties.Security(
-                                "accounting-api",
-                                "accounting-api-client"
-                        ),
+                        new AccountingApiProperties.Security(false,
+                                false,
+                                "accounting-api-client"),
                         new AccountingApiProperties.Contract(
                                 "Idempotency-Key"
                         )
@@ -49,10 +48,9 @@ class AccountingApiPropertiesTest {
                         "/api/v1/accounting-entries/idempotency/{idempotencyKey}",
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(5),
-                        new AccountingApiProperties.Security(
-                                "accounting-api",
-                                "accounting-api-client"
-                        ),
+                        new AccountingApiProperties.Security(false,
+                                false,
+                                "accounting-api-client"),
                         new AccountingApiProperties.Contract(
                                 "Idempotency-Key"
                         )
@@ -72,10 +70,9 @@ class AccountingApiPropertiesTest {
                         "/api/v1/accounting-entries/idempotency/{idempotencyKey}",
                         Duration.ofSeconds(5),
                         Duration.ofSeconds(2),
-                        new AccountingApiProperties.Security(
-                                "accounting-api",
-                                "accounting-api-client"
-                        ),
+                        new AccountingApiProperties.Security(false,
+                                false,
+                                "accounting-api-client"),
                         new AccountingApiProperties.Contract(
                                 "Idempotency-Key"
                         )

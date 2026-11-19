@@ -25,18 +25,24 @@ export interface CustomerMasterResponse {
   bankAccounts: CustomerBankAccountResponse[];
 }
 
-export interface BankingCustomerPreviewResponse {
-  financialInstitutionCode: string;
-  bankingCustomerReference: string;
-  customerNumber: string | null;
-  niu: string;
-  legalName: string;
-  email: string | null;
-  phoneNumber: string | null;
+export interface BankingCustomerPreviewAccountResponse {
   accountReference: string;
   maskedAccountIdentifier: string;
   currency: string;
   accountType: string | null;
+  status: string | null;
+  retrievedAt: string;
+}
+
+export interface BankingCustomerPreviewResponse {
+  financialInstitutionCode: string;
+  bankingCustomerReference: string;
+  customerNumber: string | null;
+  niu: string | null;
+  legalName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  accounts: BankingCustomerPreviewAccountResponse[];
   retrievedAt: string;
 }
 

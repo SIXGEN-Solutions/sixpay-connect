@@ -1,8 +1,6 @@
 # SIXPAY CONNECT - production, configuration autonome (aucun spring.config.import).
 # T1: compensation Payment release/reversal desactivee; Accounting T1/TFJ aussi desactive par defaut.
-# Prerequis: secrets externes, LDAPS, OAuth2 bancaire et mTLS provisionnes.
-# Les clients OAuth2/SSL T1 sont volontairement absents tant que T1 reste desactive;
-# leur activation necessite une decision explicite et leurs credentiels.
+# Prerequis: secrets externes, LDAPS, mTLS provisionnes.
 spring:
   application:
     name: sixpay-connect
@@ -34,6 +32,21 @@ spring:
         jdbc:
           time_zone: UTC
         default_schema: sixpay
+
+
+  ssl:
+    bundle:
+      jks:
+        amplitude-payment-client:
+          keystore:
+            location: ${AMPLITUDE_PAYMENT_KEYSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_TRUSTSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_TRUSTSTORE_TYPE:PKCS12}
+
 springdoc:
   api-docs:
     enabled: false
@@ -118,6 +131,12 @@ sixpay:
             configuration-id: TREASURY-BANK-CM-RNF
             account-reference: ${TREASURY_BANK_CM_RNF_ACCOUNT_REF:}
             version: "v1"
+    confirmation:
+      idempotency:
+        hmac:
+          enabled: ${SIXPAY_PAYMENT_OTP_HMAC_ENABLED:false}
+          key-base64: ${SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64:}
+          previous-keys-base64: ${SIXPAY_PAYMENT_OTP_HMAC_PREVIOUS_KEYS_BASE64:}
     banking:
       amplitude:
         reservation:
@@ -127,10 +146,8 @@ sixpay:
           connect-timeout: ${AMPLITUDE_FUNDS_RESERVATION_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_FUNDS_RESERVATION_READ_TIMEOUT:5s}
           security:
-            oauth2-enabled: ${AMPLITUDE_FUNDS_RESERVATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_FUNDS_RESERVATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_FUNDS_RESERVATION_ALLOW_INSECURE_HTTP:false}
-            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
             version: ${AMPLITUDE_FUNDS_RESERVATION_CONTRACT_VERSION:provisional-v1}
@@ -151,10 +168,8 @@ sixpay:
           connect-timeout: ${AMPLITUDE_POSTING_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
           security:
-            oauth2-enabled: ${AMPLITUDE_POSTING_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_POSTING_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_POSTING_ALLOW_INSECURE_HTTP:false}
-            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
             version: ${AMPLITUDE_POSTING_CONTRACT_VERSION:1.0.0}
@@ -169,10 +184,8 @@ sixpay:
           connect-timeout: ${AMPLITUDE_COMPENSATION_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_COMPENSATION_READ_TIMEOUT:10s}
           security:
-            oauth2-enabled: ${AMPLITUDE_COMPENSATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_COMPENSATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_COMPENSATION_ALLOW_INSECURE_HTTP:false}
-            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
             version: ${AMPLITUDE_COMPENSATION_CONTRACT_VERSION:provisional-v1}
@@ -190,7 +203,6 @@ sixpay:
           connect-timeout: ${AMPLITUDE_POSTING_STATUS_CONNECT_TIMEOUT:2s}
           read-timeout: ${AMPLITUDE_POSTING_STATUS_READ_TIMEOUT:5s}
           security:
-            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
         confirmation:
           enabled: ${AMPLITUDE_CONFIRMATION_ENABLED:true}
@@ -204,10 +216,8 @@ sixpay:
           connect-timeout: ${AMPLITUDE_CONFIRMATION_CONNECT_TIMEOUT}
           read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
           security:
-            oauth2-enabled: ${AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_CONFIRMATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP:false}
-            oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
           contract:
             idempotency-header: ${AMPLITUDE_CONFIRMATION_IDEMPOTENCY_HEADER:Idempotency-Key}
@@ -246,8 +256,9 @@ sixpay:
       connect-timeout: ${ACCOUNTING_API_CONNECT_TIMEOUT:2s}
       read-timeout: ${ACCOUNTING_API_READ_TIMEOUT:5s}
       security:
-        oauth2-registration-id: ${ACCOUNTING_API_OAUTH2_REGISTRATION_ID:accounting-api}
-        ssl-bundle: ${ACCOUNTING_API_SSL_BUNDLE:accounting-api-client}
+        mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
+        allow-insecure-http: ${ACCOUNTING_API_ALLOW_INSECURE_HTTP:false}
+        ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
       contract:
         idempotency-header: ${ACCOUNTING_API_IDEMPOTENCY_HEADER:Idempotency-Key}
     tfj:
@@ -258,8 +269,9 @@ sixpay:
         connect-timeout: ${AMPLITUDE_TFJ_CONNECT_TIMEOUT:2s}
         read-timeout: ${AMPLITUDE_TFJ_READ_TIMEOUT:5s}
         security:
-          oauth2-registration-id: ${AMPLITUDE_TFJ_OAUTH2_REGISTRATION_ID:amplitude-tfj}
-          ssl-bundle: ${AMPLITUDE_TFJ_SSL_BUNDLE:amplitude-tfj-client}
+          mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
+          allow-insecure-http: ${AMPLITUDE_TFJ_ALLOW_INSECURE_HTTP:false}
+          ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
       webhook:
         enabled: ${AMPLITUDE_TFJ_WEBHOOK_ENABLED:false}
     tresorpay-status:
@@ -328,35 +340,3 @@ server:
         http-only: true
         same-site: strict
         secure: ${SIXPAY_SESSION_COOKIE_SECURE:true}
-
----
-# Infrastructure bancaire externe : ne charger qu'avec un profil bancaire explicite.
-spring:
-  config:
-    activate:
-      on-profile: "production & amplitude-banking"
-  security:
-    oauth2:
-      client:
-        provider:
-          amplitude-payment:
-            token-uri: ${AMPLITUDE_PAYMENT_OAUTH2_TOKEN_URI}
-        registration:
-          amplitude-payment:
-            provider: amplitude-payment
-            authorization-grant-type: client_credentials
-            client-id: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_ID}
-            client-secret: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_SECRET}
-            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:amplitude.payment.confirmation,amplitude.payment.execution,amplitude.payment.execution.read}
-  ssl:
-    bundle:
-      jks:
-        amplitude-payment-client:
-          keystore:
-            location: ${AMPLITUDE_PAYMENT_KEYSTORE_LOCATION}
-            password: ${AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD}
-            type: ${AMPLITUDE_PAYMENT_KEYSTORE_TYPE:PKCS12}
-          truststore:
-            location: ${AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION}
-            password: ${AMPLITUDE_PAYMENT_TRUSTSTORE_PASSWORD}
-            type: ${AMPLITUDE_PAYMENT_TRUSTSTORE_TYPE:PKCS12}

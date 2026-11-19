@@ -1,6 +1,7 @@
 package com.sixpay.customer.management.application.port.input;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface BankingCustomerPreviewUseCase {
 
@@ -8,12 +9,18 @@ public interface BankingCustomerPreviewUseCase {
 
     record BankingCustomerPreviewQuery(
             String financialInstitutionCode,
-            String niu,
             String customerNumber,
-            String accountReference,
             String correlationId
-    ) {
-    }
+    ) { }
+
+    record BankingCustomerAccountPreview(
+            String accountReference,
+            String maskedAccountIdentifier,
+            String currency,
+            String accountType,
+            String status,
+            Instant retrievedAt
+    ) { }
 
     record BankingCustomerPreview(
             String financialInstitutionCode,
@@ -23,11 +30,7 @@ public interface BankingCustomerPreviewUseCase {
             String legalName,
             String email,
             String phoneNumber,
-            String accountReference,
-            String maskedAccountIdentifier,
-            String currency,
-            String accountType,
+            List<BankingCustomerAccountPreview> accounts,
             Instant retrievedAt
-    ) {
-    }
+    ) { }
 }

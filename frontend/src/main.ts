@@ -4,8 +4,17 @@
  * The image remains identical across deployments; no mock/config fallback.
  */
 async function startSixpay(): Promise<void> {
-  const { loadRuntimeEnvironment } = await import('./environments/environment.runtime');
-  await loadRuntimeEnvironment();
+  // Angular replaces environment.ts with the selected profile at build time.
+  // The production replacement exports loadRuntimeEnvironment(), which must
+  // complete successfully before Angular providers are evaluated. Local
+  // profiles export only their compile-time environment and need no JSON fetch.
+  const environmentModule = await import('./environments/environment');
+  if (
+    'loadRuntimeEnvironment' in environmentModule &&
+    typeof environmentModule.loadRuntimeEnvironment === 'function'
+  ) {
+    await environmentModule.loadRuntimeEnvironment();
+  }
 
   // Keep the application dependency graph out of the initial static imports.
   // Sequential imports make initialization order explicit and reviewable.

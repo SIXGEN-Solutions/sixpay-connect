@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +22,16 @@ public interface CustomerSpringDataRepository
     )
     Optional<CustomerJpaEntity> findAggregateById(
             @Param("customerId") UUID customerId
+    );
+
+    @EntityGraph(attributePaths = "bankAccounts")
+    @Query(
+            "select distinct customer "
+                    + "from CustomerJpaEntity customer "
+                    + "where customer.bankingCustomerReference = :reference"
+    )
+    List<CustomerJpaEntity> findAllByBankingCustomerReference(
+            @Param("reference") String reference
     );
 
     boolean existsByFinancialInstitutionCodeAndBankingCustomerReference(

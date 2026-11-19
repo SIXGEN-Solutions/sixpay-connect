@@ -89,7 +89,7 @@ class ProtectedAccountValueObjectsTest {
     }
 
     @Test
-    void treasuryReferenceEqualityUsesConfigurationIdentity() {
+    void treasuryReferenceEqualityIncludesAccountToken() {
         TreasuryAccountReference first =
                 new TreasuryAccountReference(
                         BANK,
@@ -115,7 +115,7 @@ class ProtectedAccountValueObjectsTest {
                         "v8"
                 );
 
-        assertEquals(first, sameConfiguration);
+        assertNotEquals(first, sameConfiguration);
         assertNotEquals(first, anotherVersion);
         assertEquals(
                 "****************9999",

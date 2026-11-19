@@ -1,10 +1,8 @@
 package com.sixpay.payment.infrastructure.banking.amplitude.posting.client;
 
-import com.sixpay.integration.http.IntegrationHttpHeaders;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.configuration.AmplitudePostingProperties;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.dto.AmplitudePaymentEventResult;
 import com.sixpay.payment.infrastructure.banking.amplitude.posting.error.AmplitudePaymentEventOutcomeUnknownException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -18,16 +16,14 @@ public final class RestAmplitudePaymentEventRecoveryClient
 
 
     private final RestClient restClient;
-    private final PostingAccessTokenProvider tokenProvider;
     private final AmplitudePostingProperties properties;
 
     public RestAmplitudePaymentEventRecoveryClient(
             RestClient restClient,
-            PostingAccessTokenProvider tokenProvider,
+
             AmplitudePostingProperties properties
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
     }
 
@@ -78,12 +74,7 @@ public final class RestAmplitudePaymentEventRecoveryClient
                     restClient.get()
                             .uri(path, pathValue)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(headers -> {
-                                String token = tokenProvider.accessToken();
-                                if (token != null && !token.isBlank()) {
-                                    headers.setBearerAuth(token);
-                                }
-                            })
+
                             .header(
                                     properties.contract().correlationHeader(),
                                     correlationId

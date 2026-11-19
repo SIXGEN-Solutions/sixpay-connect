@@ -1,18 +1,4 @@
 spring:
-  security:
-    oauth2:
-      client:
-        provider:
-          amplitude-payment:
-            token-uri: ${AMPLITUDE_PAYMENT_OAUTH2_TOKEN_URI}
-        registration:
-          amplitude-payment:
-            provider: amplitude-payment
-            authorization-grant-type: client_credentials
-            client-id: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_ID}
-            client-secret: ${AMPLITUDE_PAYMENT_OAUTH2_CLIENT_SECRET}
-            scope: ${AMPLITUDE_PAYMENT_OAUTH2_SCOPE:amplitude.payment.confirmation,amplitude.payment.execution,amplitude.payment.execution.read}
-
   ssl:
     bundle:
       jks:

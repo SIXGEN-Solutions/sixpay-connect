@@ -12,10 +12,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -30,16 +28,7 @@ import java.util.List;
 )
 public class AmplitudePaymentConfirmationConfiguration {
 
-    @Bean
-    ConfirmationAccessTokenProvider confirmationAccessTokenProvider(
-            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
-            AmplitudePaymentConfirmationProperties properties
-    ) {
-        if (!properties.security().oauth2Enabled()) return () -> null;
-        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
-        if (manager == null) throw new IllegalStateException("OAuth2 manager required when confirmation OAuth2 is enabled");
-        return new OAuth2ConfirmationAccessTokenProvider(manager, properties);
-    }
+
 
     @Bean
     RestClient amplitudePaymentConfirmationRestClient(
@@ -70,7 +59,7 @@ public class AmplitudePaymentConfirmationConfiguration {
     @Bean
     AmplitudePaymentConfirmationClient amplitudePaymentConfirmationClient(
             RestClient amplitudePaymentConfirmationRestClient,
-            ConfirmationAccessTokenProvider tokenProvider,
+
             AmplitudePaymentConfirmationProperties properties,
             AmplitudePaymentConfirmationMapper mapper,
             AmplitudePaymentConfirmationResponseValidator validator,
@@ -78,7 +67,6 @@ public class AmplitudePaymentConfirmationConfiguration {
     ) {
         return new RestAmplitudePaymentConfirmationClient(
                 amplitudePaymentConfirmationRestClient,
-                tokenProvider,
                 properties,
                 mapper,
                 validator,

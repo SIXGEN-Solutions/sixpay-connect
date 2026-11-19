@@ -8,13 +8,11 @@ import com.sixpay.payment.infrastructure.banking.amplitude.release.mapper.Amplit
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.*;
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.client.RestAmplitudeReversalClient;
 import com.sixpay.payment.infrastructure.banking.amplitude.reversal.mapper.AmplitudeReversalMapper;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -32,23 +30,7 @@ import java.util.List;
 )
 public class AmplitudeCompensationConfiguration {
 
-    @Bean
-    CompensationAccessTokenProvider
-    compensationAccessTokenProvider(
-            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
-            AmplitudeCompensationProperties properties
-    ) {
-        if (!properties.security().oauth2Enabled()) {
-            return () -> null;
-        }
-        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
-        if (manager == null) {
-            throw new IllegalStateException(
-                    "OAuth2 manager required when compensation OAuth2 is enabled");
-        }
-        return new OAuth2CompensationAccessTokenProvider(
-                manager, properties.security().oauth2RegistrationId());
-    }
+
 
     @Bean
     RestClient amplitudeCompensationRestClient(
@@ -94,14 +76,13 @@ public class AmplitudeCompensationConfiguration {
     @Bean
     AmplitudeFundsReleaseClient amplitudeFundsReleaseClient(
             RestClient amplitudeCompensationRestClient,
-            CompensationAccessTokenProvider tokenProvider,
+
             AmplitudeCompensationProperties properties,
             AmplitudeFundsReleaseMapper mapper,
             ObjectMapper objectMapper
     ) {
         return new RestAmplitudeFundsReleaseClient(
                 amplitudeCompensationRestClient,
-                tokenProvider,
                 properties,
                 mapper,
                 objectMapper
@@ -111,14 +92,13 @@ public class AmplitudeCompensationConfiguration {
     @Bean
     AmplitudeReversalClient amplitudeReversalClient(
             RestClient amplitudeCompensationRestClient,
-            CompensationAccessTokenProvider tokenProvider,
+
             AmplitudeCompensationProperties properties,
             AmplitudeReversalMapper mapper,
             ObjectMapper objectMapper
     ) {
         return new RestAmplitudeReversalClient(
                 amplitudeCompensationRestClient,
-                tokenProvider,
                 properties,
                 mapper,
                 objectMapper

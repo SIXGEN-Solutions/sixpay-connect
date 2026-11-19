@@ -6,6 +6,20 @@
 <sp-card title="Informations du partenaire">
   <form class="sp-partner-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <mat-form-field appearance="outline">
+      <mat-label>Identifiant partenaire</mat-label>
+      <input
+        matInput
+        formControlName="partnerIdentifier"
+        maxlength="64"
+        autocomplete="off"
+        [attr.aria-describedby]="fieldError('partnerIdentifier') ? 'partnerIdentifier-error' : null"
+      />
+      <sp-form-error
+        errorId="partnerIdentifier-error"
+        [message]="fieldError('partnerIdentifier')"
+      />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
       <mat-label>Raison sociale</mat-label>
       <input
         matInput

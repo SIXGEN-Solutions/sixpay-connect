@@ -74,7 +74,7 @@ public class CustomerController {
     public ResponseEntity<CustomerResponse> create(
             @RequestParam String financialInstitutionCode,
             @RequestParam(required = false) String niu,
-            @RequestParam(required = false) String customerNumber,
+            @RequestParam @Size(max = 50) String customerNumber,
             @RequestParam String accountReference,
             @RequestHeader(name = CORRELATION_HEADER, required = false)
             @Size(max = HEADER_MAX_LENGTH) String correlationId
@@ -167,9 +167,7 @@ public class CustomerController {
                 bankingPreview.preview(
                         new BankingCustomerPreviewUseCase.BankingCustomerPreviewQuery(
                                 request.financialInstitutionCode(),
-                                request.niu(),
                                 request.customerNumber(),
-                                request.accountReference(),
                                 effectiveCorrelationId
                         )
                 )

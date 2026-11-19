@@ -30,10 +30,9 @@ import java.util.logging.Logger;
  * are retained only as request-control metadata.</p>
  */
 @RestController
-@RequestMapping("/v1/payments")
+@RequestMapping("/api/v1/payments")
 @Tag(name = "Payment Commands", description = "TresorPay Payment initiation API")
-@SecurityRequirement(name = "mutualTLS")
-@SecurityRequirement(name = "oauth2")
+@SecurityRequirement(name = "bearerAuth")
 public class PaymentCommandController {
 
     Logger log = Logger.getLogger(PaymentCommandController.class.getName());

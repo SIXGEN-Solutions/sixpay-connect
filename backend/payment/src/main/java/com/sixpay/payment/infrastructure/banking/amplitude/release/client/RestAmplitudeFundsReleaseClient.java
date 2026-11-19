@@ -18,20 +18,18 @@ public final class RestAmplitudeFundsReleaseClient
         implements AmplitudeFundsReleaseClient {
 
     private final RestClient restClient;
-    private final CompensationAccessTokenProvider tokenProvider;
     private final AmplitudeCompensationProperties properties;
     private final AmplitudeFundsReleaseMapper mapper;
     private final ObjectMapper objectMapper;
 
     public RestAmplitudeFundsReleaseClient(
             RestClient restClient,
-            CompensationAccessTokenProvider tokenProvider,
+
             AmplitudeCompensationProperties properties,
             AmplitudeFundsReleaseMapper mapper,
             ObjectMapper objectMapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
         this.objectMapper = Objects.requireNonNull(objectMapper);
@@ -46,12 +44,7 @@ public final class RestAmplitudeFundsReleaseClient
                     .uri(properties.releasePath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .headers(headers -> {
-                        String token = tokenProvider.accessToken();
-                        if (token != null && !token.isBlank()) {
-                            headers.setBearerAuth(token);
-                        }
-                    })
+
                     .header(
                             IntegrationHttpHeaders.CORRELATION_ID,
                             request.context().correlationId().value()

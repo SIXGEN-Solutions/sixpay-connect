@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatRadioModule } from '@angular/material/radio';
 import { Router } from '@angular/router';
 import { catchError, EMPTY, finalize } from 'rxjs';
 
@@ -11,6 +12,7 @@ import { SpCardComponent } from '../../../shared/components/card/sp-card.compone
 import { SpLoadingComponent } from '../../../shared/components/loading/sp-loading.component';
 import { SpToolbarComponent } from '../../../shared/components/toolbar/sp-toolbar.component';
 import { BankingCustomerPreview } from '../models/customer-management';
+import { BankingCustomerPreviewRequest } from '../models/customer-management.requests';
 import { CustomerManagementService } from '../services/customer-management.service';
 
 @Component({
@@ -18,6 +20,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
   imports: [
     MatFormFieldModule,
     MatInputModule,
+    MatRadioModule,
     ReactiveFormsModule,
     SpButtonComponent,
     SpCardComponent,
@@ -26,7 +29,7 @@ import { CustomerManagementService } from '../services/customer-management.servi
   ],
   template: `
     <sp-toolbar
-      title="Enrôlement Customer"
+      title="Enrôlement Client"
       description="Recherchez le client dans Amplitude puis confirmez son enrôlement dans SIXPAY."
     />
 
@@ -38,18 +41,8 @@ import { CustomerManagementService } from '../services/customer-management.servi
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>NIU</mat-label>
-          <input matInput formControlName="niu" autocomplete="off" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
           <mat-label>Numéro client</mat-label>
-          <input matInput formControlName="customerNumber" autocomplete="off" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Référence compte</mat-label>
-          <input matInput formControlName="accountReference" autocomplete="off" />
+          <input matInput formControlName="customerNumber" autocomplete="off" required />
         </mat-form-field>
 
         <div class="customer-enrollment-form__actions">
@@ -80,25 +73,44 @@ import { CustomerManagementService } from '../services/customer-management.servi
             <span>{{ customer.bankingCustomerReference }}</span>
           </div>
           <div>
-            <span class="customer-preview__label">Compte</span>
-            <span>{{ customer.maskedAccountIdentifier }}</span>
-          </div>
-          <div>
-            <span class="customer-preview__label">Devise</span>
-            <span>{{ customer.currency }}</span>
+            <span class="customer-preview__label">Numéro client</span>
+            <span>{{ customer.customerNumber }}</span>
           </div>
         </div>
 
+        <div class="customer-preview__accounts">
+          <strong>3. Choisir le compte bancaire par défaut</strong>
+          @if (customer.accounts.length === 0) {
+            <p>Aucun compte bancaire n'a été retourné pour ce client.</p>
+          } @else {
+            <mat-radio-group
+              aria-label="Sélectionner le compte bancaire par défaut"
+              [value]="selectedAccountReference()"
+              (change)="selectedAccountReference.set($event.value)"
+            >
+              @for (account of customer.accounts; track account.accountReference) {
+                <mat-radio-button
+                  [value]="account.accountReference"
+                  [disabled]="account.status !== 'ACTIVE'"
+                >
+                  {{ account.maskedAccountIdentifier }} — {{ account.status || 'Statut non renseigné' }}
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          }
+        </div>
+
         <p class="customer-preview__notice">
-          Le preview ne constitue pas une preuve. La confirmation déclenche une vérification
-          bancaire fraîche côté backend avant création.
+          La liste des comptes est fournie par la banque, mais ne constitue pas
+          une preuve de vérification. Une vérification bancaire fraîche du compte
+          sélectionné est effectuée à la confirmation avant toute création.
         </p>
 
         <div class="customer-enrollment-form__actions">
           <sp-button
             type="button"
             icon="person_add"
-            [disabled]="enrolling()"
+            [disabled]="enrolling() || !selectedAccountReference()"
             (buttonClick)="enroll()"
           >
             {{ enrolling() ? 'Enrôlement…' : 'Confirmer l’enrôlement' }}
@@ -140,6 +152,17 @@ import { CustomerManagementService } from '../services/customer-management.servi
         opacity: 0.75;
       }
 
+      .customer-preview__accounts {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .customer-preview__accounts mat-radio-group {
+        display: grid;
+        gap: 0.5rem;
+      }
+
       .customer-preview__notice {
         margin: 1rem 0;
       }
@@ -163,12 +186,22 @@ export class CustomerEnrollmentWizardComponent {
   protected readonly enrolling = signal(false);
   protected readonly preview = signal<BankingCustomerPreview | null>(null);
 
+  protected readonly selectedAccountReference = signal<string | null>(null);
+  protected readonly reviewedRequest = signal<BankingCustomerPreviewRequest | null>(null);
+
   protected readonly form = this.fb.nonNullable.group({
-    financialInstitutionCode: ['', [Validators.required, Validators.maxLength(50)]],
-    niu: [''],
-    customerNumber: [''],
-    accountReference: ['', [Validators.required, Validators.maxLength(100)]],
+    financialInstitutionCode: ['REGIONAL', [Validators.required, Validators.maxLength(50)]],
+    customerNumber: ['', [Validators.required, Validators.maxLength(50)]],
   });
+
+  constructor() {
+    // Prevent using an obsolete preview when search criteria are changed.
+    this.form.valueChanges.subscribe(() => {
+      this.preview.set(null);
+      this.reviewedRequest.set(null);
+      this.selectedAccountReference.set(null);
+    });
+  }
 
   protected search(): void {
     if (this.form.invalid || this.searching()) {
@@ -177,54 +210,76 @@ export class CustomerEnrollmentWizardComponent {
     }
 
     const value = this.form.getRawValue();
-    const niu = value.niu.trim();
-    const customerNumber = value.customerNumber.trim();
+    const request: BankingCustomerPreviewRequest = {
+      financialInstitutionCode: value.financialInstitutionCode.trim(),
+      customerNumber: value.customerNumber.trim(),
+    };
+    if (!request.financialInstitutionCode || !request.customerNumber) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.preview.set(null);
+    this.reviewedRequest.set(null);
+    this.selectedAccountReference.set(null);
     this.errorService.clear();
     this.searching.set(true);
 
     this.service
-      .bankingPreview({
-        financialInstitutionCode: value.financialInstitutionCode.trim(),
-        accountReference: value.accountReference.trim(),
-        ...(niu ? { niu } : {}),
-        ...(customerNumber ? { customerNumber } : {}),
-      })
+      .bankingPreview(request)
       .pipe(
         catchError(() => EMPTY),
         finalize(() => this.searching.set(false)),
       )
-      .subscribe((preview) => this.preview.set(preview));
+      .subscribe((preview) => {
+        const current = this.form.getRawValue();
+        if (current.financialInstitutionCode.trim() !== request.financialInstitutionCode
+            || current.customerNumber.trim() !== request.customerNumber) {
+          return; // Ignore a completed search after the operator changed the form.
+        }
+        this.reviewedRequest.set(request);
+        this.preview.set(preview);
+      });
   }
 
   protected enroll(): void {
-    if (!this.preview() || this.enrolling()) {
+    const request = this.reviewedRequest();
+    const selectedAccount = this.selectedAccountReference();
+    const preview = this.preview();
+
+    if (
+      !request ||
+      !selectedAccount ||
+      !preview ||
+      this.enrolling() ||
+      !preview.accounts.some(
+        (account) =>
+          account.accountReference === selectedAccount &&
+          account.status === 'ACTIVE'
+      )
+    ) {
       return;
     }
 
-    const value = this.form.getRawValue();
-    const niu = value.niu.trim();
-    const customerNumber = value.customerNumber.trim();
+    const niu = preview.niu?.trim();
+
+    const enrollmentRequest = {
+      ...request,
+      ...(niu ? { niu } : {}),
+      accountReference: selectedAccount,
+    };
 
     this.enrolling.set(true);
 
     this.service
-      .enroll({
-        financialInstitutionCode: value.financialInstitutionCode.trim(),
-        accountReference: value.accountReference.trim(),
-        ...(niu ? { niu } : {}),
-        ...(customerNumber ? { customerNumber } : {}),
-      })
+      .enroll(enrollmentRequest)
       .pipe(
         catchError(() => EMPTY),
         finalize(() => this.enrolling.set(false)),
       )
       .subscribe((customer) => {
         void this.router.navigate(['/customers', customer.id], {
-          queryParams: {
-            enrolled: true,
-          },
+          queryParams: { enrolled: true },
         });
       });
   }

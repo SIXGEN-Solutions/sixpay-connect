@@ -14,6 +14,7 @@ test.describe('Phase 8.4 full-stack Angular -> Spring Boot -> PostgreSQL', () =>
 
     await expect(page.getByText('Créer un partenaire', { exact: true })).toBeVisible();
 
+    await page.getByLabel('Identifiant partenaire').fill(`FULLSTACK_${suffix}`);
     await page.getByLabel('Raison sociale').fill(legalName);
     await page.getByLabel('Nom du contact technique').fill('Full-stack Operations');
     await page.getByLabel('Courriel du contact').fill(contactEmail);

@@ -7,7 +7,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.ArrayList;
@@ -16,20 +15,23 @@ import java.util.Base64;
 import java.util.List;
 
 /**
- * Explicit local-development composition only. Production keys are provisioned
- * by an approved secret-manager boundary, never by this configuration.
+ * Profile-independent composition of OTP idempotency HMAC fingerprints.
+ * Production keys must be provisioned by an approved secret-manager boundary.
  * No default test key, no OTP storage, and no SHA-256 fallback for VERIFY.
  */
 @Configuration(proxyBeanMethods = false)
-@Profile("payment-banking-local")
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.confirmation.idempotency.hmac",
+        name = "enabled",
+        havingValue = "true"
+)
 public class PaymentOtpLocalIdempotencyConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(PaymentOtpIdempotencyFingerprintSet.class)
-    @ConditionalOnProperty(name = "SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64")
     PaymentOtpIdempotencyFingerprintSet paymentOtpIdempotencyFingerprintSet(
-            @Value("${SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64}") String current,
-            @Value("${SIXPAY_PAYMENT_OTP_HMAC_PREVIOUS_KEYS_BASE64:}") String previous
+            @Value("${sixpay.payment.confirmation.idempotency.hmac.key-base64}") String current,
+            @Value("${sixpay.payment.confirmation.idempotency.hmac.previous-keys-base64:}") String previous
     ) {
         List<PaymentOtpIdempotencyFingerprint> fingerprints = new ArrayList<>();
         fingerprints.add(fingerprint(current));
