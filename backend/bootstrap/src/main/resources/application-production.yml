@@ -1,8 +1,6 @@
 # SIXPAY CONNECT - production, configuration autonome (aucun spring.config.import).
 # T1: compensation Payment release/reversal desactivee; Accounting T1/TFJ aussi desactive par defaut.
-# Prerequis: secrets externes, LDAPS, OAuth2 bancaire et mTLS provisionnes.
-# Les clients OAuth2/SSL T1 sont volontairement absents tant que T1 reste desactive;
-# leur activation necessite une decision explicite et leurs credentiels.
+# Prerequis: secrets externes, LDAPS, mTLS provisionnes.
 spring:
   application:
     name: sixpay-connect
