@@ -19,16 +19,14 @@ public final class RestAmplitudePaymentEventClient
     private static final Logger logger = LoggerFactory.getLogger(RestAmplitudePaymentEventClient.class);
 
     private final RestClient restClient;
-    private final PostingAccessTokenProvider tokenProvider;
     private final AmplitudePostingProperties properties;
 
     public RestAmplitudePaymentEventClient(
             RestClient restClient,
-            PostingAccessTokenProvider tokenProvider,
+
             AmplitudePostingProperties properties
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
     }
 
@@ -54,12 +52,7 @@ public final class RestAmplitudePaymentEventClient
                             .uri(properties.postingPath())
                             .contentType(MediaType.APPLICATION_JSON)
                             .accept(MediaType.APPLICATION_JSON)
-                            .headers(headers -> {
-                                String token = tokenProvider.accessToken();
-                                if (token != null && !token.isBlank()) {
-                                    headers.setBearerAuth(token);
-                                }
-                            })
+
                             .header(
                                     properties.contract().correlationHeader(),
                                     correlationId

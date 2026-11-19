@@ -2,8 +2,6 @@ package com.sixpay.accounting.infrastructure.accountingapi.configuration;
 
 import com.sixpay.accounting.application.port.output.AccountingBatchGateway;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
-import com.sixpay.accounting.infrastructure.accountingapi.client.AccountingApiAccessTokenProvider;
-import com.sixpay.accounting.infrastructure.accountingapi.client.OAuth2AccountingApiAccessTokenProvider;
 import com.sixpay.accounting.infrastructure.accountingapi.client.RestAccountingBatchClient;
 import com.sixpay.accounting.infrastructure.accountingapi.mapper.AccountingApiMapper;
 import com.sixpay.accounting.infrastructure.accountingapi.validation.AccountingApiResponseValidator;
@@ -15,7 +13,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -32,17 +29,7 @@ import java.util.List;
 )
 public class AccountingApiConfiguration {
 
-    @Bean
-    AccountingApiAccessTokenProvider
-    accountingApiAccessTokenProvider(
-            OAuth2AuthorizedClientManager manager,
-            AccountingApiProperties properties
-    ) {
-        return new OAuth2AccountingApiAccessTokenProvider(
-                manager,
-                properties
-        );
-    }
+
 
     @Bean
     RestClient accountingApiRestClient(
@@ -56,10 +43,11 @@ public class AccountingApiConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                sslBundles.getBundle(
-                        properties.security().sslBundle()
-                ).createSslContext(),
-                List.of()
+                properties.security().mtlsEnabled()
+                        ? sslBundles.getBundle(properties.security().sslBundle()).createSslContext()
+                        : null,
+                List.of(),
+                properties.security().allowInsecureHttp()
         );
     }
 
@@ -78,7 +66,7 @@ public class AccountingApiConfiguration {
     @ConditionalOnMissingBean(AccountingBatchGateway.class)
     AccountingBatchGateway accountingBatchGateway(
             RestClient accountingApiRestClient,
-            AccountingApiAccessTokenProvider tokenProvider,
+
             AccountingApiProperties properties,
             AccountingApiMapper mapper,
             AccountingApiResponseValidator validator,
@@ -87,7 +75,6 @@ public class AccountingApiConfiguration {
     ) {
         return new RestAccountingBatchClient(
                 accountingApiRestClient,
-                tokenProvider,
                 properties,
                 mapper,
                 validator,

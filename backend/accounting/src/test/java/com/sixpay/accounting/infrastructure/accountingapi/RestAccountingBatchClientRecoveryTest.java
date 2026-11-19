@@ -4,7 +4,6 @@ import com.sixpay.accounting.domain.model.AccountingBatch;
 import com.sixpay.accounting.domain.model.AccountingBatchId;
 import com.sixpay.accounting.domain.model.AccountingBatchIdempotencyKey;
 import com.sixpay.accounting.domain.repository.AccountingBatchRepository;
-import com.sixpay.accounting.infrastructure.accountingapi.client.AccountingApiAccessTokenProvider;
 import com.sixpay.accounting.infrastructure.accountingapi.client.RestAccountingBatchClient;
 import com.sixpay.accounting.infrastructure.accountingapi.configuration.AccountingApiProperties;
 import com.sixpay.accounting.infrastructure.accountingapi.mapper.AccountingApiMapper;
@@ -107,14 +106,13 @@ class RestAccountingBatchClientRecoveryTest {
             AccountingBatchRepository repository
     ) {
         return new RestAccountingBatchClient(
-                mock(RestClient.class),
-                mock(AccountingApiAccessTokenProvider.class),
-                mock(AccountingApiProperties.class),
-                new AccountingApiMapper(),
-                new AccountingApiResponseValidator(),
-                new ObjectMapper(),
-                repository
-        );
+                       mock(RestClient.class),
+                       mock(AccountingApiProperties.class),
+                       new AccountingApiMapper(),
+                       new AccountingApiResponseValidator(),
+                       new ObjectMapper(),
+                       repository
+               );
     }
 
     private static AccountingBatch invokeResolveLocalBatch(

@@ -24,7 +24,7 @@ public record AccountingApiProperties(
             "sixpay.accounting.api";
 
     public AccountingApiProperties {
-        validateBaseUrl(baseUrl);
+        validateBaseUrl(baseUrl, security);
         submitPath = path(
                 submitPath,
                 "submitPath"
@@ -60,19 +60,14 @@ public record AccountingApiProperties(
         );
     }
 
-    public record Security(
-            String oauth2RegistrationId,
-            String sslBundle
-    ) {
+    public record Security(boolean mtlsEnabled, boolean allowInsecureHttp, String sslBundle) {
         public Security {
-            oauth2RegistrationId = required(
-                    oauth2RegistrationId,
-                    "oauth2RegistrationId"
-            );
-            sslBundle = required(
-                    sslBundle,
-                    "sslBundle"
-            );
+            if (mtlsEnabled && (sslBundle == null || sslBundle.isBlank())) {
+                throw new IllegalArgumentException("sslBundle is required when mTLS is enabled");
+            }
+            if (mtlsEnabled && allowInsecureHttp) {
+                throw new IllegalArgumentException("insecure HTTP cannot be combined with mTLS");
+            }
         }
     }
 
@@ -87,13 +82,16 @@ public record AccountingApiProperties(
         }
     }
 
-    private static void validateBaseUrl(URI value) {
+    private static void validateBaseUrl(URI value, Security security) {
         if (value == null
                 || !value.isAbsolute()
                 || value.getHost() == null
-                || !"https".equalsIgnoreCase(
-                        value.getScheme()
-                )) {
+                || !("https".equalsIgnoreCase(value.getScheme())
+                        || (security != null && security.allowInsecureHttp() && !security.mtlsEnabled()
+                        && "http".equalsIgnoreCase(value.getScheme())
+                        && ("localhost".equalsIgnoreCase(value.getHost())
+                            || "127.0.0.1".equals(value.getHost())
+                            || "::1".equals(value.getHost()))))) {
             throw new IllegalArgumentException(
                     "baseUrl must be an absolute HTTPS URI"
             );

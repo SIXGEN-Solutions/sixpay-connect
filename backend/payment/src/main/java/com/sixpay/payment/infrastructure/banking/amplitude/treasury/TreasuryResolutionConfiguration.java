@@ -1,7 +1,6 @@
 package com.sixpay.payment.infrastructure.banking.amplitude.treasury;
 
 import com.sixpay.payment.application.port.output.PaymentTreasuryAccountResolutionPort;
-import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.client.ConfirmationAccessTokenProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,10 +16,9 @@ public class TreasuryResolutionConfiguration {
 
     @Bean
     TreasuryAccountLookupClient treasuryAccountLookupClient(
-            @Qualifier("amplitudePaymentConfirmationRestClient") RestClient restClient,
-            ConfirmationAccessTokenProvider tokenProvider
+            @Qualifier("amplitudePaymentConfirmationRestClient") RestClient restClient
     ) {
-        return new RestTreasuryAccountLookupClient(restClient, tokenProvider);
+        return new RestTreasuryAccountLookupClient(restClient);
     }
 
     @Bean

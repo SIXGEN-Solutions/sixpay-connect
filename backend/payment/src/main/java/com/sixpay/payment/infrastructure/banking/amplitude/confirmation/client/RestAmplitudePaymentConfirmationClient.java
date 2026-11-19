@@ -8,7 +8,6 @@ import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.configur
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.dto.AmplitudeConfirmationResponse;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.mapper.AmplitudePaymentConfirmationMapper;
 import com.sixpay.payment.infrastructure.banking.amplitude.confirmation.validation.AmplitudePaymentConfirmationResponseValidator;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -20,7 +19,6 @@ import java.util.Objects;
 public final class RestAmplitudePaymentConfirmationClient implements AmplitudePaymentConfirmationClient {
 
     private final RestClient restClient;
-    private final ConfirmationAccessTokenProvider tokenProvider;
     private final AmplitudePaymentConfirmationProperties properties;
     private final AmplitudePaymentConfirmationMapper mapper;
     private final AmplitudePaymentConfirmationResponseValidator validator;
@@ -28,14 +26,13 @@ public final class RestAmplitudePaymentConfirmationClient implements AmplitudePa
 
     public RestAmplitudePaymentConfirmationClient(
             RestClient restClient,
-            ConfirmationAccessTokenProvider tokenProvider,
+
             AmplitudePaymentConfirmationProperties properties,
             AmplitudePaymentConfirmationMapper mapper,
             AmplitudePaymentConfirmationResponseValidator validator,
             ObjectMapper objectMapper
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
         this.validator = Objects.requireNonNull(validator);
@@ -104,8 +101,6 @@ public final class RestAmplitudePaymentConfirmationClient implements AmplitudePa
         try {
             RestClient.RequestBodySpec httpRequest = restClient.post()
                     .uri(path).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON);
-            String token = tokenProvider.accessToken();
-            if (token != null && !token.isBlank()) httpRequest.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
             String payload = httpRequest.header(
                             properties.contract().correlationHeader(),
                             context.correlationId().value()
@@ -148,9 +143,7 @@ public final class RestAmplitudePaymentConfirmationClient implements AmplitudePa
             RestClient.RequestHeadersSpec<?> spec,
             BankingRequestContext context
     ) {
-        String token = tokenProvider.accessToken();
         RestClient.RequestHeadersSpec<?> request = spec;
-        if (token != null && !token.isBlank()) request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         return request
                 .header(properties.contract().correlationHeader(), context.correlationId().value())
                 .header(properties.contract().institutionHeader(), context.financialInstitutionCode().value());

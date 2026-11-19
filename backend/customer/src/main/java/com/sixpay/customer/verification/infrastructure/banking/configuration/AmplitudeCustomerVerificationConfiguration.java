@@ -17,6 +17,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.*;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.ssl.SslBundles;
+import org.springframework.beans.factory.annotation.Value;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
@@ -33,7 +36,10 @@ public class AmplitudeCustomerVerificationConfiguration {
     @Bean
     RestClient amplitudeCustomerVerificationRestClient(
             StandardRestClientFactory factory,
-            BankingVerificationProperties properties
+            BankingVerificationProperties properties,
+            @Value("${SIXPAY_BANKING_MTLS_ENABLED:false}") boolean mtlsEnabled,
+            @Value("${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}") String sslBundle,
+            ObjectProvider<SslBundles> bundles
     ) {
         return factory.create(
                 properties.baseUrl(),
@@ -41,7 +47,7 @@ public class AmplitudeCustomerVerificationConfiguration {
                         properties.connectTimeout(),
                         properties.readTimeout()
                 ),
-                null,
+                mtlsEnabled ? bundles.getObject().getBundle(sslBundle).createSslContext() : null,
                 List.of(),
                 true
         );

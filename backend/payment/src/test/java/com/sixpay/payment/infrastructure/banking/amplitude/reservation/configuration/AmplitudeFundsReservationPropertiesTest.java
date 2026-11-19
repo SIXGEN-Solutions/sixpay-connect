@@ -42,10 +42,9 @@ class AmplitudeFundsReservationPropertiesTest {
                 "/v1/payment/funds/reservations",
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(5),
-                new AmplitudeFundsReservationProperties.Security(
-                        "amplitude-payment",
-                        "amplitude-payment-client"
-                ),
+                new AmplitudeFundsReservationProperties.Security(true,
+                        false,
+                        "amplitude-payment-client"),
                 new AmplitudeFundsReservationProperties.Contract(
                         "test-v1",
                         Set.of("00"),

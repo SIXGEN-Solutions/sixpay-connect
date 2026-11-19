@@ -27,11 +27,8 @@ class RestAmplitudePaymentEventClientTest {
                 MockRestServiceServer.bindTo(builder).build();
 
         RestAmplitudePaymentEventClient client =
-                new RestAmplitudePaymentEventClient(
-                        builder.baseUrl("http://localhost").build(),
-                        () -> "access-token",
-                        properties()
-                );
+                new RestAmplitudePaymentEventClient(builder.baseUrl("http://localhost").build(),
+                        properties());
 
         server.expect(
                         requestTo(
@@ -39,12 +36,8 @@ class RestAmplitudePaymentEventClientTest {
                         )
                 )
                 .andExpect(method(HttpMethod.POST))
-                .andExpect(
-                        header(
-                                "Authorization",
-                                "Bearer access-token"
-                        )
-                )
+                .andExpect(request -> org.junit.jupiter.api.Assertions.assertNull(
+                        request.getHeaders().getFirst(org.springframework.http.HttpHeaders.AUTHORIZATION)))
                 .andExpect(
                         header(
                                 "X-Correlation-ID",
@@ -94,11 +87,8 @@ class RestAmplitudePaymentEventClientTest {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         RestAmplitudePaymentEventClient client =
-                new RestAmplitudePaymentEventClient(
-                        builder.baseUrl("http://localhost").build(),
-                        () -> null,
-                        properties()
-                );
+                new RestAmplitudePaymentEventClient(builder.baseUrl("http://localhost").build(),
+                        properties());
 
         server.expect(requestTo("http://localhost/api/v1/payment-events"))
                 .andExpect(method(HttpMethod.POST))
@@ -132,10 +122,9 @@ class RestAmplitudePaymentEventClientTest {
                 "/api/v1/kyc/process/modenuit",
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(2),
-                new AmplitudePostingProperties.Security(
-                        "amplitude-payment",
-                        "amplitude-mtls"
-                ),
+                new AmplitudePostingProperties.Security(true,
+                        false,
+                        "amplitude-mtls"),
                 new AmplitudePostingProperties.Contract(
                         "1.0.0",
                         "Idempotency-Key",

@@ -34,7 +34,6 @@ public final class RestAccountingBatchClient
         implements AccountingBatchGateway {
 
     private final RestClient restClient;
-    private final AccountingApiAccessTokenProvider tokenProvider;
     private final AccountingApiProperties properties;
     private final AccountingApiMapper mapper;
     private final AccountingApiResponseValidator validator;
@@ -43,7 +42,7 @@ public final class RestAccountingBatchClient
 
     public RestAccountingBatchClient(
             RestClient restClient,
-            AccountingApiAccessTokenProvider tokenProvider,
+
             AccountingApiProperties properties,
             AccountingApiMapper mapper,
             AccountingApiResponseValidator validator,
@@ -51,7 +50,6 @@ public final class RestAccountingBatchClient
             AccountingBatchRepository batchRepository
     ) {
         this.restClient = Objects.requireNonNull(restClient);
-        this.tokenProvider = Objects.requireNonNull(tokenProvider);
         this.properties = Objects.requireNonNull(properties);
         this.mapper = Objects.requireNonNull(mapper);
         this.validator = Objects.requireNonNull(validator);
@@ -69,17 +67,12 @@ public final class RestAccountingBatchClient
 
         var request = mapper.toRequest(batch);
 
-        String accessToken = tokenProvider.accessToken();
-
         try {
             String payload = restClient.post()
                     .uri(properties.submitPath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .header(
-                            HttpHeaders.AUTHORIZATION,
-                            "Bearer " + accessToken
-                    )
+
                     .header(
                             IntegrationHttpHeaders.CORRELATION_ID,
                             context.correlationId().value()
@@ -220,16 +213,12 @@ public final class RestAccountingBatchClient
             AccountingIntegrationContext context
     ) {
         Objects.requireNonNull(context, "context");
-        String accessToken = tokenProvider.accessToken();
 
         try {
             String payload = restClient.get()
                     .uri(path, value)
                     .accept(MediaType.APPLICATION_JSON)
-                    .header(
-                            HttpHeaders.AUTHORIZATION,
-                            "Bearer " + accessToken
-                    )
+
                     .header(
                             IntegrationHttpHeaders.CORRELATION_ID,
                             context.correlationId().value()

@@ -35,12 +35,8 @@ class RestAmplitudePaymentEventRecoveryClientTest {
                         )
                 )
                 .andExpect(method(HttpMethod.GET))
-                .andExpect(
-                        header(
-                                "Authorization",
-                                "Bearer access-token"
-                        )
-                )
+                .andExpect(request -> org.junit.jupiter.api.Assertions.assertNull(
+                        request.getHeaders().getFirst(org.springframework.http.HttpHeaders.AUTHORIZATION)))
                 .andExpect(
                         header(
                                 "X-Correlation-ID",
@@ -104,11 +100,8 @@ class RestAmplitudePaymentEventRecoveryClientTest {
     private static RestAmplitudePaymentEventRecoveryClient client(
             RestClient.Builder builder
     ) {
-        return new RestAmplitudePaymentEventRecoveryClient(
-                builder.baseUrl("http://localhost").build(),
-                () -> "access-token",
-                properties()
-        );
+        return new RestAmplitudePaymentEventRecoveryClient(builder.baseUrl("http://localhost").build(),
+                       properties());
     }
 
     private static AmplitudePostingProperties properties() {
@@ -122,10 +115,9 @@ class RestAmplitudePaymentEventRecoveryClientTest {
                 "/api/v1/kyc/process/modenuit",
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(2),
-                new AmplitudePostingProperties.Security(
-                        "amplitude-payment",
-                        "amplitude-mtls"
-                ),
+                new AmplitudePostingProperties.Security(true,
+                        false,
+                        "amplitude-mtls"),
                 new AmplitudePostingProperties.Contract(
                         "1.0.0",
                         "Idempotency-Key",

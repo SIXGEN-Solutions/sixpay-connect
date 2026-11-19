@@ -16,13 +16,11 @@ import com.sixpay.payment.application.service.PaymentEventContextService;
 import com.sixpay.payment.domain.repository.PaymentFinancialSnapshotRepository;
 import com.sixpay.payment.application.port.output.banking.PaymentEventExecutionPort;
 import com.sixpay.payment.application.port.output.banking.PaymentEventRecoveryPort;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -39,21 +37,7 @@ import java.util.List;
 )
 public class AmplitudePostingConfiguration {
 
-    @Bean
-    PostingAccessTokenProvider postingAccessTokenProvider(
-            ObjectProvider<OAuth2AuthorizedClientManager> managerProvider,
-            AmplitudePostingProperties properties
-    ) {
-        if (!properties.security().oauth2Enabled()) {
-            return () -> null;
-        }
-        OAuth2AuthorizedClientManager manager = managerProvider.getIfAvailable();
-        if (manager == null) {
-            throw new IllegalStateException(
-                    "OAuth2 manager required when posting OAuth2 is enabled");
-        }
-        return new OAuth2PostingAccessTokenProvider(manager, properties);
-    }
+
 
     @Bean
     RestClient amplitudePostingRestClient(
@@ -81,12 +65,11 @@ public class AmplitudePostingConfiguration {
     @Bean
     AmplitudePaymentEventRecoveryClient amplitudePaymentEventRecoveryClient(
             RestClient amplitudePostingRestClient,
-            PostingAccessTokenProvider tokenProvider,
+
             AmplitudePostingProperties properties
     ) {
         return new RestAmplitudePaymentEventRecoveryClient(
                 amplitudePostingRestClient,
-                tokenProvider,
                 properties
         );
     }
@@ -106,12 +89,11 @@ public class AmplitudePostingConfiguration {
     @Bean
     AmplitudePaymentEventClient amplitudePaymentEventClient(
             RestClient amplitudePostingRestClient,
-            PostingAccessTokenProvider tokenProvider,
+
             AmplitudePostingProperties properties
     ) {
         return new RestAmplitudePaymentEventClient(
                 amplitudePostingRestClient,
-                tokenProvider,
                 properties
         );
     }
