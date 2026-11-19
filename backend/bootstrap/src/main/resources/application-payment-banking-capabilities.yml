@@ -24,6 +24,12 @@ sixpay:
             configuration-id: TREASURY-BANK-CM-RNF
             account-reference: ${TREASURY_BANK_CM_RNF_ACCOUNT_REF:}
             version: "v1"
+    confirmation:
+      idempotency:
+        hmac:
+          enabled: ${SIXPAY_PAYMENT_OTP_HMAC_ENABLED:false}
+          key-base64: ${SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64:}
+          previous-keys-base64: ${SIXPAY_PAYMENT_OTP_HMAC_PREVIOUS_KEYS_BASE64:}
     banking:
       amplitude:
         reservation:

@@ -20,14 +20,18 @@ import java.util.List;
  * No default test key, no OTP storage, and no SHA-256 fallback for VERIFY.
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(name = "SIXPAY_PAYMENT_OTP_HMAC_ENABLED", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "sixpay.payment.confirmation.idempotency.hmac",
+        name = "enabled",
+        havingValue = "true"
+)
 public class PaymentOtpLocalIdempotencyConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(PaymentOtpIdempotencyFingerprintSet.class)
     PaymentOtpIdempotencyFingerprintSet paymentOtpIdempotencyFingerprintSet(
-            @Value("${SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64}") String current,
-            @Value("${SIXPAY_PAYMENT_OTP_HMAC_PREVIOUS_KEYS_BASE64:}") String previous
+            @Value("${sixpay.payment.confirmation.idempotency.hmac.key-base64}") String current,
+            @Value("${sixpay.payment.confirmation.idempotency.hmac.previous-keys-base64:}") String previous
     ) {
         List<PaymentOtpIdempotencyFingerprint> fingerprints = new ArrayList<>();
         fingerprints.add(fingerprint(current));
