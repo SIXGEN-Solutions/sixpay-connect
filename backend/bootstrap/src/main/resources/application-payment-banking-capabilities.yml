@@ -34,7 +34,7 @@ sixpay:
           read-timeout: ${AMPLITUDE_FUNDS_RESERVATION_READ_TIMEOUT:5s}
           security:
             oauth2-enabled: ${AMPLITUDE_FUNDS_RESERVATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_FUNDS_RESERVATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_FUNDS_RESERVATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
@@ -58,7 +58,7 @@ sixpay:
           read-timeout: ${AMPLITUDE_POSTING_READ_TIMEOUT:10s}
           security:
             oauth2-enabled: ${AMPLITUDE_POSTING_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_POSTING_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_POSTING_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
@@ -76,7 +76,7 @@ sixpay:
           read-timeout: ${AMPLITUDE_COMPENSATION_READ_TIMEOUT:10s}
           security:
             oauth2-enabled: ${AMPLITUDE_COMPENSATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_COMPENSATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_COMPENSATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
@@ -111,7 +111,7 @@ sixpay:
           read-timeout: ${AMPLITUDE_CONFIRMATION_READ_TIMEOUT}
           security:
             oauth2-enabled: ${AMPLITUDE_CONFIRMATION_OAUTH2_ENABLED:true}
-            mtls-enabled: ${AMPLITUDE_CONFIRMATION_MTLS_ENABLED:true}
+            mtls-enabled: ${SIXPAY_BANKING_MTLS_ENABLED:false}
             allow-insecure-http: ${AMPLITUDE_CONFIRMATION_ALLOW_INSECURE_HTTP:false}
             oauth2-registration-id: ${AMPLITUDE_PAYMENT_OAUTH2_REGISTRATION_ID:amplitude-payment}
             ssl-bundle: ${AMPLITUDE_PAYMENT_SSL_BUNDLE:amplitude-payment-client}
