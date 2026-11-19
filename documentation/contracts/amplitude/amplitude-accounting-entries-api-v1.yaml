@@ -53,7 +53,6 @@ info:
       institutionHeader: "X-Financial-Institution-Code"
       idempotencyHeader: "Idempotency-Key"
       applicationSecurity:
-        - "OAUTH2_CLIENT_CREDENTIALS"
         - "MUTUAL_TLS"
       synchronousTerminalHttpStatus: 200
       asynchronousAcceptedHttpStatus: 202
@@ -76,9 +75,7 @@ servers:
     description: Environment-specific placeholder.
 
 security:
-  - oauth2ClientCredentials:
-      - amplitude.accounting.read
-    mutualTLS: []
+  - mutualTLS: []
 
 tags:
   - name: Accounting entries
@@ -91,9 +88,7 @@ paths:
       operationId: submitAmplitudeAccountingEntries
       summary: Submit a T1 accounting batch
       security:
-        - oauth2ClientCredentials:
-            - amplitude.accounting.write
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -132,9 +127,7 @@ paths:
       operationId: getAmplitudeAccountingBatchByBatchId
       summary: Read authoritative T1 batch result
       security:
-        - oauth2ClientCredentials:
-            - amplitude.accounting.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -157,9 +150,7 @@ paths:
       operationId: getAmplitudeAccountingBatchByIdempotencyKey
       summary: Recover a T1 submission by original idempotency key
       security:
-        - oauth2ClientCredentials:
-            - amplitude.accounting.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -178,14 +169,6 @@ paths:
 
 components:
   securitySchemes:
-    oauth2ClientCredentials:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://oauth.example/token
-          scopes:
-            amplitude.accounting.write: Submit T1 accounting batches.
-            amplitude.accounting.read: Read T1 accounting batch results.
     mutualTLS:
       type: mutualTLS
 

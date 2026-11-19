@@ -42,9 +42,7 @@ info:
       allocateNextEventNumberByOperation: "GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}"
       accountingDate: "GET /api/v1/nomenclature/getdatecomptable"
       nightMode: "GET /api/v1/kyc/process/modenuit"
-      applicationSecurity: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
-      executeScope: "amplitude.payment.execution"
-      readScope: "amplitude.payment.execution.read"
+      applicationSecurity: ["MUTUAL_TLS"]
     snapshotPolicy:
       owner: "payment"
       persistence: "REDUCED_IMMUTABLE_SIXPAY_SNAPSHOTS"
@@ -67,9 +65,7 @@ servers:
     description: Environment-specific placeholder.
 
 security:
-  - oauth2ClientCredentials:
-      - amplitude.payment.execution.read
-    mutualTLS: []
+  - mutualTLS: []
 
 paths:
   /api/v1/payment-events:
@@ -78,9 +74,7 @@ paths:
       operationId: registerPaymentEventToCoreBanking
       summary: Register and execute the SIXPAY Payment event
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -116,9 +110,7 @@ paths:
       tags: [Payment event recovery]
       operationId: getPaymentEventByPaymentReference
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -138,9 +130,7 @@ paths:
       tags: [Payment event recovery]
       operationId: getPaymentEventByIdempotencyKey
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -161,9 +151,7 @@ paths:
       operationId: allocateNextPaymentEventNumberByOperation
       summary: Atomically allocate the next Core Banking event number for an operation code
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -185,9 +173,7 @@ paths:
       operationId: getCoreBankingAccountingDate
       summary: Read the current Core Banking accounting date
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -210,9 +196,7 @@ paths:
       description: |
         Response body code "200" means night mode is active.
       security:
-        - oauth2ClientCredentials:
-            - amplitude.payment.execution.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -229,14 +213,6 @@ paths:
 
 components:
   securitySchemes:
-    oauth2ClientCredentials:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://identity.amplitude.example/oauth2/token
-          scopes:
-            amplitude.payment.execution: Execute a T0 Payment event
-            amplitude.payment.execution.read: Read authoritative T0 results
     mutualTLS:
       type: mutualTLS
 

@@ -63,7 +63,6 @@ info:
       institutionHeader: "X-Financial-Institution-Code"
       idempotencyConflictHttpStatus: 409
       securityProfile:
-        - "OAUTH2_CLIENT_CREDENTIALS"
         - "MUTUAL_TLS"
     decisions:
       - "D00-CB-OWNERSHIP"
@@ -85,7 +84,6 @@ info:
       - "RESPONSE_TIMEOUT"
       - "RATE_LIMIT_VALUES"
       - "RETRY_BACKOFF_VALUES"
-      - "OAUTH2_ENDPOINTS"
       - "CERTIFICATES_AND_TRUST_MATERIAL"
     limitations:
       - "NO_FUNDS_AVAILABILITY_DECISION"
@@ -100,9 +98,7 @@ servers:
     description: Environment-specific placeholder; real URLs remain external configuration.
 
 security:
-  - oauth2ClientCredentials:
-      - amplitude.payment.confirmation
-    mutualTLS: []
+  - mutualTLS: []
 
 tags:
   - name: Payment confirmation challenges
@@ -322,14 +318,6 @@ paths:
 
 components:
   securitySchemes:
-    oauth2ClientCredentials:
-      type: oauth2
-      description: Approved contract profile; operational token parameters remain environment configuration.
-      flows:
-        clientCredentials:
-          tokenUrl: https://identity.amplitude.example/oauth2/token
-          scopes:
-            amplitude.payment.confirmation: Payment confirmation operations.
     mutualTLS:
       type: mutualTLS
       description: SIXPAY client certificate trusted by La Regionale.
@@ -656,6 +644,5 @@ x-sixpay-external-runtime-parameters:
     - RESPONSE_TIMEOUT
     - RATE_LIMIT_VALUES
     - RETRY_BACKOFF_VALUES
-    - OAUTH2_ENDPOINTS
     - CERTIFICATES_AND_TRUST_MATERIAL
   contractApprovalBlocking: false

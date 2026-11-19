@@ -138,9 +138,7 @@ paths:
         incident recovery. A successful lookup is processed through the exact
         same matching, idempotency and quarantine rules as a callback.
       security:
-        - sixpayToAmplitudeOauth2:
-            - amplitude.tfj.read
-          mutualTLS: []
+        - mutualTLS: []
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCode'
@@ -182,13 +180,6 @@ components:
         `v1=<base64url-signature>` computed with HMAC-SHA256 over
         `timestamp + "." + HTTP_METHOD + "." + request_target + "." +
         base64url(SHA-256(raw_request_body))`.
-    sixpayToAmplitudeOauth2:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://identity.amplitude.example/oauth2/token
-          scopes:
-            amplitude.tfj.read: Read an authoritative Amplitude TFJ result
     mutualTLS:
       type: mutualTLS
 
