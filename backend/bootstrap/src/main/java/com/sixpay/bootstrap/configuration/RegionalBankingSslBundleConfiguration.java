@@ -3,6 +3,8 @@ package com.sixpay.bootstrap.configuration;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.Enumeration;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.ssl.SslBundleRegistrar;
 import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.ssl.SslBundleKey;
@@ -10,22 +12,22 @@ import org.springframework.boot.ssl.SslOptions;
 import org.springframework.boot.ssl.SslStoreBundle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 
 /** Registers the existing named Spring SSL bundle only when outbound banking mTLS is enabled. */
 @Configuration(proxyBeanMethods = false)
-@Profile("production")
+@ConditionalOnProperty(
+        name = "SIXPAY_BANKING_MTLS_ENABLED",
+        havingValue = "true"
+)
 public class RegionalBankingSslBundleConfiguration {
 
     @Bean
     SslBundleRegistrar regionalBankingSslBundleRegistrar(
             Environment env, ResourceLoader resources) {
         return registry -> {
-            if (!env.getProperty("SIXPAY_BANKING_MTLS_ENABLED", Boolean.class, false)) {
-                return;
-            }
+
             String keyLocation = required(env, "AMPLITUDE_PAYMENT_KEYSTORE_LOCATION");
             String keyPassword = required(env, "AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD");
             String trustLocation = required(env, "AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION");

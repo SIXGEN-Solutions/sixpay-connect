@@ -34,6 +34,21 @@ spring:
         jdbc:
           time_zone: UTC
         default_schema: sixpay
+
+
+  ssl:
+    bundle:
+      jks:
+        amplitude-payment-client:
+          keystore:
+            location: ${AMPLITUDE_PAYMENT_KEYSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_KEYSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_KEYSTORE_TYPE:PKCS12}
+          truststore:
+            location: ${AMPLITUDE_PAYMENT_TRUSTSTORE_LOCATION}
+            password: ${AMPLITUDE_PAYMENT_TRUSTSTORE_PASSWORD}
+            type: ${AMPLITUDE_PAYMENT_TRUSTSTORE_TYPE:PKCS12}
+
 springdoc:
   api-docs:
     enabled: false
