@@ -32,8 +32,8 @@ class PaymentOtpLocalIdempotencyConfigurationTest {
     @Test
     void enabledWithSecretBuildsBeanWithoutAnySpringProfile() {
         runner.withPropertyValues(
-                "SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true",
-                "SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64=" + encoded("current-local-test-key-material-32bytes-2026")
+                "sixpay.payment.confirmation.idempotency.hmac.enabled=true",
+                "sixpay.payment.confirmation.idempotency.hmac.key-base64=" + encoded("current-local-test-key-material-32bytes-2026")
         ).run(context -> {
             assertNull(context.getStartupFailure());
             assertNotNull(context.getBean(PaymentOtpIdempotencyFingerprintSet.class));
@@ -42,15 +42,15 @@ class PaymentOtpLocalIdempotencyConfigurationTest {
 
     @Test
     void enabledWithoutSecretFailsAtStartup() {
-        runner.withPropertyValues("SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true")
+        runner.withPropertyValues("sixpay.payment.confirmation.idempotency.hmac.enabled=true")
                 .run(context -> assertNotNull(context.getStartupFailure()));
     }
 
     @Test
     void enabledWithWeakSecretFailsAtStartup() {
         runner.withPropertyValues(
-                "SIXPAY_PAYMENT_OTP_HMAC_ENABLED=true",
-                "SIXPAY_PAYMENT_OTP_HMAC_KEY_BASE64=" + encoded("short")
+                "sixpay.payment.confirmation.idempotency.hmac.enabled=true",
+                "sixpay.payment.confirmation.idempotency.hmac.key-base64=" + encoded("short")
         ).run(context -> assertNotNull(context.getStartupFailure()));
     }
 
